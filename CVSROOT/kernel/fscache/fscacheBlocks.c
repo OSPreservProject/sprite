@@ -47,8 +47,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  *        Whenever Fscache_FetchBlock returns a block it sets the 
  *	  FSCACHE_IO_IN_PROGRESS flag in the block.  This flag will be cleared
  *	  whenever the block is released with Fscache_UnlockBlock or the
- *	  function Fscache_IODone is called.  While this flag is set in the block
- *	  all future fetches will block until the flag is cleared.
+ *	  function Fscache_IODone is called.  While this flag is set in the
+ *	  block all future fetches will block until the flag is cleared.
  *
  *     2) Synchronization for changing where a block lives on disk.  When a
  *	  block cleaner is writing out a block and Fscache_UnlockBlock is
@@ -61,8 +61,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  *
  *     4) Waiting for blocks from the whole cache to be written back.  This
  *	  is done just like (3) except that a global count of the number
- *	  of blocks being written back is kept and the FSCACHE_WRITE_BACK_WAIT flag
- *	  is set in the block instead.
+ *	  of blocks being written back is kept and the FSCACHE_WRITE_BACK_WAIT
+ *	  flag is set in the block instead.
  *
  *     5) Synchronizing informing the server when there are no longer any
  *	  dirty blocks in the cache for a file.  When the last dirty block
@@ -72,22 +72,23 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  *	  cache are unsynchronized there is a race between the close and the
  *	  delayed write back.  This is solved by using the following 
  *	  synchronization.  When a file is closed the function 
- *	  Fscache_PreventWriteBacks is called.  This function will not return until
- *	  there are no block cleaners active on the file.  When it returns it 
- *	  sets the FSCACHE_CLOSE_IN_PROGRESS flag in the cacheInfo struct in the file *	  handle and it returns the number of dirty blocks.  All subsequent
- *	  block writes are blocked until the function Fscache_AllowWriteBacks is
- *	  called.  Thus the number of dirty blocks in the cache for the
- *	  file is accurate on close because no dirty blocks can be written
- *	  out while the file is being closed.  Likewise when a block cleaner
- *	  writes out the last dirty block for a file and it tells the server
- *	  on the write that its the last dirty block the server knows that
- *	  it can believe the block cleaner if the file is closed.  This
- *	  is because if its closed then it must have been closed when the
- *	  block cleaner did the write (all closes are prohibited during the
- *	  write) and thus there is no way that more dirty blocks can be
- *	  put into the cache.  If its open then the server ignores what the
- *	  block cleaner says because it will get told again when the file is
- *	  closed.
+ *	  Fscache_PreventWriteBacks is called.  This function will not return
+ *	  until there are no block cleaners active on the file.  When it
+ *	  returns it sets the FSCACHE_CLOSE_IN_PROGRESS flag in the cacheInfo
+ *	  struct in the file handle and it returns the number of dirty blocks.
+ *	  All subsequent block writes are blocked until the function
+ *	  Fscache_AllowWriteBacks is called.  Thus the number of dirty blocks
+ *	  in the cache for the file is accurate on close because no dirty
+ *	  blocks can be written out while the file is being closed.
+ *	  Likewise when a block cleaner writes out the last dirty block for
+ *	  a file and it tells the server on the write that its the last
+ *	  dirty block the server knows that it can believe the block cleaner
+ *	  if the file is closed.  This is because if its closed then it must
+ *	  have been closed when the  block cleaner did the write
+ *	  (all closes are prohibited during the write) and thus there
+ *	  is no way that more dirty blocks can be put into the cache.
+ *	  If its open then the server ignores what the block cleaner
+ *	  says because it will get told again when the file is closed.
  */
 
 /*
@@ -139,6 +140,13 @@ static	List_Links	unmappedListHdr;
  */
 static	List_Links	dirtyListHdr;
 static	List_Links	*dirtyList = &dirtyListHdr;
+
+/*
+ * Writes and reads can block on a full cache.  This list records the
+ * processes that are blocked on this condition.
+ */
+List_Links fscacheFullWaitListHdr;
+List_Links *fscacheFullWaitList = &fscacheFullWaitListHdr;
 
 /*
  * Hash tables for blocks.
@@ -354,6 +362,7 @@ Fscache_Init(blockHashSize)
     List_Init(partFreeList);
     List_Init(dirtyList);
     List_Init(unmappedList);
+    List_Init(fscacheFullWaitList);
 
     for (i = 0,blockAddr = blockCacheStart,blockPtr = (Fscache_Block *)listStart;
 	 i < fs_Stats.blockCache.maxNumBlocks; 
@@ -406,6 +415,8 @@ Fscache_Init(blockHashSize)
  *
  * Side effects:
  *	Block either added to the partially free list or the totally free list.
+ *	The list of processes waiting on the full cache is notified if
+ *	is non-empty.
  *
  * ----------------------------------------------------------------------------
  */
@@ -432,7 +443,10 @@ PutOnFreeList(blockPtr)
     } else {
 	List_Insert((List_Links *) blockPtr, LIST_ATFRONT(totFreeList));
     }
-}
+    if (! List_IsEmpty(fscacheFullWaitList)) {
+	Fsutil_WaitListNotify(fscacheFullWaitList);
+    }
+}	
 
 
 /*
@@ -574,6 +588,9 @@ CreateBlock(retBlock, blockPtrPtr)
 	    List_Move((List_Links *) blockPtr, LIST_ATREAR(totFreeList));
 	}
     }
+    if (! List_IsEmpty(fscacheFullWaitList)) {
+	Fsutil_WaitListNotify(fscacheFullWaitList);
+    }
 
     return(TRUE);
 }
@@ -682,9 +699,10 @@ DestroyBlock(retOnePage, pageNumPtr)
  *
  *	Return a pointer to the oldest available block on the lru list.
  *	If had to sleep because all of memory is dirty then return NIL.
+ *	In this cause our caller has to retry various free lists.
  *
  * Results:
- *	Pointer to oldest available block, NIL if had to wait.
+ *	Pointer to oldest available block, NIL if had to wait.  
  *
  * Side effects:
  *	Block deleted.
@@ -728,7 +746,7 @@ FetchBlock(canWait)
 	    printf( "FetchBlock: deleted block %d of file %d in LRU list\n",
 		blockPtr->blockNum, blockPtr->fileNum);
 	} else if (blockPtr->flags & FSCACHE_BLOCK_BEING_WRITTEN) {
-	    printf( "FetchBlock: block %d of file %d caught being written out\n",
+	    printf( "FetchBlock: block %d of file %d caught being written\n",
 		blockPtr->blockNum, blockPtr->fileNum);
 	} else {
 	    /*
@@ -934,8 +952,8 @@ Fscache_GetPageFromFS(timeLastAccessed, pageNumPtr)
  *	actual data block is returned and *foundPtr is set to TRUE.
  *	The block that is returned is locked down in the cache (i.e. it cannot
  *	be replaced) until it is unlocked by Fscache_UnlockBlock.  If the block
- *	isn't found or the FSCACHE_IO_IN_PROGRESS flag is given then the block is
- * 	marked as IO in progress and must be either unlocked by 
+ *	isn't found or the FSCACHE_IO_IN_PROGRESS flag is given then the block
+ *	is marked as IO in progress and must be either unlocked by 
  *	Fscache_UnlockBlock or marked as IO done by Fscache_IODone.
  *
  * Results:
@@ -954,7 +972,8 @@ Fscache_FetchBlock(cacheInfoPtr, blockNum, flags, blockPtrPtr, foundPtr)
 				   * for the file. */
     int		 blockNum;	/* Virtual block number in the file. */
     int		 flags;		/* FSCACHE_DONT_BLOCK |
-				 * FSCACHE_READ_AHEAD_BLOCK | FSCACHE_IO_IN_PROGRESS
+				 * FSCACHE_READ_AHEAD_BLOCK |
+				 * FSCACHE_IO_IN_PROGRESS
 				 * plus the type of block */
     Fscache_Block **blockPtrPtr; /* Where pointer to cache block information
 				 * structure is returned. The structure
@@ -969,6 +988,7 @@ Fscache_FetchBlock(cacheInfoPtr, blockNum, flags, blockPtrPtr, foundPtr)
     Fscache_Block		*otherBlockPtr;
     Fscache_Block		*newBlockPtr;
     int				refTime;
+    register Boolean		dontBlock = (flags & FSCACHE_DONT_BLOCK);
 
     LOCK_MONITOR;
 
@@ -984,7 +1004,7 @@ again:
     if (blockPtr != (Fscache_Block *) NIL) {
 	if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
 	    UNLOCK_MONITOR;
-	    panic( "CacheFetchBlock hashing error\n");
+	    panic("Fscache_FetchBlock hashing error\n");
 	    *foundPtr = FALSE;
 	    *blockPtrPtr = (Fscache_Block *) NIL;
 	    return;
@@ -992,7 +1012,7 @@ again:
 	if (((flags & FSCACHE_IO_IN_PROGRESS) && 
 	     blockPtr->refCount > 0) ||
 	    (blockPtr->flags & FSCACHE_IO_IN_PROGRESS)) {
-	    if (flags & FSCACHE_DONT_BLOCK) {
+	    if (dontBlock) {
 		*foundPtr = TRUE;
 		*blockPtrPtr = (Fscache_Block *) NIL;
 		UNLOCK_MONITOR;
@@ -1022,7 +1042,6 @@ again:
      * Have to allocate a block.  If there is a free block use it.  Otherwise
      * either take a block off of the lru list or make a new one.
      */
-    blockPtr = (Fscache_Block *) NIL;
     while (blockPtr == (Fscache_Block *) NIL) {
 	if (!List_IsEmpty(partFreeList)) {
 	    /*
@@ -1056,7 +1075,7 @@ again:
 		/*
 		 * We can't have anymore blocks so reuse one of our own.
 		 */
-		blockPtr = FetchBlock(TRUE);
+		blockPtr = FetchBlock(!dontBlock);
 		fs_Stats.blockCache.lru++;
 	    } else {
 		/*
@@ -1074,8 +1093,8 @@ again:
 		    DEBUG_PRINT( ("FsCacheBlockFetch:Creating new block\n" ));
 		    if (!CreateBlock(TRUE, &newBlockPtr)) {
 			DEBUG_PRINT( ("FsCacheBlockFetch: Couldn't create block\n" ));
+			blockPtr = FetchBlock(!dontBlock);
 			fs_Stats.blockCache.lru++;
-			blockPtr = FetchBlock(TRUE);
 		    } else {
 			fs_Stats.blockCache.unmapped++;
 			blockPtr = newBlockPtr;
@@ -1087,12 +1106,27 @@ again:
 		     */
 		    DEBUG_PRINT( ("FsCacheBlockFetch: Recycling block\n") );
 		    fs_Stats.blockCache.lru++;
-		    blockPtr = FetchBlock(TRUE);
+		    blockPtr = FetchBlock(!dontBlock);
 		}
 	    }
 	}
+	if ((blockPtr == (Fscache_Block *)NIL) && dontBlock) {
+	    /*
+	     * FetchBlock couldn't make room in the cache.  Our caller
+	     * should try to treat this like a blocking operation.
+	     */
+	    fs_Stats.blockCache.lru--;
+	    *foundPtr = FALSE;
+	    *blockPtrPtr = (Fscache_Block *) NIL;
+	    UNLOCK_MONITOR;
+	    return;
+	}
+	/*
+	 * If blockPtr is NIL we waited inside FetchBlock and now
+	 * we'll try all the various ploys to get a free block again.
+	 */
     }
-
+    
     cacheInfoPtr->blocksInCache++;
     blockPtr->cacheInfoPtr = cacheInfoPtr;
     blockPtr->refCount = 1;
@@ -1182,7 +1216,7 @@ Fscache_UnlockBlock(blockPtr, timeDirtied, diskBlock, blockSize, flags)
     LOCK_MONITOR;
 
     if (blockPtr->flags & FSCACHE_BLOCK_FREE) {
-	panic( "Checking free block\n");
+	panic("Checking in free block\n");
     }
 
     if (blockPtr->flags & FSCACHE_IO_IN_PROGRESS) {
@@ -2175,6 +2209,14 @@ Fscache_CleanBlocks(data, callInfoPtr)
 	    status = (cacheInfoPtr->ioProcsPtr->blockWrite)
 		    (cacheInfoPtr->hdrPtr, blockPtr->diskBlock,
 		     blockPtr->blockSize, blockPtr->blockAddr, lastDirtyBlock);
+#ifdef lint
+	    status = Fsio_FileBlockWrite(cacheInfoPtr->hdrPtr,
+			blockPtr->diskBlock, blockPtr->blockSize,
+			blockPtr->blockAddr, lastDirtyBlock);
+	    status = FsrmtFileBlockWrite(cacheInfoPtr->hdrPtr,
+			blockPtr->diskBlock, blockPtr->blockSize,
+			blockPtr->blockAddr, lastDirtyBlock);
+#endif /* lint */
 	    ProcessCleanBlock(cacheInfoPtr, blockPtr, status,
 			      &useSameBlock, &lastDirtyBlock);
 	    if (status != SUCCESS) {
@@ -2540,10 +2582,14 @@ ProcessCleanBlock(cacheInfoPtr, blockPtr, status, useSameBlockPtr,
 		    cacheInfoPtr->flags |= FSCACHE_SERVER_DOWN;
 		}
 		/*
-		 * Note, this used to be a non-blocking call to
-		 * wait for the I/O server.
+		 * Mark the handle as needing recovery.  Then invoke a
+		 * background process to attempt the recovery now.
 		 */
 		(void) Fsutil_WantRecovery(cacheInfoPtr->hdrPtr);
+		if (status == FS_STALE_HANDLE) {
+		    Proc_CallFunc(Fsutil_AttemptRecovery,
+			      (ClientData)cacheInfoPtr->hdrPtr, 0);
+	        }
 		break;
 	    case FS_NO_DISK_SPACE:
 		if (!(cacheInfoPtr->flags & FSCACHE_NO_DISK_SPACE)) {
@@ -2600,11 +2646,15 @@ ProcessCleanBlock(cacheInfoPtr, blockPtr, status, useSameBlockPtr,
 	UNLOCK_MONITOR;
 	return;
     }
-
+    /*
+     * Successfully wrote the block.
+     */
     cacheInfoPtr->flags &= 
 			~(FSCACHE_SERVER_DOWN | FSCACHE_NO_DISK_SPACE | 
 			  FSCACHE_GENERIC_ERROR);
-
+    if (! List_IsEmpty(fscacheFullWaitList)) {
+	Fsutil_WaitListNotify(fscacheFullWaitList);
+    }
     /* 
      * Now see if we are supposed to take any spaecial action with this
      * block once we are done.
