@@ -470,6 +470,20 @@ FslclLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
 			(*newNameInfoPtrPtr)->prefixLength = 0;
 		    }
 		} else if (parentHandlePtr != (Fsio_FileIOHandle *)NIL) {
+#ifdef SOSP91
+		    /*
+		     * Put an indication in the trace that we hit a link.
+		     */
+		    if (sospTraceCount<MAX_RECORDS && curHandlePtr !=
+			    (Fsio_FileIOHandle *)NIL) {
+			((int *)sospTracePtr)[0] = -1;
+			((int *)sospTracePtr)[1] = -2;
+			((int *)sospTracePtr)[2] = -3;
+			((int *)sospTracePtr)[3] = -4;
+			sospTracePtr++;
+			sospTraceCount++;
+		    }
+#endif
 		    Fsutil_HandleRelease(curHandlePtr, TRUE);
 		    curHandlePtr = parentHandlePtr;
 		    parentHandlePtr = (Fsio_FileIOHandle *)NIL;
