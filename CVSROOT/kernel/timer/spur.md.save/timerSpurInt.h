@@ -43,10 +43,10 @@
 #endif
 
 /*
- * For the first spur kernel - 200ns.
+ * For the first spur kernel - 172ns.
  */
 
-#define	TIMER_FREQ	((unsigned int) 5000000)
+#define	TIMER_FREQ	((unsigned int) 5813953)
 
 
 /*
