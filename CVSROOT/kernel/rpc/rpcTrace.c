@@ -78,7 +78,7 @@ Rpc_PrintTrace(numRecords)
     char flagString[8];	/* Used to format rpc header flags */
     int stringIndex;
 
-    rpcTraceHdrPtr->inhibitTracing = TRUE;
+    rpcTraceHdrPtr->flags |= TRACE_INHIBIT;
     if (numRecords > rpcTraceHdrPtr->numRecords) {
 	numRecords = rpcTraceHdrPtr->numRecords;
     }
@@ -218,7 +218,7 @@ Rpc_PrintTrace(numRecords)
     PRINT_HEADER();
     Sys_Printf("Delta time = %6d.%06d\n", rpcDeltaTime.seconds,
 			  rpcDeltaTime.microseconds);
-    rpcTraceHdrPtr->inhibitTracing = FALSE;
+    rpcTraceHdrPtr->flags &= ~TRACE_INHIBIT;
 }
 
 /*
@@ -256,7 +256,7 @@ Rpc_DumpTrace(firstRec, lastRec, fileName)
     Trace_Record	*recordPtr;
     int writeLen;
 
-    rpcTraceHdrPtr->inhibitTracing = TRUE;
+    rpcTraceHdrPtr->flags |= TRACE_INHIBIT;
 
     status = Fs_Open(fileName, FS_CREATE|FS_WRITE, FS_FILE, 0666, &streamPtr);
     if (status != SUCCESS) {
@@ -305,7 +305,7 @@ Rpc_DumpTrace(firstRec, lastRec, fileName)
     (void)Fs_Close(streamPtr);
     status = SUCCESS;
 exit:
-    rpcTraceHdrPtr->inhibitTracing = FALSE;
+    rpcTraceHdrPtr->flags &= ~TRACE_INHIBIT;
     return(status);
 }
 
