@@ -16,11 +16,11 @@
 #ifdef KERNEL
 #include "vmMachTrace.h"
 #include "vmStat.h"
-#include "time.h"
+#include "spriteTime.h"
 #else
 #include <kernel/vmMachTrace.h>
 #include <kernel/vmStat.h>
-#include <time.h>
+#include <spriteTime.h>
 #endif
 
 /*
