@@ -29,6 +29,7 @@
 
 #include <stdlib.h>
 
+#ifdef KERNEL
 #include <fs.h>
 #include <fsconsist.h>
 #include <hash.h>
@@ -36,7 +37,15 @@
 #include <vm.h>
 #include <rpc.h>
 #include <timer.h>
-
+#else
+#include <kernel/fs.h>
+#include <kernel/fsconsist.h>
+#include <kernel/hash.h>
+#include <kernel/proc.h>
+#include <kernel/vm.h>
+#include <kernel/rpc.h>
+#include <kernel/timer.h>
+#endif
 /* constants */
 /*
  * Define the types of files that we care about in the kernel, for such
@@ -92,6 +101,7 @@ extern Boolean fsconsist_Debug;
 
 extern Boolean fsutil_ShouldSyncDisks;
 
+extern	int	fsutil_NumRecovering;
 
 /* procedures */
 /*
@@ -226,5 +236,5 @@ extern char *Fsutil_GetFileName _ARGS_((Fs_Stream *streamPtr));
 extern ReturnStatus Fsutil_FsRecovInfo _ARGS_((int length, 
 		Fsutil_FsRecovNamedStats *resultPtr, int *lengthNeededPtr));
 
-
+extern int Fsutil_TestForHandles _ARGS_((int serverID));
 #endif /* _FSUTIL */
