@@ -21,10 +21,6 @@
 
 #include <lfsFileLayout.h>
 
-typedef struct LfsFileLayout {
-    LfsFileLayoutParams	 params;	/* File layout description. */
-} LfsFileLayout;
-
 extern void LfsFileLayoutInit _ARGS_((void));
 extern Boolean LfsFileMatch _ARGS_((Fscache_FileInfo *cacheInfoPtr,
 			ClientData clientData));

@@ -25,20 +25,6 @@
 
 /* data structures */
 
-typedef struct LfsSegUsage {
-    LfsStableMem	stableMem;/* Stable memory supporting the map. */
-    LfsSegUsageParams	params;	  /* Map parameters taken from super block. */
-    LfsSegUsageCheckPoint checkPoint; /* Desc map data written at checkpoint. */
-    int			timeOfLastWrite; /* Time of last write of current
-					  * segment. */
-} LfsSegUsage;
-
-typedef struct LfsSegList {
-    int	segNumber;	/* Segment number of segment. */
-    int activeBytes;	/* Active bytes from the seg usage array. */
-    unsigned int priority;	/* Priority for the space-time sorting. */
-} LfsSegList;
-
 /* procedures */
 
 extern void LfsSegUsageInit _ARGS_((void));

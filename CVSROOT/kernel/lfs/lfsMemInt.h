@@ -22,14 +22,6 @@
 
 /* data structures */
 
-/*
- * LfsMem - Per LFS file system resource list.
- */
-typedef struct LfsMem {
-    int	cacheBlocksReserved; /* Number of cache blocks reserved for this file
-			      * system. */
-} LfsMem;
-
 /* procedures */
 
 extern void LfsMemInit _ARGS_((struct Lfs *lfsPtr));

@@ -26,12 +26,6 @@
 
 /* data structures */
 
-typedef struct LfsDescMap {
-    LfsStableMem	stableMem;/* Stable memory supporting the map. */
-    LfsDescMapParams	params;	  /* Map parameters taken from super block. */
-    LfsDescMapCheckPoint checkPoint; /* Desc map data written at checkpoint. */
-} LfsDescMap;
-
 /* procedures */
 extern void LfsDescMapInit _ARGS_((void));
 

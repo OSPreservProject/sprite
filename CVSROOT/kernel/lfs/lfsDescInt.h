@@ -23,18 +23,6 @@
 
 /* constants */
 
-/* data structures */
-
-/*
- * LfsDescCache - Data structure defining the cache of file descriptor blocks
- *		  maintained by a LFS file system.  The current implementation
- *		  caches descriptor map blocks in files the file cache.
- */
-
-typedef struct LfsDescCache {
-    Fsio_FileIOHandle handle; /* File handle use to cache descriptor
-			       * block under. */
-} LfsDescCache;
 /* procedures */
 
 extern void LfsDescCacheInit _ARGS_((struct Lfs *lfsPtr));

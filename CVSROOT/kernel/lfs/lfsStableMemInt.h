@@ -38,25 +38,6 @@
 #define	LFS_STABLE_MEM_REL_ENTRY 2
 
 /* data structures */
-typedef struct LfsStableMem {
-    struct Lfs	      *lfsPtr;		/* File system for stable memory. */
-    Fsio_FileIOHandle dataHandle;	/* Handle used to store blocks in
-					 * cache under. */
-    LfsDiskAddr	*blockIndexPtr; 	/* Index of current disk addresses. */
-    int		numCacheBlocksOut;	/* The number of cache blocks currently
-					 * fetched by the backend. */
-    LfsStableMemCheckPoint checkPoint; /* Data to be checkpoint. */
-    LfsStableMemParams params;  /* A copy of the parameters of the index. */
-} LfsStableMem;
-
-typedef struct LfsStableMemEntry {
-    Address	addr;			/* Memory address of entry. */
-    Boolean	modified;		/* TRUE if the entry has been 
-					 * modified. */
-    int		blockNum;		/* Block number of entry. */
-    ClientData	clientData;		/* Clientdata maintained by 
-					 * StableMem code. */
-} LfsStableMemEntry;
 
 /*
  * Macro for accessing elements of LfsStableMemEntry.

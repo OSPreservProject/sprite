@@ -21,28 +21,6 @@
 
 #include <lfsDirOpLog.h>
 
-/* data structures */
-
-typedef struct LfsDirLog {
-    int			nextLogSeqNum;	/* The next log sequence number to be
-					 * allocated. */
-    LfsDirOpLogBlockHdr *curBlockHdrPtr; /* The log block header of the block
-					 * current being filled in. */
-    char		*nextBytePtr;	/* The next available byte in the
-					 * block being filled in. */
-    int			bytesLeftInBlock;/* Number of bytes left in the
-					  * block being filled in. */
-    List_Links		activeListHdr;   /* List cache blocks of log blocks. */
-    List_Links		writingListHdr;   /* List cache blocks of log blocks
-					   * being written. */
-    Fsio_FileIOHandle   handle;		 /* File handle used to cache blocks
-					  * under. */
-    int			leastCachedSeqNum; /* The least log sequence number in
-					    * the in memory log. */
-    Boolean		paused;		/* Log traffic is currently paused. */
-    Sync_Condition	logPausedWait;  /* Wait for paused to become false. */
-} LfsDirLog;
-
 extern LfsDirOpLogEntry *LfsDirLogEntryAlloc _ARGS_((struct Lfs *lfsPtr, 
 			int entrySize, int logSeqNum, Boolean *foundPtr));
 

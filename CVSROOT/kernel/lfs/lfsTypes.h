@@ -18,6 +18,106 @@
 #ifndef _LFSTYPES
 #define _LFSTYPES
 
+#include <lfsDesc.h>
+#include <lfsDescMap.h>
+#include <lfsDirOpLog.h>
+#include <lfsUsageArray.h>
+#include <lfsFileLayout.h>
+#include <lfsSuperBlock.h>
+#include <lfsStats.h>
+
+/* Types from LfsDescInt.h */
+/*
+ * LfsDescCache - Data structure defining the cache of file descriptor blocks
+ *                maintained by a LFS file system.  The current implementation
+ *                caches descriptor map blocks in files the file cache.
+ */
+
+typedef struct LfsDescCache {
+    Fsio_FileIOHandle handle; /* File handle use to cache descriptor
+                               * block under. */
+} LfsDescCache;
+
+/* Types from LfsDirLogInt.h */
+typedef struct LfsDirLog {
+    int                 nextLogSeqNum;  /* The next log sequence number to be
+                                         * allocated. */
+    LfsDirOpLogBlockHdr *curBlockHdrPtr; /* The log block header of the block
+                                         * current being filled in. */
+    char                *nextBytePtr;   /* The next available byte in the
+                                         * block being filled in. */
+    int                 bytesLeftInBlock;/* Number of bytes left in the
+                                          * block being filled in. */
+    List_Links          activeListHdr;   /* List cache blocks of log blocks. */
+    List_Links          writingListHdr;   /* List cache blocks of log blocks
+                                           * being written. */
+    Fsio_FileIOHandle   handle;          /* File handle used to cache blocks
+                                          * under. */
+    int                 leastCachedSeqNum; /* The least log sequence number in
+                                            * the in memory log. */
+    Boolean             paused;         /* Log traffic is currently paused. */
+    Sync_Condition      logPausedWait;  /* Wait for paused to become false. */
+} LfsDirLog; 
+
+/* Types from LfsStableMem.h */
+typedef struct LfsStableMem {
+    struct Lfs        *lfsPtr;          /* File system for stable memory. */
+    Fsio_FileIOHandle dataHandle;       /* Handle used to store blocks in
+                                         * cache under. */
+    LfsDiskAddr *blockIndexPtr;         /* Index of current disk addresses. */
+    int         numCacheBlocksOut;      /* The number of cache blocks currently
+                                         * fetched by the backend. */
+    LfsStableMemCheckPoint checkPoint; /* Data to be checkpoint. */
+    LfsStableMemParams params;  /* A copy of the parameters of the index. */
+} LfsStableMem;
+
+typedef struct LfsStableMemEntry {
+    Address     addr;                   /* Memory address of entry. */
+    Boolean     modified;               /* TRUE if the entry has been
+                                         * modified. */
+    int         blockNum;               /* Block number of entry. */
+    ClientData  clientData;             /* Clientdata maintained by
+                                         * StableMem code. */
+} LfsStableMemEntry;
+
+/* Types from LfsDescMapInt.h */
+typedef struct LfsDescMap {
+    LfsStableMem        stableMem;/* Stable memory supporting the map. */
+    LfsDescMapParams    params;   /* Map parameters taken from super block. */
+    LfsDescMapCheckPoint checkPoint; /* Desc map data written at checkpoint. */
+} LfsDescMap;
+
+/* Types from lfsSegUsageInt.h */
+typedef struct LfsSegUsage {
+    LfsStableMem        stableMem;/* Stable memory supporting the map. */
+    LfsSegUsageParams   params;   /* Map parameters taken from super block. */
+    LfsSegUsageCheckPoint checkPoint; /* Desc map data written at checkpoint. */
+    int                 timeOfLastWrite; /* Time of last write of current
+                                          * segment. */
+} LfsSegUsage;
+
+typedef struct LfsSegList {
+    int segNumber;      /* Segment number of segment. */
+    int activeBytes;    /* Active bytes from the seg usage array. */
+    unsigned int priority;      /* Priority for the space-time sorting. */
+} LfsSegList;
+
+/* Types from LfsFileLayoutInt.h */
+typedef struct LfsFileLayout {
+    LfsFileLayoutParams  params;        /* File layout description. */
+} LfsFileLayout;
+
+/* Types from LfsMemInt.h */
+/*
+ * LfsMem - Per LFS file system resource list.
+ */
+typedef struct LfsMem {
+    int cacheBlocksReserved; /* Number of cache blocks reserved for this file
+                              * system. */
+} LfsMem;
+
+/* Types from LfsInt.h */
+
 /*
  * LfsCheckPoint contains the info and memory needed to perform checkpoints.
  * The file system timestamp and the next checkpoint area to write
