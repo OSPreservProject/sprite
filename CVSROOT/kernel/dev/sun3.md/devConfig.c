@@ -29,18 +29,24 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 DevConfigController devCntrlr[] = {
 /*   address,  space, ID, initProc */
-    { "SCSI", 0x80000, DEV_MULTIBUS,	0, Dev_SCSIInitController, 0, 0},
+    { "SCSI", 0x80000, DEV_MULTIBUS,	0, Dev_SCSIInitController, 0, 0,
+				    FALSE, Dev_SCSIIdleCheck, 0, 0},
 /*  { "SCSI", 0x84000, DEV_MULTIBUS,	1, Dev_SCSIInitController, 0, 0}, */
     { "SCSI", 0x200000, DEV_VME_D16A24, 0, Dev_SCSIInitController, 64,
-					   Dev_SCSIIntrStub},
+				    Dev_SCSIIntrStub, 
+				    FALSE, Dev_SCSIIdleCheck, 0, 0},
     { "SBC", 0x0FE12000, DEV_OBIO, 0, Dev_SBCInitController, 64,
-					   Dev_SBCIntrStub},
+				    Dev_SBCIntrStub, 
+				    FALSE, Dev_SBCIdleCheck, 0, 0},
     { "SBC", 0x200000, DEV_VME_D16A24, 0, Dev_SBCInitController, 64,
-					   Dev_SBCIntrStub},
+				    Dev_SBCIntrStub, 
+				    FALSE, Dev_SBCIdleCheck, 0, 0},
     { "Xylogics", 0xee40, DEV_VME_D16A16,	 0, Dev_XylogicsInitController,
-						72, Dev_XylogicsIntrStub},
+				    72, Dev_XylogicsIntrStub,
+				    FALSE, Dev_XylogicsIdleCheck, 0, 0},
     { "Xylogics", 0xee48, DEV_VME_D16A16,	 1, Dev_XylogicsInitController,
-						73, Dev_XylogicsIntrStub},
+				    73, Dev_XylogicsIntrStub, 
+				    FALSE, Dev_XylogicsIdleCheck, 0, 0},
 };
 int devNumConfigCntrlrs = sizeof(devCntrlr) / sizeof(DevConfigController);
 

@@ -21,6 +21,7 @@ Boolean Dev_XylogicsInitController();
 Boolean Dev_XylogicsInitDevice();
 Boolean	Dev_XylogicsIntr();		/* C routine */
 int	Dev_XylogicsIntrStub();		/* Autovector stub to call C routine */
+void	Dev_XylogicsIdleCheck();
 
 extern int xylogicsPrints;		/* Set to TRUE for debug prints */
 
@@ -267,6 +268,11 @@ typedef struct DevXylogicsController {
     int			mutex;		/* Mutex for queue access */
     Sync_Condition	IOComplete;	/* Synchronization stuff... */
     Sync_Condition	readyForIO;
+    /*
+     * Pointer back to controller config struct which contains the stats
+     * for this controller.
+     */
+    struct DevConfigController *configPtr;
 } DevXylogicsController;
 
 #define XY_CNTRLR_STATE_MAGIC	0xf5e4d3c2

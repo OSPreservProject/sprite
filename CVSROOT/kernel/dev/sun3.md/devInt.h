@@ -65,6 +65,15 @@ typedef struct DevConfigController {
     Boolean (*initProc)();	/* Initialization procedure */
     int vectorNumber;	/* Vector number for autovectored architectures */
     int (*intrProc)();	/* Interrupt handler called from autovector */
+    Boolean exists;	/* TRUE if the controller exists. */
+    void (*idleProc)();	/* Routine to call to see if the controller is
+			 * idle or not. */
+    int	numSamples;	/* Number of times checked to see if the controller
+			 * was idle. */
+    int	idleCount;	/* Number of times that the controller was idle
+			 * when checked. */
+    int diskReads;	/* Number of reads from the disk. */
+    int diskWrites;	/* Number of writes to the disk. */
 } DevConfigController;
 
 /*

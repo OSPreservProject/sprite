@@ -245,6 +245,7 @@ Dev_SCSIInitController(cntrlrPtr)
     scsiPtr->IOComplete.waiting = 0;
     scsiPtr->readyForIO.waiting = 0;
     scsiPtr->flags = SCSI_CNTRLR_ALIVE;
+    scsiPtr->configPtr = cntrlrPtr;
 
     /*
      * This is used for communication between the SCSI and SBC drivers
@@ -254,6 +255,39 @@ Dev_SCSIInitController(cntrlrPtr)
     
     return(TRUE);
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_SCSIIdleCheck --
+ *
+ *	Check to see if the controller is idle.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Increments the idle check count and possibly the idle count in
+ *	the controller entry.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Dev_SCSIIdleCheck(cntrlrPtr)
+    DevConfigController *cntrlrPtr;	/* Config info for the controller */
+{
+    DevSCSIController *scsiPtr;
+
+    scsiPtr = scsi[cntrlrPtr->controllerID];
+    if (scsiPtr != (DevSCSIController *)NIL) {
+	cntrlrPtr->numSamples++;
+	if (!(scsiPtr->flags & SCSI_CNTRLR_BUSY)) {
+	    cntrlrPtr->idleCount++;
+	}
+    }
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -832,7 +866,11 @@ DevSCSISectorIO(command, devPtr, firstSector, numSectorsPtr, buffer)
      */
     scsiPtr = devPtr->scsiPtr;
     MASTER_LOCK(scsiPtr->mutex);
-
+    if (command == SCSI_READ) {
+	scsiPtr->configPtr->diskReads++;
+    } else {
+	scsiPtr->configPtr->diskWrites++;
+    }
     /*
      * Here we are using a condition variable and the scheduler to
      * synchronize access to the controller.  An alternative would be
@@ -886,6 +924,11 @@ DevSCSISectorIO(command, devPtr, firstSector, numSectorsPtr, buffer)
     scsiPtr->flags &= ~SCSI_CNTRLR_BUSY;
     Sync_MasterBroadcast(&scsiPtr->readyForIO);
     MASTER_UNLOCK(scsiPtr->mutex);
+    /*
+     * Voluntarily give up the CPU in case anyone else wants to use the
+     * disk.
+     */
+    Sched_ContextSwitch(PROC_READY);
     return(status);
 }
 

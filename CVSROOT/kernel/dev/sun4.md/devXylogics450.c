@@ -184,9 +184,43 @@ Dev_XylogicsInitController(cntrlrPtr)
     xyPtr->IOComplete.waiting = 0;
     xyPtr->readyForIO.waiting = 0;
     xyPtr->flags = XYLOGICS_CNTRLR_ALIVE;
+    xyPtr->configPtr = cntrlrPtr;
 
     return(TRUE);
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_XylogicsIdleCheck --
+ *
+ *	Check to see if the controller is idle.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Increments the idle check count and possibly the idle count in
+ *	the controller entry.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Dev_XylogicsIdleCheck(cntrlrPtr)
+    DevConfigController *cntrlrPtr;	/* Config info for the controller */
+{
+    DevXylogicsController *xyPtr;		/* SBC specific state */
+
+    xyPtr = xylogics[cntrlrPtr->controllerID];
+    if (xyPtr != (DevXylogicsController *)NIL) {
+	cntrlrPtr->numSamples++;
+	if (!(xyPtr->flags & XYLOGICS_CNTRLR_BUSY)) {
+	    cntrlrPtr->idleCount++;
+	}
+    }
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -655,6 +689,11 @@ DevXylogicsSectorIO(command, diskPtr, diskAddrPtr, numSectorsPtr, buffer)
      */
     xyPtr = diskPtr->xyPtr;
     MASTER_LOCK(xyPtr->mutex);
+    if (command == XY_READ) {
+	xyPtr->configPtr->diskReads++;
+    } else {
+	xyPtr->configPtr->diskWrites++;
+    }
 
     /*
      * Here we are using a condition variable and the scheduler to
@@ -712,6 +751,11 @@ retry:
     xyPtr->flags &= ~XYLOGICS_CNTRLR_BUSY;
     Sync_MasterBroadcast(&xyPtr->readyForIO);
     MASTER_UNLOCK(xyPtr->mutex);
+    /*
+     * Voluntarily give up the CPU in case anyone else wants to use the
+     * disk.
+     */
+    Sched_ContextSwitch(PROC_READY);
     return(error);
 }
 

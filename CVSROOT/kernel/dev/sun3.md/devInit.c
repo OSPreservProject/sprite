@@ -27,6 +27,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vm.h"
 #include "vmMach.h"
 #include "dbg.h"
+#include "sysStats.h"
 
 /*
  * This holds the state of the simple allocate for multibus memory.
@@ -95,7 +96,6 @@ Dev_Config()
 				 * type field used to map in the device */
     Boolean mapItIn;		/* If TRUE we need to map the device into
 				 * kernel virtual space */
-    Boolean exists;		/* If TRUE the device exists */
 
     if (devConfigDebug) {
 	Sys_Printf("Dev_Config calling debugger:");
@@ -219,8 +219,8 @@ Dev_Config()
 		(int)VmMach_MapInDevice(cntrlrPtr->address, memoryType);
 	}
 	if (cntrlrPtr->address != NIL) {
-	    exists = (*cntrlrPtr->initProc)(cntrlrPtr);
-	    if (exists) {
+	    cntrlrPtr->exists = (*cntrlrPtr->initProc)(cntrlrPtr);
+	    if (cntrlrPtr->exists) {
 		Sys_Printf("%s-%d at kernel address %x\n", cntrlrPtr->name,
 			      cntrlrPtr->controllerID, cntrlrPtr->address);
 		if (cntrlrPtr->vectorNumber > 0) {
@@ -240,4 +240,79 @@ Dev_Config()
 	devPtr = &devDevice[index];
 	(void)(*devPtr->initProc)(devPtr);
     }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_GatherDiskStats --
+ *
+ *	Determine which disks are idle.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Dev_GatherDiskStats()
+{
+    register int		 index;
+    register DevConfigController *cntrlrPtr;
+
+    for (index = 0; index < devNumConfigCntrlrs; index++) {
+	cntrlrPtr = &devCntrlr[index];
+	if (cntrlrPtr->exists) {
+	    (*cntrlrPtr->idleProc)(cntrlrPtr);
+	}
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_GetDiskStats --
+ *
+ *	Return statistics about the different disks.
+ *
+ * Results:
+ *	Number of statistics entries returned.
+ *
+ * Side effects:
+ *	Entries in *diskStatPtr filled in.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Dev_GetDiskStats(diskStatArr, numEntries)
+    register Sys_DiskStats *diskStatArr;	/* Where to store the disk 
+						 * stats. */
+    int			   numEntries;		/* The number of elements in 
+						 * diskStatArr. */
+{
+    register int		 index;
+    register DevConfigController *cntrlrPtr;
+    int				 entriesUsed = 0;
+
+    for (index = 0;
+         index < devNumConfigCntrlrs && entriesUsed < numEntries;
+	 index++) {
+	cntrlrPtr = &devCntrlr[index];
+	if (cntrlrPtr->exists) {
+	    String_Copy(cntrlrPtr->name, diskStatArr->name);
+	    diskStatArr->controllerID = cntrlrPtr->controllerID;
+	    diskStatArr->numSamples = cntrlrPtr->numSamples;
+	    diskStatArr->idleCount = cntrlrPtr->idleCount;
+	    diskStatArr->diskReads = cntrlrPtr->diskReads;
+	    diskStatArr->diskWrites = cntrlrPtr->diskWrites;
+	    entriesUsed++;
+	    diskStatArr++;
+	}
+    }
+    return(entriesUsed);
 }
