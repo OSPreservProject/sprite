@@ -173,6 +173,11 @@ FsAttachDisk(devicePtr, localName, flags)
     if (status != SUCCESS) {
 	Mem_Free(buffer);
 	return(status);
+    } else if (((FsDomainHeader *)buffer)->magic != FS_DOMAIN_MAGIC) {
+	Sys_Printf("FsDiskAttach: Bad magic # on partition header <%x>\n",
+				  ((FsDomainHeader *)buffer)->magic);
+	Mem_Free(buffer);
+	return(FAILURE);
     }
 
     /*
@@ -199,12 +204,7 @@ FsAttachDisk(devicePtr, localName, flags)
     domainPtr->headerPtr = (FsDomainHeader *) buffer;
     domainPtr->summaryInfoPtr = summaryInfoPtr;
     domainPtr->summarySector = summarySector;
-    if (domainPtr->headerPtr->magic != FS_DOMAIN_MAGIC) {
-	Sys_Printf("FsDiskAttach: Bad magic # on domain header <%x>\n",
-				  domainPtr->headerPtr->magic);
-	Mem_Free(buffer);
-	return(FAILURE);
-    }
+
     if (rpc_SpriteID == 0) {
 	/*
 	 * Find the spriteID on the disk if we don't know it by now.
