@@ -218,7 +218,6 @@ main()
      * malloc can be called from this point on.
      */
 
-#ifdef NOTDEF
     /*
      * Initialize the main process. Must be called before any new 
      * processes are created.
@@ -236,7 +235,6 @@ main()
 	Mach_MonPrintf("Calling Proc_ServerInit\n");
     }
     Proc_ServerInit();
-#endif NOTDEF
 
     /*
      * Initialize the ethernet drivers.
@@ -265,7 +263,6 @@ main()
     }
     Rpc_Init();
 
-#ifdef NOTDEF
     /*
      * Configure devices that may or may not exist.  This needs to be
      * done after Proc_InitMainProc because the initialization routines
@@ -283,7 +280,6 @@ main()
     if (main_DoProf) {
 	Prof_Init();
     }
-#endif NOTDEF
     /*
      *  Allow interrupts from now on.
      */
@@ -292,9 +288,11 @@ main()
     }
     ENABLE_INTR();
 
+#ifdef NOTDEF
     if (main_Debug) {
 	DBG_CALL;
     }
+#endif NOTDEF
 
     /*
      * Sleep for a few seconds to calibrate the idle time ticks.
@@ -395,6 +393,7 @@ main()
     printf("MEMORY %d bytes allocated for kernel\n", 
 		vmMemEnd - mach_KernStart);
 
+#ifdef NOTDEF
     /*
      * Start up the first user process.
      */
@@ -403,6 +402,8 @@ main()
     }
     (void) Proc_NewProc((Address) Init, PROC_KERNEL, FALSE, &pid, "Init");
 
+#endif NOTDEF
+    printf("Hello World!\n");
     (void) Sync_WaitTime(time_OneYear);
     printf("Main exiting\n");
     Proc_Exit(0);

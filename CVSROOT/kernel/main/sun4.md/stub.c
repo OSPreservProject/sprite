@@ -65,11 +65,6 @@ Prof_DumpStub()
     panic("Prof_DumpStub called.\n");
 }
 
-Mach_ContextSwitch()
-{
-    panic("Mach_ContextSwitch called.\n");
-}
-
 Mach_GetStackPointer()
 {
     panic("Mach_GetStackPointer called.\n");
