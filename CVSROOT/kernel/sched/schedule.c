@@ -22,6 +22,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "dbg.h"
 #include "mach.h"
 
+#ifdef spur
+#include "devCC.h"
+#endif
+
 static int	foundOnDeck[MACH_MAX_NUM_PROCESSORS];
 static int	foundInQueue[MACH_MAX_NUM_PROCESSORS];
 static int	missedStack[MACH_MAX_NUM_PROCESSORS];
@@ -534,7 +538,7 @@ IdleLoop()
     Boolean			onReadyQueue;
 #ifdef spur 
 	/* Turn off perf counters. */
-     int	modeReg = Dev_CCIdleCounters(FALSE,0);
+    Dev_CCSetCounters(COUNTERS_OFF);
 #endif
 
     cpu = Mach_GetProcessorNumber();
@@ -677,7 +681,7 @@ exit:
     Mach_InstCountStart(1);
 #endif
 #ifdef spur
-	modeReg = Dev_CCIdleCounters(TRUE,modeReg); /* Restore perf counters. */
+    Dev_CCSetCounters(COUNTERS_RESTORE); /* Restore perf counters. */
 #endif
 
     if (procPtr->state != PROC_READY) {
