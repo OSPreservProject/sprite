@@ -56,6 +56,8 @@ static void MonPrintfWriteProc();
 static Boolean monUseUart;
 
 
+Boolean monHaveConsole = TRUE;
+
 #include "varargs.h"
 #include "stdio.h"
 
@@ -84,15 +86,10 @@ Mach_MonInit()
     int switches;
 
     switches = read_physical_word(0x40000);
-    if ((switches & 0x80) == 0) {
+    if (((switches & 0x80) == 0) && (monHaveConsole == TRUE)) {
 	monUseUart = TRUE;
     } else {
 	monUseUart = FALSE;
-    }
-    if (monUseUart) {
-	uart_init(1200);
-    } else {
-	uart_init(9600);
     }
 }
 
@@ -163,6 +160,9 @@ Mach_MonPutChar(ch)
     }
     *machMonBufferPtr = ch;
     if (monUseUart) {
+	if (ch == '\n') {
+	    writeUart('\r');
+	}
 	writeUart(ch);
     }
     machMonBufferPtr++;
