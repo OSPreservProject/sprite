@@ -52,8 +52,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "sys.h"
-#include "machine.h"
-#include "machineConst.h"
+#include "mach.h"
+#include "machConst.h"
 #include "sunMon.h"
 #include "devAddrs.h"
 #include "devTimer.h"
@@ -263,7 +263,7 @@ Dev_TimerStart(timer)
      * Enable timer interrupts in the system's interrupt register.
      */
 
-    *SunInterruptReg |= SUN_ENABLE_LEVEL5_INTR;
+    *SunInterruptReg |= MACH_ENABLE_LEVEL5_INTR;
 }
 
 
@@ -301,7 +301,7 @@ Dev_TimerInactivate(timer)
      */
 
     if (!callbackIntrsWanted && !profileIntrsWanted) {
-	*SunInterruptReg &= ~SUN_ENABLE_LEVEL5_INTR;
+	*SunInterruptReg &= ~MACH_ENABLE_LEVEL5_INTR;
 	timerRegsPtr->commandReg = IntersilCommand(RUN, INTR_DISABLE);
     }
 }
@@ -335,15 +335,15 @@ Dev_TimerGetStatus()
     unsigned char statusReg;
     unsigned char intrReg;
 
-    intrReg = *SunInterruptReg & SUN_ENABLE_LEVEL7_INTR;
+    intrReg = *SunInterruptReg & MACH_ENABLE_LEVEL7_INTR;
 
-    *SunInterruptReg &= ~(SUN_ENABLE_LEVEL5_INTR | 
-				SUN_ENABLE_ALL_INTERRUPTS | intrReg);
+    *SunInterruptReg &= ~(MACH_ENABLE_LEVEL5_INTR | 
+				MACH_ENABLE_ALL_INTERRUPTS | intrReg);
 
     statusReg = timerRegsPtr->interruptReg;
 
-    *SunInterruptReg |= (SUN_ENABLE_LEVEL5_INTR | 
-				SUN_ENABLE_ALL_INTERRUPTS | intrReg);
+    *SunInterruptReg |= (MACH_ENABLE_LEVEL5_INTR | 
+				MACH_ENABLE_ALL_INTERRUPTS | intrReg);
 
     /*
      * Read the chip again in case an obscure race condition occurs.

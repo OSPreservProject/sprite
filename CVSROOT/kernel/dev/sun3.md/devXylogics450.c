@@ -28,7 +28,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fs.h"
 #include "mem.h"
 #include "user/byte.h"
-#include "machineConst.h"
 #include "vmMach.h"
 
 /*
@@ -288,7 +287,7 @@ DevXylogicsReset(regsPtr)
 {
     char x;
     x = regsPtr->resetUpdate;
-    DELAY(100);
+    MACH_DELAY(100);
 }
 
 /*
@@ -328,7 +327,7 @@ DevXylogicsTest(xyPtr, diskPtr)
 		    xyPtr->IOPBPtr->dataAddrHigh << 8 |
 		    xyPtr->IOPBPtr->dataAddrLow,
 		    xyPtr->IOPBPtr->relocLow);
-    DELAY(1000000);
+    MACH_DELAY(1000000);
 #endif notdef
     /*
      * If all the status bits are low then the drive is ok.
@@ -399,7 +398,7 @@ DevXylogicsDoLabel(xyPtr, diskPtr)
     Sys_Printf("Label magic <%x>\n", diskLabelPtr->magic);
     Sys_Printf("Drive type byte (%x) => type %x\n",
 		      xyPtr->labelBuffer[3] & 0xff, diskPtr->xyDriveType);
-    DELAY(1000000);
+    MACH_DELAY(1000000);
 #endif notdef
     if (diskLabelPtr->magic == SUN_DISK_MAGIC) {
 	Sys_Printf("Xylogics-%d disk%d: %s\n", xyPtr->number, diskPtr->slaveID,
@@ -1038,7 +1037,7 @@ DevXylogicsWait(regsPtr, condition)
 	     */
 	    return(SUCCESS);
 	}
-	DELAY(10);
+	MACH_DELAY(10);
     }
     Sys_Panic(SYS_WARNING, "Xylogics reset");
     DevXylogicsReset(regsPtr);

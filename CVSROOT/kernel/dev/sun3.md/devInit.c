@@ -28,8 +28,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vm.h"
 #include "vmMach.h"
 #include "dbg.h"
-#include "exc.h"
-#include "machineConst.h"
 
 /*
  * This holds the state of the simple allocate for multibus memory.
@@ -221,8 +219,8 @@ Dev_Config()
 		Sys_Printf("%s-%d at kernel address %x\n", cntrlrPtr->name,
 			      cntrlrPtr->controllerID, cntrlrPtr->address);
 		if (cntrlrPtr->vectorNumber > 0) {
-		    Exc_SetHandler(cntrlrPtr->vectorNumber,
-				   cntrlrPtr->intrProc);
+		    Mach_SetHandler(cntrlrPtr->vectorNumber,
+				    cntrlrPtr->intrProc);
 		}
 	    }
 	}
