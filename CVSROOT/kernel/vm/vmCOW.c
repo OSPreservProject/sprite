@@ -108,6 +108,7 @@ void		CopyPage();
 ReturnStatus	COR();
 void		COW();
 unsigned int	GetMasterPF();
+void		SeeIfLastCOR();
 
 
 /*
@@ -741,6 +742,7 @@ COR(virtAddrPtr, ptePtr)
 			 VM_REFERENCED_BIT | VM_MODIFIED_BIT | corCheckBit |
 			 virtFrameNum));
     VmUnlockPage(virtFrameNum);
+    SeeIfLastCOR(mastSegPtr, virtAddrPtr->page);
     return(SUCCESS);
 }
 
@@ -783,6 +785,76 @@ GetMasterPF(mastSegPtr, virtPage)
     UNLOCK_MONITOR;
 
     return(pf);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SeeIfLastCOR --
+ *
+ *	See if there are any more segments that are COR off of the given 
+ *	page in the given segment.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	If there are no other pages COR of the given page in the given segment
+ *	then the page is made no longer COW.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+SeeIfLastCOR(mastSegPtr, page)
+    register	Vm_Segment	*mastSegPtr;
+    int				page;
+{
+    register	List_Links	*cowList;
+    register	Vm_Segment	*childSegPtr;
+    register	Vm_PTE		*ptePtr;
+    Vm_VirtAddr			virtAddr;
+
+    LOCK_MONITOR;
+
+    cowList = &mastSegPtr->cowInfoPtr->cowList;
+    childSegPtr = (Vm_Segment *)List_Next((List_Links *)mastSegPtr);
+    while (!List_IsAtEnd(cowList, (List_Links *)childSegPtr)) {
+	ptePtr = VmGetPTEPtr(childSegPtr, page);
+	if ((*ptePtr & VM_COR_BIT) &&
+	    Vm_GetPageFrame(*ptePtr) == mastSegPtr->segNum) {
+	    UNLOCK_MONITOR;
+	    return;
+	}
+	childSegPtr = (Vm_Segment *)List_Next((List_Links *)childSegPtr);
+    }
+
+    /*
+     * No more pages are COR off of the master.  Make the page no longer
+     * copy-on-write.
+     */
+    ptePtr = VmGetPTEPtr(mastSegPtr, page);
+    *ptePtr &= ~VM_COW_BIT;
+    mastSegPtr->numCOWPages--;
+    if (mastSegPtr->numCOWPages == 0 && mastSegPtr->numCORPages == 0) {
+	/*
+	 * If there are no more COW or COR pages then remove ourselves
+	 * from the list.  We know that we are only called by the routine
+	 * COR() which means that there is guaranteed to be at least one
+	 * segment left in the list.  Therefore there is no need to worry
+	 * about freeing up the cow info struct.
+	 */
+	List_Remove((List_Links *)mastSegPtr);
+	mastSegPtr->cowInfoPtr->numSegs--;
+	mastSegPtr->cowInfoPtr = (VmCOWInfo *)NIL;
+    }
+    if (*ptePtr & VM_PHYS_RES_BIT) {
+	virtAddr.segPtr = mastSegPtr;
+	virtAddr.page = page;
+	VmMach_SetPageProt(&virtAddr, *ptePtr);
+    }
+
+    UNLOCK_MONITOR;
 }
 
 
