@@ -69,6 +69,15 @@ typedef	struct	Mach_MemList {
     unsigned int	size;
 } Mach_MemList;
 
+struct	config_ops {
+        int (*devr_next)(/* int nodeid */);
+        int (*devr_child)(/* int nodeid */);
+        int (*devr_getproplen)(/* int nodeid; caddr_t name; */);
+        int (*devr_getprop)(/* int nodeid; caddr_t name; addr_t value; */);
+        int (*devr_setprop)(/* int nodeid; caddr_t name; addr_t value; int len;
+*/);
+        int (*devr_nextprop)(/* int nodeid; caddr_t previous; */);
+};
 
 /*
  * Here is the structure of the vector table which is at the front of the boot
@@ -83,12 +92,7 @@ typedef struct {
     Mach_MemList	**physMemory;	  /* total physical memory list */
     Mach_MemList	**virtMemory;	  /* taken virtual memory list */
     Mach_MemList	**availMemory;    /* available physical memory */
-#ifdef NOTDEF
     struct config_ops	*v_config_ops;	  /* dev_info configuration access */
-#else
-    /* for now, since I don't know the format of this. */
-    int			*v_config_ops;	  /* dev_info configuration access */
-#endif
     /*
      * storage device access facilities
      */
