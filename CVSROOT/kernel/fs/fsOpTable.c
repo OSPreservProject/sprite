@@ -45,6 +45,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsPipe.h"
 #include "fsNamedPipe.h"
 #include "fsPdev.h"
+#include "fsSocket.h"
 
 static ReturnStatus NullProc();
 static void	    NullClientKill();
@@ -370,49 +371,44 @@ FsStreamTypeOps fsStreamOpTable[] = {
 		NoProc, NoProc, NoProc, NoProc,	/* cache ops */
 		(Boolean (*)())NIL,		/* scavenge */
 		(void (*)())NoProc, NoProc },	/* kill, close */
-#ifdef notdef
+#ifdef INET
     /*
-     * Locally cached named pipe stream.  
+     * Raw IP Protocol stream.  
      */
-    { FS_LCL_NAMED_PIPE_STREAM, FsNamedPipeCltOpen, FsNamedPipeRead,
-		FsNamedPipeWrite, FsNamedPipeIOControl,
-		FsNamedPipeSelect, FsNamedPipeGetIOAttr, FsNamedPipeSetIOAttr,
-		NoHandle, FsNamedPipeEncap, FsNamedPipeDeencap,
-		FsNamedPipeAllocate, FsNamedPipeBlockRead,
-		FsNamedPipeBlockWrite, FsNamedPipeBlockCopy,
-		FsNamedPipeClose, FsNamedPipeDelete },
+    { FS_RAW_IP_STREAM, FsSocketCltOpen, FsSocketRead,
+		FsSocketWrite, FsSocketIOControl,
+		FsSocketSelect, FsSocketGetIOAttr, FsSocketSetIOAttr,
+		NoHandle,			/* verify */
+		NoProc, NoProc,			/* release, migend */
+		NoProc, NoProc,			/* migrate, reopen */
+		NoProc, NoProc,	NoProc, NoProc,	/* cache ops */
+		FsSocketScavenge,
+		(void (*)())NoProc, FsSocketClose },
     /*
-     * Remotely cached name pipe stream.  There is little to do on this
-     * machine so we use the remote device routines to forward operations
-     * to the I/O server.
+     * UDP Protocol stream.  
      */
-    { FS_RMT_NAMED_PIPE_STREAM, FsRmtNamedPipeCltOpen, FsRemoteRead,
-		FsRemoteWrite, FsRemoteIOControl,
-		FsRemoteSelect, FsRemoteGetIOAttr, FsRemoteSetIOAttr,
-		FsRmtNamedPipeVerify, FsRmtDeviceEncap, FsRmtDeviceDeencap,
-		NoProc, NoProc, NoProc, NoProc,
-		FsRmtDeviceClose, FsRmtDeviceDelete},
+    { FS_UDP_STREAM, FsSocketCltOpen, FsSocketRead,
+		FsSocketWrite, FsSocketIOControl,
+		FsSocketSelect, FsSocketGetIOAttr, FsSocketSetIOAttr,
+		NoHandle,			/* verify */
+		NoProc, NoProc,			/* release, migend */
+		NoProc, NoProc,			/* migrate, reopen */
+		NoProc, NoProc,	NoProc, NoProc,	/* cache ops */
+		FsSocketScavenge,
+		(void (*)())NoProc, FsSocketClose },
     /*
-     * A stream to the hybrid Sprite/Unix server.  DECOMMISIONED.
+     * Raw IP Protocol stream.  
      */
-    { FS_RMT_UNIX_STREAM, FsRmtUnixCltOpen, FsRmtUnixRead, FsRmtUnixWrite,
-		FsRmtUnixIOControl, FsRmtUnixSelect,
-		NullProc, NullProc,
-		NoHandle, NoProc, NoProc,
-		FsRmtUnixAllocate, FsRmtUnixBlockRead,
-		FsRmtUnixBlockWrite, FsRmtUnixBlockCopy,
-		FsRmtUnixClose, FsRmtUnixDelete},
-    /*
-     * A stream to a remote NFS file.  
-     */
-    { FS_RMT_NFS_STREAM, NoProc, NoProc, NoProc,
-		NoProc, NoProc,
-		NoProc, NoProc,
-		NoHandle, NoProc, NoProc,
-		NoProc, NoProc,
-		NoProc, NoProc,
-		NoProc, NoProc},
-#endif /* notdef */
+    { FS_TCP_STREAM, FsSocketCltOpen, FsSocketRead,
+		FsSocketWrite, FsSocketIOControl,
+		FsSocketSelect, FsSocketGetIOAttr, FsSocketSetIOAttr,
+		NoHandle,			/* verify */
+		NoProc, NoProc,			/* release, migend */
+		NoProc, NoProc,			/* migrate, reopen */
+		NoProc, NoProc,	NoProc, NoProc,	/* cache ops */
+		FsSocketScavenge,
+		(void (*)())NoProc, FsSocketClose },
+#endif /* INET */
 };
 
 /*
@@ -435,11 +431,12 @@ int fsRmtToLclType[FS_NUM_STREAM_TYPES] = {
     FS_LCL_PFS_STREAM,		/* FS_LCL_PFS_STREAM */
     FS_LCL_PFS_STREAM,		/* FS_RMT_PFS_STREAM */
     FS_CONTROL_STREAM,		/* FS_RMT_CONTROL_STREAM */
+#ifdef INET
+    FS_RAW_IP_STREAM,		/* FS_RAW_IP_STREAM */
+    FS_UDP_STREAM,		/* FS_UDP_STREAM */
+    FS_TCP_STREAM,		/* FS_TCP_STREAM */
+#endif /* INET */
 
-    -1,				/* FS_RMT_NFS_STREAM */
-    FS_LCL_NAMED_PIPE_STREAM,	/* FS_LCL_NAMED_PIPE_STREAM */
-    FS_LCL_NAMED_PIPE_STREAM,	/* FS_RMT_NAMED_PIPE_STREAM */
-    -1,				/* FS_RMT_UNIX_STREAM */
 };
 
 int fsLclToRmtType[FS_NUM_STREAM_TYPES] = {
@@ -459,11 +456,12 @@ int fsLclToRmtType[FS_NUM_STREAM_TYPES] = {
     FS_RMT_PFS_STREAM,		/* FS_LCL_PFS_STREAM */
     FS_RMT_PFS_STREAM,		/* FS_RMT_PFS_STREAM */
     FS_RMT_CONTROL_STREAM,	/* FS_RMT_CONTROL_STREAM */
+#ifdef INET
+    FS_RAW_IP_STREAM,		/* FS_RAW_IP_STREAM */
+    FS_UDP_STREAM,		/* FS_UDP_STREAM */
+    FS_TCP_STREAM,		/* FS_TCP_STREAM */
+#endif /* INET */
 
-    FS_RMT_NFS_STREAM,		/* FS_RMT_NFS_STREAM */
-    FS_RMT_NAMED_PIPE_STREAM,	/* FS_LCL_NAMED_PIPE_STREAM */
-    FS_RMT_NAMED_PIPE_STREAM,	/* FS_RMT_NAMED_PIPE_STREAM */
-    FS_RMT_UNIX_STREAM,		/* FS_RMT_UNIX_STREAM */
 };
 
 
