@@ -30,7 +30,6 @@
 #else
 #include <kernel/mach.h>
 #include <netInet.h>
-#include <kernel/netTypes.h>
 #endif
 
 /*
@@ -282,7 +281,7 @@ typedef struct {
     Mach_RegState	regs;
 } StopInfo;
 
-
+#ifdef KERNEL
 extern	void	Dbg_Init _ARGS_((void));
 extern	void	Dbg_InputPacket _ARGS_((Net_Interface *interPtr,
 			    Address packetPtr, int packetLength));
@@ -302,5 +301,5 @@ extern void
 			     unsigned int destPort, int dataSize,
 			     Address dataPtr));
 extern int	Dbg_PacketHdrSize _ARGS_((void));
-
+#endif
 #endif /* _DBG */
