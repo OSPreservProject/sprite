@@ -146,6 +146,28 @@ typedef struct {
  */
 
 typedef struct {
+    int			evictions;	/* Number of processes evicted
+				     	   from this host */
+    int			pagesWritten;	/* Number of pages flushed as a
+					   result of migration */
+    int			rpcKbytes; 	/* Total number of Kbytes sent during
+					   migration. */
+    Time		timeToMigrate;	/* Cumulative time to migrate
+					   running processes */
+    Time		timeToExec;	/* Cumulative time to do remote
+					   exec's */
+    Time		timeToEvict;	/* Cumulative time to evict
+					   processes */
+    Time		totalCPUTime;   /* Cumulative time used by all
+					   processes belonging to this host. */
+    Time		remoteCPUTime;   /* Cumulative time used by all
+					   processes belonging to this host,
+					   while executing remotely. */
+} Proc_MigVarStats;
+
+typedef struct {
+    int			statsVersion;   /* Used to distinguish old structures.
+					   */
     int			foreign; 	/* Number of foreign processes on
 				     	   this machine */
     int			remote;		/* Number of processes belonging
@@ -158,47 +180,34 @@ typedef struct {
 			     	   	   processes */
     int			errors;		/* Number of times migration has
 					   failed */
-    int			evictions;	/* Number of times we have evicted
-				     	   processes from this host */
     int			returns;	/* Number of times we have had our own
 					   process migrate back to us */
-    int			pagesWritten;	/* Number of pages flushed as a
-					   result of migration */
-    Time		timeToMigrate;	/* Cumulative time to migrate
-					   running processes */
-    Time		timeToExec;	/* Cumulative time to do remote
-					   exec's */
-    Time		timeToEvict;	/* Cumulative time to evict
-					   processes */
     int			hostCounts[NET_NUM_SPRITE_HOSTS];
     					/* Array of counts of
 					   migration to each host */
-    int			rpcKbytes; 	/* Total number of Kbytes sent during
-					   migration. */
     int			migrationsHome; /* Number of times processes migrate
 					   home, excluding evictions. */
     int			evictCalls; 	/* Number of times user-level daemon
 					   requested evictions. */
     int			evictsNeeded; 	/* Number of times requests resulted
 					   in >= 1 evictions. */
-    int			statsVersion;   /* Used to distinguish old structures.
-					   */
-    Proc_Time		totalCPUTime;   /* Cumulative time used by all
-					   processes belonging to this host. */
-    Proc_Time		remoteCPUTime;   /* Cumulative time used by all
-					   processes belonging to this host,
-					   while executing remotely. */
     int			evictionsInProgress;
     					/* Number of processes currently
 					   being evicted. */
+    Proc_MigVarStats	varStats; 	/* Other stats (see above) counted
+					   both normally and as
+					   sum-of-squares. */
+    Proc_MigVarStats	squared; 	/* Sum-of-squares. */
 					   
 } Proc_MigStats;
 
 /*
  * Macros to manipulate this structure using a monitor.
  */
-#define PROC_MIG_INC_STAT(stat) Proc_MigAddToCounter(&proc_MigStats.stat, 1)
-#define PROC_MIG_DEC_STAT(stat) Proc_MigAddToCounter(&proc_MigStats.stat, -1)
+#define PROC_MIG_INC_STAT(stat) \
+	Proc_MigAddToCounter(1, &proc_MigStats.stat, (int *) NIL)
+#define PROC_MIG_DEC_STAT(stat) \
+	Proc_MigAddToCounter(-1, &proc_MigStats.stat, (int *) NIL)
 
 
 
