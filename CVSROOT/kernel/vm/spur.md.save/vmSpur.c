@@ -1216,10 +1216,13 @@ VmMach_SetRefBit(addr)
 	segPtr = procPtr->vmPtr->segPtrArray[(unsigned int)addr >> 
 						VMMACH_SEG_REG_SHIFT];
     }
-    segDataPtr = segPtr->machPtr;
-    page = ((unsigned int)(addr) & ~VMMACH_SEG_REG_MASK) >> VMMACH_PAGE_SHIFT;
-    ptePtr = GetPageTablePtr(segDataPtr, page);
-    *ptePtr |= VMMACH_REFERENCED_BIT;
+    if (segPtr != (Vm_Segment *) NIL) {
+        segDataPtr = segPtr->machPtr;
+        page = ((unsigned int)(addr) & ~VMMACH_SEG_REG_MASK) >> 
+							VMMACH_PAGE_SHIFT;
+        ptePtr = GetPageTablePtr(segDataPtr, page);
+        *ptePtr |= VMMACH_REFERENCED_BIT;
+    }
 
     UNLOCK_MONITOR;
 }
