@@ -568,6 +568,7 @@ FsPfsOpenConnection(namingPdevHandlePtr, srvrFileIDPtr, openResultsPtr)
     if (FsGetStreamID(srvStreamPtr, &newStreamID) != SUCCESS) {
 	(void)FsStreamClientClose(&srvStreamPtr->clientList, rpc_SpriteID);
 	FsStreamDispose(srvStreamPtr);
+	Sync_LockClear(&cltHandlePtr->pdevHandlePtr->lock);
 	FsHandleRemove(cltHandlePtr->pdevHandlePtr);
 	FsHandleRemove(cltHandlePtr);
 	fsStats.object.pseudoStreams--;
