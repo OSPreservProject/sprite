@@ -1145,6 +1145,10 @@ Sys_StatsStub(command, option, argPtr)
             status = SUCCESS;
             break;
         }
+	case SYS_RECOV_PARAMS: {
+	    status = Recov_Cmd(option, argPtr);
+	    break;
+	}
         default:
             status = GEN_INVALID_ARG;
             break;
