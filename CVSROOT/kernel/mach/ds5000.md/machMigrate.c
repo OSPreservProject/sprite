@@ -66,6 +66,14 @@ Mach_EncapState(procPtr, hostID, infoPtr, buffer)
     Mach_State *machStatePtr = procPtr->machStatePtr;
     MigratedState *migPtr = (MigratedState *) buffer;
     
+    /*
+     * Make sure we have the current floating point state.
+     */
+    if (machFPCurStatePtr == machStatePtr) {
+	MachGetCurFPState(machStatePtr);
+	machFPCurStatePtr = (Mach_State *)NIL;
+    }
+
     bcopy((Address) &machStatePtr->userState, (Address) &migPtr->userState,
 	    sizeof(Mach_UserState));
     return(SUCCESS);
@@ -121,6 +129,21 @@ Mach_DeencapState(procPtr, infoPtr, buffer)
 				Proc_ResumeMigProc,
 				migPtr->userState.regState.pc,
 				TRUE);
+    /*
+     * Mach_SetupNewState thinks that all new processes have a clean FPU
+     * slate.  Override the place where it overrides the status register.
+     * (This could be handled by another arg to Mach_SetupNewState to
+     * indicate that the process is migrated, or by a kludge to see if the
+     * PC is Proc_ResumeMigProc, but neither one seems satisfactory.
+     */
+    if (proc_MigDebugLevel > 2) {
+	printf("Mach_DeencapState: FPU status register was %x.\n",
+	       migPtr->userState.regState.fpStatusReg);
+    }
+	
+    procPtr->machStatePtr->userState.regState.fpStatusReg =
+	migPtr->userState.regState.fpStatusReg;
+
     return(status);
 }    
     
