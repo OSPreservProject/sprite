@@ -58,6 +58,12 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devTimerSun3Int.h"
 #include "time.h"
 
+
+/* For profiling call */
+#include "prof.h"
+/* For CallBack call */
+#include "timer.h"
+
 static TimerDevice *timerRegsPtr = (TimerDevice *) DEV_TIMER_ADDR;
 
 /*
@@ -327,7 +333,7 @@ Dev_TimerInactivate(timer)
  *----------------------------------------------------------------------
  */
 
-unsigned short
+static unsigned short
 Dev_TimerGetStatus()
 {
     unsigned char statusReg;
@@ -378,7 +384,7 @@ Dev_TimerGetStatus()
  */
 
 /*ARGSUSED*/
-Boolean
+static Boolean
 Dev_TimerExamineStatus(statusReg, timer, spuriousPtr)
     unsigned char statusReg;	/* Ignored because it is always 0. */
     unsigned int timer;		/* Virtual Timer # */
@@ -408,6 +414,76 @@ Dev_TimerExamineStatus(statusReg, timer, spuriousPtr)
 	Sys_Panic(SYS_WARNING,"Dev_TimerExamineStatus: unknown timer %d\n", 
 				timer);
 	return(FALSE);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  Dev_TimerServiceInterrupt --
+ *
+ *      This routine is called at every timer interrupt. 
+ *      It calls the timer callback queue handling if the callback timer 
+ *	expired and calls the profiling interrupt handling if the 
+ *	profile callback timer expired.
+ *
+ *  Results:
+ *	None.
+ *
+ *  Side Effects:
+ *	Routines on the timer queue may cause side effects. Profile
+ *	collect may take place. 
+ *	
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Dev_TimerServiceInterrupt(stack)
+    Mach_IntrStack stack;
+{ 
+    /*
+     *  Determine if the callback and profile timers have expired.
+     *  Dev_TimerExamineStatus has the side effect of clearing the timer's
+     *  "cause interrupt" bit if it was set. 
+     *
+     *  The profile timer is checked first because routines on the callback
+     *  queue might cause a delay in collecting profiling information.
+     */
+
+    int profiled = FALSE;
+    unsigned short timerStatus =  Dev_TimerGetStatus();
+    Boolean spurious;
+
+    if (Dev_TimerExamineStatus(timerStatus, DEV_PROFILE_TIMER, &spurious)) {
+	Prof_CollectInfo(&stack);
+	profiled = TRUE;
+#	ifdef GATHER_STAT
+	timer_Statistics.profile++;
+#	endif
+    } 
+
+    if (Dev_TimerExamineStatus(timerStatus, DEV_CALLBACK_TIMER, &spurious)) {
+	Timer_CallBack();
+    } else {
+	if (!profiled) {
+
+	    /*
+	     * An unwanted timer interrupt was received but it wasn't
+	     * spurious (this is o.k. -- see devTimerSun3.c).
+	     */
+	    if (!spurious) {
+		return;
+	    } 
+
+	    /* Spurious interrupt!!! */
+#ifdef GATHER_STAT
+	     timer_Statistics.spurious++;
+#endif
+
+	    Sys_Printf("%c", 7);	/* ring the bell */
+
+	}
     }
 }
 
@@ -458,7 +534,7 @@ Dev_CounterInit()
 
 void
 Dev_CounterRead(timePtr)
-    Time	*timePtr;	/* Time from the counters. */
+    DevCounter	*timePtr;	/* Time from the counters. */
 {
     IntersilCounters	counter;
 
@@ -547,6 +623,36 @@ Dev_CounterIntToTime(counter, resultPtr)
 				(ONE_SECOND/ONE_SEC_INTERVAL);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ *  Dev_CounterCountToTime --
+ *
+ *      Converts a DevCounter value into a standard time value.
+ *
+ *	This routine is meant for use by the Timer module only.
+ *
+ *  Results:
+ *	A time value.
+ *
+ *  Side Effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Dev_CounterCountToTime(count, resultPtr)
+    DevCounter count;
+    Time *resultPtr;
+{
+	/* 
+	 * DevCounter's and Timer's are the same for the Sun3.
+	 */
+
+	*resultPtr = count;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -576,6 +682,73 @@ Dev_CounterTimeToInt(time, resultPtr)
 	Sys_Panic(SYS_WARNING, "Dev_CounterTimeToInt: time value too large\n");
 	*resultPtr = 0xFFFFFFFF;
     }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  Dev_CounterTimeToCounter --
+ *
+ *      Converts a standard time value into a DevCounter value.
+ *
+ *  Results:
+ *	A DevCounter value.
+ *
+ *  Side Effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Dev_CounterTimeToCount(time, resultPtr)
+    Time time;
+    DevCounter *resultPtr;
+{
+	/*
+	 * On the Sun3, the DevCounter is the same as a time value.
+	 */
+	*resultPtr = time;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  Dev_CounterAddIntToCount --
+ *
+ *      Add an interval value to a DevCounter value returning a
+ *	DevCounter value Int time units in the future. Signal overflow
+ *	if the value will not fit.
+ *	This routine is meant for use by the Timer module only.
+ *
+ *  Results:
+ *	A counter interval value.
+ *
+ *  Side Effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Dev_CounterAddIntToCount(count, interval, resultPtr, overflowPtr)
+    DevCounter	count;		/* Counter to add to */
+    unsigned int	interval;	/* Interval to add */	
+    DevCounter	*resultPtr;	/* Buffer to place the results */
+    unsigned int	*overflowPtr;	/* Overflow count */
+{
+    Time	tmp;
+    /*
+     * Since DevCounter is a time value, convert the interval to a time
+     * and use Timer_Add. It can't overflow.
+     */
+     
+    *overflowPtr = 0;	
+    Dev_CounterIntToTime(interval, &tmp);
+    Time_Add(count, tmp, resultPtr);
+
 }
 
 
