@@ -19,6 +19,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "machMon.h"
 #include "vmMachInt.h"
 #include "vm.h"
+#include "vmInt.h"
 #include "vmTrace.h"
 #include "list.h"
 #include "mach.h"
@@ -222,7 +223,7 @@ typedef struct VmMach_Context {
     VMMACH_SEG_NUM		map[VMMACH_NUM_SEGS_PER_CONTEXT];
 					/* A reflection of the hardware context
 					 * map. */
-    int				context;/* Which context this is. */
+    unsigned int		context;/* Which context this is. */
     int				flags;	/* Defined below. */
 } VmMach_Context;
 
@@ -1687,15 +1688,12 @@ SetupContext(procPtr)
 	    int			i;
 	    unsigned int	j;
 
-#ifdef NOTDEF
-	    j = ((unsigned int)mach_KernStart) >> VMMACH_SEG_SHIFT;
-#else
 	    /*
 	     * Since user addresses are never higher than the bottom of the
-	     * hole in the address space, this will save something like 30ms!
+	     * hole in the address space, this will save something like 30ms
+	     * by ending at VMMACH_BOTTOM_OF_HOLE rather than mach_KernStart.
 	     */
 	    j = ((unsigned int)VMMACH_BOTTOM_OF_HOLE) >> VMMACH_SEG_SHIFT;
-#endif
 	    for (i = 0; i < j; i++) {
 		contextPtr->map[i] = VMMACH_INV_PMEG;
 	    }
@@ -1723,17 +1721,7 @@ SetupContext(procPtr)
 	/*
 	 * Push map out to hardware.
 	 */
-#ifdef NOTDEF
-	VmMachSegMapCopy(contextPtr->map, 0, mach_KernStart);
-	XXX
-	/*
-	 * Since user addresses are never higher than the bottom of the
-	 * hole in the address space, this will save something like 30ms!
-	 */
-	VmMachSegMapCopy(contextPtr->map, 0, VMMACH_BOTTOM_OF_HOLE);
-#else
 	VmMachCopyUserSegMap(contextPtr->map);
-#endif
     } else {
 	/* XXX No need to flush anything? */
 	VmMachSetContextReg(contextPtr->context);
@@ -2169,7 +2157,11 @@ VmMach_NetMapPacket(inScatGathPtr, scatGathLength, outScatGathPtr)
     register Address	endAddr;
     int			segNum;
     int			pageNum = 0;
-#ifdef NOTDEF
+#ifdef sun4c
+    /*
+     * I need to test out the other code to see if it works on the sun4c, so
+     * for the mean-time use the old code for the sun4c.
+     */
     for (mapAddr = (Address)VMMACH_NET_MAP_START;
          scatGathLength > 0;
 	 scatGathLength--, inScatGathPtr++, outScatGathPtr++) {
@@ -2258,7 +2250,7 @@ VmMach_NetMapPacket(inScatGathPtr, scatGathLength, outScatGathPtr)
 	    printf("MapPacket: segNum is %d, pageNum is %d\n", segNum, pageNum);
 	}
     }
-#endif NOTDEF
+#endif /* sun4c */
 }
 
 
@@ -2947,7 +2939,42 @@ VmMach_AllocCheck(virtAddrPtr, virtFrameNum, refPtr, modPtr)
 	 * page, by invalidating it we can guarantee that the reference and
 	 * modify information that we are returning will be valid until
 	 * our caller reenables faults on this page.
+	 * On the sun4 we must flush this page from the cache, but we must do
+	 * it in the context to which it was allocated.  If it's in a shared
+	 * context, we must do this in all the contexts.
 	 */
+	VmProcLink	*procLinkPtr;
+	Vm_Segment	*segPtr;
+	Vm_ProcInfo	*vmPtr;
+	VmMach_ProcData	*machPtr;
+	VmMach_Context	*contextPtr;
+	unsigned int	context;
+	unsigned int	oldContext;
+
+	segPtr = virtAddrPtr->segPtr;
+	if (segPtr != (Vm_Segment *) NIL) {
+	    LIST_FORALL(segPtr->procList, (List_Links *) procLinkPtr) {
+		vmPtr = procLinkPtr->procPtr->vmPtr;
+		if (vmPtr != (Vm_ProcInfo *) NIL) {
+		    machPtr = vmPtr->machPtr;
+		    if (machPtr != (VmMach_ProcData *) NIL) {
+			contextPtr = machPtr->contextPtr;
+			if (contextPtr != (VmMach_Context *) NIL) {
+			    context = contextPtr->context;
+			    /* save old context */
+			    oldContext = VmMachGetContextReg();
+			    /* move to page's context */
+			    VmMachSetContextReg(context);
+			    /* flush page in its context */
+			    VmMachFlushPage(virtAddrPtr->page <<
+				    VMMACH_PAGE_SHIFT);
+			    /* back to old context */
+			    VmMachSetContextReg(oldContext);
+			}
+		    }
+		}
+	    }
+	}
 	PageInvalidate(virtAddrPtr, virtFrameNum, FALSE);
 
 	if (origMod && !*modPtr) {
@@ -3731,6 +3758,7 @@ VmMach_DMAAlloc(numBytes, srcAddr)
     int		virtPage;
     static initialized = FALSE;
  
+    MASTER_LOCK(vmMachMutexPtr);
     if (!initialized) {
 	/* Where to allocate the memory from. */
 	initialized = TRUE;
@@ -3762,6 +3790,7 @@ VmMach_DMAAlloc(numBytes, srcAddr)
 	}
     }
     if (!foundIt) {
+	MASTER_UNLOCK(vmMachMutexPtr);
 	return (Address) NIL;
     }
     for (j = 0; j < numPages; j++) {
@@ -3776,6 +3805,8 @@ VmMach_DMAAlloc(numBytes, srcAddr)
     }
     beginAddr = (Address) (VMMACH_DMA_START_ADDR + (i * VMMACH_PAGE_SIZE_INT) +
 	    (((unsigned int) srcAddr) & VMMACH_OFFSET_MASK));
+
+    MASTER_UNLOCK(vmMachMutexPtr);
     return beginAddr;
 }
 
@@ -3806,6 +3837,7 @@ VmMach_DMAFree(numBytes, mapAddr)
     int		numPages;
     int		i, j;
  
+    MASTER_LOCK(vmMachMutexPtr);
     /* calculate number of pages to free */
 						/* beginning of first page */
     beginAddr = (Address) (((unsigned int) mapAddr) & ~VMMACH_OFFSET_MASK_INT);
@@ -3823,6 +3855,7 @@ VmMach_DMAFree(numBytes, mapAddr)
 	SET_ALL_PAGE_MAP(mapAddr, (VmMachPTE) VirtToPhysPage(0));
 	(unsigned int) mapAddr += VMMACH_PAGE_SIZE_INT;
     }
+    MASTER_UNLOCK(vmMachMutexPtr);
     return;
 }
 
@@ -4303,5 +4336,28 @@ ByteFill(fillByte, numBytes, destPtr)
 	*destPtr++ = fillByte;
 	numBytes--;
     }
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmMach_SharedStart --
+ *
+ *      Determine the starting address for a shared segment.
+ *
+ * Results:
+ *      Returns the proper start address for the segment.
+ *
+ * Side effects:
+ *      None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+Address
+VmMach_SharedStart(reqAddr,size)
+Address		reqAddr;	/* Requested start address. */
+int		size;		/* Length of shared segment. */
+{
+    return reqAddr;
 }
 

@@ -570,21 +570,19 @@ _VmMachSetSegMap:
     retl	/* return from leaf routine */
     nop
 
-#ifdef NOTDEF
 /*
  * ----------------------------------------------------------------------------
  *
- * VmMachSegMapCopy --
+ * VmMachCopyUserSegMap --
  *
  *     	Copy the software segment map entries into the hardware segment entries.
- *	All segment table entries between address startAddr and address
- *	endAddr are copied.  It is assumed that the user context register is 
+ *	All segment table entries for user address space up to the bottom of
+ *	the hole in the virtual address space are copied.
+ *	It is assumed that the user context register is 
  *	set to the context for which the segment map entries are to be set.
  *	
- *	void VmMachSegMapCopy(tablePtr, startAddr, endAddr)
+ *	void VmMachCopyUserSegMap(tablePtr)
  *	    short *tablePtr;
- *	    int startAddr;
- *	    int endAddr;
  *
  * Results:
  *     None.
@@ -594,54 +592,6 @@ _VmMachSetSegMap:
  *
  * ----------------------------------------------------------------------------
  */
-.globl _VmMachSegMapCopy
-_VmMachSegMapCopy:
-						/* segTableAddr in %o0 */
-						/* startAddr in %o1 */
-						/* endAddr in %o2 */
-    /*
-     * Due to the hole in the address space, I must make sure that no
-     * segment for an address in the hole gets anything written to it, since
-     * this would overwrite the pmeg mapping for a valid address's segment.
-     */
-    set		VMMACH_SEG_MAP_MASK, %OUT_TEMP1
-    and		%o1, %OUT_TEMP1, %o1	/* mask out low bits */
-copyLoop:
-    /* returns 0 in OUT_TEMP1 if okay, 1 otherwise */
-    VMMACH_ADDR_OK_ASM(%o1, SegCopyLabel1, SegCopyLabel2, %OUT_TEMP1, %OUT_TEMP2)
-    tst		%OUT_TEMP1
-    be		GoAheadAndCopy
-    lduh	[%o0], %OUT_TEMP1	/* IN DELAY SLOT */
-    set		VMMACH_INV_PMEG, %OUT_TEMP2
-    cmp		%OUT_TEMP1, %OUT_TEMP2
-    be		SkipStore
-    nop
-    /* Would try to store valid pmeg to horrid location! */
-    /* What arguments? */
-    clr		%o0
-    call	_panic, 1
-    nop
-GoAheadAndCopy:
-#ifdef sun4c
-    stba	%OUT_TEMP1, [%o1] VMMACH_SEG_MAP_SPACE
-#else
-    stha	%OUT_TEMP1, [%o1] VMMACH_SEG_MAP_SPACE
-#endif
-SkipStore:
-    add		%o0, 2, %o0		/* increment address to copy from */
-    set		VMMACH_SEG_SIZE, %OUT_TEMP2
-    add		%o1, %OUT_TEMP2, %o1	/* increment addr to copy to */
-    cmp		%o2, %o1		/* Hit upper bound? */
-    bgu		copyLoop
-    nop
-
-    retl	/* return from leaf routine */
-    nop
-#else	/* NOTDEF */
-/*
- * New routine.
- */
-
 .globl _VmMachCopyUserSegMap
 _VmMachCopyUserSegMap:
     /*
@@ -723,7 +673,6 @@ CopyLoop:
 
     ret
     restore
-#endif /* NOTDEF */
 
 /*
  * ----------------------------------------------------------------------------
@@ -1217,6 +1166,37 @@ FlushingPage:
     sub		%i0, VMMACH_CACHE_LINE_SIZE, %i0	/* delay slot */
     ret
     restore
+
+#ifdef NOTDEF
+/*
+ * ----------------------------------------------------------------------------
+ *
+ *  VmMachContextForCachedAddr --
+ *
+ *     	Read the context for which a virtual address is cached from out of
+ *	the cache tags.
+ *
+ *	unsigned int VmMachContextForCachedAddr(virtualAddr)
+ *	Address	virtualAddr;
+ *
+ * Results:
+ *     The context.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+.globl	_VmMachContextForCachedAddr
+_VmMachContextForCachedAddr:
+    set		VMMACH_CACHE_TAGS_ADDR, %OUT_TEMP1
+    ldua	[%OUT_TEMP1] VMMACH_CONTROL_SPACE, %RETURN_VAL_REG
+    /* context is in bits 22 through 29 */
+/* How do I find correct cache block? */
+    srl		%RETURN_VAL_REG, 22, %RETURN_VAL_REG
+    retl
+    nop
+#endif NOTDEF
 
 
 
