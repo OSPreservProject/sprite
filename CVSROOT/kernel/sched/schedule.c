@@ -851,9 +851,11 @@ Sched_StartUserProc(pc)
     MASTER_UNLOCK(sched_MutexPtr);
     procPtr = Proc_GetCurrentProc();
 
+#ifdef notdef
     Proc_Lock(procPtr);
     procPtr->genFlags |= PROC_DONT_MIGRATE;
     Proc_Unlock(procPtr);
+#endif
     
     /*
      * Start the process running.  This does not return.
