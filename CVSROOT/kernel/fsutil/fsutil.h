@@ -136,10 +136,11 @@ typedef struct Fsutil_BulkReturn {
  * off handles to be reopened.
  */
 typedef struct Fsutil_BulkReopenOps {
-	    /* Takes hdrPtr and reopenParamsPtr */
-    ReturnStatus	(*setup)(/* Fs_HandleHeader *, Address */);
-	    /* Takes hdrPtr, fileStatePtr, and status. */	
-    ReturnStatus	(*finish)(/* Fs_HandleHeader *, Address, ReturnStatus */);
+    ReturnStatus	(*setup) _ARGS_((Fs_HandleHeader *hdrPtr,
+						    Address paramsPtr));
+    void		(*finish) _ARGS_((Fs_HandleHeader *hdrPtr,
+						    Address statePtr,
+						    ReturnStatus status));
 } Fsutil_BulkReopenOps;
 
 

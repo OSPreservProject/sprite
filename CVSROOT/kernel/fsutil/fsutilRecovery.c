@@ -254,8 +254,13 @@ doSingleRpcsInstead:
 		status = (*fsio_StreamOpTable[hdrPtr->fileID.type].reopen)
 			(hdrPtr, rpc_SpriteID, (ClientData)NIL, (int *)NIL,
 			(ClientData *)NIL);
-		RecoveryComplete(&(((Fsrmt_IOHandle *)hdrPtr)->recovery),
+		if (status == FS_RECOV_SKIP) {
+		    RecoveryComplete(&(((Fsrmt_IOHandle *)hdrPtr)->recovery),
+				    SUCCESS);
+		} else {
+		    RecoveryComplete(&(((Fsrmt_IOHandle *)hdrPtr)->recovery),
 				    status);
+		}
 		/*
 		 * If we removed the handle because it was no longer needed,
 		 * we can't try unlocking it.
@@ -273,6 +278,7 @@ doSingleRpcsInstead:
 		    case RPC_TIMEOUT:
 			goto reopenReturn;
 		    case FS_FILE_REMOVED:
+		    case FS_RECOV_SKIP:
 			/*
 			 * No noisy message, this is a common case.
 			 */
