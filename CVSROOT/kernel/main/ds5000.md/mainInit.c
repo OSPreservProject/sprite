@@ -75,6 +75,9 @@ MachStringTable *argv;
 {
     Proc_PID	pid;
     int		i;
+    int		numArgs;
+    char	argBuffer[256];
+    char	*args[10];
 
     /*
      * Initialize variables specific to a given kernel.  
@@ -90,6 +93,13 @@ MachStringTable *argv;
 	Mach_MonPrintf("Calling Mach_Init().\n");
     }
     Mach_Init(argc, argv);
+    numArgs = Mach_GetBootArgs(10, 256, args, argBuffer);
+    for (i = 0; i < numArgs; i++) {
+	if (!strcmp(args[i], "-v")) {
+	    main_PrintInitRoutines = TRUE;
+	    break;
+	}
+    }
     if (main_PrintInitRoutines) {
 	Mach_MonPrintf("Calling Sync_Init().\n");
     }
