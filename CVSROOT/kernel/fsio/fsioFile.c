@@ -1120,49 +1120,50 @@ Fsio_FileWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
  *
  * Fsio_FileBlockRead --
  *
- *	Read a block from the local disk.  This is called when the cache
- *	needs data, and from the paging routines.  Synchronization with
- *	other I/O should is done at a higher level, ie. the cache.
+ *	Read in a cache block.  This does a direct disk read if the
+ *	file is the 'physical file' used for file descriptors and
+ *	indirect blocks.  If it is a regular file data block, then
+ *	the indexing structure is used to locate the file on disk.
+ *	This always attempts to read in a full block, but will read
+ *	less if at the last block and it isn't full.  In this case,
+ *	the remainder of the cache block is zero-filled.
  *
  * Results:
- *	SUCCESS.
+ *	The results of the disk read.
  *
  * Side effects:
  *	The buffer is filled with the number of bytes indicated by
- *	the bufSize parameter.  *readCountPtr is filled with the number
- *	of bytes actually read.
+ *	the bufSize parameter.  The blockPtr->blockSize is modified to
+ *	reflect how much data was actually read in.  The unused part
+ *	of the block is filled with zeroes so that higher levels can
+ *	always assume the block has good stuff in all parts of it.
  *
  *----------------------------------------------------------------------
  */
 /*ARGSUSED*/
 ReturnStatus
-Fsio_FileBlockRead(hdrPtr, flags, buffer, offsetPtr,  lenPtr, remoteWaitPtr)
+Fsio_FileBlockRead(hdrPtr, blockPtr, remoteWaitPtr)
     Fs_HandleHeader	*hdrPtr;	/* Handle on a local file. */
-    int			flags;		/* IGNORED */
-    register Address	buffer;		/* Where to read into. */
-    int 		*offsetPtr;	/* Byte offset at which to read.  Return
-					 * value isn't used, but by-reference
-					 * passing is done to be compatible
-					 * with Fsrmt_Read */
-    int			*lenPtr;	/* Return,  bytes read. */
-    Sync_RemoteWaiter	*remoteWaitPtr;	/* IGNORED */
+    Fscache_Block	*blockPtr;	/* Cache block to read in.  This assumes
+					 * the blockNum, blockAddr (buffer area)
+					 * and blockSize are set.  This modifies
+					 * blockSize if less bytes were read
+					 * because of EOF. */
+    Sync_RemoteWaiter *remoteWaitPtr;	/* NOTUSED */
 {
     register Fsio_FileIOHandle *handlePtr =
 	    (Fsio_FileIOHandle *)hdrPtr;
     register	Fsdm_Domain	 *domainPtr;
     register	Fsdm_FileDescriptor *descPtr;
-    register			 offset = *offsetPtr;
+    register			 offset;
     register int		 numBytes;
     ReturnStatus		 status;
     Fsdm_BlockIndexInfo		 indexInfo;
 
-    numBytes = *lenPtr;
-    if ((offset & FS_BLOCK_OFFSET_MASK) != 0) {
-	panic("Fsio_FileBlockRead: Non-block aligned offset\n");
-    }
-    if (numBytes > FS_BLOCK_SIZE) {
-	panic("Fsio_FileBlockRead: Reading more than block\n");
-    }
+    status = SUCCESS;
+    blockPtr->blockSize = 0;
+    numBytes = FS_BLOCK_SIZE;
+    offset = blockPtr->blockNum * FS_BLOCK_SIZE;
 
     domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, FALSE);
     if (domainPtr == (Fsdm_Domain *) NIL) {
@@ -1175,7 +1176,7 @@ Fsio_FileBlockRead(hdrPtr, flags, buffer, offsetPtr,  lenPtr, remoteWaitPtr)
 	 */
 	status = Fsio_DeviceBlockIO(FS_READ, &domainPtr->headerPtr->device,
 			   offset / FS_FRAGMENT_SIZE, FS_FRAGMENTS_PER_BLOCK, 
-			   buffer);
+			   blockPtr->blockAddr);
 	fs_Stats.gen.physBytesRead += FS_BLOCK_SIZE;
     } else {
 	/*
@@ -1185,9 +1186,7 @@ Fsio_FileBlockRead(hdrPtr, flags, buffer, offsetPtr,  lenPtr, remoteWaitPtr)
 
 	descPtr = handlePtr->descPtr;
 	if (offset > descPtr->lastByte) {
-	    *lenPtr = 0;
-	    Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
-	    return(SUCCESS);
+	    goto exit;
 	} else if (offset + numBytes - 1 > descPtr->lastByte) {
 	    numBytes = descPtr->lastByte - offset + 1;
 	}
@@ -1196,24 +1195,26 @@ Fsio_FileBlockRead(hdrPtr, flags, buffer, offsetPtr,  lenPtr, remoteWaitPtr)
 				 &indexInfo, 0);
 	if (status != SUCCESS) {
 	    printf("Fsio_FileRead: Could not setup indexing\n");
-	    Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
-	    return(status);
+	    goto exit;
 	}
 
 	if (indexInfo.blockAddrPtr != (int *) NIL &&
 	    *indexInfo.blockAddrPtr != FSDM_NIL_INDEX) {
 	    /*
-	     * Read in the block.
+	     * Read in the block.  Specify the device, the fragment index,
+	     * the number of fragments, and the memory buffer.
 	     */
 	    status = Fsio_DeviceBlockIO(FS_READ, &domainPtr->headerPtr->device,
 		      *indexInfo.blockAddrPtr +
 		      domainPtr->headerPtr->dataOffset * FS_FRAGMENTS_PER_BLOCK,
-		      (numBytes - 1) / FS_FRAGMENT_SIZE + 1, buffer);
+		      (numBytes - 1) / FS_FRAGMENT_SIZE + 1,
+		      blockPtr->blockAddr);
 	} else {
 	    /*
 	     * Zero fill the block.  We're in a 'hole' in the file.
 	     */
-	    bzero(buffer, numBytes);
+	    fs_Stats.blockCache.readZeroFills++;
+	    bzero(blockPtr->blockAddr, numBytes);
 	}
 	Fsdm_EndIndex(handlePtr, &indexInfo, FALSE);
 	Fs_StatAdd(numBytes, fs_Stats.gen.fileBytesRead,
@@ -1227,9 +1228,17 @@ Fsio_FileBlockRead(hdrPtr, flags, buffer, offsetPtr,  lenPtr, remoteWaitPtr)
 	}
 #endif CLEAN
     }
-
+exit:
+    /*
+     * Define the block size and error fill leftover space.
+     */
     if (status == SUCCESS) {
-	*lenPtr = numBytes;
+	blockPtr->blockSize = numBytes;
+    }
+    if (blockPtr->blockSize < FS_BLOCK_SIZE) {
+	fs_Stats.blockCache.readZeroFills++;
+	bzero(blockPtr->blockAddr + blockPtr->blockSize,
+		FS_BLOCK_SIZE - blockPtr->blockSize);
     }
     Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
     return(status);
@@ -1240,8 +1249,13 @@ Fsio_FileBlockRead(hdrPtr, flags, buffer, offsetPtr,  lenPtr, remoteWaitPtr)
  *
  * Fsio_FileBlockWrite --
  *
- *	Write a block given a disk block number to a normal file, directory, 
- *	or symbolic link.
+ *	Write out a cache block.  This understands about physical
+ *	block writes as opposed to file block writes, and it understands
+ *	that negative block numbers are used for indirect blocks (gag).
+ *	Physical blocks are numbered from the beginning of the disk,
+ *	and they are used for file descriptors and indirect blocks.
+ *	File blocks are numbered from the beginning of the data block
+ *	area, so an offset must be used to calculate their true address.
  *
  * Results:
  *	The return code from the driver, or FS_DOMAIN_UNAVAILABLE if
@@ -1254,60 +1268,125 @@ Fsio_FileBlockRead(hdrPtr, flags, buffer, offsetPtr,  lenPtr, remoteWaitPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-Fsio_FileBlockWrite(hdrPtr, blockAddr, numBytes, buffer, flags)
-    Fs_HandleHeader *hdrPtr;	/* Pointer to handle for file to write to. */
-    int 	blockAddr;	/* Disk address. For regular files this
-				 * counts from the beginning of the data blocks.
-				 * For raw I/O they count from the start
-				 * of the disk partition. */
-    int		numBytes;	/* Number of bytes to write. */
-    register Address buffer;	/* Where to read bytes from. */
+Fsio_FileBlockWrite(hdrPtr, blockPtr, flags)
+    Fs_HandleHeader *hdrPtr;	/* I/O handle for the file. */
+    Fscache_Block *blockPtr;	/* Cache block to write out. */
     int		flags;		/* IGNORED */
 {
     register Fsio_FileIOHandle *handlePtr =
 	    (Fsio_FileIOHandle *)hdrPtr;
     register	Fsdm_Domain	 *domainPtr;
     ReturnStatus		status;
+    int				diskBlock;
 
     domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, TRUE);
     if (domainPtr == (Fsdm_Domain *)NIL) {
 	return(FS_DOMAIN_UNAVAILABLE);
     }
 
-    if (handlePtr->hdr.fileID.minor == 0 || blockAddr < 0) {
+    if (handlePtr->hdr.fileID.minor == 0 || blockPtr->diskBlock < 0) {
 	/*
 	 * The block number is a raw block number counting from the
 	 * beginning of the domain.
 	 * Descriptor blocks are indicated by a handle with a 0 file number 
 	 * and indirect a negative block number (indirect blocks).
 	 */
-	if (blockAddr < 0) {
-	    blockAddr = -blockAddr;
+	if (blockPtr->diskBlock < 0) {
+	    diskBlock = -blockPtr->diskBlock;
+	} else {
+	    diskBlock = blockPtr->diskBlock;
 	}
-	fs_Stats.gen.physBytesWritten += numBytes;
+	fs_Stats.gen.physBytesWritten += blockPtr->blockSize;
 	status = Fsio_DeviceBlockIO(FS_WRITE, &domainPtr->headerPtr->device,
-			 blockAddr, FS_FRAGMENTS_PER_BLOCK, buffer);
+		     diskBlock, FS_FRAGMENTS_PER_BLOCK, blockPtr->blockAddr);
     } else {
 	/*
 	 * The block number is relative to the start of the data blocks.
 	 */
-	Fs_StatAdd(numBytes, fs_Stats.gen.fileBytesWritten,
-		   fs_Stats.gen.fileWriteOverflow);
+	status = FsioVerifyBlockWrite(blockPtr);
+	if (status == SUCCESS) {
+	    status = Fsio_DeviceBlockIO(FS_WRITE, &domainPtr->headerPtr->device,
+		   blockPtr->diskBlock + 
+		   domainPtr->headerPtr->dataOffset * FS_FRAGMENTS_PER_BLOCK,
+		   (blockPtr->blockSize - 1) / FS_FRAGMENT_SIZE + 1,
+		   blockPtr->blockAddr);
+        }
+	if (status == SUCCESS) {
+	    Fs_StatAdd(blockPtr->blockSize, fs_Stats.gen.fileBytesWritten,
+		       fs_Stats.gen.fileWriteOverflow);
 #ifndef CLEAN
-	if (fsdmKeepTypeInfo) {
-	    int fileType;
-	
-	    fileType = Fsdm_FindFileType(&handlePtr->cacheInfo);
-	    fs_TypeStats.diskBytes[FS_STAT_WRITE][fileType] += numBytes;
-	}
+	    if (fsdmKeepTypeInfo) {
+		int fileType;
+	    
+		fileType = Fsdm_FindFileType(&handlePtr->cacheInfo);
+		fs_TypeStats.diskBytes[FS_STAT_WRITE][fileType] +=
+			    blockPtr->blockSize;
+	    }
 #endif CLEAN
-	status = Fsio_DeviceBlockIO(FS_WRITE, &domainPtr->headerPtr->device,
-	       blockAddr + 
-	       domainPtr->headerPtr->dataOffset * FS_FRAGMENTS_PER_BLOCK,
-	       (numBytes - 1) / FS_FRAGMENT_SIZE + 1, buffer);
+	}
     }
     Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
     return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsioVerifyBlockWrite --
+ *
+ *	Double check this block to make sure it seems like were writing
+ *	it to the right place.
+ *
+ * Results:
+ *	Error code if an inconsistency was detected.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+FsioVerifyBlockWrite(blockPtr)
+    Fscache_Block *blockPtr;		/* Block about to be written out */
+{
+    ReturnStatus status;
+    Fs_HandleHeader *hdrPtr = blockPtr->cacheInfoPtr->hdrPtr;
+    Fsdm_BlockIndexInfo		 indexInfo;
+
+    if (blockPtr->fileNum != hdrPtr->fileID.minor) {
+	printf("FsioVerifyBlockWrite: block being written to wrong file\n");
+	printf("	Logical block %d block's file %d owning file %d \"%s\"\n",
+	    blockPtr->blockNum, blockPtr->fileNum,
+	    hdrPtr->fileID.minor, Fsutil_HandleName(hdrPtr));
+	return(FS_INVALID_ARG);
+    }
+    status = Fsdm_GetFirstIndex(hdrPtr, blockPtr->blockNum, 
+			     &indexInfo, 0);
+    if (status != SUCCESS) {
+	printf("FsioVerifyBlockWrite: Could not setup indexing\n");
+	return(status);
+    }
+    if (indexInfo.blockAddrPtr == (int *)NIL ||
+	*indexInfo.blockAddrPtr == FSDM_NIL_INDEX) {
+	printf("FsioVerifyBlockWrite: no block index\n");
+	printf("	Logical block %d owning file %d \"%s\"\n",
+	    blockPtr->blockNum, hdrPtr->fileID.minor, Fsutil_HandleName(hdrPtr));
+	status = FS_INVALID_ARG;
+	goto exit;
+    }
+    if (*indexInfo.blockAddrPtr != blockPtr->diskBlock) {
+	printf("FsioVerifyBlockWrite: disk block mismatch\n");
+	printf("	Logical block %d old disk block %d new %d owning file %d \"%s\"\n",
+	    blockPtr->blockNum, *indexInfo.blockAddrPtr,
+	    blockPtr->diskBlock,
+	    hdrPtr->fileID.minor, Fsutil_HandleName(hdrPtr));
+	status = FS_INVALID_ARG;
+	goto exit;
+    }
+
+exit:
+    Fsdm_EndIndex(hdrPtr, &indexInfo, FALSE);
 }
 
 /*
