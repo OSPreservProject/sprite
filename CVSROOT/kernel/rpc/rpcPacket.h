@@ -126,9 +126,11 @@ extern int	rpc_SwappedVersion;
  *	partial re-send may only involve some fragments in the middle
  *	of the message.  This flag set on partial acknowledgments.
  *
- *	RPC_CLOSE only valid on type RPC_ACK messages.  This means the client
- *	has successfully gotten its last reply and is ending the sequence
- *	of RPCs with the server.
+ *	RPC_CLOSE only valid on type RPC_ACK messages.  This means the server
+ *	is requesting acknowledgement of its last reply so it can reassign
+ *	the server process to an active client channel.  When combined with
+ *	RPC_SERVER, this means the client has successfully gotten its
+ *	last reply.
  *
  *	RPC_ERROR indicates the service routine had an error, in this
  *	case the command field contains an error code.
