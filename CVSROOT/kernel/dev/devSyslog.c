@@ -15,6 +15,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "dev.h"
 #include "fs.h"
+#include "fsio.h"
 #include "sys.h"
 #include "machMon.h"
 #include "sig.h"
@@ -24,7 +25,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "proc.h"
 #include "timer.h"
 #include "dbg.h"
-#include "user/list.h"
+#include "list.h"
+#include "bstring.h"
 
 /*
  * Definition of mutual exclusion variable.
@@ -65,12 +67,13 @@ static	Boolean	   overflow = FALSE;
  */
 /*ARGSUSED*/
 ReturnStatus
-Dev_SyslogOpen(devicePtr, useFlags, token)
+Dev_SyslogOpen(devicePtr, useFlags, token, flagsPtr)
     Fs_Device *devicePtr;	/* Specifies type and unit number. */
     int useFlags;		/* Flags from the stream.  We only allow
 				 * a single reader at one time. */
     Fs_NotifyToken token;	/* Used for Fs call-back to notify waiting
 				 * processes that the syslog device is ready.*/
+    int *flagsPtr;	        /* OUT: Device IO flags */
 {
     MASTER_LOCK(&syslogMutex);
     Sync_SemRegister(&syslogMutex);
@@ -105,12 +108,13 @@ Dev_SyslogOpen(devicePtr, useFlags, token)
  */
 /*ARGSUSED*/
 ReturnStatus
-Dev_SyslogReopen(devicePtr, refs, writers, token)
+Dev_SyslogReopen(devicePtr, refs, writers, token, flagsPtr)
     Fs_Device *devicePtr;	/* Specifies type and unit number. */
     int refs;			/* Number of existing opens */
     int writers;		/* Number of existing writers */
     Fs_NotifyToken token;	/* Used for Fs call-back to notify waiting
 				 * processes that the console device is ready.*/
+    int *flagsPtr;	        /* OUT: Device IO flags */
 {
     int useFlags;
 
@@ -126,7 +130,7 @@ Dev_SyslogReopen(devicePtr, refs, writers, token)
     } else {
 	return(DEV_BUSY);
     }
-    return( Dev_SyslogOpen(devicePtr, useFlags, token) );
+    return( Dev_SyslogOpen(devicePtr, useFlags, token, (int *) NIL) );
 }
 
 
