@@ -78,22 +78,18 @@ Sched_MoveInQueue(procPtr)
     register	Proc_ControlBlock *procPtr;	/* pointer to process to 
 						   move/insert */
 {
-    register Proc_ControlBlock 	*curProcPtr;		/* Pointer to currently
-							 * running process */
-    register List_Links		*followingItemPtr;	/* Pointer to item that
-							 * will follow one being
-						         * moved/inserted */
-    register Proc_ControlBlock 	*itemProcPtr;		/* Pointer to 
-							 * corresponding process
-						   	 * table entry */
-    Boolean 			insert = TRUE;		/* TRUE if process is 
-							 * to be inserted */
-    Boolean 			foundInsertPoint = FALSE;/* TRUE once we know 
-							  * where to insert */
+    register Proc_ControlBlock 	*curProcPtr;
+    register Proc_ControlBlock 	*itemProcPtr;
+    register List_Links		*queuePtr;
+    List_Links			*followingItemPtr;
+    Boolean 			insert;
+    Boolean 			foundInsertPoint;
     ReturnStatus 		status;
 
-    if (!sched_Mutex) {
-	Sys_Panic(SYS_FATAL, "Sched_MoveInQueue: master lock not held.\n");
+    if (procPtr->schedFlags & SCHED_CLEAR_USAGE) {
+	procPtr->recentUsage = 0;
+	procPtr->weightedUsage = 0;
+	procPtr->unweightedUsage = 0;
     }
 
     /*
@@ -109,13 +105,6 @@ Sched_MoveInQueue(procPtr)
      *      current process switches the next time it comes into the
      *      trap handler.
      */
-
-    if (procPtr->schedFlags & SCHED_CLEAR_USAGE) {
-	procPtr->recentUsage = 0;
-	procPtr->weightedUsage = 0;
-	procPtr->unweightedUsage = 0;
-    }
-
     curProcPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
     if ((curProcPtr != (Proc_ControlBlock *) NIL) &&
 	    (procPtr->weightedUsage < curProcPtr->weightedUsage)) {
@@ -125,6 +114,22 @@ Sched_MoveInQueue(procPtr)
 	curProcPtr->schedFlags |= SCHED_CONTEXT_SWITCH_PENDING;
     }
 
+    queuePtr = schedReadyQueueHdrPtr;
+    if (List_IsEmpty(queuePtr)) {
+	/*
+	 * If the list is empty then put this process into the queue and
+	 * return.  No need to search an empty list.
+	 */
+	queuePtr->nextPtr = (List_Links *)procPtr;
+	queuePtr->prevPtr = (List_Links *)procPtr;
+	((List_Links *)(procPtr))->nextPtr = queuePtr;
+	((List_Links *)(procPtr))->prevPtr = queuePtr;
+	/*
+	List_Insert((List_Links *) procPtr, LIST_ATREAR(queuePtr));
+	*/
+	sched_Instrument.numReadyProcesses = 1;
+	return;
+    }
     /*
      * Loop through all elements in the run queue.  Search for the first
      * process with a weighted usage greater than the process being inserted.
@@ -140,7 +145,9 @@ Sched_MoveInQueue(procPtr)
      * has been determined, exit the loop.
      */
 
-    LIST_FORALL(schedReadyQueueHdrPtr, (List_Links *) itemProcPtr) {
+    insert = TRUE;
+    foundInsertPoint = FALSE;
+    LIST_FORALL(queuePtr, (List_Links *) itemProcPtr) {
 	if (itemProcPtr == procPtr) {
 	    insert = FALSE;
 	}
@@ -173,50 +180,129 @@ Sched_MoveInQueue(procPtr)
 	/*
 	 * Process goes at end of queue.
 	 */
-	List_Insert((List_Links *) procPtr,
-			     LIST_ATREAR(schedReadyQueueHdrPtr));
+	List_Insert((List_Links *) procPtr, LIST_ATREAR(queuePtr));
     }
 }
+
 
 
 /*
  * ----------------------------------------------------------------------------
  *
- * Sched_GetRunnableProcess --
+ * Sched_InsertInQueue --
  *
- *	Return a pointer to the process table entry for the READY process with
- *	the least weighted usage.
- *
- *	The queue is already sorted by weighted usage, so take the first
- *	ready process in the queue.
+ *	Given a pointer to a process, move it in the run queue (or insert
+ *	it if it is not already there) based on its current weighted usage.
+ *	If the process is of higher priority than the current process,
+ *	flag the current process as having a pending context switch.
  *
  * Results:
- *	Pointer to runnable process.
+ *	None.
  *
  * Side effects:
- *	Process is removed from the ready queue, and the global count of the
- *	number of ready processes is decremented.
+ *	Process is moved within or added to the run queue.  If the process
+ *	is added, the global count of the number of ready processes is
+ *	incremented.
  *
  * ----------------------------------------------------------------------------
  */
 
 INTERNAL Proc_ControlBlock *
-Sched_GetRunnableProcess()
+Sched_InsertInQueue(procPtr, returnProc)
+    register Proc_ControlBlock	*procPtr;	/* pointer to process to 
+						   move/insert */
+    Boolean			returnProc;	/* TRUE => return a runnable
+						 * 	   process if there is
+						 *	   one. */
 {
-    register Proc_ControlBlock	*procPtr; 	/* Pointer to corresponding 
-						 * process table entry */
-    register List_Links		*queuePtr;	/* Pointer to sched ready 
-						 * queue. */
+    register Proc_ControlBlock 	*itemProcPtr;
+    register List_Links		*queuePtr;
+
+    if (procPtr->schedFlags & SCHED_CLEAR_USAGE) {
+	procPtr->recentUsage = 0;
+	procPtr->weightedUsage = 0;
+	procPtr->unweightedUsage = 0;
+    }
+
+    /*
+     * Compare the process's weighted usage to the usage of the currently
+     * running process.  If the new process has higher priority (lower
+     * usage), then force the current process to context switch.  There
+     * are two cases:
+     *	(1) We are being called at interrupt level, in which case if the
+     *      current process was in user mode it is safe (and necessary)
+     *	    to set sched_DoContextSwitch directly.  This is because
+     *	    the interrupt handler doesn't deal with the schedFlags.
+     *  (2) Otherwise, the best thing we can do is to make sure the
+     *      current process switches the next time it comes into the
+     *      trap handler.
+     */
+    itemProcPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+    if ((itemProcPtr != (Proc_ControlBlock *) NIL) &&
+	    (procPtr->weightedUsage < itemProcPtr->weightedUsage)) {
+	if (sys_AtInterruptLevel && !sys_KernelMode) {
+	    sched_DoContextSwitch = TRUE;
+	} 
+	itemProcPtr->schedFlags |= SCHED_CONTEXT_SWITCH_PENDING;
+    }
 
     queuePtr = schedReadyQueueHdrPtr;
-    if (List_IsEmpty(queuePtr)) {
-	return((Proc_ControlBlock *) NIL);
+    /*
+     * Loop through all elements in the run queue.  Search for the first
+     * process with a weighted usage greater than the process being inserted.
+     */
+    LIST_FORALL(queuePtr, (List_Links *) itemProcPtr) {
+	if (procPtr->weightedUsage < itemProcPtr->weightedUsage) {
+	    break;
+	}
     }
-    procPtr = (Proc_ControlBlock *) List_First(queuePtr);
-    if (procPtr->state != PROC_READY) {
-	Sys_Panic(SYS_FATAL, "Non-ready process found in ready queue.\n");
+    itemProcPtr = (Proc_ControlBlock *)LIST_BEFORE(itemProcPtr);
+    if (returnProc) {
+	/*
+	 * We are supposed to return the next process to run.
+	 */
+	if (List_IsEmpty(queuePtr) || (List_Links *)itemProcPtr == queuePtr) {
+	    /*
+	     * We are the only process or we are being inserted at the front
+	     * of the queue so return ourselves.
+	     */
+	    return(procPtr);
+	} else {
+	    /*
+	     * Insert the current process in the queue and return the first 
+	     * process on the queue.
+	     */
+	/*
+	    List_Insert((List_Links *) procPtr, itemProcPtr);
+	*/
+	    ((List_Links *)procPtr)->nextPtr = 
+					((List_Links *)itemProcPtr)->nextPtr;
+	    ((List_Links *)procPtr)->prevPtr = 
+					((List_Links *)itemProcPtr);
+	    ((List_Links *)itemProcPtr)->nextPtr->prevPtr = 
+					((List_Links *)procPtr);
+	    ((List_Links *)itemProcPtr)->nextPtr =
+					((List_Links *)procPtr);
+	    procPtr = (Proc_ControlBlock *)List_First(queuePtr);
+	/*
+	    List_Remove((List_Links *)procPtr);
+	 */
+	    ((List_Links *)procPtr)->prevPtr->nextPtr =
+					    ((List_Links *)procPtr)->nextPtr;
+	    ((List_Links *)procPtr)->nextPtr->prevPtr =
+					    ((List_Links *)procPtr)->prevPtr;
+	    return(procPtr);
+	}
+    } else {
+	sched_Instrument.numReadyProcesses += 1;
+    /*
+	List_Insert((List_Links *) procPtr, itemProcPtr);
+    */
+	((List_Links *)procPtr)->nextPtr = ((List_Links *)itemProcPtr)->nextPtr;
+	((List_Links *)procPtr)->prevPtr = ((List_Links *)itemProcPtr);
+	((List_Links *)itemProcPtr)->nextPtr->prevPtr = ((List_Links *)procPtr);
+	((List_Links *)itemProcPtr)->nextPtr = ((List_Links *)procPtr);
+	return((Proc_ControlBlock *)NIL);
     }
-    List_Remove((List_Links *) procPtr);
-    sched_Instrument.numReadyProcesses -= 1;
-    return(procPtr);
 }
+
