@@ -2133,7 +2133,7 @@ VmMach_NetMapPacket(inScatGathPtr, scatGathLength, outScatGathPtr)
     register Address	endAddr;
     int			segNum;
     int			pageNum = 0;
-#ifdef sun4c
+#ifdef NOTDEF
     /*
      * I need to test out the other code to see if it works on the sun4c, so
      * for the mean-time use the old code for the sun4c.
@@ -2226,7 +2226,7 @@ VmMach_NetMapPacket(inScatGathPtr, scatGathLength, outScatGathPtr)
 	    printf("MapPacket: segNum is %d, pageNum is %d\n", segNum, pageNum);
 	}
     }
-#endif /* sun4c */
+#endif /* NOTDEF */
 }
 
 
@@ -4424,7 +4424,7 @@ void VmMach_SharedProcFinish() {}
 
 /*----------------------------------------------------------------------
  *
- * DevBufferInit --
+ * Dev32BitBufferInit --
  *
  *	Initialize a range of virtual memory to allocate from out of the
  *	device memory space.
@@ -4477,6 +4477,9 @@ Dev32BitDMABufferInit()
 	pmeg = PMEGGet(vm_SysSegPtr, 
 		       (int) ((unsigned)virtAddr >> VMMACH_SEG_SHIFT),
 		       PMEG_DONT_ALLOC);
+	if (pmeg == VMMACH_INV_PMEG) {
+	    panic("Dev32BitDMABufferInit: unable to get a pmeg.\n");
+	}
         VmMachSetSegMap(virtAddr, pmeg);
 	virtAddr += VMMACH_SEG_SIZE;
     }

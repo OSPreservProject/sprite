@@ -120,6 +120,15 @@ DoneCheck:
  * VMMACH_DMA_START_ADDR	The first virtual address that is used for 
  *				DMA buffers by devices.
  * VMMACH_DMA_SIZE		The amount of space devoted to DMA buffers
+ *
+ * VMMACH_32BIT_DMA_START_ADDR	The first address of the 32-bit "user" DVMA
+ *				area in context 0.
+ * VMMACH_32BIT_DMA_SIZE	The size of the 32-bit "user" DVMA area.  This
+ *				should be a multiple of the cache size, for
+ *				alignment purposes, and it should be a multile
+ *				of the segment size, so as not to waste aPpMEG.
+ * VMMACH_VME_ADDR_BIT		The bit that indicates an address is a VME
+ *				bus address.
  * VMMACH_NET_MAP_START		The beginning of space for mapping the Intel
  *				and AMD drivers.
  * VMMACH_NET_MEM_START		The beginning of space for memory for the Intel
@@ -181,7 +190,10 @@ DoneCheck:
 #define VMMACH_DEV_START_ADDR       	0xFFD00000
 #define	VMMACH_DEV_END_ADDR		0xFFEFFFFF
 #define	VMMACH_DMA_START_ADDR		0xFFF00000
-#define	VMMACH_DMA_SIZE			0xC0000		/* still correct? */
+#define	VMMACH_DMA_SIZE			0xC0000
+#define VMMACH_32BIT_DMA_START_ADDR	0x40000
+#define	VMMACH_32BIT_DMA_SIZE		0x800000
+#define	VMMACH_VME_ADDR_BIT		0x80000000
 
 #define	VMMACH_NUM_NET_SEGS		6
 #define VMMACH_NET_MAP_START		(VMMACH_DEV_START_ADDR -	\
