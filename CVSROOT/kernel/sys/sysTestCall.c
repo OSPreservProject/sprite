@@ -74,7 +74,7 @@ Test_PrintOut(args)
 	string++;
 	i++;
     }
-    Sys_SafePrintf((char *) nargs[0].arg, nargs[1].arg, nargs[2].arg,
+    printf((char *) nargs[0].arg, nargs[1].arg, nargs[2].arg,
 	    nargs[3].arg, nargs[4].arg, nargs[5].arg, nargs[6].arg,
 	    nargs[7].arg, nargs[8].arg, nargs[9].arg);
     for (i = 0; i < SYS_MAX_ARGS; i++) {
@@ -117,7 +117,7 @@ Test_GetChar(charPtr)
     char 	*realCharPtr;
     int		numBytes;
 
-    Sys_Printf("Obsolete Test_GetChar() called\n");
+    printf("Obsolete Test_GetChar() called\n");
 
     Vm_MakeAccessible(VM_OVERWRITE_ACCESS, 1, (Address) charPtr,
 		      &numBytes, (Address *) &realCharPtr);
@@ -126,7 +126,7 @@ Test_GetChar(charPtr)
     }
     *realCharPtr = Mach_MonGetNextChar();
 
-    Sys_Printf("%c", *realCharPtr);
+    printf("%c", *realCharPtr);
 
     Vm_MakeUnaccessible((Address) realCharPtr, numBytes);
 

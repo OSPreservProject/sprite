@@ -146,7 +146,7 @@ int *sys_ParamSizes = sys_ParamSizesDecl;
 
 static int ErrorProc()
 {
-    Sys_Panic(SYS_WARNING, "Obsolete system call.\n");
+    printf("Warning: Obsolete system call.\n");
     return(GEN_FAILURE);
 }
 
@@ -515,8 +515,7 @@ SysInitSysCall()
 	entryPtr++;
     }
     if (paramPtr->type != NIL || paramPtr->disposition != NIL) {
-	Sys_Panic(SYS_FATAL,
-		  "SysInitSysCall: error initializing parameter array.\n");
+	panic("SysInitSysCall: error initializing parameter array.\n");
     }
     RESET_NUMCALLS();
 }
