@@ -50,6 +50,23 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsStat.h"
 
 /*
+ * INET is defined so a file server can be used to open the
+ * special device file corresponding to a kernel-based ipServer
+ */
+#define INET
+#ifdef INET
+#include "netInet.h"
+/*
+ * DEV_PLACEHOLDER_2	is defined in devTypesInt.h, which is not exported.
+ *	This is an ugly hack, anyway, so we just define it here.  3/89
+ *	The best solution is to define a new disk file type and not
+ *	use FsDeviceSrvOpen at all.
+ */
+#define DEV_PLACEHOLDER_2	3
+static int sockCounter = 0;
+#endif
+
+/*
  * Parameters for RPC_FS_DEV_OPEN remote procedure call.
  * The return value from this call is a new I/O fileID.
  */
@@ -168,14 +185,43 @@ FsDeviceSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
     if (ioFileIDPtr->serverID == FS_LOCALHOST_ID) {
 	ioFileIDPtr->serverID = clientID;
     }
+    ioFileIDPtr->major = descPtr->devType;
+    ioFileIDPtr->minor = descPtr->devUnit;
+#ifdef INET
+    /*
+     * Hack in support for sockets by mapping a special device type
+     * to sockets.  This needs to be replaced with a new type of disk file.
+     */
+    if (descPtr->devType == DEV_PLACEHOLDER_2) {
+	ioFileIDPtr->major = rpc_SpriteID;
+	ioFileIDPtr->minor = sockCounter++;
+	switch(descPtr->devUnit) {
+	    case NET_IP_PROTOCOL_IP:
+		ioFileIDPtr->type = FS_RAW_IP_STREAM;
+		break;
+	    case NET_IP_PROTOCOL_UDP:
+		ioFileIDPtr->type = FS_UDP_STREAM;
+		break;
+	    case NET_IP_PROTOCOL_TCP:
+		ioFileIDPtr->type = FS_TCP_STREAM;
+		break;
+	    default:
+		ioFileIDPtr->major = descPtr->devType;
+		ioFileIDPtr->minor = descPtr->devUnit;
+		if (ioFileIDPtr->serverID == clientID) {
+		    ioFileIDPtr->type = FS_LCL_DEVICE_STREAM;
+		} else {
+		    ioFileIDPtr->type = FS_RMT_DEVICE_STREAM;
+		}
+		break;
+	}
+    } else
+#endif
     if (ioFileIDPtr->serverID == clientID) {
 	ioFileIDPtr->type = FS_LCL_DEVICE_STREAM;
     } else {
 	ioFileIDPtr->type = FS_RMT_DEVICE_STREAM;
     }
-    ioFileIDPtr->major = descPtr->devType;
-    ioFileIDPtr->minor = descPtr->devUnit;
-
     if (streamIDPtr != (Fs_FileID *)NIL) {
 	/*
 	 * Truely preparing for an open.  Return the current modify
