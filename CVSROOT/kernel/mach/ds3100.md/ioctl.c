@@ -13,6 +13,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "user/sys/ioctl.h"
 #include "user/sys/termios.h"
+#include "user/netEther.h"
 #include "sprite.h"
 #include "compatInt.h"
 #include "user/dev/tty.h"
@@ -406,7 +407,7 @@ MachUNIXIoctl(fd, request, buf)
 	    if (status != SUCCESS) {
 		return(status);
 	    }
-	    
+
 	    if (ifc.ifc_len < 32) {
 		status = SYS_INVALID_ARG;
 		break;
@@ -421,12 +422,46 @@ MachUNIXIoctl(fd, request, buf)
 	    intPtr = (int *)&ifreq.ifr_ifru;
 	    *intPtr = AF_INET;
 	    *(intPtr + 1) = machHostID;
-		
+
 	    status = Vm_CopyOut(sizeof(struct ifconf), (Address)&ifc, buf);
 	    status = Vm_CopyOut(32, (Address)&ifreq,
 				(Address)ifc.ifc_ifcu.ifcu_req);
 	    break;
 	}
+
+
+	case SIOCRPHYSADDR: {
+		/* Get the ethernet address. */
+
+		struct ifdevea *p;
+#if 1
+		Net_EtherAddress etherAddress;
+
+		Mach_GetEtherAddress(&etherAddress);
+		p = (struct ifdevea *) buf;
+		p->default_pa[0] = p->current_pa[0] = etherAddress.byte1;
+		p->default_pa[1] = p->current_pa[1] = etherAddress.byte2;
+		p->default_pa[2] = p->current_pa[2] = etherAddress.byte3;
+		p->default_pa[3] = p->current_pa[3] = etherAddress.byte4;
+		p->default_pa[4] = p->current_pa[4] = etherAddress.byte5;
+		p->default_pa[5] = p->current_pa[5] = etherAddress.byte6;
+#else
+		/*
+		 * Stuff with forgery's ether address for testing
+		 * verilog.
+		 */
+		p = (struct ifdevea *) buf;
+		p->default_pa[0] = p->current_pa[0] = 0x08;
+		p->default_pa[1] = p->current_pa[1] = 0x00;
+		p->default_pa[2] = p->current_pa[2] = 0x2b;
+		p->default_pa[3] = p->current_pa[3] = 0x10;
+		p->default_pa[4] = p->current_pa[4] = 0x75;
+		p->default_pa[5] = p->current_pa[5] = 0x24;
+		status = SUCCESS;
+#endif
+
+	    }
+	    break;
 
 	/*
 	 * Unknown requests:
