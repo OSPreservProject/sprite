@@ -1550,13 +1550,7 @@ Fs_LseekStub(streamID, offset, whence)
     int whence;
 {
     int	status;
-    /* The following nonsense is because the SOSP91 code tacks some
-     * stuff on the end of the Ioc_RepositionArgs.  If we don't have
-     * memory there, it is bad.
-     */
-#define inArgs (*inArgsPtr)
-    char buf[sizeof(Ioc_RepositionArgs)+12];
-    Ioc_RepositionArgs *inArgsPtr = (Ioc_RepositionArgs *)buf;
+    Ioc_RepositionArgs inArgs;
 
     long                retVal;
     int			err;
