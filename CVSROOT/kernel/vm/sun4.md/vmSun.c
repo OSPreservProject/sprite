@@ -343,8 +343,13 @@ VmMach_BootInit(pageSizePtr, pageShiftPtr, pageTableIncPtr, kernMemSizePtr,
     /*
      * Do boot time allocation.
      */
+#ifdef sun4
     sysMachPtr = (VmMach_SegData *)Vm_BootAlloc(sizeof(VmMach_SegData) + 
-						VMMACH_NUM_SEGS_PER_CONTEXT);
+	    (sizeof (short) * VMMACH_NUM_SEGS_PER_CONTEXT));
+#else
+    sysMachPtr = (VmMach_SegData *)Vm_BootAlloc(sizeof(VmMach_SegData) + 
+					    VMMACH_NUM_SEGS_PER_CONTEXT);
+#endif sun4
     numPages = GetNumPages();
     refModMap = (VmMachPTE *)Vm_BootAlloc(sizeof(VmMachPTE) * numPages);
 
@@ -661,8 +666,14 @@ MMUInit(firstFreeSegment)
     for (; i <
 	    ((((unsigned int) mach_KernStart) & VMMACH_ADDR_MASK) >>
 	    VMMACH_SEG_SHIFT); i++) {
-	VmMachSetSegMap((Address)(i << VMMACH_SEG_SHIFT), VMMACH_INV_PMEG);
+	int	j;
+
+	for (j = 0; j < VMMACH_NUM_CONTEXTS; j++) {
+	    VmMachSetUserContext(j);
+	    VmMachSetSegMap((Address)(i << VMMACH_SEG_SHIFT), VMMACH_INV_PMEG);
+	}
     }
+    VmMachSetUserContext(VMMACH_KERN_CONTEXT);
     i = ((unsigned int) mach_KernStart >> VMMACH_SEG_SHIFT);
 #else
     for (; i < ((unsigned int)mach_KernStart >> VMMACH_SEG_SHIFT); i++) {
@@ -702,11 +713,11 @@ MMUInit(firstFreeSegment)
      * the monitor.  Don't reserve any PMEGs that don't have any valid 
      * mappings in them.
      */
-#ifdef sun4
+#ifdef NOTDEF
+    /* I tried using this for sun4, but it's bad. */
     for (; i <= (((unsigned int) 0xffffffff) / VMMACH_SEG_SIZE); i++, segTablePtr++) {
-#else
+#endif NOTDEF
     for (; i < VMMACH_NUM_SEGS_PER_CONTEXT; i++, segTablePtr++) {
-#endif
 	Address		virtAddr;
 	int		j;
 	VmMachPTE	pte;
@@ -736,7 +747,12 @@ MMUInit(firstFreeSegment)
 			inusePMEG = TRUE;
 		    }
 		} else {
+#ifdef sun4
+		    VmMachSetPageMap(virtAddr,
+			    (VmMachPTE)VMMACH_DONT_CACHE_BIT);
+#else
 		    VmMachSetPageMap(virtAddr, (VmMachPTE)0);
+#endif sun4
 		}
 	    }
 	    virtAddr -= VMMACH_SEG_SIZE;
@@ -819,8 +835,15 @@ VmMach_SegInit(segPtr)
     } else {
 	segTableSize = segPtr->ptSize / VMMACH_NUM_PAGES_PER_SEG;
     }
+#ifdef sun4
+    segDataPtr = 
+	(VmMach_SegData *)malloc(sizeof(VmMach_SegData) +
+	(segTableSize * sizeof (short)));
+#else
     segDataPtr = 
 	(VmMach_SegData *)malloc(sizeof(VmMach_SegData) + segTableSize);
+#endif sun4
+
     segDataPtr->numSegs = segTableSize;
     segDataPtr->offset = PageToSeg(segPtr->offset);
 #ifdef sun4
@@ -887,7 +910,8 @@ VmMach_SegExpand(segPtr, firstPage, lastPage)
 	return;
     }
     newSegDataPtr = 
-	(VmMach_SegData *)malloc(sizeof(VmMach_SegData) + newSegTableSize);
+	(VmMach_SegData *)malloc(sizeof(VmMach_SegData) + (newSegTableSize *
+		sizeof (short)));
     newSegDataPtr->numSegs = newSegTableSize;
     newSegDataPtr->offset = PageToSeg(segPtr->offset);
 #ifdef sun4
@@ -1230,7 +1254,17 @@ PMEGGet(softSegPtr, hardSegNum, flags)
     pmegPtr->hardSegNum = hardSegNum;
     pmegPtr->pageCount = 0;
     List_Remove((List_Links *) pmegPtr);
+#ifdef sun4
+    ((List_Links *)pmegPtr)->prevPtr = (List_Links *) NIL;
+    ((List_Links *)pmegPtr)->nextPtr = (List_Links *) NIL;
+#endif sun4
     if (!(flags & PMEG_DONT_ALLOC)) {
+#ifdef sun4
+	if (((List_Links *)pmegPtr)->nextPtr != (List_Links *) NIL ||
+		((List_Links *)pmegPtr)->prevPtr != (List_Links *) NIL) {
+	    panic("PMEGGet: insertion of pmeg without NIL ptrs.\n");
+	}
+#endif sun4
 	List_Insert((List_Links *) pmegPtr, LIST_ATREAR(pmegInuseList));
     }
     pmegPtr->flags = flags;
@@ -1272,18 +1306,34 @@ PMEGFree(pmegNum)
 	VmMachPMEGZero(pmegNum);
     }
     pmegPtr->segPtr = (Vm_Segment *) NIL;
-#ifdef sun4
+    /*
+     * I really don't understand the code here.  The original was the second
+     * line.  The first line was to try to fix an error that shows up in
+     * UnmapIntelPage(), but I've tried now to fix that error there, since the
+     * second line breaks things elsewhere.
+     */
+#ifndef sun4
     if (pmegPtr->pageCount == 0 && !(pmegPtr->flags & PMEG_DONT_ALLOC)) {
 #else
     if (pmegPtr->pageCount == 0 || !(pmegPtr->flags & PMEG_DONT_ALLOC)) {
 #endif /* sun4 */
 	List_Remove((List_Links *) pmegPtr);
+#ifdef sun4
+	((List_Links *)pmegPtr)->prevPtr = (List_Links *) NIL;
+	((List_Links *)pmegPtr)->nextPtr = (List_Links *) NIL;
+#endif sun4
     }
     pmegPtr->flags = 0;
     pmegPtr->lockCount = 0;
     /*
      * Put this pmeg at the front of the pmeg free list.
      */
+#ifdef sun4
+    if (((List_Links *)pmegPtr)->nextPtr != (List_Links *)NIL ||
+	    ((List_Links *)pmegPtr)->prevPtr != (List_Links *)NIL) {
+	panic("PMEGGet: insertion of pmeg without NIL ptrs.\n");
+    }
+#endif sun4
     List_Insert((List_Links *) pmegPtr, LIST_ATFRONT(pmegFreeList));
 }
 
@@ -1665,15 +1715,37 @@ VmMach_UnmapIntelPage(virtAddr)
     Address	virtAddr;
 {
 #if defined(sun2) || defined(sun4)
+    PMEG		*pmegPtr;
+    Boolean	found = FALSE;
+
     if (allocatedPMEG != VMMACH_INV_PMEG) {
 	/*
 	 * Free up the PMEG.
 	 */
+#ifdef sun4
+	VmMachSetPageMap(virtAddr, (VmMachPTE)VMMACH_DONT_CACHE_BIT);
+#else
 	VmMachSetPageMap(virtAddr, (VmMachPTE)0);
+#endif sun4
 	VmMachSetSegMap(virtAddr, VMMACH_INV_PMEG);
 
 	MASTER_LOCK(vmMachMutexPtr);
 
+	/*
+	 * This is a little gross, but for some reason this pmeg has a 0
+	 * page count.  Since it has the PMEG_DONT_ALLOC flag set, it wasn't
+	 * removed from the pmegInuseList in PMEGGet().  So the remove done
+	 * in PMEGFree would remove it twice, unless we check.
+	 */
+	LIST_FORALL(pmegInuseList, (List_Links *)pmegPtr) {
+	    if (pmegPtr == &pmegArray[allocatedPMEG]) {
+		found = TRUE;
+	    }
+	}
+	if (!found) {
+	    pmegPtr = &pmegArray[allocatedPMEG];
+	    List_Insert((List_Links *) pmegPtr, LIST_ATREAR(pmegInuseList));
+	}
 	PMEGFree(allocatedPMEG);
 
 	MASTER_UNLOCK(vmMachMutexPtr);
@@ -1900,7 +1972,10 @@ VmMach_VirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
     Boolean	retVal;
 
 #ifdef sun4
-    VMMACH_ADDR_CHECK(virtAddr);
+    if (!VMMACH_ADDR_CHECK(virtAddr)) {
+	panic("VmMach_VirtAddrParse: virt addr 0x%x falls in illegal range!\n",
+		virtAddr);
+    }
 #endif sun4
     if (virtAddr >= (Address)VMMACH_MAP_SEG_ADDR && 
         virtAddr < (Address)mach_KernStart) {
@@ -2148,7 +2223,7 @@ VmMach_SetSegProt(segPtr, firstPage, lastPage, makeWriteable)
     register	VmMachPTE	pte;
     register	Address		virtAddr;
 #ifdef sun4
-    register	unsigned int	*pmegNumPtr;
+    register	unsigned short	*pmegNumPtr;
 #else
     register	unsigned char	*pmegNumPtr;
 #endif
@@ -2161,7 +2236,7 @@ VmMach_SetSegProt(segPtr, firstPage, lastPage, makeWriteable)
 
     MASTER_LOCK(vmMachMutexPtr);
 
-    pmegNumPtr = (unsigned int *) GetHardSegPtr(segPtr->machPtr, PageToSeg(firstPage)) - 1;
+    pmegNumPtr = (unsigned short *) GetHardSegPtr(segPtr->machPtr, PageToSeg(firstPage)) - 1;
     virtAddr = (Address)(firstPage << VMMACH_PAGE_SHIFT);
     while (firstPage <= lastPage) {
 	if (nextSeg) {
@@ -2205,6 +2280,9 @@ VmMach_SetSegProt(segPtr, firstPage, lastPage, makeWriteable)
 					 sizeof(Vm_TracePTEChange),
 					 (Address)&pteChange, TRUE);
 		    }
+#ifdef sun4
+		    pte |= VMMACH_DONT_CACHE_BIT;
+#endif sun4
 		    VmMachSetPageMap(pageVirtAddr, pte);
 		}
 	    }
@@ -2283,6 +2361,9 @@ VmMach_SetPageProt(virtAddrPtr, softPTE)
 				 sizeof(Vm_TracePTEChange), 
 				 (Address)&pteChange, TRUE);
 	    }
+#ifdef sun4
+	    hardPTE |= VMMACH_DONT_CACHE_BIT;
+#endif sun4
 	    VmMachWritePTE(pmegNum, virtAddr, hardPTE);
 	}
     }
@@ -2479,6 +2560,10 @@ VmMach_ClearRefBit(virtAddrPtr, virtFrameNum)
 				 (Address)&pteChange, TRUE);
 	    }
 	    pte &= ~VMMACH_REFERENCED_BIT;
+#ifdef sun4
+	    pte |= VMMACH_DONT_CACHE_BIT;
+#endif sun4
+
 	    VmMachWritePTE(pmegNum, virtAddr, pte);
 	}
     }
@@ -2538,6 +2623,9 @@ VmMach_ClearModBit(virtAddrPtr, virtFrameNum)
 				(Address)&pteChange, TRUE);
 	    }
 	    pte &= ~VMMACH_MODIFIED_BIT;
+#ifdef sun4
+	    pte |= VMMACH_DONT_CACHE_BIT;
+#endif sun4
 	    VmMachWritePTE(pmegNum, virtAddr, pte);
 	}
     }
@@ -2588,7 +2676,10 @@ VmMach_PageValidate(virtAddrPtr, pte)
     segPtr = virtAddrPtr->segPtr;
     addr = (Address) (virtAddrPtr->page << VMMACH_PAGE_SHIFT);
 #ifdef sun4
-    VMMACH_ADDR_CHECK(addr);
+    if (!VMMACH_ADDR_CHECK(addr)) {
+	panic("VmMach_PageValidate: virt addr 0x%x falls into illegal range!\n",
+		addr);
+    }
 #endif sun4
 
     /*
@@ -2624,6 +2715,10 @@ VmMach_PageValidate(virtAddrPtr, pte)
 	     */
 	    if (pmegPtr->flags & PMEG_DONT_ALLOC) {
 		List_Remove((List_Links *)pmegPtr);
+#ifdef sun4
+		((List_Links *)pmegPtr)->prevPtr = (List_Links *)NIL;
+		((List_Links *)pmegPtr)->nextPtr = (List_Links *)NIL;
+#endif sun4
 	    } else {
 		List_Move((List_Links *)pmegPtr, LIST_ATREAR(pmegInuseList));
 	    }
@@ -2737,7 +2832,10 @@ PageInvalidate(virtAddrPtr, virtPage, segDeletion)
     addr = ((virtAddrPtr->page << VMMACH_PAGE_SHIFT) &
 				VMMACH_PAGE_MASK) + vmMachPTESegAddr;
 #ifdef sun4
-    VMMACH_ADDR_CHECK(addr);
+    if (!VMMACH_ADDR_CHECK(addr)) {
+	panic("PageInvalidate: virt addr 0x%x falls into illegal range!\n",
+		addr);
+    }
 #endif sun4
     hardPTE = VmMachReadPTE(pmegNum, addr);
     if (vm_Tracing) {
@@ -2754,7 +2852,11 @@ PageInvalidate(virtAddrPtr, virtPage, segDeletion)
      * Invalidate the page table entry.
      */
     for (i = 0; i < VMMACH_CLUSTER_SIZE; i++, addr += VMMACH_PAGE_SIZE_INT) {
+#ifdef sun4
+	VmMachWritePTE(pmegNum, addr, (VmMachPTE)VMMACH_DONT_CACHE_BIT);
+#else
 	VmMachWritePTE(pmegNum, addr, (VmMachPTE)0);
+#endif sun4
     }
     pmegPtr = &pmegArray[pmegNum];
     if (hardPTE & VMMACH_RESIDENT_BIT) {
@@ -2768,6 +2870,12 @@ PageInvalidate(virtAddrPtr, virtPage, segDeletion)
 	     * it around in case it is needed again.
 	     */
 	    if (pmegPtr->flags & PMEG_DONT_ALLOC) {
+#ifdef sun4
+		if (((List_Links *)pmegPtr)->nextPtr != (List_Links *)NIL ||
+			((List_Links *)pmegPtr)->prevPtr != (List_Links *)NIL) {
+		    panic("PMEGGet: insertion of pmeg without NIL ptrs.\n");
+		}
+#endif sun4
 		List_Insert((List_Links *)pmegPtr, 
 			    LIST_ATREAR(pmegFreeList));
 	    } else {
