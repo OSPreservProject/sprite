@@ -38,6 +38,8 @@ Boolean vmSwapFileDebug = FALSE;
  */
 Sync_Condition	swapFileCondition;
 
+void	Fs_CacheBlocksUnneeded();
+
 
 /*
  *----------------------------------------------------------------------
@@ -201,8 +203,11 @@ VmPageServerRead(virtAddrPtr, pageFrame)
 
     if (segPtr->type == VM_STACK) {
 	pageToRead = mach_LastUserStackPage - virtAddrPtr->page;
+    } else if (segPtr->type == VM_SHARED) {
+	pageToRead= virtAddrPtr->page - segOffset(virtAddrPtr) +
+		(virtAddrPtr->sharedPtr->fileAddr>>vmPageShift);
     } else {
-	pageToRead = virtAddrPtr->page - segOffset(virtAddrPtr);
+	pageToRead = virtAddrPtr->page - segPtr->offset;
     }
 
     /*
@@ -562,7 +567,7 @@ VmFileServerRead(virtAddrPtr, pageFrame)
      */
     length = vm_PageSize;
     offset = ((virtAddrPtr->page - segPtr->offset) << vmPageShift) + 
-		segPtr->fileAddr;
+	    segPtr->fileAddr;
     if (vmPrefetch || !vmUseFSReadAhead) {
 	/*
 	 * If we are using prefetch then do the reads ourselves.
