@@ -375,68 +375,91 @@ _MachGetVBR:
 _Mach_GetStackPointer:
 	movc usp, d0
 	rts
-
-
-#define	SAVED_REGS 	0xFCFC
-
-|*
-|* ----------------------------------------------------------------------
-|*
-|* Mach_SetJump --
-|*
-|*	Prepare for a non-local goto (i.e. Mach_LongJump).  This saves the
-|*	program counter and all local registers in the given Mach_SetJumpState
-|*	struct.
-|*	
-|*	MachSetJump(setJumpStatePtr)
-|*	    Mach_SetJumpState	*setJumpStatePtr;
-|*
-|* Results:
-|*	None.
-|*
-|* Side effects:
-|*	None.
-|*
-|* ----------------------------------------------------------------------
-|*
-
-	.globl	_Mach_SetJump
-_Mach_SetJump:
-	movl	sp@(4),a0		| Get the address of where to store the 
-					|     registers in a register.
-	movl	_machCurStatePtr, a1	| Get pointer to mach struct in a1 and
-					|     and then store the set jump ptr.
-	movl	a0, a1@(MACH_SET_JUMP_STATE_PTR_OFFSET)
-	moveml	#SAVED_REGS,a0@(4)	| Save registers.
-	movl	sp@,a0@			| Save program counter of caller.
-	clrl	d0			| Return zero
+/*
+ * Routines between MachProbeStart() and MachProbeEnd() will return
+ * FAILURE if a bus error occurs in them.
+ */
+	.even
+	.globl _MachProbeStart
+_MachProbeStart:
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_Probe --
+ *
+ *	Copy a block of memory from one virtual address to another handling
+ *	bus errors that may occur. This	routine is intended to be used to 
+ *	probe for memory mapped devices.
+ *
+ * NOTE: This trap handlers force this routine to return SYS_NO_ACCESS if an
+ *	 bus error occurs.
+ *
+ * Calling sequences:
+ *
+ * ReturnStatus
+ * Mach_Probe(size, srcAddress, destAddress)
+ *    int		size;	 Size in bytes of the read to do. Must
+ *				  1, 2, 4, or 8  
+ *  Address	srcAddress;	 Address to read from. 
+ *  Address	destAddress;	 Address to store the read value. 
+ *	
+ *
+ * Results:
+ *	SUCCESS if the copy worked and  SYS_NO_ACCESS otherwise
+ *
+ * Side effects:
+ *	None.
+ *----------------------------------------------------------------------
+ */
+	.globl _Mach_Probe
+_Mach_Probe:
+	/*
+	 * Move arguments into registers d0 gets size, a1 gets src address
+	 * and a0 gets destAddress.
+	 */
+	movel sp@(12),a0
+	movel sp@(8), a1
+	movel sp@(4),d0
+	/*
+	 * Index based on the size argument to the correct moveb, movew, 
+	 * movel or (simulated moved) instruction. Values other than 1,2,4, or
+	 * 8 
+	 */
+	subql #1,d0
+	moveq #7,d1
+	cmpl d1,d0
+	jhi bad
+	asll #1,d0
+1$:
+	movew pc@(2$-1$-2:b,d0:l),d1
+	clrl d0
+	jmp pc@(2,d1:w)
+2$:
+	.word oneByte-2$
+	.word twoByte-2$
+	.word bad-2$
+	.word fourByte-2$
+	.word bad-2$
+	.word bad-2$
+	.word bad-2$
+	.word eightByte-2$
+oneByte:
+	moveb a1@,a0@
 	rts
-
-|*
-|* ----------------------------------------------------------------------
-|*
-|* Mach_LongJump --
-|*
-|*	Prepare for a non-local goto (i.e. Sys_LongJump).  This saves the
-|*	program counter and all local registers in the given Sys_SetJumpState
-|*	struct.
-|*	
-|* Results:
-|*	None.
-|*
-|* Side effects:
-|*	None.
-|*
-|* ----------------------------------------------------------------------
-|*
-
-	.globl	_Mach_LongJump
-_Mach_LongJump:
-	movl	sp@(4),a0		| Get address of saved state.
-	moveml	a0@(4),#SAVED_REGS	| Restore registers (this causes the 
-					|     stack to be changed).
-	movl	a0@,sp@			| Push the program counter onto the 
-					|     stack.
-	movl	#1,d0			| Return FAILURE.
-	rts	
-
+twoByte:
+	movew a1@,a0@
+	rts
+fourByte:
+	movel a1@,a0@
+	rts
+eightByte:
+	movel a1@,a0@
+	movel a1@(4),a0@(4)
+	rts
+bad:
+	moveq #1,d0
+	rts
+	.globl _MachProbeEnd
+	.even
+_MachProbeEnd:

@@ -3,8 +3,14 @@
  *
  *     Exported structures for the mach module.
  *
- * Copyright (C) 1985 Regents of the University of California
- * All rights reserved.
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
  *
  * $Header$ SPRITE (Berkeley)
  */
@@ -28,13 +34,6 @@ typedef enum {
     MACH_KERNEL
 } Mach_ProcessorStates;
 
-/*
- * Structure for a Mach_SetJump and Mach_LongJump.
- */
-typedef struct Mach_SetJumpState {
-    int		pc;
-    int		regs[12];
-} Mach_SetJumpState;
 
 /*
  * Macros to disable and enable interrupts.
@@ -289,7 +288,11 @@ typedef struct Mach_State {
 						 * context switches. */
     Address		kernStackStart;		/* Address of the beginning of
 						 * the kernel stack. */
-    Mach_SetJumpState	*setJumpStatePtr;	/* Pointer to set jump state.*/
+    int			padding;		/* This used to be a pointer 
+						 * to the set jump state and
+						 * can go away when the tricky
+						 * constants in machConst.h
+						 * are updated. */
     int			sigExcStackSize;	/* Amount of valid data in the
 						 * signal exception stack. */
     Mach_ExcStack	sigExcStack;		/* Place to store sig exception 
@@ -398,8 +401,7 @@ extern void			Mach_InitSyscall();
 extern void			Mach_SetHandler();
 extern int			Mach_GetExcStackSize();
 extern Mach_ProcessorStates	Mach_ProcessorState();
-extern ReturnStatus		Mach_SetJump();
-extern void			Mach_UnsetJump();
+extern ReturnStatus		Mach_Probe();
 extern int			Mach_GetNumProcessors();
 
 /*
