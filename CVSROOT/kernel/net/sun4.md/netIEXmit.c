@@ -97,6 +97,8 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 #define VECTOR_LENGTH	20
     int					borrowedBytes[VECTOR_LENGTH];
     int					*borrowedBytesPtr;
+    char				*tmpBuffer;
+    int					tmpBufSize;
 #if defined(sun3) || defined(sun4) 
     Net_ScatterGather			newScatGathArr[NET_IE_NUM_XMIT_BUFFERS];
 #endif
@@ -129,6 +131,8 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
      */
     borrowedBytesPtr = borrowedBytes;
     *borrowedBytesPtr = 0;
+    tmpBuffer = netIEXmitTempBuffer;
+    tmpBufSize = XMIT_TEMP_BUFSIZE;
     /*
      * Put all of the pieces of the packet into the linked list of xmit
      * buffers.
@@ -156,14 +160,14 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 	 */
 	if ((length < NET_IE_MIN_DMA_SIZE) || ((int)bufAddr & 0x1)) {
 
-	    if (length > XMIT_TEMP_BUFSIZE) {
+	    if (length > tmpBufSize) {
 		netIEState.transmitting = FALSE;
 		ENABLE_INTR();
 
 		panic("IE OutputPacket: Odd addressed buffer too large.");
 		return;
 	    }
-	    bcopy(bufAddr, netIEXmitTempBuffer, length);
+	    bcopy(bufAddr, tmpBuffer, length);
 	    if (length < NET_IE_MIN_DMA_SIZE) {
 		/*
 		 * This element of the scatter/gather vector is too small;
@@ -182,7 +186,7 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 		    }
 		    if (numBorrowedBytes > 0) {
 			bcopy(scatterGatherPtr[1].bufAddr,
-			     &netIEXmitTempBuffer[length], numBorrowedBytes);
+			     &tmpBuffer[length], numBorrowedBytes);
 			borrowedBytesPtr[1] = numBorrowedBytes;
 			length += numBorrowedBytes;
 		    }
@@ -199,7 +203,16 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 	    }
 
 	    NET_IE_ADDR_FROM_SUN_ADDR(
-		 (int) (netIEXmitTempBuffer), (int) (xmitBufDescPtr->bufAddr));
+		 (int) (tmpBuffer), (int) (xmitBufDescPtr->bufAddr));
+	    /*
+	     * Set up tmpBuffer for the next short segment.
+	     */
+	    tmpBuffer += length;
+	    tmpBufSize -= length;
+	    if ((int)tmpBuffer & 0x1) {
+		tmpBuffer++;
+		tmpBufSize--;
+	    }
 	} else {
 	    NET_IE_ADDR_FROM_SUN_ADDR(
 		 (int) (bufAddr), (int) (xmitBufDescPtr->bufAddr));
