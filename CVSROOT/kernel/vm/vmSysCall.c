@@ -714,24 +714,16 @@ Vm_MmapInt(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
 	List_Init((List_Links *)procPtr->vmPtr->sharedSegs);
 	Proc_NeverMigrate(procPtr);
     }
-/*
- * TEMPORARY!!!!
- */
     if (!(share&MAP_FIXED) || startAddr==0) {
-#if 1
-	/*
-	 * Pick an address for the mapping.
-	 */
-	status = VmMach_SharedStartAddr(procPtr, length, &startAddr);
-	if (status != SUCCESS) {
-	    printf("Vm_Mmap: VmMach_SharedStart failure\n");
-	    UNLOCK_SHM_MONITOR;
-	    (void)Fs_Close(filePtr);
-	    return status;
-	}
-#else
-        startAddr = 0x0dddc000;
-#endif
+	status = VmMach_SharedStartAddr(procPtr, length, &startAddr, 0);
+    } else {
+	status = VmMach_SharedStartAddr(procPtr, length, &startAddr, 1);
+    }
+    if (status != SUCCESS) {
+	printf("Vm_Mmap: VmMach_SharedStart failure\n");
+	UNLOCK_SHM_MONITOR;
+	(void)Fs_Close(filePtr);
+	return status;
     }
 
     /*
