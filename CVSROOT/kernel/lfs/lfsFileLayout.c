@@ -935,7 +935,9 @@ LfsFileLayoutCleanVerify(segPtr)
 			"Bad file number in descriptor block.\n");
 		    continue;
 		}
-		panic("\"Clean\" segment contains active descriptor\n");
+		for (;;) {
+		    panic("\"Clean\" segment contains active descriptor\n");
+		}
 	    }
 	    if (descCachePtr != (ClientData) NIL) {
 		LfsDescCacheBlockRelease(lfsPtr, descCachePtr, TRUE);
