@@ -112,10 +112,19 @@ Dev_SyslogReopen(devicePtr, refs, writers, token)
     Fs_NotifyToken token;	/* Used for Fs call-back to notify waiting
 				 * processes that the console device is ready.*/
 {
-    int useFlags = FS_READ;
+    int useFlags;
 
-    if (writers) {
-	useFlags |= FS_WRITE;
+    /*
+     * Because there can only be a single reader of dev syslog,
+     * and it is most always a local process, we deny a reopen
+     * for reading.  Unfortuneatly we can't always tell exactly
+     * because 'refs' includes writers.  The whole usage state
+     * needs to be fixed to be 'readers', not 'refs'.
+     */
+    if (refs == writers) {
+	useFlags = FS_WRITE;
+    } else {
+	return(DEV_BUSY);
     }
     return( Dev_SyslogOpen(devicePtr, useFlags, token) );
 }
