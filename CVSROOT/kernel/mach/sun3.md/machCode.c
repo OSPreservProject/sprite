@@ -246,7 +246,7 @@ Exc_Trap(trapStack)
 			Vm_PageIn(trapStack.excStack.tail.addrBusErr.faultAddr);
 		    }
 		    if (status != SUCCESS) {
-			if (procPtr->vmFlags & VM_COPY_IN_PROGRESS) {
+			if (procPtr->vmPtr->vmFlags & VM_COPY_IN_PROGRESS) {
 			    /*
 			     * A Vm_Copy{In,Out} is in progress so return
 			     * an error to the copying process.  The size of the
