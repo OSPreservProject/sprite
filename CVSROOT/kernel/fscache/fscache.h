@@ -52,10 +52,11 @@ typedef struct Fscache_Attributes {
  */
 typedef struct Fscache_IOProcs {
     /*
-     *	FooAllocate(hdrPtr, offset, bytes, blockAddrPtr, newBlockPtr)
+     *	FooAllocate(hdrPtr, offset, bytes, flags, blockAddrPtr, newBlockPtr)
      *		Fs_HandleHeader *hdrPtr;			(File handle)
      *		int		offset;			(Byte offset)
      *		int		bytes;			(Bytes to allocate)
+     *		int		flags;			(FSCACHE_DONT_BLOCK)
      *		int		*blockAddrPtr;		(Returned block number)
      *		Boolean		*newBlockPtr;		(TRUE if new block)
      *	FooBlockRead(hdrPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
@@ -226,20 +227,20 @@ typedef struct Fscache_Block {
 #define	FSCACHE_BLOCK_ON_DIRTY_LIST		0x000002
 #define	FSCACHE_BLOCK_BEING_WRITTEN		0x000004
 #define	FSCACHE_BLOCK_DIRTY			0x000008
-#define	FSCACHE_BLOCK_DELETED		0x000010
-#define	FSCACHE_MOVE_TO_FRONT		0x000020
-#define	FSCACHE_WRITE_BACK_WAIT		0x000040
+#define	FSCACHE_BLOCK_DELETED			0x000010
+#define	FSCACHE_MOVE_TO_FRONT			0x000020
+#define	FSCACHE_WRITE_BACK_WAIT			0x000040
 #define	FSCACHE_BLOCK_WRITE_LOCKED		0x000100
 #define	FSCACHE_BLOCK_NEW			0x000200
-#define	FSCACHE_BLOCK_CLEANER_WAITING	0x000400
+#define	FSCACHE_BLOCK_CLEANER_WAITING		0x000400
 #define	FSCACHE_NOT_MAPPED			0x000800
-#define	FSCACHE_IND_BLOCK		0x001000
-#define	FSCACHE_DESC_BLOCK		0x002000
-#define	FSCACHE_DIR_BLOCK		0x004000
-#define	FSCACHE_DATA_BLOCK		0x008000
+#define	FSCACHE_IND_BLOCK			0x001000
+#define	FSCACHE_DESC_BLOCK			0x002000
+#define	FSCACHE_DIR_BLOCK			0x004000
+#define	FSCACHE_DATA_BLOCK			0x008000
 #define	FSCACHE_READ_AHEAD_BLOCK		0x010000
-#define	FSCACHE_IO_IN_PROGRESS		0x020000
-#define FSCACHE_DONT_BLOCK		0x040000
+#define	FSCACHE_IO_IN_PROGRESS			0x020000
+#define FSCACHE_DONT_BLOCK			0x040000
 #define FSCACHE_PIPE_BLOCK			0x080000
 #define	FSCACHE_WRITE_THRU_BLOCK		0x100000
 
@@ -336,6 +337,7 @@ typedef struct Fscache_ReadAheadInfo {
 extern int fscache_MaxBlockCleaners;
 extern Boolean fscache_RATracing;
 extern int fscache_NumReadAheadBlocks;
+extern List_Links *fscacheFullWaitList;
 
 /* procedures */
 
