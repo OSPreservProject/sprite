@@ -170,7 +170,7 @@ Dev_SCSIInitController(cntrlrPtr)
      * Allocate space for SCSI specific state and
      * initialize the controller itself.
      */
-    scsiPtr = (DevSCSIController *)Mem_Alloc(sizeof(DevSCSIController));
+    scsiPtr = (DevSCSIController *)malloc(sizeof(DevSCSIController));
     scsi[cntrlrPtr->controllerID] = scsiPtr;
     scsiPtr->number = cntrlrPtr->controllerID;
 
@@ -192,7 +192,7 @@ Dev_SCSIInitController(cntrlrPtr)
 				 scsiPtr->number, 0xBABE, regsPtr->dmaCount);
 #endif 
 	    Mach_UnsetJump();
-	    Mem_Free((Address) scsiPtr);
+	    free((Address) scsiPtr);
 	    scsi[cntrlrPtr->controllerID] = (DevSCSIController *)NIL;
 	    return(FALSE);
 	}
@@ -201,7 +201,7 @@ Dev_SCSIInitController(cntrlrPtr)
 	/*
 	 * Got a bus error. Zap the info about the non-existent controller.
 	 */
-	Mem_Free((Address) scsiPtr);
+	free((Address) scsiPtr);
 	scsi[cntrlrPtr->controllerID] = (DevSCSIController *)NIL;
 	return(FALSE);
     }
@@ -337,7 +337,7 @@ Dev_SCSIInitDevice(devConfPtr)
 	return(FALSE);
     }
 
-    devPtr = (DevSCSIDevice *)Mem_Alloc(sizeof(DevSCSIDevice));
+    devPtr = (DevSCSIDevice *)malloc(sizeof(DevSCSIDevice));
     devPtr->scsiPtr = scsiPtr;
     devPtr->subUnitID = 0;
     devPtr->slaveID = devConfPtr->slaveID;
@@ -352,7 +352,7 @@ Dev_SCSIInitDevice(devConfPtr)
 	devPtr->sectorSize = DEV_BYTES_PER_SECTOR;
 	status = DevSCSITest(devPtr);
 	if (status != SUCCESS) {
-	    Mem_Free((Address)devPtr);
+	    free((Address)devPtr);
 	    return(FALSE);
 	}
 	/*
@@ -360,10 +360,10 @@ Dev_SCSIInitDevice(devConfPtr)
 	 */
 	if (scsiDiskIndex >= SCSI_MAX_DISKS) {
 	    printf("SCSI: Too many disks configured\n");
-	    Mem_Free((Address)devPtr);
+	    free((Address)devPtr);
 	    return(FALSE);
 	}
-	diskPtr = (DevSCSIDisk *) Mem_Alloc(sizeof(DevSCSIDisk));
+	diskPtr = (DevSCSIDisk *) malloc(sizeof(DevSCSIDisk));
 	devPtr->data = (ClientData)diskPtr;
 	diskPtr->type = SCSI_SHOEBOX_DISK;
 	scsiDisk[scsiDiskIndex] = devPtr;
@@ -377,13 +377,13 @@ Dev_SCSIInitDevice(devConfPtr)
 	 */
 	if (scsiTapeIndex >= SCSI_MAX_TAPES) {
 	    printf("SCSI: Too many tape drives configured\n");
-	    Mem_Free((Address)devPtr);
+	    free((Address)devPtr);
 	    return(FALSE);
 	}
 	devPtr->type = SCSI_TAPE;
 	devPtr->errorProc = DevSCSITapeError;
 	devPtr->sectorSize = DEV_BYTES_PER_SECTOR;
-	tapePtr = (DevSCSITape *) Mem_Alloc(sizeof(DevSCSITape));
+	tapePtr = (DevSCSITape *) malloc(sizeof(DevSCSITape));
 	devPtr->data = (ClientData)tapePtr;
 	tapePtr->state = SCSI_TAPE_CLOSED;
 	tapePtr->type = SCSI_UNKNOWN;
@@ -401,15 +401,15 @@ Dev_SCSIInitDevice(devConfPtr)
 	devPtr->sectorSize = DEV_BYTES_PER_WORM_SECTOR;
 	status = DevSCSITest(devPtr);
 	if (status != SUCCESS) {
-	    Mem_Free((Address)devPtr);
+	    free((Address)devPtr);
 	    return(FALSE);
 	}
 	if (scsiWormIndex >= SCSI_MAX_WORMS) {
 	    printf("SCSI: Too many worm drives configured\n");
-	    Mem_Free((Address)devPtr);
+	    free((Address)devPtr);
 	    return(FALSE);
 	}
-	wormPtr = (DevSCSIWorm *) Mem_Alloc(sizeof(DevSCSIWorm));
+	wormPtr = (DevSCSIWorm *) malloc(sizeof(DevSCSIWorm));
 	wormPtr->state = SCSI_WORM_CLOSED;
 	devPtr->data = (ClientData)wormPtr;
 	scsiWorm[scsiWormIndex] = devPtr;

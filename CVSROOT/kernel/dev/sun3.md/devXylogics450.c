@@ -115,7 +115,7 @@ Dev_XylogicsInitController(cntrlrPtr)
     /*
      * Allocate and initialize the controller state info.
      */
-    xyPtr = (DevXylogicsController *)Mem_Alloc(sizeof(DevXylogicsController));
+    xyPtr = (DevXylogicsController *)malloc(sizeof(DevXylogicsController));
     xylogics[cntrlrPtr->controllerID] = xyPtr;
     xyPtr->magic = XY_CNTRLR_STATE_MAGIC;
     xyPtr->number = cntrlrPtr->controllerID;
@@ -140,7 +140,7 @@ Dev_XylogicsInitController(cntrlrPtr)
 	regsPtr->addrLow = 'x';
 	if (regsPtr->addrLow != 'x') {
 	    Mach_UnsetJump();
-	    Mem_Free((Address) xyPtr);
+	    free((Address) xyPtr);
 	    xylogics[cntrlrPtr->controllerID] = (DevXylogicsController *)NIL;
 	    return(FALSE);
 	}
@@ -149,7 +149,7 @@ Dev_XylogicsInitController(cntrlrPtr)
 	/*
 	 * Got a bus error. Zap the info about the non-existent controller.
 	 */
-	Mem_Free((Address) xyPtr);
+	free((Address) xyPtr);
 	xylogics[cntrlrPtr->controllerID] = (DevXylogicsController *)NIL;
 	return(FALSE);
     }
@@ -273,7 +273,7 @@ Dev_XylogicsInitDevice(devPtr)
 	printf("Xylogics: To many disks configured\n");
 	return(FALSE);
     }
-    diskPtr = (DevXylogicsDisk *) Mem_Alloc(sizeof(DevXylogicsDisk));
+    diskPtr = (DevXylogicsDisk *) malloc(sizeof(DevXylogicsDisk));
     diskPtr->magic = XY_DISK_STATE_MAGIC;
     diskPtr->xyPtr = xyPtr;
     diskPtr->slaveID = devPtr->slaveID;
@@ -283,7 +283,7 @@ Dev_XylogicsInitDevice(devPtr)
      */
     error = DevXylogicsTest(xyPtr, diskPtr);
     if (error != SUCCESS) {
-	Mem_Free((Address)diskPtr);
+	free((Address)diskPtr);
 	return(FALSE);
     }
     /*
@@ -291,7 +291,7 @@ Dev_XylogicsInitDevice(devPtr)
      * sets the drive type with the controller.
      */
     if (DevXylogicsDoLabel(xyPtr, diskPtr) != SUCCESS) {
-	Mem_Free((Address)diskPtr);
+	free((Address)diskPtr);
 	return(FALSE);
     } else {
 	xyDisk[xyDiskIndex] = diskPtr;
