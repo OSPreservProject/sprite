@@ -45,7 +45,7 @@ typedef struct Mach_SetJumpState {
     if (!Mach_AtInterruptLevel()) { \
 	Mach_DisableIntr(); \
 	if (mach_NumDisableIntrsPtr[0] < 0) { \
-	    Sys_Panic(SYS_FATAL, "Negative interrupt count.\n"); \
+	    panic("Negative interrupt count.\n"); \
 	} \
 	mach_NumDisableIntrsPtr[0]++; \
     }
@@ -53,7 +53,7 @@ typedef struct Mach_SetJumpState {
     if (!Mach_AtInterruptLevel()) { \
 	mach_NumDisableIntrsPtr[0]--; \
 	if (mach_NumDisableIntrsPtr[0] < 0) { \
-	    Sys_Panic(SYS_FATAL, "Negative interrupt count.\n"); \
+	    panic("Negative interrupt count.\n"); \
 	} \
 	if (mach_NumDisableIntrsPtr[0] == 0) { \
 	    Mach_EnableIntr(); \
