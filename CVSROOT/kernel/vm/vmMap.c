@@ -116,11 +116,16 @@ VmRemapPage(addr, pfNum)
     Vm_VirtAddr		virtAddr;
     register Vm_Segment	*segPtr;
 
+   
     LOCK_MONITOR;
 
     segPtr = vm_SysSegPtr;
     virtAddr.segPtr = segPtr;
     virtAddr.page = (unsigned int) (addr) >> vmPageShift;
+    /*
+     * Clean the old page from the cache.
+     */
+    VmMach_FlushPage(&virtAddr);
     ptePtr = VmGetPTEPtr(segPtr, virtAddr.page);
     *ptePtr &= ~VM_PAGE_FRAME_FIELD;
     *ptePtr |= pfNum;
