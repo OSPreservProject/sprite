@@ -431,7 +431,7 @@ AccessBlock(op, lfsPtr, handlePtr, blockNum, blockSize, cacheFlags,
  *	file greater than the given block number.
  *
  * Results:
- *	None.
+ *	SUCCESS if all goes well or some error returned from DiskRead
  *
  * Side effects:
  *	None.
@@ -459,36 +459,38 @@ DeleteIndirectBlock(lfsPtr, handlePtr, virtualBlockNum, diskAddrPtr,
     LfsDiskAddr		diskAddr = *diskAddrPtr;
     Boolean		found;
     ReturnStatus	status = SUCCESS;
+    Boolean		blockInCache;
     int			startElement, cstep, childBlockNum, i;
     LfsDiskAddr	*blockArray;
     /*
      * If this index block hasn't been allocated yet and not in the  
-     * cache we don't need to free anything.
+     * cache we still need to check to see if any of its children
+     * might be in the cache.  
      */
     LFS_STATS_INC(lfsPtr->stats.index.deleteFetchBlock);
+    blockInCache = TRUE;
     Fscache_FetchBlock(&handlePtr->cacheInfo, virtualBlockNum,
        (int)(FSCACHE_IO_IN_PROGRESS|FSCACHE_IND_BLOCK), &cacheBlockPtr,&found);
-    if (!found && LfsIsNilDiskAddr(diskAddr)) {
-	Fscache_UnlockBlock(cacheBlockPtr, (unsigned )0, virtualBlockNum,
-			     FS_BLOCK_SIZE, FSCACHE_DELETE_BLOCK);
-	return SUCCESS;
-    }
-
     if (!found) {
-	/*
-	 * Read it into the cache if it on disk somewhere.
-	 */
-	LFS_STATS_INC(lfsPtr->stats.index.deleteFetchBlockMiss);
-	status = LfsReadBytes(lfsPtr, diskAddr, FS_BLOCK_SIZE, 
-		       cacheBlockPtr->blockAddr);
+	if (LfsIsNilDiskAddr(diskAddr)) {
+	    Fscache_UnlockBlock(cacheBlockPtr, (unsigned )0, virtualBlockNum,
+				 FS_BLOCK_SIZE, FSCACHE_DELETE_BLOCK);
+	    blockInCache = FALSE;
+	} else {
+	    /*
+	     * Read it into the cache if it on disk somewhere.
+	     */
+	    LFS_STATS_INC(lfsPtr->stats.index.deleteFetchBlockMiss);
+	    status = LfsReadBytes(lfsPtr, diskAddr, FS_BLOCK_SIZE, 
+			   cacheBlockPtr->blockAddr);
 #ifdef ERROR_CHECK
-	 LfsCheckRead(lfsPtr, diskAddr, FS_BLOCK_SIZE);
+	     LfsCheckRead(lfsPtr, diskAddr, FS_BLOCK_SIZE);
 #endif
-	 if (status != SUCCESS) {
-	     LfsError(lfsPtr, status, "Can't read indirect block.\n");
-	     return status;
-	 }
-
+	     if (status != SUCCESS) {
+		 LfsError(lfsPtr, status, "Can't read indirect block.\n");
+		 return status;
+	     }
+	}
     }
     /*
      * Compute the starting element of the block to start deleting at.
@@ -501,18 +503,23 @@ DeleteIndirectBlock(lfsPtr, handlePtr, virtualBlockNum, diskAddrPtr,
 	panic("Bad call to DeleteIndirectBlock\n");
     }
     if (step != 1) {
+	static LfsDiskAddr nilAddr;
+	LfsDiskAddr *addrPtr = &nilAddr;
 	cstep = step/FSDM_INDICES_PER_BLOCK;
 	startBlockNum = startBlockNum + startElement * step;
 	childBlockNum = -((FSDM_NUM_INDIRECT_BLOCKS+1)+startElement);
+	LfsSetNilDiskAddr(addrPtr);
 	for (i = startElement; i < FSDM_INDICES_PER_BLOCK; i++) { 
+	    if (blockInCache) { 
+		addrPtr = ((LfsDiskAddr *) cacheBlockPtr->blockAddr) + i;
+	    } 
 	    status = DeleteIndirectBlock(lfsPtr, handlePtr, childBlockNum, 
-				((LfsDiskAddr *) cacheBlockPtr->blockAddr) + i,
-				startBlockNum, lastBlockNum, cstep, 
+				addrPtr, startBlockNum, lastBlockNum, cstep, 
 				lastByteBlock);
 	    startBlockNum += step;
 	    childBlockNum--;
 	}
-    } else { 
+    } else if (blockInCache) {
 	blockArray =  ((LfsDiskAddr *) cacheBlockPtr->blockAddr) + startElement;
 	/*
 	 * Free the last block in the file handling the case that it
@@ -533,16 +540,18 @@ DeleteIndirectBlock(lfsPtr, handlePtr, virtualBlockNum, diskAddrPtr,
 	(void) LfsSegUsageFreeBlocks(lfsPtr, FS_BLOCK_SIZE, 
 			FSDM_INDICES_PER_BLOCK - startElement, blockArray);
     }
-    /*
-     * If we deleted all the indexes in this block we can delete the block.
-     */
-    if (startElement == 0) {
-	Fscache_UnlockBlock(cacheBlockPtr, (unsigned )0, virtualBlockNum,
-			     FS_BLOCK_SIZE, FSCACHE_DELETE_BLOCK);
-	(void) LfsSegUsageFreeBlocks(lfsPtr, FS_BLOCK_SIZE, 1, diskAddrPtr);
-    } else {
-	Fscache_UnlockBlock(cacheBlockPtr, (unsigned )Fsutil_TimeInSeconds(), 
-			virtualBlockNum, FS_BLOCK_SIZE, 0);
+    if (blockInCache) { 
+	/*
+	 * If we deleted all the indexes in this block we can delete the block.
+	 */
+	if (startElement == 0) {
+	    Fscache_UnlockBlock(cacheBlockPtr, (unsigned )0, virtualBlockNum,
+				 FS_BLOCK_SIZE, FSCACHE_DELETE_BLOCK);
+	    (void) LfsSegUsageFreeBlocks(lfsPtr, FS_BLOCK_SIZE, 1, diskAddrPtr);
+	} else {
+	    Fscache_UnlockBlock(cacheBlockPtr,(unsigned)Fsutil_TimeInSeconds(), 
+			    virtualBlockNum, FS_BLOCK_SIZE, 0);
+	}
     }
     return status;
 }
@@ -583,19 +592,23 @@ LfsFile_TruncIndex(lfsPtr, handlePtr, length)
 
 
     /*
-     * Delete any DBL_INDIRECT blocks first.
+     * Delete any DBL_INDIRECT blocks left over from this truncate. This is
+     * necessary only if the old length had double indirect blocks.
      */
-    if (numBlocks < (FSDM_NUM_DIRECT_BLOCKS + FSDM_INDICES_PER_BLOCK +
-		     FSDM_INDICES_PER_BLOCK * FSDM_INDICES_PER_BLOCK)) {
+    if ((numBlocks < (FSDM_NUM_DIRECT_BLOCKS + FSDM_INDICES_PER_BLOCK +
+		     FSDM_INDICES_PER_BLOCK * FSDM_INDICES_PER_BLOCK)) &&
+	(lastByteBlock >= (FSDM_NUM_DIRECT_BLOCKS + FSDM_INDICES_PER_BLOCK))) {
 	status = DeleteIndirectBlock(lfsPtr, handlePtr, -2, 
 			&(descPtr->indirect[1]),
 			FSDM_NUM_DIRECT_BLOCKS + FSDM_INDICES_PER_BLOCK,
 			numBlocks, FSDM_INDICES_PER_BLOCK, lastByteBlock);
     }
     /*
-     * Followed by any INDIRECT blocks.
+     * Followed by any INDIRECT blocks if the old length had
+     * indirect blocks.
      */
-    if (numBlocks < (FSDM_INDICES_PER_BLOCK + FSDM_NUM_DIRECT_BLOCKS)) {
+    if ((numBlocks < (FSDM_INDICES_PER_BLOCK + FSDM_NUM_DIRECT_BLOCKS)) &&
+        (lastByteBlock >= FSDM_NUM_DIRECT_BLOCKS)) {
 	status = DeleteIndirectBlock(lfsPtr, handlePtr, -1, 
 			&(descPtr->indirect[0]),
 			FSDM_NUM_DIRECT_BLOCKS, numBlocks, 1, lastByteBlock);
