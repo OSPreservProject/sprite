@@ -123,7 +123,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "list.h"
 #include "vm.h"
 #include "sys.h"
-#include "sync.h"
 #include "dbg.h"
 #include "machine.h"
 #include "mem.h"
