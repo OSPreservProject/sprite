@@ -87,9 +87,7 @@ extern TraceLog_Header *SOSP91TracePtr;
  * type			Whether it's an FS_FILE, FS_DIRECTORY, etc.
  * consist		Whether a consistency update was performed due to open
  */
-#define	SOSP_ADD_OPEN_TRACE(currentHostID, homeHostID, fileID, streamID, effID,\
-realID, mode, numNowReading, numNowWriting, create, fileSize, modify, type,\
-consist) \
+#define	SOSP_ADD_OPEN_TRACE(currentHostID, homeHostID, fileID, streamID, effID, realID, mode, numNowReading, numNowWriting, create, fileSize, modify, type, consist) \
 {\
 	unsigned int	sospBuffer[21];\
 \
@@ -248,8 +246,7 @@ consist) \
  *			FS_RMT_SHARED is set in the flags.
  * consist		Whether a consistency update was done due to close
  */ 
-#define	SOSP_ADD_CLOSE_TRACE(streamID, currentOffset, fileSize, flags, rwflags,\
-refCount, consist) \
+#define	SOSP_ADD_CLOSE_TRACE(streamID, currentOffset, fileSize, flags, rwflags, refCount, consist) \
 {\
 	unsigned int	sospBuffer[11];\
 \
@@ -373,8 +370,7 @@ refCount, consist) \
  * numNowReading	Number of clients with file open for reading
  * numNowWriting	Number of clients with file open for writing
  */ 
-#define	SOSP_ADD_READ_TRACE(hostID, fileID, streamID, readIt, offset, numBytes,\
-numNowReading, numNowWriting)\
+#define	SOSP_ADD_READ_TRACE(hostID, fileID, streamID, readIt, offset, numBytes, numNowReading, numNowWriting)\
 {\
 	unsigned int	sospBuffer[15];\
 \
