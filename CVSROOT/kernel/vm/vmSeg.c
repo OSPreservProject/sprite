@@ -1858,7 +1858,7 @@ Vm_GetSegInfo(infoPtr, segID, infoSize, segBufPtr)
 					 * Ignored unless previous argument
 					 * is USER_NIL. */
     int			infoSize;	/* Size of segment info structures */
-    Vm_SegmentInfo	*segBufPtr;	/* Where to store segment information.*/
+    Address		segBufPtr;	/* Where to store segment information.*/
 {
     Proc_PCBInfo	pcbInfo;
     Vm_Segment		*minSegAddr, *maxSegAddr, *segPtr;
@@ -1892,7 +1892,7 @@ Vm_GetSegInfo(infoPtr, segID, infoSize, segBufPtr)
 		Proc_Unlock(procPtr);
 	    }
 	}
-	for (i = VM_CODE; i <= VM_STACK; i++,(Address) segBufPtr += infoSize) {
+	for (i = VM_CODE; i <= VM_STACK; i++, segBufPtr += infoSize) {
 	    if (pcbInfo.genFlags & PROC_KERNEL) {
 		segPtr = vm_SysSegPtr;
 		FillSegmentInfo(segPtr, &segmentInfo);
@@ -1915,7 +1915,7 @@ Vm_GetSegInfo(infoPtr, segID, infoSize, segBufPtr)
 		}
 	    }
 	    if (Vm_CopyOut(bytesToCopy, (Address) &segmentInfo, 
-			   (Address)segBufPtr) != SUCCESS) { 
+			   segBufPtr) != SUCCESS) { 
 		return(SYS_ARG_NOACCESS);
 	    }
 	}
@@ -1928,7 +1928,7 @@ Vm_GetSegInfo(infoPtr, segID, infoSize, segBufPtr)
 	}
 	FillSegmentInfo(segPtr, &segmentInfo);
 	if (Vm_CopyOut(bytesToCopy, (Address) &segmentInfo, 
-		       (Address) segBufPtr) != SUCCESS) { 
+		       segBufPtr) != SUCCESS) { 
 	    return(SYS_ARG_NOACCESS);
 	}
     }
