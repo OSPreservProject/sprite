@@ -2069,7 +2069,40 @@ Mach_InitSlaveProcessor()
 
 }
 
-Mach_CheckSpecialHandling() { }
+static ClientData doNothing()
+{
+	return (ClientData) 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_CheckSpecialHandling() --
+ *
+ *	Force the specified processor to check it special handling flag
+ *	of the executing process.
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+Mach_CheckSpecialHandling(processorNum)
+    int	processorNum;	/* Processor number to act on. */
+{ 
+	ReturnStatus status;
+	ClientData   returnValue;
+
+	status = Mach_CallProcessor(processorNum, doNothing, (ClientData) 0,
+				    TRUE, &returnValue);
+	if (status != SUCCESS) {
+		printf(
+	"Warning: Can't perfom check of special handling flag for processor %d",
+		processorNum);
+	}
+}
 
 #ifdef PATCH_IBUFFER
 
