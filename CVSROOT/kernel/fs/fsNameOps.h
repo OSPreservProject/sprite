@@ -1,7 +1,9 @@
 /*
  * fsNameOps.h --
  *
- *	Definitions for pathname related operations.
+ *	Definitions for pathname related operations.  These data structures
+ *	define the file system's naming interface.  This is used internally,
+ *	for network RPCs, and for the interface to pseudo-file-systems.
  *
  * Copyright 1986 Regents of the University of California
  * All rights reserved.
@@ -18,10 +20,16 @@
  * be packaged into a struct so they can be passed through FsLookupOperation()
  * and into the domain specific lookup routine.  The following typedefs
  * are for those arguments and results.
+ *
+ * Pseudo-file-systems:  These structures are also used in the interface
+ *	to pseudo-file-system servers.  See <dev/pfs.h>
  */
 
 /*
- * FS_DOMAIN_OPEN
+ * 	FsOpenArgs are used for the DOMAIN_OPEN, DOMAIN_GET_ATTR,
+ *	DOMAIN_SET_ATTR, DOMAIN_MAKE_DIR and DOMAIN_MAKE_DEVICE operations.
+ *	(Actually, FsMakeDeviceArgs & FsSetAttrArgs embed FsOpenArgs)
+ *
  *	The arguments for open specify the starting point of the lookup,
  *	then the root file of the lookup domain, then other parameters
  *	identifying the client and its intended use of the file.
@@ -29,6 +37,7 @@
  *	The results of the open fileIDs for the I/O server, the name server,
  *	and the top-level stream to the file.  There is also some data that
  *	is specific to the file type
+ *
  */
 
 typedef struct FsOpenArgs {
@@ -39,7 +48,8 @@ typedef struct FsOpenArgs {
     int		permissions;	/* Permission bits for created files.  Already
 				 * reflects per-process permission mask */
     int		type;		/* Used to contrain open to a specific type */
-    int		clientID;	/* Host ID of client doing the open */
+    int		clientID;	/* True Host ID of client doing the open */
+    int		migClientID;	/* Logical host ID if migrated (the home node)*/
     Fs_UserIDs	id;		/* User and group IDs */
 } FsOpenArgs;
 
@@ -55,14 +65,16 @@ typedef struct FsOpenResults {
 } FsOpenResults;
 
 /*
- * FS_DOMAIN_LOOKUP arguments and results.
+ * FsLookupArgs are used for the DOMAIN_REMOVE and DOMAIN_REMOVE_DIR
+ * operations.  Also, Fs2PathParams embeds FsLookupArgs.
  */
 typedef struct FsLookupArgs {
     Fs_FileID prefixID;	/* FileID of the prefix, MUST BE FIRST */
     Fs_FileID rootID;	/* FileID of the root, MUST FOLLOW prefixID */
     int useFlags;	/* FS_EXECUTE or FS_RENAME */
     Fs_UserIDs id;	/* User and group IDs */
-    int clientID;	/* Needed to expand $MACHINE */
+    int clientID;	/* True HostID, needed to expand $MACHINE */
+    int migClientID;	/* Logical host ID if migrated (the home node) */
 } FsLookupArgs;
 
 /*
@@ -97,12 +109,8 @@ typedef struct FsSetAttrArgs {
  * FS_DOMAIN_MAKE_DEVICE arguments and results.
  */
 typedef struct FsMakeDeviceArgs {
-    Fs_FileID prefixID;	/* FileID of the prefix, MUST BE FIRST */
-    Fs_FileID rootID;	/* FileID of the root, MUST BE SECOND */
+    FsOpenArgs open;
     Fs_Device device;
-    int permissions;	/* Permissions already reflect per-process mask */
-    Fs_UserIDs id;
-    int clientID;
 } FsMakeDeviceArgs;
 
 /*
