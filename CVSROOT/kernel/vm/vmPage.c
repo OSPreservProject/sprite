@@ -2611,6 +2611,7 @@ Vm_MapBlock(addr)
     virtAddr.page = (unsigned int) addr >> vmPageShift;
     virtAddr.offset = 0;
     virtAddr.segPtr = vm_SysSegPtr;
+    virtAddr.flags = 0;
     ptePtr = VmGetPTEPtr(vm_SysSegPtr, virtAddr.page);
 
     /*
@@ -2673,6 +2674,7 @@ Vm_UnmapBlock(addr, retOnePage, pageNumPtr)
     virtAddr.page = (unsigned int) addr >> vmPageShift;
     virtAddr.offset = 0;
     virtAddr.segPtr = vm_SysSegPtr;
+    virtAddr.flags = 0;
     ptePtr = VmGetPTEPtr(vm_SysSegPtr, virtAddr.page);
 
     if (retOnePage) {

@@ -431,8 +431,6 @@ Vm_Cmd(command, arg)
 			vmTraceTime, vmTraceStats.traceDrops);
 	    printf("		       Dumps=%d Bytes=%d.\n",
 			vmTraceStats.traceDumps, vmTraceNextByte);
-	    printf("		       PMEGs=%d\n",
-			vmTraceStats.machStats.pmegsChecked);
 	    break;
 	}
 	case VM_SET_WRITEABLE_PAGEOUT:

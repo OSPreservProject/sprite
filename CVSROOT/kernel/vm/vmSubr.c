@@ -242,6 +242,7 @@ Vm_RawAlloc(numBytes)
 
     segPtr = vm_SysSegPtr;
     virtAddr.segPtr = segPtr;
+    virtAddr.flags = 0;
     lastPage = segPtr->numPages + segPtr->offset - 1;
     maxAddr = (Address) ((lastPage + 1) * vm_PageSize - 1);
     ptePtr = VmGetPTEPtr(segPtr, lastPage);
@@ -891,11 +892,18 @@ Vm_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr)
 
     if (toProcPtr->genFlags & PROC_NO_VM) {
 	/*
-	 * The process that we are copying from has already deleted its VM.
+	 * The process that we are copying to has already deleted its VM.
 	 */
 	return(SYS_ARG_NOACCESS);
     }
     fromProcPtr = Proc_GetCurrentProc();
+    if (fromProcPtr->genFlags & PROC_NO_VM) {
+	/*
+	 * The process that we are copying from has already deleted its VM.
+	 */
+	return(SYS_ARG_NOACCESS);
+    }
+
     if (fromProcPtr->genFlags & PROC_KERNEL) {
 #ifdef notdef
 	if (!fromKernel) {
@@ -1049,4 +1057,63 @@ Vm_KernPageFree(pfNum)
     unsigned	int	pfNum;
 {
     VmPageFree(pfNum);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_FlushCode --
+ *
+ *	Flush the code at the given address from the code cache.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+Vm_FlushCode(procPtr, addr, numBytes)
+    Proc_ControlBlock	*procPtr;
+    Address		addr;
+    int			numBytes;
+{
+    Vm_VirtAddr	virtAddr;
+    Vm_PTE	*ptePtr;
+    int		lastPage;
+    int		toFlush;
+
+    LOCK_MONITOR;
+
+    virtAddr.segPtr = procPtr->vmPtr->segPtrArray[VM_CODE];
+    virtAddr.page = (unsigned)addr >> vmPageShift;
+    virtAddr.offset = (unsigned)addr & (vm_PageSize - 1);
+    virtAddr.flags = 0;
+    lastPage = ((unsigned)addr + numBytes - 1) >> vmPageShift;
+    if (virtAddr.page >= virtAddr.segPtr->offset && 
+        lastPage < virtAddr.segPtr->offset + virtAddr.segPtr->numPages) {
+
+	for (ptePtr = VmGetPTEPtr(virtAddr.segPtr, virtAddr.page);
+	     virtAddr.page <= lastPage;
+	     virtAddr.page++, VmIncPTEPtr(ptePtr, 1)) {
+	    toFlush = vm_PageSize - virtAddr.offset;
+	    if (toFlush > numBytes) {
+		toFlush = numBytes;
+	    }
+	    if (*ptePtr & VM_PHYS_RES_BIT) {
+		VmMach_FlushCode(procPtr, &virtAddr, 
+				 *ptePtr & VM_PAGE_FRAME_FIELD, toFlush);
+	    }
+	    numBytes -= toFlush;
+	    virtAddr.offset = 0;
+	}
+    } else {
+	printf("Vm_FlushCode: Bogus code address to flush, addr=%x len=%d\n",
+		addr, numBytes);
+    }
+
+    UNLOCK_MONITOR;
 }

@@ -21,13 +21,11 @@
 #include "vmMach.h"
 #include "vmStat.h"
 #include "fs.h"
-#include "procAOUT.h"
 #include "sync.h"
 #else
 #include <kernel/vmMach.h>
 #include <vmStat.h>
 #include <kernel/fs.h>
-#include <kernel/procAOUT.h>
 #include <kernel/sync.h>
 #endif
 
