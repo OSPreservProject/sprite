@@ -109,6 +109,8 @@ Dev_XylogicsInitController(cntrlrPtr)
     DevXylogicsController *xyPtr;	/* Xylogics specific state */
     register DevXylogicsRegs *regsPtr;	/* Control registers for Xylogics */
     int x;				/* Used when probing the controller */
+    Address buffer;			/* DMA space buffer */
+    int bufSize;			/* Size of buffer */
 
 
     /*
@@ -161,21 +163,17 @@ Dev_XylogicsInitController(cntrlrPtr)
      * the label, and one buffer for reading and writing filesystem
      * blocks.  A physical page is obtained for the IOPB and the label.
      * The label buffer has 8 extra bytes for reading low-level sector info.
-     * The general buffer gets mapped just before a read or write.  Note
-     * that it has to be twice as large as a filesystem block so that an
-     * unaligned block can be mapped into it.
+     * The general buffer gets mapped just before a read or write.
      */
-    xyPtr->IOPBPtr = (DevXylogicsIOPB *)VmMach_DevBufferAlloc(&devIOBuffer,
-					       sizeof(DevXylogicsIOPB));
-    VmMach_GetDevicePage((Address)xyPtr->IOPBPtr);
+    bufSize = sizeof(DevXylogicsIOPB) + DEV_BYTES_PER_SECTOR + 8;
+    buffer = (Address)VmMach_DevBufferAlloc(&devIOBuffer, bufSize);
+    VmMach_GetDevicePage(buffer);
+    xyPtr->IOPBPtr = (DevXylogicsIOPB *)buffer;
+    buffer += sizeof(DevXylogicsIOPB);
+    xyPtr->labelBuffer = buffer;
 
-    xyPtr->labelBuffer = VmMach_DevBufferAlloc(&devIOBuffer,
-					     DEV_BYTES_PER_SECTOR + 8);
-    VmMach_GetDevicePage((Address)xyPtr->labelBuffer);
+    xyPtr->IOBuffer = VmMach_DevBufferAlloc(&devIOBuffer, DEV_MAX_IO_BUF_SIZE);
 
-    xyPtr->IOBuffer = VmMach_DevBufferAlloc(&devIOBuffer,
-					  2 * FS_BLOCK_SIZE);
-    
     /*
      * Initialize synchronization variables and set the controllers
      * state to alive and not busy.
