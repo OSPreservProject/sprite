@@ -62,14 +62,19 @@
  *	are saved first, then interrupts are disabled and an "At Interrupt 
  *	Level" flag is set so the handler can determine that it is running a
  *	interrupt level.  The registers are restored at the end.
+ *	This code assumes that if the interrupt occured in user mode, and if
+ *	the specialHandling flag is set on the way back to user mode, then
+ *	a context switch is desired. Note that schedFlags is not checked.
  *
  *  Algorithm:
  *	Save temporary registers
  *	Determine if interrupt occured while in kernel mode or user mode
  *	Call routine
- *	If a context switch is wanted then
- *	    Set the old status register trace mode bit on.
- *	    Clear the "context switch is wanted" flag.
+ *	if interrupt occured while in user mode.
+ *	    if specialHandling is set for the current process 
+ *    	        Set the old status register trace mode bit on.
+ *	        Clear the specialHandling flag.
+ *	    endif
  *	endif
  *	restore registers
  *		
@@ -90,10 +95,17 @@
 	jsr	routine; \
 	\
 	clrl	_mach_AtInterruptLevel ; \
-	tstl	_sched_DoContextSwitch; \
-	beq 	1$; \
+	tstl	_mach_KernelMode; \
+	bne 	1$; \
 	\
-	clrl	_sched_DoContextSwitch; \
+	movl	_proc_RunningProcesses, a0; \
+	movl	a0@, d1; \
+	addl	_machSpecialHandlingOffset, d1;\
+	movl	d1, a1; \
+	tstl	a1@; \
+	bne	1$; \
+	\
+	clrl	a1@; \
 	movw	sp@(INTR_SR_OFFSET), d0; \
 	orw	#MACH_SR_TRACEMODE, d0; \
 	movw	d0, sp@(INTR_SR_OFFSET); \

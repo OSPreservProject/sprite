@@ -45,6 +45,7 @@ _machLevel6Cnt:	.long	0
 |*
 |* ----------------------------------------------------------------------------
 |*
+	.globl	_proc_RunningProcesses
 
 	.globl	MachSpurious
 MachSpurious:

@@ -57,10 +57,10 @@ Boolean mach_AtInterruptLevel = FALSE;
  * used when expanding $MACHINE in file names.
  */
 
-#ifdef SUN3
+#ifdef sun3
 char *mach_MachineType = "sun3";
 #endif
-#ifdef SUN2
+#ifdef sun2
 char *mach_MachineType = "sun2";
 #endif
 
@@ -153,6 +153,8 @@ int machKcallTableOffset;		/* Byte offset of the kcallTable field
 					 * in a Proc_ControlBlock. */
 int machStatePtrOffset;			/* Byte offset of the machStatePtr
 					 * field in a Proc_ControlBlock. */
+int machSpecialHandlingOffset;		/* Byte offset of the specialHandling
+					 * field in a Proc_ControlBlock. */
 /* 
  * Pointer to the state structure for the current process.
  */
@@ -214,7 +216,7 @@ Mach_Init()
 	protoVecTablePtr++;
     }
 
-#ifdef SUN3
+#ifdef sun3
     /*
      * Initialize the autovector interrupt slots.
      */
@@ -224,8 +226,8 @@ Mach_Init()
 	*vecTablePtr = (int)MachBrkptTrap;
 	vecTablePtr++;
     }
-#endif SUN3
-#ifndef SUN3
+#endif sun3
+#ifndef sun3
     /*
      * Put the vectors at the base of the kernel if are on a Sun-2 only.  On
      * a Sun-3 they can stay where they are.  The vectors on the Sun-2 can
@@ -244,6 +246,8 @@ Mach_Init()
     machMaxSysCall = -1;
     machKcallTableOffset = (int) &((Proc_ControlBlock *) 0)->kcallTable;
     machStatePtrOffset = (int) &((Proc_ControlBlock *) 0)->machStatePtr;
+    machSpecialHandlingOffset = (int) 
+				&((Proc_ControlBlock *) 0)->specialHandling;
 
     /*
      * We start off with interrupts disabled.
@@ -776,7 +780,7 @@ MachTrap(trapStack)
 		 * Check to see if is a parity error.
 		 */
 
-#ifndef SUN3
+#ifndef sun3
 		if (trapStack.busErrorReg.parErrU || trapStack.busErrorReg.parErrL) {
 		    panic("Parity error!!!\n");
 		    return(MACH_KERN_ERROR);
@@ -824,7 +828,7 @@ MachTrap(trapStack)
 		    }
 
 		    protError = 
-#ifdef SUN3
+#ifdef sun3
 				!trapStack.busErrorReg.pageInvalid;
 #else
 				trapStack.busErrorReg.resident;
@@ -912,7 +916,7 @@ MachTrap(trapStack)
 	     * Check for parity error.
 	     */
 
-#ifndef SUN3
+#ifndef sun3
 	    if (trapStack.busErrorReg.parErrU || trapStack.busErrorReg.parErrL) {
 		panic("Parity error!!!\n");
 		return(MACH_KERN_ERROR);
@@ -925,7 +929,7 @@ MachTrap(trapStack)
 	     * error.
 	     */
 	protError =
-#ifdef SUN3
+#ifdef sun3
 		    !trapStack.busErrorReg.pageInvalid;
 #else
 		    trapStack.busErrorReg.resident;
@@ -1411,13 +1415,13 @@ Mach_UnsetJump()
 int
 Mach_GetMachineArch()
 {
-#       ifdef SUN2
+#       ifdef sun2
 	return SYS_SUN2;
-#       endif SUN2
+#       endif sun2
 
-#       ifdef SUN3
+#       ifdef sun3
 	return SYS_SUN3;
-#       endif SUN3
+#       endif sun3
 }
 
 /*
