@@ -995,6 +995,7 @@ MachKernelExceptionHandler(statusReg, causeReg, badVaddr, pc)
     int					cause;
 
     cause = (causeReg & MACH_CR_EXC_CODE) >> MACH_CR_EXC_CODE_SHIFT;
+    machBadVaddr = badVaddr;
 
     /*
      * Process kernel traps.
@@ -1009,7 +1010,6 @@ MachKernelExceptionHandler(statusReg, causeReg, badVaddr, pc)
 	case MACH_EXC_TLB_MOD: {
 	    Boolean	copyInProgress = FALSE;
 
-	    machBadVaddr = badVaddr;
 	    if (statusReg & MACH_SR_INT_ENA_PREV) {
 		/*
 		 * Enable interrupts.
@@ -1052,7 +1052,8 @@ MachKernelExceptionHandler(statusReg, causeReg, badVaddr, pc)
 	}
 
 	case MACH_EXC_ADDR_ERR_LD:
-	    printf("MachKernelExceptionHandler:  Address error on load\n");
+	    printf("MachKernelExceptionHandler: %s: addr: %x PC: %x\n",
+		    "Address error on load", badVaddr, pc);
 	    return(MACH_KERN_ERROR);
 	case MACH_EXC_ADDR_ERR_ST:
 	    printf("MachKernelExceptionHandler:  Address error on store\n");
