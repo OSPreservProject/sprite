@@ -397,10 +397,10 @@ extern	void		Fs_NameHashStats();
 extern	ReturnStatus	Fs_EncapStream();
 extern	ReturnStatus	Fs_DeencapStream();
 extern	int		Fs_GetEncapSize();
+extern	ReturnStatus	Fs_InitiateMigration();
 extern	void		Fs_StreamCopy();
 extern  ReturnStatus    Fs_EncapFileState();
 extern  ReturnStatus    Fs_DeencapFileState();
-extern  void            Fs_ClearFileState();
 
 /*
  * Routines to wakeup readers and writers.

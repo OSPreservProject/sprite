@@ -25,5 +25,13 @@ extern void		Prof_CollectInfo();
 extern ReturnStatus	Prof_Dump();
 extern ReturnStatus	Prof_DumpStub();
 
+/*
+ * Procedures to support process migration.
+ */
+
+extern ReturnStatus	Prof_GetEncapSize();
+extern ReturnStatus	Prof_EncapState();
+extern ReturnStatus	Prof_DeencapState();
+
 #endif /* _PROF */
 

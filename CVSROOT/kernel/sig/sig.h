@@ -84,6 +84,14 @@ extern	void		Sig_Exec();
 extern	void		Sig_ChangeState();
 extern	Boolean		Sig_Handle();
 extern	void		Sig_Return();
+
+/*
+ * Procedures to support process migration.
+ */
+
+extern ReturnStatus	Sig_GetEncapSize();
+extern ReturnStatus	Sig_EncapState();
+extern ReturnStatus	Sig_DeencapState();
 extern	void		Sig_AllowMigration();
 
 #endif _SIG

@@ -261,9 +261,10 @@ extern	Address		Vm_RawAlloc();
 /*
  * Procedures for process migration.
  */
-extern	ReturnStatus	Vm_MigrateSegment();
-extern	ReturnStatus	Vm_FreezeSegments();
-extern	void		Vm_MigSegmentDelete();
+extern	ReturnStatus	Vm_InitiateMigration();
+extern	ReturnStatus	Vm_EncapState();
+extern	ReturnStatus	Vm_DeencapState();
+extern	ReturnStatus	Vm_FinishMigration();
 
 /*
  * Procedure for the file sytem.
