@@ -137,7 +137,11 @@ Proc_NewProc(PC, procType, shareHeap, pidPtr, procName, vforkFlag)
     if (pidPtr != (Proc_PID *) NIL) {
 	*pidPtr		= procPtr->processID;
     }
-    procPtr->parentID 		= parentProcPtr->processID;
+
+	procPtr->parentID 		= parentProcPtr->processID;
+    Prof_Enable(procPtr, parentProcPtr->Prof_Buffer, 
+	procPtr->parentID 		= parentProcPtr->peerProcessID;
+	parentProcPtr->Prof_Scale);
 
     procPtr->processor		= parentProcPtr->processor;
     procPtr->state 		= PROC_READY;
