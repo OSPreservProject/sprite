@@ -91,7 +91,6 @@ static ReturnStatus UpdateState();
 static ReturnStatus ResumeExecution();
 static ReturnStatus KillRemoteCopy();
 static void	    LockAndSwitch();
-static ENTRY void   WakeupCallers();
 
 /*
  * Procedures for statistics gathering
@@ -516,7 +515,7 @@ Proc_MigrateTrap(procPtr)
 		   Stat_GetMsg(status));
 	    procPtr->genFlags &= ~(PROC_MIGRATING|PROC_REMOTE_EXEC_PENDING);
 	    Proc_Unlock(procPtr);
-	    WakeupCallers();
+	    ProcMigWakeupWaiters();
 	    return;
 	}
 	bufSize += infoPtr->size + sizeof(Proc_EncapInfo);
@@ -688,7 +687,7 @@ Proc_MigrateTrap(procPtr)
     }
 
     
-    WakeupCallers();
+    ProcMigWakeupWaiters();
     if (proc_DoTrace && proc_MigDebugLevel > 1) {
 	record.flags = (foreign ? 0 : PROC_MIGTRACE_HOME);
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_MIGTRAP,
@@ -764,7 +763,7 @@ Proc_MigrateTrap(procPtr)
     }
     procPtr->genFlags &= ~(PROC_MIGRATING|PROC_REMOTE_EXEC_PENDING|
 			   PROC_MIG_ERROR);
-    WakeupCallers();
+    ProcMigWakeupWaiters();
     if (proc_DoTrace && proc_MigDebugLevel > 0 && !foreign) {
 	record.processID = pid;
 	record.flags = PROC_MIGTRACE_HOME;
@@ -813,6 +812,8 @@ ProcMigReceiveProcess(cmdPtr, procPtr, inBufPtr, outBufPtr)
     Proc_EncapInfo *infoPtr;
 
     Proc_Lock(procPtr);
+    procPtr->genFlags = (procPtr->genFlags | PROC_MIGRATING) &
+	~PROC_MIGRATION_DONE;
 
     /*
      * Update statistics.
@@ -879,6 +880,7 @@ ProcMigReceiveProcess(cmdPtr, procPtr, inBufPtr, outBufPtr)
 	bufPtr += infoPtr->size;
     }
 
+    procPtr->genFlags &= ~PROC_MIGRATING;
     Proc_Unlock(procPtr);
 
     return(status);
@@ -1190,7 +1192,7 @@ DeencapProcState(procPtr, infoPtr, bufPtr)
 	procPtr->genFlags |= PROC_FOREIGN;
 	procPtr->kcallTable = mach_MigratedHandlers;
     }
-    procPtr->genFlags &= ~(PROC_MIG_PENDING | PROC_MIGRATING);
+    procPtr->genFlags &= ~PROC_MIG_PENDING;
     procPtr->schedFlags &=
 	~(SCHED_STACK_IN_USE | SCHED_CONTEXT_SWITCH_PENDING);
 
@@ -1910,7 +1912,7 @@ Proc_MigResetStats()
 /*
  *----------------------------------------------------------------------
  *
- * WakeupCallers --
+ * ProcMigWakeupWaiters --
  *
  *	Monitored procedure to signal any processes that may have waited for
  *	a process to migrate.
@@ -1923,8 +1925,8 @@ Proc_MigResetStats()
  *
  *----------------------------------------------------------------------
  */
-static ENTRY void
-WakeupCallers()
+ENTRY void
+ProcMigWakeupWaiters()
 {
 
     LOCK_MONITOR;
