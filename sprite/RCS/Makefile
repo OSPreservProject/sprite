@@ -325,5 +325,5 @@ rcsinfo:
 	cd ../utils; rcsinfo
 	cd ../vm; rcsinfo
 
-mainHook.o: ${H}/proc.h ${H}/fs.h ${H}/mem.h
+mainHook.o: ${H}/proc.h ${H}/fs.h
 # DO NOT DELETE THIS LINE -- make depend depends on it.
