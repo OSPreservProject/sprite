@@ -1382,7 +1382,7 @@ Fsio_FileIOControl(streamPtr, ioctlPtr, replyPtr)
 		    int fmtStatus;
 		    int size;
 		    size = ioctlPtr->inBufSize;
-		    fmtStatus = Fmt_Convert("w", ioctlPtr->format, &size, 
+		    fmtStatus = Fmt_Convert("w3", ioctlPtr->format, &size, 
 				    ioctlPtr->inBuffer, mach_Format, &size,
 				    (Address) &writeBack);
 		    if (fmtStatus != 0) {
