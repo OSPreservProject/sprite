@@ -396,7 +396,7 @@ ProcDecEnvironRefCount(environPtr)
 /*
  * ----------------------------------------------------------------------------
  *
- * Proc_SetEnviron --
+ * Proc_SetEnvironStub --
  *
  *	Add the given environment variable to the current process's 
  *	environment.
@@ -411,7 +411,7 @@ ProcDecEnvironRefCount(environPtr)
  */
 
 ENTRY ReturnStatus
-Proc_SetEnviron(environVar)
+Proc_SetEnvironStub(environVar)
     Proc_EnvironVar	environVar;	/* Variable to add to environment. */
 {
     register	ProcEnvironVar	*varPtr;
@@ -489,7 +489,7 @@ Proc_SetEnviron(environVar)
 /*
  * ----------------------------------------------------------------------------
  *
- * Proc_UnsetEnviron --
+ * Proc_UnsetEnvironStub --
  *
  *	Remove the given environment variable from the current process's 
  *	environment.
@@ -505,7 +505,7 @@ Proc_SetEnviron(environVar)
  */
 
 ENTRY ReturnStatus
-Proc_UnsetEnviron(environVar)
+Proc_UnsetEnvironStub(environVar)
     Proc_EnvironVar	environVar;	/* Variable to remove. */
 {
     register	ProcEnvironVar	*varPtr;
@@ -563,7 +563,7 @@ Proc_UnsetEnviron(environVar)
 /*
  * ----------------------------------------------------------------------------
  *
- * Proc_GetEnvironVar --
+ * Proc_GetEnvironVarStub --
  *
  *	Return the value of the given environment variable in the current 
  *	process's environment.
@@ -580,7 +580,7 @@ Proc_UnsetEnviron(environVar)
  */
 
 ReturnStatus
-Proc_GetEnvironVar(environVar)
+Proc_GetEnvironVarStub(environVar)
     Proc_EnvironVar	environVar;	/* Variable to retrieve. */
 {
     register	ProcEnvironVar	*varPtr;
@@ -636,7 +636,7 @@ Proc_GetEnvironVar(environVar)
 /*
  * ----------------------------------------------------------------------------
  *
- * Proc_GetEnvironRange --
+ * Proc_GetEnvironRangeStub --
  *
  *	Return as many environment variables as possible in the given range.  
  *	Variables are numbered from 0.  The actual number of environment 
@@ -653,7 +653,7 @@ Proc_GetEnvironVar(environVar)
  */
 
 ENTRY ReturnStatus
-Proc_GetEnvironRange(first, last, envArray, numActualVarsPtr)
+Proc_GetEnvironRangeStub(first, last, envArray, numActualVarsPtr)
     int				first;			/* First var to 
 							 * retrieve. */
     int				last;			/* Last var to 
@@ -759,7 +759,7 @@ Proc_GetEnvironRange(first, last, envArray, numActualVarsPtr)
 /*
  * ----------------------------------------------------------------------------
  *
- * Proc_CopyEnviron --
+ * Proc_CopyEnvironStub --
  *
  *	Give the current process its own copy of the environment.
  *
@@ -773,7 +773,7 @@ Proc_GetEnvironRange(first, last, envArray, numActualVarsPtr)
  */
 
 ENTRY ReturnStatus
-Proc_CopyEnviron()
+Proc_CopyEnvironStub()
 {
     register	Proc_EnvironInfo	*newEnvironPtr;
     register	Proc_ControlBlock	*procPtr;
@@ -807,7 +807,7 @@ Proc_CopyEnviron()
 /*
  * ----------------------------------------------------------------------------
  *
- * Proc_InstallEnviron --
+ * Proc_InstallEnvironStub --
  *
  *	Install the given environment as the environment of the current
  *	process.
@@ -822,7 +822,7 @@ Proc_CopyEnviron()
  */
 
 ENTRY ReturnStatus
-Proc_InstallEnviron(environ, numVars)
+Proc_InstallEnvironStub(environ, numVars)
     Proc_EnvironVar	environ[];	/* Environment to install. */
     int			numVars;	/* Number of variables in the
 					 * environment. */
