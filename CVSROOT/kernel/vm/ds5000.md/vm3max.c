@@ -168,6 +168,11 @@ static Boolean			userMapped = FALSE;
 static Proc_ControlBlock	*mappedProcPtr = (Proc_ControlBlock *)NIL;
 
 /*
+ * Flag to allow the debugger to access IO space (below the heap.
+ */
+
+Boolean vmAllowIOAccess = FALSE;
+/*
  * Forward declarations.
  */
 static int GetNumPages _ARGS_((void));
@@ -1683,7 +1688,6 @@ VmMach_MakeDebugAccessible(addr)
     unsigned	addr;
 {
     unsigned virtPage, lowEntry, highEntry;
-    static int allowIOSpace = FALSE;
 
     if (addr < (unsigned)VMMACH_VIRT_CACHED_START) {
 	if (addr < (unsigned)VMMACH_PHYS_UNCACHED_START) {
@@ -1691,27 +1695,23 @@ VmMach_MakeDebugAccessible(addr)
 			vm_NumPhysPages * VMMACH_PAGE_SIZE) &&
 		(addr >= (unsigned)VMMACH_PHYS_CACHED_START)) {
 		return TRUE;
-	    } else {
-		return FALSE;
 	    }
 	} else {
 	    if (addr < (unsigned)VMMACH_PHYS_UNCACHED_START + 
 			vm_NumPhysPages * VMMACH_PAGE_SIZE) {
 		return TRUE;
-	    } else if (allowIOSpace) {
+	    } else if (vmAllowIOAccess) {
 		if ((addr < (unsigned) MACH_IO_SLOT_ADDR(7)) &&
 			    (addr >= (unsigned) MACH_IO_SLOT_ADDR(5))) {
 		    return TRUE;
 		} else if ((addr < (unsigned) MACH_IO_SLOT_ADDR(3)) &&
 			    (addr >= (unsigned) MACH_IO_SLOT_ADDR(0))) {
 		    return TRUE;
-		} else {
-		    return FALSE;
 		}
 	    }
 	}
-    }
-    if (addr > (unsigned)mach_KernEnd) {
+	return FALSE;
+    } else if (addr > (unsigned)mach_KernEnd) {
 	return(FALSE);
     }
     virtPage = addr >> VMMACH_PAGE_SHIFT;
