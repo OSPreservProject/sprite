@@ -276,7 +276,7 @@ Fs_ProcInit()
 	Fs_Attributes	attr;
 	int		argc;
 	char		*argv[10];
-	char		argBuffer[100];
+	char		argBuffer[256];
 	int		i;
 
 	standalone = TRUE;
@@ -289,7 +289,7 @@ Fs_ProcInit()
 		standalone = FALSE;
 	}
 	if (standalone) {
-	    argc = Mach_GetBootArgs(10, 100, argv, argBuffer);
+	    argc = Mach_GetBootArgs(10, 256, argv, argBuffer);
 	    for (i = 0; i < argc; i++) {
 		if (!strcmp(argv[i], "-c")) {
 		    standalone = FALSE;
