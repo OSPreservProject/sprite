@@ -424,7 +424,8 @@ extern	Boolean	fsutil_WBOnLastDirtyBlock;
 /*
  * Filesystem initialization calls.
  */
-extern	void	Fs_Init();
+extern	void	Fs_InitData();
+extern	void	Fs_InitNameSpace();
 extern	void	Fs_ProcInit();
 extern	void	Fs_InheritState();
 extern	void	Fs_CloseState();
