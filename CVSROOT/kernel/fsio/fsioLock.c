@@ -18,14 +18,16 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsutil.h"
-#include "fsioLock.h"
-#include "fsNameOps.h"
-#include "proc.h"
-#include "rpc.h"
-#include "net.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsioLock.h>
+#include <fsNameOps.h>
+#include <proc.h>
+#include <rpc.h>
+#include <net.h>
+
+#include <stdio.h>
 
 Boolean fsio_LockDebug = FALSE;
 
@@ -103,6 +105,7 @@ Fsio_IocLock(lockPtr, ioctlPtr, streamIDPtr)
     register ReturnStatus status = SUCCESS;
     Ioc_LockArgs lockArgs;
 
+    lockArgsPtr = (Ioc_LockArgs *) NIL;
     if (ioctlPtr->format != mach_Format) {
 	int size = sizeof(Ioc_LockArgs);
 	int inSize = ioctlPtr->inBufSize;
