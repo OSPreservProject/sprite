@@ -163,9 +163,9 @@ extern	Address	vmStackEndAddr;
  * Macro to set all page map entries for the given virtual address.
  */
 #define	SET_ALL_PAGE_MAP(virtAddr, pte) { \
-    int	i; \
-    for (i = 0; i < VMMACH_CLUSTER_SIZE; i++) { \
-	VmMachSetPageMap((virtAddr) + i * VMMACH_PAGE_SIZE_INT, (pte) + i); \
+    int	__i; \
+    for (__i = 0; __i < VMMACH_CLUSTER_SIZE; __i++) { \
+	VmMachSetPageMap((virtAddr) + __i * VMMACH_PAGE_SIZE_INT, (pte) + __i); \
     } \
 }
 
@@ -2027,6 +2027,111 @@ VmMachFlushCacheRange(startAddr, endAddr)
     }
     return;
 }
+
+char	bigBuf[VMMACH_PAGE_SIZE_INT * 2];
+ReturnStatus
+VmMachTestCacheFlush()
+{
+    unsigned int	pte1;
+    unsigned int	pte2;
+    unsigned int	savePte1;
+    unsigned int	savePte2;
+    Address	virtAddr1;
+    Address	virtAddr2;
+    unsigned	int	saveValue11, saveValue12, saveValue21, saveValue22;
+    unsigned	int	saveValue3;
+    unsigned	int	endSave3;
+    unsigned	int	endSave11, endSave12, endSave21, endSave22;
+
+
+    /* first addr at first page */
+    virtAddr1 = (Address) bigBuf;
+    /* first addr's pte */
+    pte1 = VmMachGetPageMap(virtAddr1);
+    pte2 = VmMachGetPageMap(virtAddr1 + 254);
+    DEBUG_ADD(0x11111111);
+    DEBUG_ADD(virtAddr1);
+    DEBUG_ADD(pte1);
+    DEBUG_ADD(pte2);
+
+    /* second addr at second page */
+    virtAddr2 = (Address) (bigBuf + VMMACH_PAGE_SIZE_INT);
+    /* save second addr's pte */
+    savePte1 = VmMachGetPageMap(virtAddr2);
+    savePte2 = VmMachGetPageMap(virtAddr2 + 254);
+    DEBUG_ADD(virtAddr2);
+    DEBUG_ADD(savePte2);
+
+    /* flush second page's virtAddrs out of cache */
+    VmMachFlushPage(virtAddr2);
+    VmMachFlushPage(virtAddr2 + 254);
+    /* give second addr the same pte as first */
+    VmMachSetPageMap(virtAddr2, pte1);
+    VmMachSetPageMap(virtAddr2 + 254, pte2);
+
+    /* get current virtAddr1 value */
+    saveValue11 = *virtAddr1;
+    endSave11 = *(virtAddr1 + 254);
+    DEBUG_ADD(saveValue11);
+    DEBUG_ADD(endSave11);
+
+    /* get current virtAddr2 value - after flush, so really from memory */
+    saveValue21 = *virtAddr2;
+    endSave21 = *(virtAddr2 + 254);
+    DEBUG_ADD(endSave21);
+
+    /* flush virtAddr2 from memory again */
+    VmMachFlushPage(virtAddr2);
+    VmMachFlushPage(virtAddr2 + 254);
+
+    /* is something weird?  saveValue12 should equal saveValue11 */
+    saveValue12 = *virtAddr1;
+    endSave12 = *(virtAddr1 + 254);
+    DEBUG_ADD(saveValue12);
+    DEBUG_ADD(endSave12);
+
+    /* give virtAddr1 new value */
+    *virtAddr1 = ~saveValue11;
+    *(virtAddr1 + 254) = ~endSave11;
+    DEBUG_ADD(*virtAddr1);
+    DEBUG_ADD(*(virtAddr1 + 254));
+
+    /* should only be in cache */
+    saveValue3 = *virtAddr2;
+    endSave3 = *(virtAddr2 + 254);
+    if (saveValue3 == ~saveValue11) {
+	return FAILURE;
+    }
+    if (endSave3 == ~endSave11) {
+	return FAILURE;
+    }
+    /* get rid of virtAddr2 again */
+    VmMachFlushPage(virtAddr2);
+    VmMachFlushPage(virtAddr2 + 254);
+
+    /* Now try icky range flush */
+    VmMachFlushCacheRange(virtAddr1, virtAddr1 + 254);
+
+    /* Did it get to memory? */
+    saveValue22 = *virtAddr2;
+    endSave22 = *(virtAddr2 + 254);
+    DEBUG_ADD(saveValue22);
+    DEBUG_ADD(endSave22);
+
+    /* restore pte of second addr */
+    VmMachSetPageMap(virtAddr2, savePte1);
+    VmMachSetPageMap(virtAddr2 + 254, savePte2);
+
+    if (saveValue22 != ~saveValue11) {
+	return FAILURE;
+    }
+    if (endSave22 != ~endSave11) {
+	return FAILURE;
+    }
+    return SUCCESS;
+}
+
+    
 
 void	WriteHardMapSeg();
 
