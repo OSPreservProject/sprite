@@ -207,7 +207,7 @@ FslclLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
     ClientData	logClientData;		/* Client data for directory change
 					 * logging. */
 #ifdef SOSP91
-#define MAX_RECORDS 10
+#define MAX_RECORDS 20
     char buf[SOSP_LOOKUP_OFFSET+MAX_RECORDS*sizeof(Fs_FileID)];
     Fs_FileID *sospTracePtr = (Fs_FileID*)(buf+SOSP_LOOKUP_OFFSET);
     Timer_Ticks startTicks, endTicks;
