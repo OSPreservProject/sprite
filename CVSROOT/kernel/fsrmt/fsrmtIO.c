@@ -215,10 +215,6 @@ Fsrmt_RpcRead(srvToken, clientID, command, storagePtr)
     Rpc_ReplyMem	*replyMemPtr;	/* For call-back to free buffer */
     int			(*callBack)();	/* Call back to clean up after RPC */
     ClientData		clientData;	/* Client data for callBack */
-#ifdef notdef
-    Proc_ControlBlock	*procPtr;
-    Proc_PID		origFamilyID, origPID;
-#endif
 
     paramsPtr = (FsrmtIOParam *)storagePtr->requestParamPtr;
 
@@ -239,17 +235,29 @@ Fsrmt_RpcRead(srvToken, clientID, command, storagePtr)
      */
     if (paramsPtr->streamID.type == FSIO_STREAM &&
 	paramsPtr->streamID.serverID == rpc_SpriteID) {
-	streamPtr = Fsio_StreamClientVerify(&paramsPtr->streamID, clientID);
+	streamPtr = Fsio_StreamClientVerify(&paramsPtr->streamID, hdrPtr,
+		    clientID);
+	if (streamPtr == (Fs_Stream *)NIL) {
+	    printf("Fsrmt_RpcRead no stream <%d> to handle <%d,%d> client %d\n",
+		    paramsPtr->streamID.minor,
+		    paramsPtr->fileID.major, paramsPtr->fileID.minor,
+		    clientID);
+	    Fsutil_HandleRelease(hdrPtr, FALSE);
+	    return( (paramsPtr->streamID.minor < 0) ? GEN_INVALID_ARG
+						    : FS_STALE_HANDLE );
+	} else {
+	    if (paramsPtr->io.flags & FS_RMT_SHARED) {
+		paramsPtr->io.offset = streamPtr->offset;
+	    }
+	    Fsutil_HandleUnlock(streamPtr);
+	}
     } else {
+	/*
+	 * Read from the cache, no stream available.
+	 */
 	streamPtr = (Fs_Stream *)NIL;
     }
 
-    if (streamPtr != (Fs_Stream *)NIL) {
-	if (paramsPtr->io.flags & FS_RMT_SHARED) {
-	    paramsPtr->io.offset = streamPtr->offset;
-	}
-	Fsutil_HandleUnlock(streamPtr);
-    }
     if (hdrPtr->fileID.type == FSIO_LCL_FILE_STREAM &&
 	paramsPtr->io.length == FS_BLOCK_SIZE &&
 	(paramsPtr->io.offset & FS_BLOCK_OFFSET_MASK) == 0) {
@@ -297,7 +305,9 @@ Fsrmt_RpcRead(srvToken, clientID, command, storagePtr)
 	paramsPtr->io.buffer = (Address) malloc(paramsPtr->io.length);
 
 	if (streamPtr == (Fs_Stream *)NIL) {
-	    status = FS_STALE_HANDLE;
+	    printf("Fsrmt_RpcRead, non block-aligned cache read from client %d\n",
+		clientID);
+	    status = GEN_INVALID_ARG;
 	} else {
 	    status = (fsio_StreamOpTable[hdrPtr->fileID.type].read)(streamPtr,
 			    &paramsPtr->io, &paramsPtr->waiter, replyPtr);
@@ -540,27 +550,32 @@ Fsrmt_RpcWrite(srvToken, clientID, command, storagePtr)
 	dummyStream.ioHandlePtr = hdrPtr;
 	streamPtr = &dummyStream;
     } else {
-	streamPtr = Fsio_StreamClientVerify(&paramsPtr->streamID, clientID);
-    }
-    if (streamPtr == (Fs_Stream *)NIL) {
-	status = FS_STALE_HANDLE;
-    } else {
-	if (streamPtr != &dummyStream) {
+	streamPtr = Fsio_StreamClientVerify(&paramsPtr->streamID, hdrPtr,
+		    clientID);
+	if (streamPtr == (Fs_Stream *)NIL) {
+	    printf("Fsrmt_RpcWrite no stream <%d> to handle <%d,%d> client %d\n",
+		    paramsPtr->streamID.minor,
+		    paramsPtr->fileID.major, paramsPtr->fileID.minor,
+		    clientID);
+	    status = (paramsPtr->streamID.minor < 0) ? GEN_INVALID_ARG
+						     : FS_STALE_HANDLE;
+	    goto exit;
+	} else {
+	    if (paramsPtr->io.flags & FS_RMT_SHARED) {
+		paramsPtr->io.offset = streamPtr->offset;
+	    }
 	    Fsutil_HandleUnlock(streamPtr);
 	}
-	if (paramsPtr->io.flags & FS_RMT_SHARED) {
-	    paramsPtr->io.offset = streamPtr->offset;
-	}
-	FSUTIL_TRACE_IO(FSUTIL_TRACE_SRV_WRITE_2, hdrPtr->fileID, paramsPtr->io.offset,
-		    paramsPtr->io.length );
-	paramsPtr->io.buffer = storagePtr->requestDataPtr;
-	status = (fsio_StreamOpTable[hdrPtr->fileID.type].write)(streamPtr,
-		    &paramsPtr->io, &paramsPtr->waiter, replyPtr);
-	if (streamPtr != &dummyStream) {
-	    streamPtr->offset = paramsPtr->io.offset + replyPtr->length;
-	    Fsutil_HandleLock(streamPtr);
-	    Fsutil_HandleRelease(streamPtr, TRUE);
-	}
+    }
+    FSUTIL_TRACE_IO(FSUTIL_TRACE_SRV_WRITE_2, hdrPtr->fileID,
+		paramsPtr->io.offset, paramsPtr->io.length );
+    paramsPtr->io.buffer = storagePtr->requestDataPtr;
+    status = (fsio_StreamOpTable[hdrPtr->fileID.type].write)(streamPtr,
+		&paramsPtr->io, &paramsPtr->waiter, replyPtr);
+    if (streamPtr != &dummyStream) {
+	streamPtr->offset = paramsPtr->io.offset + replyPtr->length;
+	Fsutil_HandleLock(streamPtr);
+	Fsutil_HandleRelease(streamPtr, TRUE);
     }
     if (status == SUCCESS && (paramsPtr->io.flags & FS_LAST_DIRTY_BLOCK)) {
 	/*
@@ -581,9 +596,9 @@ Fsrmt_RpcWrite(srvToken, clientID, command, storagePtr)
 		 * for this file.
 		 */
 		status = Fscache_FileWriteBack(&handlePtr->cacheInfo, 0, 
-					FSCACHE_LAST_BLOCK,
-					FSCACHE_FILE_WB_WAIT | FSCACHE_WRITE_BACK_INDIRECT,
-				        &blocksSkipped);
+			    FSCACHE_LAST_BLOCK,
+			    FSCACHE_FILE_WB_WAIT | FSCACHE_WRITE_BACK_INDIRECT,
+			    &blocksSkipped);
 		if (status != SUCCESS) {
 		    printf("Fsrmt_RpcWrite: write back <%d,%d> \"%s\" err <%x>\n",
 			handlePtr->hdr.fileID.major,
@@ -600,6 +615,7 @@ Fsrmt_RpcWrite(srvToken, clientID, command, storagePtr)
 	    }
 	}
     }
+exit:
     Fsutil_HandleRelease(hdrPtr, FALSE);
 
     storagePtr->replyParamPtr = (Address)replyPtr;
@@ -882,30 +898,22 @@ Fsrmt_RpcIOControl(srvToken, clientID, command, storagePtr)
 
     paramsPtr = (FsrmtIOCParam *)storagePtr->requestParamPtr;
 
-    streamPtr = Fsio_StreamClientVerify(&paramsPtr->streamID, clientID);
-    if (streamPtr == (Fs_Stream *)NIL) {
-	printf( "Fsrmt_RpcIOControl, no stream to %s <%d, %d> for client %d\n",
-		Fsutil_FileTypeToString(paramsPtr->fileID.type),
-		paramsPtr->fileID.major, paramsPtr->fileID.minor, clientID);
-	return(FS_STALE_HANDLE);
-    }
-
     hdrPtr = (*fsio_StreamOpTable[paramsPtr->fileID.type].clientVerify)
 		(&paramsPtr->fileID, clientID, (int *)NIL);
     if (hdrPtr == (Fs_HandleHeader *)NIL) {
-	Fsutil_HandleRelease(streamPtr, TRUE);
+	printf("Fsrmt_RpcIOControl, no handle <%d,%d> client %d\n",
+		paramsPtr->fileID.major, paramsPtr->fileID.minor, clientID);
 	return(FS_STALE_HANDLE);
-    } else if (streamPtr->ioHandlePtr != hdrPtr) {
-	    printf( "Fsrmt_RpcIOControl: Stream/handle mis-match\n");
-	    printf("Stream <%d, %d, %d> => %s I/O <%d, %d, %d>\n",
-		paramsPtr->streamID.serverID, paramsPtr->streamID.major,
+    }
+    streamPtr = Fsio_StreamClientVerify(&paramsPtr->streamID, hdrPtr, clientID);
+    if (streamPtr == (Fs_Stream *)NIL) {
+	printf("Fsrmt_RpcIOControl no stream <%d> to handle <%d,%d> client %d\n",
 		paramsPtr->streamID.minor,
-		Fsutil_FileTypeToString(paramsPtr->fileID.type),
-		paramsPtr->fileID.serverID, paramsPtr->fileID.major,
-		paramsPtr->fileID.minor);
-	    Fsutil_HandleRelease(streamPtr, TRUE);
-	    Fsutil_HandleRelease(hdrPtr, TRUE);
-	    return(FS_STALE_HANDLE);
+		paramsPtr->fileID.major, paramsPtr->fileID.minor,
+		clientID);
+	Fsutil_HandleRelease(hdrPtr, TRUE);
+	return( (paramsPtr->streamID.minor < 0) ? GEN_INVALID_ARG
+						: FS_STALE_HANDLE );
     }
     Fsutil_HandleUnlock(hdrPtr);
 

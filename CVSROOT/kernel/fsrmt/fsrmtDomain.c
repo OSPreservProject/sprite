@@ -676,93 +676,73 @@ Fsrmt_RpcClose(srvToken, clientID, command, storagePtr)
     register	Fs_HandleHeader		*hdrPtr;
     ReturnStatus			status;
     Fs_Stream				dummy;
+    register ClientData clientData;
 
     paramsPtr = (FsRemoteCloseParams *) storagePtr->requestParamPtr;
 
+    hdrPtr = (*fsio_StreamOpTable[paramsPtr->fileID.type].clientVerify)
+		(&paramsPtr->fileID, clientID, (int *)NIL);
+    if (hdrPtr == (Fs_HandleHeader *) NIL) {
+	status = FS_STALE_HANDLE;
+	goto exit;
+    }
     if (paramsPtr->streamID.type == -1) {
 	/*
 	 * This is a close of a prefix handle which doesn't have a stream.
 	 */
-	streamPtr = &dummy;
 	bzero((Address)&dummy, sizeof(Fs_Stream));
+	streamPtr = &dummy;
+	streamPtr->ioHandlePtr = hdrPtr;
     } else {
-	streamPtr = Fsio_StreamClientVerify(&paramsPtr->streamID, clientID);
-    }
-    if (streamPtr == (Fs_Stream *)NIL) {
-	status = FS_STALE_HANDLE;
-    } else {
-
-	hdrPtr = (*fsio_StreamOpTable[paramsPtr->fileID.type].clientVerify)
-		    (&paramsPtr->fileID, clientID, (int *)NIL);
-	dummy.ioHandlePtr = hdrPtr;
-	if (hdrPtr == (Fs_HandleHeader *) NIL) {
-	    status = FS_STALE_HANDLE;
-	} else if (streamPtr->ioHandlePtr != hdrPtr) {
-	    printf("Fsrmt_RpcClose: Stream/handle mis-match from client %d\n",
-		clientID);
-#ifdef notdef
-	    /*
-	     * This print statement wedged mint horribly, 12/5/88.
-	     */
-	    if (streamPtr->ioHandlePtr != (Fs_HandleHeader *)NIL) {
-		register Fs_FileID *fileIDPtr;
-		fileIDPtr = &streamPtr->ioHandlePtr->fileID;
-		printf("My stream <%d> => %s I/O <%d, %d> \"%s\"\n",
+	streamPtr = Fsio_StreamClientVerify(&paramsPtr->streamID, hdrPtr,
+		    clientID);
+	if (streamPtr == (Fs_Stream *)NIL) {
+	    printf("Fsrmt_RpcClose no stream <%d> to handle <%d,%d> client %d\n",
 		    paramsPtr->streamID.minor,
-		    Fsutil_FileTypeToString(fileIDPtr->type),
-		    fileIDPtr->major, fileIDPtr->minor,
-		    Fsutil_HandleName(streamPtr->ioHandlePtr));
-	    } else {
-		printf("My stream <%d> => NIL I/O handle\n",
-		    paramsPtr->streamID.minor);
-	    }
-#else
-	    printf("My stream I/O handlePtr <%x>\n", streamPtr->ioHandlePtr);
-#endif
-	    printf("His stream => %s I/O <%d, %d>\n",
-		Fsutil_FileTypeToString(paramsPtr->fileID.type),
-		paramsPtr->fileID.major, paramsPtr->fileID.minor);
+		    paramsPtr->fileID.major, paramsPtr->fileID.minor,
+		    clientID);
 	    Fsutil_HandleRelease(hdrPtr, TRUE);
-	    status = FS_STALE_HANDLE;
-	} else {
-	    /*
-	     * Call the file type close routine to release the I/O handle
-	     * and clean up.  This call unlocks and decrements the reference
-	     * count on the handle.
-	     */
-	    register ClientData clientData;
-	    FSUTIL_TRACE_HANDLE(FSUTIL_TRACE_CLOSE, hdrPtr);
-	    if (paramsPtr->closeDataSize != 0) {
-		clientData = (ClientData)&paramsPtr->closeData;
-	    } else {
-		clientData = (ClientData)NIL;
-	    }
-	    status = (*fsio_StreamOpTable[hdrPtr->fileID.type].close)
-		    (streamPtr, clientID, paramsPtr->procID,
-		    paramsPtr->flags, paramsPtr->closeDataSize, clientData);
-#ifdef lint
-	    status = Fsio_FileClose(streamPtr, clientID, paramsPtr->procID,
-		    paramsPtr->flags, paramsPtr->closeDataSize, clientData);
-	    status = Fsio_PipeClose(streamPtr, clientID, paramsPtr->procID,
-		    paramsPtr->flags, paramsPtr->closeDataSize, clientData);
-	    status = Fsio_DeviceClose(streamPtr, clientID, paramsPtr->procID,
-		    paramsPtr->flags, paramsPtr->closeDataSize, clientData);
-	    status = FspdevPseudoStreamClose(streamPtr, clientID, paramsPtr->procID,
-		    paramsPtr->flags, paramsPtr->closeDataSize, clientData);
-#endif /* lint */
-	}
-	if (streamPtr != &dummy) {
-	    /*
-	     * Take the client of the stream's list and nuke the server's
-	     * shadow stream if there are no client's left.
-	     */
-	    if (Fsio_StreamClientClose(&streamPtr->clientList, clientID)) {
-		Fsio_StreamDestroy(streamPtr);
-	    } else {
-		Fsutil_HandleRelease(streamPtr, TRUE);
-	    }
+	    status = (paramsPtr->streamID.minor < 0) ? GEN_INVALID_ARG
+						     : FS_STALE_HANDLE ;
+	    goto exit;
 	}
     }
+    /*
+     * Call the file type close routine to release the I/O handle
+     * and clean up.  This call unlocks and decrements the reference
+     * count on the handle.
+     */
+    FSUTIL_TRACE_HANDLE(FSUTIL_TRACE_CLOSE, hdrPtr);
+    if (paramsPtr->closeDataSize != 0) {
+	clientData = (ClientData)&paramsPtr->closeData;
+    } else {
+	clientData = (ClientData)NIL;
+    }
+    status = (*fsio_StreamOpTable[hdrPtr->fileID.type].close)
+	    (streamPtr, clientID, paramsPtr->procID,
+	    paramsPtr->flags, paramsPtr->closeDataSize, clientData);
+#ifdef lint
+    status = Fsio_FileClose(streamPtr, clientID, paramsPtr->procID,
+	    paramsPtr->flags, paramsPtr->closeDataSize, clientData);
+    status = Fsio_PipeClose(streamPtr, clientID, paramsPtr->procID,
+	    paramsPtr->flags, paramsPtr->closeDataSize, clientData);
+    status = Fsio_DeviceClose(streamPtr, clientID, paramsPtr->procID,
+	    paramsPtr->flags, paramsPtr->closeDataSize, clientData);
+    status = FspdevPseudoStreamClose(streamPtr, clientID, paramsPtr->procID,
+	    paramsPtr->flags, paramsPtr->closeDataSize, clientData);
+#endif /* lint */
+    if (streamPtr != &dummy) {
+	/*
+	 * Take the client of the stream's list and nuke the server's
+	 * shadow stream if there are no client's left.
+	 */
+	if (Fsio_StreamClientClose(&streamPtr->clientList, clientID)) {
+	    Fsio_StreamDestroy(streamPtr);
+	} else {
+	    Fsutil_HandleRelease(streamPtr, TRUE);
+	}
+    }
+exit:
     /*
      * Send back the reply.
      */
