@@ -130,4 +130,11 @@
  */
 #define	VMMACH_PAGE_TABLE_INCREMENT	64
 
+/*
+ * Where the three segments start.
+ */
+#define	VMMACH_CODE_SEG_START		0x40000000
+#define	VMMACH_HEAP_SEG_START		0x80000000
+#define	VMMACH_STACK_SEG_START		0xc0000000
+
 #endif _VMSPURCONST
