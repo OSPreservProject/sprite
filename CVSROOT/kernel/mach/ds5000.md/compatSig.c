@@ -12,17 +12,18 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "sprite.h"
+#include <sprite.h>
 
 #ifndef NULL
 #define NULL 0
 #endif
 
-#include "compatInt.h"
-#include "user/sig.h"
-#include "user/sys/signal.h"
-#include "machInt.h"
-#include "mach.h"
+#include <compatInt.h>
+#include <sig.h>
+#include <user/sig.h>
+#include <user/sys/signal.h>
+#include <machInt.h>
+#include <mach.h>
 
 #include "compatSig.h"
 
@@ -121,13 +122,13 @@ Compat_UnixSigMaskToSprite(unixMask, spriteMaskPtr)
 
     *spriteMaskPtr = 0;
     for (i = 1; i <= NSIG; i++) {
-	if (unixMask & (1 << (i - 1))) {
+	if (unixMask & sigmask(i)) {
 	    status = Compat_UnixSignalToSprite(i, &signal);
 	    if (status == FAILURE) {
 		return(FAILURE);
 	    }
 	    if (signal != NULL) {
-		*spriteMaskPtr |= 1 << (signal - 1);
+		*spriteMaskPtr |= Sig_NumberToMask(signal);
 	    }
 	}
     }
@@ -168,13 +169,13 @@ Compat_SpriteSigMaskToUnix(SpriteMask, UnixMaskPtr)
 
     *UnixMaskPtr = 0;
     for (i = 1; i <= SIG_NUM_SIGNALS; i++) {
-	if (SpriteMask & (1 << (i - 1))) {
+	if (SpriteMask & Sig_NumberToMask(i)) {
 	    status = Compat_SpriteSignalToUnix(i, &signal);
 	    if (status == FAILURE) {
 		return(FAILURE);
 	    }
 	    if (signal != NULL) {
-		*UnixMaskPtr |= 1 << (signal - 1);
+		*UnixMaskPtr |= sigmask(signal);
 	    }
 	}
     }
