@@ -50,7 +50,6 @@ Rpc_Init()
     register int frag;
     Net_EtherAddress etherAddress;
 
-    List_Init(&rpcNotifyList);
     RpcInitRecovery();
 
     Trace_Init(rpcTraceHdrPtr, RPC_TRACE_LEN, sizeof(RpcHdr), 0);
