@@ -21,6 +21,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "rpcClient.h"
 #include "rpcTrace.h"
 #include "rpcHistogram.h"
+#include "sys.h"
 
 /*
  * So we can print out rpc names we include the rpcServer definitions.

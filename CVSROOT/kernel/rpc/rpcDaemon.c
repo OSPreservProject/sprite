@@ -266,7 +266,7 @@ RpcServerAlloc(rpcHdrPtr)
 	srvPtr = (RpcServerState *)NIL;
 	rpcNoServers++;
 	if (daemonState & DAEMON_TIMEOUT) {
-	    Timer_DescheduleRoutine(&queueEntry);
+	    (void)Timer_DescheduleRoutine(&queueEntry);
 	    daemonState &= ~DAEMON_TIMEOUT;
 	}
 	daemonState |= DAEMON_POKED;

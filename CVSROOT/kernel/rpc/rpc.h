@@ -118,4 +118,7 @@ void		Rpc_PrintTrace();
 ReturnStatus	Rpc_DumpTrace();
 void		Rpc_StampTest();
 
+void		Rpc_PrintCallCount();
+void		Rpc_PrintServiceCount();
+
 #endif /* _RPC */

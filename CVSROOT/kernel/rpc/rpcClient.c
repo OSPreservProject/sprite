@@ -551,7 +551,7 @@ RpcClientDispatch(chanPtr, rpcHdrPtr)
 
     if (chanPtr->state & CHAN_TIMEOUT) {
 	chanPtr->state &= ~CHAN_TIMEOUT;
-	Timer_DescheduleRoutine(&chanPtr->timeoutItem);
+	(void)Timer_DescheduleRoutine(&chanPtr->timeoutItem);
     }
     Sync_MasterBroadcast(&chanPtr->waitCondition);
 
