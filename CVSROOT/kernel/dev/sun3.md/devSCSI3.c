@@ -355,7 +355,7 @@ typedef struct CtrlRegs {
  * a 16 bit path to them. Because of this we have the following macros
  * for setting and reading them. 
  * SET_FIFO_COUNT()	- Set the FIFO count register to the provided value.
- * READ_FIFO_COUNT()	- Set the FIFO count register.
+ * READ_FIFO_COUNT()	- Read the FIFO count register.
  * SET_DMA_COUNT()	- Set the DMA count register to the provided value.
  * READ_DMA_COUNT()	- Read the DMA count register.
  * SET_DMA_ADDR()	- Set the DMA address register to the provided value.
@@ -739,6 +739,8 @@ Reset(ctrlPtr)
  *
  *----------------------------------------------------------------------
  */
+static Address lastDmaAddr;
+
 static ReturnStatus
 SendCommand(devPtr, scsiCmdPtr)
     Device	 *devPtr;		/* Device to sent to. */
@@ -930,6 +932,7 @@ SendCommand(devPtr, scsiCmdPtr)
 	    if (addr == (Address) NIL) {
 		panic("SendCommand: unable to allocate DMA memory.");
 	    }
+	    lastDmaAddr = ctrlPtr->dmaBuffer;	/* XXX */
 	} else {
 	    /*
 	     * Already mapped into DMA space.
@@ -976,6 +979,22 @@ SendCommand(devPtr, scsiCmdPtr)
 	     * that these counts be set before entering the DATA PHASE.
 	     */
 	     regsPtr->fifoCountLow = size;
+
+	    /*
+	     * Go through reset again becuase of the bug on the 3/50
+	     * where bytes occasionally linger in the DMA fifo.
+	     */
+	    MACH_DELAY(SI_UDC_WAIT);
+	    regsPtr->udcRaddr = UDC_ADR_COMMAND;
+	    MACH_DELAY(SI_UDC_WAIT);
+	    regsPtr->udcRdata = UDC_CMD_RESET;
+	    MACH_DELAY(SI_UDC_WAIT);
+	    regsPtr->control &= ~SI_CSR_FIFO_RES;    
+	    regsPtr->control |= SI_CSR_FIFO_RES;
+	    /*
+	     * End extra reset code.  This is really needed on the 3/50.
+	     */
+
 	    /*
 	     * The onboard DMA controller expects a control block (!)
 	     * that describes the DMA transfer.
@@ -1906,6 +1925,8 @@ DevSCSI3Intr(clientDataArg)
     unsigned char statusByte;
     ReturnStatus status;
     int byteCount;
+    int amountToDma;
+    int offset;
     register int i;
     unsigned char phase;
     unsigned char foo;
@@ -2086,34 +2107,37 @@ DevSCSI3Intr(clientDataArg)
 		    /*
 		     * wait for the fifo to empty
 		     */
-		   status = WaitReg(ctrlPtr, (Address)&regsPtr->control,
+		    status = WaitReg(ctrlPtr, (Address)&regsPtr->control,
 			    REG_SHORT, SI_CSR_FIFO_EMPTY, RESET, ACTIVE_HIGH);
-		   if (status != SUCCESS) {
+		    if (status != SUCCESS) {
 			printf("Warning: %s fifo wait failed\n",ctrlPtr->name);
-		   }
-#ifdef notsure		    
-		    if ((READ_FIFO_COUNT(regsPtr) == size)  ||
-			(READ_FIFO_COUNT(regsPtr) + 1 == size) {
+		    }
+		    amountToDma = ctrlPtr->scsiCmdPtr->bufferLen;
+#ifdef notdef
+		    if ((byteCount == amountToDma)  ||
+			(byteCount + 1 == amountToDma)) {
 			    goto out;
 			/*
 			 * Didn't transfer any data.
 			 * The fifoCount + 1 above wards against 5380 prefetch.
 			 */
 			    goto out;
-		     }
+		    }
+#endif
 		    /*
 		     * Transfer left over byte or shortword by hand
 		     */
-		    if ((size - READ_FIFO_COUNT(regsPtr)) & 1) {
-		    *(char *)(READ_DMA_ADDR(regsPtr) - 1 + VMMACH_DMA_START_ADDR) =
+		    offset = ctrlPtr->scsiCmdPtr->buffer +
+				amountToDma - byteCount;
+		    if ((amountToDma - byteCount) & 1) {
+			*(char *)(offset - 1) =
 			    (regsPtr->fifoData & 0xff00) >> 8;
-		    } else if (((regsPtr->udcRdata*2) - READ_FIFO_COUNT(regsPtr)) == 2) {
-		    *(char *)(READ_DMA_ADDR(regsPtr) - 2 + VMMACH_DMA_START_ADDR) =
-			    (regsPtr->fifoData & 0xff00) >> 8;
-		    *(char *)(READ_DMA_ADDR(regsPtr->dmaAddress) + VMMACH_DMA_START_ADDR) =
-			    (regsPtr->fifoData & 0xff);
+		    } else if (((regsPtr->udcRdata*2) - byteCount) == 2) {
+			*(char *)(offset - 2) =
+				(regsPtr->fifoData & 0xff00) >> 8;
+			*(char *)(offset - 1) =
+				(regsPtr->fifoData & 0xff);
 		    }
-#endif
 		}
 	    }
 
