@@ -309,14 +309,23 @@ done:
      * messages.  For each message we send out (the client replies
      * right-away without actually doing anything yet) ClientCommand
      * adds an entry to the consistInfo's message list.  Note also that
-     * client list entries can get removed as side effects of call-backs
-     * so we can't use a simple LIST_FOR_ALL here.
+     * the current client list entry can get removed as side effects of
+     * a call-back so we can't use a simple LIST_FOR_ALL here.
      */
     statPtr->numConsistChecks++;
     nextClientPtr = (FsClientInfo *)List_First(&consistPtr->clientList);
     while (!List_IsAtEnd(&consistPtr->clientList, (List_Links *)nextClientPtr)){
 	clientPtr = nextClientPtr;
+	clientPtr->locked = FALSE;
 	nextClientPtr = (FsClientInfo *)List_Next((List_Links *)clientPtr);
+	/*
+	 * Hang onto the next client element across calls to ClientCommand,
+	 * which releases the consistency lock and may allow client list
+	 * deletions due to garbage collection.
+	 */
+	if (!List_IsAtEnd(&consistPtr->clientList,(List_Links *)nextClientPtr)){
+	    nextClientPtr->locked = TRUE;
+	}
 	if (clientPtr->clientID == clientID) {
 	    /*
 	     * Don't call back to the client doing the open.  That can
@@ -361,14 +370,14 @@ done:
 		statPtr->writeBack++;
 	    }
 	} else {
-	    if (clientPtr->use.write == 0) {
+	    if ((clientPtr->use.write == 0) && (clientPtr->use.ref > 0)) {
 		/*
 		 * Case 5, another reader needs to stop caching.
 		 */
 		ClientCommand(consistPtr, clientPtr,
 					FS_INVALIDATE_BLOCKS);
 		statPtr->readInvalidate++;
-	    } else {
+	    } else if (clientPtr->use.write > 0) {
 		/*
 		 * Case 6, the writer needs to stop caching and give
 		 * us back its dirty blocks.
@@ -874,8 +883,15 @@ FsGetClientAttrs(handlePtr, clientID, isExecedPtr)
     nextClientPtr = (FsClientInfo *)List_First(&consistPtr->clientList);
     while (!List_IsAtEnd(&consistPtr->clientList, (List_Links *)nextClientPtr)){
 	clientPtr = nextClientPtr;
+	clientPtr->locked = FALSE;;
 	nextClientPtr = (FsClientInfo *)List_Next((List_Links *)clientPtr);
-
+	/*
+	 * Hang onto the next client list element across calls to ClientCommand,
+	 * which releases the consistency lock and allows list deletetions.
+	 */
+	if (!List_IsAtEnd(&consistPtr->clientList,(List_Links *)nextClientPtr)){
+	    nextClientPtr->locked = TRUE;
+	}
 	if (clientPtr->use.exec > 0) {
 	    isExeced = TRUE;
 	}
@@ -1002,6 +1018,13 @@ FsConsistClients(consistPtr)
 
     LOCK_MONITOR;
 
+    if (consistPtr->flags & FS_CONSIST_IN_PROGRESS) {
+	/*
+	 * Not safe to mess with list during consistency.
+	 */
+	UNLOCK_MONITOR;
+	return(1);
+    }
     nextClientPtr = (FsClientInfo *)List_First(&consistPtr->clientList);
     while (!List_IsAtEnd(&consistPtr->clientList, (List_Links *)nextClientPtr)){
 	clientPtr = nextClientPtr;
@@ -1009,8 +1032,14 @@ FsConsistClients(consistPtr)
 
 	if (clientPtr->use.ref == 0 &&
 	    clientPtr->clientID != consistPtr->lastWriter) {
-	    List_Remove((List_Links *) clientPtr);
-	    free((Address) clientPtr);
+	    if (clientPtr->locked) {
+		printf("FsConsistClients hit locked client %d for <%d,%d>\n",
+		    clientPtr->clientID, consistPtr->hdrPtr->fileID.major,
+		    consistPtr->hdrPtr->fileID.minor);
+	    } else {
+		List_Remove((List_Links *) clientPtr);
+		free((Address) clientPtr);
+	    }
 	} else {
 	    numClients++;
 	}
@@ -1048,6 +1077,16 @@ FsDeleteLastWriter(consistPtr, clientID)
 
     LOCK_MONITOR;
 
+    if (consistPtr->flags & FS_CONSIST_IN_PROGRESS) {
+	/*
+	 * Not safe to mess with list during consistency.  We are called
+	 * from Fs_RpcWrite on the client's last block, but we will
+	 * delete the last writer in ProcessConsistReply if the write-back
+	 * is forced as part of cache consistency.
+	 */
+	UNLOCK_MONITOR;
+	return;
+    }
     LIST_FORALL(&consistPtr->clientList, (List_Links *) clientPtr) {
 	if (clientPtr->clientID == clientID) {
 	    if (clientPtr->use.ref == 0 &&
@@ -1059,8 +1098,14 @@ FsDeleteLastWriter(consistPtr, clientID)
 			consistPtr->hdrPtr->fileID.minor, clientID);
 		}
 #endif CONSIST_DEBUG
-		List_Remove((List_Links  *) clientPtr);
-		free((Address) clientPtr);
+		if (clientPtr->locked) {
+		    printf("FsDeleteLastWriter: locked client %d of <%d,%d>\n",
+			clientPtr->clientID, consistPtr->hdrPtr->fileID.major,
+			consistPtr->hdrPtr->fileID.minor);
+		} else {
+		    List_Remove((List_Links  *) clientPtr);
+		    free((Address) clientPtr);
+		}
 		consistPtr->lastWriter = -1;
 		break;
 	    }
@@ -1097,7 +1142,8 @@ FsClientRemoveCallback(consistPtr, clientID)
     int		clientID;	/* Client who is removing the file.  This
 				 * host is not contacted via call-back.
 				 * Instead, the current RPC (close) should
-				 * return FS_FILE_REMOVED. */
+				 * return FS_FILE_REMOVED.  Note, a callback
+				 * is made during a remove-by-name. */
 {
     register	FsClientInfo	*clientPtr;
     int				curClientID;
@@ -1312,14 +1358,16 @@ FsFetchDirtyBlocks(consistPtr, invalidate)
     nextClientPtr = (FsClientInfo *)List_First(&consistPtr->clientList);
     while (!List_IsAtEnd(&consistPtr->clientList, (List_Links *)nextClientPtr)){
 	clientPtr = nextClientPtr;
+	clientPtr->locked = FALSE;
 	nextClientPtr = (FsClientInfo *)List_Next((List_Links *)clientPtr);
-
+	if (!List_IsAtEnd(&consistPtr->clientList,(List_Links *)nextClientPtr)){
+	    nextClientPtr->locked = TRUE;
+	}
 	if (clientPtr->clientID != consistPtr->lastWriter) {
 	    FsHandleLock(consistPtr->hdrPtr);
 	    consistPtr->flags = 0;
 	    UNLOCK_MONITOR;
-	    panic(
-		    "FsFetchDirtyBlocks: Non last writer in list.\n");
+	    panic("FsFetchDirtyBlocks: Non last writer in list.\n");
 	    return;
 	} else if (clientPtr->use.write > 0) {
 	    /*
