@@ -452,6 +452,12 @@ ProcDebugWakeup()
  *	Get the specified process on the debug list. If it isn't there
  *	then wait for it to show up.
  *
+ *	NOTE: The monitor is not locked until after the PCB is locked
+ *	in order to maintain the locking order of other routines
+ *	(notably AddToDebugList and RemoveFromDebugList) which grab the
+ *	monitor lock after the PCB is locked. This routine used to lock
+ *	them in the reverse order causing deadlocks.
+ *
  * Results:
  *	PROC_INVALID_PID if process doesn't exist or is dieing.
  *	GEN_ABORTED_BY_SIGNAL if wait for process was interrupted by a 
@@ -471,9 +477,9 @@ ProcGetThisDebug(pid, procPtrPtr)
 {
     register Proc_ControlBlock 	*procPtr;
     ReturnStatus		status;
+    Boolean			gotSignal;
 
 
-    LOCK_MONITOR;
     status = SUCCESS;
     while (TRUE) {
 	procPtr = Proc_LockPID(pid);
@@ -489,6 +495,7 @@ ProcGetThisDebug(pid, procPtrPtr)
 	    status = PROC_INVALID_PID;
 	    goto exit;
 	}
+	LOCK_MONITOR;
 	procPtr->genFlags |= PROC_DEBUG_WAIT;
 
 	if (procPtr->state == PROC_SUSPENDED) {
@@ -498,11 +505,14 @@ ProcGetThisDebug(pid, procPtrPtr)
 		List_Remove((List_Links *) procPtr);
 		procPtr->genFlags &= ~PROC_ON_DEBUG_LIST;
 	    }
+	    UNLOCK_MONITOR;
 	    goto exit;
 	}
 
 	Proc_Unlock(procPtr);
-	if (Sync_Wait(&debugListCondition, TRUE)) {
+	gotSignal = Sync_Wait(&debugListCondition, TRUE);
+	UNLOCK_MONITOR;
+	if (gotSignal) {
 	    Proc_Lock(procPtr);
 	    procPtr->genFlags &= ~PROC_DEBUG_WAIT;
 	    Proc_Unlock(procPtr);
@@ -512,7 +522,6 @@ ProcGetThisDebug(pid, procPtrPtr)
     }
 exit:
     *procPtrPtr = procPtr;
-    UNLOCK_MONITOR;
     return(status);
 }
 
