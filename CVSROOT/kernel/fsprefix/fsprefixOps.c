@@ -754,11 +754,12 @@ FsPrefixLookup(fileName, flags, clientID, hdrPtrPtr, rootIDPtr, lookupNamePtr,
     if (fileName[0] != '/') {
 	/*
 	 * For relative names just return the handle from the current
-	 * working directory.
+	 * working directory.  Also, don't accept relative names with
+	 * exact matches - that happens occasionally in error conditions.
 	 */
 	fsStats.prefix.relative++;
 	fsPtr = (Proc_GetEffectiveProc())->fsPtr;
-	if (fsPtr->cwdPtr != (Fs_Stream *)NIL) {
+	if (!exactMatch && fsPtr->cwdPtr != (Fs_Stream *)NIL) {
 	    *hdrPtrPtr = fsPtr->cwdPtr->ioHandlePtr;
 	    nameInfoPtr = fsPtr->cwdPtr->nameInfoPtr;
 	    *rootIDPtr = nameInfoPtr->rootID;
