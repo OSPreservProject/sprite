@@ -15,10 +15,10 @@
 #define _SIG
 
 #ifdef KERNEL
-#include "sigTypes.h"
-#include "rpc.h"
-#include "procTypes.h"
-#include "procMigrate.h"
+#include <sigTypes.h>
+#include <rpc.h>
+#include <procTypes.h>
+#include <procMigrate.h>
 #else
 #include <kernel/sigTypes.h>
 #include <kernel/rpc.h>

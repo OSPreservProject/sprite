@@ -14,8 +14,8 @@
 #ifndef _SIGINT
 #define _SIGINT
 
-#include "sprite.h"
-#include "sig.h"
+#include <sprite.h>
+#include <sig.h>
 
 /*
  * Flags for the sigFlags field in the proc table.

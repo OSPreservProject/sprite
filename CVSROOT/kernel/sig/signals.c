@@ -58,21 +58,22 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "sprite.h"
-#include "stdlib.h"
-#include "sig.h"
-#include "sync.h"
-#include "dbg.h"
-#include "list.h"
-#include "proc.h"
-#include "procMigrate.h"
-#include "status.h"
-#include "sched.h"
-#include "sigInt.h"
-#include "rpc.h"
-#include "net.h"
-#include "vm.h"
+#include <sprite.h>
+#include <stdlib.h>
+#include <sig.h>
+#include <sync.h>
+#include <dbg.h>
+#include <list.h>
+#include <proc.h>
+#include <procMigrate.h>
+#include <status.h>
+#include <sched.h>
+#include <sigInt.h>
+#include <rpc.h>
+#include <net.h>
+#include <vm.h>
 #include <bstring.h>
+#include <stdio.h>
 
 #define	SigGetBitMask(sig) (1 << (sig - 1))
 

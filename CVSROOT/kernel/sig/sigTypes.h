@@ -17,7 +17,7 @@
  */
 
 #ifdef KERNEL
-#include "machTypes.h"
+#include <machTypes.h>
 #else
 #include <kernel/machTypes.h>
 #endif
@@ -26,8 +26,8 @@
 #define _SIGTYPES
 
 #ifdef KERNEL
-#include "user/sig.h"
-#include "procTypes.h"
+#include <user/sig.h>
+#include <procTypes.h>
 #else
 #include <sig.h>
 #include <kernel/machTypes.h>
