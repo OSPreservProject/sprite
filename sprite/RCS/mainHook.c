@@ -47,3 +47,26 @@ void
 Main_HookRoutine()
 {
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Main_InitVars --
+ *
+ *	A routine called by main() before it does anything.  Can only be used
+ *	to initialize variables and nothing else.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Main_InitVars()
+{
+}
+
