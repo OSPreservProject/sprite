@@ -30,6 +30,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "rpc.h"
 #include "dbg.h"
 #include "vm.h"
+#include "ctype.h"
+#include "fscache.h"
+#include "fsutil.h"
+#include "rpcClient.h"
+#include "rpcServer.h"
+#include "procServer.h"
+#include "fsrmt.h"
 
 #define min(a,b) ((a) < (b) ? (a) : (b))
 /*
@@ -937,7 +944,7 @@ Proc_KillAllProcesses(userProcsOnly)
 		pcbPtr->state == PROC_WAITING ||
 		pcbPtr->state == PROC_MIGRATED) {
 	    alive++;
-	    (void) Sig_SendProc(pcbPtr, SIG_KILL, 0);
+	    (void) Sig_SendProc(pcbPtr, SIG_KILL, 0, (Address)0);
 	}
 	Proc_Unlock(pcbPtr);
     }
@@ -1278,12 +1285,26 @@ exit:
 #endif
 }
 
+#ifndef LOCKREG
+#ifndef CLEAN_LOCK
+#ifndef CLEAN
 /*
  *----------------------------------------------------------------------
  *
  * Proc_KDump --
  *
  *	Prints out an (kluged) proc table with state information.
+ *
+ *	This routine uses several macros to analyse the event data structure:
+ *	ISADDR(x) tests if x is a valid address.
+ *	ISSTR(x) tests if x is a pointer to a valid string.
+ *	ISALIGN(x) tests if x is an aligned address.
+ *	ISBOOL(x) tests if x is a boolean.
+ *	ISSMALL(x) tests is x is a small integer.
+ *	ISLIST(x) tests if x points to a List_Links structure.
+ *	ISPCB(x) tests if x points to a Proc_ControlBlock structure.
+ *	ISHANDLE(x) tests is x points to a Fs_HandleHeader structure.
+ *	FIELD(x,type,field) is x->type.field
  *
  * Results:
  *	SUCCESS.
@@ -1294,31 +1315,153 @@ exit:
  *
  *----------------------------------------------------------------------
  */
-#define ISADDR(x)  (((x)&1)==0 && Dbg_InRange(x,4,FALSE))
-#define ISSTR(x)   (ISADDR(x) && Dbg_InRange(x,20,FALSE) && \
-    (strncpy(buf,(char *)(x),20),strlen(buf)<20))
-#define ISALIGN(x) (ISADDR(x) && (((x)&3)==0))
-#define ISALIGNZ(x) ((int)(x)==0 || ISALIGN(x))
-/* sun3 test-and-set sets to 0x80000000 */
-#define ISBOOL(x)  ((x)==0||(x)==1||(x)==0x80000000)
-#define ISSMALL(x) ((x)>=0&&(x)<20)
-#define ISPCB(x)   (ISADDR(x) && ISADDR(((int *)(x))[0]) &&\
-		ISADDR(((int *)(x))[1])  && ISSMALL(((int *)(x))[2]))
+#define INT(x)	((int)(x))
+#define INTP(x)	((int *)(x))
+#define ISADDRR(x,range)  ((INT(x)&1)==0 && Dbg_InRange((unsigned)(x),2,FALSE)\
+		&& Dbg_InRange(((unsigned)(x))-(range)-2,2,FALSE))
+#define ISADDR(x)	ISADDRR(x,sizeof(int))
+#define ISSTR(x)	(ISADDRR(x,20) && \
+    (strncpy(buf,(char *)(x),20),strlen(buf)<20) && isprint(buf[0]))
+#define	ISSTRZ(x)	(INT(x)==0 || ISSTR(x))
+#define ISALIGN(x)	(ISADDR(x) && (INT(x)&3)==0)
+#define ISALIGNZ(x)	(INT(x)==0 || ISALIGN(x))
+/* sun3 test-and-set sets to 0x80000000, sun4 to 0xff000000 */
+#define ISBOOL(x)	(INT(x)==0||INT(x)==1||INT(x)==0x80000000||\
+			INT(x)==0xff000000)
+#define ISSMALL(x)	(INT(x)>=0&&INT(x)<20)
+#define ISPCBZ(x)	(INT(x)==0||ISPCB(x))
+#define OFF(type,field) (INTP(&(((type *)0)->field))-INTP(0))
+#define FIELD(var,type,field)	(((type *)(var))->field)
+#define P_cb	Proc_ControlBlock
+#define Fc_b	Fscache_Block
+#define Fc_fi	Fscache_FileInfo
+#define F_hh	Fs_HandleHeader
+#define L_L	List_Links
+#define HANDLENAME(x)	(Fsutil_HandleName((Fs_HandleHeader *)(x)))
+#define PRINTHANDLE(str,handle)	printf("%s: \"%s\" (handle locked by %x)",\
+		str, HANDLENAME(handle), handle->lockProcID)
+char buf[21] = {0};
 
-ReturnStatus
+static ISLIST(x)
+List_Links *x;
+{
+    return ISADDRR(x,sizeof(List_Links)) && ISADDR(x->prevPtr) &&
+	    ISADDR(x->nextPtr);
+}
+
+static ISHANDLE(x)
+Fs_HandleHeader *x;
+{
+    return ISADDRR(x,sizeof(Fs_HandleHeader)) && ISLIST(&x->lruLinks) &&
+	    ISBOOL(x->unlocked.waiting) && ISSMALL(x->refCount) &&
+	    ISSTRZ(x->name) && (unsigned)x->lockProcID <= 0xfffff; 
+}
+
+static ISPCB(x)
+Proc_ControlBlock *x;
+{
+    return ISADDRR(x,sizeof(Proc_ControlBlock)) && ISLIST(&x->links) &&
+	    ISSMALL(x->processor) && ISLIST(&x->childListHdr);
+}
+
+static ISRPCCLIENT(x)
+RpcClientChannel *x;
+{
+    int i;
+    if (!ISADDRR(x,sizeof(RpcClientChannel))) return 0;
+    for (i=0;i<rpcNumChannels;i++) {
+	if (rpcChannelPtrPtr[i] == x) return 1;
+    }
+    return 0;
+}
+
+static ISRPCSERVER(x)
+RpcServerState *x;
+{
+    int i;
+    if (!ISADDRR(x,sizeof(RpcServerState))) return 0;
+    for (i=0;i<rpcMaxServers;i++) {
+	if (rpcServerPtrPtr[i] == x) return 1;
+    }
+    return 0;
+}
+
+static ISSERVERPROC(x)
+ServerInfo *x;
+{
+    int i;
+    if (!ISADDRR(x,sizeof(ServerInfo))) return 0;
+    for (i=0;i<proc_NumServers;i++) {
+	if (serverInfoTable+i == x) return 1;
+    }
+    return 0;
+}
+
+static ISLOCK(x)
+Sync_Lock *x;
+{
+    return ISADDRR(x,sizeof(Sync_Lock)) && ISBOOL(x->inUse) &&
+	    ISBOOL(x->waiting) && ISSTR(x->name) && ISALIGNZ(x->holderPC) &&
+	    ISPCBZ(x->holderPCBPtr);
+}
+
+static ISSEM(x)
+Sync_Semaphore *x;
+{
+    return ISADDRR(x,sizeof(Sync_Semaphore)) && ISSMALL(x->value) &&
+	    ISSTR(x->name) && ISALIGNZ(x->holderPC) && ISPCBZ(x->holderPCBPtr);
+}
+
+typedef struct LockEntry {
+    int	addr;		/* Address (event) associated with the lock. */
+    char *name;		/* Name of the lock event. */
+} LockEntry;
+
+extern Sync_Condition cleanBlockCondition, writeBackComplete,
+    closeCondition, lruDone, debugListCondition, familyCondition,
+    migrateCondition, evictCondition, recovCondition, rpcDaemon, freeChannels,
+    signalCondition, codeSegCondition, cleanCondition, swapDownCondition,
+mappingCondition, swapFileCondition;
+extern int recovPingEvent;
+
+LockEntry locks[] = {
+    (int)&cleanBlockCondition, "cleanBlockCondition",
+    (int)&writeBackComplete, "writeBackComplete",
+    (int)&closeCondition, "closeCondition",
+    (int)&lruDone, "lruDone",
+    (int)&debugListCondition, "debugListCondition",
+    (int)&familyCondition, "familyCondition",
+    (int)&migrateCondition, "migrateCondition",
+    (int)&evictCondition, "evictCondition",
+    (int)&recovCondition, "recovCondition",
+    (int)&rpcDaemon, "rpcDaemon",
+    (int)&freeChannels, "freeChannels",
+    (int)&signalCondition, "signalCondition",
+    (int)&codeSegCondition, "codeSegCondition",
+    (int)&cleanCondition, "cleanCondition",
+    (int)&swapDownCondition, "swapDownCondition",
+    (int)&mappingCondition, "mappingCondition",
+    (int)&swapFileCondition, "swapFileCondition",
+    (int)&recovPingEvent, "recovPingEvent",
+    0, 0
+};
+
 Proc_KDump()
 {
-#ifndef LOCKREG
-#ifndef CLEAN_LOCK
     int i,j;
-    Proc_ControlBlock *procPtr;
+    Proc_ControlBlock *procPtr, *tmpProcPtr;
     int *event;
-    char buf[21];
-
-    buf[21] = '\0';
+    LockEntry *lockPtr;
+    Fscache_FileInfo *cacheInfoPtr;
+    Fs_HandleHeader *handlePtr;
+    RpcClientChannel *rpcClientPtr;
+    RpcServerState *rpcServerPtr;
+    ServerInfo *serverProcPtr;
+    int match;
 
     for (i = 0; i < proc_MaxNumProcesses; i++) {
 	procPtr = proc_PCBTable[i];
+	match = 0;
 	if (procPtr->state == PROC_WAITING) {
 	    printf("%8x", procPtr->processID);
 	    if (procPtr->argString != (Address) NIL) {
@@ -1336,42 +1479,144 @@ Proc_KDump()
 	    }
 	    printf(": waiting on ");
 	    event = (int *)procPtr->event;
-	    if (ISALIGN((int)event)) {
-		if (ISBOOL(event[0]) && ISBOOL(event[1]) && ISSTR(event[2])
-			&& ISALIGNZ(event[3])) {
-		    /* Sync_Lock / Sync_KernelLock */
-		    printf("lock %s at %x", (char *)(event[2]), 
-			    (int)event[3]);
-		    if (ISPCB(event[4])) {
-			printf(" held by process %x",
-			    ((Proc_ControlBlock *)(event[4]))->processID);
+	    if (ISADDR(event)) {
+		for (lockPtr = locks ; lockPtr->addr != 0; lockPtr++) {
+		    if ((int)event == lockPtr->addr) {
+			printf("condition \"%s\"\n", lockPtr->name);
+			goto found;
 		    }
-		} else if (ISPCB((int)event)) {
+		}
+		if (ISLOCK((Sync_Lock *)event)) {
+			/* Sync_Lock / Sync_KernelLock */
+			printf("lock \"%s\" at %x", (char *)(event[2]), 
+				(int)event[3]);
+			if (ISPCB((P_cb *)event[4])) {
+			    printf(" held by process %x",
+				((Proc_ControlBlock *)(event[4]))->processID);
+			}
+		} else if (ISPCB((P_cb *)event)) {
 		    /* Proc_ControlBlock */
 		    printf("timer %x",
 			    ((Proc_ControlBlock *)event)->processID);
-		} else if (ISSMALL(event[0]) && ISSTR(event[1]) &&
-			ISALIGNZ(event[2])) {
-		    /* Sync_Semaphore */
-		    printf("semaphore %s at %x",
+		} else if (ISSEM((Sync_Semaphore *)event)) {
+		   /* Sync_Semaphore */
+		    printf("semaphore \"%s\" at %x",
 			    (char *)(event[1]), (int)(event[2]));
-		    if (ISPCB(event[3])) {
+		    if (ISPCB((P_cb *)event[3])) {
 			printf(" held by process %x",
 			    ((Proc_ControlBlock *)(event[3]))->processID);
 		    }
 		} else if (ISBOOL(event[0])) {
 		    /* Sync_Condition */
-		    printf("condition %x", (int)event);
+		    handlePtr = (F_hh *)(event-OFF(F_hh,unlocked));
+		    if (ISHANDLE(handlePtr)) {
+			PRINTHANDLE("handle: \"unlocked\"", handlePtr);
+			match++;
+		    }
+		    handlePtr = (F_hh *)(FIELD(event-OFF(Fc_fi,noDirtyBlocks),
+			    Fc_fi, hdrPtr));
+		    if (ISHANDLE(handlePtr)) {
+			PRINTHANDLE("cache block: \"noDirtyBlocks\"",
+				handlePtr);
+			match++;
+		    }
+		    /* See if intPtr is a cacheInfoPtr */
+		    cacheInfoPtr = (Fc_fi *)FIELD(event-OFF(Fc_b,ioDone), Fc_b,
+			    cacheInfoPtr);
+		    if (ISADDRR(cacheInfoPtr,sizeof(Fc_fi)) &&
+			    ISHANDLE(cacheInfoPtr->hdrPtr)) {
+			PRINTHANDLE("cache block: \"ioDone\"",
+				cacheInfoPtr->hdrPtr);
+			match++;
+		    }
+		    tmpProcPtr = (P_cb *)(event-OFF(P_cb,waitCondition));
+		    if (ISPCB(tmpProcPtr)) {
+			printf("PCB: \"waitCondition\" ");
+			match++;
+		    }
+		    tmpProcPtr = (P_cb *)(event-OFF(P_cb,lockedCondition));
+		    if (ISPCB(tmpProcPtr)) {
+			printf("PCB: \"lockedCondition\" ");
+			match++;
+		    }
+		    serverProcPtr = (ServerInfo *)(event-
+			    OFF(ServerInfo, condition));
+		    if (ISSERVERPROC(serverProcPtr)) {
+			printf("ServerProc: \"condition\" ");
+			if (serverProcPtr->flags & ENTRY_INUSE) {
+			    printf("INUSE ");
+			}
+			if (serverProcPtr->flags & SERVER_BUSY) {
+			    printf("BUSY ");
+			}
+			if (serverProcPtr->flags & FUNC_PENDING) {
+			    printf("PENDING ");
+			}
+			match++;
+		    }
+		    rpcClientPtr = (RpcClientChannel *)(event-
+			    OFF(RpcClientChannel, waitCondition));
+		    if (ISRPCCLIENT(rpcClientPtr)) {
+			printf("RPC client: \"waitCondition\", server %d ",
+				rpcClientPtr->serverID);
+			if (rpcClientPtr->state & CHAN_FREE) printf("FREE ");
+			if (rpcClientPtr->state & CHAN_BUSY) printf("BUSY ");
+			if (rpcClientPtr->state & CHAN_WAITING) printf("WAIT ");
+			if (rpcClientPtr->state & CHAN_TIMEOUT) printf("TIME ");
+			if (rpcClientPtr->state & CHAN_FRAGMENTING) {
+			    printf("FRAG ");
+			}
+			match++;
+		    }
+		    rpcServerPtr = (RpcServerState *)(event-
+			    OFF(RpcServerState, waitCondition));
+		    if (ISRPCSERVER(rpcServerPtr)) {
+			printf("RPC server:\"waitCondition\", client %d ",
+				rpcServerPtr->clientID);
+			if (rpcServerPtr->state & SRV_NOTREADY) {
+			    printf("NOTREADY ");
+			}
+			if (rpcServerPtr->state & SRV_FREE) printf("FREE ");
+			if (rpcServerPtr->state & SRV_BUSY) printf("BUSY ");
+			if (rpcServerPtr->state & SRV_WAITING) printf("WAIT ");
+			if (rpcServerPtr->state & SRV_AGING) printf("AGING ");
+			if (rpcServerPtr->state & SRV_FRAGMENT) printf("FRAG ");
+			if (rpcServerPtr->state & SRV_NO_REPLY) {
+			    printf("NO_REPLY ");
+			}
+			if (rpcServerPtr->state & SRV_STUCK) printf("STUCK ");
+			match++;
+		    }
+		    handlePtr = (F_hh *)(event-OFF(Fsrmt_IOHandle,
+			recovery.reopenComplete));
+		    if (ISHANDLE(handlePtr)) {
+			PRINTHANDLE("\"recovery.reopenComplete\"", handlePtr);
+			match++;
+		    }
+		    if (!match) {
+			printf("condition %x", (int)event);
+		    } else if (match>1) {
+			printf("(Ambiguous)");
+		    }
 		} else {
 		    printf("event %x", (int)event);
 		}
+	    } else if ((int)event == -1) {
+		printf("wakeup signal");
 	    } else {
 		printf("event? %x", (int)event);
 	    }
 	    printf("\n");
+found:;
 	}
     }
-#endif
-#endif
-    return(SUCCESS);
 }
+#define KDUMP
+#endif
+#endif
+#endif
+
+#ifndef KDUMP
+ReturnStatus
+Proc_KDump() { return SUCCESS; }
+#endif
