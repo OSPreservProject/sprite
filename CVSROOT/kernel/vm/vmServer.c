@@ -202,7 +202,7 @@ VmPageServerRead(virtAddrPtr, pageFrame)
     if (segPtr->type == VM_STACK) {
 	pageToRead = mach_LastUserStackPage - virtAddrPtr->page;
     } else {
-	pageToRead = virtAddrPtr->page - segPtr->offset;
+	pageToRead = virtAddrPtr->page - segOffset(virtAddrPtr);
     }
 
     /*
@@ -422,7 +422,7 @@ VmPageServerWrite(virtAddrPtr, pageFrame)
     if (segPtr->type == VM_STACK) {
 	pageToWrite = mach_LastUserStackPage - virtAddrPtr->page;
     } else {
-	pageToWrite = virtAddrPtr->page - segPtr->offset;
+	pageToWrite = virtAddrPtr->page - segOffset(virtAddrPtr);
     }
 
     /*

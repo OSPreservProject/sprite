@@ -612,7 +612,7 @@ VmPageValidate(virtAddrPtr)
     LOCK_MONITOR;
 
     VmPageValidateInt(virtAddrPtr, 
-		      VmGetPTEPtr(virtAddrPtr->segPtr, virtAddrPtr->page));
+		      VmGetAddrPTEPtr(virtAddrPtr, virtAddrPtr->page));
 
     UNLOCK_MONITOR;
 }
@@ -666,7 +666,7 @@ VmPageInvalidate(virtAddrPtr)
     LOCK_MONITOR;
 
     VmPageInvalidateInt(virtAddrPtr, 
-	VmGetPTEPtr(virtAddrPtr->segPtr, virtAddrPtr->page));
+	VmGetAddrPTEPtr(virtAddrPtr, virtAddrPtr->page));
 
     UNLOCK_MONITOR;
 }
@@ -1131,7 +1131,7 @@ again:
 		continue;
 	    }
 
-	    ptePtr = VmGetPTEPtr(corePtr->virtPage.segPtr, 
+	    ptePtr = VmGetAddrPTEPtr(&corePtr->virtPage,
 				 corePtr->virtPage.page);
 	    referenced = *ptePtr & VM_REFERENCED_BIT;
 	    modified = *ptePtr & VM_MODIFIED_BIT;
@@ -1405,7 +1405,7 @@ Vm_PageIn(virtAddr, protFault)
 
     procPtr = Proc_GetCurrentProc();
     /*
-     * Determine which segment that this virtual address falls into.
+     * Determine which segment this virtual address falls into.
      */
     VmVirtAddrParse(procPtr, virtAddr, &transVirtAddr);
     segPtr = transVirtAddr.segPtr;
@@ -1414,7 +1414,8 @@ Vm_PageIn(virtAddr, protFault)
 	return(FAILURE);
     }
 
-    if (protFault && segPtr->type == VM_CODE) {
+    if ((protFault && segPtr->type == VM_CODE) ||
+	    (protFault && (transVirtAddr.flags & VM_READONLY_SEG))) {
 	/*
 	 * Access violation.
 	 */
@@ -1455,7 +1456,7 @@ Vm_PageIn(virtAddr, protFault)
 	    break;
     }
 
-    ptePtr = VmGetPTEPtr(segPtr, page);
+    ptePtr = VmGetAddrPTEPtr(&transVirtAddr, page);
     /*
      * Fetch the next page.
      */
@@ -1511,7 +1512,8 @@ Vm_PageIn(virtAddr, protFault)
 	    VmStoreTraceRec(VM_TRACE_PAGE_FAULT_REC, sizeof(faultRec),
 			    (Address)&faultRec, TRUE);
 	}
-    } else if (*ptePtr & VM_ON_SWAP_BIT) {
+    } else if (*ptePtr & VM_ON_SWAP_BIT ||
+	    transVirtAddr.segPtr->type == VM_SHARED) {
 	vmStat.psFilled++;
 	status = VmPageServerRead(&transVirtAddr, virtFrameNum);
 	if (vm_Tracing) {
@@ -1552,7 +1554,11 @@ Vm_PageIn(virtAddr, protFault)
      * that are sharing the code segment.
      */
     if (status != SUCCESS) {
-	VmKillSharers(segPtr);
+	if (transVirtAddr.segPtr->type == VM_SHARED) {
+	    VmPageInvalidateInt(&transVirtAddr, ptePtr);
+	} else {
+	    VmKillSharers(segPtr);
+	}
     }
 
 pageinDone:
@@ -1862,7 +1868,7 @@ PinPages(virtAddrPtr, lastPage)
 
     LOCK_MONITOR;
 
-    for (ptePtr = VmGetPTEPtr(virtAddrPtr->segPtr, virtAddrPtr->page);
+    for (ptePtr = VmGetAddrPTEPtr(virtAddrPtr, virtAddrPtr->page);
          virtAddrPtr->page <= lastPage;
 	 VmIncPTEPtr(ptePtr, 1), virtAddrPtr->page++) {
 	while (*ptePtr & VM_IN_PROGRESS_BIT) {
@@ -1956,7 +1962,7 @@ UnpinPages(virtAddrPtr, lastPage)
     LOCK_MONITOR;
 
     for (i = virtAddrPtr->page,
-		ptePtr = VmGetPTEPtr(virtAddrPtr->segPtr, virtAddrPtr->page);
+		ptePtr = VmGetAddrPTEPtr(virtAddrPtr, virtAddrPtr->page);
 	 i <= lastPage;
 	 VmIncPTEPtr(ptePtr, 1), i++) {
 
@@ -2179,7 +2185,7 @@ PageOutPutAndGet(corePtrPtr, status, recStreamPtrPtr)
         if (corePtr->virtPage.segPtr->flags & VM_SEG_DEAD) {
 	    vmStat.numDirtyPages--;
 	    VmPageInvalidateInt(&corePtr->virtPage,
-		VmGetPTEPtr(corePtr->virtPage.segPtr, corePtr->virtPage.page));
+		VmGetAddrPTEPtr(&corePtr->virtPage, corePtr->virtPage.page));
 	    PutOnFreeList(corePtr);
 	    corePtr = (VmCore *) NIL;
 	} else {
@@ -2193,7 +2199,7 @@ PageOutPutAndGet(corePtrPtr, status, recStreamPtrPtr)
 	 * In addition the modified bit must be cleared here since the page
 	 * could get modified while it is being cleaned.
 	 */
-	ptePtr = VmGetPTEPtr(corePtr->virtPage.segPtr, corePtr->virtPage.page);
+	ptePtr = VmGetAddrPTEPtr(&corePtr->virtPage, corePtr->virtPage.page);
 	*ptePtr |= VM_ON_SWAP_BIT;
 	/*
 	 * If the page has become locked while it was on the dirty list, don't
@@ -2260,7 +2266,7 @@ PutOnFront(corePtr)
 	 * catches the case when a page that we are writting out is
 	 * modified.  
 	 */
-	ptePtr = VmGetPTEPtr(corePtr->virtPage.segPtr,
+	ptePtr = VmGetAddrPTEPtr(&corePtr->virtPage,
 			     corePtr->virtPage.page);
 	referenced = *ptePtr & VM_REFERENCED_BIT;
 	modified = *ptePtr & VM_MODIFIED_BIT;
@@ -2401,7 +2407,7 @@ Vm_Clock(data, callInfoPtr)
 	    continue;
 	}
 
-	ptePtr = VmGetPTEPtr(corePtr->virtPage.segPtr, corePtr->virtPage.page);
+	ptePtr = VmGetAddrPTEPtr(&corePtr->virtPage, corePtr->virtPage.page);
 
 	/*
 	 * If the page has been referenced, then put it on the end of the
@@ -2468,7 +2474,7 @@ VmCountDirtyPages()
 	    numDirtyPages++;
 	    continue;
 	}
-	ptePtr = VmGetPTEPtr(corePtr->virtPage.segPtr, corePtr->virtPage.page);
+	ptePtr = VmGetAddrPTEPtr(&corePtr->virtPage, corePtr->virtPage.page);
 	if (*ptePtr & VM_MODIFIED_BIT) {
 	    numDirtyPages++;
 	    continue;
@@ -2521,6 +2527,7 @@ VmFlushSegment(segPtr, firstPage, lastPage)
     }
     virtAddr.segPtr = segPtr;
     virtAddr.page = firstPage;
+    virtAddr.sharedPtr = (Vm_SegProcList *)NULL;
     for (ptePtr = VmGetPTEPtr(segPtr, firstPage);
          virtAddr.page <= lastPage;
 	 virtAddr.page++, VmIncPTEPtr(ptePtr, 1)) {
@@ -2612,6 +2619,7 @@ Vm_MapBlock(addr)
     virtAddr.offset = 0;
     virtAddr.segPtr = vm_SysSegPtr;
     virtAddr.flags = 0;
+    virtAddr.sharedPtr = (Vm_SegProcList *)NULL;
     ptePtr = VmGetPTEPtr(vm_SysSegPtr, virtAddr.page);
 
     /*
@@ -2675,6 +2683,7 @@ Vm_UnmapBlock(addr, retOnePage, pageNumPtr)
     virtAddr.offset = 0;
     virtAddr.segPtr = vm_SysSegPtr;
     virtAddr.flags = 0;
+    virtAddr.sharedPtr = (Vm_SegProcList *)NULL;
     ptePtr = VmGetPTEPtr(vm_SysSegPtr, virtAddr.page);
 
     if (retOnePage) {
@@ -2793,6 +2802,43 @@ Vm_Recovery()
 	   numPageOutProcs < vmMaxPageOutProcs) { 
 	Proc_CallFunc(PageOut, (ClientData) numPageOutProcs, 0);
 	numPageOutProcs++;
+    }
+
+    UNLOCK_MONITOR;
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmPageInvalidateRange --
+ *
+ *     	Invalidate the pages in the given virtual address range.
+ *
+ * Results:
+ *     	None.
+ *
+ * Side effects:
+ *	None.
+ * ----------------------------------------------------------------------------
+ */
+void
+VmPageInvalidateRange(virtAddrPtr,length)
+    register	Vm_VirtAddr	*virtAddrPtr;
+    register	int		length;
+{
+    register	Vm_PTE		*ptePtr;
+    int				lastPage;
+
+    lastPage = virtAddrPtr->page + length>>vmPageShift - 1;
+
+
+    LOCK_MONITOR;
+
+    for (ptePtr = VmGetAddrPTEPtr(virtAddrPtr,virtAddrPtr->page);
+	    virtAddrPtr->page <= lastPage;
+	    virtAddrPtr->page++, VmIncPTEPtr(ptePtr,1)) {
+	VmPageInvalidateInt(virtAddrPtr,ptePtr);
+	
     }
 
     UNLOCK_MONITOR;

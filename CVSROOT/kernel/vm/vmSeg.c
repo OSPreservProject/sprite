@@ -32,6 +32,8 @@ Vm_Segment		*vm_SysSegPtr;		/* The system segment. */
 
 static	Vm_Segment      *segmentTable;		/* The table of segments. */
 
+Vm_SharedSegTable	sharedSegTable;		/* Table of shared segs. */
+
 /*
  * Free, inactive and dead segment lists.
  */
@@ -41,8 +43,6 @@ static	List_Links      deadSegListHdr;
 #define	freeSegList	(&freeSegListHdr)
 #define	inactiveSegList	(&inactiveSegListHdr)
 #define	deadSegList	(&deadSegListHdr)
-
-#define min(a,b) ((a) < (b) ? (a) : (b))
 
 /*
  * Condition to wait on when waiting for a code segment to be set up.
@@ -118,6 +118,8 @@ VmSegTableInit()
     List_Init(freeSegList);
     List_Init(inactiveSegList);
     List_Init(deadSegList);
+
+    List_Init((List_Links *)&sharedSegTable);
 
     /*
      * Initialize the segment table.  The kernel gets the system segment and
@@ -611,7 +613,7 @@ VmSegmentDeleteInt(segPtr, procPtr, procLinkPtrPtr, objStreamPtrPtr, migFlag)
     segPtr->refCount--;
 	
     /*
-     * If the segment is not being migrated, then procPtr refers to a processes
+     * If the segment is not being migrated, then procPtr refers to a process
      * in the list of processes sharing the segment.  Remove this process from
      * the list of processes and make sure that the space is freed.
      */
@@ -620,6 +622,19 @@ VmSegmentDeleteInt(segPtr, procPtr, procLinkPtrPtr, objStreamPtrPtr, migFlag)
 	        List_First((List_Links *) segPtr->procList);
 	while (procPtr != procLinkPtr->procPtr) {
 	    if (List_IsAtEnd(segPtr->procList, (List_Links *) procLinkPtr)) {
+		dprintf("Warning: segment %x not on shared seg. list\n",
+		    (int)segPtr);
+		dprintf("Want: %x (%x)\nHave:\n",(int)procLinkPtr->procPtr,
+			(int)procLinkPtr->procPtr->processID);
+		procLinkPtr = (VmProcLink *)
+			List_First((List_Links *) segPtr->procList);
+		do {
+		    dprintf(" %x (%x)\n",(int)(procLinkPtr->procPtr),
+			    (int)(procLinkPtr->procPtr->processID));
+		    procLinkPtr = (VmProcLink *) List_Next((List_Links *) procLinkPtr);
+		} while (!List_IsAtEnd(segPtr->procList, (List_Links *) procLinkPtr));
+
+		return(VM_DELETE_NOTHING);
 		panic("%s%s",
 	                "VmSegmentDeleteInt: Could not find segment on shared",
 			"segment list.\n");
@@ -641,12 +656,33 @@ VmSegmentDeleteInt(segPtr, procPtr, procLinkPtrPtr, objStreamPtrPtr, migFlag)
     }
 
     while (segPtr->ptUserCount > 0 ) {
+	dprintf("VmSegmentDeleteInt: ptUserCount = %d\n",segPtr->ptUserCount);
 	/*
 	 * Wait until all users of the page tables of this segment are gone.
 	 * The only remaining users of a deleted segment would be 
 	 * prefetch processes.
 	 */
 	(void)Sync_Wait(&segPtr->condition, FALSE);
+	dprintf("VmSegmentDeleteInt: done waiting\n");
+    }
+    if (segPtr->type == VM_SHARED) {
+	Vm_SharedSegTable *sharedSeg;
+	int found;
+	found = 0;
+	dprintf("Removing sharedSegTable entry\n");
+	LIST_FORALL((List_Links *)&sharedSegTable,(List_Links *)sharedSeg) {
+	    if (sharedSeg->segPtr == segPtr) {
+		List_Remove((List_Links *)sharedSeg);
+		sharedSeg = (Vm_SharedSegTable *)NULL;
+		found = 1;
+		break;
+	    }
+	}
+	if (!found) {
+	    dprintf("Danger! shared segment not found on list!\n");
+	} else {
+	    dprintf("VmSegmentDeleteInt: shared segment removed\n");
+	}
     }
     if (!vm_NoStickySegments && segPtr->type == VM_CODE &&
         !(segPtr->flags & VM_DEBUGGED_SEG)) {
@@ -811,6 +847,7 @@ CleanSegment(segPtr)
     segPtr->flags |= VM_SEG_DEAD;
 
     virtAddr.segPtr = segPtr;
+    virtAddr.sharedPtr = (Vm_SegProcList *)NULL;
     if (segPtr->type == VM_STACK) {
 	virtAddr.page = mach_LastUserStackPage - segPtr->numPages + 1;
     } else {
@@ -995,6 +1032,7 @@ EndDelete(segPtr, firstPage, lastPage)
      * Free up any resident pages.
      */
     virtAddr.segPtr = segPtr;
+    virtAddr.sharedPtr = (Vm_SegProcList *)NULL;
     for (virtAddr.page = firstPage, ptePtr = VmGetPTEPtr(segPtr, firstPage);
 	 virtAddr.page <= lastPage;
 	 virtAddr.page++, VmIncPTEPtr(ptePtr, 1)) {
@@ -1064,7 +1102,7 @@ static void	AllocMoreSpace();
  *
  * VmAddToSeg --
  *
- *	Make all pages between firstPage and lastPage be in the segments 
+ *	Make all pages between firstPage and lastPage be in the segment's 
  *	virtual address space.
  *
  * Results:
@@ -1091,7 +1129,8 @@ VmAddToSeg(segPtr, firstPage, lastPage)
     int		newNumPages;
 
     /*
-     * The only segments that can be expanded are the stack and heap segments.
+     * The only segments that can be expanded are the stack, heap, and
+     * shared segments.
      */
     if (segPtr->type == VM_CODE || segPtr->type == VM_SYSTEM) {
 	return(VM_WRONG_SEG_TYPE);
@@ -1288,7 +1327,7 @@ AddToSeg(segPtr, firstPage, lastPage, newNumPages, newSpace, oldSpacePtr)
 	    bcopy((Address) segPtr->ptPtr, (Address) newSpace.ptPtr, copySize);
 	    bzero((Address) ((int) (newSpace.ptPtr) + copySize),
 		    (newSpace.ptSize - segPtr->ptSize)  * sizeof(Vm_PTE));
-	} else {
+	} else if (segPtr->type == VM_STACK) {
 	    /*
 	     * Make sure that the heap segment isn't too big.  If it is then 
 	     * abort.

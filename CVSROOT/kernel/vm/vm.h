@@ -29,6 +29,9 @@
 #include <kernel/sync.h>
 #endif
 
+/* This should be in /usr/include/vm.h */
+#define VM_SHARED	4
+
 /*
  * Structure to represent a translated virtual address
  */
@@ -37,6 +40,7 @@ typedef struct {
     int 		page;		/* Virtual page. */
     int 		offset;		/* Offset in the page. */
     int			flags;		/* Flags defined below */
+    struct Vm_SegProcList	*sharedPtr;	/* Pointer to shared seg. */
 } Vm_VirtAddr;
 
 /*
@@ -45,8 +49,10 @@ typedef struct {
  *
  *	VM_HEAP_PT_IN_USE	The heap segment for the current process had
  *				its page table marked as being in use.
+ *	VM_READONLY_SEG		The segment is read only for this process.
  */
 #define	VM_HEAP_PT_IN_USE	0x1
+#define VM_READONLY_SEG		0x2
 /*
  * A page table entry.
  */
@@ -55,7 +61,7 @@ typedef unsigned int	Vm_PTE;
 /*
  * Flags to set and extract the fields of the PTE.
  *
- *	VM_VIRT_RES_BIT		The page is resident in the segments virtual
+ *	VM_VIRT_RES_BIT		The page is resident in the segment's virtual
  *				address space.
  *	VM_PHYS_RES_BIT		The page is physically resident in memory.
  *      VM_ZERO_FILL_BIT	The page should be filled on demand with zeros.
@@ -180,6 +186,7 @@ typedef struct Vm_Segment {
 					 * can ever have. */
     int			traceTime;	/* The last trace interval that this
 					 * segment was active. */
+
 } Vm_Segment;
 
 /*
@@ -198,7 +205,38 @@ typedef struct Vm_ProcInfo {
     struct VmMach_ProcData	*machPtr;	/* Pointer to machine dependent
 						 * data. */
     int				vmFlags;	/* Flags defined below. */
+    List_Links			*sharedSegs;	/* Process's shared segs. */
 } Vm_ProcInfo;
+
+/*
+ * List of the shared segments.
+ * There is one of these entries for each shared segment.
+ */
+typedef struct Vm_SharedSegTable {
+    List_Links          segList;        /* Links of shared segments. */
+    int                 serverID;       /* Server of associated file. */
+    int                 domain;         /* Domain of associated file. */
+    int                 fileNumber;     /* File number of associated file. */
+    struct Vm_Segment   *segPtr;        /* Shared segment. */
+    int                 refCount;       /* Number of references to segment.
+*/
+} Vm_SharedSegTable;
+
+/*
+ * Shared segments associated with a process.
+ * There is one of these entries for each processor-segment mapping.
+ */
+typedef struct Vm_SegProcList {
+    List_Links          segList;        /* Links of shared segments. */
+    int                 fd;             /* File descriptor of the mapping. */
+    Vm_SharedSegTable   *segTabPtr;     /* Pointer to shared segment table. */
+    Address             addr;           /* Start address of segment. */
+    int			offset;		/* Page table offset (see vmInt.h). */
+    Address             mappedStart;    /* Start of mapped part. */
+    Address             mappedEnd;      /* End of mapped part. */
+    Fs_Stream           *stream;        /* Stream of mapping. */
+    int                 prot;           /* Protections of segment. */
+} Vm_SegProcList;
 
 /*
  * Values for the vmFlags field.

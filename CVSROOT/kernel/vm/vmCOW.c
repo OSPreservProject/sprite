@@ -201,6 +201,7 @@ DoFork(srcSegPtr, destSegPtr)
 
     virtAddr.segPtr = srcSegPtr;
     virtAddr.flags = 0;
+    virtAddr.sharedPtr = (Vm_SegProcList *)NULL;
     for (; virtPage <= lastPage;
 	 virtPage++, VmIncPTEPtr(srcPTEPtr, 1), VmIncPTEPtr(destPTEPtr, 1)) {
 	if (!(*srcPTEPtr & VM_VIRT_RES_BIT)) {
@@ -311,6 +312,7 @@ VmCOWCopySeg(segPtr)
     lastPage = firstPage + segPtr->numPages - 1;
     virtAddr.segPtr = segPtr;
     virtAddr.flags = 0;
+    virtAddr.sharedPtr = (Vm_SegProcList *)NULL;
     for (virtAddr.page = firstPage, ptePtr = VmGetPTEPtr(segPtr, firstPage);
 	 virtAddr.page <= lastPage;
 	 virtAddr.page++, VmIncPTEPtr(ptePtr, 1)) {
@@ -383,6 +385,7 @@ VmCOWDeleteFromSeg(segPtr, firstPage, lastPage)
     }
     virtAddr.segPtr = segPtr;
     virtAddr.flags = 0;
+    virtAddr.sharedPtr = (Vm_SegProcList *)NULL;
     for (ptePtr = VmGetPTEPtr(segPtr, firstPage);
 	 firstPage <= lastPage;
 	 firstPage++, VmIncPTEPtr(ptePtr, 1)) {
@@ -672,7 +675,7 @@ VmCOR(virtAddrPtr)
 	vmStat.quickCORFaults++;
 	return(SUCCESS);
     }
-    ptePtr = VmGetPTEPtr(virtAddrPtr->segPtr, virtAddrPtr->page);
+    ptePtr = VmGetAddrPTEPtr(virtAddrPtr, virtAddrPtr->page);
     if (!(*ptePtr & VM_COR_BIT)) {
 	vmStat.quickCORFaults++;
 	status = SUCCESS;
@@ -735,6 +738,7 @@ COR(virtAddrPtr, ptePtr)
 	virtAddr.segPtr = mastSegPtr;
 	virtAddr.page = virtAddrPtr->page;
 	virtAddr.flags = 0;
+	virtAddr.sharedPtr = virtAddrPtr->sharedPtr;
 	status = VmPageServerRead(&virtAddr, virtFrameNum);
 	if (status != SUCCESS) {
 	    printf("Warning: VmCOR: Couldn't read page, status <%x>\n", status);
@@ -924,7 +928,7 @@ VmCOW(virtAddrPtr)
 	vmStat.quickCOWFaults++;
 	return;
     }
-    ptePtr = VmGetPTEPtr(virtAddrPtr->segPtr, virtAddrPtr->page);
+    ptePtr = VmGetAddrPTEPtr(virtAddrPtr, virtAddrPtr->page);
     if (!(*ptePtr & VM_COW_BIT)) {
 	vmStat.quickCOWFaults++;
     } else if (IsResident(ptePtr)) {
@@ -984,6 +988,7 @@ COW(virtAddrPtr, ptePtr, isResident, deletePage)
 	virtAddr.segPtr = mastSegPtr;
 	virtAddr.page = virtAddrPtr->page;
 	virtAddr.flags = 0;
+	virtAddr.sharedPtr = (Vm_SegProcList *)NULL;
 	if (isResident) {
 	    /*
 	     * The page is resident and locked down by our caller. 
@@ -1098,6 +1103,7 @@ GiveAwayPage(srcSegPtr, virtPage, srcPTEPtr, destSegPtr, others)
     virtAddr.segPtr = srcSegPtr;
     virtAddr.page = virtPage;
     virtAddr.flags = 0;
+    virtAddr.sharedPtr = (Vm_SegProcList *)NULL;
     pageFrame = Vm_GetPageFrame(*srcPTEPtr);
     destPTEPtr = VmGetPTEPtr(destSegPtr, virtPage);
     *destPTEPtr = *srcPTEPtr & ~VM_COW_BIT;
@@ -1166,7 +1172,7 @@ SetPTE(virtAddrPtr, pte)
 
     LOCK_MONITOR;
 
-    ptePtr = VmGetPTEPtr(virtAddrPtr->segPtr, virtAddrPtr->page);
+    ptePtr = VmGetAddrPTEPtr(virtAddrPtr, virtAddrPtr->page);
     if (vm_Tracing) {
 	Vm_TracePTEChange	pteChange;
 

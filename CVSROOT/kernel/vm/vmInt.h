@@ -459,6 +459,12 @@ typedef struct VmCOWInfo {
 } VmCOWInfo;
 
 /*
+ * Shared memory.
+ */
+extern int vmShmDebug;
+#define dprintf if (vmShmDebug) printf
+
+/*
  * Macros to get a pointer to a page table entry.
  */
 #ifdef CLEAN2
@@ -490,13 +496,18 @@ typedef struct VmCOWInfo {
 /*
  * Macro to get a virtAddr's offset in the page table.
  */
-#ifdef sun4
 #define segOffset(virtAddrPtr) ( (virtAddrPtr)->segPtr->offset)
+/*
+#ifdef sun4
 #else
-#define segOffset(virtAddrPtr) ( ((virtAddrPtr)->sharedPtr== \
-	(Vm_SegProcList *)NULL) ? (virtAddrPtr)->segPtr->offset :\
-	(virtAddrPtr)->sharedPtr->offset)
+#define segOffset(virtAddrPtr) ( vmShmDebug ? (((virtAddrPtr)->sharedPtr== \
+	(Vm_SegProcList *)NIL) ? (virtAddrPtr)->segPtr->offset :\
+	( ((virtAddrPtr)->sharedPtr==(Vm_SegProcList *)NULL) ? \
+	   (printf("Warning: NULL segOffset\n"), \
+	       (virtAddrPtr)->sharedPtr->offset) : \
+	   (virtAddrPtr)->sharedPtr->offset)) : (virtAddrPtr)->segPtr->offset)
 #endif
+*/
 
 
 /*----------------------------------------------------------------------------*/
@@ -615,9 +626,3 @@ extern	void		VmPrefetch();
  */
 extern	void		VmTraceSegStart();
 #endif _VMINT
-
-/*
- * Shared memory.
- */
-extern int vmShmDebug;
-#define dprintf if (vmShmDebug) printf

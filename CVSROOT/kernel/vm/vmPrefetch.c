@@ -44,7 +44,7 @@ static void	AbortPrefetch();
  *
  * VmPrefetch --
  *
- *	Start a fetch for the next page if it isn't resident and its on
+ *	Start a fetch for the next page if it isn't resident and it's on
  *	swap or in a file.
  *
  * Results:
@@ -69,7 +69,7 @@ VmPrefetch(virtAddrPtr, ptePtr)
 	    return;
 	}
     } else {
-	if (virtAddrPtr->page == segPtr->offset + segPtr->numPages - 1) {
+	if (virtAddrPtr->page == segOffset(virtAddrPtr) + segPtr->numPages - 1) {
 	    return;
 	}
     }
@@ -83,6 +83,7 @@ VmPrefetch(virtAddrPtr, ptePtr)
     prefetchInfoPtr->virtAddr.segPtr = segPtr;
     prefetchInfoPtr->virtAddr.page = virtAddrPtr->page + 1;
     prefetchInfoPtr->virtAddr.flags = 0;
+    prefetchInfoPtr->virtAddr.sharedPtr = virtAddrPtr->sharedPtr;
     switch (segPtr->type) {
 	case VM_CODE:
 	    vmStat.codePrefetches++;
@@ -164,7 +165,7 @@ DoPrefetch(data, callInfoPtr)
     ReturnStatus		status;
 
     prefetchInfoPtr = (PrefetchInfo *)data;
-    ptePtr = VmGetPTEPtr(prefetchInfoPtr->virtAddr.segPtr, 
+    ptePtr = VmGetAddrPTEPtr(&(prefetchInfoPtr->virtAddr), 
 			 prefetchInfoPtr->virtAddr.page);
     /*
      * Fetch a page frame.  Note that we don't block if no memory is
