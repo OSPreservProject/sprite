@@ -165,8 +165,7 @@ FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
 	    oldInfoPtr = redirectInfoPtr;
 	    redirectInfoPtr = (FsRedirectInfo *)NIL;
 	    status = (*fsDomainLookup[domainType][operation])
-	       (hdrPtr, lookupName, argsPtr, resultsPtr, nameInfoPtr,
-		       &redirectInfoPtr);
+	       (hdrPtr, lookupName, argsPtr, resultsPtr, &redirectInfoPtr);
 	    if (fsFileNameTrace) {
 		Sys_Printf("\treturns <%x>\n", status);
 	    }
@@ -1040,8 +1039,7 @@ LocatePrefix(fileName, domainTypePtr, hdrPtrPtr)
 	for (domainType = 0; domainType < FS_NUM_DOMAINS; domainType++) {
 	    status = (*fsDomainLookup[domainType][FS_DOMAIN_PREFIX])
 			((ClientData)NIL, fileName, (Address)&ids,
-			 (Address)hdrPtrPtr, (FsNameInfo *)NIL,
-			 (FsRedirectInfo **)NIL);
+			 (Address)hdrPtrPtr, (FsRedirectInfo **)NIL);
 	    if (status == SUCCESS) {
 		break;
 	    }
@@ -1052,8 +1050,7 @@ LocatePrefix(fileName, domainTypePtr, hdrPtrPtr)
 	 */
 	status = (*fsDomainLookup[domainType][FS_DOMAIN_PREFIX])
 		    ((ClientData)NIL, fileName, (Address)&ids,
-		     (Address)hdrPtrPtr, (FsNameInfo *)NIL,
-		     (FsRedirectInfo **)NIL);
+		     (Address)hdrPtrPtr, (FsRedirectInfo **)NIL);
     }
     if (status == SUCCESS) {
 	*domainTypePtr = domainType;
