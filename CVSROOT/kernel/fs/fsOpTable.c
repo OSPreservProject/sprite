@@ -249,7 +249,7 @@ FsStreamTypeOps fsStreamOpTable[] = {
      */
     { FS_CONTROL_STREAM, FsControlCltOpen, FsControlRead, NoProc,
 		FsControlIOControl, FsControlSelect,
-		NullProc, NullProc,			/* Get/Set IO Attr */
+		FsControlGetIOAttr, FsControlSetIOAttr,
 		FsControlVerify,
 		NoProc, NoProc,				/* migStart, migEnd */
 		NoProc, FsControlReopen,		/* migrate, reopen */
@@ -355,6 +355,21 @@ FsStreamTypeOps fsStreamOpTable[] = {
 		FsRmtPseudoStreamMigrate, NoProc,	/* migrate, reopen */
 		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
 		FsRemoteHandleScavenge, NullClientKill, FsRemoteIOClose },
+    /*
+     * This stream type is only used during get/set I/O attributes when
+     * the pseudo-device server is remote.  No handles of this type are
+     * actually created, only fileIDs that map to FS_CONTROL_STREAM.  
+     */
+    { FS_RMT_CONTROL_STREAM, NoProc, NoProc,	/* cltOpen, read */
+		NoProc,				/* write */
+		NoProc, NoProc,			/* ioctl, select */
+		FsRemoteGetIOAttr, FsRemoteSetIOAttr,
+		(FsHandleHeader *(*)())NoProc,	/* verify */
+		NoProc, NoProc,			/* release, migend */
+		NoProc, NoProc,			/* migrate, reopen */
+		NoProc, NoProc, NoProc, NoProc,	/* cache ops */
+		(void (*)())NoProc,		/* scavenge */
+		(void (*)())NoProc, NoProc },	/* kill, close */
 #ifdef notdef
     /*
      * Locally cached named pipe stream.  
@@ -419,6 +434,7 @@ int fsRmtToLclType[FS_NUM_STREAM_TYPES] = {
     FS_LCL_PSEUDO_STREAM,	/* FS_PFS_NAMING_STREAM */
     FS_LCL_PFS_STREAM,		/* FS_LCL_PFS_STREAM */
     FS_LCL_PFS_STREAM,		/* FS_RMT_PFS_STREAM */
+    FS_CONTROL_STREAM,		/* FS_RMT_CONTROL_STREAM */
 
     -1,				/* FS_RMT_NFS_STREAM */
     FS_LCL_NAMED_PIPE_STREAM,	/* FS_LCL_NAMED_PIPE_STREAM */
@@ -442,6 +458,7 @@ int fsLclToRmtType[FS_NUM_STREAM_TYPES] = {
     FS_PFS_NAMING_STREAM,	/* FS_PFS_NAMING_STREAM */
     FS_RMT_PFS_STREAM,		/* FS_LCL_PFS_STREAM */
     FS_RMT_PFS_STREAM,		/* FS_RMT_PFS_STREAM */
+    FS_RMT_CONTROL_STREAM,	/* FS_RMT_CONTROL_STREAM */
 
     FS_RMT_NFS_STREAM,		/* FS_RMT_NFS_STREAM */
     FS_RMT_NAMED_PIPE_STREAM,	/* FS_LCL_NAMED_PIPE_STREAM */

@@ -64,6 +64,8 @@
  *	FS_LCL_PFS_STREAM	A pseudo-stream to a pseudo-filesystem.  This
  *		differs only in what happens at open time.  I/O is the same.
  *	FS_RMT_PFS_STREAM	As above, but when the server is remote.
+ *	FS_RMT_CONTROL_STREAM	Needed only during get/set I/O attributes of
+ *				a pseudo-device whose server is remote.
  *
  * The following streams are not implemented
  *	FS_REMOTE_NFS_STREAM	NFS access implemented in kernel.
@@ -88,13 +90,14 @@
 #define FS_PFS_NAMING_STREAM		12
 #define FS_LCL_PFS_STREAM		13
 #define FS_RMT_PFS_STREAM		14
+#define FS_RMT_CONTROL_STREAM		15
 
-#define FS_RMT_NFS_STREAM		15
-#define FS_LCL_NAMED_PIPE_STREAM	16
-#define FS_RMT_NAMED_PIPE_STREAM	17
-#define FS_RMT_UNIX_STREAM		18
+#define FS_RMT_NFS_STREAM		16
+#define FS_LCL_NAMED_PIPE_STREAM	17
+#define FS_RMT_NAMED_PIPE_STREAM	18
+#define FS_RMT_UNIX_STREAM		19
 
-#define FS_NUM_STREAM_TYPES		19
+#define FS_NUM_STREAM_TYPES		20
 
 /*
  * Two arrays are used to map between local and remote types.  This has
