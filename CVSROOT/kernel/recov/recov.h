@@ -98,6 +98,7 @@ typedef struct Recov_Stats {
 extern Recov_Stats recov_Stats;
 
 extern void             Recov_Init();
+extern void		Recov_Proc();
 extern void		Recov_CrashRegister();
 extern void		Recov_RebootRegister();
 extern void		Recov_HostAlive();
