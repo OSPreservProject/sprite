@@ -28,6 +28,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "net.h"
 #include "sched.h"
 #include "dev.h"
+#include "recov.h"
 #include "procMigrate.h"
 #include "string.h"
 
@@ -587,6 +588,10 @@ Sys_StatsStub(command, option, argPtr)
 	case SYS_RPC_ENABLE_SERVICE:
 	case SYS_RPC_SRV_COUNTS:
 	case SYS_RPC_CALL_COUNTS:
+	case SYS_RPC_SET_MAX:
+	case SYS_RPC_SET_NUM:
+	case SYS_RPC_NEG_ACKS:
+	case SYS_RPC_CHANNEL_NEG_ACKS:
 	    status = Rpc_GetStats(command, option, argPtr);
 	    break;
 
@@ -806,6 +811,11 @@ Sys_StatsStub(command, option, argPtr)
 	}
 	case SYS_RECOV_STATS: {
 	    status = Recov_GetStats(option, argPtr);
+	    break;
+	}
+	case SYS_RECOV_ABS_PINGS: {
+	    recov_AbsoluteIntervals = option;
+	    status = SUCCESS;
 	    break;
 	}
 	case SYS_FS_RECOV_INFO: {
