@@ -1492,6 +1492,20 @@ Fsio_FileIOControl(streamPtr, ioctlPtr, replyPtr)
 	    (Fsio_FileIOHandle *)streamPtr->ioHandlePtr;
     register ReturnStatus status = SUCCESS;
 
+    if (ioctlPtr->command == 500) {
+	Fsdm_Domain *domainPtr;
+
+	if (ioctlPtr->outBufSize < 4096) {
+	    return GEN_INVALID_ARG;
+	}
+	replyPtr->length = GetLogBuffer(handlePtr,
+		(char *) ioctlPtr->outBuffer);
+	if (replyPtr->length == 0) {
+	    return GEN_EINTR;
+	}
+	return SUCCESS;
+    }
+
     Fsutil_HandleLock(handlePtr);
     switch(ioctlPtr->command) {
 	case IOC_REPOSITION:
