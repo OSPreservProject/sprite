@@ -93,9 +93,18 @@ extern int recov_PrintLevel;
  *	SRV_RECOV_IN_PROGRESS	This is set on a client while it is reopening
  *				files in order to ensure only one set of
  *				reopens is in process.
+ *	SRV_RECOV_FAILED	Recovery with the server failed.  This is
+ *				used to catch a race between the end of
+ *				a failed recovery and re-establishing contact
+ *				with the server.  If the server "comes back"
+ *				before a failed recovery clears the
+ *				SRV_RECOV_IN_PROGRESS bit, then a reboot
+ *				callback could get lost.  This bit is used
+ *				to detect this.
  */
 #define CLT_RECOV_IN_PROGRESS	0x1
 #define SRV_RECOV_IN_PROGRESS	0x2
+#define SRV_RECOV_FAILED	0x4
 
 /*
  * Trace types for use with Recov_HostTrace.  Compatible with recov.h bits.
