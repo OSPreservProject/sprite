@@ -23,6 +23,12 @@
 #include "fsNameOps.h"
 #include "proc.h"
 #include "fsrmt.h"
+
+/*
+ * These typedefs are replaced by stuff in fsrmtInt.h
+ */
+#ifdef notdef
+
 /*
  * Parameters for the read and write RPCs.
  */
@@ -61,6 +67,7 @@ typedef struct FsrmtRemoteIOCParam {
     Fs_IOCParam	ioc;		/* IOControl parameter block */
 } FsrmtRemoteIOCParam;
 
+
 /*
  * Parameters for the block copy RPC.
  */
@@ -70,6 +77,7 @@ typedef struct FsrmtRemoteBlockCopyParams {
     int		blockNum;	/* Block to copy to. */
 } FsrmtRemoteBlockCopyParams;
 
+#endif
 
 /*
  * RPC debugging.
