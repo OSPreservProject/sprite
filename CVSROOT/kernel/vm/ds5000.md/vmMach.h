@@ -18,6 +18,12 @@
 #ifndef _VMMACH
 #define _VMMACH
 
+#ifdef KERNEL
+#include <vm3maxConst.h>
+#else
+#include <kernel/vm3maxConst.h>
+#endif
+
 /*
  * Machine dependent data for each software segment.
  */
