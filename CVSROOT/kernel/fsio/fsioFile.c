@@ -1097,17 +1097,33 @@ Fsio_FileRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
 #ifdef SOSP91
     Fsconsist_Info *consistPtr = &handlePtr->consist;
     Fsconsist_ClientInfo	*clientPtr;
+    Fsio_UseCounts		use;
+    Boolean			maybeShared = FALSE;
 
     LIST_FORALL(&consistPtr->clientList, (List_Links *) clientPtr) {
 	if (clientPtr->clientID == readPtr->reserved) {
 	    if (!clientPtr->cached) {
-		SOSP_ADD_READ_TRACE(clientPtr->clientID, 
-			streamPtr->hdr.fileID, TRUE, readPtr->offset, 
-			readPtr->length);
+		use = clientPtr->use;
+		maybeShared = TRUE;
 	    }
 	    break;
 	}
     }
+    if (maybeShared) {
+	LIST_FORALL(&consistPtr->clientList, (List_Links *) clientPtr) {
+	    if (clientPtr->clientID != readPtr->reserved) {
+		if ((!clientPtr->cached) &&
+			((use.write > 0 && clientPtr->use.ref > 0) ||
+			clientPtr->use.write > 0)) {
+		    SOSP_ADD_READ_TRACE(clientPtr->clientID, 
+			    streamPtr->hdr.fileID, TRUE, readPtr->offset, 
+			    readPtr->length);
+		    break;
+		}
+	    }
+	}
+    }
+
 #endif SOSP91
 
     status = Fscache_Read(&handlePtr->cacheInfo, readPtr->flags,
@@ -1166,15 +1182,26 @@ Fsio_FileWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
 #ifdef SOSP91
     Fsconsist_Info *consistPtr = &handlePtr->consist;
     Fsconsist_ClientInfo	*clientPtr;
+    Boolean			maybeShared = FALSE;
 
     LIST_FORALL(&consistPtr->clientList, (List_Links *) clientPtr) {
 	if (clientPtr->clientID == writePtr->reserved) {
 	    if (!clientPtr->cached) {
-		SOSP_ADD_READ_TRACE(clientPtr->clientID, 
-		    streamPtr->hdr.fileID, FALSE, writePtr->offset, 
-		    writePtr->length);
+		maybeShared = TRUE;
 	    }
 	    break;
+	}
+    }
+    if (maybeShared) {
+	LIST_FORALL(&consistPtr->clientList, (List_Links *) clientPtr) {
+	    if (clientPtr->clientID != writePtr->reserved) {
+		if ((!clientPtr->cached) && clientPtr->use.ref > 0) {
+		    SOSP_ADD_READ_TRACE(clientPtr->clientID, 
+			    streamPtr->hdr.fileID, FALSE, writePtr->offset, 
+			    writePtr->length);
+		    break;
+		}
+	    }
 	}
     }
 #endif SOSP91
