@@ -27,6 +27,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include	"fsOpTable.h"
 #include	"fsDisk.h"
 #include	"fsFile.h"
+#include	"fsTrace.h"
 #include	"hash.h"
 #include	"vm.h"
 #include	"proc.h"
@@ -318,6 +319,122 @@ FsBlockCacheInit(blockHashSize)
 /*
  * ----------------------------------------------------------------------------
  *
+ * FsSetMinSize --
+ *
+ * 	Set the minimum size of the block cache.  This will entail mapping
+ *	enough blocks so that the number of physical pages in use is greater
+ *	than or equal to the minimum number.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	More blocks get memory put behind them.
+ *
+ * ----------------------------------------------------------------------------
+ */
+ENTRY void
+FsSetMinSize(minBlocks)
+    int	minBlocks;	/* The minimum number of blocks in the cache. */
+{
+    LOCK_MONITOR;
+
+    DEBUG_PRINT( ("Setting minimum size to %d with current size of %d\n",
+		       minBlocks, fsStats.blockCache.minCacheBlocks) );
+
+    if (minBlocks > fsStats.blockCache.maxNumBlocks) {
+	minBlocks = fsStats.blockCache.maxNumBlocks;
+	Sys_Printf( "FsSetMinSize: Only raising min cache size to %d blocks\n", 
+				minBlocks);
+    }
+    fsStats.blockCache.minCacheBlocks = minBlocks;
+    if (fsStats.blockCache.minCacheBlocks <= 
+				    fsStats.blockCache.numCacheBlocks) {
+	UNLOCK_MONITOR;
+	return;
+    }
+    
+    /*
+     * Give enough blocks memory so that the minimum cache size requirement
+     * is met.
+     */
+    while (fsStats.blockCache.numCacheBlocks < 
+					fsStats.blockCache.minCacheBlocks) {
+	if (!CreateBlock(FALSE, (FsCacheBlock **) NIL)) {
+	    Sys_Printf("FsSetMinSize: lowered min cache size to %d blocks\n",
+		       fsStats.blockCache.numCacheBlocks);
+	    fsStats.blockCache.minCacheBlocks = 
+				    fsStats.blockCache.numCacheBlocks;
+	}
+    }
+
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * FsSetMaxSize --
+ *
+ * 	Set the maximum size of the block cache.  This entails freeing
+ *	enough main memory pages so that the number of cache pages is
+ *	less than the maximum allowed.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Cache blocks have memory removed from behind them and are moved to
+ *	the unmapped list. 
+ *
+ * ----------------------------------------------------------------------------
+ */
+ENTRY void
+FsSetMaxSize(maxBlocks)
+    int	maxBlocks;	/* The minimum number of pages in the cache. */
+{
+    Boolean			giveUp;
+    int				pageNum;
+
+    LOCK_MONITOR;
+
+    if (maxBlocks > fsStats.blockCache.maxNumBlocks) {
+	maxBlocks = fsStats.blockCache.maxNumBlocks;
+	Sys_Printf("FsSetMaxSize: Only raising max cache size to %d blocks\n",
+		maxBlocks);
+    }
+
+    fsStats.blockCache.maxCacheBlocks = maxBlocks;
+    if (fsStats.blockCache.maxCacheBlocks >= 
+				    fsStats.blockCache.numCacheBlocks) {
+	UNLOCK_MONITOR;
+	return;
+    }
+    
+    /*
+     * Free enough pages to get down to maximum size.
+     */
+    giveUp = FALSE;
+    while (fsStats.blockCache.numCacheBlocks > 
+				fsStats.blockCache.maxCacheBlocks && !giveUp) {
+	giveUp = !DestroyBlock(FALSE, &pageNum);
+    }
+
+#ifndef CLEAN
+    if (cacheDebug && giveUp) {
+	Sys_Printf("FsSetMaxSize: Could only lower cache to %d\n", 
+					fsStats.blockCache.numCacheBlocks);
+    }
+#endif not CLEAN
+    
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
  * FsCacheInfoInit --
  *
  * 	Initialize the cache information for a file.  Called when setting
@@ -547,99 +664,6 @@ CreateBlock(retBlock, blockPtrPtr)
 
     return(TRUE);
 }
-
-
-/*
- * ----------------------------------------------------------------------------
- *
- * DestroyBlock --
- *
- * 	Destroy one physical page worth of blocks.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Cache blocks have memory removed from behind them and are moved to
- *	the unmapped list. 
- *
- * ----------------------------------------------------------------------------
- */
-INTERNAL static Boolean
-DestroyBlock(retOnePage, pageNumPtr)
-    Boolean	retOnePage;
-    int		*pageNumPtr;
-{
-    register	FsCacheBlock	*blockPtr;
-    register	FsCacheBlock	*otherBlockPtr;
-
-    /*
-     * First try the list of totally free pages.
-     */
-    if (!List_IsEmpty(totFreeList)) {
-	DEBUG_PRINT( ("DestroyBlock: Using tot free block to lower size\n") );
-	blockPtr = (FsCacheBlock *) List_First(totFreeList);
-	fsStats.blockCache.numCacheBlocks -= 
-		    Vm_UnmapBlock(blockPtr->blockAddr, 
-				    retOnePage, pageNumPtr) * blocksPerPage;
-	blockPtr->flags = FS_NOT_MAPPED;
-	List_Move((List_Links *) blockPtr, LIST_ATREAR(unmappedList));
-	fsStats.blockCache.numFreeBlocks--;
-	if (PAGE_IS_8K) {
-	    /*
-	     * Unmap the other block.  The block address can point to either
-	     * of the two blocks.
-	     */
-	    blockPtr = GET_OTHER_BLOCK(blockPtr);
-	    blockPtr->flags = FS_NOT_MAPPED;
-	    List_Move((List_Links *) blockPtr, LIST_ATREAR(unmappedList));
-	    fsStats.blockCache.numFreeBlocks--;
-	}
-	return(TRUE);
-    }
-
-    /*
-     * Now take blocks from the LRU list until we get one that we can use.
-     */
-    while (TRUE) {
-	blockPtr = FetchBlock(FALSE);
-	if (blockPtr == (FsCacheBlock *) NIL) {
-	    /*
-	     * There are no clean blocks left so give up.
-	     */
-	    DEBUG_PRINT( ("DestroyBlock: No clean blocks left (1)\n") );
-	    return(FALSE);
-	}
-	if (PAGE_IS_8K) {
-	    /*
-	     * We have to deal with the other block.  If it is in use, then
-	     * we can't take this page.  Otherwise delete the block from
-	     * the cache and put it onto the unmapped list.
-	     */
-	    otherBlockPtr = GET_OTHER_BLOCK(blockPtr);
-	    if (otherBlockPtr->refCount > 0 ||
-		(otherBlockPtr->flags & FS_BLOCK_ON_DIRTY_LIST) ||
-		(otherBlockPtr->flags & FS_BLOCK_DIRTY)) {
-		DEBUG_PRINT( ("DestoryBlock: Other block in use.\n") );
-		PutOnFreeList(blockPtr);
-		continue;
-	    }
-	    if (!(otherBlockPtr->flags & FS_BLOCK_FREE)) {
-		DeleteBlock(otherBlockPtr);
-	    }
-	    otherBlockPtr->flags = FS_NOT_MAPPED;
-	    List_Move((List_Links *) otherBlockPtr, LIST_ATREAR(unmappedList));
-	}
-	DEBUG_PRINT( ("DestroyBlock: Using in-use block to lower size\n") );
-	blockPtr->flags = FS_NOT_MAPPED;
-	List_Insert((List_Links *) blockPtr, LIST_ATREAR(unmappedList));
-	fsStats.blockCache.numCacheBlocks -= 
-		    Vm_UnmapBlock(blockPtr->blockAddr, 
-				retOnePage, pageNumPtr) * blocksPerPage;
-	return(TRUE);
-    }
-}
-
 
 /*
  * ----------------------------------------------------------------------------
@@ -713,71 +737,14 @@ FetchBlock(canWait)
     return((FsCacheBlock *) NIL);
 }
 
-
-/*
- * ----------------------------------------------------------------------------
- *
- * FsSetMinSize --
- *
- * 	Set the minimum size of the block cache.  This will entail mapping
- *	enough blocks so that the number of physical pages in use is greater
- *	than or equal to the minimum number.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	More blocks get memory put behind them.
- *
- * ----------------------------------------------------------------------------
- */
-ENTRY void
-FsSetMinSize(minBlocks)
-    int	minBlocks;	/* The minimum number of blocks in the cache. */
-{
-    LOCK_MONITOR;
-
-    DEBUG_PRINT( ("Setting minimum size to %d with current size of %d\n",
-		       minBlocks, fsStats.blockCache.minCacheBlocks) );
-
-    if (minBlocks > fsStats.blockCache.maxNumBlocks) {
-	minBlocks = fsStats.blockCache.maxNumBlocks;
-	Sys_Printf( "FsSetMinSize: Only raising min cache size to %d blocks\n", 
-				minBlocks);
-    }
-    fsStats.blockCache.minCacheBlocks = minBlocks;
-    if (fsStats.blockCache.minCacheBlocks <= 
-				    fsStats.blockCache.numCacheBlocks) {
-	UNLOCK_MONITOR;
-	return;
-    }
-    
-    /*
-     * Give enough blocks memory so that the minimum cache size requirement
-     * is met.
-     */
-    while (fsStats.blockCache.numCacheBlocks < 
-					fsStats.blockCache.minCacheBlocks) {
-	if (!CreateBlock(FALSE, (FsCacheBlock **) NIL)) {
-	    Sys_Printf("FsSetMinSize: lowered min cache size to %d blocks\n",
-		       fsStats.blockCache.numCacheBlocks);
-	    fsStats.blockCache.minCacheBlocks = 
-				    fsStats.blockCache.numCacheBlocks;
-	}
-    }
-
-    UNLOCK_MONITOR;
-}
 
 
 /*
  * ----------------------------------------------------------------------------
  *
- * FsSetMaxSize --
+ * DestroyBlock --
  *
- * 	Set the maximum size of the block cache.  This entails freeing
- *	enough main memory pages so that the number of cache pages is
- *	less than the maximum allowed.
+ * 	Destroy one physical page worth of blocks.
  *
  * Results:
  *	None.
@@ -788,45 +755,79 @@ FsSetMinSize(minBlocks)
  *
  * ----------------------------------------------------------------------------
  */
-ENTRY void
-FsSetMaxSize(maxBlocks)
-    int	maxBlocks;	/* The minimum number of pages in the cache. */
+INTERNAL static Boolean
+DestroyBlock(retOnePage, pageNumPtr)
+    Boolean	retOnePage;
+    int		*pageNumPtr;
 {
-    Boolean			giveUp;
-    int				pageNum;
+    register	FsCacheBlock	*blockPtr;
+    register	FsCacheBlock	*otherBlockPtr;
 
-    LOCK_MONITOR;
-
-    if (maxBlocks > fsStats.blockCache.maxNumBlocks) {
-	maxBlocks = fsStats.blockCache.maxNumBlocks;
-	Sys_Printf("FsSetMaxSize: Only raising max cache size to %d blocks\n",
-		maxBlocks);
-    }
-
-    fsStats.blockCache.maxCacheBlocks = maxBlocks;
-    if (fsStats.blockCache.maxCacheBlocks >= 
-				    fsStats.blockCache.numCacheBlocks) {
-	UNLOCK_MONITOR;
-	return;
-    }
-    
     /*
-     * Free enough pages to get down to maximum size.
+     * First try the list of totally free pages.
      */
-    giveUp = FALSE;
-    while (fsStats.blockCache.numCacheBlocks > 
-				fsStats.blockCache.maxCacheBlocks && !giveUp) {
-	giveUp = !DestroyBlock(FALSE, &pageNum);
+    if (!List_IsEmpty(totFreeList)) {
+	DEBUG_PRINT( ("DestroyBlock: Using tot free block to lower size\n") );
+	blockPtr = (FsCacheBlock *) List_First(totFreeList);
+	fsStats.blockCache.numCacheBlocks -= 
+		    Vm_UnmapBlock(blockPtr->blockAddr, 
+				    retOnePage, pageNumPtr) * blocksPerPage;
+	blockPtr->flags = FS_NOT_MAPPED;
+	List_Move((List_Links *) blockPtr, LIST_ATREAR(unmappedList));
+	fsStats.blockCache.numFreeBlocks--;
+	if (PAGE_IS_8K) {
+	    /*
+	     * Unmap the other block.  The block address can point to either
+	     * of the two blocks.
+	     */
+	    blockPtr = GET_OTHER_BLOCK(blockPtr);
+	    blockPtr->flags = FS_NOT_MAPPED;
+	    List_Move((List_Links *) blockPtr, LIST_ATREAR(unmappedList));
+	    fsStats.blockCache.numFreeBlocks--;
+	}
+	return(TRUE);
     }
 
-#ifndef CLEAN
-    if (cacheDebug && giveUp) {
-	Sys_Printf("FsSetMaxSize: Could only lower cache to %d\n", 
-					fsStats.blockCache.numCacheBlocks);
+    /*
+     * Now take blocks from the LRU list until we get one that we can use.
+     */
+    while (TRUE) {
+	blockPtr = FetchBlock(FALSE);
+	if (blockPtr == (FsCacheBlock *) NIL) {
+	    /*
+	     * There are no clean blocks left so give up.
+	     */
+	    DEBUG_PRINT( ("DestroyBlock: No clean blocks left (1)\n") );
+	    return(FALSE);
+	}
+	if (PAGE_IS_8K) {
+	    /*
+	     * We have to deal with the other block.  If it is in use, then
+	     * we can't take this page.  Otherwise delete the block from
+	     * the cache and put it onto the unmapped list.
+	     */
+	    otherBlockPtr = GET_OTHER_BLOCK(blockPtr);
+	    if (otherBlockPtr->refCount > 0 ||
+		(otherBlockPtr->flags & FS_BLOCK_ON_DIRTY_LIST) ||
+		(otherBlockPtr->flags & FS_BLOCK_DIRTY)) {
+		DEBUG_PRINT( ("DestroyBlock: Other block in use.\n") );
+		PutOnFreeList(blockPtr);
+		continue;
+	    }
+	    if (!(otherBlockPtr->flags & FS_BLOCK_FREE)) {
+		DeleteBlock(otherBlockPtr);
+	    }
+	    otherBlockPtr->flags = FS_NOT_MAPPED;
+	    List_Move((List_Links *) otherBlockPtr, LIST_ATREAR(unmappedList));
+	}
+	DEBUG_PRINT( ("DestroyBlock: Using in-use block to lower size\n") );
+	blockPtr->flags = FS_NOT_MAPPED;
+	List_Insert((List_Links *) blockPtr, LIST_ATREAR(unmappedList));
+	fsStats.blockCache.numCacheBlocks -= 
+		    Vm_UnmapBlock(blockPtr->blockAddr, 
+				retOnePage, pageNumPtr) * blocksPerPage;
+	return(TRUE);
     }
-#endif not CLEAN
-    
-    UNLOCK_MONITOR;
 }
 
 
@@ -941,6 +942,13 @@ again:
     hashEntryPtr = Hash_Find(blockHashTable, (Address) &blockHashKey);
     blockPtr = (FsCacheBlock *) Hash_GetValue(hashEntryPtr);
     if (blockPtr != (FsCacheBlock *) NIL) {
+	if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
+	    UNLOCK_MONITOR;
+	    Sys_Panic(SYS_FATAL, "CacheFetchBlock hashing error\n");
+	    *foundPtr = FALSE;
+	    *blockPtrPtr = (FsCacheBlock *) NIL;
+	    return;
+	}
 	if (((flags & FS_IO_IN_PROGRESS) && 
 	     blockPtr->refCount > 0) ||
 	    (blockPtr->flags & FS_IO_IN_PROGRESS)) {
@@ -1050,6 +1058,7 @@ again:
 			       FS_DESC_CACHE_BLOCK | FS_DIR_CACHE_BLOCK |
     			       FS_READ_AHEAD_BLOCK);
     blockPtr->flags |= FS_IO_IN_PROGRESS;
+    blockPtr->fileNum = cacheInfoPtr->hdrPtr->fileID.minor;
     blockPtr->blockNum = blockNum;
     blockPtr->timeDirtied = 0;
     *blockPtrPtr = blockPtr;
@@ -1251,7 +1260,12 @@ FsCacheBlockTrunc(cacheInfoPtr, blockNum, newBlockSize)
     hashEntryPtr = GetUnlockedBlock(&blockHashKey, blockNum);
     if (hashEntryPtr != (Hash_Entry *) NIL) {
 	blockPtr = (FsCacheBlock *) Hash_GetValue(hashEntryPtr);
-	blockPtr->blockSize = newBlockSize;
+
+	if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
+	    Sys_Panic(SYS_FATAL, "CacheBlockTrunc, hashing error\n");
+	} else {
+	    blockPtr->blockSize = newBlockSize;
+	}
     }
 
     UNLOCK_MONITOR;
@@ -1329,6 +1343,8 @@ CacheFileInvalidate(cacheInfoPtr, firstBlock, lastBlock)
     BlockHashKey	     blockHashKey;
     int			     i;
 
+    FS_TRACE_IO(FS_TRACE_SRV_WRITE_1, cacheInfoPtr->hdrPtr->fileID, firstBlock, lastBlock);
+
     if (cacheInfoPtr->blocksInCache > 0) {
 	SET_BLOCK_HASH_KEY(blockHashKey, cacheInfoPtr, 0);
 	if ((lastBlock == FS_LAST_BLOCK) &&
@@ -1342,7 +1358,11 @@ CacheFileInvalidate(cacheInfoPtr, firstBlock, lastBlock)
 		continue;
 	    }
 	    blockPtr = (FsCacheBlock *) Hash_GetValue(hashEntryPtr);
-    
+	    if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
+		Sys_Panic(SYS_FATAL, "CacheFileInvalidate, hashing error\n");
+		continue;
+	    }
+
 	    /*
 	     * Remove it from the hash table.
 	     */
@@ -1559,6 +1579,12 @@ again:
 
 	blockPtr = (FsCacheBlock *) Hash_GetValue(hashEntryPtr);
 
+	if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
+	    Sys_Panic(SYS_FATAL, "CacheWriteBack, hashing error\n");
+	    UNLOCK_MONITOR;
+	    return(FAILURE);
+	}
+
 	if (flags & (FS_FILE_WB_INVALIDATE | FS_FILE_WB_WAIT)) {
 	    /*
 	     * Wait for the block to become unlocked.  If have to wait then
@@ -1763,6 +1789,11 @@ FsCacheBlocksUnneeded(cacheInfoPtr, offset, numBytes)
 	}
 
 	blockPtr = (FsCacheBlock *) Hash_GetValue(hashEntryPtr);
+
+	if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
+	    Sys_Panic(SYS_FATAL, "CacheBlocksUnneeded, hashing error\n");
+	    continue;
+	}
 
 	if (blockPtr->refCount > 0) {
 	    /*
@@ -2028,6 +2059,10 @@ FsCleanBlocks(data, callInfoPtr)
     blockPtr = tBlockPtr;
     while (cacheInfoPtr != (FsCacheFileInfo *)NIL) {
 	while (blockPtr != (FsCacheBlock *)NIL) {
+	    if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
+		Sys_Panic(SYS_FATAL, "FsCleanBlocks, bad block\n");
+		continue;
+	    }
 	    /*
 	     * Gather statistics.
 	     */
@@ -2271,6 +2306,12 @@ GetDirtyBlockInt(cacheInfoPtr, blockPtrPtr, lastDirtyBlockPtr)
 
     LIST_FORALL(&cacheInfoPtr->dirtyList, dirtyPtr) {
 	blockPtr = DIRTY_LINKS_TO_BLOCK(dirtyPtr);
+	if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
+	    UNLOCK_MONITOR;
+	    Sys_Panic(SYS_FATAL, "GetDirtyBlock, bad block\n");
+	    LOCK_MONITOR;
+	    continue;
+	}
 	if (blockPtr->refCount > 0) {
 	    /*
 	     * Being actively used.  Wait until it is not in use anymore in
@@ -2685,6 +2726,7 @@ GetUnlockedBlock(blockHashKeyPtr, blockNum)
 again:
     hashEntryPtr = Hash_LookOnly(blockHashTable, (Address)blockHashKeyPtr);
     if (hashEntryPtr == (Hash_Entry *) NIL) {
+	FS_TRACE(FS_TRACE_NO_BLOCK);
 	return((Hash_Entry *) NIL);
     }
 
@@ -2695,12 +2737,14 @@ again:
      */
     if (blockPtr->refCount > 0 || 
 	(blockPtr->flags & FS_BLOCK_BEING_WRITTEN)) {
+	FS_TRACE_BLOCK(FS_TRACE_BLOCK_WAIT, blockPtr);
 	(void) Sync_Wait(&blockPtr->ioDone, FALSE);
 	if (sys_ShuttingDown) {
 	    return((Hash_Entry *) NIL);
 	}
 	goto again;
     }
+    FS_TRACE_BLOCK(FS_TRACE_BLOCK_HIT, blockPtr);
     return(hashEntryPtr);
 }
 
