@@ -136,30 +136,6 @@ Timer_Init()
     Timer_TimerInit(TIMER_CALLBACK_TIMER);
     Timer_TimerStart(TIMER_CALLBACK_TIMER);
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * Timer_LockRegister --
- *
- *	Used to register locks for the timer module. Must be called late
- *  	in the initialization, after the vm module has been initialized.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Both mutex locks are registered.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Timer_LockRegister()
-{
-    Sync_SemRegister(&timerMutex); 
-    Sync_SemRegister(&timerClockMutex); 
-}
 
 
 
@@ -256,7 +232,7 @@ Timer_CallBack()
 			time = ELEMENTPTR->time;
 			clientData = ELEMENTPTR->clientData;
 			MASTER_UNLOCK(&timerMutex);
-			(routine) (time,clientData);
+			(routine) (time, clientData);
 			MASTER_LOCK(&timerMutex);
 		    }
 		}
