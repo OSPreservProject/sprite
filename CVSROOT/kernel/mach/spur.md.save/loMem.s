@@ -124,7 +124,6 @@
 	.globl _machKcallTableOffset
 	.globl _machNumArgs
 	.globl _machDebugState
-	.globl _MachCallDebugger
 	.globl _MachInterrupt
 	.globl _MachUserError
 	.globl _MachVMFault 
@@ -1854,8 +1853,8 @@ saveState_Done:
 	/*
 	 * Save the cwp and swp.
 	 */
-	st_32		r1, VOL_TEMP1, $MACH_TRAP_SWP_OFFSET
-	st_32		r2, VOL_TEMP1, $MACH_TRAP_CWP_OFFSET
+	st_32		r1, VOL_TEMP1, $MACH_REG_STATE_SWP_OFFSET
+	st_32		r2, VOL_TEMP1, $MACH_REG_STATE_CWP_OFFSET
 	/*
 	 * Restore the kpsw and return to our caller.
 	 */
