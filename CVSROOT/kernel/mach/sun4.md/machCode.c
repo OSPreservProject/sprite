@@ -39,6 +39,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif NUM_PROCESSORS
 
 int mach_NumProcessors = NUM_PROCESSORS;
+int	storedDataSize = -1;	/* Not initialized. */
 
 /*
  * TRUE if cpu was in kernel mode before the interrupt, FALSE if was in 
@@ -318,8 +319,8 @@ Mach_Init()
     machKcallTableOffset = offsetof(Proc_ControlBlock, kcallTable);
     machSpecialHandlingOffset = offsetof(Proc_ControlBlock, specialHandling);
 
-    if ( MACH_PROC_REGS_OFFSET != offsetof(Proc_ControlBlock, extraField)) {
-	panic("MACH_PROC_REGS_OFFSET is wrong!\n");
+    if (MACH_UNIX_ERRNO_OFFSET != offsetof(Proc_ControlBlock, unixErrno)) {
+	panic("MACH_UNIX_ERRNO_OFFSET is wrong!\n");
     }
 
     machMaxSysCall = -1;
