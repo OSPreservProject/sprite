@@ -30,6 +30,12 @@
 extern	Boolean	dbg_UsingNetwork;
 
 /*
+ * Variable to indicate if are using the rs232 debugger or the network debugger.
+ * On the sun4, we have only used the network.
+ */
+extern  Boolean dbg_Rs232Debug;
+
+/*
  * Variable that indicates that we are under control of the debugger.
  */
 extern	Boolean	dbg_BeingDebugged;
