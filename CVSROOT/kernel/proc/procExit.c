@@ -726,7 +726,7 @@ Proc_Reaper(data, callInfoPtr)
  *	The given process is detached from its parent.
  *
  * Results:
- *	SUCCESS			- always returned.
+ *	None.
  *
  * Side effects:
  *	PROC_DETACHED flags set in the exitFlags field for the process.
@@ -900,9 +900,11 @@ Proc_Detach(status)
      *	Proc_Wait on this process.
      */
 
+    Proc_Lock(procPtr);
     procPtr->termReason	= PROC_TERM_DETACHED;
     procPtr->termStatus	= status;
     procPtr->termCode	= 0;
+    Proc_Unlock(procPtr);
 
     Proc_DetachInt(procPtr);
 
