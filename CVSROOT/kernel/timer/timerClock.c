@@ -233,6 +233,60 @@ Timer_GetRealTimeOfDay(timePtr, timerLocalOffsetPtr, DSTPtr)
 /*
  *----------------------------------------------------------------------
  *
+ *  Timer_GetRealTimeFromTicks --
+ *
+ *	Gives an accurate translation of ticks to time.  This routine
+ *	returns an absolute time value, rather than the relative time
+ *	value since booting returned by Timer_TicksToTime.  This routine
+ *	is slower, though.
+ *
+ *  Results:
+ *	The time of the tick value is returned.
+ *
+ *  Side Effects:
+ *	Updates the global variables that stores the system up-time.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Timer_GetRealTimeFromTicks(ticks, timePtr, timerLocalOffsetPtr, DSTPtr)
+    Timer_Ticks	ticks;		/* Ticks value to convert to time. */
+    Time *timePtr;		/* Buffer to hold time value. */
+    int  *timerLocalOffsetPtr;	/* Optional buffer to hold local offset. */
+    Boolean *DSTPtr;		/* Optional buffer to hold DST allowed flag. */
+{
+    Timer_Ticks	diffTk;
+
+    /*
+     * No masterlock, since we can be called from a call-back and get deadlock.
+     */
+
+    /*
+     *  Get the tick value and subtract from it the system time
+     *  when the universal time was last set. Add this difference to the value
+     *  of the stored universal time to get the universal time at that tick
+     *  value.
+     */
+
+    Timer_SubtractTicks(ticks, systemWhenUniversalSetTk, &diffTk);
+    Timer_AddTicks(diffTk, universalWhenSetTk, &diffTk);
+    Timer_TicksToTime(diffTk, timePtr);
+
+    if (timerLocalOffsetPtr != (int *) NIL) {
+	*timerLocalOffsetPtr = timerUniversalToLocalOffset;
+    }
+    if (DSTPtr != (Boolean *) NIL) {
+	*DSTPtr = timerDSTAllowed;
+    }
+
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  *  Timer_GetTimeOfDay--
  *
  *	Retrieves an approximate universal time. 

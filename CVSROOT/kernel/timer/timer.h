@@ -256,6 +256,7 @@ extern Boolean  Timer_DescheduleRoutine();
 
 extern void Timer_GetTimeOfDay();
 extern void Timer_GetRealTimeOfDay();
+extern void Timer_GetRealTimeFromTicks();
 extern void Timer_SetTimeOfDay();
 
 extern void Timer_LockRegister();
