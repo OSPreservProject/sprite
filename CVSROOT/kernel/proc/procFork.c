@@ -35,9 +35,22 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <vm.h>
 #include <prof.h>
 
+/*
+ * There is only one vfork sleep condition in the system.
+ * When a child does a Sync_Broadcast, all sleeping parents
+ * wake up, check the VFORKPARENT flag in their respective
+ * PCBs and all but one (hopefully) go back to sleep.
+ * If the contention level is too high we can put a condition lock
+ * in each PCB, but this requires recompiling most of the world
+ * so lets try the easy way first.
+ */
+static Sync_Condition vforkCondition;
+static Sync_Lock vforkLock;
+#define LOCKPTR &vforkLock
+
 static ReturnStatus    InitUserProc _ARGS_((Proc_ControlBlock *procPtr,
 			    Proc_ControlBlock *parentProcPtr,
-			    Boolean shareHeap));
+			    Boolean shareHeap, Boolean vforkFlag));
 
 
 /*
@@ -83,12 +96,69 @@ Proc_Fork(shareHeap, pidPtr)
      */
 
     status = Proc_NewProc((Address) 0, PROC_USER, shareHeap, newPidPtr,
-			  (char *)NIL);
+			  (char *)NIL, FALSE);
 
     Vm_MakeUnaccessible((Address) newPidPtr, numBytes);
 
     return(status);
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_Vfork --
+ *
+ *	Process the vfork system call.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Proc_Vfork()
+{
+    ReturnStatus	status;
+    Proc_PID newPid;
+
+    status = Proc_NewProc((Address) 0, PROC_USER, FALSE, &newPid,
+			  (char *) NIL, TRUE);
+    if (status != SUCCESS) {
+	Mach_SetErrno(Compat_MapCode(status));
+	return -1;
+    }
+    return (int) newPid;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Proc_VforkWakeup
+ *
+ *	Called by vfork'd child to wakeup waiting parent
+ *      (when child dies or execs). Caller must hold a lock
+ *      on the child's PCB entry (ie. must have called Proc_Lock()).
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Will make parent process runnable.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+void
+Proc_VforkWakeup(procPtr)
+Proc_ControlBlock 	*procPtr;
+{
+    Proc_ControlBlock 	*parentProcPtr;
 
     parentProcPtr = Proc_GetPCB(procPtr->parentID);
     Proc_Lock(parentProcPtr);
@@ -108,13 +178,14 @@ Proc_Fork(shareHeap, pidPtr)
 
 
 /*
-Proc_NewProc(PC, procType, shareHeap, pidPtr, procName)
+ * ----------------------------------------------------------------------------
  *
  * Proc_NewProc --
  *
  *	Allocates a PCB and initializes it.
  *
  * Results:
+ *	Pointer to process control block for created process.
  *
  * Side effects:
  *	PCB initialized and made runnable.
@@ -141,6 +212,9 @@ Proc_NewProc(PC, procType, shareHeap, pidPtr, procName, vforkFlag)
     parentProcPtr = Proc_GetActualProc();
 
     if (parentProcPtr->genFlags & PROC_FOREIGN) {
+	migrated = TRUE;
+    }
+
     procPtr = ProcGetUnusedPCB();
     if (pidPtr != (Proc_PID *) NIL) {
 	*pidPtr		= procPtr->processID;
@@ -174,7 +248,7 @@ Proc_NewProc(PC, procType, shareHeap, pidPtr, procName, vforkFlag)
     procPtr->recentUsage 	= 0;
     procPtr->weightedUsage 	= 0;
     procPtr->unweightedUsage 	= 0;
-     */
+
     procPtr->kernelCpuUsage.ticks 	= timer_TicksZeroSeconds;
     procPtr->userCpuUsage.ticks 	= timer_TicksZeroSeconds;
     procPtr->childKernelCpuUsage.ticks = timer_TicksZeroSeconds;
@@ -258,7 +332,7 @@ p     */
 	procPtr->peerHostID = NIL;
 	procPtr->peerProcessID = NIL;
     }
-	status = InitUserProc(procPtr, parentProcPtr, shareHeap);
+
     /*
      * Set up the virtual memory of the new process.
      */
@@ -276,6 +350,15 @@ p     */
     } else {
 	status = InitUserProc(procPtr, parentProcPtr, shareHeap, vforkFlag);
 	if (status != SUCCESS) {
+	    /*
+	     * We couldn't allocate virtual memory, so free up the new
+	     * process that we were in the process of allocating.
+	     */
+
+	    if (!migrated) {
+		ProcFamilyRemove(procPtr);
+		List_Remove((List_Links *) &(procPtr->siblingElement));
+	    }
 	    ProcFreePCB(procPtr);
 
 	    return(status);
@@ -291,13 +374,24 @@ p     */
 	Proc_Unlock(parentProcPtr);
     }
 
-    Mach_SetReturnVal(procPtr, (int) PROC_CHILD_PROC, 1);
+    /*
      * Set up the environment of the process.
      */
 
     if (!migrated) {
 	ProcSetupEnviron(procPtr);
     }
+    
+    /*
+     * Have the new process inherit filesystem state.
+     */
+    Fs_InheritState(parentProcPtr, procPtr);
+
+    /*
+     * Return PROC_CHILD_PROC to the newly created process.
+     */
+    Mach_SetReturnVal(procPtr, (vforkFlag ? 0 : (int) PROC_CHILD_PROC), 1);
+
     /*
      * Put the process on the ready queue.
      */
@@ -320,11 +414,13 @@ p     */
 
 /*
  *----------------------------------------------------------------------
-InitUserProc(procPtr, parentProcPtr, shareHeap)
+ *
  * InitUserProc --
  *
  *	Initalize the state for a user process.  This involves allocating
  *	the segments for the new process.
+ *
+ * Results:
  *	None.
  *
  * Side effects:
@@ -340,20 +436,27 @@ InitUserProc(procPtr, parentProcPtr, shareHeap, vforkFlag)
     Boolean				shareHeap;	/* TRUE => share heap
 							 * with parent. */
     Boolean				vforkFlag;	/* TRUE => share all
-     * is a copy of the parents.  Finally the heap segment is either a copy
+							 * segs with parent. */
+{
     ReturnStatus	status;
 
     /*
      * Set up a kernel stack for the process.
      */
-    status = Vm_SegmentDup(parentProcPtr->vmPtr->segPtrArray[VM_STACK],
-    /*
+    status = Mach_SetupNewState(procPtr, parentProcPtr->machStatePtr,
+				Sched_StartUserProc, (Address)NIL, TRUE);
     if (status != SUCCESS) {
-	Mach_FreeState(procPtr);
 	return(status);
+    }
+
+    /*
+     * Initialize all of the segments.  The system segment is the standard one.
+     * The code segment is the same as the parent process.  The stack segment
+     * is a copy of the parents, unless vforkFlag == TRUE in which case
+     * the ref count is boosted.  Finally the heap segment is either a copy
      * or the same as the parent depending on the share heap flag.
      */
-    if (shareHeap) {
+
     procPtr->vmPtr->segPtrArray[VM_SYSTEM] = (Vm_Segment *) NIL;
 
     if (vforkFlag) {

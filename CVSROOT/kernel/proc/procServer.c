@@ -292,7 +292,7 @@ Proc_ServerProcCreate(numToCreate)
 	    break;
 	}
 	(void) Proc_NewProc((Address) Proc_ServerProc, PROC_KERNEL, FALSE, 
-			&pid, "Proc_ServerProc");
+			&pid, "Proc_ServerProc", FALSE);
     }
     return i;
 }

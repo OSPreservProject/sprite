@@ -628,6 +628,11 @@ ProcExitProcess(exitProcPtr, reason, status, code, thisProcess)
     exitProcPtr->termStatus	= status;
     exitProcPtr->termCode	= code;
 
+    /* If we were created with a vfork, then wake the parent up */
+    if (exitProcPtr->genFlags & PROC_VFORKCHILD) {
+	Proc_VforkWakeup(exitProcPtr);
+    }
+
     exitProcPtr->state = ExitProcessInt(exitProcPtr, migrated, thisProcess);
 
     Proc_Unlock(exitProcPtr);

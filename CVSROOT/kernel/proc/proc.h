@@ -179,6 +179,8 @@ extern void 		Proc_ExitInt _ARGS_((int reason, int status, int code));
 extern	void		Proc_FlagMigration _ARGS_((Proc_ControlBlock *procPtr,
 				int hostID, Boolean exec));
 extern	int		Proc_Fork _ARGS_((Boolean shareHeap, Proc_PID *pidPtr));
+extern	void		Proc_VforkWakeup _ARGS_((Proc_ControlBlock *procPtr));
+extern	int		Proc_Vfork _ARGS_(());
 extern	Proc_ControlBlock *Proc_GetEffectiveProc _ARGS_((void));
 extern	ReturnStatus	Proc_GetFamilyID _ARGS_((Proc_PID pid,
 				Proc_PID *familyIDPtr));
@@ -233,7 +235,7 @@ extern ReturnStatus	Proc_MigUpdateInfo _ARGS_((Proc_ControlBlock *procPtr));
 extern	void		Proc_NeverMigrate _ARGS_((Proc_ControlBlock *procPtr));
 extern ReturnStatus	Proc_NewProc _ARGS_((Address PC, int procType,
 				Boolean shareHeap, Proc_PID *pidPtr,
-				char *procName));
+				char *procName, Boolean shareAllSegs));
 extern	void		Proc_NotifyMigratedWaiters _ARGS_((ClientData data,
 				Proc_CallInfo *callInfoPtr));
 extern	ReturnStatus	Proc_Profile _ARGS_((int shiftSize, int lowPC,

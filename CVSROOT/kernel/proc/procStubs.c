@@ -134,7 +134,8 @@ Proc_ForkStub()
 #else
     Mach_Return2(1);
 #endif
-    status = Proc_NewProc((Address) 0, PROC_USER, FALSE, &newPid, (char *) NIL);
+    status = Proc_NewProc((Address) 0, PROC_USER, FALSE, &newPid,
+			  (char *) NIL, FALSE);
     if (status == PROC_CHILD_PROC) {
 	panic("Proc_ForkStub: Child came alive here?\n");
     }
@@ -171,10 +172,8 @@ Proc_VforkStub()
 #else
     Mach_Return2(1);
 #endif
-    status = Proc_NewProc(0, PROC_USER, TRUE, &newPid, (char *) NIL);
-    if (status == PROC_CHILD_PROC) {
-	panic("Proc_VforkStub: Child came alive here?\n");
-    }
+    status = Proc_NewProc(0, PROC_USER, FALSE, &newPid,
+			  (char *) NIL, TRUE);
     if (status != SUCCESS) {
 	Mach_SetErrno(Compat_MapCode(status));
 	return -1;
