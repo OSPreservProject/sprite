@@ -962,7 +962,7 @@ END(Mach_DisableIntr)
  */
 .set noreorder
 
-NON_LEAF(Mach_ContextSwitch,STAND_FRAME_SIZE + 8,ra)
+NON_LEAF(Mach_ContextSwitch,STAND_FRAME_SIZE,ra)
     subu	sp, sp, STAND_FRAME_SIZE
     sw		ra, STAND_RA_OFFSET(sp)
     sw		a0, STAND_FRAME_SIZE(sp)
