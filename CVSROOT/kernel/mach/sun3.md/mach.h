@@ -42,7 +42,7 @@ typedef struct Mach_SetJumpState {
 #define	Mach_DisableIntr()	asm("movw #0x2700,sr")
 #define	Mach_EnableIntr()	asm("movw #0x2000,sr")
 #define DISABLE_INTR() \
-    if (!mach_AtInterruptLevel) { \
+    if (!Mach_AtInterruptLevel()) { \
 	Mach_DisableIntr(); \
 	if (mach_NumDisableIntrsPtr[0] < 0) { \
 	    Sys_Panic(SYS_FATAL, "Negative interrupt count.\n"); \
@@ -50,7 +50,7 @@ typedef struct Mach_SetJumpState {
 	mach_NumDisableIntrsPtr[0]++; \
     }
 #define ENABLE_INTR() \
-    if (!mach_AtInterruptLevel) { \
+    if (!Mach_AtInterruptLevel()) { \
 	mach_NumDisableIntrsPtr[0]--; \
 	if (mach_NumDisableIntrsPtr[0] < 0) { \
 	    Sys_Panic(SYS_FATAL, "Negative interrupt count.\n"); \
@@ -59,6 +59,18 @@ typedef struct Mach_SetJumpState {
 	    Mach_EnableIntr(); \
 	} \
     }
+
+/*
+ * A macro to test if the current processor is at interrupt level.
+ */
+
+#define	Mach_AtInterruptLevel()	(mach_AtInterruptLevel)
+
+/*
+ * A macro to test if the current processor is in kernel mode.
+ */
+
+#define	Mach_KernelMode() (mach_KernelMode)
 
 /*
  * Delay for N microseconds.
@@ -320,6 +332,7 @@ typedef struct {
  */
 #define	Mach_GetProcessorNumber() 	0
 
+
 extern	Boolean	mach_KernelMode;
 extern	int	mach_NumProcessors;
 extern	Boolean	mach_AtInterruptLevel;
@@ -381,6 +394,7 @@ extern	int	Mach_TestAndSet();
 extern	int	Mach_GetMachineType();
 extern	int	Mach_GetMachineArch();
 extern	Address	Mach_GetStackPointer();
+extern 	void	Mach_CheckSpecialHandling();
 
 /*
  * spriteStart is defined in bootSys.s with an underscore.
@@ -401,6 +415,5 @@ extern	Address	mach_FirstUserAddr;
 extern	Address	mach_LastUserAddr;
 extern	Address	mach_MaxUserStackAddr;
 extern	int	mach_LastUserStackPage;
-
 
 #endif _MACH
