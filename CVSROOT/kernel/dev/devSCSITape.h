@@ -18,6 +18,13 @@
 #ifndef _DEVSCSITAPE
 #define _DEVSCSITAPE
 
+/*
+ * Flags encoded in the unit number of the device.
+ */
+
+#define DEV_SCSI_TAPE_NO_REWIND	0x1	/* No rewind on close. */
+#define DEV_SCSI_TAPE_VAR_BLOCK	0x2	/* Variable block size. */
+
 extern ReturnStatus DevSCSITapeOpen _ARGS_((Fs_Device *devicePtr, int useFlags,
     Fs_NotifyToken token, int *flagsPtr));
 extern ReturnStatus DevSCSITapeRead _ARGS_((Fs_Device *devicePtr,
