@@ -34,8 +34,6 @@ RTM ?= $(TM)
 RTM ?= $(MACHINE)
 #endif
 
-LIBNET = -lnet
-
 MODULE = sprite
 SPRITEDIR =	/sprite/src/kernel
 USERH=		/sprite/lib/include
@@ -247,7 +245,7 @@ sun3: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	cc -c ${CFLAGS} mainHook.c
 	cc -c ${CFLAGS} version.c
 	${LD} -X -msun3 -o $@ -e start -T e004000 ${OBJS} version.o \
-	    -L/sprite/lib/${RTM}.md ${LIBOLD} ${LIBNET}
+	    -L/sprite/lib/${RTM}.md
 	@ls -l $@
 	@size $@
 	update -f -s $@ /sprite/boot/$@.md/new
@@ -265,7 +263,7 @@ sun4: ${OBJS_SUN4} Makefile .PRECIOUS .NOEXPORT
 	cc -c ${CFLAGS} -Dsun4 mainHook.c
 	cc -c ${CFLAGS} -Dsun4 version.c
 	${LD} -X -msun4 -o $@ -e start -T f6004020 ${OBJS_SUN4} version.o \
-	    -L/sprite/lib/${RTM}.md ${LIBNET}
+	    -L/sprite/lib/${RTM}.md
 	@ls -l $@
 	@size $@
 	update -f -s $@ /sprite/boot/$@.md/new
@@ -282,7 +280,7 @@ sun4c: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	cc -c ${CFLAGS} -Dsun4 -Dsun4c mainHook.c
 	cc -c ${CFLAGS} -Dsun4 -Dsun4c version.c
 	${LD} -X -msun4 -o $@ -e start -T f6004000 ${OBJS} version.o \
-	    -L/sprite/lib/sun4.md ${LIBNET}
+	    -L/sprite/lib/sun4.md
 	@ls -l $@
 	@size $@
 	update -f -s $@ /sprite/boot/$@.md/new
@@ -299,7 +297,7 @@ ds3100: ${OBJS} .PRECIOUS .NOEXPORT
 	cc -c ${CFLAGS} mainHook.c
 	@cc -c ${CFLAGS} version.c
 	${LD} -N -o ds3100 -e start -T 80030000 ${OBJS} version.o \
-		-L/sprite/lib/${RTM}.md ${LIBNET}
+		-L/sprite/lib/${RTM}.md
 	@ls -l $@
 	@size $@
 	update -f $@ /sprite/boot/$@.md/new
@@ -335,7 +333,7 @@ profile3: ${PROFOBJS} Makefile .PRECIOUS
 	cc -c ${CFLAGS} mainHook.c
 	@cc -c ${CFLAGS} version.c
 	${LD} -msun3 -X -o $@ -e start -T e004000 ${PROFOBJS} version.o \
-	    -L/sprite/lib/${RTM}.md ${LIBOLD} ${LIBNET}
+	    -L/sprite/lib/${RTM}.md
 	@ls -l $@
 	@size $@
 	update -f -s $@ /sprite/boot/sun3.md/prof
