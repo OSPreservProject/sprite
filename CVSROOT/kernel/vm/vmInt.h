@@ -559,6 +559,6 @@ extern	void		VmPrefetch();
 /*
  * Vm tracing.
  */
-extern	void		VmClearSegTraceTimes();
+extern	void		VmTraceSegStart();
 
 #endif _VMINT
