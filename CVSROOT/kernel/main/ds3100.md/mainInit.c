@@ -111,7 +111,7 @@ MachStringTable *argv;
     if (main_PrintInitRoutines) {
 	Mach_MonPrintf("Calling Mach_Init().\n");
     }
-    Mach_Init();
+    Mach_Init(argc, argv);
     if (main_PrintInitRoutines) {
 	Mach_MonPrintf("Calling Sync_Init().\n");
     }
