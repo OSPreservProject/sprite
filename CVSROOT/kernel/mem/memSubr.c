@@ -110,7 +110,7 @@ static	int	largeMaxSize = 10000;
 void
 Mem_DumpStats()
 {
-    Mem_PrintStatsSubr(PrintProc, 0, smallMinNum, largeMinNum, largeMaxSize);
+    Mem_PrintStatsSubrInt(PrintProc, 0, smallMinNum, largeMinNum, largeMaxSize);
 }
 
 
