@@ -47,6 +47,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 enum IndexOp { GET_ADDR, SET_ADDR, GROW_ADDR};
 
+static ReturnStatus GrowBlock _ARGS_((Lfs *lfsPtr, 
+		Fsio_FileIOHandle *handlePtr, int blockNum, int blockSize,
+		LfsDiskAddr diskAddress, int cacheFlags));
+
 static ReturnStatus AccessBlock _ARGS_((enum IndexOp op, Lfs *lfsPtr, 
 		Fsio_FileIOHandle *handlePtr, int blockNum, int blockSize,
 		int cacheFlags, LfsDiskAddr *diskAddressPtr));
@@ -149,7 +153,104 @@ LfsFile_SetIndex(handlePtr, blockNum, blockSize, cacheFlags, diskAddress)
     Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
     return status;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GrowBlock --
+ *
+ *	Grow the specified block to take occupy more space.
+ *
+ * Results:
+ *	SUCCESS if operation worked ok.
+ *	FS_WOULD_BLOCK if operation would block an cantBlock set.
+ *
+ * Side effects:
+ *	The block may be fetched into the cache and marked as
+ *	modified to get to be written to the log again.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+GrowBlock(lfsPtr, handlePtr, blockNum, growthSize, diskAddr, cacheFlags)
+    Lfs		*lfsPtr;		     /* File system of file. */
+    Fsio_FileIOHandle	      *handlePtr;    /* Handle for file that are 
+					      * interest in. */
+    int		blockNum;		     /* Block number of file. */
+    int		growthSize;		/* Block growth size. */
+    LfsDiskAddr diskAddr;	    	/* Disk address of block. */
+    int		cacheFlags;	     /* FSCACHE_CANT_BLOCK,FSCACHE_DONT_BLOCK.*/
+{
+    Fsdm_FileDescriptor *descPtr;
+    int origBlockSize;
+    Fscache_Block *blockPtr;
+    Boolean	found;
+    ReturnStatus	status = SUCCESS;
 
+    if (LfsIsNilDiskAddr(diskAddr)) {
+	/*
+	 * The block is not allocated on disk. Do nothing.
+	 */
+	return SUCCESS;
+    }
+    descPtr = handlePtr->descPtr;
+
+    origBlockSize = (descPtr->lastByte + 1) - blockNum * FS_BLOCK_SIZE;
+    if (origBlockSize <= 0) {
+	LfsError(lfsPtr, FAILURE, "GrowBlock: Bad original size of block\n");
+	return FAILURE;
+    }
+    origBlockSize = LfsBlocksToBytes(lfsPtr, 
+				LfsBytesToBlocks(lfsPtr,origBlockSize));
+
+    if (origBlockSize + growthSize > FS_BLOCK_SIZE) {
+	LfsError(lfsPtr, FAILURE, "GrowBlock: Bad  size of block\n");
+	return FAILURE;
+    }
+
+    if (descPtr->fileType != FS_DIRECTORY) { 
+	/*
+	 * If the file is not a directory we need to read the block in 
+	 * and mark it as dirty so it will be written back. This
+	 * is because the block now too small on disk and we must
+	 * write it out with its new larger size. The reason why
+	 * we must fetch the block is that the growth may be due
+	 * to a write pass the end block of the file.  This causes the
+	 * old last block to no longer be a fragment. The new bytes in
+	 * this block must be zeros.  This can not happen for directories
+	 * because the file system controls writes to directory blocks.
+	 */
+	Fscache_FetchBlock(&handlePtr->cacheInfo, blockNum,
+		    cacheFlags, &blockPtr, &found);
+	if (!found) {
+	    if (blockPtr == (Fscache_Block *) NIL) {
+		status = FS_WOULD_BLOCK;
+		return status;
+	    }
+	     status = LfsReadBytes(lfsPtr, diskAddr, origBlockSize, 
+			   blockPtr->blockAddr);
+	    bzero(blockPtr->blockAddr+origBlockSize, FS_BLOCK_SIZE-origBlockSize);
+#ifdef ERROR_CHECK
+	     LfsCheckRead(lfsPtr, diskAddr, origBlockSize);
+#endif
+	     if (status != SUCCESS) {
+		 LfsError(lfsPtr, status, "Can't read block to grow.\n");
+		 return status;
+	     }
+	}
+
+	Fscache_UnlockBlock(blockPtr,(unsigned)Fsutil_TimeInSeconds(), 
+				blockNum, origBlockSize+growthSize, 0);
+    }
+    /*
+     * Grow the active bytes of the segment. The activeBytes will
+     * be decremented when the file is deleted or the block is written
+     * out to disk.
+     */
+    LfsSetSegUsage(lfsPtr, LfsDiskAddrToSegmentNum(lfsPtr, diskAddr),
+		    growthSize);
+    return status;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -234,6 +335,7 @@ AccessBlock(op, lfsPtr, handlePtr, blockNum, blockSize, cacheFlags,
 	    /*
 	     * This is a direct data block.
 	     */
+	    status = SUCCESS;
 	    switch (op) {
 		case GET_ADDR: { 
 		    *diskAddressPtr = directPtr[blockNum];
@@ -248,17 +350,15 @@ AccessBlock(op, lfsPtr, handlePtr, blockNum, blockSize, cacheFlags,
 		    break;
 		}
 		case GROW_ADDR: {
-		    LfsDiskAddr diskAddr = directPtr[blockNum];
-		    if (!LfsIsNilDiskAddr(diskAddr)) {
-			LfsSetSegUsage(lfsPtr,
-				   LfsDiskAddrToSegmentNum(lfsPtr, diskAddr),
-				    blockSize);
-		    }
-		    *diskAddressPtr = diskAddr;
+		    status = GrowBlock(lfsPtr, handlePtr, blockNum, 
+				blockSize, directPtr[blockNum], 
+				cacheFlags & 
+				   (FSCACHE_CANT_BLOCK|FSCACHE_DONT_BLOCK));
+		    *diskAddressPtr = directPtr[blockNum];
 		    break;
 		}
 	    }
-	    return(SUCCESS);
+	    return(status);
 	}
 	if (blockNum < (FSDM_NUM_DIRECT_BLOCKS + FSDM_INDICES_PER_BLOCK)) {
 	    parentBlockNum = -1;
@@ -304,6 +404,7 @@ AccessBlock(op, lfsPtr, handlePtr, blockNum, blockSize, cacheFlags,
 		cacheFlags, &parentblockPtr, &found);
     if ((parentblockPtr != (Fscache_Block *) NIL) && found) {
 	modTime = 0;
+	 status = SUCCESS;
 	 switch (op) {
 	     case GET_ADDR: {
 		LFS_STATS_INC(lfsPtr->stats.index.getFetchHit);
@@ -324,17 +425,16 @@ AccessBlock(op, lfsPtr, handlePtr, blockNum, blockSize, cacheFlags,
 	     case GROW_ADDR: {
 		*diskAddressPtr = 
 		    ((LfsDiskAddr *)parentblockPtr->blockAddr)[parentIndex];
-		if (!LfsIsNilDiskAddr(*diskAddressPtr)) {
-			LfsSetSegUsage(lfsPtr,
-			    LfsDiskAddrToSegmentNum(lfsPtr, *diskAddressPtr),
-			    blockSize);
-		}
+		status = GrowBlock(lfsPtr, handlePtr, blockNum, 
+				blockSize, *diskAddressPtr, 
+				cacheFlags & 
+				   (FSCACHE_CANT_BLOCK|FSCACHE_DONT_BLOCK));
 		break;
 	     } 
 	 }
 	 Fscache_UnlockBlock(parentblockPtr, (unsigned )modTime, parentBlockNum,
 			     FS_BLOCK_SIZE, 0);
-	 return SUCCESS;
+	 return status;
     }
     if (parentblockPtr == (Fscache_Block *) NIL) {
 	return FS_WOULD_BLOCK;
@@ -409,11 +509,10 @@ AccessBlock(op, lfsPtr, handlePtr, blockNum, blockSize, cacheFlags,
 	 case GROW_ADDR: {
 	    *diskAddressPtr =  
 		    ((LfsDiskAddr *)parentblockPtr->blockAddr)[parentIndex];
-	    if (!LfsIsNilDiskAddr(*diskAddressPtr)) {
-		    LfsSetSegUsage(lfsPtr,
-			LfsDiskAddrToSegmentNum(lfsPtr, *diskAddressPtr),
-			blockSize);
-	    }
+	    status = GrowBlock(lfsPtr, handlePtr, blockNum, 
+				blockSize, *diskAddressPtr, 
+				cacheFlags & 
+				   (FSCACHE_CANT_BLOCK|FSCACHE_DONT_BLOCK));
 	    break;
 	 }
     }
@@ -691,19 +790,27 @@ LfsFile_GrowBlock(lfsPtr, handlePtr, offset, numBytes)
     blockNum = offset / FS_BLOCK_SIZE;
     oldLastBlock = oldSize / FS_BLOCK_SIZE;
     if (newLastByte > descPtr->lastByte) {
-	int blocksToGrow, bytesToGrow, lastFragSize, newLastFragSize, 
-	     extraBytes;
+	int blocksToGrow, bytesToGrow, lastFragSize, extraBytes;
 	/*
-	 * We are writing at the end of the file. If the last block is 
+	 * We are writing passed the end of the file. If the last block is 
 	 * a fragment we must grow it.
 	 */
 	lastFragSize = oldSize % FS_BLOCK_SIZE;
-	newLastFragSize = lastFragSize + (newLastByte - descPtr->lastByte);
-	if (newLastFragSize > FS_BLOCK_SIZE) {
-	    newLastFragSize = FS_BLOCK_SIZE;
+	if (lastFragSize > 0) { 
+	    int newLastFragSize;
+	    newLastFragSize = lastFragSize + (newLastByte - descPtr->lastByte);
+	    if (newLastFragSize > FS_BLOCK_SIZE) {
+		newLastFragSize = FS_BLOCK_SIZE;
+	    }
+	    blocksToGrow = LfsBytesToBlocks(lfsPtr, newLastFragSize) - 
+			    LfsBytesToBlocks(lfsPtr, lastFragSize);
+	} else {
+	    /*
+	     * The last block in the file was not a fragment. No need to
+	     * grow it.
+	     */
+	    blocksToGrow = 0;
 	}
-	blocksToGrow = LfsBytesToBlocks(lfsPtr, newLastFragSize) - 
-			LfsBytesToBlocks(lfsPtr, lastFragSize);
 	if (blocksToGrow > 0) {
 	    bytesToGrow = LfsBlocksToBytes(lfsPtr,blocksToGrow);
 	    /*
