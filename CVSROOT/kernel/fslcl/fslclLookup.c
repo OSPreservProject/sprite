@@ -616,7 +616,9 @@ endScan:
 			status = DeleteFileName(parentHandlePtr,
 			      curHandlePtr, component, compLen, FALSE, idPtr,
 			      FSDM_LOG_RENAME_DELETE);
-			fileDeleted = TRUE;
+			if (status == SUCCESS) {
+			    fileDeleted = TRUE;
+			}
 		    } else {
 			/*
 			 * Not ok to link to an existing file.
