@@ -137,6 +137,8 @@ static Boolean 		SetupVM _ARGS_((register Proc_ControlBlock *procPtr,
 			    Fs_Stream *codeFilePtr, Boolean usedFile, 
 			    Vm_Segment **codeSegPtrPtr, 
 			    register Vm_ExecInfo *execInfoPtr));
+static Boolean		ZeroHeapEnd _ARGS_ ((Vm_ExecInfo *execInfoPtr,
+					     Address heapEnd));
 
 #ifdef notdef
 /*
@@ -1217,9 +1219,11 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
      * mode.
      */
 #ifdef sun4
+#if 0
     if (objInfo.unixCompat) {
 	userStackPointer += 32;
     }
+#endif
 #endif
     Mach_ExecUserProc(procPtr, userStackPointer, (Address) execInfoPtr->entry);
     panic("DoExec: Proc_RunUserProc returned.\n");
@@ -1428,7 +1432,6 @@ SetupVM(procPtr, objInfoPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr)
     Boolean			notFound;
     Vm_Segment			*heapSegPtr;
     Fs_Stream			*heapFilePtr;
-    ReturnStatus		status;
     Address			heapEnd = (Address) NIL;
     int				realCode = 1;
 
@@ -1557,18 +1560,60 @@ SetupVM(procPtr, objInfoPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr)
 		    Fsutil_HandleName(&codeFilePtr->hdr),
 		    "and should be relinked");
 	} else {
-	    status = Vm_PageIn((Address) 
-		    ((execInfoPtr->bssFirstPage-1)*vm_PageSize),
-		    FALSE);
-	    if (status != SUCCESS) {
-		printf("SetupVM: heap prefetch failure\n");
-		return FALSE;
-	    }
-	    bzero((char *)heapEnd,
-		    vm_PageSize-((unsigned)heapEnd&(vm_PageSize-1)));
-	    }
+	    return ZeroHeapEnd(execInfoPtr, heapEnd);
+	}
     }
     return(TRUE);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ZeroHeapEnd --
+ *
+ *	Zero out the end of the heap (from the given address to the 
+ *	next page boundary).  This routine exists for compatibility 
+ *	with oddly-linked binaries.
+ *
+ * Results:
+ *	TRUE if we were successful, FALSE if not (e.g., couldn't bring 
+ *	in the last heap page).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+    
+static Boolean
+ZeroHeapEnd(execInfoPtr, userHeapEnd)
+    Vm_ExecInfo	*execInfoPtr;	/* info about the exec file */
+    Address	userHeapEnd;	/* user address of the end of the heap */
+{
+    ReturnStatus	status;
+    Address	heapEnd;	/* kernel address of end of heap */
+    int		bytesToZero;	/* number of bytes to zero out */
+    int		bytesAvail;	/* number of bytes accessible */
+    
+
+    status = Vm_PageIn((Address) ((execInfoPtr->bssFirstPage-1)*vm_PageSize),
+		       FALSE);
+    if (status != SUCCESS) {
+	printf("SetupVM: heap prefetch failure\n");
+	return FALSE;
+    }
+    bytesToZero = vm_PageSize - ((unsigned)userHeapEnd&(vm_PageSize-1));
+    Vm_MakeAccessible(VM_READWRITE_ACCESS, bytesToZero, userHeapEnd,
+		      &bytesAvail, &heapEnd);
+    if (bytesAvail != bytesToZero) {
+	printf("SetupVM: can't map heap\n");
+	return FALSE;
+    }
+    bzero((char *)heapEnd, bytesToZero);
+    Vm_MakeUnaccessible(heapEnd, bytesToZero);
+
+    return TRUE;
 }
 
 
