@@ -59,7 +59,12 @@ ProcGetObjInfo(execPtr, objInfoPtr)
     }
 #endif
 #ifdef sun4
-    if (execPtr->machineType != PROC_SPARC) {
+    /*
+     * Sun's compiler includes a tool version number or something in the
+     * top 16 bits of the machineType field, so we can only look at the
+     * low 16 bits.
+     */
+    if ((execPtr->machineType & 0xff) != PROC_SPARC) {
 	return(PROC_BAD_AOUT_FORMAT);
     }
 #endif
