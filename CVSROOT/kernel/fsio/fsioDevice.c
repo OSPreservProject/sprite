@@ -148,8 +148,7 @@ ReturnStatus
 FsDeviceSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	    dataSizePtr, clientDataPtr)
     FsLocalFileIOHandle	*handlePtr;	/* A handle obtained by FsLocalLookup.
-					 * Should be locked upon entry.  It
-					 * is unlocked and released here. */
+					 * Should be locked upon entry. */
     int		clientID;		/* ID of client doing the open.
 					 * SHOULD REFLECT MIGRATION SOMEHOW */
     int		useFlags;		/* Use flags from the stream */
@@ -265,7 +264,7 @@ FsDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPtr)
 	 * The client is recorded at the stream level to support migration,
 	 * and at the I/O handle level for regular I/O.
 	 */
-	(void)FsIOClientOpen(&devHandlePtr->clientList, clientID, flags);
+	FsIOClientOpen(&devHandlePtr->clientList, clientID, flags, FALSE);
 
 	streamPtr = FsStreamFind(&deviceDataPtr->streamID,
 			(FsHandleHeader *)devHandlePtr, flags, (Boolean *)NIL);
@@ -459,16 +458,25 @@ Fs_RpcDevOpen(srvToken, clientID, command, storagePtr)
 					 * open routine. */
     ReturnStatus	status;
     FsDeviceRemoteOpenPrm *paramPtr;
+    register int	dataSize = storagePtr->requestDataSize;
+    ClientData		streamData;
 
     /*
      * Call the client-open routine to set up an I/O handle here on the
      * I/O server for the device.  This is either the device, pipe, or
-     * named pipe open routine.
+     * named pipe open routine.  We allocate storage and copy the stream
+     * data so the CltOpen routine can free it, as it expects to do.
      */
     paramPtr = (FsDeviceRemoteOpenPrm *) storagePtr->requestParamPtr;
+    if (dataSize > 0) {
+	streamData = (ClientData)Mem_Alloc(dataSize);
+	Byte_Copy(dataSize, storagePtr->requestDataPtr, (Address)streamData);
+    } else {
+	streamData = (ClientData)NIL;
+    }
     status = (fsStreamOpTable[paramPtr->fileID.type].cltOpen)
 		    (&paramPtr->fileID, &paramPtr->useFlags,
-		     clientID, storagePtr->requestDataPtr, &hdrPtr);
+		     clientID, streamData, &hdrPtr);
     if (status == SUCCESS) {
 	/*
 	 * Return the fileID to the other host so it can
@@ -513,10 +521,9 @@ FsDeviceClose(hdrPtr, clientID, flags, size, data)
     ReturnStatus		status;
     register FsDeviceIOHandle	*devHandlePtr =
 	    (FsDeviceIOHandle *)hdrPtr;
-    Boolean			wasCached; /* IGNORED */
+    Boolean			cache = FALSE;
 
-    if (!FsIOClientClose(&devHandlePtr->clientList, clientID, flags,
-		    &wasCached)) {
+    if (!FsIOClientClose(&devHandlePtr->clientList, clientID, flags, &cache)) {
 	Sys_Panic(SYS_WARNING,
 		  "FsDeviceClose, client %d unknown for device <%d,%d>\n",
 		  clientID, hdrPtr->fileID.major, hdrPtr->fileID.minor);
@@ -931,7 +938,7 @@ FsDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
     FsDeviceIOHandle			*devHandlePtr;
     register Fs_Stream			*streamPtr;
     Boolean				found;
-    Boolean				wasCached;	/* IGNORED */
+    Boolean				cache = FALSE;
 
     if (migInfoPtr->ioFileID.serverID != rpc_SpriteID) {
 	/*
@@ -980,7 +987,7 @@ FsDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
      */
     if ((migInfoPtr->flags & FS_RMT_SHARED) == 0) {
 	found = FsIOClientClose(&devHandlePtr->clientList,
-		    migInfoPtr->srcClientID, migInfoPtr->flags, &wasCached);
+		    migInfoPtr->srcClientID, migInfoPtr->flags, &cache);
 	if (!found) {
 	    Sys_Panic(SYS_WARNING,
 		"FsDeviceMigrate, IO Client %d not found\n",
@@ -989,7 +996,7 @@ FsDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
     }
     if (migInfoPtr->flags & FS_NEW_STREAM) {
 	(void)FsIOClientOpen(&devHandlePtr->clientList, dstClientID,
-		migInfoPtr->flags);
+		migInfoPtr->flags, FALSE);
     }
 
     *sizePtr = 0;
@@ -1363,13 +1370,13 @@ FsDeviceWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, remoteWaitPtr)
  */
 ReturnStatus
 FsDeviceSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
-    register FsHandleHeader	*hdrPtr;	/* Handle on device to select */
+    FsHandleHeader	*hdrPtr;	/* Handle on device to select */
     Sync_RemoteWaiter	*waitPtr;	/* Process info for remote waiting */
     int 		*readPtr;	/* Bit to clear if non-readable */
     int 		*writePtr;	/* Bit to clear if non-writeable */
     int 		*exceptPtr;	/* Bit to clear if non-exceptable */
 {
-    FsDeviceIOHandle	*devHandlePtr = (FsDeviceIOHandle *)hdrPtr;
+    register FsDeviceIOHandle *devHandlePtr = (FsDeviceIOHandle *)hdrPtr;
     register Fs_Device	*devicePtr = &devHandlePtr->device;
     register ReturnStatus status;
     register int inFlags;		/* Until we fix the device drivers */

@@ -168,8 +168,7 @@ ReturnStatus
 FsFileSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	dataSizePtr, clientDataPtr)
      register FsLocalFileIOHandle *handlePtr;	/* A handle from FsLocalLookup.
-					 * Should be locked upon entry.  It
-					 * is unlocked and released here. */
+					 * Should be LOCKED upon entry. */
      int		clientID;	/* Host ID of client doing the open */
      register int	useFlags;	/* FS_READ | FS_WRITE | FS_EXECUTE */
      FsFileID		*ioFileIDPtr;	/* Return - same as handle file ID */
@@ -495,7 +494,7 @@ FsFileClose(hdrPtr, clientID, flags, dataSize, closeData)
 {
     register FsLocalFileIOHandle *handlePtr = (FsLocalFileIOHandle *)hdrPtr;
     ReturnStatus		status;
-    Boolean			wasCached;
+    Boolean			wasCached = TRUE;
 
     /*
      * Update the client state to reflect the close by the client.
@@ -673,7 +672,8 @@ FsFileScavenge(hdrPtr)
     }
 
     if (handlePtr->use.ref == 0 &&
-	handlePtr->cacheInfo.blocksInCache == 0) {
+	handlePtr->cacheInfo.blocksInCache == 0 &&
+	FsConsistClients(&handlePtr->consist) == 0) {
 	/*
 	 * Remove handles for files with no users and no blocks in cache.
 	 * This call unlocks the handle and then frees its memory if there

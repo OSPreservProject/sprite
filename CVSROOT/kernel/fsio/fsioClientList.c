@@ -100,10 +100,11 @@ FsClientInit()
  */
 
 ENTRY FsClientInfo *
-FsIOClientOpen(clientList, clientID, useFlags)
+FsIOClientOpen(clientList, clientID, useFlags, cached)
     List_Links	*clientList;	/* List of clients for the I/O handle. */
     int		clientID;	/* The client who is opening the file. */
     int		useFlags;	/* FS_READ | FS_WRITE | FS_EXECUTE */
+    Boolean	cached;		/* Boolean property recorded for client */
 {
     register FsClientInfo *clientPtr;
     register ClientItem *listPtr;
@@ -120,7 +121,7 @@ FsIOClientOpen(clientList, clientID, useFlags)
     clientPtr->use.ref = 0;
     clientPtr->use.write = 0;
     clientPtr->use.exec = 0;
-    clientPtr->cached = FALSE;
+    clientPtr->cached = cached;
     clientPtr->openTimeStamp = 0;
     List_InitElement((List_Links *)clientPtr);
     List_Insert((List_Links *) clientPtr, LIST_ATFRONT(clientList));
@@ -170,16 +171,18 @@ exit:
  *
  */
 Boolean
-FsIOClientClose(clientList, clientID, flags, wasCachedPtr)
+FsIOClientClose(clientList, clientID, flags, cachePtr)
     List_Links		*clientList;	/* List of clients for I/O handle */
     int			clientID;	/* Host ID of client that had it open */
     register int	flags;		/* Flags from the stream. */
-    Boolean		*wasCachedPtr;	/* TRUE if client marked as caching */
+    Boolean		*cachePtr;	/* In/Out.  If TRUE on entry, this won't
+					 * delete the client list entry if
+					 * the entry's cached field is also
+					 * TRUE.  On return, this is the value
+					 * of the client's cached field. */
 {
     register	FsClientInfo	*clientPtr;
     register	Boolean		found = FALSE;
-
-    *wasCachedPtr = FALSE;
 
     LIST_FORALL(clientList, (List_Links *) clientPtr) {
 	if (clientPtr->clientID == clientID) {
@@ -202,13 +205,13 @@ FsIOClientClose(clientList, clientID, flags, wasCachedPtr)
 		clientPtr->clientID,
 		clientPtr->use.ref, clientPtr->use.write, clientPtr->use.exec);
 	}
-	*wasCachedPtr = clientPtr->cached;
-#ifdef figure_out_cleanup
-	if (clientPtr->use.ref == 0) {
-	    List_Remove((List_Links *) clientPtr);
-	    Mem_Free((Address) clientPtr);
+	if (!(*cachePtr) || !clientPtr->cached) {
+	    if (clientPtr->use.ref == 0) {
+		List_Remove((List_Links *) clientPtr);
+		Mem_Free((Address) clientPtr);
+	    }
+	    *cachePtr = FALSE;
 	}
-#endif
     }
     return(found);
 }

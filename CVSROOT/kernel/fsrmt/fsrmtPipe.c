@@ -74,8 +74,8 @@ Fs_CreatePipe(inStreamPtrPtr, outStreamPtrPtr)
 
     GetFileID(&fileID);
     handlePtr = FsPipeHandleInit(&fileID, FALSE);
-    (void)FsIOClientOpen(&handlePtr->clientList, rpc_SpriteID, FS_READ);
-    (void)FsIOClientOpen(&handlePtr->clientList, rpc_SpriteID, FS_WRITE);
+    FsIOClientOpen(&handlePtr->clientList, rpc_SpriteID, FS_READ, FALSE);
+    FsIOClientOpen(&handlePtr->clientList, rpc_SpriteID, FS_WRITE, FALSE);
 
     /*
      * Allocate and initialize the read, or "in", end of the stream.
@@ -206,9 +206,9 @@ FsPipeClose(hdrPtr, clientID, flags, dataSize, closeData)
     ClientData		closeData;	/* Should be NIL */
 {
     register FsPipeIOHandle *handlePtr = (FsPipeIOHandle *)hdrPtr;
-    Boolean notUsed;
+    Boolean cache = FALSE;
 
-    if (!FsIOClientClose(&handlePtr->clientList, clientID, flags, &notUsed)) {
+    if (!FsIOClientClose(&handlePtr->clientList, clientID, flags, &cache)) {
 	Sys_Panic(SYS_WARNING, "FsPipeClose, unknown client %d\n", clientID);
 	FsHandleUnlock(handlePtr);
     } else {
@@ -753,7 +753,7 @@ FsPipeMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
     FsPipeIOHandle			*handlePtr;
     register Fs_Stream			*streamPtr;
     Boolean				found;
-    Boolean				wasCached;	/* IGNORED */
+    Boolean				cache = FALSE;
 
     if (migInfoPtr->ioFileID.serverID != rpc_SpriteID) {
 	/*
@@ -793,7 +793,7 @@ FsPipeMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
      */
     if ((migInfoPtr->flags & FS_RMT_SHARED) == 0) {
 	found = FsIOClientClose(&handlePtr->clientList,
-		    migInfoPtr->srcClientID, migInfoPtr->flags, &wasCached);
+		    migInfoPtr->srcClientID, migInfoPtr->flags, &cache);
 	if (!found) {
 	    Sys_Panic(SYS_WARNING,
 		"FsPipeMigrate, IO Client %d not found\n",
@@ -802,7 +802,7 @@ FsPipeMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
     }
     if (migInfoPtr->flags & FS_NEW_STREAM) {
 	(void)FsIOClientOpen(&handlePtr->clientList, dstClientID,
-		migInfoPtr->flags);
+		migInfoPtr->flags, FALSE);
     }
 
     *sizePtr = 0;
