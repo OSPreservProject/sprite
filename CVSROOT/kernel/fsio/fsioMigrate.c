@@ -110,9 +110,6 @@ Fsio_EncapStream(streamPtr, bufPtr)
 
     Fsutil_HandleUnlock(streamPtr);
 
-    fs_Stats.mig.filesEncapsulated++;
-
-
     return(SUCCESS);
 }
 
@@ -159,8 +156,6 @@ Fsio_DeencapStream(bufPtr, streamPtrPtr)
     ClientData			data;
 
     migInfoPtr = (FsMigInfo *) bufPtr;
-
-    fs_Stats.mig.filesDeencapsulated++;
 
     if (migInfoPtr->srcClientID == rpc_SpriteID) {
 	/*
