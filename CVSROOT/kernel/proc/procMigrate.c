@@ -68,6 +68,11 @@ static void	    LockAndSwitch();
 static ENTRY void   WakeupCallers();
 static ENTRY ReturnStatus   WaitForMigration();
 
+/*
+ * External procedures.
+ */
+extern Address malloc();
+
 
 /*
  *----------------------------------------------------------------------
@@ -503,7 +508,7 @@ SendProcessState(procPtr, nodeID, foreign)
 	    (PROC_NUM_ID_FIELDS + PROC_NUM_FLAGS +
 	     PROC_NUM_SCHED_FIELDS + 1) * sizeof(int) +
 	    SIG_INFO_SIZE + machStateSize + argStringLength;
-    procBuffer = (Address) malloc(procBufferSize);
+    procBuffer = malloc(procBufferSize);
 
     ptr = procBuffer;
 
@@ -524,7 +529,7 @@ SendProcessState(procPtr, nodeID, foreign)
     ptr += PROC_NUM_FLAGS * sizeof(int);
 
     bcopy((Address) &procPtr->billingRate, ptr,
-	    PROC_NUM_ID_FIELDS * sizeof (int));
+	    PROC_NUM_SCHED_FIELDS * sizeof (int));
     ptr += PROC_NUM_SCHED_FIELDS * sizeof(int);
 
     bcopy((Address) &procPtr->sigHoldMask, ptr, SIG_INFO_SIZE);
@@ -966,7 +971,7 @@ InitiateMigration(procPtr, nodeID)
 	    panic("InitiateMigration: Rpc_Storage corrupted.\n");
 	} else {
 #endif /* SANITY_CHECK */
-	    if (proc_MigDebugLevel > 0) {
+	    if (proc_MigDebugLevel > 2) {
 		panic("InitiateMigration: Error %x returned by host %d.\n",
 		    status, nodeID);
 	    } else {
@@ -1110,7 +1115,7 @@ Proc_MigSendUserInfo(procPtr)
      * an int.
      */
     procBufferSize = PROC_NUM_USER_INFO_FIELDS * sizeof(int);
-    procBuffer = (Address) malloc(procBufferSize);
+    procBuffer = malloc(procBufferSize);
 
     ptr = procBuffer;
 
@@ -1306,22 +1311,32 @@ Proc_DestroyMigratedProc(pidData)
 	Proc_Unlock(procPtr);
 	return;
     }
+#ifdef notdef
     /*
      * Wake up the process if it is asleep.
      */
     Sync_RemoveWaiter(procPtr);
+#endif
 
-    /*
-     * Unlock the process again, since ProcExitProcess locks it.  [Is
-     * there any race condition?  ProcExitProcess must be careful about
-     * the process it's passed.]
-     */
-    Proc_Unlock(procPtr);
-    
-    ProcExitProcess(procPtr, PROC_TERM_DESTROYED, (int) PROC_NO_PEER, 0,
-		    FALSE);
+    if (procPtr->state == PROC_MIGRATED) {
+	/*
+	 * Perform an exit on behalf of the process.  Unlock the
+	 * process again, since ProcExitProcess locks it.  [Is there
+	 * any race condition?  e.g., ProcExitProcess must be careful
+	 * about the process it's passed.]
+	 */
+	Proc_Unlock(procPtr);
+	ProcExitProcess(procPtr, PROC_TERM_DESTROYED, (int) PROC_NO_PEER, 0,
+			FALSE);
+	Proc_RemoveMigDependency(pid);
+    } else {
+	/*
+	 * Let it get killed the normal way, and let the exit routines
+	 * handle cleaning up dependencies.
+	 */
+	Sig_SendProc(procPtr, SIG_KILL, PROC_NO_PEER);
+    }
 
-    Proc_RemoveMigDependency(pid);
 }
 
 
