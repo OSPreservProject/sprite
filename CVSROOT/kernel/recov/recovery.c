@@ -68,6 +68,12 @@ static List_Links	crashCallBackList;
 int recov_CrashDelay;
 
 /*
+ * When a crash call back is avoided because the host didn't really go
+ * down we increment the following counter.
+ */
+int recovNumNonCrashes = 0;
+
+/*
  * The state of other hosts is kept in a hash table keyed on SpriteID.
  * This state is maintained by Recov_HostAlive and Recov_HostDead, which are
  * called in turn after packet reception or RPC timeout, respectively.
