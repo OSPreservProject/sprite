@@ -6,67 +6,35 @@ int	debugTwo = 0;
 int	debugThree = 0;
 int	debugFour = 0;
 
-int	proc_PCBTable[100];
-
-int *
-Mach_GetEtherAddress(etherAddressPtr)
-int *	etherAddressPtr;
+#ifdef sun4c
+/*
+ * Various prom things called in these routines don't exist on the sun4c.
+ */
+int
+Test_GetLine()
 {
-	*etherAddressPtr = 0x08002000;
-	etherAddressPtr++;
-	*etherAddressPtr = 0xef480000;
-	return etherAddressPtr;
 }
 
-int	*sched_MutexPtr;
+int
+Test_GetChar()
+{
+}
+#endif
+
+Mach_GetLastSyscall()
+{
+}
+
+Proc_RpcMigInfo()
+{
+}
+Proc_RpcMigInit()
+{
+}
 
 VmMachTracePMEG()
 {
     panic("VmMachTracePMEG called.\n");
-}
-
-Dump_Register_Events()
-{
-    panic("Dump_Register_Events called\n");
-}
-
-Dump_Show_Local_Menu()
-{
-    panic("Dump_Show_Local_Menu called.\n");
-}
-
-Prof_Init()
-{
-    panic("Prof_Init called.\n");
-}
-
-Prof_Start()
-{
-    panic("Prof_Start called.\n");
-}
-
-Prof_Enable()
-{
-}
-
-Prof_Disable()
-{
-    panic("Prof_Disable called.\n");
-}
-
-Prof_Profil()
-{
-    panic("Prof_Profil called.\n");
-}
-
-Prof_End()
-{
-    panic("Prof_End called.\n");
-}
-
-Prof_DumpStub()
-{
-    panic("Prof_DumpStub called.\n");
 }
 
 Mach_GetStackPointer()
@@ -74,46 +42,44 @@ Mach_GetStackPointer()
     panic("Mach_GetStackPointer called.\n");
 }
 
-Prof_EncapState()
-{
-    panic("Prof_EncapState called.\n");
-}
-
-Prof_DeencapState()
-{
-    panic("Prof_DeencapState called.\n");
-}
-
-Prof_GetEncapSize()
-{
-    panic("Prof_GetEncapSize called.\n");
-}
-
+ReturnStatus
 Mach_EncapState()
 {
     panic("Mach_EncapState called.\n");
 }
 
+ReturnStatus
 Mach_GetEncapState()
 {
     panic("Mach_GetEncapState called.\n");
 }
 
+ReturnStatus
 Mach_GetEncapSize()
 {
     panic("Mach_GetEncapSize called.\n");
 }
 
+ReturnStatus
 Mach_DeencapState()
 {
     panic("Mach_DeencapState called.\n");
 }
 
+Boolean
 Mach_CanMigrate()
 {
     panic("Mach_CanMigrate called.\n");
 }
 
-modf()
+Vm_FreezeSegments()
+{
+}
+
+Vm_MigrateSegment()
+{
+}
+
+Vm_ReceiveSegmentInfo()
 {
 }

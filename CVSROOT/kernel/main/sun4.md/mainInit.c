@@ -15,7 +15,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "dbg.h"
 #include "dev.h"
-#include "mem.h"
 #include "net.h"
 #include "proc.h"
 #include "prof.h"
@@ -29,6 +28,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "machMon.h"
 #include "devAddrs.h"
 #include "mach.h"
+#include "stdlib.h"
 
 void main();
 static void Init();
@@ -43,11 +43,7 @@ extern void Proc_RecovInit();
 /*
  *  Pathname of the Init program.
  */
-#ifdef NOTDEF
-#define INIT	 	"/initsprite"
-#else
-#define	INIT		"/initsprite.mgbaker"
-#endif NOTDEF
+#define INIT	 	"cmds/initsprite"
 
 /*
  * Flags defined in individual's mainHook.c to modify the startup behavior. 
@@ -96,25 +92,16 @@ main()
      * IMPORTANT: Only variable assignments and nothing else can be
      *		  done in this routine.
      */
-    if (main_PrintInitRoutines) {
-	Mach_MonPrintf("Calling Main_InitVars().\n");
-    }
     Main_InitVars();
 
     /*
      * Initialize machine dependent info.  MUST BE CALLED HERE!!!.
      */
-    if (main_PrintInitRoutines) {
-	Mach_MonPrintf("Calling Mach_Init().\n");
-    }
     Mach_Init();
 
     /*
      * Initialize the debugger.
      */
-    if (main_PrintInitRoutines) {
-	Mach_MonPrintf("Calling Dbg_Init().\n");
-    }
     Dbg_Init();
 
     /*
@@ -163,32 +150,26 @@ main()
 	Mach_MonPrintf("Calling Proc_Init().\n");
     }
     Proc_Init();
-
     if (main_PrintInitRoutines) {
 	Mach_MonPrintf("Calling Sync_LockStatInit().\n");
     }
     Sync_LockStatInit();
-
     if (main_PrintInitRoutines) {
 	Mach_MonPrintf("Calling Timer_Init().\n");
     }
     Timer_Init();
-
     if (main_PrintInitRoutines) {
 	Mach_MonPrintf("Calling Sig_Init().\n");
     }
     Sig_Init();
-
     if (main_PrintInitRoutines) {
 	Mach_MonPrintf("Calling Sched_Init().\n");
     }
     Sched_Init();
-
     if (main_PrintInitRoutines) {
 	Mach_MonPrintf("Calling Sync_Init().\n");
     }
     Sync_Init();
-
 
     /*
      * Sys_Printfs are not allowed before this point.
@@ -202,7 +183,6 @@ main()
 	Mach_MonPrintf("Calling Fs_Bin\n");
     }
     Fs_Bin();
-
     if (main_PrintInitRoutines) {
 	Mach_MonPrintf("Calling Net_Bin\n");
     }
@@ -233,16 +213,10 @@ main()
     Proc_InitMainProc();
 
     /*
-     * Enable server process manager.
-     */
-    if (main_PrintInitRoutines) {
-	Mach_MonPrintf("Calling Proc_ServerInit\n");
-    }
-    Proc_ServerInit();
-
-    /*
-     * Initialize the ethernet drivers and the routes.
-     * Dependencies: Vm_Init
+     * Initialize the network and the routes.  It would be nice if we
+     * could call Net_Init earlier so that we can use the debugger earlier
+     * but we must call Vm_Init first.  VM could be changed so that we
+     * could move the call earlier however.
      */
     if (main_PrintInitRoutines) {
 	Mach_MonPrintf("Calling Net_Init\n");
@@ -252,6 +226,14 @@ main()
 	Mach_MonPrintf("Calling Net_RouteInit\n");
     }
     Net_RouteInit();
+
+    /*
+     * Enable server process manager.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Proc_ServerInit\n");
+    }
+    Proc_ServerInit();
 
     /*
      * Initialize the recovery module.  Do before Rpc and after Vm_Init.
@@ -399,7 +381,6 @@ main()
      */
     printf("MEMORY %d bytes allocated for kernel\n", 
 		vmMemEnd - mach_KernStart);
-
     /*
      * Start up the first user process.
      */
@@ -408,7 +389,6 @@ main()
     }
     (void) Proc_NewProc((Address) Init, PROC_KERNEL, FALSE, &pid, "Init");
 
-    printf("Hello World!\n");
     (void) Sync_WaitTime(time_OneYear);
     printf("Main exiting\n");
     Proc_Exit(0);
@@ -433,22 +413,58 @@ main()
 static void
 Init()
 {
-    static char		*initArgs[] = { INIT, (char *) NIL };
-    static char		*altInitArgs[] = { 0, (char *) NIL };
+    char		*initArgs[10];
     ReturnStatus	status;
+    char		argBuffer[100];
+    int			argc;
+    Fs_Stream		*dummy;
+    char		bootCommand[103];
+    char		*ptr;
+    int			i;
+    int			argLength;
 
     if (main_PrintInitRoutines) {
 	Mach_MonPrintf("In Init\n");
     }
-    if (main_AltInit != 0) {
-	altInitArgs[0] = main_AltInit;
-	printf("Execing \"%s\"\n", altInitArgs[0]);
-	status = Proc_KernExec(altInitArgs[0], initArgs);
-	printf( "Init: Could not exec %s status %x.\n",
-			altInitArgs[0], status);
+    bzero(bootCommand, 103);
+    argc = Mach_GetBootArgs(8, 100, &(initArgs[2]), argBuffer);
+    if (argc > 0) {
+	argLength = (((int) initArgs[argc+1]) + strlen(initArgs[argc+1]) +
+			1 - ((int) argBuffer));
+    } else {
+	argLength = 0;
     }
+    if (argLength > 0) {
+	initArgs[1] = "-b";
+	ptr = bootCommand;
+	for (i = 0; i < argLength; i++) {
+	    if (argBuffer[i] == '\0') {
+		*ptr++ = ' ';
+	    } else {
+		*ptr++ = argBuffer[i];
+	    }
+	}
+	bootCommand[argLength] = '\0';
+	initArgs[2] = bootCommand;
+	initArgs[argc + 2] = (char *) NIL;
+    } else {
+	initArgs[1] = (char *) NIL;
+    }
+    if (main_AltInit != 0) {
+	initArgs[0] = main_AltInit;
+	printf("Execing \"%s\"\n", initArgs[0]);
+	status = Proc_KernExec(initArgs[0], initArgs);
+	printf( "Init: Could not exec %s status %x.\n",
+			initArgs[0], status);
+    }
+    status = Fs_Open(INIT,FS_EXECUTE | FS_FOLLOW, FS_FILE, 0, &dummy);
+    if (status != SUCCESS) {
+	printf("Can't open %s <0x%x>\n", INIT,status);
+    }
+    initArgs[0] = INIT;
     status = Proc_KernExec(initArgs[0], initArgs);
     printf( "Init: Could not exec %s status %x.\n",
 			initArgs[0], status);
     Proc_Exit(1);
 }
+
