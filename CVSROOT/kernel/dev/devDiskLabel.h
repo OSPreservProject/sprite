@@ -81,6 +81,8 @@ typedef struct Sun_DiskLabel {
  */
 #define DEC_NUM_DISK_PARTS  8
 
+#define DEC_LABEL_VERSION 1
+
 /*
  * A disk is divided into partitions and this type specifies where a
  * partition starts and how many bytes it contains.
@@ -103,8 +105,10 @@ typedef struct Dec_DiskLabel {
     int		magic;			/* DEC_LABEL_MAGIC */
     int		isPartitioned;		/* 1 if disk is partitioned. */
     Dec_DiskMap map[DEC_NUM_DISK_PARTS]; /* Indicates disk partitions. */
-    /* The following stuff is a Sprite addition to the standard
-       Dec disk label. */
+    /*
+     * The following stuff is a Sprite addition to the standard
+     *  Dec disk label.
+     */
     int		numCylinders;
     int		numAltCylinders;
     int		numHeads;
@@ -115,7 +119,9 @@ typedef struct Dec_DiskLabel {
     int		domainSector;
     int		numDomainSectors;
     int		spriteMagic;		/* FSDM_DISK_MAGIC */
-    char    pad[512-(28+DEC_NUM_DISK_PARTS*8)];	/* 512 byte sector. */
+    char	asciiLabel[128];    	/* For compatibility. */
+    int		version;
+    char	pad[512-(13*4+DEC_NUM_DISK_PARTS*8+128)];/* 512 byte sector. */
 } Dec_DiskLabel;
 
 /*
@@ -131,24 +137,22 @@ typedef struct Dec_DiskBoot {
     int		mode;			/* Mode for boot info. */
     int		loadAddr;		/* Address to start loading. */
     int		execAddr;		/* Address to start execing. */
-    Dec_BootMap	map[29];		/* Position of boot program. */
+    Dec_BootMap	map[61];		/* Position of boot program. */
 } Dec_DiskBoot;
  
 #define DEC_BOOT_MAGIC	0x02757a
 #define DEC_LABEL_MAGIC	0x032957
 
 /*
- * The dec label does not describe the location of the filesystem header
- * information that comes after the zero'th label sector.  (The sprite label
- * will, but is never used.)  Instead, the following constants are used.
+ * The following default values are used:
  * DEC_BOOT_SECTOR	The sector holding the boot information.
  * DEC_SUMMARY_SECTOR  one sector of summary info
  * DEC_DOMAIN_SECTOR  the first sector of the static domain header
  * DEC_LABEL_SECTOR	The sector holding the disk label.
  */
 #define DEC_BOOT_SECTOR		0
-#define DEC_SUMMARY_SECTOR	17
-#define DEC_DOMAIN_SECTOR	18
+#define DEC_SUMMARY_SECTOR	(DEC_LABEL_SECTOR+1)
+#define DEC_DOMAIN_SECTOR	(DEC_LABEL_SECTOR+2)
 #define DEC_LABEL_SECTOR	31
 
 /*
