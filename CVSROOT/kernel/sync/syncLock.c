@@ -93,7 +93,7 @@ Sync_Init()
     for (i=0 ; i<PROC_HASHBUCKETS ; i++) {
 	List_Init(&eventChainHeaders[i]);
     }
-    bzero((Address) &sync_Instrument, sizeof(sync_Instrument));
+    bzero((Address) sync_Instrument, sizeof(sync_Instrument));
     for (i=0; i < MACH_MAX_NUM_PROCESSORS; i++) {
 	sync_InstrumentPtr[i] = &sync_Instrument[i];
     }
@@ -518,7 +518,7 @@ SyncEventWakeupInt(event)
 	procPtr->event = NIL;
 	if (procPtr->state == PROC_WAITING) {
 	    procPtr->state = PROC_READY;
-	    Sched_MoveInQueue(procPtr);
+	    Sched_InsertInQueue(procPtr, (Proc_ControlBlock **) NIL);
 	}
     }
 }
@@ -598,7 +598,7 @@ Sync_WakeWaitingProcess(procPtr)
 	List_Remove(&procPtr->eventHashChain.links);
 	procPtr->event = NIL;
 	procPtr->state = PROC_READY;
-	Sched_MoveInQueue(procPtr);
+	Sched_InsertInQueue(procPtr, (Proc_ControlBlock **) NIL);
     } else if (procPtr->state == PROC_WAITING) {
 	    if (!(procPtr->syncFlags & SYNC_WAIT_REMOTE)) {
 		panic("Sync_WakeWaitingProcess: Proc waiting but event and remote wait NIL\n");
@@ -955,7 +955,7 @@ ProcessWakeup(procPtr, waitToken)
 	 */
 	if (procPtr->event == NIL) {
 	    procPtr->state = PROC_READY;
-	    Sched_MoveInQueue(procPtr);
+	    Sched_InsertInQueue(procPtr, (Proc_ControlBlock **) NIL);
 	}
     } else {
 	/*
