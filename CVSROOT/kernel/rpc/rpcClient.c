@@ -125,6 +125,7 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 				 * getting no reply. */
     register unsigned int lastFragMask = 0;	/* Previous state of our
 						 * fragment reassembly */
+    Boolean	seemsHung = FALSE;	/* Used to control warning msgs */
 
     /*
      * This code is locked with MASTER_LOCK in order to synchronize
@@ -296,6 +297,7 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 				"RpcDoCall: %s seems hung, RPC %d\n",
 				name, command);
 			}
+			seemsHung = TRUE;
 			numAcks = 0;
 		    }
 		}
@@ -372,6 +374,13 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 	}
     } while (error == SUCCESS);
     chanPtr->state &= ~CHAN_WAITING;
+    if (seemsHung) {
+	if (error == SUCCESS) {
+	    Sys_Printf("RPC %d ok\n", command);
+	} else {
+	    Sys_Printf("RPC %d exit 0x%x\n", command, error);
+	}
+    }
     MASTER_UNLOCK(chanPtr->mutex);
     return(error);
 }
