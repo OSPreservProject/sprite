@@ -2574,4 +2574,4 @@ VmMach_FlushCode(procPtr, virtAddrPtr, virtPage, numBytes)
 {
 }
 
-
+VmMach_SharedStart() {}
