@@ -300,7 +300,7 @@ extern	void		Vm_Recovery();
 /*
  * Miscellaneous procedures.
  */
-extern	int		Vm_GetKernelStack();
+extern	Address		Vm_GetKernelStack();
 extern	void		Vm_FreeKernelStack();
 extern	void		Vm_ProcInit();
 
