@@ -24,10 +24,7 @@
 #include <fsconsist.h>
 #include <fsioFile.h>
 #else
-#include <kernel/fscache.h>
-#include <kernel/fsio.h>
-#include <kernel/fsconsist.h>
-#include <kernel/fsioFile.h>
+#include <fs.h>
 #endif
 
 /*
@@ -60,6 +57,7 @@ typedef struct Fslcl_DirEntry {
     (FSLCL_DIR_ENTRY_HEADER + \
     ((stringLength / FSLCL_REC_LEN_GRAIN) + 1) * FSLCL_REC_LEN_GRAIN)
 
+#ifdef KERNEL
 /*
  * Misc. routines.
  */
@@ -67,5 +65,7 @@ extern void Fslcl_DomainInit _ARGS_((void));
 extern ReturnStatus Fslcl_DeleteFileDesc _ARGS_((Fsio_FileIOHandle *handlePtr));
 extern void Fslcl_NameInitializeOps _ARGS_((void));
 extern void Fslcl_NameHashInit _ARGS_((void));
+
+#endif /* KERNEL */
 
 #endif /* _FSLCL */
