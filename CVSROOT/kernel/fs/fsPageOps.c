@@ -224,8 +224,7 @@ Fs_PageCopy(srcStreamPtr, destStreamPtr, offset, numBytes)
 	    status = Fsrmt_BlockCopy(srcHdrPtr, destHdrPtr, i);
 #endif /* lint */
 	    if (status != SUCCESS) {
-		if (status == RPC_TIMEOUT || status == FS_STALE_HANDLE ||
-		    status == RPC_SERVICE_DISABLED) {
+		if (status == RPC_TIMEOUT || status == RPC_SERVICE_DISABLED) {
 		    /*
 		     * The server is down so we wait for it.  This just blocks
 		     * the user process doing the page fault.
