@@ -297,7 +297,7 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 				 mutexPtr : (Sync_Semaphore *)NIL ),
 				 routePtr);
 		    if (status != SUCCESS) {
-			panic("RpcOutput: Net_Output failed.\n");
+			return status;
 		    }
 		    /*
 		     * Insert a delay after all but the last fragment.
@@ -359,7 +359,7 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 	status = Net_Output(spriteID, (Net_ScatterGather *)message, 4, mutexPtr,
 	    routePtr);
 	if (status != SUCCESS) {
-	    panic("RpcOutput: Net_Output failed.\n");
+	    return status;
 	}
 	RPC_TRACE(rpcHdrPtr, RPC_OUTPUT, "Output");
     }
