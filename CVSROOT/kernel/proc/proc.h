@@ -208,7 +208,7 @@ extern void 		Proc_InitMainProc _ARGS_((void));
 extern	Boolean		Proc_IsMigratedProc _ARGS_((
 				Proc_ControlBlock *procPtr));
 extern	int		Proc_KillAllProcesses _ARGS_((Boolean userProcsOnly));
-extern	void		Proc_KDump _ARGS_((void));
+extern	void		Proc_KDump _ARGS_((ClientData dummy));
 extern	void		Proc_Lock _ARGS_((Proc_ControlBlock *procPtr));
 extern ReturnStatus 	Proc_LockFamily _ARGS_((int familyID, 
 				List_Links **familyListPtr, int *userIDPtr));

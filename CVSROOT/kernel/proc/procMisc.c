@@ -1451,8 +1451,10 @@ LockEntry locks[] = {
     0, 0
 };
 
+/*ARGSUSED*/
 void
-Proc_KDump()
+Proc_KDump(dummy)
+    ClientData dummy;		/* unused - see dump.c:eventTable */
 {
     int i;
     Proc_ControlBlock *procPtr, *tmpProcPtr;
@@ -1623,6 +1625,11 @@ found:;
 #endif
 
 #ifndef KDUMP
+/* ARGSUSED */
 ReturnStatus
-Proc_KDump() { return SUCCESS; }
+Proc_KDump(dummy) 
+    ClientData dummy;
+{ 
+    return SUCCESS;
+}
 #endif
