@@ -5452,8 +5452,7 @@ VmMach_SharedStartAddr(procPtr,size,reqAddr, fixed)
 {
     int numBlocks = (size+VMMACH_SHARED_BLOCK_SIZE-1) /
 	    VMMACH_SHARED_BLOCK_SIZE;
-    int firstBlock = (((int)*reqAddr)-VMMACH_SHARED_START_ADDR+
-	    VMMACH_SHARED_BLOCK_SIZE-1) /
+    int firstBlock = (((int)*reqAddr)-VMMACH_SHARED_START_ADDR) /
 	    VMMACH_SHARED_BLOCK_SIZE;
     int i;
     VmMach_SharedData	*sharedData = &procPtr->vmPtr->machPtr->sharedData;
