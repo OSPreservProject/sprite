@@ -1362,9 +1362,14 @@ FsioVerifyBlockWrite(blockPtr)
 	return(FS_INVALID_ARG);
     }
     status = Fsdm_GetFirstIndex(hdrPtr, blockPtr->blockNum, 
-			     &indexInfo, 0);
-    if (status != SUCCESS) {
-	printf("FsioVerifyBlockWrite: Could not setup indexing\n");
+			     &indexInfo, FSCACHE_DONT_BLOCK);
+    if (status == FS_WOULD_BLOCK) {
+	/*
+	 * No room in the cache for the index blocks needed to check.
+	 * assume the write is ok.
+	 */
+	return(SUCCESS);
+    } else if (status != SUCCESS) {
 	return(status);
     }
     if (indexInfo.blockAddrPtr == (int *)NIL ||
@@ -1614,6 +1619,37 @@ Fsio_FileIOControl(streamPtr, ioctlPtr, replyPtr)
 	    break;
 	case IOC_PREFIX:
 	    break;
+	case IOC_WRITE_BACK: {
+	    /*
+	     * Write out the cached data for the file.
+	     */
+	    Ioc_WriteBackArgs *argPtr = (Ioc_WriteBackArgs *)ioctlPtr->inBuffer;
+	    Fscache_FileInfo *cacheInfoPtr = &handlePtr->cacheInfo;
+
+	    if (ioctlPtr->inBufSize < sizeof(Ioc_WriteBackArgs)) {
+		status = GEN_INVALID_ARG;
+	    } else {
+		int firstBlock, lastBlock;
+		int blocksSkipped;
+		int flags = 0;
+		if (argPtr->shouldBlock) {
+		    flags |= FSCACHE_FILE_WB_WAIT;
+		}
+		if (argPtr->firstByte > 0) {
+		    firstBlock = argPtr->firstByte / FS_BLOCK_SIZE;
+		} else {
+		    firstBlock = 0;
+		}
+		if (argPtr->lastByte > 0) {
+		    lastBlock = argPtr->lastByte / FS_BLOCK_SIZE;
+		} else {
+		    lastBlock = FSCACHE_LAST_BLOCK;
+		}
+		cacheInfoPtr->flags |= FSCACHE_WB_ON_LDB;
+		status = Fscache_FileWriteBack(cacheInfoPtr, firstBlock,
+			lastBlock, flags, &blocksSkipped);
+	    }
+	}
 	default:
 	    status = GEN_INVALID_ARG;
 	    break;
