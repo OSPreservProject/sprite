@@ -1973,6 +1973,11 @@ WriteHardMapSeg(machPtr)
 {
     MASTER_LOCK(vmMachMutexPtr);
 
+    if (machPtr->contextPtr != (VmMach_Context *) NIL) {
+        machPtr->contextPtr->map[MAP_SEG_NUM] =
+            (int)*GetHardSegPtr(machPtr->mapSegPtr->machPtr,
+            machPtr->mapHardSeg);
+    }
     VmMachSetSegMap((Address)VMMACH_MAP_SEG_ADDR, 
 	 *GetHardSegPtr(machPtr->mapSegPtr->machPtr, machPtr->mapHardSeg));
 
@@ -2497,14 +2502,36 @@ VmMach_PageValidate(virtAddrPtr, pte)
 	hardPTE |= VMMACH_KRW_PROT;
     } else {
 	Proc_ControlBlock	*procPtr;
+        VmProcLink              *procLinkPtr;
+        VmMach_Context          *contextPtr;
 
+	procPtr = Proc_GetCurrentProc();
 	if (virtAddrPtr->flags & USING_MAPPED_SEG) {
 	    addr = (Address) (VMMACH_MAP_SEG_ADDR + 
 				((unsigned int)addr & (VMMACH_SEG_SIZE - 1)));
-	}
+            /* PUT IT IN SOFTWARE OF MAP AREA FOR PROCESS */
+            procPtr->vmPtr->machPtr->contextPtr->map[MAP_SEG_NUM] =
+                    *segTablePtr;
+        } else{
+            /* update it for regular seg num */
+            procPtr->vmPtr->machPtr->contextPtr->map[hardSeg] = *segTablePtr;
+        }
 	VmMachSetSegMap(addr, *segTablePtr);
-	procPtr = Proc_GetCurrentProc();
-	procPtr->vmPtr->machPtr->contextPtr->map[hardSeg] = *segTablePtr;
+        if (segPtr != (Vm_Segment *) NIL) {
+            VmCheckListIntegrity((List_Links *)segPtr->procList);
+            LIST_FORALL(segPtr->procList, (List_Links *)procLinkPtr) {
+                if (procLinkPtr->procPtr->vmPtr != (Vm_ProcInfo *) NIL &&
+                        procLinkPtr->procPtr->vmPtr->machPtr !=
+                        (VmMach_ProcData *) NIL &&
+                        (contextPtr =
+                        procLinkPtr->procPtr->vmPtr->machPtr->contextPtr) !=
+                        (VmMach_Context *) NIL) {
+                    contextPtr->map[hardSeg] = *segTablePtr;
+                }
+            }
+        }
+
+
 	if ((pte & (VM_COW_BIT | VM_READ_ONLY_PROT)) ||
 		(virtAddrPtr->flags & VM_READONLY_SEG)) {
 	    hardPTE |= VMMACH_UR_PROT;
