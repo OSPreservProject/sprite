@@ -3,9 +3,6 @@
  *
  *	Various routines for initialzation, input and output.
  *
- *	TODO: This needs to be fixed to handle more than one interface.
- *	Update the route table accessed by spriteID to include a
- *	interface 
  *
  * Copyright 1987 Regents of the University of California
  * Permission to use, copy, modify, and distribute this
@@ -121,10 +118,6 @@ Net_Init()
 	    interPtr->devNetData = (ClientData) NIL;
 	    interPtr->number = counter[interPtr->netType];
 	    counter[interPtr->netType]++;
-	    Mach_MonPrintf("%s net interface %d at 0x%x\n",
-		interPtr->name,
-		interPtr->number,
-		interPtr->ctrlAddr);
 	    sprintf(buffer, "NetOutputMutex:%d", i);
 	    Sync_SemInitDynamic(&interPtr->syncOutputMutex, 
 		buffer);
