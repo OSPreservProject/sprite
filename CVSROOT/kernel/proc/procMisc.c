@@ -91,8 +91,13 @@ Proc_GetPCBInfo(firstPid, lastPid, hostID, bufferPtr, argsPtr,
 	    ((firstPid == PROC_MY_PID) && hostID != PROC_MY_HOSTID)) {
 	    return(GEN_INVALID_ARG);
 	}
-    } else if (bufferPtr == USER_NIL) {
+    }
+    if (bufferPtr == USER_NIL) {
 	return (SYS_ARG_NOACCESS);
+    }
+    if (hostID != PROC_MY_HOSTID &&
+	(hostID <= 0 || hostID > NET_NUM_SPRITE_HOSTS)) {
+	return(GEN_INVALID_ARG);
     }
 
     /*
@@ -180,6 +185,16 @@ Proc_GetPCBInfo(firstPid, lastPid, hostID, bufferPtr, argsPtr,
 		status = GetRemotePCB(hostID, (Proc_PID) i, &pcbEntry,
 					   argString);
 		if (status != SUCCESS) {
+		    /*
+		     * Break if we hit an error.  The typical error condition
+		     * is to hit an invalid process ID, which happens since
+		     * we don't know proc_MaxNumProcesses on the other
+		     * machine.  Instead, we convert GEN_INVALID_ARG to
+		     * SUCCESS and return what we found so far.
+		     */
+		    if (status == GEN_INVALID_ARG) {
+			status = SUCCESS;
+		    }
 		    break;
 		}
 	    }
