@@ -1402,14 +1402,12 @@ ClientCommand(consistPtr, clientPtr, flags)
 	} else {
 	    numRefusals++;
 	    if (consistRpc.flags & FS_DEBUG_CONSIST) {
-		Sys_Panic(SYS_FATAL, "Client %d dropped too many requests\n",
-			    clientPtr->clientID);
-	    } else {
-		Sys_Panic(SYS_WARNING, "Client %d dropped consist request %s\n",
-		    clientPtr->clientID, ConsistType(flags));
-		if (numRefusals > 30) {
+		Sys_Panic(SYS_FATAL,
+		    "Client %d dropped too many %s requests for <%d,%d>\n",
+			    clientPtr->clientID, ConsistType(flags),
+			    consistRpc.fileID.major, consistRpc.fileID.minor);
+	    } else if (numRefusals > 30) {
 		    consistRpc.flags |= FS_DEBUG_CONSIST;
-		}
 	    }
 	}
     }
@@ -1497,7 +1495,14 @@ Fs_RpcConsist(srvToken, clientID, command, storagePtr)
 		    consistArgPtr->fileID.serverID,
 		    "no handle");
 	} else {
+	    /*
+	     * A consistency message has arrived from an open from which
+	     * we haven't received the reply.  Return FAILURE to force
+	     * the server to resend and give the open reply a chance
+	     * of getting to us.  This is the "open/consistency race".
+	     */
 	    status = FAILURE;
+#ifdef notdef
 	    Sys_Panic(SYS_WARNING,
 		    "Fs_RpcConsist: <%d,%d> %s msg from %d dropped: %s\n",
 		    consistArgPtr->fileID.major,
@@ -1505,6 +1510,7 @@ Fs_RpcConsist(srvToken, clientID, command, storagePtr)
 		    ConsistType(consistArgPtr->flags),
 		    consistArgPtr->fileID.serverID,
 		    "open in progress");
+#endif
 	}
     } else if (rmtHandlePtr->openTimeStamp != consistArgPtr->openTimeStamp) {
 	if (FsPrefixOpenInProgress(&consistArgPtr->fileID) == 0) {
@@ -1518,7 +1524,11 @@ Fs_RpcConsist(srvToken, clientID, command, storagePtr)
 		    consistArgPtr->openTimeStamp, rmtHandlePtr->openTimeStamp,
 		    "stale handle");
 	} else {
+	    /*
+	     * Possible open/consistency race.
+	     */
 	    status = FAILURE;
+#ifdef notdef
 	    Sys_Panic(SYS_WARNING,
 		"Fs_RpcConsist: <%d,%d> %s msg from %d timestamp %d not %d, %s\n",
 		    consistArgPtr->fileID.major,
@@ -1527,25 +1537,12 @@ Fs_RpcConsist(srvToken, clientID, command, storagePtr)
 		    consistArgPtr->fileID.serverID,
 		    consistArgPtr->openTimeStamp, rmtHandlePtr->openTimeStamp,
 		    "open in progress");
+#endif
 	}
     } else {
 	status = SUCCESS;
     }
 
-#ifdef notdef
-    if ((rmtHandlePtr != (FsRmtFileIOHandle *)NIL) &&
-	(rmtHandlePtr->openTimeStamp == consistArgPtr->openTimeStamp)) {
-	status = SUCCESS;
-    } else if (FsPrefixOpenInProgress(&consistArgPtr->fileID) == 0) {
-	status = FS_STALE_HANDLE;
-    } else {
-	/*
-	 * This message may in fact pertain to an open that we have
-	 * in progress.  In this case return FAILURE and the server will retry.
-	 */
-	status = FAILURE;
-    }
-#endif notdef
     if (rmtHandlePtr != (FsRmtFileIOHandle *)NIL) {
 	FsHandleRelease(rmtHandlePtr, TRUE);
     }
@@ -1559,17 +1556,13 @@ Fs_RpcConsist(srvToken, clientID, command, storagePtr)
 	consistPtr->args = *consistArgPtr;
 	Proc_CallFunc(ProcessConsist, (ClientData) consistPtr, 0);
     } else if (consistArgPtr->flags & FS_DEBUG_CONSIST) {
-	Sys_Panic(SYS_FATAL, "Fs_RpcConsist: told to enter debugger\n");
-#ifdef notdef
-    } else {
-	Sys_Panic(SYS_WARNING,
-	    "Fs_RpcConsist: <%d,%d> %s msg dropped: %s\n",
+	Sys_Panic(SYS_FATAL,
+	    "Fs_RpcConsist: <%d,%d> Too Many %s msgs dropped: %s\n",
 		    consistArgPtr->fileID.major,
 		    consistArgPtr->fileID.minor,
 		    ConsistType(consistArgPtr->flags),
 		    (status == FS_STALE_HANDLE) ? "stale handle" :
-						  "open/consist race");
-#endif notdef
+						  "open in progress");
     }
     Rpc_Reply(srvToken, status, storagePtr, (int(*)())NIL, (ClientData)NIL);
     return(SUCCESS);
