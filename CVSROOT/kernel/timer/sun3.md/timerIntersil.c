@@ -263,7 +263,7 @@ Dev_TimerStart(timer)
      * Enable timer interrupts in the system's interrupt register.
      */
 
-    *SunInterruptReg |= MACH_ENABLE_LEVEL5_INTR;
+    *Mach_InterruptReg |= MACH_ENABLE_LEVEL5_INTR;
 }
 
 
@@ -301,7 +301,7 @@ Dev_TimerInactivate(timer)
      */
 
     if (!callbackIntrsWanted && !profileIntrsWanted) {
-	*SunInterruptReg &= ~MACH_ENABLE_LEVEL5_INTR;
+	*Mach_InterruptReg &= ~MACH_ENABLE_LEVEL5_INTR;
 	timerRegsPtr->commandReg = IntersilCommand(RUN, INTR_DISABLE);
     }
 }
@@ -335,14 +335,14 @@ Dev_TimerGetStatus()
     unsigned char statusReg;
     unsigned char intrReg;
 
-    intrReg = *SunInterruptReg & MACH_ENABLE_LEVEL7_INTR;
+    intrReg = *Mach_InterruptReg & MACH_ENABLE_LEVEL7_INTR;
 
-    *SunInterruptReg &= ~(MACH_ENABLE_LEVEL5_INTR | 
+    *Mach_InterruptReg &= ~(MACH_ENABLE_LEVEL5_INTR | 
 				MACH_ENABLE_ALL_INTERRUPTS | intrReg);
 
     statusReg = timerRegsPtr->interruptReg;
 
-    *SunInterruptReg |= (MACH_ENABLE_LEVEL5_INTR | 
+    *Mach_InterruptReg |= (MACH_ENABLE_LEVEL5_INTR | 
 				MACH_ENABLE_ALL_INTERRUPTS | intrReg);
 
     /*
