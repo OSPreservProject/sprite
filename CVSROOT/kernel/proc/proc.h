@@ -23,6 +23,7 @@
 #ifdef KERNEL
 #include "user/proc.h"
 #include "user/sync.h"
+#include "syncLock.h"
 #include "list.h"
 #include "timer.h"
 #include "sig.h"
@@ -30,6 +31,7 @@
 #else
 #include <proc.h>
 #include <sync.h>
+#include <kernel/syncLock.h>
 #include <list.h>
 #include <kernel/timer.h>
 #include <kernel/sig.h>
@@ -370,11 +372,23 @@ typedef struct Proc_ControlBlock {
      */
     char	*argString;
 
+#ifdef LOCKDEP
     /*
      * Stack of locks that process has grabbed.
      */
      Proc_LockStackElement	lockStack[PROC_LOCKSTACK_SIZE];
      int			lockStackSize;
+#endif
+
+#ifndef CLEAN_LOCK
+    /*
+     * Information on contention for PCB locks. PCB locks are implemented
+     * as a bit in the genflag field and don't use the standard locking
+     * stuff. The following field is used to keep lock information. 
+     * Its type is Sync_Semaphore, but it is not used as such.
+     */
+     Sync_Semaphore		lockInfo;
+#endif
 
     /*
      * Used to speed up basic kernel-call processing.  These two fields
