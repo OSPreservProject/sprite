@@ -66,11 +66,9 @@ typedef struct Fscache_IOProcs {
      *		int		*offsetPtr;		(Byte offset)
      *		int		*lenPtr;		(Byte count)
      *		Sync_RemoteWaiter *waitPtr;		(For remote waiting)
-     *	FooBlockWrite(hdrPtr, blockNumber, numBytes, buffer, lastDirtyBlock)
+     *	FooBlockWrite(hdrPtr, blockPtr, lastDirtyBlock)
      *		Fs_HandleHeader	*hdrPtr;		(File handle)
-     *		int		blockNumber;		(Disk block number)
-     *		int		numBytes;		(Byte count in block)
-     *		Address		buffer;			(Source of data)
+     *		Fscache_Block	*blockPtr;		(Cache block to write)
      *		Boolean		lastDirtyBlock;		(Indicates last block)
      *	FooBlockCopy(srcHdrPtr, dstHdrPtr, blockNumber)
      *		Fs_HandleHeader	*srcHdrPtr;		(Source file handle)
@@ -223,7 +221,7 @@ typedef struct Fscache_Block {
  *					already locked.	
  *   FSCACHE_PIPE_BLOCK			This is a block that is permanently
  *					locked so that it can serve as the
- *					data area for a pipe.
+ *					data area for a pipe. (NOT USED)
  *   FSCACHE_WRITE_THRU_BLOCK		This block is being written through by
  *					the caller to Fscache_UnlockBlock.
  */
