@@ -103,7 +103,6 @@
  *	RPC_FS_MKDEV		Make a special device file
  *	RPC_FS_REOPEN		Reopen a file.
  *	RPC_FS_DOMAIN_INFO	Return information about the given domain.
- *	RPC_FS_DEV_REOPEN	Reopen a device at the I/O server.
  *	RPC_FS_RECOVERY		Recovery control message used by clients to
  *				tell server's they want to re-establish
  *				its open file handles, and when they are done.
@@ -210,7 +209,6 @@ ReturnStatus Fs_RpcMakeDev();		/*  FS_MKDEV */
 ReturnStatus Sig_RpcSend();		/*  SIG_SEND */
 ReturnStatus Fs_RpcReopen();		/*  FS_REOPEN */
 ReturnStatus Fs_RpcDomainInfo();		/*  FS_DOMAIN_INFO */
-ReturnStatus Fs_RpcDevReopen();		/*  FS_DEV_REOPEN */
 ReturnStatus Fs_RpcRecovery();		/*  FS_RECOVERY */
 ReturnStatus Proc_RpcGetPCB();		/*  PROC_GETPCB  */
 ReturnStatus Fsio_RpcStreamMigClose();	/*  FS_RELEASE */
