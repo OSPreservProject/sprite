@@ -171,6 +171,16 @@ Fsrmt_Read(streamPtr, readPtr, waitPtr, replyPtr)
     replyPtr->length = amountRead;
     Fs_StatAdd(amountRead, fs_Stats.gen.remoteBytesRead,
 	       fs_Stats.gen.remoteReadOverflow);
+#ifdef SOSP91
+    if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
+	if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
+		(proc_RunningProcesses[0]->genFlags &
+		(PROC_FOREIGN | PROC_MIGRATING))) {
+	    Fs_StatAdd(amountRead, fs_SospMigStats.gen.remoteBytesRead, 
+			fs_SospMigStats.gen.remoteReadOverflow);
+	}
+    }
+#endif SOSP91
     if (userSpace) {
 	free(readBufferPtr);
     }
@@ -507,6 +517,16 @@ Fsrmt_Write(streamPtr, writePtr, waitPtr, replyPtr)
     replyPtr->length = amountWritten;
     Fs_StatAdd(amountWritten, fs_Stats.gen.remoteBytesWritten,
 	       fs_Stats.gen.remoteWriteOverflow);
+#ifdef SOSP91
+    if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
+	if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
+		(proc_RunningProcesses[0]->genFlags &
+		(PROC_FOREIGN | PROC_MIGRATING))) {
+	    Fs_StatAdd(amountWritten, fs_SospMigStats.gen.remoteBytesWritten, 
+			fs_SospMigStats.gen.remoteWriteOverflow);
+	}
+    }
+#endif SOSP91
     if (userSpace) {
 	free(writeBufferPtr);
     }

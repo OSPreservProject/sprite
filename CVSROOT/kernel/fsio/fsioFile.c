@@ -318,6 +318,11 @@ Fsio_FileNameOpen(handlePtr, openArgsPtr, openResultsPtr)
 	    fileStatePtr->newUseFlags = useFlags;
 	    openResultsPtr->streamData = (ClientData)fileStatePtr;
 	    openResultsPtr->dataSize = sizeof(Fsio_FileState);
+#ifdef SOSP91
+	if (handlePtr->descPtr->fileType == FS_DIRECTORY) {
+	    fileStatePtr->newUseFlags |= FS_DIR;
+	}
+#endif SOSP91
 
 	    /*
 	     * Now set up a shadow stream on here on the server so we

@@ -791,6 +791,15 @@ Fsio_DeviceRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
     }
     devHandlePtr->accessTime = Fsutil_TimeInSeconds();
     fs_Stats.gen.deviceBytesRead += replyPtr->length;
+#ifdef SOSP91
+    if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
+	if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
+		(proc_RunningProcesses[0]->genFlags &
+		(PROC_FOREIGN | PROC_MIGRATING))) {
+	    fs_SospMigStats.gen.deviceBytesRead += replyPtr->length; 
+	}
+    }
+#endif SOSP91
     if (!(flags & FS_DEV_DONT_LOCK)) { 
 	Fsutil_HandleUnlock(devHandlePtr);
     }
@@ -866,6 +875,15 @@ Fsio_DeviceWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
 	}
 	devHandlePtr->modifyTime = Fsutil_TimeInSeconds();
 	fs_Stats.gen.deviceBytesWritten += replyPtr->length;
+#ifdef SOSP91
+	if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
+	    if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
+		    (proc_RunningProcesses[0]->genFlags &
+		    (PROC_FOREIGN | PROC_MIGRATING))) {
+		fs_SospMigStats.gen.deviceBytesWritten += replyPtr->length; 
+	    }
+	}
+#endif SOSP91
     }
 
     if (copy) {
