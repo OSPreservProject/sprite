@@ -26,6 +26,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sync.h"
 #include "sys.h"
 #include "dbg.h"
+
 /*
  * Number of page frames in system.
  */
@@ -146,6 +147,15 @@ static Boolean useHardRefBit = TRUE;
  * and all reads become read for ownership.
  */
 static Boolean ownStackAndHeap = TRUE;
+
+/*
+** Variable to control page flush policy.
+** If TRUE then it flushes the page without doing a ReadAnyways.
+** If FALSE then it first brings the page into the cache with a ReadAnyways
+** then flushes it.
+** THIS FLAG MUST NOT BE SET ON A MP SYSTEM!
+*/
+static Boolean uniprocessorFlushPage = FALSE;
 
 
 /*
@@ -439,6 +449,8 @@ AllocPageTable(segPtr, offset, numPages)
     register	int		firstPTPage;
     int				lastPTPage;
     Address			ptAddr;
+    unsigned int		pfNum;
+
 
     segDataPtr = segPtr->machPtr;
     /*
@@ -461,10 +473,10 @@ AllocPageTable(segPtr, offset, numPages)
 	 firstPTPage <= lastPTPage;
 	 firstPTPage++, ptePtr++, ptAddr += VMMACH_PAGE_SIZE) {
 	if (!(*ptePtr & VMMACH_RESIDENT_BIT)) {
+	    pfNum = Vm_KernPageAllocate();
 	    *ptePtr = VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | 
 	              VMMACH_KRW_UNA_PROT | VMMACH_REFERENCED_BIT |
-		      VMMACH_MODIFIED_BIT |
-		      SetPageFrame(VirtToPhysPage(Vm_KernPageAllocate()));
+		      VMMACH_MODIFIED_BIT | SetPageFrame(VirtToPhysPage(pfNum));
 	    bzero(ptAddr, VMMACH_PAGE_SIZE);
 	}
      }
@@ -580,6 +592,7 @@ VmMach_SegDelete(segPtr)
     register	VmMach_SegData	*segDataPtr;
     register	int		firstPage;
     Vm_VirtAddr			virtAddr;
+    unsigned int		pfNum;
 
     segDataPtr = segPtr->machPtr;
     virtAddr.segPtr = vm_SysSegPtr;
@@ -597,7 +610,8 @@ VmMach_SegDelete(segPtr)
 	     * of the cache.
 	     */
 	    VmMach_FlushPage(&virtAddr, TRUE);
-	    Vm_KernPageFree((unsigned)PhysToVirtPage(GetPageFrame(*ptePtr)));
+	    pfNum = GetPageFrame(*ptePtr);
+	    Vm_KernPageFree((unsigned)PhysToVirtPage(pfNum));
 	    *ptePtr = 0;
 	}
      }
@@ -1007,7 +1021,7 @@ VmMach_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr,
  *----------------------------------------------------------------------
  */
 
-Sync_Lock		ptLock = SYNC_LOCK_INIT_STATIC();
+Sync_Lock		ptLock = Sync_LockInitStatic("vm:ptLock");
 #define	LOCKPTR		&ptLock
 
 
@@ -1044,6 +1058,8 @@ VmMach_SetSegProt(segPtr, firstPage, lastPage, makeWriteable)
     VmMachPTE			machPTE;
 
     LOCK_MONITOR;
+
+    Sync_LockRegister(&ptLock);
 
     segDataPtr = segPtr->machPtr;
     firstPage &= ~(VMMACH_SEG_REG_MASK >> VMMACH_PAGE_SHIFT);
@@ -1195,7 +1211,7 @@ VmMach_AllocCheck(virtAddrPtr, virtFrameNum, refPtr, modPtr)
     int				page;
     VmMachPTE			*ptePtr;
 
-    LOCK_MONITOR;
+        LOCK_MONITOR;
 
     segDataPtr = virtAddrPtr->segPtr->machPtr;
     page = virtAddrPtr->page & ~(VMMACH_SEG_REG_MASK >> VMMACH_PAGE_SHIFT);
@@ -1336,6 +1352,7 @@ VmMach_SetRefBit(addr)
     VmMachPTE			*ptePtr;
     Proc_ControlBlock		*procPtr;
     register	VmMach_ProcData	*procDataPtr;
+    VmMachPTE	machPTE = 0;
 
     LOCK_MONITOR;
 
@@ -1355,6 +1372,7 @@ VmMach_SetRefBit(addr)
         page = ((unsigned int)(addr) & ~VMMACH_SEG_REG_MASK) >> 
 							VMMACH_PAGE_SHIFT;
         ptePtr = GetPageTablePtr(segDataPtr, page);
+	machPTE = *ptePtr;
 	if (*ptePtr & VMMACH_RESIDENT_BIT) {
 	    *ptePtr |= VMMACH_REFERENCED_BIT;
 	    if ((vmWriteableRefPageout || vmWriteablePageout) && 
@@ -1492,6 +1510,19 @@ VmMach_PageValidate(virtAddrPtr, pte)
     segDataPtr = virtAddrPtr->segPtr->machPtr;
     page = virtAddrPtr->page & ~(VMMACH_SEG_REG_MASK >> VMMACH_PAGE_SHIFT);
     ptePtr = GetPageTablePtr(segDataPtr, page);
+    if (*ptePtr & VMMACH_RESIDENT_BIT) {
+	/*
+  	 * If already resident do not validate again because we could lose
+	 * the modify bit.
+	 */
+	if (VirtToPhysPage(Vm_GetPageFrame(pte)) == GetPageFrame(*ptePtr)) {
+		UNLOCK_MONITOR;
+		return;
+	}
+	if (virtAddrPtr->segPtr != vm_SysSegPtr)
+		printf("Remapping page 0x%x of segment %d\n",page,
+			virtAddrPtr->segPtr->segNum);
+    }
     machPTE = VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | 
 	      VMMACH_REFERENCED_BIT |
               SetPageFrame(VirtToPhysPage(Vm_GetPageFrame(pte)));
@@ -1654,6 +1685,7 @@ VmMach_MapInDevice(devPhysAddr, numBytes)
     int				i;
     VmMachPTE			pte;
     Address			retAddr;
+    int				pfNum;
 
     numPages = (((unsigned)devPhysAddr + numBytes - 1) >> VMMACH_PAGE_SHIFT) -
 	       ((unsigned)devPhysAddr >> VMMACH_PAGE_SHIFT) + 1;
@@ -1670,10 +1702,10 @@ VmMach_MapInDevice(devPhysAddr, numBytes)
 	 firstPTPage <= lastPTPage;
 	 firstPTPage++, ptePtr++, ptAddr += VMMACH_PTES_IN_PAGE) {
 	if (!(*ptePtr & VMMACH_RESIDENT_BIT)) {
+	     pfNum = Vm_KernPageAllocate();
 	    *ptePtr = VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | 
 		      VMMACH_KRW_URO_PROT | VMMACH_REFERENCED_BIT |
-		      VMMACH_MODIFIED_BIT |
-		      SetPageFrame(VirtToPhysPage(Vm_KernPageAllocate()));
+		      VMMACH_MODIFIED_BIT | SetPageFrame(VirtToPhysPage(pfNum));
 	    bzero((Address)ptAddr, VMMACH_PAGE_SIZE);
 	}
     }
@@ -2114,10 +2146,11 @@ VmMachFlushPage(segPtr, pageNum, invalidate)
     VmMach_SegData		*segDataPtr;
     int				origSegNum;
     int				refBit;
+    int				resBit;
 
     segDataPtr = segPtr->machPtr;
     ptePtr = GetPageTablePtr(segDataPtr, pageNum);
-    if (!(*ptePtr & VMMACH_RESIDENT_BIT)) {
+    if (!(*ptePtr & VMMACH_RESIDENT_BIT) || !(*ptePtr & VMMACH_CACHEABLE_BIT)) {
 	return;
     }
 
@@ -2129,27 +2162,41 @@ VmMachFlushPage(segPtr, pageNum, invalidate)
     } else {
 	pageAddr = (Address) (pageNum << VMMACH_PAGE_SHIFT);
     }
-
+    /*
+     * Reset the page resident bit saving the value to restore.
+     * If the called wants the page invalidated restore a value of 
+     * zero.
+     */
+    resBit = !invalidate ? (*ptePtr & VMMACH_RESIDENT_BIT) : 0;
     *ptePtr &= ~VMMACH_RESIDENT_BIT;
     /*
      * Set the reference bit because the ReadAnyways will cause a
      * reference bit fault.
      */
-    refBit = *ptePtr & VMMACH_REFERENCED_BIT;
+    refBit = !invalidate ? (*ptePtr & VMMACH_REFERENCED_BIT) : 0;
     *ptePtr |= VMMACH_REFERENCED_BIT;
-    for (addr = pageAddr; 
-         addr < pageAddr + VMMACH_PAGE_SIZE;
-	 addr = addr + VMMACH_CACHE_BLOCK_SIZE) {
-	VmMachReadAnyways(addr);
-	VmMachFlushBlock(addr);
+    if (uniprocessorFlushPage) {
+	for (addr = pageAddr; 
+         	addr < pageAddr + VMMACH_PAGE_SIZE;
+	 	addr = addr + VMMACH_CACHE_BLOCK_SIZE) 
+	{
+	    VmMachFlushBlock(addr);
+    	}
     }
-    *ptePtr &= ~VMMACH_REFERENCED_BIT;
-    if (!invalidate) {
-	/*
-	 * We are not invalidating this page so restore the reference and
-	 * modify bits.
-	 */
-	*ptePtr |= (VMMACH_RESIDENT_BIT | refBit);
+    else {
+    	for (addr = pageAddr; 
+         	addr < pageAddr + VMMACH_PAGE_SIZE;
+	 	addr = addr + VMMACH_CACHE_BLOCK_SIZE) 
+	{
+	    VmMachReadAnyways(addr);
+	    VmMachFlushBlock(addr);
+    	}
+    }
+    if (!refBit) {
+	*ptePtr &= ~VMMACH_REFERENCED_BIT;
+    }
+    if (resBit) {
+	*ptePtr |= VMMACH_RESIDENT_BIT;
     }
     if (segPtr->segNum > 0) {
 	(void) VmMachSetSegReg1(origSegNum, origSegNum / 4 + rootPTPageNum);
@@ -2427,11 +2474,53 @@ VmMach_Cmd(command, arg)
 		        ownStackAndHeap, arg);
 	    ownStackAndHeap = (Boolean) arg;
 	    return(SUCCESS);
+	case VM_SET_UP_FLUSH_PAGE:
+	    printf("uniprocessorFlushPage val was %d, is %d\n",
+			uniprocessorFlushPage, arg);
+	    uniprocessorFlushPage = (Boolean) arg;
+	    return(SUCCESS);
 	default:
 	    printf("Warning: VmMach_Cmd: Unknown command %d\n", command);
 	    return(GEN_INVALID_ARG);
     }
 }
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmMach_MakeNonCachable --
+ *
+ *      Make a page non cachable.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      The page table is modified.
+ *
+ * ----------------------------------------------------------------------------
+ */
+ENTRY void
+VmMach_MakeNonCachable(virtAddrPtr, pte) 
+    register	Vm_VirtAddr	*virtAddrPtr;
+    Vm_PTE			pte;
+{
+    register  VmMach_SegData	*segDataPtr;
+    int				page;
+    VmMachPTE			*ptePtr;
+    VmMachPTE			machPTE;
+
+    LOCK_MONITOR;
+
+    segDataPtr = virtAddrPtr->segPtr->machPtr;
+    page = virtAddrPtr->page & ~(VMMACH_SEG_REG_MASK >> VMMACH_PAGE_SHIFT);
+    ptePtr = GetPageTablePtr(segDataPtr, page);
+    *ptePtr &= ~VMMACH_CACHEABLE_BIT;
+
+    UNLOCK_MONITOR;
+}
+
 
 /*
  * Dummy function which will turn out to be the function that the debugger
