@@ -129,6 +129,7 @@ Lfs_AttachDisk(devicePtr, localName, flags, domainNumPtr)
     lfsPtr->checkpointIntervalPtr = (int *) NIL;
     Sync_LockInitDynamic(&(lfsPtr->lock), "LfsLock");
     lfsPtr->activeFlags = 0;
+    lfsPtr->cleanerProcPtr = (Proc_ControlBlock *) NIL;
     lfsPtr->dirModsActive = 0;
     status = LfsLoadFileSystem(lfsPtr, flags); 
     if (status != SUCCESS) { 
