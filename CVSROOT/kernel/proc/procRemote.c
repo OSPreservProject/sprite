@@ -967,6 +967,11 @@ ProcRemoteExit(procPtr, reason, exitStatus, code)
      */
     if (!(procPtr->genFlags & PROC_DONT_MIGRATE)) {
 	PROC_MIG_DEC_STAT(foreign);
+    } else {
+	if (proc_MigDebugLevel > 3) {
+	    printf("ProcRemoteExit: process %x is foreign but unmigratable.\n",
+		   procPtr->processID);
+	}
     }
     if ((procPtr->migFlags & PROC_EVICTING) ||
 	(proc_MigStats.foreign == 0 &&
