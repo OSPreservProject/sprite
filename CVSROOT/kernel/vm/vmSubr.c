@@ -897,12 +897,6 @@ Vm_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr)
 	return(SYS_ARG_NOACCESS);
     }
     fromProcPtr = Proc_GetCurrentProc();
-    if (fromProcPtr->genFlags & PROC_NO_VM) {
-	/*
-	 * The process that we are copying from has already deleted its VM.
-	 */
-	return(SYS_ARG_NOACCESS);
-    }
 
     if (fromProcPtr->genFlags & PROC_KERNEL) {
 #ifdef notdef
@@ -945,6 +939,12 @@ Vm_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr)
 	return(status);
     }
 
+    if ((fromProcPtr->genFlags & PROC_NO_VM) && !fromKernel) {
+	/*
+	 * The process that we are copying from has already deleted its VM.
+	 */
+	return(SYS_ARG_NOACCESS);
+    }
     /*
      * Determine which segment the address falls into.
      */
