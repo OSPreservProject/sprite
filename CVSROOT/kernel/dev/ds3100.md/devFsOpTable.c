@@ -23,21 +23,22 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fs.h"
 #include "rawBlockDev.h"
 #include "devFsOpTable.h"
-#include "devTypesInt.h"
+#include "devTypes.h"
 
 /*
  * Device specific include files.
  */
 
-#include "devConsole.h"
 #include "devSyslog.h"
 #include "devNull.h"
 #include "devSCSIDisk.h"
 #include "devSCSITape.h"
 #include "devNet.h"
 #include "devBlockDevice.h"
-#include "devGraphics.h"
-
+#include "scsiHBADevice.h"
+#include "raidExt.h"
+#include "tty.h"
+#include "graphics.h"
 
 static ReturnStatus NullSelectProc();
 static ReturnStatus NoDevice();
@@ -63,11 +64,11 @@ extern ReturnStatus Dev_serialBInTrace();
 
 DevFsTypeOps devFsOpTable[] = {
     /*
-     * The console.  The workstation's display and keyboard.
+     * Serial lines used to implement terminals.
      */
-    {DEV_CONSOLE,    Dev_ConsoleOpen, Dev_ConsoleRead, Dev_ConsoleWrite,
-		     Dev_ConsoleIOControl, Dev_ConsoleClose, Dev_ConsoleSelect,
-		     DEV_NO_ATTACH_PROC},
+    {DEV_TERM,       DevTtyOpen, DevTtyRead, DevTtyWrite,
+		     DevTtyIOControl, DevTtyClose, DevTtySelect,
+		     DEV_NO_ATTACH_PROC, NoDevice},
     /*
      * The system error log.  If this is not open then error messages go
      * to the console.
@@ -79,49 +80,74 @@ DevFsTypeOps devFsOpTable[] = {
      * SCSI Worm interface.
      */
     {DEV_SCSI_WORM, NoDevice, NullProc, NullProc,
-		    NullProc, NullProc, NullProc, DEV_NO_ATTACH_PROC},
-
+		    NullProc, NullProc, NullProc, 
+		    DEV_NO_ATTACH_PROC, NoDevice},
     /*
      * The following device number is unused.
      */
     {DEV_PLACEHOLDER_2, NoDevice, NullProc, NullProc,
-		    NullProc, NullProc, NullProc, DEV_NO_ATTACH_PROC},
-    /*
-     * SCSI Disk interface.
-     */
+		    NullProc, NullProc, NullProc, 
+		    DEV_NO_ATTACH_PROC, NoDevice},
     /*
      * New SCSI Disk interface.
      */
     {DEV_SCSI_DISK, DevRawBlockDevOpen, DevRawBlockDevRead,
 		    DevRawBlockDevWrite, DevRawBlockDevIOControl, 
-		    DevRawBlockDevClose, NullProc, DevScsiDiskAttach},
+		    DevRawBlockDevClose, NullSelectProc, DevScsiDiskAttach,
+		    DevRawBlockDevReopen},
     /*
      * SCSI Tape interface.
      */
     {DEV_SCSI_TAPE, DevSCSITapeOpen, DevSCSITapeRead, DevSCSITapeWrite,
-		    DevSCSITapeIOControl, DevSCSITapeClose, NullProc},
+		    DevSCSITapeIOControl, DevSCSITapeClose, NullSelectProc,
+		    DEV_NO_ATTACH_PROC, NoDevice},
     /*
      * /dev/null
      */
     {DEV_MEMORY,    NullProc, Dev_NullRead, Dev_NullWrite,
-		    NullProc, NullProc, NullSelectProc, DEV_NO_ATTACH_PROC},
+		    NullProc, NullProc, NullSelectProc, DEV_NO_ATTACH_PROC,
+		    NullProc},
     /*
      * Xylogics 450 disk controller.
      */
-    {DEV_XYLOGICS, NullProc, Dev_NullRead, Dev_NullWrite,
-		   NullProc, NullProc, NullSelectProc, DEV_NO_ATTACH_PROC},
+    {DEV_XYLOGICS, NullProc, Dev_NullRead, 
+		   Dev_NullWrite, NullProc, 
+		   NullProc, NullSelectProc, 
+		   DEV_NO_ATTACH_PROC, NullProc},
     /*
      * Network devices.  The unit number specifies the ethernet protocol number.
      */
     {DEV_NET,      DevNet_FsOpen, DevNet_FsRead, DevNet_FsWrite, 
 		   DevNet_FsIOControl, DevNet_FsClose, DevNet_FsSelect,
-		   DEV_NO_ATTACH_PROC},
+		   DEV_NO_ATTACH_PROC, DevNet_FsReopen},
+    /*
+     * Raw SCSI HBA interface.
+     */
+    {DEV_SCSI_HBA, DevSCSIDeviceOpen, Dev_NullRead, Dev_NullWrite,
+                    DevSCSIDeviceIOControl, DevSCSIDeviceClose, NullSelectProc,
+                    DEV_NO_ATTACH_PROC, NoDevice},
+    /*
+     * RAID device.
+     */
+    {DEV_RAID, NullProc, Dev_NullRead,
+	       Dev_NullWrite, NullProc,
+	       NullProc, NullSelectProc,
+	       DEV_NO_ATTACH_PROC, NullProc},
+
+    /*
+     * Debug device. (useful for debugging RAID device)
+     */
+    {DEV_DEBUG, NullProc, Dev_NullRead,
+	       Dev_NullWrite, NullProc,
+	       NullProc, NullSelectProc,
+	       DEV_NO_ATTACH_PROC, NullProc},
+
     /*
      * The graphics device.
      */
-    {DEV_GRAPHICS, DevGraphicsOpen, DevGraphicsRead, DevGraphicsWrite,
+    {DEV_MOUSE, DevGraphicsOpen, DevGraphicsRead, DevGraphicsWrite,
 		   DevGraphicsIOControl, DevGraphicsClose, DevGraphicsSelect,
-		    DEV_NO_ATTACH_PROC}, 
+		   DEV_NO_ATTACH_PROC, NoDevice}, 
 
 };
 

@@ -19,11 +19,6 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include "sprite.h"
 #include "machMon.h"
 #include "mach.h"
-#include "devKeyboard.h"
-#include "devKeyboardInt.h"
-#include "devKbdQueue.h"
-#include "devConsole.h"
-#include "devSerial.h"
 #include "dev.h"
 #include "fs.h"
 #include "sys.h"
@@ -32,7 +27,7 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include "dbg.h"
 #include "dc7085.h"
 #include "machAddrs.h"
-#include "devGraphics.h"
+#include "graphics.h"
 #include "dev/graphics.h"
 
 /*
@@ -189,10 +184,7 @@ static void		LoadCursor();
 static void		RestoreCursorColor();
 static void		CursorColor();
 static void		MouseInit();
-static int		MouseGetCh();
-static void		MousePutCh();
 static void		KBDReset();
-static void		KBDPutc();
 static void		InitColorMap();
 static void		VDACInit();
 static void		LoadColorMap();
@@ -512,25 +504,24 @@ MouseInit()
     /*
      * Initialize the mouse.
      */
-    *devLPRPtr = LPR_RXENAB | LPR_B4800 | LPR_OPAR | LPR_PARENB |
-			   LPR_8_BIT_CHAR | MOUSE_PORT;
-    MousePutCh(MOUSE_SELF_TEST);
-    id_byte1 = MouseGetCh();
+    DevDC7085MouseInit();
+    DevDC7085MousePutCh(MOUSE_SELF_TEST);
+    id_byte1 = DevDC7085MouseGetCh();
     if (id_byte1 < 0) {
 	printf("MouseInit: Timeout on 1st byte of self-test report\n");
 	return;
     }
-    id_byte2 = MouseGetCh();
+    id_byte2 = DevDC7085MouseGetCh();
     if (id_byte2 < 0) {
 	printf("MouseInit: Timeout on 2nd byte of self-test report\n");
 	return;
     }
-    id_byte3 = MouseGetCh();
+    id_byte3 = DevDC7085MouseGetCh();
     if (id_byte3 < 0) {
 	printf("MouseInit: Timeout on 3rd byte of self-test report\n");
 	return;
     }
-    id_byte4 = MouseGetCh();
+    id_byte4 = DevDC7085MouseGetCh();
     if (id_byte4 < 0) {
 	printf("MouseInit: Timeout on 4th byte of self-test report\n");
 	return;
@@ -538,79 +529,7 @@ MouseInit()
     if ((id_byte2 & 0x0f) != 0x2) {
 	printf("MouseInit: We don't have a mouse!!!\n");
     }
-    MousePutCh(MOUSE_INCREMENTAL);
-}
-
-
-/*
- * ----------------------------------------------------------------------------
- *
- * MouseGetCh --
- *
- *	Read a character from the mouse.
- *
- * Results:
- *	A character read from the mouse, -1 if we timed out waiting.
- *
- * Side effects:
- *	None.
- *
- * ----------------------------------------------------------------------------
- */
-static int
-MouseGetCh()
-{
-    register int		timeout;
-    register unsigned short	c;
-
-    for (timeout = 1000000; timeout > 0; timeout--) {
-	if (*devCSRPtr & CSR_RDONE) {
-	    c = *devRBufPtr;
-	    MACH_DELAY(50000);
-	    if (((c >> 8) & 03) != 1) {
-		continue;
-	    }
-	    return(c & 0xff);
-	}
-    }
-    return(-1);
-}
-
-
-/*
- * ----------------------------------------------------------------------------
- *
- * MousePutCh --
- *
- *	Write a character to the mouse.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	A character is written to the mouse.
- *
- * ----------------------------------------------------------------------------
- */
-static void
-MousePutCh(c)
-    int	c;
-{
-    register	int	timeout;
-    register	int	reg;
-
-    reg = *devTCRPtr;
-    *devTCRPtr = 0x2;
-    timeout = 60000;
-
-    for (timeout = 60000;
-         (!(*devCSRPtr & CSR_TRDY) || (*devCSRPtr & CSR_TX_LINE_NUM) != 0x100) &&
-	     timeout > 0;
-	 timeout--) {
-    }
-    *devTDRPtr = c & 0xff;
-    MACH_DELAY(50000);
-    *devTCRPtr = reg;
+    DevDC7085MousePutCh(MOUSE_INCREMENTAL);
 }
 
 
@@ -635,75 +554,14 @@ KBDReset()
     register int i;
 
     inKBDReset = TRUE;
-    KBDPutc(LK_DEFAULTS);
+    DevDC7085KBDPutc(LK_DEFAULTS);
     for (i=1; i < 15; i++) {
-	KBDPutc(divDefaults[i] | (i << 3));
+	DevDC7085KBDPutc(divDefaults[i] | (i << 3));
     }
     for (i = 0; i < KBD_INIT_LENGTH; i++) {
-	KBDPutc ((int)kbdInitString[i]);
+	DevDC7085KBDPutc ((int)kbdInitString[i]);
     }
     inKBDReset = FALSE;
-}
-
-
-/*
- * ----------------------------------------------------------------------------
- *
- * KBDPutc --
- *
- *	Put a character out to the keyboard.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	A character is written to the keyboard.
- *
- * ----------------------------------------------------------------------------
- */
-static void
-KBDPutc(c)
-    register int c;
-{
-    register unsigned	short	tcr;
-    register int	timeout;
-    int			line;
-
-    tcr = *devTCRPtr & 1;
-    *devTCRPtr |= 1;
-    while (1) {
-        timeout = 1000000;
-        while (!(*devCSRPtr & CSR_TRDY) && timeout > 0) {
-            timeout--;
-        }
-        if (timeout == 0) {
-            break;
-        }
-        line = (*devCSRPtr >> 8) & 3;
-        if (line != 0) {
-            tcr |= 1 << line;
-            *devTCRPtr &= ~(1 << line);
-            continue;
-        }
-        *devTDRPtr = c & 0xff;
-        MACH_DELAY(5);
-        while (1) {
-            while (!(*devCSRPtr & CSR_TRDY)) {
-            }
-            line = (*devCSRPtr >> 8) & 3;
-            if (line != 0) {
-                tcr |= 1 << line;
-                *devTCRPtr &= ~(1 << line);
-                continue;
-            }
-            break;
-        }
-        break;
-    }
-    *devTCRPtr &= ~1;
-    if (tcr != 0) {
-	*devTCRPtr |= tcr;
-    }
 }
 
 
@@ -836,7 +694,6 @@ LoadColorMap(ptr)
     if(ptr->index > 256) {
 	 return;
     }
-    MACH_DELAY(100000);
 
     vdacPtr->mapWA = ptr->index; Mach_EmptyWriteBuffer();
     vdacPtr->map = ptr->entry.red; Mach_EmptyWriteBuffer();
@@ -844,49 +701,11 @@ LoadColorMap(ptr)
     vdacPtr->map = ptr->entry.blue; Mach_EmptyWriteBuffer();
 }
 
-
-static void RecvIntr(), XmitIntr();
-
-/*
- * ----------------------------------------------------------------------------
- *
- * DevGraphicsInterrupt --
- *
- *	Service an interrupt from the uart.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Adds serial, keyboard or mouse events to the queue.
- *
- * ----------------------------------------------------------------------------
- */
-void
-DevGraphicsInterrupt()
-{
-    unsigned csr;
-
-    MASTER_LOCK(&graphicsMutex);
-
-    csr = *devCSRPtr;
-
-    if (csr & CSR_RDONE) {
-	RecvIntr();
-    }
-
-    if (csr & CSR_TRDY) {
-	XmitIntr();
-    }
-
-    MASTER_UNLOCK(&graphicsMutex);
-}
-
 
 /*
  *----------------------------------------------------------------------
  *
- * RecvIntr --
+ * DevGraphicsKbdIntr --
  *
  *	Process a received character.
  *
@@ -898,120 +717,113 @@ DevGraphicsInterrupt()
  *
  *----------------------------------------------------------------------
  */
-static void
-RecvIntr()
+void
+DevGraphicsKbdIntr(ch)
+    unsigned char ch;
 {
-    unsigned short	recvBuf;
-
-    while (*devCSRPtr & CSR_RDONE) {
-	recvBuf = *devRBufPtr;
-	switch ((recvBuf & RBUF_LINE_NUM) >> RBUF_LINE_NUM_SHIFT) {
-	    case KBD_PORT: {
-		/*
-		 * Keyboard interrupt.
-		 */
-		unsigned char	ch;
-		int		i;
-		Time		time;
-		DevEvent	*eventPtr;
-		
-		ch = *devRBufPtr & 0xFF;
-		if (ch == LK_POWER_ERROR || ch == LK_KDOWN_ERROR ||
-		    ch == LK_INPUT_ERROR || ch == LK_OUTPUT_ERROR) {
-		    if(!inKBDReset) {
-			printf("\n: RecvIntr: keyboard error,code=%x", ch);
-			KBDReset();
-		    }
-		    return;
-		}
-		if (ch < LK_LOWEST) {
-		   return;
-		}
-		if (ch == 0x73) {
-		    /*
-		     * F13 key.
-		     */
-		    DBG_CALL;
-		    return;
-		} else if (ch == 0x74) {
-		    /*
-		     * F12 key.
-		     */
-		    Mach_MonAbort();
-		    return;
-		}
-
-		/*
-		 * See if there is room in the queue.
-		 */
-		i = DEV_EVROUND(scrInfo.eventQueue.eTail + 1);
-		if (i == scrInfo.eventQueue.eHead) {
-		    return;
-		}
-
-		/*
-		 * Add the event to the queue.
-		 */
-		eventPtr = &events[scrInfo.eventQueue.eTail];
-		eventPtr->type = DEV_BUTTON_RAW_TYPE;
-		eventPtr->device = DEV_KEYBOARD_DEVICE;
-		eventPtr->x = scrInfo.mouse.x;
-		eventPtr->y = scrInfo.mouse.y;
-		Timer_GetCurrentTicks(&time);
-		eventPtr->time = TO_MS(time);
-		eventPtr->key = ch;
-		scrInfo.eventQueue.eTail = i;
-
-		if (devGraphicsOpen) {
-		    Fs_DevNotifyReader(notifyToken);
-		}
-
-		break;
-	    }
-	    case MOUSE_PORT: {
-		/*
-		 * Mouse interrupt.
-		 */
-		MouseReport	*newRepPtr;
-		unsigned char	ch;
-
-		newRepPtr = &currentRep;
-		ch = *devRBufPtr & 0xFF;
-		newRepPtr->byteCount++;
-		if (ch & MOUSE_START_FRAME) {
-		    /*
-		     * The first mouse report byte (button state).
-		     */
-		    newRepPtr->state = ch;
-		    if (newRepPtr->byteCount > 1) {
-			newRepPtr->byteCount = 1;
-		    }
-		} else if (newRepPtr->byteCount == 2) {
-		    /*
-		     * The second mouse report byte (delta x).
-		     */
-		    newRepPtr->dx = ch;
-		} else if (newRepPtr->byteCount == 3) {
-		    /*
-		     * The final mouse report byte (delta y).
-		     */
-		    newRepPtr->dy = ch;
-		    newRepPtr->byteCount = 0;
-		    if (newRepPtr->dx != 0 || newRepPtr->dy != 0) {
-			/*
-			 * If the mouse moved, post a motion event.
-			 */
-			MouseEvent(newRepPtr);
-		    }
-		    MouseButtons(newRepPtr);
-		}
-		break;
-	    }
-	    case MODEM_PORT:
-		break;
-	    case PRINTER_PORT:
-		break;
+    int		i;
+    Time	time;
+    DevEvent	*eventPtr;
+    
+    if (ch == LK_POWER_ERROR || ch == LK_KDOWN_ERROR ||
+	ch == LK_INPUT_ERROR || ch == LK_OUTPUT_ERROR) {
+	if(!inKBDReset) {
+	    printf("\n: RecvIntr: keyboard error,code=%x", ch);
+	    KBDReset();
 	}
+	return;
+    }
+    if (ch < LK_LOWEST) {
+       return;
+    }
+    if (ch == 0x73) {
+	/*
+	 * F13 key.
+	 */
+	DBG_CALL;
+	return;
+    } else if (ch == 0x74) {
+	/*
+	 * F12 key.
+	 */
+	Mach_MonAbort();
+	return;
+    }
+
+    /*
+     * See if there is room in the queue.
+     */
+    i = DEV_EVROUND(scrInfo.eventQueue.eTail + 1);
+    if (i == scrInfo.eventQueue.eHead) {
+	return;
+    }
+
+    /*
+     * Add the event to the queue.
+     */
+    eventPtr = &events[scrInfo.eventQueue.eTail];
+    eventPtr->type = DEV_BUTTON_RAW_TYPE;
+    eventPtr->device = DEV_KEYBOARD_DEVICE;
+    eventPtr->x = scrInfo.mouse.x;
+    eventPtr->y = scrInfo.mouse.y;
+    Timer_GetCurrentTicks(&time);
+    eventPtr->time = TO_MS(time);
+    eventPtr->key = ch;
+    scrInfo.eventQueue.eTail = i;
+
+    Fs_DevNotifyReader(notifyToken);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevGraphicsMouseIntr --
+ *
+ *	Process a received mouse character.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Events added to the queue.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+DevGraphicsMouseIntr(ch)
+    unsigned char ch;
+{
+    MouseReport	*newRepPtr;
+
+    newRepPtr = &currentRep;
+    newRepPtr->byteCount++;
+    if (ch & MOUSE_START_FRAME) {
+	/*
+	 * The first mouse report byte (button state).
+	 */
+	newRepPtr->state = ch;
+	if (newRepPtr->byteCount > 1) {
+	    newRepPtr->byteCount = 1;
+	}
+    } else if (newRepPtr->byteCount == 2) {
+	/*
+	 * The second mouse report byte (delta x).
+	 */
+	newRepPtr->dx = ch;
+    } else if (newRepPtr->byteCount == 3) {
+	/*
+	 * The final mouse report byte (delta y).
+	 */
+	newRepPtr->dy = ch;
+	newRepPtr->byteCount = 0;
+	if (newRepPtr->dx != 0 || newRepPtr->dy != 0) {
+	    /*
+	     * If the mouse moved, post a motion event.
+	     */
+	    MouseEvent(newRepPtr);
+	}
+	MouseButtons(newRepPtr);
     }
 }
 
@@ -1418,7 +1230,7 @@ Blitc(c)
 	    scrInfo.col = 0;
 	    break;
 	case '\007':
-	    KBDPutc(LK_RING_BELL);
+	    DevDC7085KBDPutc(LK_RING_BELL);
 	    break;
 	default:
 	    /*
@@ -1506,27 +1318,6 @@ Blitc(c)
     if (!devGraphicsOpen) {
 	PosCursor(scrInfo.col * 8, scrInfo.row * 15);
     }
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * XmitIntr --
- *
- *	Handle a transmission interrupt.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-static void
-XmitIntr()
-{
 }
 
 
@@ -1784,7 +1575,7 @@ mapError:
 	    if (!devGraphicsOpen) {
 		kpCmdPtr->cmd |= 1;
 	    }
-	    KBDPutc((int)kpCmdPtr->cmd);
+	    DevDC7085KBDPutc((int)kpCmdPtr->cmd);
 	    cp = &kpCmdPtr->par[0];
 	    for (cp = &kpCmdPtr->par[0]; 
 	         kpCmdPtr->nbytes > 0;
@@ -1792,7 +1583,7 @@ mapError:
 		if(kpCmdPtr->nbytes == 1) {
 		    *cp |= 0x80;
 		}
-		KBDPutc((int)*cp);
+		DevDC7085KBDPutc((int)*cp);
 	    }
 	    break;
 	}
@@ -1875,26 +1666,29 @@ mapError:
  *----------------------------------------------------------------------
  */
 ReturnStatus
-DevGraphicsSelect(devicePtr, inFlags, outFlagsPtr)
+DevGraphicsSelect(devicePtr, readPtr, writePtr, exceptPtr)
     Fs_Device	        *devicePtr;
-    int			inFlags;
-    int			*outFlagsPtr;
+    int			*readPtr;
+    int			*writePtr;
+    int			*exceptPtr;
 {
     ReturnStatus status = SUCCESS;
 
     MASTER_LOCK(&graphicsMutex);
 
-    if (devicePtr->unit == DEV_MOUSE_UNIT) {
-	if (inFlags & FS_READABLE) {
-	    if (scrInfo.eventQueue.eHead != scrInfo.eventQueue.eTail) {
-		*outFlagsPtr |= FS_READABLE;
+    if (*readPtr) {
+	if (devicePtr->unit == DEV_MOUSE_UNIT) {
+	    if (scrInfo.eventQueue.eHead == scrInfo.eventQueue.eTail) {
+		*readPtr = 0;
 	    }
-	} else if (inFlags & FS_WRITABLE) {
-	    status = FS_NO_ACCESS;
+	} else {
+	    *readPtr = 0;
 	}
     }
 
     MASTER_UNLOCK(&graphicsMutex);
+
+    *writePtr = *exceptPtr = 0;
 
     return(status);
 }

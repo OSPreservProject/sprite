@@ -14,15 +14,10 @@
  * $Header$ SPRITE (DECWRL)
  */
 
-/*
- * Define the six registers.
- */
-extern volatile unsigned short *devCSRPtr;
-extern volatile unsigned short *devRBufPtr;
-extern volatile unsigned short *devLPRPtr;
-extern volatile unsigned short *devTCRPtr;
-extern volatile unsigned short *devMSRPtr;
-extern volatile unsigned short *devTDRPtr;
+#ifndef _DC7085
+#define _DC7085
+
+#include "tty.h"
 
 /*
  * Control status register bits.
@@ -48,11 +43,30 @@ extern volatile unsigned short *devTDRPtr;
 #define RBUF_CHAR		0x00FF
 
 /*
+ * Transmit control register values.
+ */
+#define TCR_DTR2		0x400
+
+/*
  * Line parameter register bits.
  */
 #define	LPR_RXENAB	0x1000
+#define LPR_B50		0x0000
+#define LPR_B75		0x0100
+#define LPR_B110	0x0200
+#define LPR_B134	0x0300
+#define LPR_B150	0x0400
+#define LPR_B300	0x0500
+#define LPR_B600	0x0600
+#define LPR_B1200	0x0700
+#define LPR_B1800	0x0800
+#define LPR_B2000	0x0900
+#define LPR_B2400	0x0A00
+#define LPR_B3600	0x0B00
 #define	LPR_B4800	0x0C00
+#define LPR_B7200	0x0D00
 #define LPR_B9600	0x0E00
+#define LPR_B19800	0x0F00
 #define LPR_OPAR	0x0080
 #define LPR_PARENB	0x0040
 #define LPR_2_STOP	0x0020
@@ -143,4 +157,47 @@ typedef struct {
 #define LK_INPUT_ERROR	0xb6		/* garbage command to keyboard	*/
 #define LK_LOWEST	0x56		/* lowest significant keycode	*/
 
+typedef struct {
+    char *name;				/* Name to use for device in console
+					 * error messages. */
+    DevTty *ttyPtr;			/* Information about the logical
+					 * terminal associated with the line. */
+    int baud;				/* Current baud rate for channel
+					 * (9600 means 9600 baud). */
+    void (*inputProc)();		/* Procedure to call at interrupt time
+					 * to take input character.   See
+					 * DevTtyInputChar for example of
+					 * inputProc's structure. */
+    ClientData inputData;		/* Argument to pass to inputProc. */
+    int (*outputProc)();		/* Procedure to call at interrupt time
+					 * to get next output character.   See
+					 * DevTtyOutputChar for example of
+					 * outputProc's calling structure. */
+    ClientData outputData;		/* Argument to pass to outputProc. */
+    int port;				/* Which of the four ports this is. */
+    int flags;				/* See below for definitions. */
+} DevDC7085;
 
+/*
+ * Flag values.
+ */
+#define XMIT_ENABLED	0x1
+#define LINE_ACTIVE	0x2
+
+extern DevDC7085	devKeyboard;
+extern DevDC7085	devSerialA;
+extern DevDC7085	devSerialB;
+
+/*
+ * Exported procedures:
+ */
+
+extern void		DevDC7085Reset();
+extern void		DevDC7085Activate();
+extern int		DevDC7085RawProc();
+extern void		DevDC7085MouseInit();
+extern void		DevDC7085MousePutCh();
+extern int		DevDC7085MouseGetCh();
+extern void		DevDC7085KBDPutc();
+
+#endif _DC7085

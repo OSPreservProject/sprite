@@ -21,8 +21,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "devInt.h"
-#include "devKeyboard.h"
-#include "devGraphics.h"
+#include "graphics.h"
 #include "vm.h"
 #include "dbg.h"
 #include "sysStats.h"
@@ -51,7 +50,7 @@ int devConfigDebug = FALSE;
 void
 Dev_Init()
 {
-    Dev_KbdInit();
+    DevTtyInit();
     DevGraphicsInit();
 }
 
