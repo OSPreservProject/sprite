@@ -1223,6 +1223,9 @@ Fscache_BlockRead(cacheInfoPtr, blockNum, blockPtrPtr, numBytesPtr, blockType,
 		    blockPtr->blockNum,
 		    cacheInfoPtr->attr.lastByte - offset);
 	    blockPtr->blockSize = cacheInfoPtr->attr.lastByte - offset;
+	    if (blockPtr->blockSize > FS_BLOCK_SIZE) {
+		blockPtr->blockSize = FS_BLOCK_SIZE;
+	    }
 	}
 	if ((status != SUCCESS) ||
 	    (blockPtr->blockSize == 0 && !allocate)) {
