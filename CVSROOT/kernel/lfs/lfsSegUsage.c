@@ -592,15 +592,14 @@ LfsSetLogTail(lfsPtr, logRangePtr, startBlock, activeBytes)
  */
 
 int
-LfsGetSegsToClean(lfsPtr, maxBlocks, maxSegArrayLen, segArrayPtr)
+LfsGetSegsToClean(lfsPtr, maxSegArrayLen, segArrayPtr)
     Lfs	  *lfsPtr;	/* File system of interest. */
-    int	  maxBlocks;	/* Maximum number of file system blocks to clean. */
     int	  maxSegArrayLen; 	/* The maximum number of segment to clean to 
 				 * return. */
     LfsSegList	 *segArrayPtr;	/* Array of length maxSegArrayLen to return
 				 * segments to clean. */
 {
-    int	numberSegs, segNum, numBlocks, blockSize;
+    int	numberSegs, segNum, blockSize;
     Boolean fullClean;
     int i, j;
     LfsSegUsageEntry *s;
@@ -660,7 +659,6 @@ LfsGetSegsToClean(lfsPtr, maxBlocks, maxSegArrayLen, segArrayPtr)
 	}
    }
    LfsStableMemRelease(&(usagePtr->stableMem), &smemEntry, FALSE);
-   numBlocks = 0;
    fullClean = ((lfsPtr->controlFlags & LFS_CONTROL_CLEANALL) != 0);
    for (i = 0; i < numberSegs; i++) {
        /*
@@ -671,10 +669,6 @@ LfsGetSegsToClean(lfsPtr, maxBlocks, maxSegArrayLen, segArrayPtr)
 	    (usagePtr->checkPoint.numClean+i >
 		   usagePtr->params.minNumClean + 
 		       usagePtr->params.numSegsToClean)) {
-	    return i;
-	}
-	numBlocks +=  LfsBytesToBlocks(lfsPtr, segArrayPtr[i].activeBytes);
-	if (numBlocks > maxBlocks) {
 	    return i;
 	}
    }
