@@ -66,6 +66,13 @@
 
 #define PROC_PCB_ARG_LENGTH 256
 
+/*
+ * Number of locks that can be pushed on the lock stack for a process. The
+ * stack is used in the sync module to determine the locking structure of the
+ * system.
+ */
+#define PROC_LOCKSTACK_SIZE 10
+
 
 /* DATA STRUCTURES */
 
@@ -128,6 +135,11 @@ typedef union {
     Timer_Ticks	ticks;	/* The kernel's notion of time. */
     Time	time;	/* The user's notion of time. */
 } Proc_Time;
+
+typedef struct {
+    int		type;		/* type of lock */
+    Address	lockPtr;	/* Ptr to lock */
+} Proc_LockStackElement;
 
 /*
  *  The Proc_ControlBlock structure:
@@ -373,6 +385,12 @@ typedef struct Proc_ControlBlock {
     char	*argString;
 
     /*
+     * Stack of locks that process has grabbed.
+     */
+     Proc_LockStackElement	lockStack[PROC_LOCKSTACK_SIZE];
+     int			lockStackSize;
+
+    /*
      * Used to speed up basic kernel-call processing.  These two fields
      * must be next to each other in the table, and in the order below.
      * If you change this, you'll have to change the assembler code that
@@ -558,11 +576,25 @@ extern Boolean proc_RefuseMigrations;
     (proc_RunningProcesses[Mach_GetProcessorNumber()]->rpcClientProcess != \
 		((Proc_ControlBlock *) NIL))
 
+/*
+ * Used to get the lock at the top of the lock stack without popping it off.
+ */
+#define Proc_GetCurrentLock(pcbPtr, typePtr, lockPtrPtr) \
+    { \
+	if ((pcbPtr)->lockStackSize == 0) { \
+	    *(typePtr) = -1; \
+	    *(lockPtrPtr) = NULL; \
+	} else { \
+	    *(typePtr) = (pcbPtr)->lockStack[(pcbPtr)->lockStackSize].type; \
+	    *(lockPtrPtr) = \
+		(pcbPtr)->lockStack[(pcbPtr)->lockStackSize].lockPtr; \
+	} \
+    }
 /* 
  * External procedures.
  */
 
-extern void		  	Proc_InitTable();
+extern void		  	Proc_Init();
 extern void		  	Proc_InitMainProc();
 extern ReturnStatus		Proc_NewProc();
 extern void			ProcStartUserProc();
@@ -622,6 +654,9 @@ extern	int			proc_NumServers;
 
 extern  ReturnStatus		Proc_Dump();
 extern  ReturnStatus		Proc_DumpPCB();
+
+extern  void			Proc_RemoveFromLockStack();
+extern  void			Proc_PushLockStack();
 
 /*
  * The following are kernel stubs corresponding to system calls.  They
