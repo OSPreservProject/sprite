@@ -229,6 +229,7 @@ typedef struct Vm_SegProcList {
     Vm_SharedSegTable   *segTabPtr;     /* Pointer to shared segment table. */
     Address             addr;           /* Start address of segment. */
     int			offset;		/* Page table offset (see vmInt.h). */
+    int			fileAddr;	/* Offset into the file. */
     Address             mappedStart;    /* Start of mapped part. */
     Address             mappedEnd;      /* End of mapped part. */
     Fs_Stream           *stream;        /* Stream of mapping. */
