@@ -471,7 +471,7 @@ Fsio_DeviceReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 /*
  * ----------------------------------------------------------------------------
  *
- * Fsio_DeviceClientKill --
+ * Fsio_DeviceCloseInt --
  *
  *	Called when a client is assumed down.  This cleans up the
  *	references due to the client.
