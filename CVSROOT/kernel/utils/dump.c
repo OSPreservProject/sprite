@@ -61,7 +61,7 @@ static void	PrintTOD();
 static EventTableType eventTable[] = {
     {'/', PrintL1Menu, (ClientData)0,"Print Dump Event Menu"},
     {'a', RESERVED_EVENT, NULL_ARG, "Abort to PROM monitor" }, 
-#ifdef 0
+#ifdef notdef
     {'b', RESERVED_EVENT, NULL_ARG, 
 				"Put machine into (old) serial line debugger"},
 #endif
