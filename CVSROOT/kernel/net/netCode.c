@@ -27,6 +27,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "net.h"
 #include "netInt.h"
 #include "devNet.h"
+#include "sync.h"
 #include "dbg.h"
 
 Net_EtherStats	net_EtherStats;
@@ -94,6 +95,28 @@ Net_Init()
      * Pre-load some addresses, including the broadcast address.
      */
     Net_RouteInit();
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_Bin --
+ *
+ *	Bin various memory sizes allocated by the net module.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Calls Mem_Bin to optimize memory allocation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Net_Bin()
+{
+    Mem_Bin(NET_ETHER_MAX_BYTES);
 }
 
 /*
