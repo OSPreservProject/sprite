@@ -1,8 +1,8 @@
 /*
  * byte.h --
  *
- *	This file defines the facilities provided for copying,
- *	comparing, and zeroing byte arrays.
+ *	This file defines a few extra convenience macros for manipulating
+ *	byte arrays.
  *
  * Copyright (C) 1986 Regents of the University of California
  * All rights reserved.
@@ -13,13 +13,6 @@
 
 #ifndef _BYTE
 #define _BYTE
-
-#include "sprite.h"
-
-extern void Byte_Copy();
-extern void Byte_Fill();
-extern void Byte_Zero();
-extern Boolean Byte_Compare();
 
 /*
  * Byte_FillBuffer is used to copy a value into a buffer and advance
