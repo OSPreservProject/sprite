@@ -678,7 +678,7 @@ MachTrap(trapStack)
     register	Proc_ControlBlock	*procPtr;
     ReturnStatus			status;
 
-    procPtr = Proc_GetActualProc(0);
+    procPtr = Proc_GetActualProc();
     /*
      * Process kernel traps.
      */
