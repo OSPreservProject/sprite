@@ -1246,7 +1246,7 @@ InitiateMigration(procPtr, hostID)
     status = ProcMigCommand(hostID, &cmd, &inBuf, &outBuf);
 
     if (status != SUCCESS) {
-	if (proc_MigDebugLevel > 0) {
+	if (proc_MigDebugLevel > 2) {
 	    printf(
 		   "%s InitiateMigration: Error returned by host %d:\n\t%s\n",
 		   "Warning:", hostID, Stat_GetMsg(status));
