@@ -1482,10 +1482,11 @@ FsDeviceSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsDeviceIOControl(hdrPtr, command, inBufSize, inBuffer, outBufSize, 
+FsDeviceIOControl(hdrPtr, command, byteOrder, inBufSize, inBuffer, outBufSize, 
 		outBuffer)
     FsHandleHeader *hdrPtr;		/* I/O handle for device. */
     int command;			/* Device specific I/O control */
+    int byteOrder;			/* Client's byte order */
     int inBufSize;			/* Size of inBuffer */
     Address inBuffer;			/* Buffer of input arguments */
     int outBufSize;			/* Size of outBuffer */
@@ -1495,6 +1496,10 @@ FsDeviceIOControl(hdrPtr, command, inBufSize, inBuffer, outBufSize,
     register Fs_Device	*devicePtr = &devHandlePtr->device;
     register ReturnStatus status;
 
+    if (byteOrder != mach_ByteOrder) {
+	FsFileError(hdrPtr, "Device I/O control byte swapping not done",
+	    SUCCESS);
+    }
     FsHandleLock(devHandlePtr);
     status = (*devFsOpTable[devicePtr->type].ioControl) (devicePtr,
 	    command, inBufSize,	inBuffer, outBufSize, outBuffer);

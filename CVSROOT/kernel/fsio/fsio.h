@@ -173,9 +173,10 @@ typedef struct FsStreamTypeOps {
      *	handles some generic I/O controls, and then passes the I/O control
      *	down to the stream-specific handler.
      *
-     *	FooIOControl(hdrPtr, command, inBufSize, inBuf, outBufSize, outBuf)
+     *	FooIOControl(hdrPtr, command, byteOrder, inBufSize, inBuf, outBufSize, outBuf)
      *		FsHandleHeader *hdrPtr;			(File handle)
      *		int		command;		(Special operation)
+     *		int		byteOrder;		(client's byte order)
      *		int		inBufSize;		(Size of inBuf)
      *		Address		inBuf;			(Input data)
      *		int		outBufSize;		(Size of outBuf)

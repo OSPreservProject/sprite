@@ -680,7 +680,7 @@ FsFileError(hdrPtr, string, status)
     char *string;
 {
     if (hdrPtr == (FsHandleHeader *)NIL) {
-	Sys_Printf("(NIL handle)");
+	Sys_Printf("(NIL handle) %s: ", string);
     } else {
 	Net_HostPrint(hdrPtr->fileID.serverID,
 		      FsFileTypeToString(hdrPtr->fileID.type));
@@ -688,6 +688,9 @@ FsFileError(hdrPtr, string, status)
 		hdrPtr->fileID.major, hdrPtr->fileID.minor, string);
     }
     switch (status) {
+	case SUCCESS:
+	    Sys_Printf("\n");
+	    break;
 	case FS_DOMAIN_UNAVAILABLE:
 	    Sys_Printf("domain unavailable\n");
 	    break;

@@ -545,13 +545,11 @@ Fs_IOControl(streamPtr, command, inBufSize, inBuffer,  outBufSize, outBuffer)
     int				offset;
     Ioc_LockArgs		*lockArgsPtr;
 
+    /*
+     * Retry loop to handle server error recovery and blocking locks.
+     */
     do {
-	/*
-	 * The IOControl may have to be retried in the case of server recovery
-	 * or blocking locks.
-	 */
 	retry = FALSE;
-
 	/*
 	 * Pre-processing for some of the IOControls.
 	 *
@@ -582,8 +580,26 @@ Fs_IOControl(streamPtr, command, inBufSize, inBuffer,  outBufSize, outBuffer)
 	 * If so, we may also have to adjust some state of our own.
 	 */
 	status = (fsStreamOpTable[streamPtr->ioHandlePtr->fileID.type].ioControl)
-	    (streamPtr->ioHandlePtr, command, inBufSize, inBuffer, outBufSize,
-		outBuffer);
+	    (streamPtr->ioHandlePtr, command, mach_ByteOrder, inBufSize,
+		inBuffer, outBufSize, outBuffer);
+#ifdef lint
+	status = FsFileIOControl(streamPtr->ioHandlePtr, command,
+		    mach_ByteOrder, inBufSize, inBuffer, outBufSize, outBuffer);
+	status = FsRmtFileIOControl(streamPtr->ioHandlePtr, command,
+		    mach_ByteOrder, inBufSize, inBuffer, outBufSize, outBuffer);
+	status = FsDeviceIOControl(streamPtr->ioHandlePtr, command,
+		    mach_ByteOrder, inBufSize, inBuffer, outBufSize, outBuffer);
+	status = FsRemoteIOControl(streamPtr->ioHandlePtr, command,
+		    mach_ByteOrder, inBufSize, inBuffer, outBufSize, outBuffer);
+	status = FsPipeIOControl(streamPtr->ioHandlePtr, command,
+		    mach_ByteOrder, inBufSize, inBuffer, outBufSize, outBuffer);
+	status = FsControlIOControl(streamPtr->ioHandlePtr, command,
+		    mach_ByteOrder, inBufSize, inBuffer, outBufSize, outBuffer);
+	status = FsServerStreamIOControl(streamPtr->ioHandlePtr, command,
+		    mach_ByteOrder, inBufSize, inBuffer, outBufSize, outBuffer);
+	status = FsPseudoStreamIOControl(streamPtr->ioHandlePtr, command,
+		    mach_ByteOrder, inBufSize, inBuffer, outBufSize, outBuffer);
+#endif /* lint */
 	switch(status) {
 	    case SUCCESS:
 		break;

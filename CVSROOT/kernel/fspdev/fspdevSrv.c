@@ -1125,11 +1125,11 @@ FsControlRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
  *----------------------------------------------------------------------
  */
 
-/*ARGSUSED*/
 ReturnStatus
-FsControlIOControl(hdrPtr, command, inBufSize, inBuffer, outBufSize, outBuffer)
+FsControlIOControl(hdrPtr, command, byteOrder, inBufSize, inBuffer, outBufSize, outBuffer)
     FsHandleHeader *hdrPtr;		/* File handle */
     int command;			/* File specific I/O control */
+    int byteOrder;			/* Client byte order, should be same */
     int inBufSize;			/* Size of inBuffer */
     Address inBuffer;			/* Buffer of input arguments */
     int outBufSize;			/* Size of outBuffer */
@@ -1139,6 +1139,9 @@ FsControlIOControl(hdrPtr, command, inBufSize, inBuffer, outBufSize, outBuffer)
     register PdevControlIOHandle *ctrlHandlePtr = (PdevControlIOHandle *)hdrPtr;
     register ReturnStatus status;
 
+    if (byteOrder != mach_ByteOrder) {
+	Sys_Panic(SYS_FATAL, "FsControlIOControl: wrong byte order\n");
+    }
     switch(command) {
 	case IOC_REPOSITION:
 	    status = SUCCESS;
@@ -2086,10 +2089,11 @@ exit:
  */
 
 ReturnStatus
-FsPseudoStreamIOControl(hdrPtr, command, inBufSize, inBuffer,
+FsPseudoStreamIOControl(hdrPtr, command, byteOrder, inBufSize, inBuffer,
 		       outBufSize, outBuffer)
     FsHandleHeader *hdrPtr;	/* Handle header for pseudo-stream. */
     int		command;	/* The control operation to be performed. */
+    int		byteOrder;	/* Client's byte order */
     int		inBufSize;	/* Size of input buffer. */
     Address	inBuffer;	/* Data to be sent to the slave/master. */
     int		outBufSize;	/* Size of output buffer. */
@@ -2131,19 +2135,26 @@ FsPseudoStreamIOControl(hdrPtr, command, inBufSize, inBuffer,
 	 */
 	case IOC_NUM_READABLE: {
 	    if (pdevHandlePtr->readBuf.data != (Address)NIL) {
-		register int bytesAvail;
-		if (outBuffer == (Address)NIL ||
-		    outBufSize < sizeof(int)) {
-		    status = GEN_INVALID_ARG;
-		    goto exit;
-		} else if (pdevHandlePtr->flags & PDEV_READ_BUF_EMPTY) {
+		int bytesAvail;
+		if (pdevHandlePtr->flags & PDEV_READ_BUF_EMPTY) {
 		    bytesAvail = 0;
 		} else {
 		    bytesAvail = pdevHandlePtr->readBuf.lastByte -
 				 pdevHandlePtr->readBuf.firstByte + 1;
 		}
-		*(int *)outBuffer = bytesAvail;
 		status = SUCCESS;
+		if (byteOrder != mach_ByteOrder) {
+		    int size = sizeof(int);
+		    Swap_Buffer((Address)&bytesAvail, sizeof(int),
+			mach_ByteOrder, byteOrder, "w", outBuffer, &size);
+		    if (size != sizeof(int)) {
+			status = GEN_INVALID_ARG;
+		    }
+		} else if (outBufSize != sizeof(int)) {
+		    status = GEN_INVALID_ARG;
+		} else {
+		    *(int *)outBuffer = bytesAvail;
+		}
 		DBG_PRINT( ("IOC  %x,%x num readable %d\n",
 			pdevHandlePtr->hdr.fileID.major,
 			pdevHandlePtr->hdr.fileID.minor,
@@ -2159,6 +2170,7 @@ FsPseudoStreamIOControl(hdrPtr, command, inBufSize, inBuffer,
     request.param.ioctl.command		= command;
     request.param.ioctl.familyID	= procPtr->familyID;
     request.param.ioctl.procID		= procPtr->processID;
+    request.param.ioctl.byteOrder	= byteOrder;
 
     status = RequestResponse(pdevHandlePtr, &request, inBufSize, inBuffer,
 		outBufSize, outBuffer, (int *) NIL, (Sync_RemoteWaiter *)NIL);
@@ -2400,12 +2412,13 @@ FsServerStreamRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
  *
  *----------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 ENTRY ReturnStatus
-FsServerStreamIOControl(hdrPtr, command, inBufSize, inBuffer,
+FsServerStreamIOControl(hdrPtr, command, byteOrder, inBufSize, inBuffer,
 		       outBufSize, outBuffer)
     FsHandleHeader 	*hdrPtr;	/* Server IO Handle. */
     int		command;	/* The control operation to be performed. */
+    int		byteOrder;	/* Client's byte order, should be same */
     int		inBufSize;	/* Size of input buffer. */
     Address	inBuffer;	/* Data to be sent to the slave/master. */
     int		outBufSize;	/* Size of output buffer. */
@@ -2416,6 +2429,9 @@ FsServerStreamIOControl(hdrPtr, command, inBufSize, inBuffer,
 
     LOCK_MONITOR;
 
+    if (byteOrder != mach_ByteOrder) {
+	Sys_Panic(SYS_FATAL, "FsServerStreamIOControl: wrong byte order\n");
+    }
     switch (command) {
 	case IOC_PDEV_SET_BUF: {
 	    /*

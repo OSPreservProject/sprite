@@ -776,9 +776,10 @@ Fs_RpcSelectStub(srvToken, clientID, command, storagePtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsRemoteIOControl(hdrPtr, command, inBufSize, inBuffer, outBufSize, outBuffer)
+FsRemoteIOControl(hdrPtr, command, byteOrder, inBufSize, inBuffer, outBufSize, outBuffer)
     FsHandleHeader *hdrPtr;
     int         command;
+    int		byteOrder;
     int         inBufSize;
     Address     inBuffer;
     int         outBufSize;
@@ -794,6 +795,7 @@ FsRemoteIOControl(hdrPtr, command, inBufSize, inBuffer, outBufSize, outBuffer)
     params.command = command;
     params.inBufSize = inBufSize;
     params.outBufSize = outBufSize;
+    params.byteOrder = byteOrder;
 
     storage.requestParamPtr = (Address)&params;
     storage.requestParamSize = sizeof(FsSpriteIOCParams);
@@ -863,8 +865,19 @@ Fs_RpcIOControl(srvToken, clientID, command, storagePtr)
     }
     FsHandleUnlock(hdrPtr);
     status = (*fsStreamOpTable[hdrPtr->fileID.type].ioControl)(hdrPtr,
-	    paramsPtr->command, paramsPtr->inBufSize,
+	    paramsPtr->command, paramsPtr->byteOrder, paramsPtr->inBufSize,
 	    storagePtr->requestDataPtr, paramsPtr->outBufSize, outBufPtr);
+#ifdef lint
+    status = FsFileIOControl(hdrPtr,
+	    paramsPtr->command, paramsPtr->byteOrder, paramsPtr->inBufSize,
+	    storagePtr->requestDataPtr, paramsPtr->outBufSize, outBufPtr);
+    status = FsPipeIOControl(hdrPtr,
+	    paramsPtr->command, paramsPtr->byteOrder, paramsPtr->inBufSize,
+	    storagePtr->requestDataPtr, paramsPtr->outBufSize, outBufPtr);
+    status = FsDeviceIOControl(hdrPtr,
+	    paramsPtr->command, paramsPtr->byteOrder, paramsPtr->inBufSize,
+	    storagePtr->requestDataPtr, paramsPtr->outBufSize, outBufPtr);
+#endif /* lint */
     FsHandleRelease(hdrPtr, FALSE);
 
     FS_RPC_DEBUG_PRINT1("Fs_RpcIOControl returns <%x>\n", status);

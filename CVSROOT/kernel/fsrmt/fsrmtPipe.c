@@ -540,16 +540,18 @@ exit:
  */
 /*ARGSUSED*/
 ReturnStatus
-FsPipeIOControl(hdrPtr, command, inBufSize, inBuffer, outBufSize,
+FsPipeIOControl(hdrPtr, command, byteOrder, inBufSize, inBuffer, outBufSize,
 	outBuffer)
     FsHandleHeader *hdrPtr;
     int command;
+    int byteOrder;
     int inBufSize;
     Address inBuffer;
     int outBufSize;
     Address outBuffer;
 {
     register FsPipeIOHandle *handlePtr = (FsPipeIOHandle *)hdrPtr;
+    ReturnStatus status = SUCCESS;
 
     switch(command) {
 	case IOC_REPOSITION:
@@ -557,33 +559,54 @@ FsPipeIOControl(hdrPtr, command, inBufSize, inBuffer, outBufSize,
 	case IOC_GET_FLAGS:
 	case IOC_SET_BITS:
 	    return(SUCCESS);
+	case IOC_CLEAR_BITS:
 	case IOC_SET_FLAGS: {
 	    /*
 	     * Guard against turning off append mode in pipes.
 	     */
-	    register int *flagsPtr = (int *)inBuffer;
-	    if ((*flagsPtr & IOC_APPEND) == 0) {
+	    int flags;
+	    int size;
+	    if (byteOrder != mach_ByteOrder) {
+		size = sizeof(int);
+		Swap_Buffer(inBuffer, inBufSize, byteOrder, mach_ByteOrder, "w",
+			    (Address)&flags, &size);
+		if (size != sizeof(int)) {
+		    status = GEN_INVALID_ARG;
+		}
+	    } else if (inBufSize != sizeof(int)) {
+		status = GEN_INVALID_ARG;
+	    } else {
+		flags = *(int *)inBuffer;
+	    }
+	    if (status != SUCCESS) {
+		return(status);
+	    }
+	    if ((command == IOC_SET_FLAGS && (flags & IOC_APPEND) == 0) ||
+		(command == IOC_CLEAR_BITS && (flags & IOC_APPEND))) {
 		return(GEN_INVALID_ARG);
 	    }
 	    return(SUCCESS);
-	}
-	case IOC_CLEAR_BITS: {
-	    register int *flagsPtr = (int *)inBuffer;
-	    if (*flagsPtr & IOC_APPEND) {
-		return(GEN_INVALID_ARG);
-	    } else {
-		return(SUCCESS);
-	    }
 	}
 	case IOC_TRUNCATE:
 	case IOC_LOCK:
 	case IOC_UNLOCK:
 	    return(GEN_NOT_IMPLEMENTED);
 	case IOC_NUM_READABLE: {
-	    register int bytesAvailable;
+	    int bytesAvailable;
 	    bytesAvailable = handlePtr->lastByte - handlePtr->firstByte;
-	    *(int *)outBuffer = bytesAvailable;
-	    return(SUCCESS);
+	    if (byteOrder != mach_ByteOrder) {
+		int size = sizeof(int);
+		Swap_Buffer((Address)&bytesAvailable, sizeof(int),
+		    mach_ByteOrder, byteOrder, "w", outBuffer, &size);
+		if (size != sizeof(int)) {
+		    status = GEN_INVALID_ARG;
+		}
+	    } else if (outBufSize != sizeof(int)) {
+		status = GEN_INVALID_ARG;
+	    } else {
+		*(int *)outBuffer = bytesAvailable;
+	    }
+	    return(status);
 	}
 	case IOC_GET_OWNER:
 	case IOC_SET_OWNER:
