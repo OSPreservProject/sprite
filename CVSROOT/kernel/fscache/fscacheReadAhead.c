@@ -155,7 +155,7 @@ FscacheReadAhead(cacheInfoPtr, blockNum)
 	      &blockPtr, &found);
 	if (found) {
 	    if (blockPtr != (Fscache_Block *) NIL) {
-		Fscache_UnlockBlock(blockPtr, 0, -1, 0, 0);
+		Fscache_UnlockBlock(blockPtr, (time_t)0, -1, 0, 0);
 	    }
 	    continue;
 	}
@@ -205,9 +205,9 @@ DoReadAhead(data, callInfoPtr)
 		(cacheInfoPtr->hdrPtr, blockPtr, (Sync_RemoteWaiter *)NIL);
     if (status != SUCCESS) {
 	fs_Stats.blockCache.domainReadFails++;
-	Fscache_UnlockBlock(blockPtr, 0, -1, 0, FSCACHE_DELETE_BLOCK);
+	Fscache_UnlockBlock(blockPtr, (time_t)0, -1, 0, FSCACHE_DELETE_BLOCK);
     } else {
-	Fscache_UnlockBlock(blockPtr, 0, -1, 0, 0);
+	Fscache_UnlockBlock(blockPtr, (time_t)0, -1, 0, 0);
     }
     DecReadAheadCount(callBackData->readAheadPtr);
     free((Address) callBackData);
