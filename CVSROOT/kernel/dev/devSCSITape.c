@@ -3,6 +3,13 @@
  *
  *      The standard Open, Read, Write, IOControl, and Close operations
  *      are defined here for the SCSI tape.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
  *
  * Copyright 1986 Regents of the University of California
  * All rights reserved.
@@ -25,7 +32,208 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "dbg.h"
 int SCSITapeDebug = FALSE;
 
-#define SECTORS_PER_FRAGMENT	(FS_FRAGMENT_SIZE / DEV_BYTES_PER_SECTOR)
+/*
+ * State for each SCSI tape drive.  This used to map from unit numbers
+ * back to the controller for the drive.
+ */
+static int scsiTapeIndex = -1;
+DevSCSIDevice *scsiTape[SCSI_MAX_TAPES];
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevSCSITapeInit --
+ *
+ *	Initialize the device driver state for a SCSI Tape drive.
+ *	In order for filesystem unit numbers to correctly match up
+ *	with different disks we depend on Dev_SCSIInitDevice to
+ *	increment the scsiTapeIndex properly.
+ *
+ * Results:
+ *	SUCCESS.  Because tape drives take up to several seconds to
+ *	initialize themselves we always assume one is out there.
+ *
+ * Side effects:
+ *	A DevSCSITape structure is allocated and referneced by the private
+ *	data pointer in	the generic DevSCSIDevice structure.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+DevSCSITapeInit(scsiPtr, devPtr)
+    DevSCSIController *scsiPtr;		/* Controller state */
+    DevSCSIDevice *devPtr;		/* Device state to complete */
+{
+    register DevSCSITape *tapePtr;
+
+    /*
+     * Don't try to talk to the tape drive at boot time.  It may be doing
+     * stuff after the SCSI bus reset like auto load.
+     */
+    if (scsiTapeIndex >= SCSI_MAX_TAPES) {
+	printf("SCSI: Too many tape drives configured\n");
+	return(FAILURE);
+    }
+    devPtr->type = SCSI_TAPE;
+    devPtr->errorProc = DevSCSITapeError;
+    devPtr->sectorSize = DEV_BYTES_PER_SECTOR;
+    tapePtr = (DevSCSITape *) malloc(sizeof(DevSCSITape));
+    devPtr->data = (ClientData)tapePtr;
+    tapePtr->state = SCSI_TAPE_CLOSED;
+    tapePtr->type = SCSI_UNKNOWN;
+    scsiTape[scsiTapeIndex] = devPtr;
+    printf("SCSI-%d tape %d at slave %d\n",
+		scsiPtr->number, scsiTapeIndex, devPtr->slaveID);
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevSCSITapeIO --
+ *
+ *      Low level routine to read or write an SCSI tape device.  The
+ *      interface here is in terms of a particular SCSI tape and the
+ *      number of sectors to transfer.  This routine takes care of mapping
+ *      its buffer into the special multibus memory area that is set up
+ *      for Sun DMA.  Each IO involves one tape block, and all tape blocks
+ *	are multiples of the underlying device block size (DEV_BYTES_PER_SECTOR)
+ *
+ *	This should be combined with DevSCSISectorIO as it is so similar.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+DevSCSITapeIO(command, devPtr, buffer, countPtr)
+    int command;			/* SCSI_READ, SCSI_WRITE, etc. */
+    register DevSCSIDevice *devPtr; 	/* State info for the tape */
+    char *buffer;			/* Target buffer */
+    int *countPtr;			/* Upon entry, the number of sectors to
+					 * transfer, or general count for
+					 * skipping blocks, etc. Upon return,
+					 * the number of sectors transferred. */
+{
+    ReturnStatus status;
+    register DevSCSIController *scsiPtr; /* Controller for the drive */
+
+    /*
+     * Synchronize with the interrupt handling routine and with other
+     * processes that are trying to initiate I/O with this controller.
+     */
+    scsiPtr = devPtr->scsiPtr;
+    MASTER_LOCK(scsiPtr->mutex);
+
+    /*
+     * Here we are using a condition variable and the scheduler to
+     * synchronize access to the controller.  An alternative would be
+     * to have a command queue associated with the controller.  We can't
+     * rely on the mutex variable because that is relinquished later
+     * when the process using the controller waits for the I/O to complete.
+     */
+    while (scsiPtr->flags & SCSI_CNTRLR_BUSY) {
+	Sync_MasterWait(&scsiPtr->readyForIO, &scsiPtr->mutex, FALSE);
+    }
+    scsiPtr->flags |= SCSI_CNTRLR_BUSY;
+    scsiPtr->flags &= ~SCSI_IO_COMPLETE;
+
+    if (command == SCSI_READ || command == SCSI_WRITE) {
+	/*
+	 * Map the buffer into the special area of multibus memory that
+	 * the device can DMA into.  Probably have to worry about
+	 * the buffer size.
+	 */
+	buffer = VmMach_DevBufferMap(*countPtr * DEV_BYTES_PER_SECTOR,
+				 buffer, scsiPtr->IOBuffer);
+    }
+    DevSCSISetupTapeCommand(command, devPtr, countPtr);
+    status = (*scsiPtr->commandProc)(devPtr->slaveID, scsiPtr, *countPtr,
+				     buffer, INTERRUPT);
+    /*
+     * Wait for the command to complete.  The interrupt handler checks
+     * for I/O errors, computes the residual, and notifies us.
+     */
+    if (status == SUCCESS) {
+	while((scsiPtr->flags & SCSI_IO_COMPLETE) == 0) {
+	    Sync_MasterWait(&scsiPtr->IOComplete, &scsiPtr->mutex, FALSE);
+	}
+	status = scsiPtr->status;
+    }
+    if (scsiPtr->residual) {
+	printf("Warning: SCSI residual %d, cmd %x\n", scsiPtr->residual,
+			    command);
+    }
+    *countPtr -= scsiPtr->residual;
+    if (command == SCSI_READ || command == SCSI_WRITE) {
+	*countPtr /= DEV_BYTES_PER_SECTOR;
+    }
+    scsiPtr->flags &= ~SCSI_CNTRLR_BUSY;
+    Sync_MasterBroadcast(&scsiPtr->readyForIO);
+    MASTER_UNLOCK(scsiPtr->mutex);
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevSCSISetupTapeCommand --
+ *
+ *	A variation on DevSCSISetupCommand that creates a control block
+ *	designed for tape drives.  SCSI tape drives read from the current
+ *	tape position, so there is only a block count, no offset.  There
+ *	is a special code that modifies the command in the tape control
+ *	block.  The value of the code is a function of the command and the
+ *	type of the tape drive (ugh.)  The correct code is determined here.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Set the various fields in the tape control block.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+DevSCSISetupTapeCommand(command, devPtr, countPtr)
+    int command;		/* One of SCSI_* commands */
+    DevSCSIDevice *devPtr;	/* Device state */
+    int *countPtr;		/* In - Transfer count, blocks or bytes!
+				 * Out - The proper dma byte count for caller */
+{
+    register DevSCSITapeControlBlock	*tapeControlBlockPtr;
+    register DevSCSITape		*tapePtr;
+    int dmaCount = *countPtr;		/* DMA count needed by host interface */
+    int count = *countPtr;		/* Count put in the control block */
+
+    devPtr->scsiPtr->devPtr = devPtr;
+    tapeControlBlockPtr =
+	    (DevSCSITapeControlBlock *)&devPtr->scsiPtr->controlBlock;
+    bzero((Address)tapeControlBlockPtr,sizeof(DevSCSITapeControlBlock));
+    tapePtr = (DevSCSITape *)devPtr->data;
+    if ((unsigned int)tapePtr->setupProc != NIL) {
+	/*
+	 * If the drive type is known we have to customize the control
+	 * block with various vendor-specific bits.  This means that
+	 * the first commands done can't depend on this.  This is ok
+	 * as we do a REQUEST_SENSE first to detect the drive type.
+	 */
+	(*tapePtr->setupProc)(tapePtr, &command, tapeControlBlockPtr,
+		&dmaCount, &count);
+    }
+    tapeControlBlockPtr->command = command & 0xff;
+    tapeControlBlockPtr->code = code;
+    tapeControlBlockPtr->unitNumber = devPtr->subUnitID;
+    tapeControlBlockPtr->highCount = (count & 0x1f0000) >> 16;
+    tapeControlBlockPtr->midCount =  (count & 0x00ff00) >> 8;
+    tapeControlBlockPtr->lowCount =  (count & 0x0000ff);
+    *countPtr = dmaCount;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -376,33 +584,7 @@ rewind:		    /*
 	    status = DevSCSIRequestSense(devPtr->scsiPtr, devPtr);
 	    
 	    statusPtr->statusReg = devPtr->scsiPtr->regsPtr->control;
-	    if (tapePtr->type == SCSI_SYSGEN) {
-		/*
-		 * Return the first two sense bytes from the sysgen controller.
-		 * This has the standard QIC 02 bits, see the typedef
-		 * for DevQICIISense.  In the high part of the error word
-		 * return the standard SCSI error byte that contains the
-		 * error class and code.
-		 */
-		unsigned char *senseBytes;
-		statusPtr->type = DEV_TAPE_SYSGEN;
-		senseBytes = devPtr->scsiPtr->senseBuffer->sense;
-		statusPtr->errorReg = ((senseBytes[1] & 0xFF) << 8) |
-				    (senseBytes[0] & 0xFF) |
-				   (devPtr->scsiPtr->senseBuffer->error << 24);
-	    } else {
-		/*
-		 * Return one byte from the class 7 extended sense, plus
-		 * the standard SCSI error byte.
-		 */
-		DevEmuluxSense *emuluxSensePtr =
-			(DevEmuluxSense *)devPtr->scsiPtr->senseBuffer;
-		char *senseBytes = (char *)devPtr->scsiPtr->senseBuffer;
-
-		statusPtr->type = DEV_TAPE_EMULUX;
-		statusPtr->errorReg = (senseBytes[2] & 0xFF) |
-				   (emuluxSensePtr->error << 24);
-	    }
+	    (*tapePtr->statusProc)(devPtr, statusPtr);
 	    statusPtr->residual = devPtr->scsiPtr->residual;
 	    statusPtr->fileNumber = 0;
 	    statusPtr->blockNumber = 0;
@@ -574,193 +756,25 @@ DevSCSITapeError(devPtr, sensePtr)
     DevSCSITape *tapePtr = (DevSCSITape *)devPtr->data;
     int command = devPtr->scsiPtr->command;
 
-    switch (tapePtr->type) {
-	case SCSI_UNKNOWN: {
-	    printf("Warning: Unknown tape drive type");
-	    if (sensePtr->error != SCSI_NO_SENSE_DATA) {
-		register int class = (sensePtr->error & 0x70) >> 4;
-		register int code = sensePtr->error & 0xF;
-		register int addr;
-		addr = (sensePtr->highAddr << 16) |
-			(sensePtr->midAddr << 8) |
-			sensePtr->lowAddr;
-		printf("SCSI-%d: Sense error (%d-%d) at <%x> ",
-				 devPtr->scsiPtr->number, class, code, addr);
-		if (scsiNumErrors[class] > code) {
-		    printf("%s", scsiErrors[class][code]);
-		}
-		printf("\n");
-		status = DEV_INVALID_ARG;
+    if (tapePtr->type == SCSI_UNKNOWN) {
+	printf("DevSCSITapeError: Unknown tape drive type");
+	if (sensePtr->error != SCSI_NO_SENSE_DATA) {
+	    register int class = (sensePtr->error & 0x70) >> 4;
+	    register int code = sensePtr->error & 0xF;
+	    register int addr;
+	    addr = (sensePtr->highAddr << 16) |
+		    (sensePtr->midAddr << 8) |
+		    sensePtr->lowAddr;
+	    printf("SCSI-%d: Sense error (%d-%d) at <%x> ",
+			     devPtr->scsiPtr->number, class, code, addr);
+	    if (scsiNumErrors[class] > code) {
+		printf("%s", scsiErrors[class][code]);
 	    }
-	    break;
+	    printf("\n");
+	    status = DEV_INVALID_ARG;
 	}
-	case SCSI_SYSGEN: {
-	    register DevQICIISense *qicSensePtr;
-	    qicSensePtr = (DevQICIISense *)sensePtr->sense;
-	    /*
-	     * Check for special sense data returned by sysgen tape drives.
-	     */
-	    if (qicSensePtr->noCartridge) {
-		status = DEV_OFFLINE;
-	    } else if (qicSensePtr->noDrive) {
-		status = DEV_NO_DEVICE;
-	    } else if (qicSensePtr->dataError || qicSensePtr->retries) {
-		status = DEV_HARD_ERROR;
-	    } else if (qicSensePtr->endOfTape) {
-		status = DEV_END_OF_TAPE;
-	    } else {
-		switch (command) {
-		    case SCSI_TEST_UNIT_READY:
-		    case SCSI_OPENING:
-		    case SCSI_SPACE:
-			break;
-		    case SCSI_READ:
-			if (qicSensePtr->fileMark) {
-			    /*
-			     * Hit the file mark after reading good data.
-			     * Setting this bit causes the next read to
-			     * return zero bytes.
-			     */
-			    tapePtr->state |= SCSI_TAPE_AT_EOF;
-			}
-			break;
-		    case SCSI_WRITE:
-		    case SCSI_WRITE_EOF:
-		    case SCSI_ERASE_TAPE:
-			if (qicSensePtr->writeProtect) {
-			    status = FS_NO_ACCESS;
-			}
-			break;
-		}
-	    }
-	    break;
-	}
-	case SCSI_EMULUX: {
-	    register DevEmuluxSense *emuluxSensePtr;
-	    register DevSCSIExtendedSense *extSensePtr;
-	    emuluxSensePtr = (DevEmuluxSense *)sensePtr;
-#ifdef lint
-	    *emuluxSensePtr++;
-#endif
-	    extSensePtr = (DevSCSIExtendedSense *)sensePtr;
-/*
- * One way to do this is look at the extended sense "key", however
- * this isn't fully understood yet.  Instead, the Emulux has its own
- * special bits, plus it returns a regular SCSI error code.
- */
-#ifdef notdef
-	    switch (extSensePtr->key) {
-		case SCSI_NO_SENSE:
-		    break;
-		case SCSI_RECOVERABLE:
-		    /*
-		     * The drive recovered from an error.
-		     */
-		    printf("Warning: SCSI-%d drive %d, recoverable error\n",
-				devPtr->scsiPtr->number, devPtr->slaveID);
-		    break;
-		case SCSI_NOT_READY:
-		    status = DEV_OFFLINE;
-		    break;
-		case SCSI_ILLEGAL_REQUEST:
-		    /*
-		     * Probably a programming error.
-		     */
-		    printf("Warning: SCSI-%d drive %d, illegal request %d\n",
-				devPtr->scsiPtr->number, devPtr->slaveID,
-				command);
-		    status = DEV_INVALID_ARG;
-		    break;
-		case SCSI_MEDIA_ERROR:
-		case SCSI_HARDWARE_ERROR:
-		    printf("Warning: SCSI-%d drive %d, hard class7 error %d\n",
-				devPtr->scsiPtr->number, devPtr->slaveID,
-				extSensePtr->key);
-		    status = DEV_HARD_ERROR;
-		    break;
-		case SCSI_WRITE_PROTECT:
-		    if (command == SCSI_WRITE ||
-			command == SCSI_WRITE_EOF ||
-			command == SCSI_ERASE_TAPE) {
-			status = FS_NO_ACCESS;
-		    }
-		    break;
-		case SCSI_DIAGNOSTIC:
-		    printf("Warning: SCSI-%d drive %d, \"blank check\"\n",
-			devPtr->scsiPtr->number, devPtr->slaveID);
-		    printf("\tInfo bytes 0x%x 0x%x 0x%x 0x%x\n",
-			extSensePtr->info1 & 0xff,
-			extSensePtr->info2 & 0xff,
-			extSensePtr->info3 & 0xff,
-			extSensePtr->info4 & 0xff);
-		    break;
-		case SCSI_MEDIA_CHANGE:
-		case SCSI_VENDOR:
-		case SCSI_POWER_UP_FAILURE:
-		case SCSI_ABORT:
-		case SCSI_EQUAL:
-		case SCSI_OVERFLOW:
-		    printf("Warning: SCSI-%d drive %d, unsupported class7 error %d\n",
-			devPtr->scsiPtr->number, devPtr->slaveID,
-			extSensePtr->key);
-		    status = DEV_HARD_ERROR;
-		    break;
-	    }
-#endif notdef
-	    switch (emuluxSensePtr->error) {
-		case SCSI_NOT_READY:
-		    status = DEV_OFFLINE;
-		    break;
-		case SCSI_NOT_LOADED:
-		    status = DEV_NO_MEDIA;
-		    break;
-		case SCSI_INSUF_CAPACITY:
-		    printf("Warning: Emulux: Insufficient tape capacity");
-		    /* fall thru */
-		case SCSI_END_OF_MEDIA:
-		    status = DEV_END_OF_TAPE;
-		    break;
-		case SCSI_HARD_DATA_ERROR:
-		    status = DEV_HARD_ERROR;
-		    break;
-		case SCSI_WRITE_PROTECT:
-		    if (command == SCSI_WRITE ||
-			command == SCSI_ERASE_TAPE ||
-			command == SCSI_WRITE_EOF) {
-			status = FS_NO_ACCESS;
-		    }
-		    break;
-		case SCSI_CORRECTABLE_ERROR:
-		    printf("Warning: SCSI-%d drive %d, correctable error",
-			    devPtr->scsiPtr->number, devPtr->slaveID);
-		    break;
-		case SCSI_FILE_MARK:
-		    if (command == SCSI_READ) {
-			/*
-			 * Hit the file mark after reading good data.
-			 * Setting this bit causes the next read to
-			 * return zero bytes.
-			 */
-			tapePtr->state |= SCSI_TAPE_AT_EOF;
-		    }
-		    break;
-		case SCSI_INVALID_COMMAND:
-		    printf("Warning: SCSI-%d drive %d, invalid command 0x%x",
-			    devPtr->scsiPtr->number, devPtr->slaveID,
-			    command);
-		    break;
-
-		case SCSI_UNIT_ATTENTION:
-		    /*
-		     * The drive has been reset sinse the last command.
-		     * This status will be handled by the retry in
-		     * the tape open routine.
-		     */
-		    status = DEV_NO_MEDIA;
-		    break;
-	    }
-	    break;
-	}
+    } else {
+	status = (*tapePtr->errorProc)(devPtr, sensePtr);
     }
     return(status);
 }
