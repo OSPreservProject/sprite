@@ -16,6 +16,30 @@
 #ifndef _FSSTAT
 #define _FSSTAT
 
+/*
+ * Note, both client and server Naming operations are kept.
+ */
+typedef struct FsNameOpStats {
+    unsigned int numReadOpens;		/* open(O_RDONLY) on client.  Count
+					 * of all server open calls */
+    unsigned int numWriteOpens;		/* open(O_WRONLY) */
+    unsigned int numReadWriteOpens;	/* open(O_RDWR) */
+    unsigned int chdirs;		/* Number Fs_ChangeDir */
+    unsigned int makeDevices;		/* Number Fs_MakeDevice */
+    unsigned int makeDirs;		/* Number Fs_MakeDirectory */
+    unsigned int removes;		/* Number Fs_Remove */
+    unsigned int removeDirs;		/* Number Fs_RemoveDirs */
+    unsigned int renames;		/* Number Fs_Rename */
+    unsigned int hardLinks;		/* Number Fs_HardLink */
+    unsigned int symLinks;		/* Number Fs_SymLink */
+    unsigned int getAttrs;		/* Number get attrs from name */
+    unsigned int setAttrs;		/* Number set attrs by name */
+    unsigned int getAttrIDs;		/* Number set attrs by open stream */
+    unsigned int setAttrIDs;		/* Number get attrs from open stream */
+    unsigned int getIOAttrs;		/* Number get attr from I/O server */
+    unsigned int setIOAttrs;		/* Number set attr to I/O server */
+} FsNameOpStats;
+
 typedef struct FsGeneralStats {
     unsigned int physBytesRead;		/* Number of physical (ie descriptors)
 				 	 * disk bytes read. */
@@ -39,13 +63,6 @@ typedef struct FsGeneralStats {
     unsigned int fileBytesDeleted;	/* Number of file bytes deleted
 					 * (total) */
     unsigned int fileDeleteOverflow;	/* Extra */
-    unsigned int numReadOpens;		/* Number of calls to open files for
-					 * reading */
-    unsigned int numWriteOpens;		/* Number of calls to open files for
-					 * writing */
-    unsigned int numReadWriteOpens;	/* Number of calls to open files for
-					 * reading  and writing */
-    unsigned int numSetAttrs;		/* Number of calls to set attributes */
 } FsGeneralStats;
 
 /*
@@ -143,12 +160,10 @@ typedef struct FsBlockCacheStats {
     unsigned int vmRequests;		/* Number of times virtual memory
 					 * requested memory from us. */
     unsigned int triedToGiveToVM;	/* Number of vmRequests that we
-					 * actually tried to satisfy. */
+					 * tried to satisfy because
+					 * we had free blocks */
     unsigned int vmGotPage;		/* Number of vmRequests that we
-					 * actually satisfied. */
-    unsigned int gavePageToVM;		/* Blocks that we voluntarily gave
-					 * back to to virtual memory when a
-					 * block was freed.  */
+					 * satisfied after checking LRU times */
     /*
      * Block allocation statistics.
      */
@@ -220,23 +235,28 @@ typedef struct FsNameCacheStats {
  * Handle statistics.
  */
 typedef struct FsHandleStats {
-    unsigned int exists;	/* Handles currently in existence. */
-    unsigned int created;	/* Handles that have been created. */
-    unsigned int updateCalls;	/* Number of calls to HandleUpdate */
+    unsigned int maxNumber;	/* Current limit on table size. */
+    unsigned int exists;	/* Number of handles currently in existence. */
     unsigned int installCalls;	/* Calls to FsHandleInstall. */
-    unsigned int installHits;	/* Number of installs in which handle was found. */
+    unsigned int installHits;	/* installs in which handle was found. */
+    unsigned int fetchCalls;	/* Calls to FsHandleFetch. */
+    unsigned int fetchHits;	/* fetches in which handle was found. */
+    unsigned int release;	/* Calls to FsHandleRelease. */
+    unsigned int locks;		/* Number of times a handle was locked. */
+    unsigned int lockWaits;	/* Number of times had to wait on a lock */
+    unsigned int unlocks;	/* Number of times a handle was unlocked. */
+    unsigned int created;	/* Handles that have been created. */
+    unsigned int lruScans;	/* Number of LRU replacement scans */
+    unsigned int lruChecks;	/* Number of handles checked for reclaimation */
+    unsigned int lruHits;	/* Number of handles actually reclaimed */
+    unsigned int lruEntries;	/* Number of handles in LRU list. */
+    unsigned int limbo;		/* Number of handles marked for removal */
+    /*
+     * The following are specific to regular files.
+     */
     unsigned int versionMismatch; /* Version mismatch on file. */
     unsigned int cacheFlushes;	/* Cache flushed because of version mismatch
 				 * of not cacheable. */
-    unsigned int maxNumber;	/* Current limit on table size. */
-    unsigned int fetchCalls;	/* Calls to FsHandleFetch. */
-    unsigned int fetchHits;	/* Number of fetches in which handle was
-				 * found. */
-    unsigned int lockCalls;	/* Calls to FsHandleLock. */
-    unsigned int locks;		/* Number of times a handle was locked. */
-    unsigned int lockWaits;	/* Number of times had to wait to lock a
-				 * handle. */
-    unsigned int releaseCalls;	/* Calls to FsHandleRelease. */
     unsigned int segmentFetches; /* Calls by VM to see if there is indeed
 				  * already a segment with the code file. */
     unsigned int segmentHits;	/* Segment fetches that return non-nil
@@ -244,15 +264,14 @@ typedef struct FsHandleStats {
 } FsHandleStats;
 
 /*
- * Prefix table statistics
+ * Prefix table statistics.  These are client-side statistics
  */
 typedef struct FsPrefixStats {
     unsigned int relative;	/* Number of relative names encountered */
     unsigned int absolute;	/* Number of absolute names subject to prefix
 				 * lookup */
     unsigned int redirects;	/* Number of redirects from the server */
-    unsigned int loops;		/* Number of circular redirects (domain
-				 * unavailable) */
+    unsigned int loops;		/* Number of circular redirects */
     unsigned int timeouts;	/* Number of times the server was down */
     unsigned int stale;		/* Number of times server server rejected a
 				 * handle */
@@ -260,11 +279,27 @@ typedef struct FsPrefixStats {
 } FsPrefixStats;
 
 /*
+ * Name lookup statistics.  These are server-side statistics.
+ */
+typedef struct FsLookupStats {
+    unsigned int number;	/* Number of pathname lookups */
+    unsigned int numComponents;	/* Number of pathname components parsed */
+    unsigned int numSpecial;	/* Number of $MACHINE names encounted */
+    unsigned int forDelete;	/* Number for deletion */
+    unsigned int forLink;	/* Number for linking */
+    unsigned int forRename;	/* Number for rename */
+    unsigned int forCreate;	/* Number for creation */
+    unsigned int symlinks;	/* Number of symbolic links encountered */
+    unsigned int redirect;	/* Number of redirects due to symbolic links */
+    unsigned int remote;	/* Number of redirects due to remote links */
+    unsigned int parent;	/* Number of redirects due to ".." */
+    unsigned int notFound;	/* Number of FILE_NOT_FOUND lookups */
+} FsLookupStats;
+
+/*
  * Counts of various file system objects.
  */
 typedef struct FsObjectStats {
-    int lruScans;		/* Number of LRU replacement scans */
-    int scavenges;		/* Number of handles actually reclaimed */
     int streams;
     int streamClients;		/* Equal to streams, except during migration */
     int files;			/* Local files, not including directories */
@@ -276,10 +311,8 @@ typedef struct FsObjectStats {
     int remote;			/* All the various remote objects but files*/
     int directory;
     int dirFlushed;		/* Directories that were flushed */
-    int lruChecks;		/* Number of handles checked for reclaimation */
-    int lruEntries;		/* Number of handles in LRU list */
     int fileClients;		/* Number of consist.clientList entries */
-    int limbo;			/* Number of handles marked for removal */
+    int other;			/* For unknown objects */
 } FsObjectStats;
 
 /*
@@ -293,6 +326,8 @@ typedef struct FsRecoveryStats {
     int waitAbort;		/* Interrupted RecoveryWaits */
     int timeout;		/* Re-open's that timed out */
     int failed;			/* Re-open's that failed */
+    int deleted;		/* Re-open's of a file that has been deleted */
+    int offline;		/* Re-open's of a file that is now offline */
     int succeeded;		/* Re-open's that worked */
     int clientCrashed;		/* Number of clients that crashed */
     int clientRecovered;	/* Number of clients that re-opened files */
@@ -302,14 +337,17 @@ typedef struct FsRecoveryStats {
  * File system statistics.
  */
 typedef struct FsStats {
-    FsBlockCacheStats	blockCache;
-    FsNameCacheStats	nameCache;
-    FsAllocStats	alloc;
-    FsHandleStats	handle;
-    FsGeneralStats	gen;
-    FsPrefixStats	prefix;
-    FsObjectStats	object;
-    FsRecoveryStats	recovery;
+    FsNameOpStats	cltName;	/* Client-side naming operations */
+    FsNameOpStats	srvName;	/* Server-side naming operations */
+    FsGeneralStats	gen;		/* General I/O operations */
+    FsBlockCacheStats	blockCache;	/* Block cache operations */
+    FsAllocStats	alloc;		/* Disk allocation */
+    FsHandleStats	handle;		/* Handle management */
+    FsPrefixStats	prefix;		/* Client-side prefix operations */
+    FsLookupStats	lookup;		/* Server-side lookup operations */
+    FsNameCacheStats	nameCache;	/* Server name cache */
+    FsObjectStats	object;		/* Counts of various objects */
+    FsRecoveryStats	recovery;	/* Crash recovery and reopening */
 } FsStats;
 
 /*
