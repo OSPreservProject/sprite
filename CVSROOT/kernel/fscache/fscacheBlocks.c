@@ -497,7 +497,10 @@ PutOnFreeList(blockPtr)
  *
  * PutFileOnDirtyList --
  *
- * 	Put the given file onto the global dirty list.
+ * 	Put the given file onto the global dirty list.  This is suppressed
+ *	if the file is being deleted.  In this case a concurrent delete
+ *	and write-back can end up with a deleted file back on the
+ *	dirty list if we are not careful.
  *
  * Results:
  *	None.
@@ -511,6 +514,9 @@ INTERNAL static void
 PutFileOnDirtyList(cacheInfoPtr)
     register	Fscache_FileInfo	*cacheInfoPtr;	/* Cache info for a file */
 {
+    if (cacheInfoPtr->flags & FSCACHE_FILE_GONE) {
+	return;
+    }
     if (!(cacheInfoPtr->flags & FSCACHE_FILE_ON_DIRTY_LIST)) {
 	List_Insert((List_Links *)cacheInfoPtr, LIST_ATREAR(dirtyList));
 	cacheInfoPtr->flags |= FSCACHE_FILE_ON_DIRTY_LIST;
@@ -2698,7 +2704,6 @@ ProcessCleanBlock(cacheInfoPtr, blockPtr, status, useSameBlockPtr,
 	cacheInfoPtr->lastTimeTried = fsutil_TimeInSeconds;
 	PutBlockOnDirtyList(blockPtr, TRUE);
 	cacheInfoPtr->flags &= ~FSCACHE_FILE_BEING_WRITTEN;
-	PutFileOnDirtyList(cacheInfoPtr);
 	if (cacheInfoPtr->flags & FSCACHE_CLOSE_IN_PROGRESS) {
 	    /*
 	     * Wake up anyone waiting for us to finish so that they can close
