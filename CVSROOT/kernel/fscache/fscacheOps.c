@@ -253,7 +253,7 @@ FsUpdateAttrFromCache(cacheInfoPtr, attrPtr)
     register Fs_Attributes	*attrPtr;	/* Attributes from server */
 {
     LOCK_MONITOR;
-    if ((cacheInfoPtr->flags & FS_FILE_NOT_CACHEABLE) == 0) {
+    if (cacheInfoPtr->version == attrPtr->version) {
 	if (cacheInfoPtr->attr.accessTime > attrPtr->accessTime.seconds) {
 	    attrPtr->accessTime.seconds = cacheInfoPtr->attr.accessTime;
 	}
