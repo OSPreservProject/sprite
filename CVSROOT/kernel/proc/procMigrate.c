@@ -407,7 +407,7 @@ SendProcessState(procPtr, nodeID, trapStackPtr, foreign)
     Rpc_Storage storage;
     Proc_MigrateCommand migrateCommand;
     Proc_MigrateReply returnInfo;
-    int codeNameLength;
+    int argStringLength;
     int trapStackSize;
     Proc_TraceRecord record;
 
@@ -423,18 +423,13 @@ SendProcessState(procPtr, nodeID, trapStackPtr, foreign)
 		     (ClientData *) &record);
     }
    
-#ifdef notdef
-/* FIXME */
-    codeNameLength = Byte_AlignAddr(String_Length(procPtr->codeFileName) + 1);
-#else notdef
-    codeNameLength = 0;
-#endif notdef
+    argStringLength = Byte_AlignAddr(String_Length(procPtr->argString) + 1);
     trapStackSize = Exc_GetTrapStackSize(trapStackPtr);
     procBufferSize = (3 + PROC_NUM_FLAGS + PROC_NUM_BILLING_FIELDS +
 		      PROC_NUM_ID_FIELDS + procPtr->numGroupIDs) *
 	    sizeof(int) +
             sizeof(Proc_PID) + sizeof(Proc_State) + SIG_INFO_SIZE +
-	    trapStackSize + codeNameLength;
+	    trapStackSize + argStringLength;
     procBuffer = Mem_Alloc(procBufferSize);
 
     ptr = procBuffer;
@@ -472,12 +467,9 @@ SendProcessState(procPtr, nodeID, trapStackPtr, foreign)
     Byte_Copy(trapStackSize, (Address) trapStackPtr, ptr);
     ptr += trapStackSize;
 
-    Byte_FillBuffer(ptr, int, codeNameLength);
-#ifdef notdef
-/* FIXME */
-    Byte_Copy(codeNameLength, (Address) procPtr->codeFileName, ptr);
-    ptr += codeNameLength;
-#endif notdef
+    Byte_FillBuffer(ptr, int, argStringLength);
+    Byte_Copy(argStringLength, (Address) procPtr->argString, ptr);
+    ptr += argStringLength;
 
     /*
      * Set up for the RPC.
