@@ -714,6 +714,7 @@ FsRemoteIOClose(streamPtr, clientID, procID, flags, dataSize, closeData)
      * remove the handle if we aren't using it anymore.
      */
     if (status == SUCCESS && rmtHandlePtr->recovery.use.ref == 0) {
+	FsRecoverySyncLockCleanup(&rmtHandlePtr->recovery);
 	FsHandleRelease(rmtHandlePtr, TRUE);
 	FsHandleRemove(rmtHandlePtr);
 	fsStats.object.remote--;
