@@ -402,11 +402,19 @@ FsrmtFileClose(streamPtr, clientID, procID, flags, dataSize, closeData)
 	status = FS_FILE_REMOVED;
     } else {
 	if (handlePtr->rmt.recovery.use.ref == 0) {
+	    int	numDirtyBlocks;
 	    /*
 	     * Synchronize closes and delayed writes.  We wait for writes
 	     * in progress to complete. 
 	     */
-	    (void) Fscache_PreventWriteBacks(&handlePtr->cacheInfo);
+	    numDirtyBlocks =  Fscache_PreventWriteBacks(&handlePtr->cacheInfo);
+	    if (numDirtyBlocks == 0) {
+		/*
+		 * Inform the server on the close requests the we don't
+		 * have any dirty blocks for the file.
+		 */
+		flags |= FS_LAST_DIRTY_BLOCK;
+	    }
 	}
 	status = Fsrmt_Close(streamPtr, clientID, procID, flags,
 	    sizeof(Fscache_Attributes), (ClientData)&handlePtr->cacheInfo.attr);
