@@ -153,6 +153,7 @@ ProcessRaidLog(raidPtr)
 #ifdef TESTING
     Sync_CondInit(&controlBlock.wait);
 #endif TESTING
+    controlBlock.status = SUCCESS;
     controlBlock.numIO = 0;
     controlBlock.numIO++;
     FOR_ALL_VEC(raidPtr->log.diskLockVec, stripeID, raidPtr->numStripe) {
@@ -193,7 +194,9 @@ initDoneProc(controlBlockPtr, status)
     InitControlBlock	*controlBlockPtr;
     ReturnStatus	 status;
 {
-    controlBlockPtr->status = status;
+    if (status != SUCCESS) {
+	controlBlockPtr->status = status;
+    }
     MASTER_LOCK(&controlBlockPtr->mutex); 
     controlBlockPtr->numIO--; 
     if (controlBlockPtr->numIO == 0) { 
@@ -526,11 +529,14 @@ Raid_Configure(raidPtr, charBuf)
     /*
      * Attach log device.
      */
-    raidPtr->logHandlePtr = Dev_BlockDeviceAttach(&raidPtr->logDev);
-    if (raidPtr->logHandlePtr == (DevBlockDeviceHandle *) NIL) {
-	printf("RAID:ERR:Could not attach log device %d %d\n",
-		raidPtr->logDev.type, raidPtr->logDev.unit);
-	return FAILURE;
+    if (raidPtr->parityConfig != 'S') {
+	raidPtr->logHandlePtr = Dev_BlockDeviceAttach(&raidPtr->logDev);
+	if (raidPtr->logHandlePtr == (DevBlockDeviceHandle *) NIL) {
+	    printf("RAID:ERR:Could not attach log device %d %d\n",
+		    raidPtr->logDev.type, raidPtr->logDev.unit);
+	    return FAILURE;
+	}
+	Raid_InitLog(raidPtr);
     }
 
     /*
@@ -566,8 +572,6 @@ Raid_Configure(raidPtr, charBuf)
 	    raidPtr->disk[col][row] = diskPtr;
 	}
     }
-
-    Raid_InitLog(raidPtr);
 
     raidPtr->state = RAID_VALID;
     return SUCCESS;
