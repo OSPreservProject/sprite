@@ -54,10 +54,13 @@ Net_EtherAddress netBroadcastAddr = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
 /*
  * The Route table. Invalid entries are NIL pointers.
- * The table is indexed by Sprite Host IDs.
+ * The table is indexed by Sprite Host IDs.  Access to
+ * the table is synchronized with a MASTER_LOCK to prevent
+ * changes from interfering with packet handling.
  */
 Net_Route	*netRouteArray[NET_NUM_SPRITE_HOSTS];
 int	 	netNumRoutes = NET_NUM_SPRITE_HOSTS;
+Sync_Semaphore	netRouteMutex = Sync_SemInitStatic("netRouteMutex");
 
 /*
  * This flag turns on print statements in the ARP protocol
@@ -285,25 +288,27 @@ Net_InstallRoute(spriteID, flags, type, clientData, hostname, machType)
     char *machType;		/* Machine type used to expand $MACHINE */
 {
     register Net_Route *routePtr;
-    
+    Address oldData;
+
+    MASTER_LOCK(&netRouteMutex);
+
     if (spriteID < 0 || spriteID >= NET_NUM_SPRITE_HOSTS) {
+	MASTER_UNLOCK(&netRouteMutex);
 	return(SYS_INVALID_ARG);
     }
     routePtr = netRouteArray[spriteID];
     if (routePtr != (Net_Route *)NIL) {
-	if (routePtr->data != (Address)NIL) {
-	    free((Address)routePtr->data);
-	}
-	if (routePtr->name != (char *)NIL) {
-	    free((Address) routePtr->name);
-	}
-	if (routePtr->machType != (char *)NIL) {
-	    free((Address) routePtr->machType);
-	}
-	free((Address)routePtr);
+	oldData = routePtr->data;
+    } else {
+	oldData = (Address)NIL;
+	routePtr = (Net_Route *)malloc(sizeof(Net_Route));
+	netRouteArray[spriteID] = routePtr;
     }
-    routePtr = (Net_Route *)malloc(sizeof(Net_Route));
-    netRouteArray[spriteID] = routePtr;
+    /*
+     * Silently discard old name and machine types.  We'll holler below
+     * if the ethernet address changes.  Names and types may be set
+     * to "noname" and "unknown" during bootstrap routing.
+     */
     routePtr->name = (char *)malloc(strlen(hostname) + 1);
     (void) strcpy(routePtr->name, hostname);
     routePtr->machType = (char *)malloc(strlen(machType) + 1);
@@ -324,12 +329,24 @@ Net_InstallRoute(spriteID, flags, type, clientData, hostname, machType)
 	     * drivers fill in the source part of the ethernet header each
 	     * time they send out a packet.
 	     */
-	    etherHdrPtr = (Net_EtherHdr *)malloc(sizeof(Net_EtherHdr));
-	    NET_ETHER_ADDR_COPY(*(Net_EtherAddress *)clientData,
-				NET_ETHER_HDR_DESTINATION(*etherHdrPtr));
-	    NET_ETHER_HDR_TYPE(*etherHdrPtr) = 
-			Net_HostToNetShort(NET_ETHER_SPRITE);
-	    routePtr->data = (Address)etherHdrPtr;
+	    if (oldData != (Address)NIL) {
+		etherHdrPtr = (Net_EtherHdr *)oldData;
+		if ( ! NET_ETHER_COMPARE_PTR(
+		    &NET_ETHER_HDR_DESTINATION(*etherHdrPtr),
+		    (Net_EtherAddress *)clientData)) {
+		    printf("Net_InstallRoute, host <%d> changing ethernet addr\n",
+			    spriteID);
+		    oldData = (Address)NIL;
+		}
+	    }
+	    if (oldData == (Address)NIL) {
+		etherHdrPtr = (Net_EtherHdr *)malloc(sizeof(Net_EtherHdr));
+		NET_ETHER_ADDR_COPY(*(Net_EtherAddress *)clientData,
+				    NET_ETHER_HDR_DESTINATION(*etherHdrPtr));
+		NET_ETHER_HDR_TYPE(*etherHdrPtr) = 
+			    Net_HostToNetShort(NET_ETHER_SPRITE);
+		routePtr->data = (Address)etherHdrPtr;
+	    }
 	    break;
 	}
 	default: {
@@ -338,6 +355,7 @@ Net_InstallRoute(spriteID, flags, type, clientData, hostname, machType)
 	    break;
 	}
     }
+    MASTER_UNLOCK(&netRouteMutex);
     return(SUCCESS);
 }
 
@@ -394,6 +412,10 @@ Net_IDToRouteStub(spriteID, argPtr)
  * Net_IDToRoute --
  *
  *	Return the route to the host specified by the input sprite id.
+ *	This synchronizes with installation of new routes, although it
+ *	returns a pointer into the route table making it difficult
+ *	to change routing information without leaking memory - we can't
+ *	free anything referenced by the route table.
  *
  * Results:
  *	A pointer to the route for the host.
@@ -407,13 +429,15 @@ Net_Route *
 Net_IDToRoute(spriteID)
     int spriteID;
 {
-    /*
-     * Synchronization with RouteInstall etc?
-     */
+    register Net_Route *routePtr;
+    MASTER_LOCK(&netRouteMutex);
     if (spriteID < 0 || spriteID >= netNumRoutes) {
-	return((Net_Route *)NIL);
+	routePtr = (Net_Route *)NIL;
+    } else {
+	routePtr = netRouteArray[spriteID];
     }
-    return(netRouteArray[spriteID]);
+    MASTER_UNLOCK(&netRouteMutex);
+    return(routePtr);
 }
 
 /*
@@ -447,11 +471,10 @@ Net_AddrToID(flags, type, routeData)
 {
     register Net_Route *routePtr;
     register int i;
+    register int ID;
 
-    /*
-     * Monitor?
-     */
-    
+    MASTER_LOCK(&netRouteMutex);
+
     for (i=0 ; i<netNumRoutes ; i++) {
 	routePtr = netRouteArray[i];
 	if (routePtr == (Net_Route *)NIL) {
@@ -464,7 +487,8 @@ Net_AddrToID(flags, type, routeData)
 	     */
 	    if ((flags & NET_ROUTE_BROAD) &&
 	        (routePtr->flags & NET_ROUTE_BROAD)) {
-		return(routePtr->spriteID);
+		ID = routePtr->spriteID;
+		goto found;
 	    }
 	    /*
 	     * The address types of the table and input match,
@@ -479,7 +503,8 @@ Net_AddrToID(flags, type, routeData)
 		    etherAddrPtr = (Net_EtherAddress *)routeData;
 		    if (NET_ETHER_COMPARE_PTR(etherAddrPtr,
 				 &(NET_ETHER_HDR_DESTINATION(*etherHdrPtr)))){
-			return(routePtr->spriteID);
+			ID = routePtr->spriteID;
+			goto found;
 		    }
 		    break;
 		}
@@ -494,7 +519,11 @@ Net_AddrToID(flags, type, routeData)
     /*
      * We didn't find an address match on a route.
      */
+    MASTER_UNLOCK(&netRouteMutex);
     return(-1);
+found:
+    MASTER_UNLOCK(&netRouteMutex);
+    return(ID);
 }
 
 /*
@@ -543,10 +572,9 @@ Net_AddrToName(etherAddressPtr, namePtrPtr)
     register Net_Route *routePtr;
     register int i;
 
-    /*
-     * Monitor?
-     */
-    
+    MASTER_LOCK(&netRouteMutex);
+
+    *namePtrPtr = (char *) NIL;
     for (i=0 ; i<netNumRoutes ; i++) {
 	routePtr = netRouteArray[i];
 	if (routePtr == (Net_Route *)NIL) {
@@ -558,11 +586,11 @@ Net_AddrToName(etherAddressPtr, namePtrPtr)
 			&NET_ETHER_HDR_DESTINATION(*etherHdrPtr),
 			etherAddressPtr)) {
 		*namePtrPtr = routePtr->name;
-		return;
+		break;
 	    }
 	}
     }
-    *namePtrPtr = (char *) NIL;
+    MASTER_UNLOCK(&netRouteMutex);
     return;
 }
 
@@ -589,9 +617,7 @@ Net_SpriteIDToName(spriteID, namePtrPtr)
 {
     register Net_Route *routePtr;
 
-    /*
-     * Monitor?
-     */
+    MASTER_LOCK(&netRouteMutex);
     *namePtrPtr = (char *) NIL;
     if (spriteID >= 0 && spriteID < netNumRoutes) {
 	routePtr = netRouteArray[spriteID];
@@ -599,6 +625,7 @@ Net_SpriteIDToName(spriteID, namePtrPtr)
 	    *namePtrPtr = routePtr->name;
 	}
     }
+    MASTER_UNLOCK(&netRouteMutex);
 }
 
 /*
@@ -625,9 +652,7 @@ Net_SpriteIDToMachType(spriteID)
     register Net_Route *routePtr;
     register char *machTypeString;
 
-    /*
-     * Monitor?
-     */
+    MASTER_LOCK(&netRouteMutex);
     machTypeString = (char *)NIL;
     if (spriteID >= 0 && spriteID < netNumRoutes) {
 	routePtr = netRouteArray[spriteID];
@@ -635,6 +660,7 @@ Net_SpriteIDToMachType(spriteID)
 	    machTypeString = routePtr->machType;
 	}
     }
+    MASTER_UNLOCK(&netRouteMutex);
     return(machTypeString);
 }
 
@@ -700,7 +726,7 @@ Net_Arp(spriteID, mutexPtr)
     gather.bufAddr = (Address)&request;
     gather.length = sizeof(NetSpriteArp);
     gather.done = FALSE;
-    gather.conditionPtr = (Sync_Condition *) NIL;
+    gather.mutexPtr = (Sync_Semaphore *) NIL;
     
     status = NetDoArp(mutexPtr, NET_SPRITE_ARP_REQUEST, &gather, &reply);
     if (status == SUCCESS) {
@@ -752,7 +778,7 @@ Net_RevArp(etherAddrPtr)
     gather.bufAddr = (Address)&request;
     gather.length = sizeof(NetSpriteArp);
     gather.done = FALSE;
-    gather.conditionPtr = (Sync_Condition *) NIL;
+    gather.mutexPtr = (Sync_Semaphore *) NIL;
 
     MASTER_LOCK(&mutex);
     Sync_SemRegister(&mutex);
@@ -1135,7 +1161,7 @@ NetArpOutput(spriteID, destPtr, flags)
     gatherPtr->bufAddr = (Address)packetPtr;
     gatherPtr->length = sizeof(NetSpriteArp);
     gatherPtr->done = FALSE;
-    gatherPtr->conditionPtr = (Sync_Condition *) NIL;
+    gatherPtr->mutexPtr = (Sync_Semaphore *) NIL;
 
     /*
      * The destination comes from the route for reverse arp, destPtr is NIL.
