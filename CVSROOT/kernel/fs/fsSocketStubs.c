@@ -47,12 +47,25 @@ extern Mach_State	*machCurStatePtr;
 static ReturnStatus IOControlStub _ARGS_ ((int streamID, int command,
     int inBufSize, Address inBuffer, int outBufSize, Address outBuffer));
 
-extern char *errs[];
+static char *errs[] = {"ENOERR", "EPERM", "ENOENT", "ESRCH", "EINTR", "EIO",
+        "ENXIO", "E2BIG", "ENOEXEC", "EBADF", "ECHILD", "EAGAIN", "ENOMEM",
+        "EACCES", "EFAULT", "ENOTBLK", "EBUSY", "EEXIST", "EXDEV", "ENODEV",
+        "ENOTDIR", "EISDIR", "EINVAL", "ENFILE", "EMFILE", "ENOTTY",
+        "ETXTBSY", "EFBIG", "ENOSPC", "ESPIPE", "EROFS", "EMLINK", "EPIPE",
+        "EDOM", "ERANGE", "EWOULDBLOCK", "EINPROGRESS", "EALREADY", "ENOTSOCK",
+        "EDESTADDRREQ", "EMSGSIZE", "EPROTOTYPE", "ENOPROTOOPT",
+        "EPROTONOSUPPORT", "ESOCKTNOSUPPORT", "EOPNOTSUPP", "EPFNOSUPPORT",
+        "EAFNOSUPPORT", "EADDRINUSE", "EADDRNOTAVAIL", "ENETDOWN",
+        "ENETUNREACH", "ENETRESET", "ECONNABORTED", "ECONNRESET", "ENOBUFS",
+        "EISCONN", "ENOTCONN", "ESHUTDOWN", "ETIMEDOUT", "ECONNREFUSED",
+        "ELOOP", "ENAMETOOLONG", "EHOSTDOWN", "EHOSTUNREACH", "ENOTEMPTY",
+        "EPROCLIM", "EUSERS", "EDQUOT", "ESTALE", "EREMOTE"};
 
 #undef Mach_SetErrno
 #define Mach_SetErrno(err) if (debugFsStubs) \
-	printf("Error %d (%s) at %d in %s\n", err,\
-	errs[err], __LINE__, __FILE__); Proc_GetActualProc()->unixErrno = (err)
+        printf("Error %d (%s) at %d in %s\n", err,\
+        err<sizeof(errs)/sizeof(char *)?errs[err]:"",\
+        __LINE__, __FILE__); Proc_GetActualProc()->unixErrno = (err)
 
 #if 1
 #define	DebugMsg(status, string) printf("%x: %s\n", status, string)
