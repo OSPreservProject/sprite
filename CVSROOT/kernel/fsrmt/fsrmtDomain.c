@@ -651,7 +651,9 @@ Fs_RpcClose(srvToken, clientID, command, storagePtr)
 	dummy.ioHandlePtr = hdrPtr;
 	if (hdrPtr == (FsHandleHeader *) NIL) {
 	    status = FS_STALE_HANDLE;
-	} else  {
+	} else if (streamPtr->ioHandlePtr != hdrPtr) {
+	    Sys_Panic(SYS_FATAL, "Fs_RpcClose: Stream/handle mis-match\n");
+	} else {
 	    /*
 	     * Call the file type close routine to release the I/O handle
 	     * and clean up.  This call unlocks and decrements the reference
