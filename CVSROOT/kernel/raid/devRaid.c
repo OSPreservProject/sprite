@@ -265,11 +265,11 @@ RaidConfigure(raidPtr, devicePtr)
      * Allocate RaidDisk structures; one for each logical disk.
      */
     raidPtr->disk = (RaidDisk ***)
-		malloc((unsigned)raidPtr->numCol * sizeof(RaidDisk *));
+		malloc((unsigned)raidPtr->numCol * sizeof(RaidDisk **));
     for ( col = 0; col < raidPtr->numCol; col++ ) {
 	raidPtr->disk[col] = (RaidDisk **)
-		malloc((unsigned)raidPtr->numRow * sizeof(RaidDisk));
-	bzero((char*)raidPtr->disk[col],raidPtr->numRow*sizeof(RaidDisk));
+		malloc((unsigned)raidPtr->numRow * sizeof(RaidDisk *));
+	bzero((char*)raidPtr->disk[col],raidPtr->numRow*sizeof(RaidDisk *));
     }
 
     /*
