@@ -157,11 +157,15 @@ Recov_Proc()
 static RecovPing *
 FirstHostToCheck()
 {
-    RecovPing *pingPtr = (RecovPing *)NIL;
+    RecovPing *pingPtr;
 
     LOCK_MONITOR;
 
-    pingPtr = (RecovPing *)List_First(recovPingList);
+    if (List_IsEmpty(recovPingList)) {
+	pingPtr = (RecovPing *)NIL;
+    } else {
+	pingPtr = (RecovPing *)List_First(recovPingList);
+    }
 
     UNLOCK_MONITOR;
     return(pingPtr);
@@ -189,10 +193,9 @@ NextHostToCheck(pingPtr)
 {
     LOCK_MONITOR;
 
+    pingPtr = (RecovPing *)List_Next((List_Links *)pingPtr);
     if (List_IsAtEnd(recovPingList, (List_Links *)pingPtr)) {
 	pingPtr = (RecovPing *)NIL;
-    } else {
-	pingPtr = (RecovPing *)List_Next((List_Links *)pingPtr);
     }
 
     UNLOCK_MONITOR;
