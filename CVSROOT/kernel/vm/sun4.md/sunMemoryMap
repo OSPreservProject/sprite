@@ -52,20 +52,20 @@ Virtual address space on the sun4:
 	0xFFF00000	
 	   -	  Device mapping area.	 2048 Kbytes
 	0xFFD00000
-	   - 	  File system block cache. 6400 Kbytes (6.25 Meg)
-	0xFF6c0000
+	   - 	  File system block cache. 149760 Kbytes (146.25 Meg)
+	0xF6AC0000
 	   -	  Hardware segments used to access PMEGs. 512 Kbytes
-	0xFF640000
+	0xF6A40000
 	   -	  Lost due to rounding. 128 Kbytes
-	0xFF620000
+	0xF6A20000
 	   -	  Area used to map user pages into kernel.   128 KBytes
-	0xFF600000
+	0xF6A00000
 	   -	  Kernel Stacks (128 processes).   2048 Kbytes.
-	0xFF400000
-	   - 	  Kernel Code and Data.  4096 Kbytes.
-	0xFF000000
+	0xF6800000
+	   - 	  Kernel Code and Data.  8192 Kbytes.
+	0xF6000000
 	   -	  Area for mapping between user's segment. 256 KBytes
-	0xFEFC0000
+	0xF5FC0000
 	   -	  Not currently in use. 507648 Kbytes (495.75 Meg)
 	0xE0000000
 	   -	  The Hole!! (3072 Meg)
