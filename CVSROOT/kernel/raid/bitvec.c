@@ -9,7 +9,7 @@ MakeBitVec(n)
     int n;
 {
     BitVec vec;
-    int size = (n/32 + 1) * sizeof(int);
+    int size = VecSize(n);
 
     vec = (BitVec) malloc((unsigned) size);
     bzero((char *) vec, size);
@@ -20,7 +20,7 @@ ClearBitVec(bitVec, n)
     BitVec	bitVec;
     int		n;
 {
-    int size = (n/32 + 1) * sizeof(int);
+    int size = VecSize(n);
     bzero((char *) bitVec, size);
 }
 

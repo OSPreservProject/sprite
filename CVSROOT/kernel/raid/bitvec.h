@@ -12,6 +12,7 @@ typedef int *BitVec;
 #define VecIndex(w, b)	(((w) << 5) | b)
 #define WordIndex(i)	((i) >> 5)
 #define BitIndex(i)	((i) & 0x1F)
+#define VecSize(n)	(((n)/32 + 1) * sizeof(int))
 
 #define SetBit(bitVec, i) ( (bitVec)[WordIndex(i)] |= 1 << BitIndex(i) )
 #define ClrBit(bitVec, i) ( (bitVec)[WordIndex(i)] &= ~(1 << BitIndex(i)) )
@@ -19,7 +20,5 @@ typedef int *BitVec;
 
 #define FOR_ALL_VEC(bitVec, i, n)	\
     for ((i) = -1; ((i) = GetBitIndex((bitVec), (i), (n))) != -1;)
-
-extern BitVec MakeBitVec();
 
 #endif BITVEC_H
