@@ -16,4 +16,6 @@
 extern void InitiateSimpleStripeIOs();
 extern void InitiateStripeIOs();
 extern void InitiateHardInit();
-extern void InitiateReconstruction();
+extern void blockIODoneProc();
+extern void nonInterruptLevelCallBackProc();
+extern void InitiateIORequests();
