@@ -21,27 +21,31 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
+#include <sprite.h>
 
-#include "fs.h"
-#include "fsutil.h"
-#include "fsNameOps.h"
-#include "fsio.h"
-#include "fsprefix.h"
-#include "fslcl.h"
-#include "devFsOpTable.h"
-#include "fspdev.h"
-#include "fsutilTrace.h"
-#include "fsStat.h"
-#include "fsconsist.h"
-#include "proc.h"
-#include "rpc.h"
-#include "recov.h"
-#include "timer.h"
-#include "trace.h"
-#include "fsdm.h"
-#include "fsrmt.h"
-#include "devTypes.h"
+#include <fs.h>
+#include <fsutil.h>
+#include <fsNameOps.h>
+#include <fsio.h>
+#include <fsprefix.h>
+#include <fslcl.h>
+#include <devFsOpTable.h>
+#include <fspdev.h>
+#include <fsutilTrace.h>
+#include <fsStat.h>
+#include <fsconsist.h>
+#include <proc.h>
+#include <rpc.h>
+#include <recov.h>
+#include <timer.h>
+#include <trace.h>
+#include <fsdm.h>
+#include <fsrmt.h>
+#include <devTypes.h>
+#include <strings.h>
+#include <stdlib.h>
+#include <stdio.h>
+
 
 #define	SCSI_MAKE_DEVICE_TYPE(type, hbaType, ctrlNum, targetID, LUN, dBits) \
 		(((hbaType)<<8)|(type))
@@ -135,8 +139,8 @@ Fs_InitData()
      * a given size which grows on demand.  Thus the numbers passed to
      * the next two routines are not crucial.
      */
-    Fsutil_HandleInit(64);
     Fscache_Init(64);
+    Fsutil_HandleInit(64);
 
     Fsprefix_Init();
 
@@ -177,20 +181,6 @@ Fs_InitData()
 void
 Fs_InitNameSpace()
 {
-    ReturnStatus status;
-    Time time;
-
-    /*
-     * Put the routine on the timeout queue that keeps the time in
-     * seconds up to date.  WHY NOT USE Timer_GetTimeOfDay?
-     */
-
-    fsutil_TimeOfDayElement.routine = Fsutil_UpdateTimeOfDay;
-    fsutil_TimeOfDayElement.clientData = 0;
-    fsutil_TimeOfDayElement.interval = timer_IntOneSecond;
-    Timer_ScheduleRoutine(&fsutil_TimeOfDayElement, TRUE);
-    Timer_GetTimeOfDay(&time, (int *) NIL, (Boolean *) NIL);
-    fsutil_TimeInSeconds = time.seconds;
 
     /*
      * Install a crash callback with the recovery module.  (A reboot
@@ -265,8 +255,6 @@ Fs_ProcInit()
     ReturnStatus	status;		/* General status code return */
     Proc_ControlBlock	*procPtr;	/* Main process's proc table entry */
     register Fs_ProcessState	*fsPtr;	/* FS state ref'ed from proc table */
-    char		buffer[128];
-    Boolean		standalone;
     Fs_Stream		*stream;
     Fs_Device 		defaultDisk;
     int			i;
