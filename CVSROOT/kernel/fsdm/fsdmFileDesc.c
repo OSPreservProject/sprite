@@ -225,7 +225,7 @@ Fsdm_FileDescStore(handlePtr, forceOut)
 #ifdef lint
     status = Lfs_FileDescStore(domainPtr, handlePtr, fileNumber, fileDescPtr,
 					forceOut);
-    status = Lfs_FileDescStore(domainPtr, handlePtr, fileNumber, fileDescPtr,
+    status = Ofs_FileDescStore(domainPtr, handlePtr, fileNumber, fileDescPtr,
 					forceOut);
 #endif /* lint */
     Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
