@@ -52,25 +52,6 @@
 #define	MACH_VOR_OFFSET	6
 
 /*
- * The length of the small basic stack.
- */
-#define	MACH_SHORT_STACK	8
-
-/*
- * The length of the longest stack in bytes.
- */
-#ifdef SUN3
-#define	MACH_LONG_STACK	92
-#else
-#define	MACH_LONG_STACK	58
-#endif
-
-/*
- * Masks to get at the stack format.
- */
-#define	MACH_STACK_FORMAT_MASK	0xF000
-
-/*
  * Offsets of the fields in the Mach_State structure.
  */
 #define	MACH_USER_SP_OFFSET		0

@@ -62,14 +62,17 @@ typedef struct {
 /*
  * The actual table of vectors.
  */
-
 extern	MachVectorTable		*machVectorTablePtr;
 
 /*
  * The prototype table which contains the vectors which are to be copied into
  * the vector table.
  */
-
 extern	MachVectorTable 	machProtoVectorTable;
+
+/*
+ * Internal functions.
+ */
+extern	void	MachUserReturn();
 
 #endif _MACHINT

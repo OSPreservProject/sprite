@@ -34,6 +34,7 @@ _machLevel6Cnt:	.long	0
 |* ----------------------------------------------------------------------------
 |*
 |* Interrupt handling --
+|*
 |*     Handle exceptions.  Enter the debugger for unsuported interrupts.
 |*
 |* Results:
@@ -45,37 +46,37 @@ _machLevel6Cnt:	.long	0
 |* ----------------------------------------------------------------------------
 |*
 
-	.globl	Mach_Spurious
-Mach_Spurious:
+	.globl	MachSpurious
+MachSpurious:
 	addl	#1,_machSpuriousCnt
 	CallTrapHandler(MACH_SPURIOUS_INT)
 
-	.globl	Mach_Level1Int
-Mach_Level1Int:
+	.globl	MachLevel1Int
+MachLevel1Int:
 	addl	#1,_machLevel1Cnt
 	CallTrapHandler(MACH_LEVEL1_INT)
 
-	.globl	Mach_Level2Int
-Mach_Level2Int:
+	.globl	MachLevel2Int
+MachLevel2Int:
 	addl	#1,_machLevel2Cnt
     	CallInterruptHandler(_Dev_SCSIIntr)
 
-	.globl	Mach_Level3Int
-Mach_Level3Int:
+	.globl	MachLevel3Int
+MachLevel3Int:
 	addl	#1,_machLevel3Cnt
 	CallInterruptHandler(_Net_Intr)
 
-	.globl	Mach_Level4Int
-Mach_Level4Int:
+	.globl	MachLevel4Int
+MachLevel4Int:
 	addl	#1,_machLevel4Cnt
 	CallTrapHandler(MACH_LEVEL4_INT)
 
-	.globl	Mach_Level5Int
-Mach_Level5Int:
+	.globl	MachLevel5Int
+MachLevel5Int:
 	addl	#1,_machLevel5Cnt
 	CallInterruptHandler(_Timer_ServiceInterrupt)
 
-	.globl	Mach_Level6Int
-Mach_Level6Int:
+	.globl	MachLevel6Int
+MachLevel6Int:
 	addl	#1,_machLevel6Cnt
     	CallInterruptHandler(_Dev_KbdServiceInterrupt)

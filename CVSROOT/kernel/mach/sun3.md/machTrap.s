@@ -18,6 +18,7 @@
 |* ----------------------------------------------------------------------------
 |*
 |* Trap handling --
+|*
 |*	Handle exceptions.  In all cases except kernel calls, call
 |*	the C trap handler.  See the kernel call code below.
 |*
@@ -29,77 +30,76 @@
 |*
 |* ----------------------------------------------------------------------------
 |*
-
-	.globl	Mach_Reset
-Mach_Reset:
+	.globl	MachReset
+MachReset:
 	CallTrapHandler(MACH_RESET)
 
-	.globl	Mach_BusError
-Mach_BusError:
+	.globl	MachBusError
+MachBusError:
 	CallTrapHandler(MACH_BUS_ERROR)
 
-	.globl	Mach_AddrError
-Mach_AddrError:
+	.globl	MachAddrError
+MachAddrError:
 	CallTrapHandler(MACH_ADDRESS_ERROR)
 
-	.globl	Mach_IllegalInst
-Mach_IllegalInst:
+	.globl	MachIllegalInst
+MachIllegalInst:
 	CallTrapHandler(MACH_ILLEGAL_INST)
 
-	.globl	Mach_ZeroDiv
-Mach_ZeroDiv:
+	.globl	MachZeroDiv
+MachZeroDiv:
 	CallTrapHandler(MACH_ZERO_DIV)
 
-	.globl	Mach_ChkInst
-Mach_ChkInst:
+	.globl	MachChkInst
+MachChkInst:
 	CallTrapHandler(MACH_CHK_INST)
 
-	.globl	Mach_Trapv
-Mach_Trapv:
+	.globl	MachTrapv
+MachTrapv:
 	CallTrapHandler(MACH_TRAPV)
 
-	.globl	Mach_PrivVio
-Mach_PrivVio:
+	.globl	MachPrivVio
+MachPrivVio:
 	CallTrapHandler(MACH_PRIV_VIOLATION)
 
-	.globl	Mach_TraceTrap
-Mach_TraceTrap:
+	.globl	MachTraceTrap
+MachTraceTrap:
 	CallTrapHandler(MACH_TRACE_TRAP)
 
-	.globl	Mach_Emu1010
-Mach_Emu1010:
+	.globl	MachEmu1010
+MachEmu1010:
 	CallTrapHandler(MACH_EMU1010)
 
-	.globl	Mach_Emu1111
-Mach_Emu1111:
+	.globl	MachEmu1111
+MachEmu1111:
 	CallTrapHandler(MACH_EMU1111)
 
-	.globl	Mach_FmtError	
-Mach_FmtError:
+	.globl	MachFmtError	
+MachFmtError:
 	CallTrapHandler(MACH_STACK_FMT_ERROR)
 
-	.globl	Mach_UninitVect
-Mach_UninitVect:
+	.globl	MachUninitVect
+MachUninitVect:
 	CallTrapHandler(MACH_UNINIT_VECTOR)
 
-	.globl	Mach_SigRetTrap
-Mach_SigRetTrap:
+	.globl	MachSigRetTrap
+MachSigRetTrap:
 	CallTrapHandler(MACH_SIG_RET_TRAP)
 
-	.globl	Mach_BadTrap
-Mach_BadTrap:
+	.globl	MachBadTrap
+MachBadTrap:
 	CallTrapHandler(MACH_BAD_TRAP)
 
-	.globl	Mach_BrkptTrap
-	.globl _Mach_BrkptTrap
-_Mach_BrkptTrap:
-Mach_BrkptTrap:
+	.globl	MachBrkptTrap
+	.globl _MachBrkptTrap
+_MachBrkptTrap:
+MachBrkptTrap:
 	CallTrapHandler(MACH_BRKPT_TRAP)
 
 |*
 |* ----------------------------------------------------------------------
 |*
-|* Mach_SyscallTrap --
+|* MachSyscallTrap --
 |*
 |*	This is the code entered on system call traps.  The code below
 |*	is tuned to get into and out of kernel calls as fast as possible.
@@ -116,8 +116,8 @@ Mach_BrkptTrap:
 	.globl _machMaxSysCall, _machKcallTableOffset, _machArgOffsets
 	.globl _machArgDispatch, _machCurStatePtr
 	.globl _sys_NumCalls, _proc_RunningProcesses
-	.globl Mach_SyscallTrap
-Mach_SyscallTrap:
+	.globl MachSyscallTrap
+MachSyscallTrap:
 
 	|*
 	|* If this is a fork kernel call, save the registers in the PCB.
@@ -272,7 +272,7 @@ return:
  * MachReturnFromUserTrap --
  *
  *	Routine to return from a trap handler.  Called by CallTrapHandler
- *	macro after have returned from Mach_Trap.  The proper action is
+ *	macro after have returned from MachTrap.  The proper action is
  *	taken depending on the error code and then an rte to user space
  *	is performed.
  *
@@ -369,7 +369,7 @@ normReturn:
  * MachReturnFromKernTrap --
  *
  *	Routine to return from a trap handler.  Called by CallTrapHandler
- *	macro after have returned from Mach_Trap.  The proper action is
+ *	macro after have returned from MachTrap.  The proper action is
  *	taken depending on the error code and then an rte to kern space
  *	is performed.
  *

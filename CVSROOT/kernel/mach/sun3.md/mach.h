@@ -256,7 +256,7 @@ typedef struct {
 } Mach_IntrStack;
 
 /*
- * Initialization mach module.  Must be called first as part of boot 
+ * Routine to initialize mach module.  Must be called first as part of boot 
  * sequence.
  */
 extern void	Mach_Init();
@@ -284,10 +284,9 @@ extern int	Mach_GetExcStackSize();
 /*
  * Machine dependent routines.
  */
-extern	void	Mach_ContextSwitch();
 extern	void	Mach_GetEtherAddress();
+extern	void	Mach_ContextSwitch();
 extern	int	Mach_TestAndSet();
-extern	void	Mach_Init();
 extern	int	Mach_GetMachineType();
 extern	Address	Mach_GetStackPointer();
 

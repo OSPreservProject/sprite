@@ -371,7 +371,6 @@ _MachGetVBR:
 |*
 |* ----------------------------------------------------------------------
 |*
-
 	.globl _Mach_GetStackPointer
 _Mach_GetStackPointer:
 	movc usp, d0

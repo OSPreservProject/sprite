@@ -32,11 +32,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 typedef struct {
     int		magicNumber;		/* Magic number used to determine if
-					   the stack has been corrupted. */
+					 * the stack has been corrupted. */
     Address	userStackPtr;		/* The user's stack pointer. */
     short	statusReg;		/* The status register. */
     void	(*startFunc)();		/* Function to call when process
-					   first starts executing. */
+					 * first starts executing. */
     int		retPC;			/* Return PC that will be sitting on the
     					 * stack when startFunc is called. */
     Address	startPC;		/* PC to start executing at.  Is passed
@@ -170,9 +170,9 @@ Mach_Init()
      * Initialize the autovector interrupt slots.
      */
     for (i = MACH_NUM_EXCEPTIONS ; i<256 ; i++) {
-	extern int Mach_BrkptTrap();
+	extern int MachBrkptTrap();
 
-	*vecTablePtr = (int)Mach_BrkptTrap;
+	*vecTablePtr = (int)MachBrkptTrap;
 	vecTablePtr++;
     }
 #endif SUN3
@@ -235,7 +235,7 @@ Mach_InitFirstProc(procPtr)
  *	process after a migration.
  *
  * Results:
- *	None.
+ *	PROC_NO_STACKS if couldn't allocate a kernel stack.  SUCCESS otherwise.
  *
  * Side effects:
  *	Machine state in the destination process control block is overwritten.
@@ -246,12 +246,11 @@ ReturnStatus
 Mach_SetupNewState(procPtr, parStatePtr, startFunc, startPC)
     Proc_ControlBlock	*procPtr;	/* Pointer to process control block
 					 * to initialize state for. */
-    Mach_State		*parStatePtr;	/* State of parent on fork or from other
-					 * machine on migration to copy to
-					 * new state. */
+    Mach_State		*parStatePtr;	/* State of parent on fork or from
+					 * other machine on migration. */
     void		(*startFunc)();	/* Function to call when process first
 					 * starts executing. */
-    Address		startPC;	/* Address pass as argument to 
+    Address		startPC;	/* Address to pass as argument to 
 					 * startFunc.  If NIL then the address
 					 * is taken from *parStatePtr's 
 					 * exception stack. */
@@ -288,7 +287,7 @@ Mach_SetupNewState(procPtr, parStatePtr, startFunc, startPC)
     stackPtr->fill2 = 0;
     /* 
      * Set up the state of the process.  User processes inherit from their
-     * parent and kernel processes start executing at clientData.
+     * parent and kernel processes start executing at startPC.
      */
     if (startPC == (Address)NIL) {
 	statePtr->userState.userStackPtr = parStatePtr->userState.userStackPtr;
@@ -378,7 +377,7 @@ Mach_StartUserProc(procPtr, entryPoint)
  *	None.
  *
  * Side effects:
- *	Stack pointer and set for the process.
+ *	Stack pointer set for the process.
  *
  *----------------------------------------------------------------------
  */
@@ -950,7 +949,7 @@ MachTrap(trapStack)
  *      Take the proper action to return from a user exception.
  *
  * Results:
- *      Code to return to the trap handler.
+ *      None.
  *
  * Side effects:
  *      Interrupts disabled.
@@ -1013,10 +1012,10 @@ MachUserReturn(procPtr)
  *
  * Routines to set up and return from signal handlers.
  *
- * In to call a handler four things must be done:
+ * In order to call a handler four things must be done:
  *
  *	1) The current state of the process must be saved so that when
- *	   the handler returns the normal return to user space can occur.
+ *	   the handler returns a normal return to user space can occur.
  *	2) The user stack must be set up so that the signal number and the
  *	   the signal code are passed to the handler.
  *	3) Things must be set up so that when the handler returns it returns
@@ -1030,34 +1029,11 @@ MachUserReturn(procPtr)
  * user process will execute on return to be the address of the signal
  * handler and the user stack pointer to point to the proper place on
  * the user stack.  The first three of these are accomplished by 
- * setting up the user stack properly.  When a handler is called the 
- * user stack looks like the following:
- *
- *     		-----------------------
- *     		| Address of trap inst |<----- New user stack pointer.
- *     		-----------------------
- *     		| Signal number       |
- *     		-----------------------
- *     		| Signal code         |
- *     		-----------------------
- *     		| Trap stack          |
- *     		-----------------------
- *     		| Old hold mask       |
- *     		-----------------------
- *     		| trap instruction    |
- *     		-----------------------
- *     		| Original user stack |<----- Old user stack pointer
- *     		|                     |
- *
- *
- * Thus the top entry on the stack is the return address where the handler
- * will start executing upon return.  But this is just the address of a
- * trap instruction that is stored on the stack below.  Thus when
- * a handler returns it will execute a trap instruction and drop back
- * into the kernel.  Following the return address are the signal number and
- * signal code which are the arguments to the handler.  Following this is
- * the saved state of the process which is the trap stack and the old mask
- * of held signals.
+ * setting up the user stack properly.  The top entry on the stack is the
+ * return address where the handler will start executing upon return.  But 
+ * this is just the address of a trap instruction that is stored on the stack
+ * below.  Thus when a handler returns it will execute a trap instruction 
+ * and drop back into the kernel. 
  */
 
 
