@@ -354,7 +354,7 @@ FsRemoteIOHandleInit(ioFileIDPtr, useFlags, name, newHandlePtrPtr)
     Fs_FileID		*ioFileIDPtr;		/* Remote IO File ID */
     int			useFlags;		/* Stream usage flags */
     char		*name;			/* File name */
-    FsDeviceIOHandle	**newHandlePtrPtr;	/* Return - installed handle */
+    FsHandleHeader	**newHandlePtrPtr;	/* Return - installed handle */
 {
     register Boolean found;
     register FsRecoveryInfo *recovPtr;
@@ -1585,8 +1585,12 @@ ReadNotify(data, callInfoPtr)
     Proc_CallInfo	*callInfoPtr;
 {
     register FsDeviceIOHandle *devHandlePtr = (FsDeviceIOHandle *)data;
-    devHandlePtr->readNotifyScheduled = FALSE;
-    FsWaitListNotify(&devHandlePtr->readWaitList);
+    if (devHandlePtr->hdr.fileID.type != FS_LCL_DEVICE_STREAM) {
+	Sys_Panic(SYS_WARNING, "ReadNotify, lost device handle\n");
+    } else {
+	devHandlePtr->readNotifyScheduled = FALSE;
+	FsWaitListNotify(&devHandlePtr->readWaitList);
+    }
     callInfoPtr->interval = 0;
 }
 
@@ -1633,8 +1637,12 @@ WriteNotify(data, callInfoPtr)
     Proc_CallInfo	*callInfoPtr;
 {
     register FsDeviceIOHandle *devHandlePtr = (FsDeviceIOHandle *)data;
-    devHandlePtr->writeNotifyScheduled = FALSE;
-    FsWaitListNotify(&devHandlePtr->writeWaitList);
+    if (devHandlePtr->hdr.fileID.type != FS_LCL_DEVICE_STREAM) {
+	Sys_Panic(SYS_WARNING, "WriteNotify, lost device handle\n");
+    } else {
+	devHandlePtr->writeNotifyScheduled = FALSE;
+	FsWaitListNotify(&devHandlePtr->writeWaitList);
+    }
     callInfoPtr->interval = 0;
 }
 
