@@ -659,32 +659,6 @@ DevXylogicsSectorIO(command, diskPtr, diskAddrPtr, numSectorsPtr, buffer)
     ReturnStatus error;
     register DevXylogicsController *xyPtr; /* Controller for the disk */
     int retries = 0;
-#ifdef mouse_trap
-    if (command == XY_WRITE) {
-	int		i, j;
-	register char	*bufPtr;
-	register int	*intPtr;
-	/*
-	 * Check all sectors for sectors full of zeroes.
-	 */
-	for (i = 0, bufPtr = buffer; i < *numSectorsPtr; i++, bufPtr += 512) {
-	    intPtr = (int *)bufPtr;
-	    if (*intPtr == 0 && *(intPtr + 127) == 0) {
-		Boolean	allZero = TRUE;
-		for (j = 0; j < 128; j++, intPtr++) {
-		    if (*intPtr != 0) {
-			allZero = FALSE;
-			break;
-		    }
-		}
-		if (allZero) {
-		    Sys_Panic(SYS_FATAL,
-				"DevXylogicsSectorIO: Writing all 0's\n");
-		}
-	    }
-	}
-    }
-#endif mouse_trap
     /*
      * Synchronize with the interrupt handling routine and with other
      * processes that are trying to initiate I/O with this controller.
