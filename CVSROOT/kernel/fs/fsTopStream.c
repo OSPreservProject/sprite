@@ -215,6 +215,7 @@ FsStreamMigClient(streamIDPtr, srcClientID, dstClientID, ioHandlePtr,
     register Boolean found;
     register Fs_Stream *streamPtr;
     Fs_Stream *newStreamPtr;
+    int newClientStream = *flagsPtr & FS_NEW_STREAM;
 
     found = FsHandleInstall(streamIDPtr, sizeof(Fs_Stream), (char *)NIL,
 			    (FsHandleHeader **)&newStreamPtr);
@@ -249,7 +250,7 @@ FsStreamMigClient(streamIDPtr, srcClientID, dstClientID, ioHandlePtr,
 	 */
 	streamPtr->flags |= FS_RMT_SHARED;
     }
-    *flagsPtr = streamPtr->flags;
+    *flagsPtr = streamPtr->flags | newClientStream;
     *offsetPtr = streamPtr->offset;
     FsHandleRelease(streamPtr, TRUE);
 }
