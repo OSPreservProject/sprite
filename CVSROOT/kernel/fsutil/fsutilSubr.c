@@ -396,7 +396,7 @@ FsUpdateTimeOfDay()
 
     Timer_GetTimeOfDay(&time, (int *) NIL, (Boolean *) NIL);
     fsTimeInSeconds = time.seconds;
-    Timer_RescheduleRoutine(&fsTimeOfDayElement, TRUE);
+    Timer_ScheduleRoutine(&fsTimeOfDayElement, TRUE);
 }
 
 
