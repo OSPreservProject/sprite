@@ -376,4 +376,6 @@ I fixed a couple bugs in fslclLookup.c and fsrmtAttributes.c.  These were
 SOSP tracing problems.
 
 1.081	Thu Jan 10 14:26:33 PST 1991
+
+1.082	Thu Jan 10 14:43:59 PST 1991
     New files linked in from the net library.
