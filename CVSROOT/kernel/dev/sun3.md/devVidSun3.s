@@ -7,7 +7,7 @@
 |* All rights reserved.
 |*
 
-#ifdef SUN3
+#ifdef sun3
 
     .data
     .asciz "$Header$ SPRITE (Berkeley)"
@@ -71,4 +71,4 @@ done:
     movl	#0, d0			| Return SUCCESS
     rts
 
-#endif SUN3
+#endif /* sun3 */
