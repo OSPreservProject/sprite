@@ -366,13 +366,17 @@ typedef struct Fs_WriteBackStats {
  * Some miscellaneous stats to determine why we read remote bytes.
  */
 typedef struct Fs_RemoteIOStats {
-    int blocksReadForVM;	/* Count of block reads from Fs_PageRead */
-    int bytesReadForCache;	/* Count of bytes read into the cache */
-    int bytesWrittenFromCache;	/* Count of bytes written from the cache */
-    int uncacheableBytesRead;	/* Count of uncacheable bytes read */
-    int uncacheableBytesWritten;/* Count of uncacheable bytes read */
-    int sharedStreamBytesRead;	/* Count of bytes read from shared streams */
-    int sharedStreamBytesWritten;/* Count of bytes written to shared streams */
+    int blocksReadForVM;	/* Blocks read from Fs_PageRead (old) */
+    int bytesReadForCache;	/* Bytes read into the cache */
+    int bytesWrittenFromCache;	/* Bytes written from the cache */
+    int uncacheableBytesRead;	/* Uncacheable bytes read (not counting swap) */
+    int uncacheableBytesWritten;/* Uncacheable bytes written */
+    int sharedStreamBytesRead;	/* Bytes read from shared uncacheable streams */
+    int sharedStreamBytesWritten;/* Bytes written to shared uncached streams */
+    int hitsOnVMBlock;		/* Code and Heap pages found in the cache */
+    int missesOnVMBlock;	/* Code and Heap pages not found in the cache */
+    int bytesReadForVM;		/* Bytes read in RmtFilePageRead */
+    int bytesWrittenForVM;	/* Bytes written in RmtFilePageWrite */
 } Fs_RemoteIOStats;
 
 /*
