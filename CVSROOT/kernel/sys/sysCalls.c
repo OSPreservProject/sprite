@@ -837,6 +837,7 @@ Sys_StatsStub(command, option, argPtr)
 	    status = Vm_CopyOut(length, &stats, argPtr);
 	    break;
 	}
+#ifdef sun4
 	case SYS_TEST_CMAP: {
 	    Address	addr;
 
@@ -845,6 +846,7 @@ Sys_StatsStub(command, option, argPtr)
 		    addr, VmMachGetSegMap(addr), VmMachGetPageMap(addr));
 	    break;
 	}
+#endif
 	default:
 	    status = GEN_INVALID_ARG;
 	    break;
