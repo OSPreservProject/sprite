@@ -295,7 +295,8 @@ typedef struct DevSCSI3Regs {
 						/* byte dma read */
 	unsigned short		fifoCount;	/* fifo byte count reg */
 	unsigned short		control;	/* control/status register */
-	unsigned int		bytePack;	/* byte pack register */
+	unsigned short		bytePackHigh;	/* Byte 0 and Byte 1 */
+	unsigned short		bytePackLow;	/* Byte 2 and Byte 3 */
 	unsigned short		addrIntr;	/* bits 0-7: addr modifier */
 						/* bits 8-13: intr vector */
 						/* bits 14-15: unused */
