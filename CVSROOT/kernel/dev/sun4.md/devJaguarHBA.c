@@ -269,7 +269,7 @@ static JaguarMem DebugJaguarMem;
 
 #define	DMA_BURST_COUNT		0
 #define	JAGUAR_ADDRESS_MODIFIER  (JAGUAR_32BIT_MEM_TYPE | \
-				  JAGUAR_NORMAL_MODE_XFER | 0x3D)
+				  JAGUAR_NORMAL_MODE_XFER | 0x0D)
 #define	MAX_CMDS_QUEUED		2
 #define	SELECTION_TIMEOUT	1000
 #define	RESELECTION_TIMEOUT	0
@@ -957,7 +957,11 @@ DevJaguarIntr(clientData)
      * Release the device's DMA space.
      */
     if (actionPtr->dmaBufferLen > 0) {
-	VmMach_DMAFree(actionPtr->dmaBufferLen, actionPtr->dmaBuffer);
+	if (((unsigned)actionPtr->dmaBuffer) & 0x80000000) { 
+	    VmMach_UserDMAFree(actionPtr->dmaBufferLen, actionPtr->dmaBuffer);
+	} else {
+	    VmMach_DMAFree(actionPtr->dmaBufferLen, actionPtr->dmaBuffer);
+	}
     }
     returnStatus = crb->iopb.returnStatus;
     /*
@@ -1101,7 +1105,11 @@ SendJaguarCmd(ctrlPtr, workQueue, iopbPtr, action, actionArg)
 	} else { 
 	    actionPtr->dmaBufferLen = READ_LONG(iopbPtr->maxXferLen);
 	}
-	actionPtr->dmaBuffer = (Address) (addr + VMMACH_DMA_START_ADDR);
+	if ((unsigned)addr & 0x80000000) {
+	    actionPtr->dmaBuffer = (Address) (addr);
+	} else {
+	    actionPtr->dmaBuffer = (Address) (addr + VMMACH_DMA_START_ADDR);
+	}
 	actionPtr->actionArg = actionArg;
         cqe->commandTag[0] = ctrlPtr->nextActionBuffer;
     }
@@ -1394,7 +1402,7 @@ FillInScsiIOPB(devPtr, scsiCmdPtr, iopbPtr)
 	 * the interrupt handler not to free it.
 	 */
 	if (((unsigned) scsiCmdPtr->buffer) < (unsigned)VMMACH_DMA_START_ADDR) {
-	    addr = (Address) VmMach_DMAAlloc(scsiCmdPtr->bufferLen, 
+	    addr = (Address) VmMach_UserDMAAlloc(scsiCmdPtr->bufferLen, 
 					 scsiCmdPtr->buffer);
 	} else {
 	    addr = (Address) (((unsigned) scsiCmdPtr->buffer) | 1);
@@ -1402,7 +1410,11 @@ FillInScsiIOPB(devPtr, scsiCmdPtr, iopbPtr)
     } else {
 	addr = (Address) VMMACH_DMA_START_ADDR;
     }
-    SET_LONG(iopbPtr->bufferAddr, (unsigned)addr - VMMACH_DMA_START_ADDR);
+    if ((unsigned) addr < (unsigned)VMMACH_DMA_START_ADDR) {
+	SET_LONG(iopbPtr->bufferAddr, (unsigned)addr);
+    } else {
+	SET_LONG(iopbPtr->bufferAddr, (unsigned)addr - VMMACH_DMA_START_ADDR);
+    }
     SET_LONG(iopbPtr->maxXferLen, scsiCmdPtr->bufferLen);
     iopbPtr->cmd.scsiArg.unitAddress = devPtr->unitAddress;
     bcopy(scsiCmdPtr->commandBlock, (char *) iopbPtr->cmd.scsiArg.cmd, 
