@@ -20,24 +20,26 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
+#include <sprite.h>
 
-#include "fs.h"
-#include "fsio.h"
-#include "fsutil.h"
-#include "fsNameOps.h"
-#include "fsNameOpsInt.h"
-#include "fsdm.h"
-#include "fsconsist.h"
-#include "fsioLock.h"
-#include "fsprefix.h"
-#include "fsrmt.h"
-#include "dev.h"
-#include "rpc.h"
-#include "fsStat.h"
-#include "fsioDevice.h"
-#include "devFsOpTable.h"
-#include "recov.h"
+#include <fs.h>
+#include <fsconsist.h>
+#include <fsio.h>
+#include <fsutil.h>
+#include <fsNameOps.h>
+#include <fsrmtNameOpsInt.h>
+#include <fsdm.h>
+#include <fsioLock.h>
+#include <fsprefix.h>
+#include <fsrmt.h>
+#include <dev.h>
+#include <rpc.h>
+#include <recov.h>
+#include <fsStat.h>
+#include <fsioDevice.h>
+#include <devFsOpTable.h>
+
+#include <stdio.h>
 
 /*
  * Parameters for RPC_FS_DEV_OPEN remote procedure call.
@@ -137,7 +139,7 @@ Fsrmt_IOHandleInit(ioFileIDPtr, useFlags, name, newHandlePtrPtr)
     register Fsutil_RecoveryInfo *recovPtr;
 
     found = Fsutil_HandleInstall(ioFileIDPtr, sizeof(Fsrmt_IOHandle), name,
-	    newHandlePtrPtr);
+		    FALSE, newHandlePtrPtr);
     recovPtr = &((Fsrmt_IOHandle *)*newHandlePtrPtr)->recovery;
     if (!found) {
 	Fsutil_RecoveryInit(recovPtr);
@@ -147,15 +149,6 @@ Fsrmt_IOHandleInit(ioFileIDPtr, useFlags, name, newHandlePtrPtr)
 	 * someone is paying attention to the I/O server and the filesystem
 	 * will get called back when the I/O server reboots.
 	 */
-	if (recov_PrintLevel >= RECOV_PRINT_CRASH) {
-	    /*
-	     * Printf for debugging ref count problem that affects recovery.
-	     */
-	    printf(
-	"Fsrmt_IOHandleInit: register Fsutil_Reopen serverID %d, device %s\n",
-		ioFileIDPtr->serverID, name == (char *) NIL ? "NIL" : name);
-	}
-
 	Recov_RebootRegister(ioFileIDPtr->serverID, Fsutil_Reopen,
 			    (ClientData)NIL);
     }
@@ -367,16 +360,6 @@ Fsrmt_IOClose(streamPtr, clientID, procID, flags, dataSize, closeData)
 	 * Undo the callback we registered when we created the remote handle.
 	 * Then nuke the handle itself.
 	 */
-	if (recov_PrintLevel >= RECOV_PRINT_CRASH) {
-	    /*
-	     * Printf for debugging ref count problem that affects recovery.
-	     */
-	    printf(
-	"Fsrmt_IOClose: unregister Fsutil_Reopen for serverID %d, device %s\n",
-	    rmtHandlePtr->hdr.fileID.serverID, rmtHandlePtr->hdr.name ==
-			(char *)NIL ? "NIL": rmtHandlePtr->hdr.name);
-	}
-	    
 	Recov_RebootUnRegister(rmtHandlePtr->hdr.fileID.serverID, Fsutil_Reopen,
 			    (ClientData)NIL);
 	Fsutil_RecoverySyncLockCleanup(&rmtHandlePtr->recovery);
@@ -395,7 +378,7 @@ Fsrmt_IOClose(streamPtr, clientID, procID, flags, dataSize, closeData)
  */
 typedef struct FsRmtDeviceReopenParams {
     Fs_FileID	fileID;		/* File ID of file to reopen. MUST BE FIRST! */
-    Fsutil_UseCounts use;		/* Device usage information */
+    Fsio_UseCounts use;		/* Device usage information */
 } FsRmtDeviceReopenParams;
 
 /*
@@ -506,7 +489,7 @@ Fsrmt_IOMigClose(hdrPtr, flags)
 /*ARGSUSED*/
 ReturnStatus
 FsrmtDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
-    FsMigInfo	*migInfoPtr;	/* Migration state */
+    Fsio_MigInfo	*migInfoPtr;	/* Migration state */
     int		dstClientID;	/* ID of target client */
     int		*flagsPtr;	/* In/Out Stream usage flags */
     int		*offsetPtr;	/* Return - the new stream offset */
@@ -557,7 +540,7 @@ FsrmtDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPt
 /*ARGSUSED*/
 ReturnStatus
 Fsrmt_IOMigOpen(migInfoPtr, size, data, hdrPtrPtr)
-    FsMigInfo	*migInfoPtr;	/* Migration state */
+    Fsio_MigInfo	*migInfoPtr;	/* Migration state */
     int		size;		/* Zero */
     ClientData	data;		/* NIL */
     Fs_HandleHeader **hdrPtrPtr;	/* Return - handle for the file */
@@ -567,7 +550,7 @@ Fsrmt_IOMigOpen(migInfoPtr, size, data, hdrPtrPtr)
     Boolean found;
 
     found = Fsutil_HandleInstall(&migInfoPtr->ioFileID, sizeof(Fsrmt_IOHandle),
-		(char *)NIL, hdrPtrPtr);
+		(char *)NIL, FALSE, hdrPtrPtr);
     rmtHandlePtr = (Fsrmt_IOHandle *)*hdrPtrPtr;
     recovPtr = &rmtHandlePtr->recovery;
     if (!found) {
@@ -578,15 +561,6 @@ Fsrmt_IOMigOpen(migInfoPtr, size, data, hdrPtrPtr)
 	 * someone is paying attention to the I/O server and the filesystem
 	 * will get called back when the I/O server reboots.
 	 */
-	if (recov_PrintLevel >= RECOV_PRINT_CRASH) {
-	    /*
-	     * Printf for debugging ref count problem that affects recovery.
-	     */
-	    printf(
-	   "Fsrmt_IOMigOpen: register Fsutil_Reopen serverID %d\n",
-		   migInfoPtr->ioFileID.serverID);
-	}
-
 	Recov_RebootRegister(migInfoPtr->ioFileID.serverID, Fsutil_Reopen,
 			    (ClientData)NIL);
     }
