@@ -196,4 +196,9 @@ typedef struct Proc_DestroyMigProcData {
 extern void Proc_ResumeMigProc();
 extern void Proc_DestroyMigratedProc();
 
+extern void Proc_RemoveMigDependency();
+extern void Proc_AddMigDependency();
+
+
+
 #endif _PROCMIGRATE
