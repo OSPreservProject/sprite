@@ -414,7 +414,7 @@ Fsio_RpcStreamMigClose(srvToken, clientID, command, storagePtr)
 				(Fs_HandleHeader *)NIL, rpc_SpriteID);
     if (streamPtr == (Fs_Stream *) NIL) {
 	printf("Fsio_RpcStreamMigClose, unknown stream <%d>, client %d\n",
-	    paramPtr->streamID.major, clientID);
+	    paramPtr->streamID.minor, clientID);
 	return( (paramPtr->streamID.minor < 0) ? GEN_INVALID_ARG
 					       : FS_STALE_HANDLE);
     }
@@ -603,9 +603,6 @@ Fsio_StreamClientVerify(streamIDPtr, ioHandlePtr, clientID)
     register Fs_Stream *streamPtr;
     Boolean found = FALSE;
 
-    if (ioHandlePtr == (Fs_HandleHeader *)NIL) {
-	return((Fs_Stream *)NIL);
-    }
     streamPtr = Fsutil_HandleFetchType(Fs_Stream, streamIDPtr);
     if (streamPtr != (Fs_Stream *)NIL) {
 	LIST_FORALL(&streamPtr->clientList, (List_Links *) clientPtr) {
@@ -621,7 +618,13 @@ Fsio_StreamClientVerify(streamIDPtr, ioHandlePtr, clientID)
 	    Fsutil_HandleRelease(streamPtr, TRUE);
 	    streamPtr = (Fs_Stream *)NIL;
 
-	} else if (streamPtr->ioHandlePtr != ioHandlePtr) {
+	} else if (ioHandlePtr != (Fs_HandleHeader *)NIL &&
+		   streamPtr->ioHandlePtr != ioHandlePtr) {
+	    /*
+	     * The client's stream doesn't reference the same handle as we do.
+	     * Note that ioHandlePtr is NIL when we are called from
+	     * Fsio_RpcStreamMigClose, so we can't make this check in that case.
+	     */
 	    printf("Fsio_StreamClientVerify ioHandle mismatch client ID %d:\n",
 			clientID);
 	    if (streamPtr->ioHandlePtr == (Fs_HandleHeader *)NIL) {
