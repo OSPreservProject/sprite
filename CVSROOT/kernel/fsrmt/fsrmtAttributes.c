@@ -425,19 +425,38 @@ Fsrmt_RpcSetAttrPath(srvToken, clientID, command, storagePtr)
  */
 /*ARGSUSED*/
 ReturnStatus
+#ifdef SOSP91
+FsrmtGetAttr(fileIDPtr, clientID, attrPtr, hostID, userID)
+    register Fs_FileID		*fileIDPtr;	/* Identfies file */
+    int				clientID;	/* IGNORED, implicitly passed
+						 * by the RPC system. */
+    int hostID, userID;
+#else
 FsrmtGetAttr(fileIDPtr, clientID, attrPtr)
     register Fs_FileID		*fileIDPtr;	/* Identfies file */
     int				clientID;	/* IGNORED, implicitly passed
 						 * by the RPC system. */
     register Fs_Attributes	*attrPtr;	/* Return - the attributes */
+#endif
 {
     register ReturnStatus	status;
     Rpc_Storage storage;
 
+#ifdef SOSP91
+    int buf[6];
+    bcopy((char *)fileIDPtr, (char *)buf, 16);
+    buf[5] = hostID;
+    buf[6] = userID;
+    storage.requestParamPtr = (Address) buf;
+    storage.requestParamSize = sizeof(Fs_FileID)+2*sizeof(int);
+    storage.requestDataPtr = (Address) NIL;
+    storage.requestDataSize = 0;
+#else
     storage.requestParamPtr = (Address) fileIDPtr;
     storage.requestParamSize = sizeof(Fs_FileID);
     storage.requestDataPtr = (Address) NIL;
     storage.requestDataSize = 0;
+#endif
 
     storage.replyParamPtr = (Address) attrPtr;
     storage.replyParamSize = sizeof(Fs_Attributes);
@@ -526,9 +545,6 @@ Fsrmt_RpcGetAttr(srvToken, clientID, command, storagePtr)
 
     fs_Stats.srvName.getAttrs++;
     attrPtr = mnew(Fs_Attributes);
-#ifdef SOSP91
-    SOSP_ADD_GET_ATTR_TRACE(clientID, -1, *fileIDPtr);
-#endif
     status = (*fs_AttrOpTable[domainType].getAttr)(fileIDPtr, clientID, attrPtr);
 #ifdef lint
     status = FslclGetAttr(fileIDPtr, clientID, attrPtr);
@@ -557,6 +573,10 @@ typedef struct FsRemoteSetAttrParams {
     Fs_UserIDs		ids;
     Fs_Attributes	attrs;
     int			flags;
+#ifdef SOSP91
+    int			hostID;
+    int			userID;
+#endif
 } FsRemoteSetAttrParams;
 
 /*
@@ -578,11 +598,21 @@ typedef struct FsRemoteSetAttrParams {
  */
 
 ReturnStatus
+#ifdef SOSP91
+FsrmtSetAttr(fileIDPtr, attrPtr, idPtr, flags, hostID, userID)
+    Fs_FileID		*fileIDPtr;
+    Fs_Attributes	*attrPtr;
+    Fs_UserIDs		 *idPtr;
+    int			flags;
+    int			hostID;
+    int			userID;
+#else
 FsrmtSetAttr(fileIDPtr, attrPtr, idPtr, flags)
     Fs_FileID		*fileIDPtr;
     Fs_Attributes	*attrPtr;
     Fs_UserIDs		 *idPtr;
     int			flags;
+#endif
 {
     ReturnStatus status;
     Rpc_Storage storage;
@@ -592,6 +622,10 @@ FsrmtSetAttr(fileIDPtr, attrPtr, idPtr, flags)
     params.ids = *idPtr;
     params.attrs = *attrPtr;
     params.flags = flags;
+#ifdef SOSP91
+    params.hostID = hostID;
+    params.userID = userID;
+#endif
     storage.requestParamPtr = (Address)&params;
     storage.requestParamSize = sizeof(FsRemoteSetAttrParams);
     storage.requestDataPtr = (Address)NIL;;
