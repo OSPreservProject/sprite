@@ -127,7 +127,9 @@
  *
  *	rx --	register to load slotid into.
  */
-#define LD_SLOT_ID(rx)	ld_external rx, r0, $MACH_SLOT_ID_REG|MACH_CO_RD_REG
+#define LD_SLOT_ID(rx)	\
+		ld_external rx, r0, $MACH_SLOT_ID_REG|MACH_CO_RD_REG;\
+		Nop
 
 /*
  * ST_RPTM(rx, rptm) --
