@@ -355,12 +355,12 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
     /*
      * The control I/O handle is identified by the fileID of the pseudo-device
      * file with type CONTROL.  The minor field has the disk decriptor version
-     * number or'ed into it to avoid conflict when you delete the
+     * number xor'ed into it to avoid conflict when you delete the
      * pdev file and recreate one with the same file number (minor field).
      */
     ioFileID = handlePtr->hdr.fileID;
     ioFileID.type = FS_CONTROL_STREAM;
-    ioFileID.minor |= (handlePtr->descPtr->version << 16);
+    ioFileID.minor ^= (handlePtr->descPtr->version << 24);
     ctrlHandlePtr = FsControlHandleInit(&ioFileID, handlePtr->hdr.name, &found);
 
     if (useFlags & (FS_MASTER|FS_NEW_MASTER)) {
@@ -417,8 +417,8 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	    ioFileIDPtr->major = (handlePtr->hdr.fileID.serverID << 16) |
 				  handlePtr->hdr.fileID.major;
 	    ctrlHandlePtr->seed++;
-	    ioFileIDPtr->minor = (handlePtr->hdr.fileID.minor << 16) |
-				  ctrlHandlePtr->seed;
+	    ioFileIDPtr->minor = handlePtr->hdr.fileID.minor ^
+				  (ctrlHandlePtr->seed << 16);
 	    /*
 	     * Return the control stream file ID so it can be found again
 	     * later when setting up the client's stream and the
@@ -532,6 +532,7 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
     register PdevClientIOHandle	*cltHandlePtr;
     register PdevControlIOHandle	*ctrlHandlePtr;
     register FsPdevState		*pdevStatePtr;
+    Fs_Stream			 *cltStreamPtr;
     Proc_ControlBlock		*procPtr;
     Proc_PID 			procID;
     int				uid;
@@ -597,8 +598,8 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 	procPtr = Proc_GetEffectiveProc();
 	procID = procPtr->processID;
 	uid = procPtr->effectiveUserID;
+	cltStreamPtr = (Fs_Stream *)NIL;
     } else {
-	register Fs_Stream *cltStreamPtr;
 
 	procID = pdevStatePtr->procID;
 	uid = pdevStatePtr->uid;
@@ -614,6 +615,16 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
      */
     cltHandlePtr->pdevHandlePtr = ServerStreamCreate(ctrlHandlePtr, ioFileIDPtr,
 						     clientID, name);
+    if (cltHandlePtr->pdevHandlePtr == (PdevServerIOHandle *)NIL) {
+	status = FAILURE;
+	FsHandleInvalidate(cltHandlePtr);
+	FsHandleRemove(cltHandlePtr);
+	if (cltStreamPtr != (Fs_Stream *)NIL) {
+	    FsStreamClientClose(&cltStreamPtr->clientList, clientID);
+	    FsStreamDispose(cltStreamPtr);
+	}
+	goto exit;
+    }
     List_Init(&cltHandlePtr->clientList);
     (void)FsIOClientOpen(&cltHandlePtr->clientList, clientID, 0, FALSE);
     FsHandleRelease(ctrlHandlePtr, TRUE);
@@ -757,7 +768,10 @@ ServerStreamCreate(ctrlHandlePtr, ioFileIDPtr, slaveClientID, name)
 			    &hdrPtr);
     pdevHandlePtr = (PdevServerIOHandle *)hdrPtr;
     if (found) {
-	Sys_Panic(SYS_WARNING, "ServerStreamCreate, found server handle\n");
+	Sys_Panic(SYS_WARNING, "ServerStreamCreate, found handle <%x,%x,%x>\n",
+	    hdrPtr->fileID.serverID, hdrPtr->fileID.major,hdrPtr->fileID.minor);
+	FsHandleRelease(pdevHandlePtr, TRUE);
+	return((PdevServerIOHandle *)NIL);
     }
 
     DBG_PRINT( ("ServerStreamOpen <%d,%x,%x>\n",
