@@ -111,8 +111,8 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "status.h"
 #include "sprite.h"
+#include "status.h"
 #include "proc.h"
 #include "procInt.h"
 #include "procMigrate.h"
