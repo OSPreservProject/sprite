@@ -54,6 +54,7 @@ static  void	    DeleteSeg();
 static  void	    CleanSegment();
 static 	void	    FillSegmentInfo();
 static ReturnStatus AddToSeg();
+static ReturnStatus GetRemoteSegInfo();
 
 int	vmNumSegments = 256;
 
@@ -1831,12 +1832,15 @@ Vm_SegmentIncRef(segPtr, procPtr)
  *
  *	This routine takes in a pointer to a proc table entry and returns
  *	the segment table information for the segments that it uses.
+ *	If the proc table entry corresponds to a migrated process,
+ * 	contact its current host.
  *
  * Results:
  *	SUCCESS if could get the information, SYS_ARG_NOACCESS if the
  *	the pointer to the segment table entries passed in are bad amd
  *	SYS_INVALID_ARG if one of the segment pointers in the proc table
- *	are bad.
+ *	are bad.  Or, the result from the RPC to get the migrated process's
+ *	info.
  *
  * Side effects:
  *	None.
@@ -1862,6 +1866,9 @@ Vm_GetSegInfo(infoPtr, segID, infoSize, segBufPtr)
     int			segNum;
     int			bytesToCopy;
     Vm_SegmentInfo	segmentInfo;
+    int			host;
+    Proc_ControlBlock	*procPtr;
+    ReturnStatus 	status;
 
     segNum = (int) segID;
     bytesToCopy = min(sizeof(Vm_SegmentInfo), infoSize);
@@ -1872,20 +1879,41 @@ Vm_GetSegInfo(infoPtr, segID, infoSize, segBufPtr)
 		      (Address) &pcbInfo) != SUCCESS) {
 	    return(SYS_ARG_NOACCESS);
 	}
+	/*
+	 * Follow remote processes.  Use the peerHostID as a hint.
+	 */
+	host = 0;
+	if (pcbInfo.peerHostID != (int) NIL) {
+	    procPtr = Proc_LockPID(pcbInfo.processID);
+	    if (procPtr != (Proc_ControlBlock *) NIL) {
+		if (procPtr->state == PROC_MIGRATED) {
+		    host = procPtr->peerHostID;
+		}
+		Proc_Unlock(procPtr);
+	    }
+	}
 	for (i = VM_CODE; i <= VM_STACK; i++,(Address) segBufPtr += infoSize) {
 	    if (pcbInfo.genFlags & PROC_KERNEL) {
 		segPtr = vm_SysSegPtr;
+		FillSegmentInfo(segPtr, &segmentInfo);
 	    } else {
 		segNum = pcbInfo.vmSegments[i];
 		if (segNum < 0 || segNum >= vmNumSegments) {
 		    return(SYS_INVALID_ARG);
 		}
-		segPtr = &segmentTable[segNum];
-		if (segPtr < minSegAddr || segPtr > maxSegAddr) {
-		    return(SYS_INVALID_ARG);
+		if (host) {
+		    status = Proc_GetRemoteSegInfo(host, segNum, &segmentInfo);
+		    if (status != SUCCESS) {
+			return(status);
+		    }
+		} else {
+		    segPtr = &segmentTable[segNum];
+		    if (segPtr < minSegAddr || segPtr > maxSegAddr) {
+			return(SYS_INVALID_ARG);
+		    }
+		    FillSegmentInfo(segPtr, &segmentInfo);
 		}
 	    }
-	    FillSegmentInfo(segPtr, &segmentInfo);
 	    if (Vm_CopyOut(bytesToCopy, (Address) &segmentInfo, 
 			   (Address)segBufPtr) != SUCCESS) { 
 		return(SYS_ARG_NOACCESS);
@@ -1974,6 +2002,38 @@ VmGetSegPtr(segNum)
     int	segNum;
 {
     return(&segmentTable[segNum]);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_EncapSegInfo --
+ *
+ *	Encapsulate information for a particular segment.  This is used
+ * 	to send info to other hosts (for ps, e.g.).
+ *
+ * Results:
+ *	SUCCESS, or invalid arg if the segment doesn't exist.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Vm_EncapSegInfo(segNum, infoPtr)
+    int	segNum;			/* Number of the segment. */
+    Vm_SegmentInfo *infoPtr;	/* Pointer to encapsulated data. */
+{
+    Vm_Segment *segPtr;
+    segPtr = &segmentTable[segNum];
+    if (segPtr < segmentTable ||
+	segPtr > &(segmentTable[vmNumSegments - 1])) {
+	return(GEN_INVALID_ARG);
+    }
+    FillSegmentInfo(segPtr, infoPtr);
+    return(SUCCESS);
 }
 
 
