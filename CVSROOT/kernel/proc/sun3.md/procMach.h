@@ -22,12 +22,12 @@
 #include <sprite.h>
 
 #define	NEW_PAGE_SIZE		0x2000
-#define SUN_SEG_SIZE		NEW_PAGE_SIZE
 #ifdef sun4
 #define	NEW_SEG_SIZE		0x40000
 #else
 #define	NEW_SEG_SIZE		0x20000
 #endif
+#define SUN_SEG_SIZE		NEW_SEG_SIZE
 
 /*
  * Header prepended to each a.out file.
