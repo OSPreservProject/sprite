@@ -154,6 +154,15 @@ DoneCheck:
  *					(Implementation dependent)
  *	VMMACH_NUM_PAGE_MAP_ENTRIES	Number of total page map entries
  *	VMMACH_NUM_PMEGS		Number of pmegs
+ *	VMMACH_NUM_NET_SEGS		The number of segments used for mapping
+ *					net scatter gather arrays aligned to
+ *					avoid cache flushing.  This number is
+ *					picked by rule of thumb.  Usually there
+ *					are no more than 5 elements in a
+ *					scatter gather array, so 5 segments
+ *					avoids cache flushing.  The 6th segment
+ *					is for mapping any elements beyond this
+ *					consecutively (cache flushing used).
  *	
  */
 #define VMMACH_NUM_SEGS_PER_CONTEXT	0x4000	/* 2**14 */
@@ -174,10 +183,12 @@ DoneCheck:
 #define	VMMACH_DMA_START_ADDR		0xFFF00000
 #define	VMMACH_DMA_SIZE			0xC0000		/* still correct? */
 
-#define VMMACH_NET_MAP_START		0xFFFC0000
-#define	VMMACH_NET_MAP_SIZE		0x20000
-#define VMMACH_NET_MEM_START		(VMMACH_NET_MAP_START + \
-					 VMMACH_NET_MAP_SIZE)
+#define	VMMACH_NUM_NET_SEGS		6
+#define VMMACH_NET_MAP_START		(VMMACH_DEV_START_ADDR -	\
+				(VMMACH_NUM_NET_SEGS * VMMACH_SEG_SIZE))
+#define	VMMACH_NET_MAP_SIZE		(VMMACH_NUM_NET_SEGS * VMMACH_SEG_SIZE)
+#define VMMACH_NET_MEM_START		(VMMACH_DMA_START_ADDR +	\
+						VMMACH_DMA_SIZE)
 #define	VMMACH_NET_MEM_SIZE		(0x20000-VMMACH_PAGE_SIZE)
 #define	VMMACH_FIRST_SPECIAL_SEG	(((unsigned int) VMMACH_DEV_START_ADDR) >> VMMACH_SEG_SHIFT)
 						/* why is this one - 1??? */

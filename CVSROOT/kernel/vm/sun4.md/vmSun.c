@@ -1725,12 +1725,14 @@ SetupContext(procPtr)
 	 */
 #ifdef NOTDEF
 	VmMachSegMapCopy(contextPtr->map, 0, mach_KernStart);
-#else
+	XXX
 	/*
 	 * Since user addresses are never higher than the bottom of the
 	 * hole in the address space, this will save something like 30ms!
 	 */
 	VmMachSegMapCopy(contextPtr->map, 0, VMMACH_BOTTOM_OF_HOLE);
+#else
+	VmMachCopyUserSegMap(contextPtr->map);
 #endif
     } else {
 	/* XXX No need to flush anything? */
@@ -2165,7 +2167,9 @@ VmMach_NetMapPacket(inScatGathPtr, scatGathLength, outScatGathPtr)
 {
     register Address	mapAddr;
     register Address	endAddr;
-
+    int			segNum;
+    int			pageNum = 0;
+#ifdef NOTDEF
     for (mapAddr = (Address)VMMACH_NET_MAP_START;
          scatGathLength > 0;
 	 scatGathLength--, inScatGathPtr++, outScatGathPtr++) {
@@ -2193,6 +2197,68 @@ VmMach_NetMapPacket(inScatGathPtr, scatGathLength, outScatGathPtr)
 	    mapAddr += VMMACH_PAGE_SIZE_INT;
 	}
     }
+#else
+    for (segNum = 0 ; scatGathLength > 0;
+	    scatGathLength--, inScatGathPtr++, outScatGathPtr++) {
+	outScatGathPtr->length = inScatGathPtr->length;
+	if (inScatGathPtr->length == 0) {
+	    continue;
+	}
+	/*
+	 * For the first (VMMACH_NUM_NET_SEGS) - 1 elements in the
+	 * scatter gather array, map each element into a segment, aligned
+	 * with the mapping pages so that cache flushes will be avoided.
+	 */
+	if (segNum < VMMACH_NUM_NET_SEGS - 1) {
+	    /* do silly mapping */
+	    mapAddr = (Address)VMMACH_NET_MAP_START +
+		    (segNum * VMMACH_SEG_SIZE);
+	    /* align to same cache boundary */
+	    mapAddr += ((unsigned int)inScatGathPtr->bufAddr &
+		    (VMMACH_CACHE_SIZE - 1));
+	    /* set addr to beginning of page */
+	    (unsigned int) mapAddr &= ~VMMACH_OFFSET_MASK;
+	    VmMachFlushPage(mapAddr);
+	    VmMachSetPageMap(mapAddr, VmMachGetPageMap(inScatGathPtr->bufAddr));
+	    outScatGathPtr->bufAddr = (Address) ((unsigned)mapAddr +
+		    ((unsigned)inScatGathPtr->bufAddr & VMMACH_OFFSET_MASK));
+	    mapAddr += VMMACH_PAGE_SIZE_INT;
+	    endAddr = (Address)inScatGathPtr->bufAddr +
+		    inScatGathPtr->length - 1;
+	    if (((unsigned)inScatGathPtr->bufAddr & ~VMMACH_OFFSET_MASK_INT) !=
+		((unsigned)endAddr & ~VMMACH_OFFSET_MASK_INT)) {
+		VmMachFlushPage(mapAddr);
+		VmMachSetPageMap(mapAddr, VmMachGetPageMap(endAddr));
+	    }
+	    segNum++;
+	} else {
+	    /*
+	     * For elements beyond the last one, map them all into the
+	     * last mapping segment.  Cache flushing will be necessary for
+	     * these.
+	     */
+	    mapAddr = (Address)VMMACH_NET_MAP_START +
+		    (segNum * VMMACH_SEG_SIZE) + (pageNum * VMMACH_PAGE_SIZE);
+	    VmMachFlushPage(inScatGathPtr->bufAddr);
+	    VmMachFlushPage(mapAddr);
+	    VmMachSetPageMap(mapAddr, VmMachGetPageMap(inScatGathPtr->bufAddr));
+	    outScatGathPtr->bufAddr = (Address) ((unsigned)mapAddr +
+		    ((unsigned)inScatGathPtr->bufAddr & VMMACH_OFFSET_MASK));
+	    mapAddr += VMMACH_PAGE_SIZE_INT;
+	    pageNum++;
+	    endAddr = (Address)inScatGathPtr->bufAddr +
+		    inScatGathPtr->length - 1;
+	    if (((unsigned)inScatGathPtr->bufAddr & ~VMMACH_OFFSET_MASK_INT) !=
+		((unsigned)endAddr & ~VMMACH_OFFSET_MASK_INT)) {
+		VmMachFlushPage(endAddr);
+		VmMachFlushPage(mapAddr);
+		VmMachSetPageMap(mapAddr, VmMachGetPageMap(endAddr));
+		pageNum++;
+	    }
+	    printf("MapPacket: segNum is %d, pageNum is %d\n", segNum, pageNum);
+	}
+    }
+#endif NOTDEF
 }
 
 

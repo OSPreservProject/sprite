@@ -106,7 +106,6 @@ _VmMachWritePTE:
     nop
 
 
-#ifdef NOTDEF
 /*
  * ----------------------------------------------------------------------
  *
@@ -262,145 +261,6 @@ BByteCopyIt:
 BDoneCopying: 
     retl		/* return from leaf routine */
     nop
-#endif NOTDEF
-#ifdef NOTDEF
-.globl	_bcopy
-_bcopy:
-						/* sourcePtr in i0 */
-						/* destPtr in i1 */
-						/* numBytes in i2 */
-    /* Start prologue */
-    set		(-MACH_SAVED_WINDOW_SIZE), %OUT_TEMP1
-    save	%sp, %OUT_TEMP1, %sp
-    /* end prologue */
-/*
- * If the source or dest are not double-word aligned then everything must be
- * done as word or byte copies.
- */
-    or		%i0, %i1, %OUT_TEMP1
-    andcc	%OUT_TEMP1, 7, %g0
-    be		BDoubleWordCopy
-    nop
-    andcc	%OUT_TEMP1, 3, %g0
-    be		BWordCopy
-    nop
-    ba		BByteCopyIt
-    nop
-
-    /*
-     * Do as many 64-byte copies as possible.
-     */
-
-BDoubleWordCopy:
-    cmp    	%i2, 64
-    bl     	BFinishWord
-    nop
-    ldd		[%i0], %OUT_TEMP1	/* uses out_temp1 and out_temp2 */
-    std		%OUT_TEMP1, [%i1]
-    ldd		[%i0 + 8], %OUT_TEMP1
-    std		%OUT_TEMP1, [%i1 + 8]
-    ldd		[%i0 + 16], %OUT_TEMP1
-    std		%OUT_TEMP1, [%i1 + 16]
-    ldd		[%i0 + 24], %OUT_TEMP1
-    std		%OUT_TEMP1, [%i1 + 24]
-    ldd		[%i0 + 32], %OUT_TEMP1
-    std		%OUT_TEMP1, [%i1 + 32]
-    ldd		[%i0 + 40], %OUT_TEMP1
-    std		%OUT_TEMP1, [%i1 + 40]
-    ldd		[%i0 + 48], %OUT_TEMP1
-    std		%OUT_TEMP1, [%i1 + 48]
-    ldd		[%i0 + 56], %OUT_TEMP1
-    std		%OUT_TEMP1, [%i1 + 56]
-    
-    sub   	%i2, 64, %i2
-    add		%i0, 64, %i0
-    add		%i1, 64, %i1
-    ba     	BDoubleWordCopy
-    nop
-BWordCopy:
-    cmp		%i2, 64
-    bl		BFinishWord
-    nop
-    ld		[%i0], %OUT_TEMP1
-    st		%OUT_TEMP1, [%i1]
-    ld		[%i0 + 4], %OUT_TEMP1
-    st		%OUT_TEMP1, [%i1 + 4]
-    ld		[%i0 + 8], %OUT_TEMP1
-    st		%OUT_TEMP1, [%i1 + 8]
-    ld		[%i0 + 12], %OUT_TEMP1
-    st		%OUT_TEMP1, [%i1 + 12]
-    ld		[%i0 + 16], %OUT_TEMP1
-    st		%OUT_TEMP1, [%i1 + 16]
-    ld		[%i0 + 20], %OUT_TEMP1
-    st		%OUT_TEMP1, [%i1 + 20]
-    ld		[%i0 + 24], %OUT_TEMP1
-    st		%OUT_TEMP1, [%i1 + 24]
-    ld		[%i0 + 28], %OUT_TEMP1
-    st		%OUT_TEMP1, [%i1 + 28]
-    ld		[%i0 + 32], %OUT_TEMP1
-    st		%OUT_TEMP1, [%i1 + 32]
-    ld		[%i0 + 36], %OUT_TEMP1
-    st		%OUT_TEMP1, [%i1 + 36]
-    ld		[%i0 + 40], %OUT_TEMP1
-    st		%OUT_TEMP1, [%i1 + 40]
-    ld		[%i0 + 44], %OUT_TEMP1
-    st		%OUT_TEMP1, [%i1 + 44]
-    ld		[%i0 + 48], %OUT_TEMP1
-    st		%OUT_TEMP1, [%i1 + 48]
-    ld		[%i0 + 52], %OUT_TEMP1
-    st		%OUT_TEMP1, [%i1 + 52]
-    ld		[%i0 + 56], %OUT_TEMP1
-    st		%OUT_TEMP1, [%i1 + 56]
-    ld		[%i0 + 60], %OUT_TEMP1
-    st		%OUT_TEMP1, [%i1 + 60]
-    
-    sub   	%i2, 64, %i2
-    add		%i0, 64, %i0
-    add		%i1, 64, %i1
-    ba     	BWordCopy
-    nop
-
-    /*
-     * Copy up to 64 bytes of remainder, in 4-byte chunks.  I SHOULD do this
-     * quickly by dispatching into the middle of a sequence of move
-     * instructions, but I don't yet.
-     */
-
-BFinishWord:
-    cmp		%i2, 4
-    bl		BByteCopyIt
-    nop
-    ld		[%i0], %OUT_TEMP1
-    st		%OUT_TEMP1, [%i1]
-    sub		%i2, 4, %i2
-    add		%i0, 4, %i0
-    add		%i1, 4, %i1
-    ba		BFinishWord
-    nop
-    
-    /*
-     * Do one byte copies until done.
-     */
-BByteCopyIt:
-    tst    	%i2
-    ble     	BDoneCopying
-    nop
-    ldub	[%i0], %OUT_TEMP1
-    stb		%OUT_TEMP1, [%i1]
-    sub		%i2, 1, %i2
-    add		%i0, 1, %i0
-    add		%i1, 1, %i1
-    ba     	BByteCopyIt
-    nop
-
-    /* 
-     * Return.
-     */
-
-BDoneCopying: 
-    ret
-    restore
-#endif /* NOTDEF */
 
 /*
  * ----------------------------------------------------------------------------
@@ -710,6 +570,7 @@ _VmMachSetSegMap:
     retl	/* return from leaf routine */
     nop
 
+#ifdef NOTDEF
 /*
  * ----------------------------------------------------------------------------
  *
@@ -776,6 +637,93 @@ SkipStore:
 
     retl	/* return from leaf routine */
     nop
+#else	/* NOTDEF */
+/*
+ * New routine.
+ */
+
+.globl _VmMachCopyUserSegMap
+_VmMachCopyUserSegMap:
+    /*
+     * Due to the hole in the address space, I must make sure that no
+     * segment for an address in the hole gets anything written to it, since
+     * this would overwrite the pmeg mapping for a valid address's segment.
+     */
+
+    /* Start prologue */
+    set		(-MACH_SAVED_WINDOW_SIZE), %OUT_TEMP1
+    save	%sp, %OUT_TEMP1, %sp
+    /* end prologue */
+						/* segTableAddr in %i0 */
+
+    set		VMMACH_BOTTOM_OF_HOLE, %OUT_TEMP2	/* contains end addr */
+    srl		%OUT_TEMP2, VMMACH_SEG_SHIFT, %OUT_TEMP1	/* num segs */
+
+    /* panic if not divisable by 8, since we do 8 at a time in loop */
+    andcc	%OUT_TEMP1, 7, %g0
+    be		StartCopySetup
+    nop
+    /*	Call panic - what args? */
+    clr		%o0
+    call	_panic, 1
+    nop
+
+StartCopySetup:
+    /* preload offsets - each another seg size away */
+    set		VMMACH_SEG_SIZE, %i1
+    add		%i1, %i1, %i2
+    add		%i1, %i2, %i3
+    add		%i1, %i3, %i4
+    add		%i1, %i4, %i5
+    add		%i1, %i5, %o1
+    add		%i1, %o1, %o2
+    clr		%o0
+CopyLoop:
+#ifdef sun4c
+    lduh	[%i0], %OUT_TEMP1
+    stba	%OUT_TEMP1, [%o0] VMMACH_SEG_MAP_SPACE
+    lduh	[%i0 + 2], %OUT_TEMP1
+    stba	%OUT_TEMP1, [%o0 + %i1] VMMACH_SEG_MAP_SPACE
+    lduh	[%i0 + 4], %OUT_TEMP1
+    stba	%OUT_TEMP1, [%o0 + %i2] VMMACH_SEG_MAP_SPACE
+    lduh	[%i0 + 6], %OUT_TEMP1
+    stba	%OUT_TEMP1, [%o0 + %i3] VMMACH_SEG_MAP_SPACE
+    lduh	[%i0 + 8], %OUT_TEMP1
+    stba	%OUT_TEMP1, [%o0 + %i4] VMMACH_SEG_MAP_SPACE
+    lduh	[%i0 + 10], %OUT_TEMP1
+    stba	%OUT_TEMP1, [%o0 + %i5] VMMACH_SEG_MAP_SPACE
+    lduh	[%i0 + 12], %OUT_TEMP1
+    stba	%OUT_TEMP1, [%o0 + %o1] VMMACH_SEG_MAP_SPACE
+    lduh	[%i0 + 14], %OUT_TEMP1
+    stba	%OUT_TEMP1, [%o0 + %o2] VMMACH_SEG_MAP_SPACE
+#else
+    lduh	[%i0], %OUT_TEMP1
+    stha	%OUT_TEMP1, [%o0] VMMACH_SEG_MAP_SPACE
+    lduh	[%i0 + 2], %OUT_TEMP1
+    stha	%OUT_TEMP1, [%o0 + %i1] VMMACH_SEG_MAP_SPACE
+    lduh	[%i0 + 4], %OUT_TEMP1
+    stha	%OUT_TEMP1, [%o0 + %i2] VMMACH_SEG_MAP_SPACE
+    lduh	[%i0 + 6], %OUT_TEMP1
+    stha	%OUT_TEMP1, [%o0 + %i3] VMMACH_SEG_MAP_SPACE
+    lduh	[%i0 + 8], %OUT_TEMP1
+    stha	%OUT_TEMP1, [%o0 + %i4] VMMACH_SEG_MAP_SPACE
+    lduh	[%i0 + 10], %OUT_TEMP1
+    stha	%OUT_TEMP1, [%o0 + %i5] VMMACH_SEG_MAP_SPACE
+    lduh	[%i0 + 12], %OUT_TEMP1
+    stha	%OUT_TEMP1, [%o0 + %o1] VMMACH_SEG_MAP_SPACE
+    lduh	[%i0 + 14], %OUT_TEMP1
+    stha	%OUT_TEMP1, [%o0 + %o2] VMMACH_SEG_MAP_SPACE
+#endif /* sun4c */
+
+    set		(8 * VMMACH_SEG_SIZE), %OUT_TEMP1
+    add		%o0, %OUT_TEMP1, %o0
+    cmp		%o0, %OUT_TEMP2		/* compare against end addr */
+    blu		CopyLoop
+    add		%i0, 16, %i0		/* delay slot */
+
+    ret
+    restore
+#endif /* NOTDEF */
 
 /*
  * ----------------------------------------------------------------------------
