@@ -67,3 +67,4 @@ ungetc.c                 /sprite/src/lib/c/stdio/ungetc.c
 unlink.c                 /sprite/src/lib/c/unixSyscall/unlink.c
 vfprintf.c               /sprite/src/lib/c/stdio/vfprintf.c
 vfscanf.c                /sprite/src/lib/c/stdio/vfscanf.c
+strdup.c                 /sprite/src/lib/c/string/strdup.c
