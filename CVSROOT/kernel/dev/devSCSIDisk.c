@@ -30,6 +30,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devDiskStats.h"
 #include "devBlockDevice.h"
 #include "stdlib.h"
+#include "bstring.h"
 #include "dev/scsi.h"
 #include "dbg.h"
 #include "fsdm.h"
@@ -644,7 +645,7 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
     Fs_IOReply *replyPtr;	/* Size of outBuffer and returned signal */
 {
      ScsiDisk	*diskPtr = (ScsiDisk *) handlePtr;
-     ReturnStatus	status;
+     ReturnStatus	status = FAILURE;
 
      if ((ioctlPtr->command & ~0xffff) == IOC_SCSI) {
 	 status = DevScsiIOControl(diskPtr->devPtr, ioctlPtr, replyPtr);
