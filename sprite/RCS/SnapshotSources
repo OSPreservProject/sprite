@@ -1,38 +1,22 @@
 #!/bin/csh -f  
+
+onintr cleanup
+
 if ($#argv != 1) then
     echo "Usage: $0 versionNumber"
     exit
 endif
-set insDir = '/sprite/src/kernel/Installed'
+set insDir = '/sprite/src/kernel/Snapshots'
+set srcDir = '/sprite/src/kernel'
 set version = $1
-if (-e $insDir/$version) then
+if (-e $insDir/$version/.ssdone) then
     echo "$insDir/$version already exists. Skipping snapshot of sources."
     exit
 endif
 
-mkdir $insDir/$version
-foreach i (`cat /sprite/src/kernel/Modules` raid.null)
-    mkdir $insDir/$version/$i
-    switch ($i)
-        #
-	# The following modules should have the target of a symbolic link
-	# copied, not the link itself
-	#
-	case 'libc'
-	    set updateOptions = $updateOptions '-l'
-	    breaksw
-	default
-	    set updateOptions = ""
-	    breaksw
-    endsw
-    update $updateOptions $insDir/$i $insDir/$version/$i
-end
-
-#
-# Snapshot the kernel and user include files.  We have to change the
-# 'kernel' and 'user' links, since they are absolute in the 
-# uninstalled sources.
-#
+pushd $srcDir
+pmake SNAPDIR=$insDir SNAPVERSION=$version snapshot
+popd
 
 mkdir $insDir/$version/include
 update /sprite/lib/include $insDir/$version/include
@@ -61,4 +45,10 @@ foreach i (*.md)
 end
 popd
 
+touch $insDir/$version/.ssdone
+
+cleanup:
+    rm -f /tmp/ss.$$
+    rm -f /tmp/ss.libc.$$
+    rm -f /tmp/ss.script.$$
 
