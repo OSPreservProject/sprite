@@ -173,7 +173,6 @@ FsDeviceSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
     ioFileIDPtr->minor = descPtr->devUnit;
 
     if (streamIDPtr != (FsFileID *)NIL) {
-	register Fs_Stream *streamPtr;
 	/*
 	 * Truely preparing for an open.  Return the current modify
 	 * and access times for the I/O server's cache.  Return the
@@ -184,15 +183,9 @@ FsDeviceSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	deviceDataPtr->accessTime = descPtr->accessTime;
 	/*
 	 * Choose a streamID for the client that points to the device server.
-	 * We only need to choose the name here, that's why we discard
-	 * the stream.  It will be re-created on the device server in
-	 * the client open routine.
 	 */
-	streamPtr = FsStreamNew(ioFileIDPtr->serverID, (FsHandleHeader *)NIL,
-				useFlags, handlePtr->hdr.name);
-	*streamIDPtr = streamPtr->hdr.fileID;
+	FsStreamNewID(ioFileIDPtr->serverID, streamIDPtr);
 	deviceDataPtr->streamID = *streamIDPtr;
-	FsStreamDispose(streamPtr);
 
 	*clientDataPtr = (ClientData)deviceDataPtr;
 	*dataSizePtr = sizeof(FsDeviceState);
@@ -269,10 +262,9 @@ FsDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtrPt
 	 */
 	(void)FsIOClientOpen(&devHandlePtr->clientList, clientID, flags, FALSE);
 
-	streamPtr = FsStreamFind(&deviceDataPtr->streamID,
+	streamPtr = FsStreamAddClient(&deviceDataPtr->streamID, clientID,
 			(FsHandleHeader *)devHandlePtr, flags,
 			name, (Boolean *)NIL);
-	(void)FsStreamClientOpen(&streamPtr->clientList, clientID, flags);
 	FsHandleRelease(streamPtr, TRUE);
 
 	devHandlePtr->use.ref++;
@@ -961,10 +953,6 @@ FsDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
     Address	*dataPtr;	/* Return - pointer to FsDeviceState */
 {
     FsDeviceIOHandle			*devHandlePtr;
-    register Fs_Stream			*streamPtr;
-    Boolean				found;
-    Boolean				cache = FALSE;
-    Boolean				keepReference = FALSE;
 
     if (migInfoPtr->ioFileID.serverID != rpc_SpriteID) {
 	/*
@@ -985,108 +973,24 @@ FsDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
      * At the stream level, add the new client to the set of clients
      * for the stream, and check for any cross-network stream sharing.
      */
-    streamPtr = FsStreamFind(&migInfoPtr->streamID,
-		(FsHandleHeader *)devHandlePtr, migInfoPtr->flags,
-		(char *)NIL, &found);
-    if ((streamPtr->flags & FS_RMT_SHARED) == 0) {
-	/*
-	 * We don't think the stream is being shared so we
-	 * grab the offset from the client.
-	 */
-	streamPtr->offset = migInfoPtr->offset;
-    }
-    if ((migInfoPtr->flags & FS_RMT_SHARED) == 0) {
-	/*
-	 * The client doesn't perceive sharing of the stream so
-	 * it must be its last reference so we do an I/O close.
-	 */
-	(void)FsStreamClientClose(&streamPtr->clientList,
-				migInfoPtr->srcClientID);
-    } else if (migInfoPtr->flags & FS_NEW_STREAM) {
-	keepReference = TRUE;
-    }
-    if (FsStreamClientOpen(&streamPtr->clientList, dstClientID,
-	    migInfoPtr->flags)) {
-	/*
-	 * We detected network sharing so we mark the stream.
-	 */
-	streamPtr->flags |= FS_RMT_SHARED;
-#ifdef notdef
-	migInfoPtr->flags |= FS_RMT_SHARED;
-#endif notdef
-    }
-    if (keepReference) {
-	FsHandleUnlock(streamPtr);
-    } else {
-	FsHandleRelease(streamPtr, TRUE);
-    }
+    FsStreamMigClient(&migInfoPtr->streamID, migInfoPtr->srcClientID,
+			dstClientID, (FsHandleHeader *)devHandlePtr,
+			&migInfoPtr->offset, &migInfoPtr->flags);
     /*
      * Adjust use counts on the I/O handle to reflect any new sharing.
      */
-     if ((migInfoPtr->flags & FS_NEW_STREAM) &&
-       (migInfoPtr->flags & FS_RMT_SHARED)) {
-      /*
-       * The stream is becoming shared across the network so
-       * we need to increment the use counts on the I/O handle
-       * to reflect the additional client stream.
-       */
-      devHandlePtr->use.ref++;
-      if ((migInfoPtr->flags & FS_WRITE) &&
-	  !(migInfoPtr->flags & FS_LAST_WRITER)) {
-	  devHandlePtr->use.write++;
-      }
-    } else if ((migInfoPtr->flags & (FS_NEW_STREAM|FS_RMT_SHARED)) == 0) {
-	/*
-	 * The stream is no longer shared, and it is not new on the
-	 * target client, so we have to decrement the use counts
-	 * to reflect the fact that the original client's stream is not
-	 * referencing the I/O handle.
-	 */
-	devHandlePtr->use.ref--;
-	if (migInfoPtr->flags & FS_WRITE) {
-	    devHandlePtr->use.write--;
-	}
-    } else if (migInfoPtr->flags & FS_LAST_WRITER) {
-	/*
-	 * The stream is still open for reading but no longer for writing
-	 * on the source client.
-	 */
-	devHandlePtr->use.write--;
-    }
+    FsMigrateUseCounts(migInfoPtr->flags, &devHandlePtr->use);
 
     /*
-     * Move the client at the I/O handle level.  We are careful to only
-     * close the srcClient if its migration state indicates it isn't
-     * shared.  We are careful to only open the dstClient if it getting
-     * the stream for the first time.  Also, if the srcClient is switching
-     * from a writer to a reader, we remove its write reference.
+     * Move the client at the I/O handle level.
      */
-    if ((migInfoPtr->flags & FS_RMT_SHARED) == 0) {
-	found = FsIOClientClose(&devHandlePtr->clientList,
-		    migInfoPtr->srcClientID, migInfoPtr->flags, &cache);
-	if (!found) {
-	    Sys_Panic(SYS_WARNING,
-		"FsDeviceMigrate, IO Client %d not found\n",
-		migInfoPtr->srcClientID);
-	}
-    } else if (migInfoPtr->flags & FS_LAST_WRITER) {
-	found = FsIOClientRemoveWriter(&devHandlePtr->clientList,
-		    migInfoPtr->srcClientID);
-	if (!found) {
-	    Sys_Panic(SYS_WARNING,
-		"FsDeviceMigrate, IO Client %d not found\n",
-		migInfoPtr->srcClientID);
-	}
-    }
-    if (migInfoPtr->flags & FS_NEW_STREAM) {
-	(void)FsIOClientOpen(&devHandlePtr->clientList, dstClientID,
-		migInfoPtr->flags, FALSE);
-    }
+    FsIOClientMigrate(&devHandlePtr->clientList, migInfoPtr->srcClientID,
+			dstClientID, migInfoPtr->flags);
 
     *sizePtr = 0;
     *dataPtr = (Address)NIL;
-    *flagsPtr = streamPtr->flags;
-    *offsetPtr = streamPtr->offset;
+    *flagsPtr = migInfoPtr->flags;
+    *offsetPtr = migInfoPtr->offset;
     /*
      * We don't need this reference on the I/O handle; there is no change.
      */

@@ -130,13 +130,11 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	    *ioFileIDPtr = ioFileID;
 	    *clientDataPtr = (ClientData)NIL;
 	    *dataSizePtr = 0;
-	    streamPtr = FsStreamNew(rpc_SpriteID,
-		(FsHandleHeader *)ctrlHandlePtr, useFlags,
+	    streamPtr = FsStreamNewClient(rpc_SpriteID, clientID,
+				    (FsHandleHeader *)ctrlHandlePtr, useFlags,
 				    handlePtr->hdr.name);
 	    *streamIDPtr = streamPtr->hdr.fileID;
-	    (void)FsStreamClientOpen(&streamPtr->clientList,
-				     clientID,useFlags);
-	    FsHandleUnlock(streamPtr);
+	    FsHandleRelease(streamPtr, TRUE);
 	}
     } else {
 	if (streamIDPtr == (FsFileID *)NIL) {
@@ -187,11 +185,8 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	     * stream is kept here.  Instead, the streamID is returned to
 	     * the pdev server who sets up the shadow stream.
 	     */
-	    streamPtr = FsStreamNew(ctrlHandlePtr->serverID,
-			(FsHandleHeader *)NIL, useFlags, handlePtr->hdr.name);
-	    *streamIDPtr = streamPtr->hdr.fileID;
-	    pdevStatePtr->streamID = streamPtr->hdr.fileID;
-	    FsStreamDispose(streamPtr);
+	    FsStreamNewID(ctrlHandlePtr->serverID, streamIDPtr);
+	    pdevStatePtr->streamID = *streamIDPtr;
 	}
     }
     FsHandleRelease(ctrlHandlePtr, TRUE);
@@ -299,29 +294,23 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 	}
     }
     /*
+     * Put the client on the stream list.
+     */
+    cltStreamPtr = FsStreamAddClient(&pdevStatePtr->streamID, clientID,
+		(FsHandleHeader *)cltHandlePtr, *flagsPtr, name, &found);
+    FsHandleRelease(cltStreamPtr, TRUE);
+    /*
      * We have to look around and decide if we are being called
      * from Fs_Open, or via RPC from a remote client.  A remote client's
-     * processID and uid are passed to us via the FsPdevState.  We also
-     * have to ensure that a FS_STREAM exists and has the client
-     * on its list so the client's remote I/O ops. are accepted here, and
-     * so that we have the right number of client references.
+     * processID and uid are passed to us via the FsPdevState.
      */
-    cltStreamPtr = FsStreamFind(&pdevStatePtr->streamID,
-		(FsHandleHeader *)cltHandlePtr, *flagsPtr, name, &found);
-    (void)FsStreamClientOpen(&cltStreamPtr->clientList,
-			    clientID, *flagsPtr);
     if (clientID == rpc_SpriteID) {
 	procPtr = Proc_GetEffectiveProc();
 	procID = procPtr->processID;
 	uid = procPtr->effectiveUserID;
-	FsHandleRelease(cltStreamPtr, TRUE);
     } else {
 	procID = pdevStatePtr->procID;
 	uid = pdevStatePtr->uid;
-	/*
-	 * Keep a reference to the stream that will be released by Fs_RpcClose.
-	 */
-	FsHandleUnlock(cltStreamPtr);
     }
     /*
      * Set up the connection state and hook the client handle to it.
@@ -334,7 +323,7 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 	 * Set up a stream for the server process.  This will be picked
 	 * up by FsControlRead and converted to a user-level streamID.
 	 */
-	srvStreamPtr = FsStreamNew(rpc_SpriteID,
+	srvStreamPtr = FsStreamNewClient(rpc_SpriteID, rpc_SpriteID,
 				(FsHandleHeader *)cltHandlePtr->pdevHandlePtr,
 				FS_READ|FS_USER, name);
 	notifyPtr = Mem_New(PdevNotify);
@@ -343,6 +332,7 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 	List_Insert((List_Links *)notifyPtr,
 		    LIST_ATREAR(&ctrlHandlePtr->queueHdr));
 	FsHandleUnlock(srvStreamPtr);
+
 	FsFastWaitListNotify(&ctrlHandlePtr->readWaitList);
 	FsHandleUnlock(cltHandlePtr->pdevHandlePtr);
 	/*
@@ -591,10 +581,6 @@ FsPseudoStreamMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr,
     Address	*dataPtr;	/* Return - pointer to FsPdevState */
 {
     PdevClientIOHandle			*cltHandlePtr;
-    register Fs_Stream			*streamPtr;
-    Boolean				found;
-    Boolean				cache = FALSE;
-    Boolean				keepReference = FALSE;
 
     if (migInfoPtr->ioFileID.serverID != rpc_SpriteID) {
 	/*
@@ -621,65 +607,20 @@ FsPseudoStreamMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr,
      * At the stream level, add the new client to the set of clients
      * for the stream, and check for any cross-network stream sharing.
      */
-    streamPtr = FsStreamFind(&migInfoPtr->streamID,
-			     (FsHandleHeader *)cltHandlePtr, migInfoPtr->flags,
-			     (char *)NIL, &found);
-    if ((streamPtr->flags & FS_RMT_SHARED) == 0) {
-	/*
-	 * We don't think the stream is being shared so we
-	 * grab the offset from the client.
-	 */
-	streamPtr->offset = migInfoPtr->offset;
-    }
-    if ((migInfoPtr->flags & FS_RMT_SHARED) == 0) {
-	/*
-	 * The client doesn't perceive sharing of the stream so
-	 * it must be its last reference so we do an I/O close.
-	 */
-	(void)FsStreamClientClose(&streamPtr->clientList,
-				migInfoPtr->srcClientID);
-    } else if (migInfoPtr->flags & FS_NEW_STREAM) {
-	keepReference = TRUE;
-    }
-    if (FsStreamClientOpen(&streamPtr->clientList, dstClientID,
-	    migInfoPtr->flags)) {
-	/*
-	 * We detected network sharing so we mark the stream.
-	 */
-	streamPtr->flags |= FS_RMT_SHARED;
-#ifdef notdef
-	migInfoPtr->flags |= FS_RMT_SHARED;
-#endif notdef
-    }
-    if (keepReference) {
-	FsHandleUnlock(streamPtr);
-    } else {
-	FsHandleRelease(streamPtr, TRUE);
-    }
+    FsStreamMigClient(&migInfoPtr->streamID, migInfoPtr->srcClientID,
+		    dstClientID, (FsHandleHeader *)cltHandlePtr,
+		    &migInfoPtr->offset, &migInfoPtr->flags);
+
     /*
-     * Move the client at the I/O handle level.  We are careful to only
-     * close the srcClient if its migration state indicates it isn't
-     * shared.  We are careful to only open the dstClient if it getting
-     * the stream for the first time.
+     * Move the client at the I/O handle level.
      */
-    if ((migInfoPtr->flags & FS_RMT_SHARED) == 0) {
-	found = FsIOClientClose(&cltHandlePtr->clientList,
-		    migInfoPtr->srcClientID, migInfoPtr->flags, &cache);
-	if (!found) {
-	    Sys_Panic(SYS_WARNING,
-		"FsPseudoStreamMigrate, IO Client %d not found\n",
-		migInfoPtr->srcClientID);
-	}
-    }
-    if (migInfoPtr->flags & FS_NEW_STREAM) {
-	(void)FsIOClientOpen(&cltHandlePtr->clientList, dstClientID,
-		migInfoPtr->flags, FALSE);
-    }
+    FsIOClientMigrate(&cltHandlePtr->clientList, migInfoPtr->srcClientID,
+			dstClientID, migInfoPtr->flags);
 
     *sizePtr = 0;
     *dataPtr = (Address)NIL;
-    *flagsPtr = streamPtr->flags;
-    *offsetPtr = streamPtr->offset;
+    *flagsPtr = migInfoPtr->flags;
+    *offsetPtr = migInfoPtr->offset;
     /*
      * We don't need this reference on the I/O handle; there is no change.
      */
