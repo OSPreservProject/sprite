@@ -32,24 +32,24 @@
  */
 
 typedef struct FsOpenArgs {
-    FsFileID	prefixID;	/* File ID from prefix handle, MUST BE FIRST */
-    FsFileID	rootID;		/* File ID of root.  MUST FOLLOW prefix ID.
+    Fs_FileID	prefixID;	/* File ID from prefix handle, MUST BE FIRST */
+    Fs_FileID	rootID;		/* File ID of root.  MUST FOLLOW prefix ID.
 				 * Used to trap ".." past the root. */
     int		useFlags;	/* Flags defined in fs.h */
     int		permissions;	/* Permission bits for created files.  Already
 				 * reflects per-process permission mask */
     int		type;		/* Used to contrain open to a specific type */
     int		clientID;	/* Host ID of client doing the open */
-    FsUserIDs	id;		/* User and group IDs */
+    Fs_UserIDs	id;		/* User and group IDs */
 } FsOpenArgs;
 
 typedef struct FsOpenResults {
-    FsFileID	ioFileID;	/* FileID used to get to I/O server.  This is
+    Fs_FileID	ioFileID;	/* FileID used to get to I/O server.  This is
 				 * set by the name server, although the I/O
 				 * server has the right to modify the major
 				 * and minor numbers */
-    FsFileID	streamID;	/* File ID of the stream being opened */
-    FsFileID	nameID;		/* FileID used to get to the name of the file.*/
+    Fs_FileID	streamID;	/* File ID of the stream being opened */
+    Fs_FileID	nameID;		/* FileID used to get to the name of the file.*/
     int		dataSize;	/* Size of extra streamData */
     ClientData	streamData;	/* Pointer to stream specific extra data */
 } FsOpenResults;
@@ -58,10 +58,10 @@ typedef struct FsOpenResults {
  * FS_DOMAIN_LOOKUP arguments and results.
  */
 typedef struct FsLookupArgs {
-    FsFileID prefixID;	/* FileID of the prefix, MUST BE FIRST */
-    FsFileID rootID;	/* FileID of the root, MUST FOLLOW prefixID */
+    Fs_FileID prefixID;	/* FileID of the prefix, MUST BE FIRST */
+    Fs_FileID rootID;	/* FileID of the root, MUST FOLLOW prefixID */
     int useFlags;	/* FS_EXECUTE or FS_RENAME */
-    FsUserIDs id;	/* User and group IDs */
+    Fs_UserIDs id;	/* User and group IDs */
     int clientID;	/* Needed to expand $MACHINE */
 } FsLookupArgs;
 
@@ -69,7 +69,7 @@ typedef struct FsLookupArgs {
  * FS_DOMAIN_GET_ATTR results.
  */
 typedef struct FsGetAttrResults {
-    FsFileID		*fileIDPtr;	/* File ID that indicates I/O server */
+    Fs_FileID		*fileIDPtr;	/* File ID that indicates I/O server */
     Fs_Attributes	*attrPtr;	/* Returned results */
 } FsGetAttrResults;
 
@@ -79,7 +79,7 @@ typedef struct FsGetAttrResults {
 typedef	union	FsGetAttrResultsParam {
     int	prefixLength;
     struct	AttrResults {
-	FsFileID	fileID;
+	Fs_FileID	fileID;
 	Fs_Attributes	attrs;
     } attrResults;
 } FsGetAttrResultsParam;
@@ -97,11 +97,11 @@ typedef struct FsSetAttrArgs {
  * FS_DOMAIN_MAKE_DEVICE arguments and results.
  */
 typedef struct FsMakeDeviceArgs {
-    FsFileID prefixID;	/* FileID of the prefix, MUST BE FIRST */
-    FsFileID rootID;	/* FileID of the root, MUST BE SECOND */
+    Fs_FileID prefixID;	/* FileID of the prefix, MUST BE FIRST */
+    Fs_FileID rootID;	/* FileID of the root, MUST BE SECOND */
     Fs_Device device;
     int permissions;	/* Permissions already reflect per-process mask */
-    FsUserIDs id;
+    Fs_UserIDs id;
     int clientID;
 } FsMakeDeviceArgs;
 
