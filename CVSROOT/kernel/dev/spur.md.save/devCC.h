@@ -29,4 +29,11 @@ extern ReturnStatus Dev_CCIOControl();
 extern ReturnStatus Dev_CCClose();
 extern ReturnStatus Dev_CCSelect();
 
+extern ReturnStatus Dev_PCCOpen();
+extern ReturnStatus Dev_PCCRead();
+extern ReturnStatus Dev_PCCWrite();
+extern ReturnStatus Dev_PCCIOControl();
+extern ReturnStatus Dev_PCCClose();
+extern ReturnStatus Dev_PCCSelect();
+
 #endif _DEVCC

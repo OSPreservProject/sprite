@@ -90,6 +90,11 @@ DevFsTypeOps devFsOpTable[] = {
      */
     {DEV_CC,   	 Dev_CCOpen, Dev_CCRead, Dev_CCWrite,
 		     Dev_CCIOControl, Dev_CCClose, Dev_CCSelect},
+    /*
+     * processed cache controler device.
+     */
+    {DEV_PCC,       Dev_PCCOpen, Dev_PCCRead, Dev_PCCWrite,
+		    Dev_PCCIOControl, Dev_PCCClose, Dev_PCCSelect},
 };
 
 int devNumDevices = sizeof(devFsOpTable) / sizeof(DevFsTypeOps);
