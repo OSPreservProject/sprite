@@ -47,13 +47,13 @@ Mach_MonFuncs mach_MonFuncs = {
     (int (*)()) MACH_MON_SAVEREGS,
     (int (*)()) MACH_MON_LOADREGS,
     (int (*)()) MACH_MON_JUMPS8,
-    (int (*)()) MACH_MON_GETENV2,
+    (char *(*)()) MACH_MON_GETENV2,
     (int (*)()) MACH_MON_SETENV2,
     (int (*)()) MACH_MON_ATONUM,
     (int (*)()) MACH_MON_STRCMP,
     (int (*)()) MACH_MON_STRLEN,
-    (int (*)()) MACH_MON_STRCPY,
-    (int (*)()) MACH_MON_STRCAT,
+    (char *(*)()) MACH_MON_STRCPY,
+    (char *(*)()) MACH_MON_STRCAT,
     (int (*)()) MACH_MON_GETCMD,
     (int (*)()) MACH_MON_GETNUMS,
     (int (*)()) MACH_MON_ARGPARSE,
@@ -132,8 +132,46 @@ void
 Mach_MonReboot(rebootString)
     char	*rebootString;
 {
-    mach_MonFuncs.setenv2("bootpath",rebootString);
+    char *bootpath;
+    if (*rebootString != '\0') {
+	mach_MonFuncs.setenv2("bootpath",rebootString);
+    } else {
+	bootpath = mach_MonFuncs.getenv2("bootpath");
+	if (bootpath == (char *)NULL || *bootpath == '\0') {
+	    /*
+	     * Hardware doesn't have a bootpath.
+	     */
+	    mach_MonFuncs.setenv2("bootpath",DEFAULT_REBOOT);
+	    printf("Using default %s\n",DEFAULT_REBOOT);
+	}
+	/*
+	 * Otherwise use hardware's bootpath.
+	 */
+    }
     *MACH_USE_NON_VOLATILE |= MACH_NON_VOLATILE_FLAG;
     mach_MonFuncs.autoboot();
     panic("Mach_MonReboot: Reboot failed (I'm still alive aren't I?)\n");
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_ArgParse --
+ *
+ *	Parse a string into ds3100 string table form.
+ *
+ * Results:
+ *     Returns argc.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+int
+Mach_ArgParse(string,table)
+char *string;
+MachStringTable *table;
+{
+    mach_MonFuncs.argparse(string,table);
 }
