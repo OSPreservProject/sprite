@@ -37,14 +37,6 @@ extern	Boolean	sys_ErrorShutdown;
 extern	int	sys_NumCalls[];
 
 extern	void	Sys_Init();
-extern	void	Sys_Printf();
-#define Sys_SafePrintf	Sys_Printf
-#ifdef NOTDEF
-/* No one calls this one anyway. */
-extern	void	Sys_UnSafePrintf();
-#endif /* NOTDEF */
-extern	void	Sys_HostPrint();
-extern	void	Sys_Panic();
 extern	void	printf();
 extern	void	panic();
 
