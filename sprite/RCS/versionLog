@@ -265,4 +265,23 @@ Profiling on the ds3100.
 LFS added.
 ProcExit closes a process's files in two phases to avoid races between
 the vm and fs modules during process exit.
+
+1.079	Tue Dec 11 13:08:36 PST 1990
+Sosp traces and counters in place.
+vmSun.c:
+    Cache flushing during PMEG stealing in the VM module should be faster now.
+Merge "extra" Server RPC stats into the regular structure.
+fsioStream.c:
+    Bug fix to prevent reopens with file types of -1 from indexing through -1
+    in the file type switch on the server.  Poison packet fix for clients.
+Sparcstation scsi driver added.
+FscacheBlocks.c:
+    Patched problem with files hanging on dirty list no dirty blocks.
+procExec.c:
+    Returns E2BIG if anything in the environment is too long. (Unix compat.)
+Changes to get kernel profiling working.
+On sun4c's the dma reset is now owned by the dev module and not the net module.
+Added support for kgcorein dbgMain.c
+Added the mop protocol in devNet.c.
+lfsMem.c: removed cache memory requirements for file systems.
     New files linked in from the net library.
