@@ -39,6 +39,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <machparam.h>
 #include <string.h>
 
+#ifdef SOSP91
+#include <sospRecord.h>
+#endif
+
 extern Boolean fsconsist_ClientCachingEnabled;
 
 
@@ -408,6 +412,15 @@ Fs_IOControl(streamPtr, ioctlPtr, replyPtr)
 		}
 	    }
 	    return(status);	/* Do not pass down IOC_PREFIX */
+#ifdef SOSP91
+	} else if ((command == IOC_REPOSITION) &&
+	    (streamType == FSIO_RMT_FILE_STREAM)) {
+	    int		*offsetPtr;
+	    offsetPtr = (int *) (ioctlPtr->inBuffer + 
+				    sizeof(Ioc_RepositionArgs));
+	    *offsetPtr = streamPtr->offset;
+	    ioctlPtr->inBufSize += sizeof(int);
+#endif
 	}
 
 	status = (*fsio_StreamOpTable[streamType].ioControl)
@@ -501,6 +514,12 @@ Fs_IOControl(streamPtr, ioctlPtr, replyPtr)
 		    *(int *)ioctlPtr->outBuffer = newOffset;
 		    replyPtr->length = sizeof(int);
 		}
+#ifdef SOSP91
+		if (streamType == FSIO_LCL_FILE_STREAM) {
+		    SOSP_ADD_LSEEK_TRACE(streamPtr->hdr.fileID, 
+			streamPtr->offset, newOffset);
+		}
+#endif
 		streamPtr->offset = newOffset;
 	    }
 	    break;
@@ -648,9 +667,15 @@ Fs_Close(streamPtr)
 	 */
 	Fsutil_HandleLock(streamPtr->ioHandlePtr);
 
+#ifdef SOSP91
+	status = (fsio_StreamOpTable[streamPtr->ioHandlePtr->fileID.type].close)
+		(streamPtr, rpc_SpriteID, procPtr->processID, streamPtr->flags,
+		0, (ClientData)NIL, (int *) NIL);
+#else 
 	status = (fsio_StreamOpTable[streamPtr->ioHandlePtr->fileID.type].close)
 		(streamPtr, rpc_SpriteID, procPtr->processID, streamPtr->flags,
 		0, (ClientData)NIL);
+#endif
 #ifdef lint
 	status = Fsio_FileClose(streamPtr, rpc_SpriteID, procPtr->processID,
 		streamPtr->flags, 0, (ClientData)NIL);
