@@ -211,18 +211,6 @@ typedef struct RpcService {
 extern RpcService rpcService[];
 
 /*
- * The form in which the user expects the server tracing info.
- */
-typedef	struct	RpcServerUserStateInfo {
-    int		index;
-    int		clientID;
-    int		channel;
-    int		state;
-    int		num;
-    Time	time;
-} RpcServerUserStateInfo;
-
-/*
  * A histogram of the service times for the different RPCs.
  */
 extern Rpc_Histogram	*rpcServiceTime[];
