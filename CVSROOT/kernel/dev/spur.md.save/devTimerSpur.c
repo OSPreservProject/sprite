@@ -61,11 +61,6 @@ static  unsigned int profileTicks;
 static	DevCounter	zeroCount = {0,0};
 
 /*
- * Time per tick of high 32bits of counter.
- */
-static Time		timeHigh;		
-
-/*
  * The largest interval value.
  */
 #define	MAXINT	((unsigned int ) 0xffffffff)
@@ -74,8 +69,28 @@ static Time		timeHigh;
  * Scale factor to make integer division more accurate. 
  */
 #define	SCALE_FACTOR	100
-
 
+/*
+ * 2 ^ 32.
+ */
+#define	TWO_TO_32 	4294967296.0
+
+#ifndef FLOATING_POINT_CONVERT
+static	Time	timeHigh;	/* Time per high tick of counter. */
+static unsigned int maxMicrosecondMutiple;/* Maximum number that we can
+					   * multiply timeHigh.microseconds 
+					   * by and still fix in a 32bit 
+					   * integer.  */
+static unsigned int secondsPerMicrosecondMultiple;
+					/* The number of seconds per each 
+					 * maxMicrosecondMutiple. 
+					 */
+/*
+ * The maximum number that we can multiply and microsecond value and have it
+ * fit an a 32bit integer.
+ */
+#define	MAX_MICROSEC_MULTIPLE	((int)(MAXINT / ONE_SECOND))
+#endif
 /*
  *----------------------------------------------------------------------
  *
@@ -489,15 +504,6 @@ Dev_CounterInit()
 {
     unsigned int modeRegister;	/* Local copy of CC mode register */
 
-    /*
-     * Initialized the number of seconds per tick of high word of 
-     * counter.
-     */
-
-    timeHigh.seconds =  (int) (0xffffffff / TIMER_FREQ);
-    timeHigh.microseconds = (int) (((0xffffffff % TIMER_FREQ) * SCALE_FACTOR) /
-				((TIMER_FREQ * SCALE_FACTOR) / ONE_SECOND));
-
     DISABLE_INTR();
     /*
      * Make sure the timer is not ticking.
@@ -521,6 +527,21 @@ Dev_CounterInit()
     modeRegister |= (FREERUNNING_TIMER_MODE_BIT);
     Mach_Write8bitCCReg(MACH_MODE_REG,modeRegister);
     Mach_EnableNonmaskableIntr();
+
+#ifndef FLOAT_COUNTER_CONVERT
+    /*
+     * Initailized values used by counter conversion routines.
+     */
+    {
+	double	intPart, modf();
+	timeHigh.microseconds = (int)
+		((ONE_SECOND * modf(TWO_TO_32/TIMER_FREQ,&intPart)) + 0.5);
+	timeHigh.seconds = (int) intPart;
+	maxMicrosecondMutiple = (unsigned int)(TWO_TO_32/timeHigh.microseconds);
+	secondsPerMicrosecondMultiple = (unsigned int) (TWO_TO_32/ONE_SECOND);
+    }
+#endif
+
     ENABLE_INTR();
 
 }
@@ -614,17 +635,54 @@ Dev_CounterCountToTime(count, resultPtr)
     DevCounter	count;
     Time *resultPtr;
 {
-    unsigned int leftOver;
-    Time	tmp;
+#ifdef FLOAT_COUNTER_CONVERT
+    extern	double	modf();
+    double	countDouble;
 
-    resultPtr->seconds = (int) (count.low / TIMER_FREQ);
-    leftOver = (unsigned int) (count.low - (resultPtr->seconds * TIMER_FREQ));
-    resultPtr->microseconds = (int) ((leftOver * SCALE_FACTOR) /
-				((TIMER_FREQ * SCALE_FACTOR) / ONE_SECOND));
 
-    Time_Multiply(timeHigh,count.high,&tmp);
-    Time_Add(*resultPtr, tmp, resultPtr);
 
+    countDouble = (count.low + TWO_TO_32 * count.high) / TIMER_FREQ;
+    resultPtr->microseconds = (int)
+			((1000000.0 * modf(countDouble,&countDouble)) + 0.5);
+    resultPtr->seconds = (int) countDouble;
+#else
+    unsigned int	low, frac;
+
+    resultPtr->seconds = timeHigh.seconds * count.high;
+    if (count.high > maxMicrosecondMutiple) { 
+	resultPtr->seconds += (count.high / maxMicrosecondMutiple) * 
+				secondsPerMicrosecondMultiple;
+	low = (count.high % maxMicrosecondMutiple) * timeHigh.microseconds;
+    } else {
+	low = count.high * timeHigh.microseconds;
+    }
+    if (low > ONE_SECOND) {
+	resultPtr->seconds += low/ONE_SECOND;
+        resultPtr->microseconds = low % ONE_SECOND; 
+    } else {
+        resultPtr->microseconds = low; 
+    }
+
+    resultPtr->seconds += count.low / TIMER_FREQ;
+    frac = count.low % TIMER_FREQ;
+    if (frac < MAX_MICROSEC_MULTIPLE) {
+	resultPtr->microseconds += (frac * ONE_SECOND) / TIMER_FREQ;
+    } else if (frac < MAX_MICROSEC_MULTIPLE*10) {
+	resultPtr->microseconds += ((frac * (ONE_SECOND/10)) / (TIMER_FREQ/10));
+    } else if (frac < MAX_MICROSEC_MULTIPLE*100) {
+	resultPtr->microseconds += ((frac * (ONE_SECOND/100))/(TIMER_FREQ/100));
+    } else if (frac <MAX_MICROSEC_MULTIPLE*1000 ) {
+	resultPtr->microseconds += ((frac * (ONE_SECOND/1000)) / 	
+						(TIMER_FREQ/1000));
+    } else {
+	resultPtr->microseconds += ((frac * (ONE_SECOND/10000)) /
+						(TIMER_FREQ/10000));
+    }
+    if (resultPtr->microseconds > ONE_SECOND) {
+	resultPtr->microseconds -= ONE_SECOND;
+	resultPtr->seconds++;
+    }
+#endif
 }
 
 
@@ -693,22 +751,39 @@ Dev_CounterTimeToCount(time, resultPtr)
     Time time;
     DevCounter *resultPtr;
 {
-    unsigned int intervalLow;
 
-    /*
-     * Number of seconds in each DevCounter.high tick.
-     */
-#define	SECONDS_HIGH	((int)(MAXINT/TIMER_FREQ))
+#ifdef FLOAT_COUNTER_CONVERT
 
-    resultPtr->high =  (time.seconds / SECONDS_HIGH);
-    resultPtr->low = (int) ((time.seconds % SECONDS_HIGH) * TIMER_FREQ);
-    intervalLow = (int) ((time.microseconds / SCALE_FACTOR) *
-		((TIMER_FREQ * SCALE_FACTOR)/ONE_SECOND));
-    resultPtr->low += intervalLow;
-    if (resultPtr->low < intervalLow) {
-	resultPtr->high += 1;
+    double	countDouble;
+
+
+    countDouble = (time.seconds + (time.microseconds / 1000000.0)) 
+			* (double)TIMER_FREQ;
+
+    resultPtr->high =  (int) (countDouble / TWO_TO_32 );
+    resultPtr->low = (int)((countDouble - (resultPtr->high * TWO_TO_32)) + 0.5);
+#else
+    Time	newtime;
+    unsigned  	int	ticks;
+
+    if (time.seconds > timeHigh.seconds) {
+	unsigned int	high;
+	resultPtr->high = high = (time.seconds / (timeHigh.seconds+1));
+	resultPtr->low = 0;
+	Dev_CounterCountToTime(*resultPtr,&newtime);
+	Time_Subtract(time, newtime, &time);
+	Dev_CounterTimeToCount(time,resultPtr);
+	resultPtr->high += high; 
+	return; 
+    } else {
+	resultPtr->high = 0;
     }
-#undef SECONDS_HIGH
+    ticks = time.seconds * TIMER_FREQ;
+    resultPtr->low =  (time.microseconds / 100) * (TIMER_FREQ/10000) + ticks;
+    if (resultPtr->low < ticks) {
+	resultPtr->high++;
+    }
+#endif
 }
 
 
