@@ -54,6 +54,12 @@ Sync_SlowLockStub(lockPtr)
 {
     ReturnStatus	status = SUCCESS;
     Proc_ControlBlock	*procPtr;
+#ifdef	sequent
+    Sync_UserLock *userLockPtr =
+		(Sync_UserLock*) ((Address) lockPtr + mach_KernelVirtAddrUser);
+#else	/* !sequent */
+    Sync_UserLock *userLockPtr = lockPtr;
+#endif	/* sequent */
 
     procPtr = Proc_GetCurrentProc();
 
@@ -63,9 +69,9 @@ Sync_SlowLockStub(lockPtr)
 	return(status);
     }
     MASTER_LOCK(sched_MutexPtr);
-    while (Mach_TestAndSet(&(lockPtr->inUse)) != 0) {
-	lockPtr->waiting = TRUE;
-	(void) SyncEventWaitInt((unsigned int)lockPtr, TRUE);
+    while (Mach_TestAndSet(&(userLockPtr->inUse)) != 0) {
+	userLockPtr->waiting = TRUE;
+	(void) SyncEventWaitInt((unsigned int)userLockPtr, TRUE);
 #ifdef spur
 	Mach_InstCountEnd(1);
 #endif
@@ -118,6 +124,12 @@ Sync_SlowWaitStub(event, lockPtr, wakeIfSignal)
     Boolean		wakeIfSignal;
 {
     ReturnStatus	status;
+#ifdef	sequent
+    Sync_UserLock *userLockPtr =
+		(Sync_UserLock*) ((Address) lockPtr + mach_KernelVirtAddrUser);
+#else	/* !sequent */
+    Sync_UserLock *userLockPtr = lockPtr;
+#endif	/* sequent */
 
     status = Vm_PinUserMem(VM_READWRITE_ACCESS, sizeof(*lockPtr),
 			(Address)lockPtr);
@@ -128,8 +140,8 @@ Sync_SlowWaitStub(event, lockPtr, wakeIfSignal)
     /*
      * release the monitor lock and wait on the condition
      */
-    lockPtr->inUse = 0;
-    lockPtr->waiting = FALSE;
+    userLockPtr->inUse = 0;
+    userLockPtr->waiting = FALSE;
     SyncEventWakeupInt((unsigned int)lockPtr);
 
     if (SyncEventWaitInt(event, wakeIfSignal)) {
@@ -174,6 +186,11 @@ Sync_SlowBroadcastStub(event, waitFlagPtr)
     int *waitFlagPtr;
 {
     ReturnStatus	status;
+#ifdef	sequent
+    int *userWaitFlagPtr =(int*)((Address)waitFlagPtr+mach_KernelVirtAddrUser);
+#else	/* !sequent */
+    int *userWaitFlagPtr = waitFlagPtr;
+#endif	/* sequent */
 
     status = Vm_PinUserMem(VM_READWRITE_ACCESS, sizeof(*waitFlagPtr), 
 			(Address)waitFlagPtr);
@@ -183,7 +200,7 @@ Sync_SlowBroadcastStub(event, waitFlagPtr)
 
     MASTER_LOCK(sched_MutexPtr);
 
-    *waitFlagPtr = FALSE;
+    *userWaitFlagPtr = FALSE;
     SyncEventWakeupInt(event);
 
 #ifdef spur

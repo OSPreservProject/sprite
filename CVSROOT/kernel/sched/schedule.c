@@ -28,6 +28,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <devCC.h>
 #endif
 
+#ifdef sequent
+#include "machSGSProc.h"
+#include "devClockArbiter.h"	/* for blinky lights */
+#endif /* sequent */
+
 static int	foundOnDeck[MACH_MAX_NUM_PROCESSORS];
 static int	foundInQueue[MACH_MAX_NUM_PROCESSORS];
 static int	missedStack[MACH_MAX_NUM_PROCESSORS];
@@ -590,6 +595,20 @@ IdleLoop()
 	Mach_EnableIntr();
 	panic("Interrupt level at %d going into idle loop.\n", i);
     }
+
+#ifdef sequent
+    /*
+     * Really going idle, turn off the front panel light
+     * and the processor board light.
+     */
+    if (light_show) {
+	if (fp_lights) {
+	    FP_LIGHTOFF(cpu);
+	}
+	*(int *)PHYS_LED = 0;
+    }
+#endif /* sequent */
+
     while (1) {
 	/*
 	 * Wait for a process to become runnable.  
@@ -710,6 +729,20 @@ exit:
     */
 	sched_Instrument.numReadyProcesses -= 1;
     }
+
+#ifdef sequent
+    /*
+     * Leaving idle, turn on the front panel light
+     * and the processor board light.
+     */
+    if (light_show) {
+	if (fp_lights) {
+	    FP_LIGHTON(cpu);
+	}
+	*(int *)PHYS_LED = 1;
+    }
+#endif /* sequent */
+
     return(procPtr);
 }
 
@@ -1197,9 +1230,16 @@ Sched_IdleProcessor(pnum)
      * Insure that processor number is in range.   
      * 
      */
+
+#ifdef sequent
+    if ((pnum < 0) || (pnum >= mach_NumProcessors)) {
+        return GEN_INVALID_ARG;
+    }
+#else /* sequent */
     if (pnum >= MACH_MAX_NUM_PROCESSORS) {
 	return (GEN_INVALID_ARG);
     }
+#endif /* sequent */
     MASTER_LOCK(sched_MutexPtr);
     switch (sched_ProcessorStatus[pnum]) { 
 	case SCHED_PROCESSOR_ACTIVE: 

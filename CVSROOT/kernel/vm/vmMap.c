@@ -242,7 +242,7 @@ Vm_MakeAccessible(accessType, numBytes, startAddr, retBytesPtr, retAddrPtr)
      * falls into and which page in the segment.
      */
     VmVirtAddrParse(procPtr, startAddr, &virtAddr);
-    
+
     segPtr = virtAddr.segPtr;
     /*
      * See if the beginning address falls into a segment.
@@ -255,7 +255,18 @@ Vm_MakeAccessible(accessType, numBytes, startAddr, retBytesPtr, retAddrPtr)
 
     procPtr->vmPtr->numMakeAcc++;
     *retBytesPtr = numBytes;
+
+#ifdef	sequent
+    /*
+     * Relocate the returned address to allow kernel to address it
+     * directly.  mach_KernelVirtAddrUser should be defined for all
+     * machines (with value == 0 on most).
+     */
+    *retAddrPtr = startAddr + mach_KernelVirtAddrUser;
+#else
     *retAddrPtr = startAddr;
+#endif  /* sequent */
+
     firstPage = virtAddr.page;
     lastPage = ((unsigned int) (startAddr) + numBytes - 1) >> vmPageShift;
     if (segPtr->type == VM_STACK) {
@@ -348,6 +359,13 @@ Vm_MakeUnaccessible(addr, numBytes)
 {
     Proc_ControlBlock  	*procPtr;
     register Vm_Segment	*segPtr;
+
+#ifdef	sequent
+    /*
+     * Un-relocate the address back to user-relative.
+     */
+    addr -= mach_KernelVirtAddrUser;
+#endif	/* sequent */
 
     LOCK_MONITOR;
 

@@ -1425,12 +1425,10 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
     Vm_VirtAddr			srcVirtAddr;
     Vm_VirtAddr			destVirtAddr;
     int				i;
-    Address			srcAddr;
+#ifndef sequent    
+    Address			srcAddr = (Address) NIL;
     Address			destAddr = (Address)NIL;
-#ifndef sequent
-    Address			srcAddr;
-    Address			destAddr;
-#endif /* sequent */
+#endif    
     Fs_Stream			*newFilePtr;
 
     if (srcSegPtr->type == VM_HEAP) {
@@ -1466,7 +1464,7 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
 	     */
 	    if (vm_Tracing) {
 		Vm_TraceSegCreate	segCreate;
-    
+
 		segCreate.segNum = destSegPtr->segNum;
 		segCreate.parSegNum = srcSegPtr->segNum;
 		segCreate.segType = destSegPtr->type;
@@ -1504,9 +1502,6 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
      */
     CopyInfo(srcSegPtr, destSegPtr, &tSrcPTEPtr, &tDestPTEPtr, &srcVirtAddr,
 	     &destVirtAddr);
-#ifndef sequent    
-    srcAddr = (Address) NIL;
-#endif
 
     /*
      * Copy over memory.
