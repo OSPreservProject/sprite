@@ -29,6 +29,8 @@
 
 typedef struct FsOpenArgs {
     FsFileID	prefixID;	/* File ID from prefix handle, MUST BE FIRST */
+    FsFileID	rootID;		/* File ID of root.  MUST FOLLOW prefix ID.
+				 * Used to trap ".." past the root. */
     int		useFlags;	/* Flags defined in fs.h */
     int		permissions;	/* Permission bits for created files.  Already
 				 * reflects per-process permission mask */
@@ -43,6 +45,7 @@ typedef struct FsOpenResults {
 				 * server has the right to modify the major
 				 * and minor numbers */
     FsFileID	streamID;	/* File ID of the stream being opened */
+    FsFileID	nameID;		/* FileID used to get to the name of the file.*/
     int		dataSize;	/* Size of extra streamData */
     ClientData	streamData;	/* Pointer to stream specific extra data */
 } FsOpenResults;
@@ -52,6 +55,7 @@ typedef struct FsOpenResults {
  */
 typedef struct FsLookupArgs {
     FsFileID prefixID;	/* FileID of the prefix, MUST BE FIRST */
+    FsFileID rootID;	/* FileID of the root, MUST FOLLOW prefixID */
     int useFlags;	/* FS_EXECUTE or FS_RENAME */
     FsUserIDs id;	/* User and group IDs */
 } FsLookupArgs;
