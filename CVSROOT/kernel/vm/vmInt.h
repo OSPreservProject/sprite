@@ -463,7 +463,7 @@ extern int vmShmDebug;
 #ifdef lint
 #define dprintf printf
 #else
-#define dprintf if (vmShmDebug) printf
+#define dprintf if (vmShmDebug & 2) printf
 #endif
 
 /*
