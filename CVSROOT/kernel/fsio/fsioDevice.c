@@ -1355,7 +1355,7 @@ Fsio_BootTimeTtyOpen()
      * ttyDriver to a serial line if the EEPROM is properly configured.
      */
     ttyFileID.type = FSIO_LCL_DEVICE_STREAM;
-    ttyFileID.serverID = FS_LOCALHOST_ID;
+    ttyFileID.serverID = rpc_SpriteID;
     ttyFileID.major = DEV_TERM;
     ttyFileID.minor = 0;
     (void)FsioDeviceHandleInit(&ttyFileID, "/dev/console", &devHandlePtr);
@@ -1367,6 +1367,8 @@ Fsio_BootTimeTtyOpen()
     if (DEV_TYPE_INDEX(devHandlePtr->device.type) >= devNumDevices) {
 	status = FS_DEVICE_OP_INVALID;
     } else {
+/* XXX */ printf("Fsio_BootTimeTtyOpen: spriteID %d devHandle <%x>\n",
+			rpc_SpriteID, devHandlePtr);
 	status = (*devFsOpTable[DEV_TYPE_INDEX(devHandlePtr->device.type)].open)
 		    (&devHandlePtr->device, FS_READ|FS_WRITE, 
 		     (Fs_NotifyToken)devHandlePtr);
