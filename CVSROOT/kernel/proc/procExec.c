@@ -20,6 +20,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "mach.h"
+#ifdef sun4
+#include "machMon.h"
+#endif sun4
 #include "proc.h"
 #include "procInt.h"
 #include "sync.h"
@@ -255,7 +258,6 @@ Proc_KernExec(fileName, argPtrArray)
 
     status = DoExec(fileName, strlen(fileName), argPtrArray,
 		    PROC_MAX_EXEC_ARGS, (char **) NIL, 0, FALSE, FALSE);
-
     /*
      * If the exec failed, then delete the extra segments and fix up the
      * proc table entry to put us back into kernel mode.
@@ -515,7 +517,15 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
 	 * Make room on the stack for this string.  Make it 4 byte aligned.
 	 * Also up the amount needed to save the argument list.
 	 */
+#ifndef sun4
 	userStackPointer -= ((realLength) + 3) & ~3;
+#else
+	/*
+	 * For initial sun4 port, I'm requiring the user stack pointer to
+	 * be double-word aligned.
+	 */
+	userStackPointer -= ((realLength) + 7) & ~7;
+#endif /* sun4 */
 	argStringLength += realLength;
 	/*
 	 * Copy over the argument and ensure null termination.
@@ -589,7 +599,15 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
 	/*
 	 * Make room on the stack for this string.  Make it 4 byte aligned.
 	 */
+#ifndef sun4
 	userStackPointer -= ((realLength) + 3) & ~3;
+#else
+	/*
+	 * For the initial sun4 port, I'm requiring the user stack pointer
+	 * to be double-word aligned.
+	 */
+	userStackPointer -= ((realLength) + 7) & ~7;
+#endif /* sun4 */
 	/*
 	 * Copy over the environment variable and ensure null termination.
 	 */
@@ -693,13 +711,24 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
     }
     Vm_MakeUnaccessible(copyAddr - argBytes, argBytes);
     /*
-     * Now copy the array of arguments plus argc, the address of argv, and
-     * the address of envp onto the stack.
+     * The stack ends up in the following state:  the top word is argc.
+     * Right below this is the array of pointers to arguments (argv).  Right
+     * below this is the array of pointers to environment stuff (envp).  So,
+     * to figure out the address of argv, one simply adds a word to the address
+     * of the top of the stack.  To figure out the address of envp, one
+     * looks at argc and skips over the appropriate amount of space to jump
+     * over argc and argv = (1 + (argc + 1)) * 4 bytes.  The extra "1" is for
+     * the null argument at the end of argv.  Below all that stuff on the
+     * stack, but not necessarily immediately below, are the environment and
+     * argument stuff copied there earlier.
      */
     copyLength = (argNumber + envNumber + 2) * sizeof(Address) + sizeof(int);
     newArgPtrArray[argNumber] = (char *) USER_NIL;
     newEnvPtrArray[envNumber] = (char *) USER_NIL;
     userStackPointer -= copyLength;
+#ifdef sun4
+    userStackPointer -= ((realLength) + 7) & ~7;
+#endif /* sun4 */
     tArgNumber = argNumber;
     (void) Vm_CopyOut(sizeof(int), (Address) &tArgNumber,
 		      userStackPointer);
@@ -751,6 +780,9 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
      * because there is an implicit enable interrupts when we return to user 
      * mode.
      */
+#ifdef sun4
+    Mach_MonPrintf("Calling Mach_ExecUserProc with userStackPtr 0x%x, argc %d\n", userStackPointer, tArgNumber);
+#endif sun4
     Mach_ExecUserProc(procPtr, userStackPointer, (Address) entry);
     panic("DoExec: Proc_RunUserProc returned.\n");
 
