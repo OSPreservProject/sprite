@@ -587,15 +587,14 @@ Boolean fsStreamDisposeDebug = TRUE;
 
 ENTRY void
 FsStreamDispose(streamPtr)
-    Fs_Stream *streamPtr;
+    register Fs_Stream *streamPtr;
 {
     Boolean noClients = TRUE;
     
     if (!List_IsEmpty(&streamPtr->clientList)) {
 	noClients = FALSE;
 	if (fsStreamDisposeDebug) {
-	    FsStreamClientInfo *clientPtr;
-	    char *FsFileTypeToString();
+	    register FsStreamClientInfo *clientPtr;
 
 	    LIST_FORALL(&streamPtr->clientList, (List_Links *) clientPtr) {
 
