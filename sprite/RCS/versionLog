@@ -413,4 +413,6 @@ fixed stupid bug in test of count limit in scsi group 0 command
 
 1.092	Wed May  8 17:29:45 PDT 1991
 first installed ds5000 kernel
+
+1.093	Wed May 29 17:50:34 PDT 1991
     New files linked in from the net library.
