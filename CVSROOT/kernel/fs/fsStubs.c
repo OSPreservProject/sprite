@@ -49,6 +49,7 @@ static char rcsid[] = "$Header$";
 #include <vm.h>
 #include <fs.h>
 #include <fsUnixStubs.h>
+#include <procUnixStubs.h>
 #include <fsutil.h>
 #include <fsutilTrace.h>
 #include <fsio.h>
@@ -70,7 +71,8 @@ char *errs[] = {"ENOERR", "EPERM", "ENOENT", "ESRCH", "EINTR", "EIO",
 	"EPROCLIM", "EUSERS", "EDQUOT", "ESTALE", "EREMOTE"};
 
 #undef Mach_SetErrno
-#define Mach_SetErrno(err) printf("Error %d (%s) at %d in %s\n", err,\
+#define Mach_SetErrno(err) if (debugFsStubs) \
+	printf("Error %d (%s) at %d in %s\n", err,\
 	err<sizeof(errs)/sizeof(char *)?errs[err]:"",\
 	__LINE__, __FILE__); Proc_GetActualProc()->unixErrno = (err)
 
@@ -111,7 +113,7 @@ char *errs[] = {"ENOERR", "EPERM", "ENOENT", "ESRCH", "EINTR", "EIO",
 #define Mach_SetErrno(err)
 #endif
 
-extern int debugFsStubs;
+int debugFsStubs = 0;
 
 static int CvtSpriteToUnixType _ARGS_((register int spriteFileType));
 static void CvtSpriteToUnixAtts _ARGS_((register Fs_Attributes *spriteAttsPtr,
@@ -531,8 +533,11 @@ GetTermInfo(streamPtr, ioctl, ttyb, lmode, tc, ltc)
 	ioctl->outBuffer = (Address) ltc;
 	status = Fs_IOControl(streamPtr, ioctl, &reply);
     }
-    printf("GetTermInfo: werase = %x, int = %x\n", ltc->t_werasc, tc->t_intrc);
-    if (status != SUCCESS) {
+    if (debugFsStubs) {
+	printf("GetTermInfo: werase = %x, int = %x\n", ltc->t_werasc,
+		tc->t_intrc);
+    }
+    if (status != SUCCESS && debugFsStubs) {
 	printf("GetTermInfo: status %x\n", status);
     }
     return status;
@@ -708,8 +713,10 @@ Fs_NewReadStub(streamID, buffer, numBytes)
     }
     for (;;) {
 	amountRead = numBytes - totalAmountRead;
-	printf("Fs_Read(%x, %x, %x, %x(%d))\n", streamPtr, buffer,
-		streamPtr->offset, &amountRead, amountRead);
+	if (debugFsStubs) {
+	    printf("Fs_Read(%x, %x, %x, %x(%d))\n", streamPtr, buffer,
+		    streamPtr->offset, &amountRead, amountRead);
+	}
 	status = Fs_Read(streamPtr, buffer, streamPtr->offset, &amountRead);
 	totalAmountRead += amountRead;
 	if (status != SUCCESS) {
@@ -725,7 +732,9 @@ Fs_NewReadStub(streamID, buffer, numBytes)
 		continue;
 	    }
 #endif	    
-	    printf("Fs_Read aborted by signal\n");
+	    if (debugFsStubs) {
+		printf("Fs_Read aborted by signal\n");
+	    }
 	    Mach_SetErrno(Compat_MapCode(status));
 	    return -1;
 	}
@@ -760,7 +769,7 @@ Fs_NewWriteStub(streamID, buffer, numBytes)
     int                 writeLength;
     int                 totalAmountWritten;
 
-    if (1 || debugFsStubs) {
+    if (debugFsStubs) {
 	printf("Fs_NewWriteStub(%d, %d)\n", streamID, numBytes);
     }
     totalAmountWritten = 0;
@@ -785,7 +794,9 @@ Fs_NewWriteStub(streamID, buffer, numBytes)
 		continue;
 	    }
 #endif	    
-	    printf("Fs_Write aborted by signal\n");
+	    if (debugFsStubs) {
+		printf("Fs_Write aborted by signal\n");
+	    }
 	    Mach_SetErrno(Compat_MapCode(status));
 	    return -1;
 	}
@@ -868,13 +879,17 @@ Fs_NewOpenStubInt(pathName, unixFlags, permissions)
     useFlags &= ~FS_KERNEL_FLAGS;
     useFlags |= (FS_USER | FS_FOLLOW);
 
-    printf("Fs_NewOpenStubInt: Fs_Open(%s, %x, %x, %x, %x)\n", pathName,
-	    useFlags, FS_FILE, permissions&0777, &streamPtr);
+    if (debugFsStubs) {
+	printf("Fs_NewOpenStubInt: Fs_Open(%s, %x, %x, %x, %x)\n", pathName,
+		useFlags, FS_FILE, permissions&0777, &streamPtr);
+    }
     status = Fs_Open(pathName, useFlags, FS_FILE,
 	permissions & 0777, &streamPtr);
 
     if (status != SUCCESS) {
-	printf("Fs_Open: error %x\n", status);
+	if (debugFsStubs) {
+	    printf("Fs_Open: error %x\n", status);
+	}
 	Mach_SetErrno(Compat_MapCode(status));
 	return -1;
     }
@@ -885,12 +900,16 @@ Fs_NewOpenStubInt(pathName, unixFlags, permissions)
      */
     status = Fs_GetStreamID(streamPtr, &streamID);
     if (status != SUCCESS) {
-	printf("open (2) status = %08lx\n", status);
+	if (debugFsStubs) {
+	    printf("open (2) status = %08lx\n", status);
+	}
 	(void) Fs_Close(streamPtr);
 	Mach_SetErrno(Compat_MapCode(status));
 	return -1;
     }
-    printf("Fs_NewOpenStubInt: result %d\n", streamID);
+    if (debugFsStubs) {
+	printf("Fs_NewOpenStubInt: result %d\n", streamID);
+    }
     return streamID;
 }
 
@@ -924,12 +943,14 @@ Fs_NewOpenStub(pathName, unixFlags, permissions)
     /*
      * Copy the name in from user space to the kernel stack.
      */
-    procPtr->unixProgress = 0x11beef22;
+    procPtr->unixProgress = PROC_PROGRESS_UNIX;
     if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
 		       &pathNameLength) != SUCCESS) {
 	Mach_SetErrno(EACCES);
-	printf("Errno: %x = %d\n", &Proc_GetActualProc()->unixErrno,
-		Proc_GetActualProc()->unixErrno);
+	if (debugFsStubs) {
+	    printf("Errno: %x = %d\n", &Proc_GetActualProc()->unixErrno,
+		    Proc_GetActualProc()->unixErrno);
+	}
 	return -1;
     }
     if (pathNameLength == FS_MAX_PATH_NAME_LENGTH) {
@@ -1496,7 +1517,9 @@ Fs_IoctlInt(streamID, command, inBufSize, inBuf, outBufSize, outBuf,
 	status = Fs_IOControl(streamPtr, &ioctl, reply);
     }
     if (status != SUCCESS) {
-	printf("Ioctl %x failed\n", command);
+	if (debugFsStubs) {
+	    printf("Ioctl %x failed\n", command);
+	}
 	*err= Compat_MapCode(status);
 	Mach_SetErrno(*err);
 	return -1;
@@ -1561,7 +1584,9 @@ Fs_LseekStub(streamID, offset, whence)
 	    return -1;
     }
     inArgs.offset = offset;
-    printf("ioctl: %d, %d\n", inArgs.offset, inArgs.base);
+    if (debugFsStubs) {
+	printf("ioctl: %d, %d\n", inArgs.offset, inArgs.base);
+    }
     status = Fs_IoctlInt(streamID, IOC_REPOSITION, sizeof(Ioc_RepositionArgs),
 	    (Address)&inArgs, sizeof(retVal), (Address)&retVal, &reply, &err);
     if (status < 0) {
@@ -1687,10 +1712,14 @@ Fs_StatStub(pathName, attrsBufPtr)
     if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
 		       &pathNameLength) != SUCCESS) {
 	status = SYS_ARG_NOACCESS;
-	printf("Fs_StatStub: arg no access\n");
+	if (debugFsStubs) {
+	    printf("Fs_StatStub: arg no access\n");
+	}
     } else if (pathNameLength == FS_MAX_PATH_NAME_LENGTH) {
 	status = FS_INVALID_ARG;
-	printf("Fs_StatStub: len\n");
+	if (debugFsStubs) {
+	    printf("Fs_StatStub: len\n");
+	}
     } else {
 	if (CheckIfPresent(newName) != SUCCESS) {
 	    Mach_SetErrno(ENOENT);
@@ -1707,11 +1736,12 @@ Fs_StatStub(pathName, attrsBufPtr)
 	}
     }
     if (status != SUCCESS) {
-	printf("Fs_StatStub: failure\n");
+	if (debugFsStubs) {
+	    printf("Fs_StatStub: failure\n");
+	}
 	Mach_SetErrno(Compat_MapCode(status));
 	return -1;
     }
-    printf("Fs_StatStub: success\n");
     return 0;
 }
 
@@ -1768,7 +1798,9 @@ Fs_LstatStub(pathName, attrsBufPtr)
 	       status = Fs_GetAttributes(newName,FS_ATTRIB_FILE,&spriteAttrs);
 	    }
 	} else {
-	    printf("Skipping stat of remote link\n");
+	    if (debugFsStubs) {
+		printf("Skipping stat of remote link\n");
+	    }
 	}
 	if (status == SUCCESS) {
 	    CvtSpriteToUnixAtts(&spriteAttrs, &tmpAttrsBuf);
@@ -1830,11 +1862,12 @@ Fs_FstatStub(streamID, attrsBufPtr)
 	}
     }
     if (status != SUCCESS) {
-	printf("Fs_Fstat failed\n");
+	if (debugFsStubs) {
+	    printf("Fs_Fstat failed\n");
+	}
 	Mach_SetErrno(Compat_MapCode(status));
 	return -1;
     }
-    printf("Fs_Fstat ok\n");
     return 0;
 }
 
@@ -1960,7 +1993,9 @@ Fs_PipeStub()
 	Mach_SetErrno(Compat_MapCode(status));
 	return -1;
     }
-    printf("Fs_PipeStub: return %d, %d\n", inStreamID, outStreamID);
+    if (debugFsStubs) {
+	printf("Fs_PipeStub: return %d, %d\n", inStreamID, outStreamID);
+    }
     Mach_Return2(outStreamID);
     return inStreamID;
 }
@@ -2670,7 +2705,6 @@ Fs_IoctlStub(streamID, request, buf)
             }
 
 	    status = GetTermInfo(streamPtr, &ioctl, &ttyb, &lmode, &tc, &ltc);
-	    printf("TCGETS: werase = %x, int = %x\n", ltc.t_werasc, tc.t_intrc);
 	    if (status == SUCCESS) {
 		CvtSgttybToTermios(&ttyb, &lmode, &tc, &ltc, &ts);
 		if (request==TCGETS) {
@@ -2711,7 +2745,6 @@ Fs_IoctlStub(streamID, request, buf)
                 printf("ioctl: TCSETA/S/SW/SF\n");
             }
 	    status = GetTermInfo(streamPtr, &ioctl, &ttyb, &lmode, &tc, &ltc);
-	    printf("TCSETS: werase = %x, int = %x\n", ltc.t_werasc, tc.t_intrc);
 	    if (status != SUCCESS) {
 		Mach_SetErrno(Compat_MapCode(status));
 		return -1;
@@ -2731,7 +2764,6 @@ Fs_IoctlStub(streamID, request, buf)
 		bcopy((Address) tio.c_cc, (Address) ts.c_cc, NCC);
 	    }
 	    if (status == SUCCESS) {
-		printf("  IOC_TTY_SET_PARAMS\n");
 		CvtTermiosToSgttyb((type==SETSTYPE)?1:0, &ts, &ttyb,
 			&lmode, &tc, &ltc);
 		ioctl.command = IOC_TTY_SET_PARAMS;
@@ -2740,29 +2772,22 @@ Fs_IoctlStub(streamID, request, buf)
 		status = Fs_IOControl(streamPtr, &ioctl, &reply);
 	    }
 	    if (status == SUCCESS) {
-		printf("  IOC_TTY_SET_LM\n");
 		ioctl.command = IOC_TTY_SET_LM;
 		ioctl.inBufSize = sizeof(int);
 		ioctl.inBuffer = (Address) &lmode;
 		status = Fs_IOControl(streamPtr, &ioctl, &reply);
 	    }
 	    if (status == SUCCESS) {
-		printf("  IOC_TTY_SET_TCHARS\n");
 		ioctl.command = IOC_TTY_SET_TCHARS;
 		ioctl.inBufSize = sizeof(struct tchars);
 		ioctl.inBuffer = (Address) &tc;
 		status = Fs_IOControl(streamPtr, &ioctl, &reply);
 	    }
 	    if (status == SUCCESS) {
-		printf("  IOC_TTY_SET_LTCHARS\n");
 		ioctl.command = IOC_TTY_SET_LTCHARS;
 		ioctl.inBufSize = sizeof(struct ltchars);
 		ioctl.inBuffer = (Address) &ltc;
 		status = Fs_IOControl(streamPtr, &ioctl, &reply);
-	    }
-	    printf("TCGETS: werase = %x, int = %x\n", ltc.t_werasc, tc.t_intrc);
-	    if (status != SUCCESS) {
-		printf("Debug: TCSET failed\n");
 	    }
         }
 	break;
@@ -3358,9 +3383,6 @@ Fs_MkdirStub(pathName, permissions)
 
     if (debugFsStubs) {
 	printf("Fs_MkdirStub\n");
-    } else {
-	printf("Fs_MkdirStub skipped\n");
-	printf("debugFsStubs at %x\n", &debugFsStubs);
     }
     /*
      * Copy the name in from user space to the kernel stack.
@@ -3823,7 +3845,9 @@ Fs_GetdirInt(streamPtr, inDir, oldOff, newOff, kernDir)
 	status = Fs_Read(streamPtr, (Address)inDir, streamPtr->offset,
 		&amountRead);
 	if (status != SUCCESS) {
-	    printf("Fs_GetdirInt: Read failed: %x\n", status);
+	    if (debugFsStubs) {
+		printf("Fs_GetdirInt: Read failed: %x\n", status);
+	    }
 	    Mach_SetErrno(Compat_MapCode(status));
 	    return -1;
 	}
@@ -3831,7 +3855,6 @@ Fs_GetdirInt(streamPtr, inDir, oldOff, newOff, kernDir)
 	    return EISDIR;
 	}
 	if (Vm_CopyIn(HDR_SIZE, (Address)inDir, (Address)kernDir) != SUCCESS) {
-	    printf("Copy in failure\n");
 	    Mach_SetErrno(EINVAL);
 	    return -1;
 	}
@@ -3849,7 +3872,6 @@ Fs_GetdirInt(streamPtr, inDir, oldOff, newOff, kernDir)
 	    SWAP2(kernDir->d_namlen);
 	    if (Vm_CopyOut(HDR_SIZE, (Address)kernDir, (Address) inDir)
 		    != SUCCESS) {
-		printf("Copy out failure\n");
 		Mach_SetErrno(EINVAL);
 		return -1;
 	    }
@@ -4042,7 +4064,7 @@ Fs_GetdirentriesStub(fd, buf, nbytes, basep)
 	    } intIn, intOut;
 
 	    if (dirPtr->nameLength <= FS_MAX_NAME_LENGTH) {
-		printf("MachUNIXGetDirEntries: Bad directory format\n");
+		printf("Getdirentries: Bad directory format\n");
 	    }
 	    intIn.i = dirPtr->fileNumber;
 	    intOut.c[0] = intIn.c[3];

@@ -66,6 +66,8 @@ Boolean	mach_KernelMode;
  */
 Boolean mach_AtInterruptLevel = FALSE;
 
+extern int debugProcStubs;
+
 /*
  * The machine type string is imported by the file system and
  * used when expanding $MACHINE in file names.
@@ -1254,11 +1256,15 @@ MachUserReturn(procPtr)
 	     * We must also ensure that the argument registers are the
 	     * same as when we came in.
 	     */
-	    printf("Restarting signal; old pc = %x\n",
-		    procPtr->machStatePtr->userState.excStackPtr->pc);
+	    if (debugProcStubs) {
+		printf("Restarting signal; old pc = %x\n",
+			procPtr->machStatePtr->userState.excStackPtr->pc);
+	    }
 	    procPtr->machStatePtr->userState.excStackPtr->pc -= 4;
-	    printf("Restarting signal; new pc = %x\n",
-		    procPtr->machStatePtr->userState.excStackPtr->pc);
+	    if (debugProcStubs) {
+		printf("Restarting signal; new pc = %x\n",
+			procPtr->machStatePtr->userState.excStackPtr->pc);
+	    }
 	    procPtr->unixProgress = PROC_PROGRESS_UNIX;
 	}
 	if (Sig_Handle(procPtr, &sigStack.sigStack, &pc)) {
@@ -1288,7 +1294,7 @@ MachUserReturn(procPtr)
     Sig_AllowMigration(procPtr);
 
     if (procPtr->unixProgress != PROC_PROGRESS_NOT_UNIX &&
-            procPtr->unixProgress != PROC_PROGRESS_UNIX) {
+            procPtr->unixProgress != PROC_PROGRESS_UNIX && debugProcStubs) {
         printf("UnixProgress = %d leaving MachUserReturn\n",
                 procPtr->unixProgress);
     }
@@ -1366,8 +1372,10 @@ SetupSigHandler(procPtr, sigStackPtr, pc)
 		    sigStackPtr->sigStack.sigNum);
 	    return;
 	}
-	printf("Unix signal %d(%d) to %x\n", unixSignal,
-		sigStackPtr->sigStack.sigNum, procPtr->processID);
+	if (debugProcStubs) {
+	    printf("Unix signal %d(%d) to %x\n", unixSignal,
+		    sigStackPtr->sigStack.sigNum, procPtr->processID);
+	}
 	unixSigStack.sigNum = unixSignal;
 	unixSigStack.sigCode = sigStackPtr->sigStack.sigCode;
 	unixSigStack.sigContextPtr = (struct sigcontext *)(usp + 4*sizeof(int));
@@ -1379,10 +1387,12 @@ SetupSigHandler(procPtr, sigStackPtr, pc)
 		(int) statePtr->userState.excStackPtr->pc;
 	unixSigStack.sigContext.sc_ps =
 		(int) statePtr->userState.excStackPtr->statusReg;
-	printf("sp = %x, pc = %x, ps = %x, len = %d to %x, exPc = %x\n",
-		statePtr->userState.userStackPtr, pc,
-		unixSigStack.sigContext.sc_ps, sizeof(UnixSignalStack),
-		(Address)usp, statePtr->userState.excStackPtr->pc);
+	if (debugProcStubs) {
+	    printf("sp = %x, pc = %x, ps = %x, len = %d to %x, exPc = %x\n",
+		    statePtr->userState.userStackPtr, pc,
+		    unixSigStack.sigContext.sc_ps, sizeof(UnixSignalStack),
+		    (Address)usp, statePtr->userState.excStackPtr->pc);
+	}
 	/*
 	 * Copy the stack out to user space.
 	 */
@@ -1393,7 +1403,8 @@ SetupSigHandler(procPtr, sigStackPtr, pc)
 	    Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
 	}
     } else {
-	if (procPtr->unixProgress != -1) {
+	if (procPtr->unixProgress != PROC_PROGRESS_NOT_UNIX &&
+		debugProcStubs) {
 	    printf("Warning: process %x has unixProgress = %x\n",
 		    procPtr->processID, procPtr->unixProgress);
 	}
@@ -1772,14 +1783,16 @@ Mach_SigreturnStub()
     if (Sig_SigsetmaskStub(bufVals[1])<0) {
 	printf("Sig_SigsetmaskStub error in Sigreturn on %x\n", bufVals[1]);
     }
-    printf("saved usp = %x, SP= %x, exSp = %x\n",
-	    procPtr->machStatePtr->userState.userStackPtr, 
-	    procPtr->machStatePtr->userState.trapRegs[SP],
-	    procPtr->machStatePtr->userState.excStackPtr);
-    printf("Mach_SigreturnStub(%x from %x): %x, %x, %x, %x, %x\n", jmpBuf,
-	    procPtr->machStatePtr->userState.userStackPtr,
-	    bufVals[0], bufVals[1],
-	    bufVals[2], bufVals[3], bufVals[4]);
+    if (debugProcStubs) {
+	printf("saved usp = %x, SP= %x, exSp = %x\n",
+		procPtr->machStatePtr->userState.userStackPtr, 
+		procPtr->machStatePtr->userState.trapRegs[SP],
+		procPtr->machStatePtr->userState.excStackPtr);
+	printf("Mach_SigreturnStub(%x from %x): %x, %x, %x, %x, %x\n", jmpBuf,
+		procPtr->machStatePtr->userState.userStackPtr,
+		bufVals[0], bufVals[1],
+		bufVals[2], bufVals[3], bufVals[4]);
+    }
     procPtr->machStatePtr->userState.userStackPtr = (Address)bufVals[2];
 
     /*
@@ -1795,12 +1808,17 @@ Mach_SigreturnStub()
 	    ->userState.excStackPtr + excStackSize - MACH_SHORT_SIZE);
     procPtr->machStatePtr->userState.trapRegs[SP] = (int)excStackPtr;
     excStackPtr->statusReg = bufVals[4]&0xf;
-    printf("Sigreturn statusReg = %x, pc = %x\n", bufVals[4]&0xf, bufVals[3]);
+    if (debugProcStubs) {
+	printf("Sigreturn statusReg = %x, pc = %x\n", bufVals[4]&0xf,
+		bufVals[3]);
+    }
     excStackPtr->vor.stackFormat = MACH_SHORT;
     excStackPtr->pc = (int)bufVals[3];
-    printf("New usp = %x, SP= %x, exSp = %x\n",
-	    procPtr->machStatePtr->userState.userStackPtr, 
-	    procPtr->machStatePtr->userState.trapRegs[SP],
-	    procPtr->machStatePtr->userState.excStackPtr);
+    if (debugProcStubs) {
+	printf("New usp = %x, SP= %x, exSp = %x\n",
+		procPtr->machStatePtr->userState.userStackPtr, 
+		procPtr->machStatePtr->userState.trapRegs[SP],
+		procPtr->machStatePtr->userState.excStackPtr);
+    }
     return procPtr->machStatePtr->userState.trapRegs[D0];
 }

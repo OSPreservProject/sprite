@@ -266,6 +266,11 @@ static	VmMachPTE		*refModMap;
 int	vmMachKernMemSize = VMMACH_MAX_KERN_SIZE;
 
 /*
+ * Unix compatibility debug flag.
+ */
+extern int	debugVmStubs;
+
+/*
  * The segment that is used to map a segment into a process's virtual address
  * space for cross-address-space copies.
  */
@@ -1786,9 +1791,12 @@ VmMach_VirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
 		    >>(VMMACH_SEG_SHIFT-VMMACH_PAGE_SHIFT))
 		    << VMMACH_SEG_SHIFT;
 	}
-	printf("segOffset = %x, offset = %x, mapHardSeg = %x\n",
-		segOffset(transVirtAddrPtr), transVirtAddrPtr->segPtr->offset,
-		procPtr->vmPtr->machPtr->mapHardSeg);
+	if (debugVmStubs) {
+	    printf("segOffset = %x, offset = %x, mapHardSeg = %x\n",
+		    segOffset(transVirtAddrPtr),
+		    transVirtAddrPtr->segPtr->offset,
+		    procPtr->vmPtr->machPtr->mapHardSeg);
+	}
 	origVirtAddr += (unsigned int)virtAddr & (VMMACH_SEG_SIZE - 1);
 	transVirtAddrPtr->page = (unsigned) (origVirtAddr) >> VMMACH_PAGE_SHIFT;
 	transVirtAddrPtr->offset = (unsigned)virtAddr & VMMACH_OFFSET_MASK;
@@ -3253,7 +3261,7 @@ VmMach_DMAFree(numBytes, mapAddr)
     for (j = 0; j < numPages; j++) {
 	dmaPageBitMap[i + j] = 0;	/* free page */
 	SET_ALL_PAGE_MAP(mapAddr, (VmMachPTE) 0);
-	(unsigned int) mapAddr += VMMACH_PAGE_SIZE_INT;
+	mapAddr = (Address)(((unsigned int) mapAddr) + VMMACH_PAGE_SIZE_INT);
     }
     return;
 }
@@ -3842,8 +3850,10 @@ VmMach_Alloc(sharedData, regionSize, addr)
 	}
     }
     if (blockCount < numBlocks) {
-	dprintf("VmMach_Alloc: got %d blocks of %d of %d total\n",
-		blockCount,numBlocks,VMMACH_SHARED_NUM_BLOCKS);
+	if (debugVmStubs) {
+	    dprintf("VmMach_Alloc: got %d blocks of %d of %d total\n",
+		    blockCount,numBlocks,VMMACH_SHARED_NUM_BLOCKS);
+	}
 	return VM_NO_SEGMENTS;
     }
     firstBlock = i-blockCount;
@@ -3893,8 +3903,10 @@ VmMach_Unalloc(sharedData, addr)
     }
     for (i=0;i<numBlocks;i++) {
 	if (ISFREE(i+firstBlock)) {
-	    printf("Freeing free shared address %d %d %x\n",i,i+firstBlock,
-		    (int)addr);
+	    if (debugVmStubs) {
+		printf("Freeing free shared address %d %d %x\n",i,i+firstBlock,
+			(int)addr);
+	    }
 	    return;
 	}
 	FREE(i+firstBlock);
