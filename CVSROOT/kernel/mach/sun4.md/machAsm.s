@@ -79,3 +79,18 @@ _Mach_EnableIntr:
 	mov %VOL_TEMP1, %psr
 	retl
 	nop
+
+/*
+ * Jmpl writes current pc into RETURN_VAL_REG_CHILD here, which is where values
+ * are returned from calls.  The return from __MachGetPc must not overwrite 
+ * this.  Since this uses a non-pc-relative jump, we CANNOT use this routine 
+ * while executing before we've copied the kernel to where it was linked for. 
+ */
+.globl	_Mach_GetPC
+_Mach_GetPC:
+	set	__MachGetPc, %RETURN_VAL_REG
+	jmpl	%RETURN_VAL_REG, %RETURN_VAL_REG
+	nop
+	retl
+	nop
+

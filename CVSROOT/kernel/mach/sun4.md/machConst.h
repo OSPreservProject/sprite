@@ -129,31 +129,6 @@
  */
 #define	MACH_ENABLE_TIMER_INTR_LEVEL	MACH_ENABLE_LEVEL10_INTR
 
-#ifdef NOTDEF
-/*
- * Different stack formats on a 68000
- */
-#define	MACH_SHORT		0x0
-#define	MACH_THROWAWAY		0x1
-#define	MACH_INST_EXCEPT	0x2
-#define	MACH_MC68010_BUS_FAULT	0x8
-#define	MACH_COPROC_MID_INSTR	0x9
-#define	MACH_SHORT_BUS_FAULT	0xa
-#define	MACH_LONG_BUS_FAULT	0xb
-
-/*
- * The sizes of the different stack formats.
- */
-#define	MACH_SHORT_SIZE			8
-#define MACH_THROWAWAY_SIZE		8
-#define	MACH_INST_EXCEPT_SIZE		12
-#define MACH_MC68010_BUS_FAULT_SIZE	58
-#define MACH_COPROC_MID_INSTR_SIZE	20
-#define MACH_SHORT_BUS_FAULT_SIZE	32
-#define	MACH_LONG_BUS_FAULT_SIZE	92
-
-#endif /* NOTDEF */
-
 /*
  * MACH_KERN_START	The address where the kernel image is loaded at.
  * MACH_CODE_START	The address where the kernel code is loaded at.
@@ -203,20 +178,10 @@
  * the kernel to die upon booting if the offsets aren't what's here.
  * All sizes are in bytes.
  */
-#define	MACH_TRAP_REGS_OFFSET		8
-#define	MACH_GLOBALS_OFFSET		8
-#define	MACH_OUTS_OFFSET		(MACH_GLOBALS_OFFSET + 8 * 4)
-#define	MACH_LOCALS_OFFSET		(MACH_OUTS_OFFSET + 8 * 4)
+#define	MACH_TRAP_REGS_OFFSET		0
+#define	MACH_LOCALS_OFFSET		0
 #define	MACH_INS_OFFSET			(MACH_LOCALS_OFFSET + 8 * 4)
-#define	MACH_PSR_OFFSET			(MACH_INS_OFFSET + 8 * 4)
-#define	MACH_Y_OFFSET			(MACH_PSR_OFFSET + 4)
-#define	MACH_TBR_OFFSET			(MACH_PSR_OFFSET + 8)
-#define	MACH_WIM_OFFSET			(MACH_PSR_OFFSET + 12)
-
-#ifdef NOTDEF
-#define	MACH_PC_OFFSET			(MACH_PSR_OFFSET + 16)
-#define	MACH_NEXT_PC_OFFSET		(MACH_PSR_OFFSET + 20)
-#endif NOTDEF
+#define	MACH_GLOBALS_OFFSET		(MACH_INS_OFFSET + 8 * 4)
 
 /*
  * Maximum number of processors configurable.
@@ -232,21 +197,24 @@
 
 
 /*
- * The size of a single saved window (locals and ins) and all of the saved
- * windows (in bytes).
+ * The size of a single saved window (locals and ins) in bytes.
  */
-#define	MACH_SAVED_WINDOW_SIZE	64	/* in bytes */
-#define	MACH_SAVED_REG_SET_SIZE		\
-				(MACH_NUM_WINDOWS * MACH_SAVED_WINDOW_SIZE)
+#define	MACH_SAVED_WINDOW_SIZE	(MACH_NUM_LOCALS * 4 + MACH_NUM_INS * 4)
+/*
+ * The size of the state frame that's saved on interrupts, etc.  This must
+ * be the size of Mach_RegState, and this is checked in machCode.c.  We
+ * shouldn't succeed in booting if these constants are out of whack.  Keep
+ * it this way!  Size is in bytes.
+ */
+#define	MACH_SAVED_STATE_FRAME	(MACH_SAVED_WINDOW_SIZE + MACH_NUM_GLOBALS * 4)
+
 /*
  * The number of registers.
  */
-#define	MACH_NUM_GLOBAL_REGS		8
-#define	MACH_NUM_REGS_PER_WINDOW	16
-#define	MACH_NUM_ACTIVE_REGS		32
-#define	MACH_TOTAL_REGS			(MACH_NUM_GLOBAL_REGS + \
-					 MACH_NUM_REGS_PER_WINDOW * \
-					 MACH_NUM_WINDOWS)
+#define	MACH_NUM_GLOBALS		8
+#define	MACH_NUM_INS			8
+#define	MACH_NUM_LOCALS			8
+#define	MACH_NUM_WINDOW_REGS		(MACH_NUM_LOCALS + MACH_NUM_INS)
 
 /*
  * Definitions of registers.
@@ -267,14 +235,21 @@
  *	ret value from C call	= o0 = r8 in old window
  *	ret addr to C call	= i7 = r31 in new window
  *	ret val to C call	= i0 = r24 in new window
+ *	psr saved into		= l0 = r16 as first part of trap
  *	ret pc from trap	= l1 = r17 in new window
  *	ret npc from trap	= l2 = r18 in new window
- *	psr saved into		= l0 = r16 as first part of trap
+ *	tbr from trap		= l3 = r19 as first part of trap
+ *	y from trap		= l4 = r20 as first part of trap
  *
  * System routines may end up using a window pointed to by wim if a trap
  * was taken before we got a window overflow.  In this case, they can use
- * the local registers, but not thein or out registers, since they may be
+ * the local registers, but not the in or out registers, since they may be
  * in use.  They can use global registers known to be free.
+ *
+ * NOTE: the order of the what's stored into the local routines is important
+ * since that's what gets saved on a stack frame for interrupts, etc.  If this
+ * changes, the corresponding changes need to be made in machAsmDefs.h and
+ * the mach.h definition of Mach_RegState.
  *
  *	RETURN_ADDR_REG	(r15)	Where the return address from a function call
  *				is stored at call-time.
@@ -283,16 +258,14 @@
  *	CUR_PSR_REG	(r16)	Register where psr is stored at trap time.
  *	CUR_PC_REG	(r17)	Register where the first PC is stored on a trap.
  *	NEXT_PC_REG	(r18)	Register where the 2nd PC is stored on a trap.
- *	VOL_TEMP[1-2]	(r19-r20)
- *				Volatile temporary register.  Means that 
+ *	CUR_TBR_REG	(r19)	Register where the tbr is stored on a trap.
+ *	CUR_Y_REG	(r20)	Register where the y reg is stored on a trap.
+ *	SAFE_TEMP	(r21) 	Register that cannot be modified by macros or
+ *				subroutines within the same window.
+ *	VOL_TEMP[1-2]	(r22-r23)
+ *				Volatile temporary registers.  Means that 
  *				macros in machAsmDefs.h can modify these 
  *				registers.
- *	SAFE_TEMP	(r21)
- *				Register that cannot be modified by macros or
- *				subroutines within the same window.
- *	NON_INTR_TEMP[1-2] (r22-r23)
- *				Registers that cannot be modified by interrupt
- *				handlers.
  *	RETURN_VAL_REG	(r8)	Where a value is returned from a C routine.
  *	RETURN_VAL_REG_CHILD (r24)
  *				Where to return a value to our caller.
@@ -303,11 +276,11 @@
 #define	CUR_PSR_REG		r16		/* l0 */
 #define	CUR_PC_REG		r17		/* l1 */
 #define	NEXT_PC_REG		r18		/* l2 */
-#define	VOL_TEMP1		r19		/* l3 */
-#define	VOL_TEMP2		r20		/* l4 */
+#define	CUR_TBR_REG		r19		/* l3 */
+#define	CUR_Y_REG		r20		/* l4 */
 #define	SAFE_TEMP		r21		/* l5 */
-#define	NON_INTR_TEMP1		r22		/* l6 */
-#define	NON_INTR_TEMP2		r23		/* l7 */
+#define	VOL_TEMP1		r22		/* l6 */
+#define	VOL_TEMP2		r23		/* l7 */
 #define	RETURN_VAL_REG		r8		/* o0 */
 #define	RETURN_VAL_REG_CHILD	r24		/* i0 */
 #define	TBR_REG			r6		/* g6 */

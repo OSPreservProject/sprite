@@ -65,11 +65,12 @@ Address	mach_MaxUserStackAddr;
 int	mach_LastUserStackPage;
 
 /*
- * Temporarily, for implementing and testing interrupts, I'm saving trap
- * state into the following buffer.
+ * For testing correctness of defined offsets.
  */
-Mach_RegState	stateHolder;
-Mach_RegState	*temporaryTrapState = &stateHolder;
+Mach_RegState	regStateHolder;
+Mach_State	stateHolder;
+int		debugCounter = 0;		/* for debugging */
+int		debugSpace[500];
 
 
 /*
@@ -103,36 +104,27 @@ Mach_Init()
     mach_MaxUserStackAddr = (Address)MACH_MAX_USER_STACK_ADDR;
     mach_LastUserStackPage = (MACH_MAX_USER_STACK_ADDR - 1) / VMMACH_PAGE_SIZE;
 
-#define	CHECK_OFFSETS1(s, o)		\
+#define	CHECK_SIZE(c, d)		\
+    if (sizeof (c) != d) {		\
+	panic("Bad size for structure.  Redo machConst.h!\n");\
+    }
+	
+#define	CHECK_OFFSETS(s, o)		\
     if ((int)(&(stateHolder.s)) - (int)(&stateHolder) != o) {\
+	panic("Bad offset for registers.  Redo machConst.h!\n");\
+    }
+#define	CHECK_TRAP_REG_OFFSETS(s, o)		\
+    if ((int)(&(regStateHolder.s)) - (int)(&regStateHolder) != o) {\
 	panic("Bad offset for trap registers.  Redo machConst.h!\n");\
     }
-#define	CHECK_OFFSETS2(s, o)		\
-    if ((int)(&(stateHolder.s)) - (int)(&stateHolder) != o) {\
-	panic("Bad offset for psr register.  Redo machConst.h!\n");\
-    }
-#define	CHECK_OFFSETS3(s, o)		\
-    if ((int)(&(stateHolder.s)) - (int)(&stateHolder) != o) {\
-	panic("Bad offset for y register.  Redo machConst.h!\n");\
-    }
-#define	CHECK_OFFSETS4(s, o)		\
-    if ((int)(&(stateHolder.s)) - (int)(&stateHolder) != o) {\
-	panic("Bad offset for tbr register.  Redo machConst.h!\n");\
-    }
-#define	CHECK_OFFSETS5(s, o)		\
-    if ((int)(&(stateHolder.s)) - (int)(&stateHolder) != o) {\
-	panic("Bad offset for wim register.  Redo machConst.h!\n");\
-    }
 
-    CHECK_OFFSETS1(regs, MACH_TRAP_REGS_OFFSET);
-    CHECK_OFFSETS2(psr, MACH_PSR_OFFSET);
-    CHECK_OFFSETS3(y, MACH_Y_OFFSET);
-    CHECK_OFFSETS4(tbr, MACH_TBR_OFFSET);
-    CHECK_OFFSETS5(wim, MACH_WIM_OFFSET);
-#ifdef NOTDEF
-    CHECK_OFFSETS(curPC, MACH_PC_OFFSET);
-    CHECK_OFFSETS(nextPC, MACH_NEXT_PC_OFFSET);
-#endif /* NOTDEF */
+    CHECK_SIZE(Mach_RegState, MACH_SAVED_STATE_FRAME);
+    CHECK_OFFSETS(trapRegs, MACH_TRAP_REGS_OFFSET);
+    CHECK_TRAP_REG_OFFSETS(curPsr, MACH_LOCALS_OFFSET);
+    CHECK_TRAP_REG_OFFSETS(ins, MACH_INS_OFFSET);
+    CHECK_TRAP_REG_OFFSETS(globals, MACH_GLOBALS_OFFSET);
+
+#undef CHECK_SIZE
 #undef CHECK_OFFSETS
 
     return;

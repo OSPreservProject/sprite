@@ -3,8 +3,14 @@
  *
  *     Exported structures for the mach module.
  *
- * Copyright (C) 1985 Regents of the University of California
- * All rights reserved.
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
  *
  * $Header$ SPRITE (Berkeley)
  */
@@ -92,44 +98,75 @@ extern ReturnStatus (*(mach_MigratedHandlers[]))();
 /*
  * State for each process.
  *
- * IMPORTANT NOTE: If the order or size of fields in these structures change
+ * IMPORTANT NOTE: 1) If the order or size of fields in these structures change
  *		   then the constants which give the offsets must be
  *		   changed in "machConst.h".
+ *
+ *		   2) Mach_DebugState and Mach_RegState are the same thing.
+ *		   If what the debugger needs changes, they may no longer be
+ *		   the same thing.  Mach_RegState is used as a template for
+ *		   saving registers to the stack for nesting interrupts, traps,
+ *		   etc.  Therefore, the first sets of registers, locals and ins,
+ *		   are in the same order as they are saved off of the sp for
+ *		   a regular save window operation.  If this changes, changes
+ *		   must be made in machAsmDefs.h and machConst.h.  Note that
+ *		   this means the pointer to Mach_RegState for trapRegs in the
+ *		   Mach_State structure is actually a pointer to registers saved
+ *		   on the stack.
+ *
+ *		   3) Mach_State defines the use of local registers.   Should
+ *		   more local registers be necessary, then some of the special
+ *		   registers (tbr, etc) will need to be saved after the globals.
+ *
+ *		   4) Note that we must be careful about the alignment of
+ *		   this structure, since it's saved and restored with load
+ *		   and store double operations.  Without an aligner, this is
+ *		   hard.  I'm not sure what to do about that.  Usually, this
+ *		   just be space on the stack, so it will be double-word
+ *		   aligned anyway.
  */
 
 /*
  * The register state of a process.
  */
-typedef struct {
+typedef struct Mach_RegState {
+#ifdef NOTDEF
+    /*
+     * I'm handing people ptrs to this thing now, so I just have to be careful.
+     */
     double	aligner;			/* Force the compiler to start
 					 	 * regs on a double-word
 					 	 * boundary so that std's and
 					 	 * ldd's can be used. */
-    int		regs[MACH_NUM_ACTIVE_REGS];	/* Registers at time of trap,
-						 * includes globals, ins, locals
-						 * and outs. */
-    int		psr;				/* processor state reg */
-    int		y;				/* Multiply register */
-    int		tbr;				/* trap base register - records
-						 * type of trap, etc. */
-    int		wim;				/* window invalid mask at time
-						 * of trap - for the debugger's
-						 * sake only. */
-/*
- * These shouldn't be necessary since they're stored in the local registers
- * on a trap???
- */
-#ifdef NOTDEF
-    Address	curPC;				/* program counter */
-    Address	nextPC;				/* next program counter */
 #endif NOTDEF
+						/* Registers at time of trap:
+						 * locals then ins then globals.
+						 * The psr, tbr, etc, are saved
+						 * in locals.  The in registers
+						 * are the in registers of the
+						 * window we've trapped into. */
+    int		curPsr;				/* locals */
+    int		pc;
+    int		nextPc;
+    int		tbr;
+    int		y;
+    int		safeTemp;
+    int		volTemp1;
+    int		volTemp2;
+    int		ins[MACH_NUM_INS];		/* ins */
+    int		globals[MACH_NUM_GLOBALS];	/* globals */
 } Mach_RegState;
 
+typedef	Mach_RegState	Mach_DebugState;
+
+
 /*
- * The user state for a process.
+ * The state for a process - saved on context switch, etc.
  */
-typedef struct {
-    Mach_RegState	trapRegs;		/* State of process at trap. */
+typedef struct Mach_State {
+    Mach_RegState	*trapRegs;		/* User state at trap time. */
+    Mach_RegState	switchRegs;		/* Kernel state, switch time */
+    int			savedRegs[MACH_NUM_WINDOW_REGS][MACH_NUM_WINDOWS];
 						/* Where we save all the
 						 * window's registers to if the
 						 * user stack isn't resident.
@@ -140,48 +177,28 @@ typedef struct {
 						 * and which window we're in
 						 * while saving the regs...
 						 */
-    int			savedRegs[MACH_NUM_REGS_PER_WINDOW][MACH_NUM_WINDOWS];
     int			savedMask;		/* Mask showing which windows
 						 * contained info that must
 						 * be restored to the stack from
 						 * the above buffer since the
 						 * stack wasn't resident. */
-} Mach_UserState;
+    int			kernelStack;		/* pointer to the kernel
+						 * stack for this process. */
+} Mach_State;
 
 /*
- * The kernel and user state for a process.
- */
-typedef struct Mach_State {
-    Mach_UserState	userState;		/* User state for a process. */
-    int			switchRegs[MACH_NUM_ACTIVE_REGS + MACH_NUM_GLOBAL_REGS];
-						/* Where registers are saved
-						 * and restored to/from during
-						 * context switches. */
-    /*
-     * Should this be start and end and current kernel sp?
-     */
-    Address		kernStackStart;		/* Address of the beginning of
-						 * the kernel stack. */
-} Mach_State;
+ * The machine dependent signal structure.
+  */
+typedef struct Mach_SigContext {
+    int	junk;	/* TBA */
+} Mach_SigContext;
 
 /*
  * Macro to get processor number
  */
 #define	Mach_GetProcessorNumber() 	0
 
-/*
- * jmpl writes current pc into %o0 here, which is where values are returned
- * from calls.  The return from __MachGetPc must not overwrite this.
- * Since this uses a non-pc-relative jmp, we CANNOT use this routine while
- * executing before we've copied the kernel to where it was linked for.
- */
-#ifdef lint
-#define Mach_GetPC() 	0
-#else
-#define	Mach_GetPC()			\
-    asm("jmpl __MachGetPc, %o0");	\
-    asm("nop");
-#endif /* lint */
+extern	Address	Mach_GetPC();
 
 extern	Boolean	mach_KernelMode;
 extern	int	mach_NumProcessors;
