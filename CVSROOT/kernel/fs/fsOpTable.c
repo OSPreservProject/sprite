@@ -56,7 +56,8 @@ static FsHandleHeader *NoHandle();
  * Domain specific routine table for lookup operations.
  * The following operate on a single pathname.  They are called via
  *	FsLookupOperation with arguments described in fsOpTable.h
- *	DomainPrefix
+ *	DomainImport
+ *	DomainExport
  *	DomainOpen
  *	DomainGetAttrPath
  *	DomainSetAttrPath
@@ -74,18 +75,19 @@ static FsHandleHeader *NoHandle();
  */
 ReturnStatus (*fsDomainLookup[FS_NUM_DOMAINS][FS_NUM_NAME_OPS])() = {
 /* FS_LOCAL_DOMAIN */
-    {FsLocalPrefix, FsLocalOpen, FsLocalGetAttrPath, FsLocalSetAttrPath, 
-     FsLocalMakeDevice, FsLocalMakeDir,
+    {NoProc, FsLocalExport, FsLocalOpen, FsLocalGetAttrPath,
+     FsLocalSetAttrPath, FsLocalMakeDevice, FsLocalMakeDir,
      FsLocalRemove, FsLocalRemoveDir, FsLocalRename, FsLocalHardLink},
 /* FS_REMOTE_SPRITE_DOMAIN */
-    {FsSpritePrefix, FsSpriteOpen, FsSpriteGetAttrPath, FsSpriteSetAttrPath,
-     FsSpriteMakeDevice, FsSpriteMakeDir, 
+    {FsSpriteImport, NoProc, FsSpriteOpen, FsSpriteGetAttrPath,
+     FsSpriteSetAttrPath, FsSpriteMakeDevice, FsSpriteMakeDir, 
      FsSpriteRemove, FsSpriteRemoveDir, FsSpriteRename, FsSpriteHardLink},
 /* FS_PSEUDO_DOMAIN */
-    {NoProc, NullProc, NullProc, NullProc, NullProc, NullProc, NullProc,
-     NullProc, NullProc, NullProc},
+    {NoProc, FsPfsExport, FsPfsOpen, FsPfsGetAttrPath, FsPfsSetAttrPath,
+     FsPfsMakeDevice, FsPfsMakeDir, FsPfsRemove, FsPfsRemoveDir,
+     FsPfsRename, FsPfsHardLink},
 /* FS_NFS_DOMAIN */
-    {NoProc, NullProc, NullProc, NullProc, NullProc, NullProc, NullProc,
+    {NoProc, NoProc, NullProc, NullProc, NullProc, NullProc, NullProc, NullProc,
      NullProc, NullProc, NullProc},
 };
 
@@ -97,12 +99,16 @@ ReturnStatus (*fsDomainLookup[FS_NUM_DOMAINS][FS_NUM_NAME_OPS])() = {
  */
 FsOpenOps fsOpenOpTable[] = {
     /*
-     * FILE through REMOTE_LINK are all the same.
+     * FILE through SYMBOLIC_LINK are all the same.
      */
     { FS_FILE, FsFileSrvOpen },
     { FS_DIRECTORY, FsFileSrvOpen },
     { FS_SYMBOLIC_LINK, FsFileSrvOpen },
-    { FS_REMOTE_LINK, FsFileSrvOpen },
+    /*
+     * A remote link can either be treated like a regular file,
+     * or opened by a pseudo-filesystem server.
+     */
+    { FS_REMOTE_LINK, FsRmtLinkSrvOpen },
     /*
      * Remote devices are opened like ordinary devices, so the old
      * remote-device type is unused.
@@ -243,7 +249,8 @@ FsStreamTypeOps fsStreamOpTable[] = {
     { FS_CONTROL_STREAM, FsControlCltOpen, FsControlRead, NoProc,
 		FsControlIOControl, FsControlSelect,
 		NullProc, NullProc,			/* Get/Set IO Attr */
-		FsControlVerify, FsControlMigStart, FsControlMigEnd,
+		FsControlVerify,
+		NoProc, NoProc,				/* migStart, migEnd */
 		NoProc, FsControlReopen,		/* migrate, reopen */
 		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
 		FsControlScavenge, FsControlClientKill, FsControlClose },
@@ -255,8 +262,9 @@ FsStreamTypeOps fsStreamOpTable[] = {
      */
     { FS_SERVER_STREAM, NoProc, FsServerStreamRead, NoProc,
 		FsServerStreamIOControl, FsServerStreamSelect,
-		NullProc, NullProc,		/* Get/Set IO Attr */
-		NoHandle, FsServerStreamMigStart, FsServerStreamMigEnd,
+		NullProc, NullProc,			/* Get/Set IO Attr */
+		NoHandle,				/* verify */
+		NoProc, NoProc,				/* migStart, migEnd */
 		NoProc, NoProc,				/* migrate, reopen */
 		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
 		FsHandleUnlockHdr, NullClientKill, FsServerStreamClose },
@@ -283,7 +291,39 @@ FsStreamTypeOps fsStreamOpTable[] = {
 		FsRmtPseudoStreamMigrate, NoProc,	/* migrate, reopen */
 		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
 		FsRemoteHandleScavenge, NullClientKill, FsRemoteIOClose },
+    /*
+     * A control stream used to mark the existence of a pseudo-filesystem.
+     * The server doesn't do I/O to this stream; it is only used at
+     * open and close time.
+     */
+    { FS_PFS_CONTROL_STREAM, FsPfsCltOpen,
+		NoProc, NoProc,				/* read, write */
+		NoProc, NoProc,				/* IOControl, select */
+		NullProc, NullProc,			/* Get/Set IO Attr */
+		FsControlVerify,
+		NoProc, NoProc,				/* migStart, migEnd */
+		NoProc, FsControlReopen,		/* migrate, reopen */
+		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
+		FsControlScavenge, FsControlClientKill,
+		FsControlClose },
 #ifdef not_done_yet
+    /*
+     * The 'naming stream' for a pseudo-filesystem is used to forward lookup
+     * operations from the kernel up to the user-level server.  It is like
+     * a regular pdev request-response stream, except that extra connections
+     * to it are established via the prefix table when remote Sprite hosts
+     * import a pseudo-filesystem.  The routines here are used to set this up.
+     */
+    { FS_PFS_NAMING_STREAM, FsPfsNamingCltOpen,
+		NoProc, NoProc,				/* read, write */
+		NoProc, NoProc,				/* IOControl, select */
+		NullProc, NullProc,			/* Get/Set IO Attr */
+		FsRmtPseudoStreamVerify,
+		NoProc, NoProc,				/* migStart, migEnd */
+		NoProc, FsPfsNamingReopen,		/* migrate, reopen */
+		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
+		FsPfsNamingScavenge, FsPfsNamingClientKill,
+		FsPfsNamingClose },
     /*
      * Locally cached named pipe stream.  
      */
@@ -306,7 +346,7 @@ FsStreamTypeOps fsStreamOpTable[] = {
 		NoProc, NoProc, NoProc, NoProc,
 		FsRmtDeviceClose, FsRmtDeviceDelete},
     /*
-     * A stream to the hybrid Sprite/Unix server.  
+     * A stream to the hybrid Sprite/Unix server.  DECOMMISIONED.
      */
     { FS_RMT_UNIX_STREAM, FsRmtUnixCltOpen, FsRmtUnixRead, FsRmtUnixWrite,
 		FsRmtUnixIOControl, FsRmtUnixSelect,
