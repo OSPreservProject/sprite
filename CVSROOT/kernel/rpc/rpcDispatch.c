@@ -125,16 +125,18 @@ Rpc_Dispatch(packetPtr, packetLength)
     if (rpcHdrPtr->flags & RPC_SERVER) {
 	register RpcServerState *srvPtr;
 	/*
-	 * Only respond if the RPC system is "on".  We allow echoes to
-	 * come in, however, so that other hosts know we are up.
+	 * Don't do anything if we don't know who we are.  This occurs
+	 * at boot time if we get a request before doing reverse ARP.
 	 */
-	if (!rpcServiceEnabled && rpcHdrPtr->command != RPC_ECHO_2) {
+	if (rpc_SpriteID == 0) {
 	    return;
 	}
 	rpcSrvStat.toServer++;
 	/*
 	 * Verify or initialize the sprite host id for the client 
 	 * (clientID) from the transport level source address.
+	 * THIS IS OLD and should be already be replaced by the
+	 * clients responsible use of reverse arp.
 	 */
 	if ( ! RpcValidateClient(rawPacketPtr)) {
 	    rpcSrvStat.invClient++;
@@ -317,6 +319,8 @@ RpcValidateClient(rawPacketPtr)
 	 */
 	clientID = Net_AddrToID(0, NET_ROUTE_ETHER,
 				   (ClientData)&rawPacketPtr->etherHdr.source);
+        Sys_Panic(SYS_WARNING, "RpcValidateClient had to set clientID %d\n",
+				clientID);
 	if (clientID < 0) {
 	    /*
 	     * Should invoke Reverse ARP to find out the Sprite ID.
