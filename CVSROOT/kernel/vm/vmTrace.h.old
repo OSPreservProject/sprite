@@ -96,16 +96,22 @@ typedef unsigned short	Vm_TracePage;
  * Start trace record.
  */
 typedef struct {
-    short	recType;
-    int		hostID;
-    int		pageSize;
-    int		numPages;
-    Address	codeStartAddr;
-    Address	dataStartAddr;
-    Address	stackStartAddr;
-    Address	mapStartAddr;
-    Address	cacheStartAddr;
-    Address	cacheEndAddr;
+    short	recType;		/* Always equals VM_TRACE_START_REC. */
+    int		hostID;			/* Sprite host number. */
+    int		pageSize;		/* The page size. */
+    int		numPages;		/* The number of physical pages. */
+    Address	codeStartAddr;		/* The starting address of the kernel's
+					 * code (runs up to dataStartAddr). * /
+    Address	dataStartAddr;		/* The starting address of the kernel's
+					 * data (runs up to stackStartAddr). */
+    Address	stackStartAddr;		/* The start of the range of virtual
+					 * addresses that are used for kernel
+					 * stacks (runs up to mapStartAddr). */
+    Address	mapStartAddr;		/* The start of kernel virtual 
+					 * addresses used for mapping stuff
+					 * (runs up to cacheStartAddr). */
+    Address	cacheStartAddr;		/* The start of the FS cache. */
+    Address	cacheEndAddr;		/* The end of the FS cache. */
 } Vm_TraceStart;
 
 /*
