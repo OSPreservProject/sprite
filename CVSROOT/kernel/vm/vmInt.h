@@ -51,16 +51,6 @@ extern	int	vmMapEndPage;		/* Last page to use for mapping. */
 extern	Address	vmBlockCacheBaseAddr;	/* Base of the file system cache. */
 extern	Address	vmBlockCacheEndAddr;	/* End of the file system cache. */
 
-/*
- * Structure that contains file information that needs to be freed.
- */
-typedef struct {
-    Fs_Stream	*objStreamPtr;
-    Fs_Stream	*swapStreamPtr;
-    char	*swapFileName;
-    int		segNum;
-} VmFileInfo;
-
 
 /*---------------------------------------------------------------------------*/
 
