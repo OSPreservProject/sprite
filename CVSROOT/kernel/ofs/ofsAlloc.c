@@ -895,17 +895,20 @@ FsWriteBackSummary(domainPtr)
 {
     ReturnStatus	status;
     int			amountRead;
+    Fs_IOParam		io;
+    Fs_IOReply		reply;
 
     LOCK_MONITOR;
 
+    bzero((Address)&io, sizeof(io));
+    bzero((Address)&reply, sizeof(reply));
+    io.buffer = (Address)domainPtr->summaryInfoPtr;
+    io.length = DEV_BYTES_PER_SECTOR;
+    io.offset = domainPtr->summarySector * DEV_BYTES_PER_SECTOR;
     status = (*devFsOpTable[DEV_TYPE_INDEX(domainPtr->headerPtr->device.type)].write)
-		(&domainPtr->headerPtr->device, 
-		    domainPtr->summarySector * DEV_BYTES_PER_SECTOR,
-		    DEV_BYTES_PER_SECTOR,
-		    domainPtr->summaryInfoPtr, &amountRead); 
+		(&domainPtr->headerPtr->device, &io, &reply); 
     if (status != SUCCESS) {
-	printf(
-	    "FsWriteBackSummary: Could not write out summary info.\n");
+	printf("FsWriteBackSummary: Could not write out summary info.\n");
     }
     if (status == GEN_NO_PERMISSION) {
 	printf("FsWriteBackSummary: Disk is write-protected.\n");
@@ -2095,10 +2098,11 @@ exit:
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsLocalDomainInfo(domain, domainInfoPtr)
-    int			domain;
+FsLocalDomainInfo(fileIDPtr, domainInfoPtr)
+    Fs_FileID		*fileIDPtr;
     Fs_DomainInfo	*domainInfoPtr;
 {
+    int		domain = fileIDPtr->major;
     FsDomain	*domainPtr;
 
     if (domain >= FS_MAX_LOCAL_DOMAINS) {
@@ -2115,6 +2119,8 @@ FsLocalDomainInfo(domain, domainInfoPtr)
     domainInfoPtr->freeKbytes = domainPtr->summaryInfoPtr->numFreeKbytes;
     domainInfoPtr->maxFileDesc = domainPtr->headerPtr->numFileDesc;
     domainInfoPtr->freeFileDesc = domainPtr->summaryInfoPtr->numFreeFileDesc;
+    domainInfoPtr->blockSize = FS_BLOCK_SIZE;
+    domainInfoPtr->optSize = FS_BLOCK_SIZE;
 
     FsDomainRelease(domain);
 
