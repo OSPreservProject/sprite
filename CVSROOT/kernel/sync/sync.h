@@ -132,6 +132,12 @@ typedef struct Sync_RegElement {
 } Sync_RegElement;
 
 /*
+ * Structure for System V semaphores.
+ */
+typedef struct semid_ds Sync_SysVSem;
+
+
+/*
  * Define a structure to keep track of waiting processes on remote machines.
  */
 
@@ -190,6 +196,10 @@ extern 	void		SyncMergePriorInt();
 extern	void		Sync_RegisterInt();
 extern	void		Sync_CheckoutInt();
 extern	void		Sync_PrintLockStats();
+
+extern	ReturnStatus	Sync_SemgetStub();
+extern	ReturnStatus	Sync_SemopStub();
+extern	ReturnStatus	Sync_SemctlStub();
 
 extern Sync_RegElement  *regQueuePtr;
 
