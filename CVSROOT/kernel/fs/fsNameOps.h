@@ -79,8 +79,12 @@ extern	ReturnStatus (*fs_DomainLookup[FS_NUM_DOMAINS][FS_NUM_NAME_OPS])();
  */
 
 typedef struct Fs_AttrOps {
-    ReturnStatus	(*getAttr)();
-    ReturnStatus	(*setAttr)();
+    ReturnStatus	(*getAttr) _ARGS_((Fs_FileID *fileIDPtr, int clientID,
+						Fs_Attributes *attrPtr));
+
+    ReturnStatus	(*setAttr) _ARGS_((Fs_FileID *fileIDPtr, 
+					  Fs_Attributes *attrPtr, 
+					  Fs_UserIDs *idPtr, int flags));
 } Fs_AttrOps;
 
 extern Fs_AttrOps fs_AttrOpTable[];
@@ -234,8 +238,55 @@ typedef struct Fs_2PathRedirectInfo {
 
 
 /*
+ * Table of name lookup routine maintained by each domain type.
+ */
+typedef struct Fs_DomainLookupOps {
+     ReturnStatus (*import) _ARGS_((char *prefix, int serverID, 
+		    Fs_UserIDs *idPtr, int *domainTypePtr,
+		    Fs_HandleHeader **hdrPtrPtr));
+     ReturnStatus (*export) _ARGS_((Fs_HandleHeader *hdrPtr, int clientID,
+		    Fs_FileID *ioFileIDPtr, int *dataSizePtr, 
+		    ClientData *clientDataPtr));
+     ReturnStatus (*open) _ARGS_((Fs_HandleHeader *prefixHandlePtr,
+		    char *relativeName, Address argsPtr, Address resultsPtr, 
+		    Fs_RedirectInfo **newNameInfoPtrPtr));
+     ReturnStatus (*getAttrPath) _ARGS_((Fs_HandleHeader *prefixHandlePtr,
+		    char *relativeName, Address argsPtr, Address resultsPtr,
+		    Fs_RedirectInfo **newNameInfoPtrPtr));
+     ReturnStatus (*setAttrPath) _ARGS_((Fs_HandleHeader *prefixHandlePtr,
+		    char *relativeName, Address argsPtr, Address resultsPtr,
+		    Fs_RedirectInfo **newNameInfoPtrPtr));
+     ReturnStatus (*makeDevice) _ARGS_((Fs_HandleHeader *prefixHandle, 
+		    char *relativeName, Address argsPtr, Address resultsPtr,
+		    Fs_RedirectInfo **newNameInfoPtrPtr));
+     ReturnStatus (*makeDir) _ARGS_((Fs_HandleHeader *prefixHandle, 
+		    char *relativeName, Address argsPtr, Address resultsPtr, 
+		    Fs_RedirectInfo **newNameInfoPtrPtr));
+     ReturnStatus (*remove) _ARGS_((Fs_HandleHeader *prefixHandle, 
+		    char *relativeName, Address argsPtr, Address resultsPtr, 
+		    Fs_RedirectInfo **newNameInfoPtrPtr));
+     ReturnStatus (*removeDir) _ARGS_((Fs_HandleHeader *prefixHandle, 
+		    char *relativeName, Address argsPtr, Address resultsPtr, 
+		    Fs_RedirectInfo **newNameInfoPtrPtr));
+     ReturnStatus (*rename) _ARGS_((Fs_HandleHeader *prefixHandle1, 
+		    char *relativeName1, Fs_HandleHeader *prefixHandle2, 
+		    char *relativeName2, Fs_LookupArgs *lookupArgsPtr, 
+		    Fs_RedirectInfo **newNameInfoPtrPtr, 
+		    Boolean *name1ErrorPtr));
+     ReturnStatus (*hardLink) _ARGS_((Fs_HandleHeader *prefixHandle1, 
+		    char *relativeName1, Fs_HandleHeader *prefixHandle2,
+		    char *relativeName2, Fs_LookupArgs *lookupArgsPtr, 
+		    Fs_RedirectInfo **newNameInfoPtrPtr, 
+		    Boolean *name1ErrorPtr));
+} Fs_DomainLookupOps;
+
+
+/*
  * Forward references.
  */
-extern void Fs_SetIDs();
+extern void Fs_SetIDs _ARGS_((Proc_ControlBlock *procPtr, Fs_UserIDs *idPtr));
+extern void Fs_InstallDomainLookupOps _ARGS_((int domainType, 
+		Fs_DomainLookupOps *nameLookupOpsPtr, 
+		Fs_AttrOps *attrOpTablePtr));
 
 #endif _FSNAMEOPS
