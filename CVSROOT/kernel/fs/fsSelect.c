@@ -245,7 +245,7 @@ Fs_SelectStub(numStreams, userTimeoutPtr, userReadMaskPtr, userWriteMaskPtr,
  *
  * Fs_NewSelectStub --
  *
- *      The stub for the "select" Unix system call.
+ *      The stub for the "select" Unix system call in Unix compatibility.
  *
  * Results:
  *      Returns -1 on failure.
@@ -352,7 +352,7 @@ Fs_NewSelectStub(numStreams, userReadMaskPtr, userWriteMaskPtr,
 	Mach_SetErrno(EFAULT);
 	return -1;
     }
-    status = Fs_Select(numStreams, timeoutPtr, inReadMaskPtr, outReadMaskPtr,
+    status = Fs_Select(numStreams+1, timeoutPtr, inReadMaskPtr, outReadMaskPtr,
 	inWriteMaskPtr, outWriteMaskPtr, inExceptMaskPtr, outExceptMaskPtr,
 	&numReady, &doTimeout);
     if (status == SUCCESS || status == FS_TIMEOUT) {
@@ -381,6 +381,22 @@ Fs_NewSelectStub(numStreams, userReadMaskPtr, userWriteMaskPtr,
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_Select --
+ *
+ *      The internal select system call.
+ *
+ * Results:
+ *      Returns ReturnStatus.
+ *
+ * Side effects:
+ *      Side effects associated with the system call.
+ *
+ *
+ *----------------------------------------------------------------------
+ */
 /*ARGSUSED*/
 ReturnStatus
 Fs_Select(numStreams, timeoutPtr, inReadMaskPtr, outReadMaskPtr,
