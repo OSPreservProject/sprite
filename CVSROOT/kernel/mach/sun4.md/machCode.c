@@ -843,13 +843,17 @@ Mach_InitSyscall(callNum, numArgs, normalHandler, migratedHandler)
 {
     machMaxSysCall++;
     if (machMaxSysCall != callNum) {
-	panic("out-of-order kernel call initialization");
+	printf("Warning: out-of-order kernel call initialization, call %d\n",
+	       callNum);
     }
     if (machMaxSysCall >= SYS_NUM_SYSCALLS) {
-	panic("too many kernel calls");
+	printf("Warning: too many kernel calls.\n");
+	machMaxSysCall--;
+	return;
     }
     if (numArgs > SYS_MAX_ARGS) {
-	panic("too many arguments to kernel call");
+	printf("Warning: too many arguments to kernel call %d\n", callNum);
+	numArgs = SYS_MAX_ARGS;
     }
     /*
      * Offset of beginning of args on stack - offset from frame pointer.

@@ -851,14 +851,21 @@ Mach_InitSyscall(callNum, numArgs, normalHandler, migratedHandler)
 					 * for migrated processes. */
 {
     machMaxSysCall++;
+    machMaxSysCall++;
     if (machMaxSysCall != callNum) {
-	panic( "out-of-order kernel call initialization");
+	printf("Warning: out-of-order kernel call initialization, call %d\n",
+	       callNum);
     }
     if (machMaxSysCall >= MAXCALLS) {
-	panic( "too many kernel calls");
+	printf("Mach_InitSyscall: too many kernel calls\n",
+	       machMaxSysCall);
+	machMaxSysCall--;
+	return;
     }
     if (numArgs > MAXARGS) {
-	panic( "too many arguments to kernel call");
+	printf("Mach_InitSyscall: too many arguments (%d) to kernel call <%d>\n",
+		numArgs, callNum);
+	numArgs = MAXARGS;
     }
     machNumArgs[machMaxSysCall] = numArgs;
     mach_NormalHandlers[machMaxSysCall] = normalHandler;
