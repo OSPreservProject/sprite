@@ -71,7 +71,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * The scheduler module mutex semaphore.  Used in sync module as well,
  * since synchronization involves mucking with the process queues.
  */
-Sync_Semaphore sched_Mutex = SYNC_SEMAPHORE_STATIC("sched_Mutex");
+Sync_Semaphore sched_Mutex = SYNC_SEM_INIT_STATIC("sched_Mutex");
 Sync_Semaphore *sched_MutexPtr = &sched_Mutex;
 
 /*
