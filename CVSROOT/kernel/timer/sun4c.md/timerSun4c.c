@@ -71,7 +71,7 @@ static volatile Counters *counterPtr = (volatile Counters *) DEV_COUNTER_ADDR;
  */
 static Timer_Ticks todCounter;
 
-void Timer_TimerServiceInterrupt();
+int Timer_TimerServiceInterrupt();
 
 /*
  * Timer interval expressed as an integer and as a Time. This is the
@@ -79,7 +79,7 @@ void Timer_TimerServiceInterrupt();
  * since we callback every other time. 
  */
 
-static int interval = TIMER_CALLBACK_INTERVAL_APPROX / 1000;
+static unsigned int interval = TIMER_CALLBACK_INTERVAL_APPROX / 1000;
 static Time time = { 0, TIMER_CALLBACK_INTERVAL_APPROX};
 
 
@@ -163,6 +163,11 @@ Timer_TimerStart(timer)
      } else {
 	panic("Timer_TimerInit: unknown timer %d\n", timer);
      }
+#ifdef lint
+    junk = junk;
+#endif
+
+
 }
 
 
@@ -228,7 +233,7 @@ Timer_TimerInactivate(timer)
  *----------------------------------------------------------------------
  */
 
-void
+int
 Timer_TimerServiceInterrupt(clientData, pc)
     ClientData	clientData;	        /* Really Counter number */
     unsigned int	pc;		/* Only for sun4 version. */
@@ -265,6 +270,9 @@ Timer_TimerServiceInterrupt(clientData, pc)
 	panic("Timer_TimerServiceInterrupt: Unknown timer %d\n", 
 		    (int) clientData);
     }
+#ifdef lint
+    junk = junk;
+#endif
 }
 
 /*

@@ -105,7 +105,7 @@ static    IntersilCounters	initialCounter = {
  */
 
 static void CountersToTime();
-void Timer_TimerServiceInterrupt();
+int Timer_TimerServiceInterrupt();
 
 /*
  * Timer interval expressed as an integer and as a Time. This is the
@@ -114,7 +114,7 @@ void Timer_TimerServiceInterrupt();
  * we callback every 20 ms.
  */
 
-static int interval = TIMER_CALLBACK_INTERVAL_APPROX / 1000;
+static unsigned int interval = TIMER_CALLBACK_INTERVAL_APPROX / 1000;
 static Time time = { 0, TIMER_CALLBACK_INTERVAL_APPROX};
 
 /*
@@ -439,7 +439,8 @@ int	testCounter = 0;
  *----------------------------------------------------------------------
  */
 
-void
+/*ARGSUSED*/
+int
 Timer_TimerServiceInterrupt(dummy, pc)
     int			dummy;		/* unused clientData */
     unsigned int	pc;		/* Only for sun4 version. */

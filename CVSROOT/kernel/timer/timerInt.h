@@ -30,7 +30,7 @@ extern Boolean		timerDSTAllowed;
 extern void		Timer_CallBack();
 extern void 		TimerTicksInit();
 extern void 		Timer_CounterInit();
-extern void		Timer_ClockInit();
+extern void		TimerClock_Init();
 extern void		TimerSetSoftwareUniversalTime();
 extern void		TimerSetHardwareUniversalTime();
 extern void		TimerHardwareUniversalTimeInit();

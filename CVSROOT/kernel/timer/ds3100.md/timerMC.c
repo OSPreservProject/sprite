@@ -215,7 +215,9 @@ void
 Timer_TimerStart(timer)
     register unsigned short timer;
 {
+#ifndef lint
     unsigned char	dummy;
+#endif
 
     *regBPtr |= REGB_PER_INT_ENA;
 #ifndef lint

@@ -109,7 +109,10 @@ static    IntersilCounters	initialCounter = {
  */
 
 static void CountersToTime();
-void Timer_TimerServiceInterrupt();
+int Timer_TimerServiceInterrupt();
+static unsigned short Timer_TimerGetStatus();
+static Boolean Timer_TimerExamineStatus();
+
 
 
 /*
@@ -119,7 +122,7 @@ void Timer_TimerServiceInterrupt();
  * we callback every 20 ms.
  */
 
-static int interval = TIMER_CALLBACK_INTERVAL_APPROX / 1000;
+static unsigned int interval = TIMER_CALLBACK_INTERVAL_APPROX / 1000;
 static Time time = { 0, TIMER_CALLBACK_INTERVAL_APPROX};
 /*
  * Constants used to convert the contents of the free-running counters
@@ -336,6 +339,7 @@ Timer_TimerInactivate(timer)
  *----------------------------------------------------------------------
  */
 
+#ifndef lint
 static unsigned short
 Timer_TimerGetStatus()
 {
@@ -360,6 +364,7 @@ Timer_TimerGetStatus()
 
     return(statusReg);
 }
+#endif
 
 
 /*
@@ -386,6 +391,7 @@ Timer_TimerGetStatus()
  *----------------------------------------------------------------------
  */
 
+#ifndef lint
 /*ARGSUSED*/
 static Boolean
 Timer_TimerExamineStatus(statusReg, timer, spuriousPtr)
@@ -419,6 +425,7 @@ Timer_TimerExamineStatus(statusReg, timer, spuriousPtr)
 	return(FALSE);
     }
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -441,7 +448,8 @@ Timer_TimerExamineStatus(statusReg, timer, spuriousPtr)
  *----------------------------------------------------------------------
  */
 
-void
+/*ARGSUSED*/
+int
 Timer_TimerServiceInterrupt(clientData, stack)
     ClientData	    clientData;
     Mach_IntrStack stack;

@@ -156,7 +156,6 @@ Timer_CallBack(interval, time)
 						 * to be called. */
 	Time			timeOfDay;	/* Best guess at tod. */
 	Timer_Ticks		currentSystemTimeTk;
-	Time			intervalTime;
 
 	/*
 	 *  The callback timer has expired. This means at least the first
@@ -503,10 +502,12 @@ TimerDumpElement(timerPtr)
 
     Timer_TicksToTime(timerPtr->time, &time);
 
+#ifndef lint
     printf("(*0x%x)(0x%x) @ %d.%06u\n",
 	    (Address) timerPtr->routine, 
 	    (Address) timerPtr->clientData,
 	    time.seconds, time.microseconds);
+#endif
 }
 
 /*

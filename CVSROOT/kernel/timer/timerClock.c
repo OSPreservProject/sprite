@@ -153,7 +153,6 @@ void
 TimerClock_Init()
 {
 
-    char	buffer[100];
     Time	universal;
     int		offset;
     Boolean	DST;
