@@ -64,10 +64,15 @@ int devNumConfigCntrlrs = sizeof(devCntrlr) / sizeof(DevConfigController);
  */
 DevConfigDevice devDevice[] = {
 /* cntrlrID, slaveID, flags, initproc */		/* Device unit # */
-    { 0, 0, 0 | SCSI_DISK, Dev_SCSIInitDevice},	/* rsd units 0-7 */
-    { 0, 0, 1 | SCSI_DISK, Dev_SCSIInitDevice},	/* rsd units 8-15 */
-    { 0, 1, 0 | SCSI_DISK, Dev_SCSIInitDevice},	/* rsd units 16-23 */
-    { 0, 1, 1 | SCSI_DISK, Dev_SCSIInitDevice},	/* rsd units 24-31 */
+    /*
+     * For historical reasons LUN 1 is initialized first and corresponds
+     * to rsd0, while LUN 0 comes second and maps to rsd1.
+     */
+    { 0, 0, 1 | SCSI_DISK, Dev_SCSIInitDevice},	/* rsd units 0-7 */
+    { 0, 0, 0 | SCSI_DISK, Dev_SCSIInitDevice},	/* rsd units 8-15 */
+
+/*  { 0, 1, 0 | SCSI_DISK, Dev_SCSIInitDevice},	/* rsd units 16-23 */
+/*  { 0, 1, 1 | SCSI_DISK, Dev_SCSIInitDevice},	/* rsd units 24-31 */
     { 0, 3, 0 | SCSI_WORM, Dev_SCSIInitDevice},	/* scsiWorm 0-7 */
     { 0, 4, 0 | SCSI_TAPE, Dev_SCSIInitDevice},	/* tape0 (shoebox) */
     { 0, 5, 0 | SCSI_TAPE, Dev_SCSIInitDevice},	/* tape1 (exabyte) */
