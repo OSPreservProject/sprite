@@ -45,8 +45,7 @@ int		   numFreeChannels = 8;
  * A process might have to wait for a free RPC channel.
  */
 Sync_Condition freeChannels;
-Sync_Lock rpcLock = Sync_LockInitStatic("Rpc:rpcLock");
-#define LOCKPTR (&rpcLock)
+Sync_Semaphore rpcMutex = Sync_SemInitStatic("Rpc:rpcMutex");
 
 /*
  * There is sequence of rpc transaction ids that increases over time.
@@ -296,6 +295,32 @@ RpcSetup(serverID, command, storagePtr, chanPtr)
     chanPtr->fragsReceived = 0;
     chanPtr->fragsDelivered = 0;
 }
+#ifdef DEBUG
+#define CHAN_TRACESIZE 1000
+#define INC(ctr) { (ctr) = ((ctr) == CHAN_TRACESIZE-1) ? 0 : (ctr)+1; }
+typedef struct {
+    RpcClientChannel	*chanPtr;
+    char		*action;
+    int			pNum;
+    int			serverID;
+    int			chanNum;
+} debugElem;
+
+static debugElem	debugArray[CHAN_TRACESIZE];
+static int 		debugCtr;
+#define CHAN_TRACE(channel, string) \
+{	\
+    debugElem *ptr = &debugArray[debugCtr];	\
+    INC(debugCtr);	\
+    ptr->chanPtr = (channel);	\
+    ptr->action = string;	\
+    ptr->chanNum = (channel)->index;	\
+    ptr->serverID = (channel)->serverID;	\
+    ptr->pNum = Mach_GetProcessorNumber();	\
+}	
+#else
+#define CHAN_TRACE(channel, string)
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -328,14 +353,12 @@ RpcChanAlloc(serverID)
     register int firstUnused = -1;	/* The first unused channel */
     register int firstFree = -1;	/* The first chan used but now free */
 
-    LOCK_MONITOR;
-
-
+    MASTER_LOCK(&rpcMutex);
     while (numFreeChannels < 1) {
 	rpcCltStat.chanWaits++;
-	(void) Sync_Wait(&freeChannels, FALSE);
+	Sync_MasterWait(&freeChannels, &rpcMutex, FALSE);
     }
-    
+
     for (i=0 ; i<rpcNumChannels ; i++) {
 	chanPtr = rpcChannelPtrPtr[i];
 	if (chanPtr->state == CHAN_FREE) {
@@ -354,6 +377,7 @@ RpcChanAlloc(serverID)
 		 * transaction.
 		 */
 		rpcCltStat.chanHits++;
+		DEBUG(chanPtr, "alloc channel w/ same server");
 		goto found;
 	    } else if (firstFree < 0) {
 		/*
@@ -371,9 +395,11 @@ RpcChanAlloc(serverID)
     if (firstUnused >= 0) {
 	rpcCltStat.chanNew++;
 	chanPtr = rpcChannelPtrPtr[firstUnused];
+	CHAN_TRACE(chanPtr, "alloc first unused");
     } else if (firstFree >= 0) {
 	rpcCltStat.chanReuse++;
 	chanPtr = rpcChannelPtrPtr[firstFree];
+	CHAN_TRACE(chanPtr, "alloc first free");
     } else {
 	panic("Rpc_ChanAlloc can't find the free channel.\n");
     }
@@ -384,7 +410,7 @@ found:
     chanPtr->state = CHAN_BUSY;
     numFreeChannels--;
 
-    UNLOCK_MONITOR;
+    MASTER_UNLOCK(&rpcMutex);
     return(chanPtr);
 }
 
@@ -408,8 +434,8 @@ RpcChanFree(chanPtr)
     RpcClientChannel *chanPtr;		/* The channel to free */
 {
 
-    LOCK_MONITOR;
-
+    MASTER_LOCK(&rpcMutex);
+    CHAN_TRACE(chanPtr, "free channel");
     if (chanPtr->state == CHAN_FREE) {
 	panic("Rpc_ChanFree: freeing free channel\n");
     }
@@ -418,8 +444,81 @@ RpcChanFree(chanPtr)
     numFreeChannels++;
     if (numFreeChannels == 1) {
 	rpcCltStat.chanBroads++;
-	Sync_Broadcast(&freeChannels);
+	Sync_MasterBroadcast(&freeChannels);
     }
     
-    UNLOCK_MONITOR;
+    MASTER_UNLOCK(&rpcMutex);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcChanClose --
+ *
+ *	Process a close request from a server. This is called from
+ *	RpcClientDispatch at interrupt level.  If the channel is not
+ *	busy then the interrupt handler
+ *	needs to mark the channel as busy momentarily and send an
+ *	ack to the server. See RpcClientDispatch for more details.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The channel might be used to send an ack to the server.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+RpcChanClose(chanPtr,rpcHdrPtr)
+    register RpcClientChannel *chanPtr;	/* The channel to use.*/
+    register RpcHdr *rpcHdrPtr;		/* The Rpc header as it sits in the
+					 * network module's buffer.  The data
+					 * in the message follows this. */
+{
+    register RpcHdr *ackHdrPtr;
+    if ((chanPtr->state & CHAN_BUSY) == 0) {
+	MASTER_LOCK(&rpcMutex);
+	/*
+	 * Check again to make sure the channel isn't busy,
+	 * then temporarily allocate it while we issue the explicit ack.
+	 * If a process has slipped in and allocated the channel then its
+	 * request will serve as the acknowledgement and we can bail out.
+	 */
+	if ((chanPtr->state & CHAN_BUSY) != 0) {
+	    MASTER_UNLOCK(&rpcMutex);
+	    return;
+	}
+	chanPtr->state |= CHAN_BUSY;
+	numFreeChannels--;
+	MASTER_UNLOCK(&rpcMutex);
+
+	rpcCltStat.close++;
+	/*
+	 * Set up and transmit the explicit acknowledgement packet.
+	 * Unset fragment and buffer fields have been initialized in Rpc_Init.
+	 */
+	ackHdrPtr = &chanPtr->ackHdr;
+	ackHdrPtr->flags = RPC_ACK | RPC_CLOSE | RPC_SERVER;
+	ackHdrPtr->delay = rpcMyDelay;
+	ackHdrPtr->clientID = rpc_SpriteID;
+	ackHdrPtr->serverID = rpcHdrPtr->serverID;
+	ackHdrPtr->channel = rpcHdrPtr->channel;
+	ackHdrPtr->serverHint = rpcHdrPtr->serverHint;
+	ackHdrPtr->ID = rpcHdrPtr->ID;
+	(void)RpcOutput(rpcHdrPtr->serverID, &chanPtr->ackHdr, &chanPtr->ack,
+			     (RpcBufferSet *)NIL, 0, (Sync_Semaphore *)NIL);
+	/*
+	 * Note that the packet can linger in the network output queue,
+	 * so we are relying on the fact that it would only be reused
+	 * for another ack in the worst case.
+	 */
+
+	MASTER_LOCK(&rpcMutex);
+	chanPtr->state &= ~CHAN_BUSY;
+	numFreeChannels++;
+	MASTER_UNLOCK(&rpcMutex);
+    }
+}
+
