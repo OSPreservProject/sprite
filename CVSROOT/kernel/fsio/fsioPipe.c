@@ -1051,18 +1051,12 @@ FsRmtPipeReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
     reopenParams.use = rmtHandlePtr->recovery.use;
 
     /*
-     * Contact the server to do the reopen.
+     * Contact the server to do the reopen, and then notify waiters.
      */
     outSize = 0;
     status = FsSpriteReopen(hdrPtr, sizeof(FsPipeReopenParams),
 		(Address)&reopenParams, &outSize, (Address)NIL);
-
-    if (status == SUCCESS) {
-	/*
-	 * Notify waiters that recovery is complete.
-	 */
-	FsRecoveryWakeup(&rmtHandlePtr->recovery);
-    }
+    FsRecoveryWakeup(&rmtHandlePtr->recovery, status);
     return(status);
 }
 
