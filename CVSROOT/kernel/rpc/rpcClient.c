@@ -55,14 +55,14 @@ unsigned int	rpcMaxWait;	/* Maximum wait interval in ticks */
 int	rpcMaxFactor = 5000;	/* rpcMaxWait is rpcMaxFactor times
 				 * 1 millisecond */
 
-int	rpcMaxTries = 6;	/* Number of times to re-send before aborting */
+int	rpcMaxTries = 8;	/* Number of times to re-send before aborting */
 
 /*
- * Watchdog against lots of acknowledgments from a server.  Now we hang
- * in order to figure out what's wrong on the server.  This counter causes
- * a warning message to be printed every rpcMaxAcks.
+ * Watchdog against lots of acknowledgments from a server.  This limit causes
+ * a warning message to be printed every rpcMaxAcks, and if the RPC is
+ * a broadcast it gets aborted.
  */
-int	rpcMaxAcks = 20;
+int	rpcMaxAcks = 12;
 
 /*
  * For debugging servers.  We allow client's to retry forever instead
@@ -74,7 +74,7 @@ Boolean rpc_NoTimeouts = FALSE;
  * A histogram is kept of the elapsed time of each different kind of RPC.
  */
 Rpc_Histogram *rpcCallTime[RPC_LAST_COMMAND+1];
-Boolean rpcCallTiming = TRUE;
+Boolean rpcCallTiming = FALSE;
 
 
 /*
