@@ -69,6 +69,33 @@ _VmMachFlushBlock:
 /*
  *----------------------------------------------------------------------
  *
+ * VmMachFlushCache --
+ *
+ *	void VmMachFlushCache()
+ *
+ *	Flush the entire cache.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The entire cache is flushed.
+ *
+ *----------------------------------------------------------------------
+ */
+	.globl _VmMachFlushCache
+_VmMachFlushCache:
+	add_nt		SAFE_TEMP1, r0, $0
+	LD_CONSTANT(SAFE_TEMP2, VMMACH_CACHE_SIZE)
+1:	st_external	r0, SAFE_TEMP1, $MACH_CO_FLUSH
+	add_nt		SAFE_TEMP1, SAFE_TEMP1, $VMMACH_CACHE_BLOCK_SIZE
+	cmp_br_delayed	lt, SAFE_TEMP1, SAFE_TEMP2, 1b
+	Nop
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * VmMachSetSegRegisters --
  *
  *	void VmMachSetSegRegisters(segNums, RPTPMs)
