@@ -810,8 +810,8 @@ DevFBMMap(devicePtr, startAddr, length, offset, newAddrPtr)
 	    (((unsigned int)kernelAddr) & ~(VMMACH_SEG_SIZE - 1));
     numBytes = ((unsigned int)((kernelAddr + length) - kernelAlignedAddr) +
 	    (VMMACH_SEG_SIZE - 1)) & ~(VMMACH_SEG_SIZE - 1);
-    status = VmMach_IntMapKernelIntoUser(kernelAlignedAddr,
-	    numBytes, startAddr, newAddrPtr);
+    status = VmMach_IntMapKernelIntoUser((unsigned int) kernelAlignedAddr,
+	    numBytes, (unsigned int) startAddr, newAddrPtr);
     if (status != SUCCESS) {
 	return status;
     }
