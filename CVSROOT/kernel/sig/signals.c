@@ -331,7 +331,9 @@ LocalSend(procPtr, sigNum, code)
 	 * If the process is waiting or suspended then wake it up.
 	 */
 	Sync_WakeWaitingProcess(procPtr);
-	Proc_Resume(procPtr);
+	if (sigNum == SIG_RESUME) {
+	    Proc_Resume(procPtr);
+	}
 
 	if (sigNum == SIG_KILL) {
 	    /*
