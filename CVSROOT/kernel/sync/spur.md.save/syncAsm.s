@@ -52,7 +52,7 @@
     .globl _Sync_GetLock
 _Sync_GetLock:
     rd_kpsw		r17
-    and			r18, r17, $~MACH_KPSW_INTR_TRAP_ENA
+    and			r18, r17, $~(MACH_KPSW_INTR_TRAP_ENA|MACH_KPSW_IBUFFER_ENA)
     jump		2f
     wr_kpsw		r18, $0
 
