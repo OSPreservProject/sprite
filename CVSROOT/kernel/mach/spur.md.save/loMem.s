@@ -999,9 +999,39 @@ interrupt_GoodSWP:
 	Nop
 
 interrupt_KernMode:
+	/*
+	 * Save all globals on the spill stack in case they get
+	 * trashed.
+	 */
+	sub		SPILL_SP, SPILL_SP, $32
+	st_32		r1, SPILL_SP, $0
+	st_32		r2, SPILL_SP, $4
+	st_32		r3, SPILL_SP, $8
+	st_32		r5, SPILL_SP, $12
+	st_32		r6, SPILL_SP, $16
+	st_32		r7, SPILL_SP, $20
+	st_32		r8, SPILL_SP, $24
+	st_32		r9, SPILL_SP, $28
+	/*
+	 * Enable all traps and take the interrupt.
+	 */
 	wr_kpsw		KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
 	call 		_MachInterrupt
 	Nop
+	/*
+	 * Restore the globals and the spill sp.
+	 */
+	ld_32		r1, SPILL_SP, $0
+	ld_32		r2, SPILL_SP, $4
+	ld_32		r3, SPILL_SP, $8
+	ld_32		r5, SPILL_SP, $12
+	ld_32		r6, SPILL_SP, $16
+	ld_32		r7, SPILL_SP, $20
+	ld_32		r8, SPILL_SP, $24
+	ld_32		r9, SPILL_SP, $28
+	nop
+	add_nt		SPILL_SP, SPILL_SP, $32
+
 	/*
 	 * Restore insert register and kpsw, enable interrupts and return.
 	 */
@@ -2465,8 +2495,15 @@ _Mach_EnableIntr:
  */
 	.globl	_Mach_TestAndSet
 _Mach_TestAndSet:
+	rd_kpsw		SAFE_TEMP1
+	and		VOL_TEMP1, SAFE_TEMP1, $(~MACH_KPSW_INTR_TRAP_ENA)
+	wr_kpsw		VOL_TEMP1, $0
+
 	test_and_set	VOL_TEMP1, INPUT_REG1, $0
 	nop
+
+	wr_kpsw		SAFE_TEMP1, $0
+
 	add_nt		RETURN_VAL_REG_CHILD, VOL_TEMP1, $0
 	return		RETURN_ADDR_REG, $8
 	Nop
