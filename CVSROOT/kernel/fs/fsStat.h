@@ -549,17 +549,6 @@ Fs_TypeStats fs_TypeStats;
         counter &= ~FS_STAT_OVERFLOW; \
     }
 
-#ifdef SOSP91
-typedef	struct	Fs_SospMigStats {
-    Fs_BlockCacheStats	blockCache;
-    Fs_RemoteIOStats	rmtIO;
-    Fs_GeneralStats	gen;
-} Fs_SospMigStats;
-    
-
-extern	Fs_SospMigStats	fs_SospMigStats;
-#endif SOSP91
-
 /*
  * We've changed things so that heap pages are cacheable.
  * In order to know how much of the vm bytes are found in the cache or not,
@@ -567,31 +556,6 @@ extern	Fs_SospMigStats	fs_SospMigStats;
  * as does bytesReadForVM, so we use this extra counter to know how much of
  * that is so.
  */
-#ifdef SOSP91
-typedef	struct Fs_NewStats {
-    int		uncacheableDirBytesRead;
-    int		uncacheableDirBytesReadMig;
-    int		CORPageServerRead;
-    int		CORPageServerReadM;
-    int		hitsOnCodePage;
-    int		hitsOnCodePageM;
-    int		hitsOnSwapPage;
-    int		hitsOnSwapPageM;
-    int		missesOnCodePage;
-    int		missesOnCodePageM;
-    int		missesOnSwapPage;
-    int		missesOnSwapPageM;
-    int		psFilledM;
-    int		fsFilledM;
-    int		zeroFilledM;
-    int		totalFaultsM;
-    int		remoteDevicishBytesRead;
-    int		remoteDevicishBytesReadM;
-    int		COWCopySwapPage;
-    int		COWCopySwapPageM;
-} Fs_NewStats;
-extern	Fs_NewStats	fs_MoreStats;
-#endif SOSP91
 
 extern	Fs_Stats	fs_Stats;
 
