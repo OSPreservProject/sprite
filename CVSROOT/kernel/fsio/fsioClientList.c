@@ -22,13 +22,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsutil.h"
-#include "fsconsist.h"
-#include "fsio.h"
-#include "fsStat.h"
-#include "rpc.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsconsist.h>
+#include <fsio.h>
+#include <fsStat.h>
+#include <rpc.h>
 
 
 
@@ -53,7 +53,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  *
  * ----------------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 Boolean
 Fsio_StreamClientOpen(clientList, clientID, useFlags, foundPtr)
     List_Links		*clientList;	/* List of clients */
