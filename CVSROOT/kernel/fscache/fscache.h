@@ -335,8 +335,14 @@ typedef struct Fscache_ReadAheadInfo {
 #define FSCACHE_DEBUG_PRINT3(string, arg1, arg2, arg3)
 #endif not CLEAN
 
-/* Data. */
+/*
+ * The cache uses a number of Proc_ServerProcs to do write-backs.
+ * FSCACHE_MAX_CLEANER_PROCS defines the maximum number, and this
+ * is used to configure the right number of Proc_ServerProcs.
+ */
+#define FSCACHE_MAX_CLEANER_PROCS	3
 extern int	fscache_MaxBlockCleaners;
+
 extern Boolean	fscache_RATracing;
 extern int	fscache_NumReadAheadBlocks;
 
