@@ -42,24 +42,37 @@ main()
     * Initialize machine dependent info.  MUST BE CALLED HERE!!!.
     */
     Mach_Init();
-    Vm_BootInit();
+    Mach_MonPrintf("After Mach_Init\n");
     Dbg_Init();
-    Sync_Init();
-    Mach_MonPrintf("Before\n");
-    NetIEInit("IE", 0, 0xffd0c000);
-    Mach_MonPrintf("After\n");
-#ifdef NOTDEF
-    Net_Init();
-
+    Mach_MonPrintf("After Dbg_Init\n");
+    /* Sys Init here */
+    Vm_BootInit();
+    Mach_MonPrintf("After Vm_BootInit\n");
     Timer_TimerInit();
     Timer_TimerStart();
-#endif /* NOTDEF */
+    Mach_MonPrintf("After Timer Initialize routines\n");
+    Sync_Init();
+    Mach_MonPrintf("After Sync_Init\n");
+    Vm_Init();
+    Mach_MonPrintf("After Vm_Init\n");
+#ifdef NOTDEF
+    NetIEInit("IE", 0, 0x3fd0c000);
+    Mach_MonPrintf("After NetIEInit\n");
+#else
+    Net_Init();
+    Mach_MonPrintf("After Net_Init\n");
+#endif NOTDEF
+    Mach_MonPrintf("Enabling interrupts\n");
     ENABLE_INTR();
+#ifdef NOTDEF
     DBG_CALL;
     Mach_MonPrintf("Debugger returned\n");
     Mach_MonPrintf("Trying it again\n");
     DBG_CALL;
     Mach_MonPrintf("Debugger returned again\n");
+#else
+    Mach_MonPrintf("Here we are.\n");
+#endif
 
     for ( ; ; ) {
 	;
