@@ -28,6 +28,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsStream.h"
 #include "fsOpTable.h"
 #include "fsBlockCache.h"
+#include "fsTrace.h"
 #include "fsStat.h"
 #include "fsDisk.h"
 #include "mem.h"
@@ -188,6 +189,7 @@ Fs_Write(streamPtr, buffer, offset, lenPtr)
 
     remoteWaiter.hostID = rpc_SpriteID;
 
+    FS_TRACE_IO(FS_TRACE_WRITE, streamPtr->ioHandlePtr->fileID, offset, *lenPtr);
     /*
      * Outer loop to attempt the write and block if not ready.  The
      * extra size and toWrite variables are needed because of devices
@@ -318,6 +320,8 @@ Fs_PageRead(streamPtr, pageAddr, offset, numBytes, pageType)
 		status = (*fsStreamOpTable[streamType].blockRead)
 			(streamPtr->ioHandlePtr, 0, pageAddr, &offset,
 			 &bytesRead, (Sync_RemoteWaiter *)NIL);
+		FS_TRACE_IO(FS_TRACE_READ, streamPtr->ioHandlePtr->fileID,
+			    offset, bytesRead);
 		if (status != SUCCESS) {
 		    if (status == RPC_TIMEOUT || status == FS_STALE_HANDLE ||
 			status == RPC_SERVICE_DISABLED) {
@@ -540,35 +544,79 @@ Fs_IOControl(streamPtr, command, inBufSize, inBuffer,  outBufSize, outBuffer)
     register ReturnStatus	status;
     register Boolean		retry;
     int				offset;
+    Ioc_LockArgs		*lockArgsPtr;
 
-    /*
-     * Special case for IOC_NUM_READABLE.  We pass the stream offset
-     * down using the inBuffer so that the stream-type-specific routines
-     * can correctly compute how much data is available.
-     */
-    if (command == IOC_NUM_READABLE) {
-	offset = streamPtr->offset;
-	inBuffer = (Address) &offset;
-	inBufSize = sizeof(int);
-    }
-    /*
-     * First call down stream to see if the IOControl is applicable.
-     * If so, we may also have to adjust some state of our own.
-     */
     do {
+	/*
+	 * The IOControl may have to be retried in the case of server recovery
+	 * or blocking locks.
+	 */
 	retry = FALSE;
+
+	/*
+	 * Pre-processing for some of the IOControls.
+	 *
+	 * IOC_NUM_READABLE.  We pass the stream offset
+	 * down using the inBuffer so that the stream-type-specific routines
+	 * can correctly compute how much data is available.
+	 *
+	 * IOC_LOCK and IOC_UNLOCK.  We have to fill in the process and hostID
+	 * entries in the buffer passed in from the user.
+	 */
+	switch(command) {
+	    case IOC_NUM_READABLE:
+		offset = streamPtr->offset;
+		inBuffer = (Address) &offset;
+		inBufSize = sizeof(int);
+		break;
+	    case IOC_LOCK:
+	    case IOC_UNLOCK: {
+		lockArgsPtr = (Ioc_LockArgs *)inBuffer;
+		lockArgsPtr->hostID = rpc_SpriteID;
+		Sync_GetWaitToken(&lockArgsPtr->pid, &lockArgsPtr->token);
+		break;
+	    }
+	}
+
+	/*
+	 * Call down stream to see if the IOControl is applicable.
+	 * If so, we may also have to adjust some state of our own.
+	 */
 	status = (fsStreamOpTable[streamPtr->ioHandlePtr->fileID.type].ioControl)
 	    (streamPtr->ioHandlePtr, command, inBufSize, inBuffer, outBufSize,
 		outBuffer);
-	if (status == RPC_TIMEOUT || status == FS_STALE_HANDLE ||
-	    status == RPC_SERVICE_DISABLED) {
-	    status = FsWaitForRecovery(streamPtr->ioHandlePtr, status);
-	    if (status == SUCCESS) {
-		retry = TRUE;
-	    }
-	}
-	if (status != SUCCESS) {
-	    return(status);
+	switch(status) {
+	    case SUCCESS:
+		break;
+	    case RPC_TIMEOUT:
+	    case RPC_SERVICE_DISABLED:
+	    case FS_STALE_HANDLE:
+		status = FsWaitForRecovery(streamPtr->ioHandlePtr, status);
+		if (status == SUCCESS) {
+		    retry = TRUE;
+		    break;
+		} else {
+		    return(status);
+		}
+	    case FS_WOULD_BLOCK:
+		/*
+		 * Blocking I/O control.  Should be a lock, although some
+		 * pseudo-device servers (like ipServer) will return
+		 * this status code for their own reasons.
+		 */
+		if ((command == IOC_LOCK) &&
+		    ((lockArgsPtr->flags & IOC_LOCK_NO_BLOCK) == 0)) {
+		    if (Sync_ProcWait((Sync_Lock *) NIL, TRUE)) {
+			return(GEN_ABORTED_BY_SIGNAL);
+		    } else {
+			retry = TRUE;
+			break;
+		    }
+		} else {
+		    return(status);
+		}
+	    default:
+		return(status);
 	}
     } while (retry);
 
