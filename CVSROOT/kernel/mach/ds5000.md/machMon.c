@@ -90,14 +90,14 @@ Mach_MonReboot(rebootString)
 {
     char *bootpath;
     if (*rebootString != '\0') {
-	mach_MonFuncs.setenv2("bootpath",rebootString);
+	mach_MonFuncs.setenv2("boot",rebootString);
     } else {
-	bootpath = mach_MonFuncs.getenv2("bootpath");
+	bootpath = mach_MonFuncs.getenv2("boot");
 	if (bootpath == (char *)NULL || *bootpath == '\0') {
 	    /*
 	     * Hardware doesn't have a bootpath.
 	     */
-	    mach_MonFuncs.setenv2("bootpath",DEFAULT_REBOOT);
+	    mach_MonFuncs.setenv2("boot",DEFAULT_REBOOT);
 	    printf("Using default %s\n",DEFAULT_REBOOT);
 	}
 	/*
