@@ -102,7 +102,7 @@ ProcGetObjInfo(filePtr, execPtr, objInfoPtr)
 	    data[2]==0xd0058000 && data[3]==0x9205a004) ||
     /* Profiled sun4 startup code */
 	    (data[0]==0xbc100000 && data[1]==0x11000008 &&
-		data[2]==0x13000208 && data[3]==0x400038df)) {
+		data[2]==0x13000028)) {
 
 #endif
 	type = TYPE_SPRITE;
