@@ -35,11 +35,16 @@ int recovPingSeconds = 30;
 /*
  * Whether or not to ping at absolute intervals instead of 30 after the last
  * ping finished.  This is used for testing the affects of the synchronization
- * of client pinging on the servers.
+ * of client pinging on the servers.  The condition variable gets its 
+ * own lock because that seemed cleaner than using the monitor lock 
+ * (the condition variable has nothing to do with the data protected 
+ * by the monitor lock).  The condition variable is an extern so that it 
+ * can be referenced by Proc_Dump().
  */
 Boolean			recov_AbsoluteIntervals = TRUE;
 Timer_QueueElement	recovIntervalElement;
-unsigned int		recovPingEvent;
+Sync_Condition		recovPingCondition;
+static Sync_Lock	recovPingConditionLock;
 /*
  * A list of hosts to ping is used by Recov_Proc.
  */
@@ -54,8 +59,8 @@ List_Links *recovPingList = &recovPingListHdr;
 /*
  * Access to the ping list is monitored
  */
-static Sync_Lock recovPingLock;
-#define LOCKPTR (&recovPingLock)
+static Sync_Lock pingListLock;
+#define LOCKPTR (&pingListLock)
 
 static RecovPing *FirstHostToCheck _ARGS_((void));
 static RecovPing *NextHostToCheck _ARGS_((RecovPing *pingPtr));
@@ -84,7 +89,9 @@ PingInterval(time, clientData)
     Timer_Ticks	time;
     ClientData	clientData;
 {
-    Sync_EventWakeup((unsigned int) &recovPingEvent);
+    (void)Sync_GetLock(&recovPingConditionLock);
+    Sync_Broadcast(&recovPingCondition);
+    (void)Sync_Unlock(&recovPingConditionLock);
     Timer_ScheduleRoutine(&recovIntervalElement, TRUE);
 
     return;
@@ -110,7 +117,9 @@ PingInterval(time, clientData)
 void
 RecovPingInit()
 {
-    Sync_LockInitDynamic(&recovPingLock, "Recov:pingListLock");
+    Sync_LockInitDynamic(&pingListLock, "Recov:pingListLock");
+    Sync_LockInitDynamic(&recovPingConditionLock,
+			 "Recov:recovPingConditionLock");
     List_Init(recovPingList);
     if (recov_AbsoluteIntervals) {
 	recovIntervalElement.routine = PingInterval;
@@ -158,7 +167,10 @@ Recov_Proc()
 	    Time_Multiply(time_OneSecond, recovPingSeconds, &wait);
 	    Sync_WaitTime(wait);
 	} else {
-	    (void) Sync_EventWait((unsigned int) &recovPingEvent, FALSE);
+	    (void) Sync_GetLock(&recovPingConditionLock);
+	    (void) Sync_SlowWait(&recovPingCondition, &recovPingConditionLock,
+				 FALSE);
+	    (void) Sync_Unlock(&recovPingConditionLock);
 	}
 	if (sys_ShuttingDown) {
 	    printf("Recov_Proc exiting.\n");
