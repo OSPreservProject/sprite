@@ -1087,6 +1087,11 @@ Sys_StatsStub(command, option, argPtr)
 	    status = SUCCESS;
 	    break;
 	}
+        case SYS_MACH_PRINT_DEV_TREE: {
+	    Mach_MonTraverseAndPrintDevTree();
+	    status = SUCCESS;
+	    break;
+	}
 #endif /* sun4c */
 	case SYS_PROC_ADD_SERVERS: {
 	    if (option < 0) {
