@@ -69,7 +69,7 @@ Boolean fsWBOnLastDirtyBlock = FALSE;
 Trace_Header fsTraceHdr;
 Trace_Header *fsTraceHdrPtr = &fsTraceHdr;
 int fsTraceLength = 256;
-Boolean fsTracing = TRUE;
+Boolean fsTracing = FALSE;
 Time fsTraceTime;		/* Cost of taking a trace record */
 int fsTracedFile = -1;		/* fileID.minor of traced file */
 
