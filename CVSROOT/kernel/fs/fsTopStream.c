@@ -91,7 +91,6 @@ FsStreamNewClient(serverID, clientID, ioHandlePtr, useFlags, name)
     register Fs_Stream *streamPtr;
     Fs_Stream *newStreamPtr;
     Fs_FileID fileID;
-    FsStreamClientInfo *clientPtr;
 
     LOCK_MONITOR;
 
@@ -165,7 +164,6 @@ FsStreamAddClient(streamIDPtr, clientID, ioHandlePtr, useFlags, name,
     register Boolean found;
     register Fs_Stream *streamPtr;
     Fs_Stream *newStreamPtr;
-    Boolean foundClient;
 
     found = FsHandleInstall(streamIDPtr, sizeof(Fs_Stream), name,
 			    (FsHandleHeader **)&newStreamPtr);
@@ -610,8 +608,7 @@ FsStreamDispose(streamPtr)
 
 	    LIST_FORALL(&streamPtr->clientList, (List_Links *) clientPtr) {
 
-		printf( 
-			  "FsStreamDispose, client %d still in list for stream <%d,%d>, refCount %d\n",
+		printf("FsStreamDispose, client %d still in list for stream <%d,%d>, refCount %d\n",
 			  clientPtr->clientID, streamPtr->hdr.fileID.major,
 			  streamPtr->hdr.fileID.minor, streamPtr->hdr.refCount);
 		if (streamPtr->ioHandlePtr != (FsHandleHeader *)NIL) {

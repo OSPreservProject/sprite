@@ -609,7 +609,6 @@ Fs_EncapFileState(procPtr, bufPtr, sizePtr, numEncapPtr)
     int numEncap;
     ReturnStatus status;
     FsPrefix *prefixPtr;
-    char *cwdName;
     int cwdLength;
 
 

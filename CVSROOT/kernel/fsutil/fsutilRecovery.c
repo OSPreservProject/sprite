@@ -168,7 +168,7 @@ ReopenHandles(serverID)
     register	Fs_Stream	*streamPtr;
     register	FsRemoteIOHandle *rmtHandlePtr;
     ReturnStatus		status = SUCCESS;
-    Boolean			printed;
+    Boolean			printed = FALSE;
     int				succeeded = fsStats.recovery.succeeded;
     int				failed = fsStats.recovery.failed;
 

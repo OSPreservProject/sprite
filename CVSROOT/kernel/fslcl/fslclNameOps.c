@@ -368,7 +368,7 @@ FsStreamTypeOps fsStreamOpTable[] = {
 		NoProc, NoProc,			/* release, migend */
 		NoProc, NoProc,			/* migrate, reopen */
 		NoProc, NoProc, NoProc, NoProc,	/* cache ops */
-		(void (*)())NoProc,		/* scavenge */
+		(Boolean (*)())NoProc,		/* scavenge */
 		(void (*)())NoProc, NoProc },	/* kill, close */
 #ifdef notdef
     /*

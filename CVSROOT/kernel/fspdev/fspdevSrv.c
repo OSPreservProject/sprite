@@ -1752,7 +1752,9 @@ FsPseudoStreamRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     register PdevClientIOHandle *cltHandlePtr =
 	    (PdevClientIOHandle *)streamPtr->ioHandlePtr;
     register PdevServerIOHandle *pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
+#ifdef notdef
     register Ioc_Owner *ownerPtr;
+#endif notdef
     Proc_ControlBlock	*procPtr;
     Pdev_Request	request;
 
@@ -1939,6 +1941,9 @@ FsPseudoStreamWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     int			replySize;
     int			numBytes;
     int			maxRequestSize;
+#ifdef notdef
+    IOC_Owner		*ownerPtr;
+#endif
 
     LOCK_MONITOR;
     /*
