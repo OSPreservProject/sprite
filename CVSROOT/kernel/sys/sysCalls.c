@@ -498,6 +498,20 @@ Sys_StatsStub(command, option, argPtr)
 	    } else {
 		Timer_TicksToTime(sched_Instrument.noProcessRunning,
 				  &sched_Instrument.idleTime);
+		/*
+		 * If no interrupts received, mostRecentInterrupt will
+		 * be 0, so set it to the current time.  This will happen
+		 * the first time Sched_Stats is called if there were no
+		 * keyboard interrupts already.
+		 *
+		 * Note: mostRecentInterrupt can't be set during dev_Kbd
+		 * initialization because the timer has not yet been
+		 * initialized.
+		 */
+		if (dev_KbdInstrument.mostRecentInterrupt.seconds == 0) {
+		    Timer_GetTimeOfDay(&dev_KbdInstrument.mostRecentInterrupt,
+				       (int *) NIL, (Boolean *) NIL);
+		}
 		Timer_GetTimeOfDay(&curTime, (int *) NIL, (Boolean *) NIL);
 		Time_Subtract(curTime, dev_KbdInstrument.mostRecentInterrupt,
 			      &sched_Instrument.noUserInput);
