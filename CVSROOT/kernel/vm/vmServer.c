@@ -79,11 +79,11 @@ VmSwapFileRemove(swapStreamPtr, swapFileName)
 	} else {
 	    status = Fs_Remove(swapFileName);
 	}
-	free(swapFileName);
 	if (status != SUCCESS) {
 	    printf("Warning: VmSwapFileRemove: Fs_Remove(%s) returned %x.\n",
 		      swapFileName, status);
 	}
+	free(swapFileName);
     }
     if (origID != NIL) {
 	procPtr->effectiveUserID = origID;
