@@ -301,7 +301,7 @@ Mach_SetupNewState(procPtr, parStatePtr, startFunc, startPC)
     /*
      * Allocate a kernel stack for this process.
      */
-    statePtr->kernStackStart = Vm_GetKernelStack();
+    statePtr->kernStackStart = Vm_GetKernelStack(0);
     if (statePtr->kernStackStart == (Address)NIL) {
 	return(PROC_NO_STACKS);
     }
@@ -1320,4 +1320,31 @@ Mach_UnsetJump()
     procPtr->machStatePtr->setJumpStatePtr = (Mach_SetJumpState *) NIL;
 }
 
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_GetMachineArch --
+ *
+ *	Return the machine architecture (SYS_SUN2 or SYS_SUN3).
+ *
+ * Results:
+ *	The machine architecture.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+int
+Mach_GetMachineArch()
+{
+#       ifdef SUN2
+	return SYS_SUN2;
+#       endif SUN2
+
+#       ifdef SUN3
+	return SYS_SUN3;
+#       endif SUN3
+}
 
