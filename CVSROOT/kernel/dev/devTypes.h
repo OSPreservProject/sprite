@@ -56,12 +56,13 @@
 #define	DEV_RAID		10
 #define	DEV_DEBUG		11
 #define DEV_MOUSE		12
+#define DEV_GRAPHICS		13
 
 /*
  * Following device(s) exist only on Sequent Symmetry
  */
 
-#define DEV_ZDC_DISK		13
+#define DEV_ZDC_DISK		14
 
 /*
  * The following device types are defined for SPUR as of 7/15/89.  They
