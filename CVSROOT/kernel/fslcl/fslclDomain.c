@@ -167,6 +167,10 @@ FsLocalOpen(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
 		(handlePtr, openArgsPtr->clientID, openArgsPtr->useFlags,
 		 &openResultsPtr->ioFileID, &openResultsPtr->streamID,
 		 &openResultsPtr->dataSize, &openResultsPtr->streamData);
+	openResultsPtr->nameID = handlePtr->hdr.fileID;
+	if (openArgsPtr->clientID != rpc_SpriteID) {
+	    openResultsPtr->nameID.type = FS_RMT_FILE_STREAM;
+	}
 	FsHandleRelease(handlePtr, TRUE);
 	FsDomainRelease(handlePtr->hdr.fileID.major);
     }
