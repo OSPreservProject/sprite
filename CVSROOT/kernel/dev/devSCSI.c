@@ -17,6 +17,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "dev.h"
 #include "devInt.h"
 #include "devSCSI.h"
+#include "devSCSIWorm.h"
 
 #include "multibus.h"
 #include "sunMon.h"
@@ -52,6 +53,13 @@ static int scsiTapeIndex = -1;
 DevSCSIDevice *scsiTape[SCSI_MAX_TAPES];
 
 /*
+ * State for each SCSI worm drive.  This used to map from unit numbers
+ * back to the controller for the drive.
+ */
+static int scsiWormIndex = -1;
+DevSCSIDevice *scsiWorm[SCSI_MAX_WORMS];
+
+/*
  * SetJump stuff needed when probing for the existence of a device.
  */
 static Sys_SetJumpState setJumpState;
@@ -75,6 +83,7 @@ static Sys_SetJumpState setJumpState;
  * SECTORS_PER_BLOCK
  */
 #define SECTORS_PER_BLOCK	(FS_BLOCK_SIZE / DEV_BYTES_PER_SECTOR)
+#define SECTORS_PER_WORM_BLOCK	(FS_BLOCK_SIZE / DEV_BYTES_PER_WORM_SECTOR)
 
 /*
  * The error codes for class 0-6 sense data are class specific.
@@ -128,6 +137,8 @@ char **scsiErrors[] = {
     scsiClass2Errors,
 };
 
+int devSCSIDebug = FALSE;
+
 /*
  * Forward declarations.
  */
@@ -142,6 +153,7 @@ ReturnStatus	DevSCSIWait();
 
 extern ReturnStatus DevSCSIDiskError();
 extern ReturnStatus DevSCSITapeError();
+extern ReturnStatus DevSCSIWormError();
 
 
 /*
@@ -280,6 +292,8 @@ Dev_SCSIInitDevice(devConfPtr)
 	scsiDiskIndex++;
     } else if (devConfPtr->flags == DEV_SCSI_TAPE) {
 	scsiTapeIndex++;
+    } else if (devConfPtr->flags == DEV_SCSI_WORM) {
+	scsiWormIndex++;
     }
 
     scsiPtr = scsi[devConfPtr->controllerID];
@@ -300,6 +314,7 @@ Dev_SCSIInitDevice(devConfPtr)
 	 */
 	devPtr->type = SCSI_DISK;
 	devPtr->errorProc = DevSCSIDiskError;
+	devPtr->sectorSize = DEV_BYTES_PER_SECTOR;
 	status = DevSCSITest(devPtr);
 	if (status != SUCCESS) {
 	    Mem_Free((Address)devPtr);
@@ -309,7 +324,7 @@ Dev_SCSIInitDevice(devConfPtr)
 	 * Set up a slot in the disk list. See above about scsiDiskIndex.
 	 */
 	if (scsiDiskIndex >= SCSI_MAX_DISKS) {
-	    Sys_Printf("SCSI: To many disks configured\n");
+	    Sys_Printf("SCSI: Too many disks configured\n");
 	    Mem_Free((Address)devPtr);
 	    return(FALSE);
 	}
@@ -325,12 +340,13 @@ Dev_SCSIInitDevice(devConfPtr)
 	 * stuff after the SCSI bus reset like auto load.
 	 */
 	if (scsiTapeIndex >= SCSI_MAX_TAPES) {
-	    Sys_Printf("SCSI: To many tape drives configured\n");
+	    Sys_Printf("SCSI: Too many tape drives configured\n");
 	    Mem_Free((Address)devPtr);
 	    return(FALSE);
 	}
 	devPtr->type = SCSI_TAPE;
 	devPtr->errorProc = DevSCSITapeError;
+	devPtr->sectorSize = DEV_BYTES_PER_SECTOR;
 	tapePtr = (DevSCSITape *) Mem_Alloc(sizeof(DevSCSITape));
 	devPtr->data = (ClientData)tapePtr;
 	tapePtr->state = SCSI_TAPE_CLOSED;
@@ -338,6 +354,32 @@ Dev_SCSIInitDevice(devConfPtr)
 	scsiTape[scsiTapeIndex] = devPtr;
 	Sys_Printf("SCSI-%d tape %d at slave %d\n",
 		    scsiPtr->number, scsiTapeIndex, devPtr->slaveID);
+    } else if (devConfPtr->flags == DEV_SCSI_WORM) {
+	register DevSCSIWorm *wormPtr;
+	/*
+	 * Check that the worm is on-line.  This means we won't find a disk
+	 * if it's powered down upon boot.
+	 */
+	devPtr->type = SCSI_WORM;
+	devPtr->errorProc = DevSCSIWormError;
+	devPtr->sectorSize = DEV_BYTES_PER_WORM_SECTOR;
+	status = DevSCSITest(devPtr);
+	if (status != SUCCESS) {
+	    Mem_Free((Address)devPtr);
+	    return(FALSE);
+	}
+	if (scsiWormIndex >= SCSI_MAX_WORMS) {
+	    Sys_Printf("SCSI: Too many worm drives configured\n");
+	    Mem_Free((Address)devPtr);
+	    return(FALSE);
+	}
+	wormPtr = (DevSCSIWorm *) Mem_Alloc(sizeof(DevSCSIWorm));
+	wormPtr->state = SCSI_WORM_CLOSED;
+	wormPtr->type = SCSI_RXT;
+	devPtr->data = (ClientData)wormPtr;
+	scsiWorm[scsiWormIndex] = devPtr;
+	Sys_Printf("SCSI-%d worm %d at slave %d\n",
+		    scsiPtr->number, scsiWormIndex, devPtr->slaveID);
     }
     return(TRUE);
 }
@@ -806,11 +848,11 @@ DevSCSISectorIO(command, devPtr, firstSector, numSectorsPtr, buffer)
      * Map the buffer into the special area of multibus memory that
      * the device can DMA into.
      */
-    buffer = Vm_DevBufferMap(*numSectorsPtr * DEV_BYTES_PER_SECTOR,
+    buffer = Vm_DevBufferMap(*numSectorsPtr * devPtr->sectorSize,
 			     buffer, scsiPtr->IOBuffer);
     DevSCSISetupCommand(command, devPtr, firstSector, *numSectorsPtr);
     status = DevSCSICommand(devPtr->slaveID, scsiPtr,
-			     *numSectorsPtr * DEV_BYTES_PER_SECTOR,
+			     *numSectorsPtr * devPtr->sectorSize,
 			     buffer, INTERRUPT);
     /*
      * Wait for the command to complete.  The interrupt handler checks
@@ -822,7 +864,7 @@ DevSCSISectorIO(command, devPtr, firstSector, numSectorsPtr, buffer)
 	}
 	status = scsiPtr->status;
     }
-    *numSectorsPtr -= (scsiPtr->residual / DEV_BYTES_PER_SECTOR);
+    *numSectorsPtr -= (scsiPtr->residual / devPtr->sectorSize);
     scsiPtr->flags &= ~SCSI_CNTRLR_BUSY;
     Sync_MasterBroadcast(&scsiPtr->readyForIO);
     MASTER_UNLOCK(scsiPtr->mutex);
@@ -963,6 +1005,13 @@ DevSCSICommand(targetID, scsiPtr, size, addr, interrupt)
     char *charPtr;			/* Used to put the control block
 					 * into the commandStatus register */
     int i;
+    int bits = 0;			/* variable bits to OR into control */
+    Boolean checkMsg = FALSE;		/* have DevSCSIWait check for
+					   a premature message */
+#undef WORM_DEBUG
+#ifdef WORM_DEBUG
+    Boolean oldDebug;
+#endif WORM_DEBUG
 
     /*
      * Save some state needed by the interrupt handler to check errors.
@@ -998,7 +1047,7 @@ DevSCSICommand(targetID, scsiPtr, size, addr, interrupt)
     regsPtr->control = 0;
     regsPtr->data = (1 << targetID);
     regsPtr->control = SCSI_SELECT;
-    status = DevSCSIWait(regsPtr, SCSI_BUSY, NO_RESET);
+    status = DevSCSIWait(regsPtr, SCSI_BUSY, NO_RESET, FALSE);
     if (status != SUCCESS) {
 	regsPtr->data = 0;
 	regsPtr->control = 0;
@@ -1017,12 +1066,11 @@ DevSCSICommand(targetID, scsiPtr, size, addr, interrupt)
      */
     regsPtr->dmaAddress = (int)(addr - MULTIBUS_BASE);
     regsPtr->dmaCount = -size - 1;
+    bits = SCSI_WORD_MODE | SCSI_DMA_ENABLE;
     if (interrupt == INTERRUPT) {
-	regsPtr->control = SCSI_WORD_MODE|SCSI_DMA_ENABLE|
-			    SCSI_INTERRUPT_ENABLE;
-    } else {
-	regsPtr->control = SCSI_WORD_MODE|SCSI_DMA_ENABLE;
-    }
+	bits |= SCSI_INTERRUPT_ENABLE;
+    } 
+    regsPtr->control = bits;
 
     /*
      * Stuff the control block through the commandStatus register.
@@ -1032,11 +1080,32 @@ DevSCSICommand(targetID, scsiPtr, size, addr, interrupt)
      * are of "group 0" which means they are 6 bytes long.
      */
     charPtr = (char *)&scsiPtr->controlBlock;
+#ifdef WORM_DEBUG
+    oldDebug = devSCSIDebug;
+    if (scsiPtr->devPtr->type == SCSI_WORM) {
+	devSCSIDebug = TRUE;
+    }
+#endif WORM_DEBUG
+    if (scsiPtr->devPtr->type == SCSI_WORM) {
+	checkMsg = TRUE;
+    }
     for (i=0 ; i<sizeof(DevSCSIControlBlock) ; i++) {
-	status = DevSCSIWait(regsPtr, SCSI_REQUEST, RESET);
+	status = DevSCSIWait(regsPtr, SCSI_REQUEST, RESET, checkMsg);
+/*
+ * This is just a guess.
+ */
+	if (status == DEV_EARLY_CMD_COMPLETION) {
+#ifdef WORM_DEBUG
+	    devSCSIDebug = oldDebug;
+#endif WORM_DEBUG
+	    return(SUCCESS);
+	}
 	if (status != SUCCESS) {
 	    Sys_Printf("SCSI-%d: couldn't send command block (i=%d)\n",
 				 scsiPtr->number, i);
+#ifdef WORM_DEBUG
+	    devSCSIDebug = oldDebug;
+#endif WORM_DEBUG
 	    return(status);
 	}
 	/*
@@ -1047,16 +1116,22 @@ DevSCSICommand(targetID, scsiPtr, size, addr, interrupt)
 	    DevSCSIReset(regsPtr);
 	    Sys_Printf("SCSI-%d: device dropped command line\n",
 				 scsiPtr->number);
+#ifdef WORM_DEBUG
+	    devSCSIDebug = oldDebug;
+#endif WORM_DEBUG
 	    return(DEV_HANDSHAKE_ERROR);
 	}
 	regsPtr->commandStatus = *charPtr;
 	charPtr++;
     }
+#ifdef WORM_DEBUG
+    devSCSIDebug = oldDebug;
+#endif WORM_DEBUG
     if (interrupt == WAIT) {
 	/*
 	 * A synchronous command.  Wait here for the command to complete.
 	 */
-	status = DevSCSIWait(regsPtr, SCSI_INTERRUPT_REQUEST, RESET);
+	status = DevSCSIWait(regsPtr, SCSI_INTERRUPT_REQUEST, RESET, FALSE);
 	if (status == SUCCESS) {
 	    scsiPtr->residual = -regsPtr->dmaCount -1;
 	    status = DevSCSIStatus(scsiPtr);
@@ -1113,7 +1188,7 @@ DevSCSIStatus(scsiPtr)
 	 * status bytes have been received and that the byte in the
 	 * commandStatus register is the message byte.
 	 */
-	status = DevSCSIWait(regsPtr, SCSI_REQUEST, RESET);
+	status = DevSCSIWait(regsPtr, SCSI_REQUEST, RESET, FALSE);
 	if (status != SUCCESS) {
 	    Sys_Printf("SCSI-%d: wait error after %d status bytes\n",
 				 scsiPtr->number, numStatusBytes);
@@ -1159,7 +1234,7 @@ DevSCSIStatus(scsiPtr)
 /*
  *----------------------------------------------------------------------
  *
- * DevSCSIReqeustSense --
+ * DevSCSIRequestSense --
  *
  *	Do a request-sense command to obtain the sense data that an
  *	SCSI device returns after some error conditions.  Unfortunately,
@@ -1238,23 +1313,59 @@ DevSCSIRequestSense(scsiPtr, devPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-DevSCSIWait(regsPtr, condition, reset)
+DevSCSIWait(regsPtr, condition, reset, checkMsg)
     DevSCSIRegs *regsPtr;
     int condition;
     Boolean reset;
+    Boolean checkMsg;
 {
     register int i;
     ReturnStatus status = DEV_TIMEOUT;
+    register int control;
 
+    if (checkMsg) {
+	Sys_Printf("DevSCSIWait: checking for message.\n");
+    }
     for (i=0 ; i<SCSI_WAIT_LENGTH ; i++) {
-	if (regsPtr->control & condition) {
+	control = regsPtr->control;
+        /*
+	 * For debugging of WORM: 
+	 *  .. using printf because using kdbx causes different behavior.
+	 */
+	if (devSCSIDebug && i < 5) {
+	    Sys_Printf("%d/%x ", i, control);
+	}
+/* this is just a guess too. */
+	if (checkMsg) {
+	    register int mask = SCSI_REQUEST | SCSI_INPUT | SCSI_MESSAGE | SCSI_COMMAND;
+	    if ((control & mask) == mask) {
+		register int msg;
+	    
+		msg = regsPtr->commandStatus & 0xff;
+		Sys_Printf("DevSCSIWait: Unexpected message 0x%x\n", msg);
+		if (msg == SCSI_COMMAND_COMPLETE) {
+		    return(DEV_EARLY_CMD_COMPLETION);
+		} else {
+		    return(DEV_HANDSHAKE_ERROR);
+		}
+	    }
+	}
+	if (control & condition) {
 	    return(SUCCESS);
-	} else if (regsPtr->control & SCSI_BUS_ERROR) {
+	}
+	if (control & SCSI_BUS_ERROR) {
 	    Sys_Printf("SCSI: bus error\n");
+	    status = DEV_DMA_FAULT;
+	    break;
+	} else if (control & SCSI_PARITY_ERROR) {
+	    Sys_Printf("SCSI: parity error\n");
 	    status = DEV_DMA_FAULT;
 	    break;
 	}
 	DELAY(10);
+    }
+    if (devSCSIDebug) {
+	Sys_Printf("DevSCSIWait: timed out, control = %x.\n", control);
     }
     if (reset) {
 	DevSCSIReset(regsPtr);
@@ -1354,4 +1465,69 @@ Dev_SCSIIntr()
 	}
     }
     return(FALSE);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevSCSIWormIO --
+ *
+ *      Read or Write (to/from) a raw SCSI worm disk.  This just
+ *	maps multiple-sector operations into separate IO's.  They may
+ *	be combined for efficiency at a later time.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+DevSCSIWormIO(command, deviceUnit, buffer, firstSector, numSectorsPtr)
+    int command;			/* SCSI_READ or SCSI_WRITE */
+    int deviceUnit;			/* Unit from the filesystem that
+					 * indicates a disk */
+    char *buffer;			/* Target buffer */
+    int firstSector;			/* First sector to transfer. Should be
+					 * relative to the start of the disk
+					 * partition corresponding to the unit*/
+    int *numSectorsPtr;			/* Upon entry, the number of sectors to
+					 * transfer.  Upon return, the number
+					 * of sectors actually transferred. */
+{
+    ReturnStatus status;
+    int worm;		/* Number of worm that corresponds to the unit number */
+    DevSCSIDevice *devPtr;		/* Generic SCSI device state */
+    register DevSCSIWorm *wormPtr;	/* State of the worm */
+    int totalSectors;		/* The total number of sectors to transfer */
+    int numSectors;		/* The number of sectors to transfer at
+				 * one time, up to a blocks worth. */
+    int lastSector;	/* Last sector of the partition */
+    int totalXfer;	/* The total number of sectors actually transferred */
+
+    worm = deviceUnit;
+    devPtr = scsiWorm[worm];
+    wormPtr = (DevSCSIWorm *)devPtr->data;
+    totalSectors = *numSectorsPtr;
+
+    /*
+     * Chop up the IO into blocksize pieces.  For now, let's try ignoring
+     * the FS blocksize and just do a single worm block at a time.
+     */
+    totalXfer = 0;
+    do {
+	numSectors = 1;
+	status = DevSCSISectorIO(command, devPtr, firstSector, &numSectors, buffer);
+	if (status == SUCCESS) {
+	    firstSector += numSectors;
+	    totalSectors -= numSectors;
+	    buffer += numSectors * DEV_BYTES_PER_WORM_SECTOR;
+	    totalXfer += numSectors;
+	}
+    } while (status == SUCCESS && totalSectors > 0);
+    *numSectorsPtr = totalXfer;
+    return(status);
 }
