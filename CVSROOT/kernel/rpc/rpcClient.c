@@ -26,52 +26,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "proc.h"
 #include "sys.h"
 
-/*
- * Constant parameters for the protocol.  The RpcConst structure keeps
- * the complete set of constants.  Some (patchable) variables are defined
- * here that define initial values, see Rpc_Init.
- */
-RpcConst rpc;
-/*
- * rpcRetryMsec
- *	This is the initial waiting period for the reciept of a packet.
- * rpcMaxAckMsec:
- *	This is the maximum waiting period for the reciept of a packet,
- *	given that we've already gotten an acknowledgment.
- * rpcMaxTimeoutMsec:
- *	This is the maximum waiting period for the reciept of a packet,
- *	given that we've been timing out.
- * rpcMaxTries:
- *	This is the number of times the client will resend without
- *	getting an acknowledgment from a server.  After this
- *	many attempts it will time out the rpc attempt.
- * rpcMaxAcks:
- *	This is number of acknowledgments a client will accept from
- *	a server.  If the server proccess on the other machine goes into
- *	a loop then the server machine dispatcher will continue to
- *	sending us "i'm busy" acks forever.
- */
-int	rpcRetryMsec = 100;	/* rpc.retryWait is rpcRetryMsec times
-				 * 1 millisecond (see Rpc_Init).
-				 * This can be as low as 30 for echoes and
-				 * get time, but needs to be large because
-				 * reads and writes take a while */
-int	rpcMaxAckMsec = 5000;	/* rpc.maxAckWait = rpcMaxAckMsec msec.
-				 * The wait period doubles each retry when
-				 * receiving acks up to this maximum.  */
-
-int	rpcMaxTimeoutMsec = 1000; /* rpc.maxTimeoutWait = rpcMaxTimeoutMsec
-				 * The wait period doubles each retry when
-				 * not recieving packets up to this maximum. */
-
-int	rpcMaxTries = 8;	/* Number of times to re-send before aborting.
-				 * If the initial timeout is .1 sec, and it
-				 * doubles until 1 sec, 8 retries means a
-				 * total timeout period of about 6 seconds. */
-int	rpcMaxAcks = 10;	/* Watchdog against lots of acks from a server.
-				 * This limit causes a warning message to be
-				 * printed every rpcMaxAcks, and if the RPC
-				 * is a broadcast it gets aborted. */
 
 /*
  * For debugging servers.  We allow client's to retry forever instead
@@ -115,6 +69,7 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 				 * passed to the recovery module. */
 {
     register RpcHdr *rpcHdrPtr;	/* Pointer to received message header */
+    register RpcConst *constPtr;/* Timeout parameter block */
     register ReturnStatus error;/* General error return status */
     register unsigned int wait;	/* Wait interval for timeouts */
     int numAcks;		/* Count of acks received.  Used to catch the
@@ -144,8 +99,7 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 
     *srvBootIDPtr = 0;
     rpcCltStat.requests++;
-    chanPtr->requestRpcHdr.serverHint =
-	chanPtr->replyRpcHdr.serverHint;
+    chanPtr->requestRpcHdr.serverHint =	chanPtr->replyRpcHdr.serverHint;
     chanPtr->state |= CHAN_WAITING;
     error = RpcOutput(serverID, &chanPtr->requestRpcHdr,
 		      &chanPtr->request, chanPtr->fragment,
@@ -156,13 +110,14 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
      * characteristics of the RPC, or of the other host.
      * For now we just wait longer if the packet will be fragmented.
      */
+    constPtr = chanPtr->constPtr;
     if ((storagePtr->requestDataSize + storagePtr->requestParamSize >
 	    RPC_MAX_FRAG_SIZE) ||
 	(storagePtr->replyDataSize + storagePtr->replyParamSize >
 	    RPC_MAX_FRAG_SIZE)) {
-	wait = 5 * rpc.retryWait;
+	wait = constPtr->fragRetryWait;
     } else {
-	wait = rpc.retryWait;
+	wait = constPtr->retryWait;
     }
 
     /*
@@ -253,7 +208,7 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 	    } else if (rpcHdrPtr->flags & RPC_ACK) {
 		numAcks++;
 		rpcCltStat.acks++;
-		if (numAcks <= rpc.maxAcks) {
+		if (numAcks <= constPtr->maxAcks) {
 		    /*
 		     * An ack from the server indicating that a server
 		     * process is working on our request.  We increase
@@ -268,8 +223,8 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 		    if (serverID != RPC_BROADCAST_SERVER_ID) {
 			numTries = 0;
 			wait *= 2;
-			if (wait > rpc.maxAckWait) {
-			    wait = rpc.maxAckWait;
+			if (wait > constPtr->maxAckWait) {
+			    wait = constPtr->maxAckWait;
 			}
 		    }
 		} else {
@@ -326,8 +281,8 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 	     * Back off upon timeout because we may be talking to a slow host
 	     */
 	    wait *= 2;
-	    if (wait > rpc.maxTimeoutWait) {
-		wait = rpc.maxTimeoutWait;
+	    if (wait > constPtr->maxTimeoutWait) {
+		wait = constPtr->maxTimeoutWait;
 	    }
 	    if ((chanPtr->state & CHAN_FRAGMENTING) == 0) {
 		/*
@@ -335,7 +290,7 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 		 * the request.
 		 */
 		numTries++;
-		if (numTries <= rpc.maxTries ||
+		if (numTries < constPtr->maxTries ||
 		    (rpc_NoTimeouts && serverID != RPC_BROADCAST_SERVER_ID)) {
 		    rpcCltStat.resends++;
 		    chanPtr->requestRpcHdr.flags |= RPC_PLSACK;
@@ -361,7 +316,7 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 		} else {
 		    numTries++;
 		}
-		if (numTries > rpc.maxTries &&
+		if (numTries >= constPtr->maxTries &&
 		    (!rpc_NoTimeouts||(serverID == RPC_BROADCAST_SERVER_ID))) {
 		    rpcCltStat.aborts++;
 		    error = RPC_TIMEOUT;
