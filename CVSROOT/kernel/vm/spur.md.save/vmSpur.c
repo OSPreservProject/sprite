@@ -1183,16 +1183,16 @@ VmMach_SetProtForDbg(readWrite, numBytes, addr)
      */
     while (numBytes > 0) { 
         VmMachFlushBlock(
-		(Address)((unsigned)addr & ~(VMMACH_CACHE_BLOCK_SIZE-1)));
-	addr += VMMACH_CACHE_BLOCK_SIZE;
-	numBytes -= VMMACH_CACHE_BLOCK_SIZE;
+		(Address)((unsigned)addr & ~(VMMACH_CACHE_LINE_SIZE-1)));
+	addr += VMMACH_CACHE_LINE_SIZE;
+	numBytes -= VMMACH_CACHE_LINE_SIZE;
     }
     /*
      * Flush the following cache block in case the range slops over into it.
      * For example addr = 0x1f numBytes = 2.
      */
     VmMachFlushBlock(
-		(Address)((unsigned)addr & ~(VMMACH_CACHE_BLOCK_SIZE-1)));
+		(Address)((unsigned)addr & ~(VMMACH_CACHE_LINE_SIZE-1)));
    
 }
 
@@ -1489,7 +1489,7 @@ VmMach_SetModBit(addr)
 	 * cache stats.
 	 */
 	VmMachFlushBlock(
-		    (Address)((unsigned)addr & ~(VMMACH_CACHE_BLOCK_SIZE-1)));
+		    (Address)((unsigned)addr & ~(VMMACH_CACHE_LINE_SIZE-1)));
     }
 
     UNLOCK_MONITOR;
@@ -2194,7 +2194,7 @@ VmMachFlushPage(segPtr, pageNum, invalidate)
     if (uniprocessorFlushPage) {
 	for (addr = pageAddr; 
          	addr < pageAddr + VMMACH_PAGE_SIZE;
-	 	addr = addr + VMMACH_CACHE_BLOCK_SIZE) 
+		addr = addr + VMMACH_CACHE_LINE_SIZE) 
 	{
 	    VmMachFlushBlock(addr);
     	}
@@ -2202,7 +2202,7 @@ VmMachFlushPage(segPtr, pageNum, invalidate)
     else {
     	for (addr = pageAddr; 
          	addr < pageAddr + VMMACH_PAGE_SIZE;
-	 	addr = addr + VMMACH_CACHE_BLOCK_SIZE) 
+		addr = addr + VMMACH_CACHE_LINE_SIZE) 
 	{
 	    VmMachReadAnyways(addr);
 	    VmMachFlushBlock(addr);
@@ -2548,3 +2548,30 @@ VmMach_MakeNonCachable(virtAddrPtr, pte)
 VmMachTrap()
 {
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmMach_FlushCode --
+ *
+ *      Machine dependent vm commands.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+void
+VmMach_FlushCode(procPtr, virtAddrPtr, virtPage, numBytes)
+    Proc_ControlBlock   *procPtr;
+    Vm_VirtAddr         *virtAddrPtr;
+    unsigned            virtPage;
+    int                 numBytes;
+{
+}
+
+
