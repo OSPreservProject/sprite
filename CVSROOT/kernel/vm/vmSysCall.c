@@ -15,6 +15,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "vm.h"
 #include "vmInt.h"
+#include "vmTrace.h"
 #include "user/vm.h"
 #include "sync.h"
 #include "sys.h"
@@ -339,6 +340,60 @@ Vm_Cmd(command, arg)
 	case VM_SET_USE_FS_READ_AHEAD:
 	    SETVAR(vmUseFSReadAhead, arg);
 	    break;
+	case VM_START_TRACING: {
+	    ReturnStatus	status;
+	    int			tracesPerSecond;
+	    void		VmTraceDaemon();
+
+	    tracesPerSecond = arg;
+	    Sys_Printf("Vm_Cmd: Tracing started at %d times per second\n",
+	    		arg);
+
+	    if (vmTraceBuffer == (char *)NIL) {
+		vmTraceBuffer = (char *)Mem_Alloc(VM_TRACE_BUFFER_SIZE);
+	    }
+	    Byte_Zero(sizeof(vmTraceStats), &vmTraceStats);
+
+	    vmTracing = TRUE;
+	    vmTracesPerClock = tracesPerSecond;
+	    vmTracesToGo = vmTracesPerClock;
+	    vmClockSleep = timer_IntOneSecond / tracesPerSecond;
+	    vmTraceFirstByte = 0;
+	    vmTraceNextByte = 0;
+	    vmTraceTime = 0;
+	    VmClearSegTraceTimes();
+	    if (vmTraceFilePtr == (Fs_Stream *)NIL) {
+		status = Fs_Open(vmTraceFileName, 
+				 FS_WRITE | FS_CREATE | FS_APPEND,
+				 FS_FILE, 0660, &vmTraceFilePtr);
+		if (status != SUCCESS) {
+		    Sys_Panic(SYS_WARNING, 
+			"Vm_Cmd: Couldn't open trace file, reason %x\n", 
+			status);
+		    vmTracing = FALSE;
+		    vmClockSleep = timer_IntOneSecond;
+		    vmTraceFilePtr = (Fs_Stream *)NIL;
+		    break;
+		}
+	    }
+	    break;
+	}
+	case VM_END_TRACING:
+	    vmTracing = FALSE;
+	    vmClockSleep = timer_IntOneSecond;
+	    if (vmTraceFilePtr != (Fs_Stream *)NIL) {
+		VmTraceDump((ClientData)0, (Proc_CallInfo *)NIL);
+		(void)Fs_Close(vmTraceFilePtr);
+		vmTraceFilePtr = (Fs_Stream *)NIL;
+	    }
+	    Sys_Printf("Vm_Cmd: Tracing ended: Traces=%d Drops=%d\n",
+			vmTraceTime, vmTraceStats.traceDrops);
+	    Sys_Printf("		       Dumps=%d Bytes=%d.\n",
+			vmTraceStats.traceDumps, vmTraceNextByte);
+	    Sys_Printf("		       PMEGs=%d\n",
+			vmTraceStats.machStats.pmegsChecked);
+	    break;
+
         default:
             Sys_Panic(SYS_WARNING, "Vm_Cmd: Unknown command.\n");
 	    status = GEN_INVALID_ARG;

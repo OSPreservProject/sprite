@@ -119,6 +119,7 @@ VmSegTableInit()
     vm_SysSegPtr->flags = 0;
     vm_SysSegPtr->numPages = vmFirstFreePage;
     vm_SysSegPtr->resPages = vmFirstFreePage;
+    vm_SysSegPtr->traceTime = 0x7fffffff;
 
     for (i = 0, segPtr = segmentTable; i < vmNumSegments; i++, segPtr++) {
 	segPtr->filePtr = (Fs_Stream *)NIL;
@@ -1750,4 +1751,38 @@ VmGetSegPtr(segNum)
     int	segNum;
 {
     return(&segmentTable[segNum]);
+}
+
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmClearSegTraceTimes --
+ *
+ *     Reset all segment trace times.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     All segment trace times are set to 0.
+ *     
+ * ----------------------------------------------------------------------------
+ */
+ENTRY void
+VmClearSegTraceTimes()
+{
+    int		i;
+    Vm_Segment	*segPtr;
+
+    LOCK_MONITOR;
+
+    for (i = 0, segPtr = segmentTable; i < vmNumSegments; i++, segPtr++) {
+	if (i != VM_SYSTEM_SEGMENT) {
+	    segPtr->traceTime = 0;
+	}
+    }
+
+    UNLOCK_MONITOR;
 }

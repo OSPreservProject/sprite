@@ -13,6 +13,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "vm.h"
 #include "vmInt.h"
+#include "vmTrace.h"
 #include "lock.h"
 #include "sync.h"
 #include "sys.h"
@@ -29,14 +30,25 @@ Vm_Stat		vmStat;
 int             vmFirstFreePage;  
 Address		vmMemEnd;
 Sync_Lock 	vmMonitorLock = {0, 0};
+int		vm_PageSize;
+int		vmPageShift;
+int		vmPageTableInc;
+int		vmKernMemSize;
+int		vmMaxProcesses = 80;
+Address		vmBlockCacheBaseAddr;
+Address 	vmBlockCacheEndAddr;
 
-int	vm_PageSize;
-int	vmPageShift;
-int	vmPageTableInc;
-int	vmKernMemSize;
-int	vmMaxProcesses = 80;
-Address	vmBlockCacheBaseAddr;
-Address vmBlockCacheEndAddr;
+Boolean		vmTracing = FALSE;
+int		vmTracesPerClock;
+int		vmTracesToGo;
+char		*vmTraceBuffer = (char *)NIL;
+int		vmTraceFirstByte;
+int		vmTraceNextByte;
+int		vmTraceTime = 0;
+Fs_Stream	*vmTraceFilePtr = (Fs_Stream *)NIL;
+char		*vmTraceFileName = "/sprite/vmtrace/tracefile";
+Boolean		vmTraceDumpStarted = FALSE;
+VmTraceStats	vmTraceStats;
 
 
 /*
@@ -894,3 +906,60 @@ Vm_KernPageFree(pfNum)
 {
     VmPageFree(pfNum);
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmTraceDump --
+ *
+ *	Daemon to dump virtual memory trace records to a file.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Page freed.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+VmTraceDump(data, callInfoPtr)
+    ClientData	data;
+    Proc_CallInfo	*callInfoPtr;
+{
+    int			curNextByte;
+    int			length;
+    int			savedLength;
+    ReturnStatus	status;
+
+    vmTraceStats.traceDumps++;
+
+    /*
+     * Dump the trace buffer.
+     */
+    curNextByte = vmTraceNextByte;
+    while (vmTraceFirstByte != curNextByte) {
+	length = VM_TRACE_BUFFER_SIZE - VM_GET_BUFFER_INDEX(vmTraceFirstByte);
+	if (curNextByte - vmTraceFirstByte < length) {
+	    length = curNextByte - vmTraceFirstByte;
+	}
+	savedLength = length;
+	status = Fs_Write(vmTraceFilePtr, 
+			  vmTraceBuffer + VM_GET_BUFFER_INDEX(vmTraceFirstByte),
+			  vmTraceFirstByte, &length);
+	if (status != SUCCESS) {
+	    Sys_Panic(SYS_WARNING,
+		"VmTraceDaemon: Couldn't write trace file, reason %x\n",
+		status);
+	    break;
+	} else if (length != savedLength) {
+	    Sys_Panic(SYS_WARNING,
+		"VmTraceDaemon: Short write, length = %d\n", length);
+	    break;
+	}
+	vmTraceFirstByte += length;
+    }
+    vmTraceDumpStarted = FALSE;
+}
+

@@ -190,6 +190,8 @@ typedef struct Vm_Segment {
 					 * can ever have. */
     Address		maxAddr;	/* Maximium address that the segment
 					 * can ever have. */
+    int			traceTime;	/* The last trace interval that this
+					 * segment was active. */
 } Vm_Segment;
 
 /*

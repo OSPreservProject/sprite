@@ -37,6 +37,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vmMach.h"
 #include "vm.h"
 #include "vmInt.h"
+#include "vmTrace.h"
 #include "user/vm.h"
 #include "sync.h"
 #include "dbg.h"
@@ -2269,6 +2270,22 @@ Vm_Clock(data, callInfoPtr)
     LOCK_MONITOR;
 
     Timer_GetTimeOfDay(&curTime, (int *) NIL, (Boolean *) NIL);
+
+    if (vmTracing) {
+	VmMach_Trace();
+
+	/*
+	 * Decrement the number of traces per iteration of the clock.  If we
+	 * are at 0 then run the clock for one interation.
+	 */
+	vmTracesToGo--;
+	if (vmTracesToGo > 0) {
+	    callInfoPtr->interval = vmClockSleep;
+	    UNLOCK_MONITOR;
+	    return;
+	}
+	vmTracesToGo = vmTracesPerClock;
+    }
 
     /*
      * Examine vmPagesToCheck pages.
