@@ -2094,11 +2094,11 @@ WaitForMigration()
 static ENTRY void
 AddMigrateTime(time, totalPtr, squaredTotalPtr)
     Time time;
-    int *totalPtr;
-    int *squaredTotalPtr;
+    unsigned int *totalPtr;
+    unsigned int *squaredTotalPtr;
 {
-    int intTime;
-    int squaredTime;
+    unsigned int intTime;
+    unsigned int squaredTime;
 
 #ifndef CLEAN
     LOCK_MONITOR;
