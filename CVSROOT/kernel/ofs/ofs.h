@@ -23,7 +23,6 @@
 #else
 #include <kernel/dev.h>
 #include <kernel/fslcl.h>
-#include <kernel/fsioFile.h>
 #include <kernel/fsdm.h>
 #include <kernel/devBlockDevice.h>
 #endif
@@ -274,6 +273,7 @@ typedef struct Ofs_DomainHeader {
  */
 #define OFS_NUM_DOMAIN_SECTORS	((sizeof(Ofs_DomainHeader)-1) / DEV_BYTES_PER_SECTOR + 1)
 
+#ifdef KERNEL
 /*
  * Structure for each domain.
  */
@@ -310,7 +310,6 @@ typedef struct Ofs_Domain {
     DevBlockDeviceHandle *blockDevHandlePtr; /* Block device containing file
 					      * system. */
 } Ofs_Domain;
-
 
 /*
  * Types of indexing.  Order is important here because the indirect and
@@ -502,5 +501,7 @@ extern ReturnStatus OfsBlockAllocInit _ARGS_((Ofs_Domain *ofsPtr));
 extern int OfsBlocksToSectors _ARGS_((int fragNumber, Ofs_Geometry *geoPtr));
 extern ReturnStatus OfsVerifyBlockWrite _ARGS_((Ofs_Domain *ofsPtr, 
 				Fscache_Block *blockPtr));
+
+#endif /* KERNEL */
 
 #endif /* _OFS */
