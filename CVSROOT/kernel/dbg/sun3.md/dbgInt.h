@@ -15,7 +15,6 @@
 
 #include "dbgAsm.h"
 #include "vmMach.h"
-#include "vmMachInt.h"
 
 /*
  * There are sixteen registers: d0-d7 and a0-7.
