@@ -16,7 +16,7 @@
  * these facilities.
  *
  * A signal handler is called right before a process is to return to 
- * user space.  In order to call the handler three things must be done:
+ * user space.  In order to call the handler four things must be done:
  *
  *	1) The current state of the process must be saved so that when
  *	   the handler returns the normal return to user space can occur.
@@ -105,8 +105,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 Boolean		
 Sig_Handle(trapStackPtr, pcPtr)
     Exc_TrapStack	*trapStackPtr;	/* The trap stack that was created
-					   when the user process entered the
-					   kernel. */
+					 * when the user process entered the
+					 * kernel. */
     int			*pcPtr;		/* Program counter of where to start
 					 * executing the signal handler. */
 {
@@ -165,19 +165,16 @@ Sig_Handle(trapStackPtr, pcPtr)
 	    Sys_Panic(SYS_FATAL, "Sig_Handle: Proc_Exit returned!\n");
 
 	case SIG_SUSPEND_ACTION:
-	    Proc_Lock(procPtr);
-	    if (!(procPtr->genFlags & PROC_DEBUG_WAIT)) {
-		Proc_Unlock(procPtr);
-		Proc_Suspend(sigNum);
-		return(FALSE);
-	    }
-	    Proc_Unlock(procPtr);
-	    /*
-	     * Fall through and take a debug action on this process.
-	     */
 	case SIG_DEBUG_ACTION:
-	    /*
-	     * Save the state of the process and put it onto the debug list.
+	    /* 
+	     * A suspended process and a debugged process are basically
+	     * the same.  A suspended process can be debugged just like
+	     * a process in the debug state.   The only difference is that
+	     * a suspended process does not go onto the debug list; it can
+	     * only be debugged by a debugger that specifically asks for
+	     * it.
+	     *
+	     * Save the state of the process.
 	     */
 	    Byte_Copy(sizeof(procPtr->genRegs), 
 		     (Address) trapStackPtr->genRegs,
@@ -185,12 +182,18 @@ Sig_Handle(trapStackPtr, pcPtr)
 	    procPtr->genRegs[SP] = trapStackPtr->userStackPtr;
 	    procPtr->progCounter = trapStackPtr->excStack.pc;
 
-	    Proc_PutOnDebugList(procPtr, PROC_TERM_SIGNALED, sigNum, 
-				procPtr->sigCodes[sigNum],
-				trapStackPtr->excStack.statusReg);
+	    /*
+	     * Suspend the process.
+	     */
+	    Proc_SuspendProcess(procPtr,
+			procPtr->sigActions[sigNum] == SIG_DEBUG_ACTION,
+			PROC_TERM_SIGNALED, sigNum, 
+			procPtr->sigCodes[sigNum],
+			trapStackPtr->excStack.statusReg);
 
 	    /*
-	     * Set the state to that given by the debugger and return.
+	     * Copy the state back because it might have gotten modified
+	     * while it was suspended.
 	     */
 	    trapStackPtr->excStack.pc = procPtr->progCounter;
 	    oldSp = trapStackPtr->genRegs[SP];
@@ -248,8 +251,10 @@ Sig_Handle(trapStackPtr, pcPtr)
 
     if (Vm_CopyOut(sizeof(SigStack), 
 		   (Address) &sigStack, (Address) usp) != SUCCESS) {
-	Sys_Panic(SYS_WARNING, "Sig_Handle: No room on stack for signal.\n");
-	return(TRUE);
+	Sys_Panic(SYS_WARNING,
+		  "Sig_Handle: No room on stack for signal, PID=%x.\n",
+		  procPtr->processID);
+	Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
     }
 
     /*
@@ -307,7 +312,9 @@ Sig_Return(procPtr, trapStackPtr, oldStackAddrPtr)
     if (Vm_CopyIn(sigStackSize,
 		  (Address) (trapStackPtr->userStackPtr - 4), 
 	          (Address) &sigStack) != SUCCESS) {
-	Sys_Printf("Sig_Return: Stack too small to extract trap info.\n");
+	Sys_Panic(SYS_WARNING,
+	      "Sig_Return: Stack too small to extract trap info, PID=%x.\n",
+	      procPtr->processID);
 	Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
     }
 
