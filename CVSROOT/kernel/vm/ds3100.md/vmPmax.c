@@ -17,7 +17,6 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 
 #include "sprite.h"
 #include "vmPmaxConst.h"
-#include "vmMachInt.h"
 #include "vm.h"
 #include "vmInt.h"
 #include "vmMach.h"
