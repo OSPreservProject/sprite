@@ -242,12 +242,18 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 
     switch(ioctlPtr->command) {
     case IOC_DEV_RAID_PRINT:
+	if (raidPtr->state != RAID_VALID) {
+	    return SUCCESS;
+	}
 	PrintRaid(raidPtr);
 	return SUCCESS;
     case IOC_DEV_RAID_RECONFIG:
 	status = Raid_Configure(raidPtr, raidIOCParamPtr->buf);
 	return status;
     case IOC_DEV_RAID_FAIL:
+	if (raidPtr->state != RAID_VALID) {
+	    return FAILURE;
+	}
 	if (row < 0 || row >= raidPtr->numRow) {
 	    printf("RAID:MSG:row=%d out of range on ioctl call", row);
 	    return FAILURE;
@@ -259,6 +265,9 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 	Raid_FailDisk(raidPtr, col, row, raidPtr->disk[col][row]->version);
 	return SUCCESS;
     case IOC_DEV_RAID_REPLACE:
+	if (raidPtr->state != RAID_VALID) {
+	    return FAILURE;
+	}
 	if (row < 0 || row >= raidPtr->numRow) {
 	    printf("RAID:MSG:row=%d out of range on ioctl call", row);
 	    return FAILURE;
@@ -271,6 +280,9 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 		raidIOCParamPtr->type, raidIOCParamPtr->unit, 0);
 	return SUCCESS;
     case IOC_DEV_RAID_HARDINIT:
+	if (raidPtr->state != RAID_VALID) {
+	    return FAILURE;
+	}
 	InitSema(&iocCtrl.sema, "Raid HardInit", 0);
 	Raid_InitiateHardInit(raidPtr,
 		raidIOCParamPtr->startStripe, raidIOCParamPtr->numStripe,
@@ -279,6 +291,9 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 	DownSema(&iocCtrl.sema);
 	return iocCtrl.status;
     case IOC_DEV_RAID_PARITYCHECK:
+	if (raidPtr->state != RAID_VALID) {
+	    return FAILURE;
+	}
 	InitSema(&iocCtrl.sema, "Raid ParityCheck", 0);
 	Raid_InitiateParityCheck(raidPtr,
 		raidIOCParamPtr->startStripe, raidIOCParamPtr->numStripe,
@@ -287,6 +302,9 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 	DownSema(&iocCtrl.sema);
 	return iocCtrl.status;
     case IOC_DEV_RAID_RECONSTRUCT:
+	if (raidPtr->state != RAID_VALID) {
+	    return FAILURE;
+	}
 	InitSema(&iocCtrl.sema, "Raid Reconstruct", 0);
 	Raid_InitiateReconstruction(raidPtr, col, row,
 		raidPtr->disk[col][row]->version,
@@ -296,6 +314,9 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 	DownSema(&iocCtrl.sema);
 	return iocCtrl.status;
     case IOC_DEV_RAID_IO:
+	if (raidPtr->state != RAID_VALID) {
+	    return FAILURE;
+	}
 	if (!IObuf) {
 	    IObuf = (char *) malloc(1024*1024);
 	}
@@ -309,6 +330,9 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 	Raid_Unlock(raidPtr);
 	return SUCCESS;
     case IOC_DEV_RAID_SAVE_STATE:
+	if (raidPtr->state != RAID_VALID) {
+	    return FAILURE;
+	}
 	status = Raid_SaveState(raidPtr);
 	if (status != SUCCESS) {
 	    printf("RAID:MSG:Could not checkpoint state.\n");
@@ -335,7 +359,7 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 	}
 	status = Raid_RestoreState(raidPtr);
 	if (status != SUCCESS) {
-	    printf("RAID:MSG:Could not checkpoint state.\n");
+	    printf("RAID:MSG:Could not restore state.\n");
 	}
 	return status;
     default:
