@@ -1332,8 +1332,8 @@ Fs_RpcSetIOAttr(srvToken, clientID, command, storagePtr)
     status = (*fsStreamOpTable[hdrPtr->fileID.type].setIOAttr)
 	    (&hdrPtr->fileID, attrPtr, setAttrParamPtr->flags);
 #ifdef lint
-    status = FsDeviceSetIOAttr(&hdrPtr->fileID, attrPtr, flags);
-    status = FsPipeSetIOAttr(&hdrPtr->fileID, attrPtr, flags);
+    status = FsDeviceSetIOAttr(&hdrPtr->fileID, attrPtr,setAttrParamPtr->flags);
+    status = FsPipeSetIOAttr(&hdrPtr->fileID, attrPtr, setAttrParamPtr->flags);
 #endif lint
 
     FsHandleRelease(hdrPtr, FALSE);
