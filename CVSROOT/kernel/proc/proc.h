@@ -332,6 +332,7 @@ typedef struct Proc_ControlBlock {
 					   state. */
     int		oldSigHoldMask;		/* Mask of held signals when a
 					   Sig_Pause call starts. */
+    int		sigAddr;		/* Address of the fault. */
 
     /*
      * Info for interval timers. The timer info is not put directly in
