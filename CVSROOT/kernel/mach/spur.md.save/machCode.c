@@ -265,8 +265,9 @@ Mach_InitFirstProc(procPtr)
  *
  *----------------------------------------------------------------------
  */ 
+/*ARGSUSED*/
 ReturnStatus
-Mach_SetupNewState(procPtr, parStatePtr, startFunc, startPC)
+Mach_SetupNewState(procPtr, parStatePtr, startFunc, startPC, user)
     Proc_ControlBlock	*procPtr;	/* Pointer to process control block
 					 * to initialize state for. */
     Mach_State		*parStatePtr;	/* State of parent on fork or from
@@ -277,6 +278,7 @@ Mach_SetupNewState(procPtr, parStatePtr, startFunc, startPC)
 					 * startFunc.  If NIL then the address
 					 * is taken from *parStatePtr's 
 					 * exception stack. */
+    Boolean		user;		/* TRUE if is a user process. */
 {
     register	Mach_State	*statePtr;
 
@@ -566,6 +568,9 @@ Mach_GetDebugState(procPtr, debugStatePtr)
     Proc_ControlBlock	*procPtr;
     Proc_DebugState	*debugStatePtr;
 {
+    Byte_Copy(sizeof(Mach_RegState), 
+	      (Address)&procPtr->machStatePtr->userState.trapRegState,
+	      (Address)&debugStatePtr->regState);
 }
 
 
@@ -590,6 +595,15 @@ Mach_SetDebugState(procPtr, debugStatePtr)
     Proc_ControlBlock	*procPtr;
     Proc_DebugState	*debugStatePtr;
 {
+    register	Mach_State	*statePtr;
+    int				origKpsw;
+
+    statePtr = procPtr->machStatePtr;
+    origKpsw = statePtr->userState.trapRegState.kpsw;
+    Byte_Copy(sizeof(Mach_RegState), 
+	      (Address)&debugStatePtr->regState,
+	      (Address)&statePtr->userState.trapRegState);
+    statePtr->userState.trapRegState.kpsw = origKpsw;
 }
 
 
