@@ -460,6 +460,17 @@ Sig_SendProc(procPtr, sigNum, code)
     int				  sigNum;
     int				  code;
 {
+    /*
+     * Make sure that the signal is in range.
+     */
+    if (sigNum < SIG_MIN_SIGNAL || sigNum >= SIG_NUM_SIGNALS) {
+	if (sigNum == 0) {
+	    return(SUCCESS);
+	} else {
+	    return(SIG_INVALID_SIGNAL);
+	}
+    }
+
     if (procPtr->state == PROC_MIGRATED ||
         (procPtr->genFlags & PROC_MIGRATING)) {
 	return(SigMigSend(procPtr, sigNum, code));
@@ -508,13 +519,6 @@ Sig_Send(sigNum, code, id, familyID)
     List_Links				*familyList;
     int					userID;
     int					hostID;
-
-    /*
-     * Make sure that the signal is in range.
-     */
-    if (sigNum < SIG_MIN_SIGNAL || sigNum >= SIG_NUM_SIGNALS) {
-	return(SIG_INVALID_SIGNAL);
-    }
 
     if (!Proc_ComparePIDs(id, PROC_MY_PID)) {
 	hostID = Proc_GetHostID(id);
