@@ -66,6 +66,8 @@ extern	ReturnStatus	Sig_Pause();
 
 extern	void		Sig_Init();
 extern	void		Sig_ProcInit();
+extern	void		Sig_Fork();
+extern	void		Sig_Exec();
 extern	void		Sig_ChangeState();
 extern	Boolean		Sig_Handle();
 extern	void		Sig_Return();
