@@ -1,4 +1,4 @@
-/* 
+/*
  * procRpc.c --
  *
  *	Procedures to handle remote procedure calls on behalf of migrated
@@ -74,7 +74,7 @@ typedef struct {
 
 static CallBack callBackVector[] = {
 /*
- *     callPtr	  (why)		sideEffectsPtr	call number    
+ *     callPtr	  (why)		sideEffectsPtr	call number
  */
     { RpcProcFork,			RSNIL }, /* SYS_PROC_FORK	   0 */
     { RpcProcExec,			RSNIL }, /* SYS_PROC_EXEC	   1 */
@@ -163,7 +163,12 @@ static CallBack callBackVector[] = {
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_PROC_SETINTERVALTIMER  84 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_WRITEBACKID    85 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_PROC_EXEC_ENV     86 */
-
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_SET_ATTR_NEW   87 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_SET_ATTR_ID_NEW 88 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_PROC_GETHOSTIDS   89 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_SCHED_IDLE_PROCESSOR 90 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_SCHED_START_PROCESSOR 91 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_MACH_NUM_PROCESSORS 92 */
 };
 
 
@@ -174,7 +179,7 @@ static CallBack callBackVector[] = {
  *
  *	Service a system call for a migrated process.  Call the rpc
  *	module to return the results, if any.
- * 
+ *
  * Results:
  *	Any data retured by the system call is passed back in a buffer,
  *	as is its length.  The result returned by the system call is
@@ -187,7 +192,7 @@ static CallBack callBackVector[] = {
  */
 
 /* ARGSUSED */
-static ReturnStatus 
+static ReturnStatus
 RpcRemoteCall(callPtr, dataPtr, dataLength, replyDataPtr,
 		   replyDataLengthPtr)
     Proc_RemoteCall *callPtr;
@@ -258,7 +263,7 @@ RpcRemoteCall(callPtr, dataPtr, dataLength, replyDataPtr,
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_CALL,
 		     (ClientData) &record);
     }
-    
+
     if (!callPtr->parseArgs) {
 	status = (*(callBackVector[callPtr->callNumber].localPtr))
 		(procPtr, dataPtr, dataLength, replyDataPtr,
@@ -333,8 +338,8 @@ RpcRemoteCall(callPtr, dataPtr, dataLength, replyDataPtr,
  *
  * RpcProcExit --
  *
- *	Perform an exit on the home node of a process. 
- * 
+ *	Perform an exit on the home node of a process.
+ *
  * Results:
  *	SUCCESS 		- the process exited successfully.
  *	PROC_INVALID_PID 	- the process does not exist.
@@ -346,7 +351,7 @@ RpcRemoteCall(callPtr, dataPtr, dataLength, replyDataPtr,
  */
 
 /* ARGSUSED */
-static ReturnStatus 
+static ReturnStatus
 RpcProcExit(procPtr, dataPtr, dataLength, replyDataPtr,
 		   replyDataLengthPtr)
     register Proc_ControlBlock *procPtr;
@@ -367,11 +372,11 @@ RpcProcExit(procPtr, dataPtr, dataLength, replyDataPtr,
 
     Proc_Lock(procPtr);
     Byte_EmptyBuffer(dataPtr, Timer_Ticks,  ticks);
-    Timer_AddTicks(procPtr->kernelCpuUsage.ticks, ticks, 
-		   &procPtr->kernelCpuUsage.ticks); 
+    Timer_AddTicks(procPtr->kernelCpuUsage.ticks, ticks,
+		   &procPtr->kernelCpuUsage.ticks);
     Byte_EmptyBuffer(dataPtr, Timer_Ticks,  ticks);
     Timer_AddTicks(procPtr->kernelCpuUsage.ticks, ticks,
-		   &procPtr->userCpuUsage.ticks); 
+		   &procPtr->userCpuUsage.ticks);
     Byte_EmptyBuffer(dataPtr, int,  count);
     procPtr->numQuantumEnds += count;
     Byte_EmptyBuffer(dataPtr, int, count);
@@ -402,11 +407,11 @@ RpcProcExit(procPtr, dataPtr, dataLength, replyDataPtr,
  *
  * RpcProcExec --
  *
- *	Perform an exec on the home node of a process. 
- * 
+ *	Perform an exec on the home node of a process.
+ *
  * Results:
  *	SUCCESS 		- The process is migrated and has been
- * 				  modified.  
+ * 				  modified.
  *
  * Side effects:
  *	the process's argument string and effective userID are modified.
@@ -415,7 +420,7 @@ RpcProcExit(procPtr, dataPtr, dataLength, replyDataPtr,
  */
 
 /* ARGSUSED */
-static ReturnStatus 
+static ReturnStatus
 RpcProcExec(procPtr, dataPtr, dataLength, replyDataPtr,
 		   replyDataLengthPtr)
     register Proc_ControlBlock *procPtr;
@@ -426,7 +431,7 @@ RpcProcExec(procPtr, dataPtr, dataLength, replyDataPtr,
 {
     int uid;
     char *argString;
-    
+
     if (proc_MigDebugLevel > 4) {
 	printf("RpcProcExec called.\n");
     }
@@ -477,13 +482,13 @@ RpcProcExec(procPtr, dataPtr, dataLength, replyDataPtr,
  *
  * Side effects:
  *	A new process is created.  The identifier of the newly-created
- *	process is returned to the remote node in the data buffer.  
+ *	process is returned to the remote node in the data buffer.
  *
  *----------------------------------------------------------------------
  */
 
 /* ARGSUSED */
-static ReturnStatus 
+static ReturnStatus
 RpcProcFork(parentProcPtr, dataPtr, dataLength, replyDataPtr,
 	    replyDataLengthPtr)
     register Proc_ControlBlock *parentProcPtr;
@@ -537,7 +542,7 @@ RpcProcFork(parentProcPtr, dataPtr, dataLength, replyDataPtr,
      *  Insert this PCB entry into the list of children of our parent.
      */
     List_Init((List_Links *) childProcPtr->childList);
-    List_Insert((List_Links *) &(childProcPtr->siblingElement), 
+    List_Insert((List_Links *) &(childProcPtr->siblingElement),
 		LIST_ATREAR(parentProcPtr->childList));
 
     Sig_Fork(parentProcPtr, childProcPtr);
@@ -552,7 +557,7 @@ RpcProcFork(parentProcPtr, dataPtr, dataLength, replyDataPtr,
     /*
      * Set up the environment of the process.
      */
- 
+
      ProcSetupEnviron(childProcPtr);
 
     /*
@@ -568,11 +573,11 @@ RpcProcFork(parentProcPtr, dataPtr, dataLength, replyDataPtr,
     /*
      * Send back the child's process ID in the replyData buffer.
      */
-    
+
     *replyDataLengthPtr = sizeof(Proc_PID);
     *replyDataPtr = (Address) malloc(sizeof(Proc_PID));
     * ((Proc_PID *) *replyDataPtr) = childProcPtr->processID;
-    
+
     if (proc_MigDebugLevel > 3) {
 	printf("RpcProcFork returning SUCCESS.\n");
     }
@@ -588,7 +593,7 @@ RpcProcFork(parentProcPtr, dataPtr, dataLength, replyDataPtr,
  *	Perform a copy into or out of the user's address space.  If
  *	the user process is migrated, copy the arguments directly and
  *	let the rpc server send the results to the remote node.
- * 
+ *
  * Results:
  *	SUCCESS 		- the copy was performed successfully.
  *	SYS_ARG_NOACCESS 	- the argument was not accessible.
@@ -607,7 +612,7 @@ Proc_ByteCopy(copyIn, numBytes, sourcePtr, destPtr)
     Address destPtr;		/* Where to copy to */
 {
     ReturnStatus status = SUCCESS;
-    
+
     if (Proc_IsMigratedProcess()) {
 	bcopy(sourcePtr, destPtr, numBytes);
     } else if (copyIn) {
@@ -626,9 +631,9 @@ Proc_ByteCopy(copyIn, numBytes, sourcePtr, destPtr)
  *
  *	Copy a string to a buffer of limited length.  This routine is
  *	a parallel routine to Vm_StringNCopy.
- * 
+ *
  * Results:
- *	SUCCESS 
+ *	SUCCESS
  *
  * Side effects:
  *	*strNameLength is set to the actual length of the string copied.
@@ -641,7 +646,7 @@ Proc_StringNCopy(numBytes, srcStr, destStr, strLengthPtr)
     register int	numBytes;	/* Maximum number of bytes to copy. */
     register char	*srcStr;	/* String to copy. */
     register char	*destStr;	/* Where to copy string to. */
-    int			*strLengthPtr;	/* Where to return actual length of 
+    int			*strLengthPtr;	/* Where to return actual length of
 					 * string copied. */
 {
     register int length;
@@ -681,7 +686,7 @@ Proc_StringNCopy(numBytes, srcStr, destStr, strLengthPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-Proc_MakeStringAccessible(maxLength, stringPtrPtr, accessLengthPtr, 
+Proc_MakeStringAccessible(maxLength, stringPtrPtr, accessLengthPtr,
 			  newLengthPtr)
     int maxLength;	 /* Maximum allowable string length */
     char **stringPtrPtr; /* On input *stringPtrPtr is a user space pointer,
@@ -695,7 +700,7 @@ Proc_MakeStringAccessible(maxLength, stringPtrPtr, accessLengthPtr,
     register char *charPtr;
 
     if (!Proc_IsMigratedProcess()) {
-	Vm_MakeAccessible(VM_READONLY_ACCESS, 
+	Vm_MakeAccessible(VM_READONLY_ACCESS,
 			  maxLength, (Address) *stringPtrPtr,
 			  &accessLength, (Address *) stringPtrPtr);
 	if (*stringPtrPtr == (Address)NIL) {
@@ -880,13 +885,13 @@ Proc_RpcMigInit(srvToken, clientID, command, storagePtr)
 {
     ProcMigInitiateCmd *cmdPtr;
     char *machType;
-    
+
     if (proc_RefuseMigrations) {
 	goto error;
     }
     if (storagePtr->requestParamSize != sizeof(ProcMigInitiateCmd)) {
 	/*
-	 * Implicit version mismatch if they're not the same size.  
+	 * Implicit version mismatch if they're not the same size.
 	 */
 	if (proc_MigDebugLevel > 0) {
 	    printf("Migration version mismatch: size of initiation request");
@@ -895,7 +900,7 @@ Proc_RpcMigInit(srvToken, clientID, command, storagePtr)
         }
 	goto error;
     }
-    
+
     cmdPtr = (ProcMigInitiateCmd *) storagePtr->requestParamPtr;
     /*
      * Note: the processID is ignored, at least for now. But we look
@@ -978,7 +983,7 @@ Proc_RpcMigInfo(srvToken, clientID, command, storagePtr)
     if (status == SUCCESS) {
 	storagePtr->replyParamPtr = (Address) returnInfoPtr;
 	storagePtr->replyParamSize = sizeof(Proc_MigrateReply);
-	
+
 	replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
 	replyMemPtr->paramPtr = (Address) returnInfoPtr;
 	replyMemPtr->dataPtr = (Address) NIL;
@@ -1030,7 +1035,7 @@ Proc_RpcRemoteCall(srvToken, clientID, command, storagePtr)
     status = RpcRemoteCall((Proc_RemoteCall *)storagePtr->requestParamPtr,
  	    storagePtr->requestDataPtr, storagePtr->requestDataSize,
  	    &returnData, &returnDataLength);
-    
+
     storagePtr->replyDataPtr = returnData;
     storagePtr->replyDataSize = returnDataLength;
 
