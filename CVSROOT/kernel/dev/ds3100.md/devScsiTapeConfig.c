@@ -20,7 +20,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 #include "sprite.h"
+#include  "scsiTape.h"
+#include "exabyteTape.h"
 
-ReturnStatus ((*devSCSITapeAttachProcs[1])());
+ReturnStatus ((*devSCSITapeAttachProcs[])()) = {
+    DevExabyteAttach,
+};
 
-int devNumSCSITapeTypes = 0;
+int devNumSCSITapeTypes =  sizeof(devSCSITapeAttachProcs) / 
+				sizeof(devSCSITapeAttachProcs[0]);
+
