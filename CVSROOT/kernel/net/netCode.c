@@ -22,28 +22,25 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif
 
 #include <sprite.h>
-
 #include <list.h>
 #include <net.h>
 #include <netInt.h>
 #include <devNet.h>
 #include <sync.h>
 #include <dbg.h>
-
 #include <machMon.h>
-
 #include <netInet.h>
-
-Net_EtherStats	net_EtherStats;
-NetEtherFuncs	netEtherFuncs;
-static	Sync_Semaphore	outputMutex;
-static void	EnterDebugger();
 
 /*
  * Network configuration table defined by machine dependent code.
  */
-extern NetInterface	netInterface[];
-extern int		numNetInterfaces;
+extern Net_Interface	netConfigInterfaces[];
+extern int		netNumConfigInterfaces;
+Net_Interface		*netInterfaces[NET_MAX_INTERFACES];
+int			netNumInterfaces;
+
+Net_Address 		netZeroAddress;
+int			net_NetworkHeaderSize[NET_NUM_NETWORK_TYPES];
 
 #define	INC_BYTES_SENT(gatherPtr, gatherLength) { \
 	register	Net_ScatterGather	*gathPtr; \
@@ -68,7 +65,13 @@ extern int		numNetInterfaces;
     *shortPtr = Net_NetToHostShort(*shortPtr); \
 } 
 
+int netDebug = FALSE;
+Boolean	ultra = FALSE;
 
+static void NetAddStats _ARGS_((Net_Stats *aPtr, Net_Stats *bPtr, 
+		    Net_Stats *sumPtr));
+static void EnterDebugger _ARGS_((Net_Interface *interPtr, Address packetPtr,
+				int packetLength));
 
 /*
  *----------------------------------------------------------------------
@@ -89,28 +92,49 @@ extern int		numNetInterfaces;
 void
 Net_Init()
 {
-    register int inter;
+    register int i;
+    char buffer[100];
+    ReturnStatus status;
+    int		counter[NET_NUM_NETWORK_TYPES];
+    Net_Interface	*interPtr;
 
-    /*
-     * Zero out the statistics struct.
-     */
-    bzero((Address) &net_EtherStats, sizeof(net_EtherStats));
+    NetEtherInit();
+
+    for (i = 0; i < NET_NUM_NETWORK_TYPES; i++) {
+	counter[i] = 0;
+    }
 
     /*
      * Determine the number and kind of network interfaces by calling
      * each network interface initialization procedure.
      */
-    for (inter = 0 ; inter<numNetInterfaces ; inter++) {
-	if ((*netInterface[inter].init)(netInterface[inter].name,
-					netInterface[inter].number,
-					netInterface[inter].ctrlAddr)) {
-	    Mach_MonPrintf("%s-%d net interface at 0x%x\n",
-		netInterface[inter].name,
-		netInterface[inter].number,
-		netInterface[inter].ctrlAddr);
+    bzero((char *) &netZeroAddress, sizeof(Net_Address));
+    netNumInterfaces = 0;
+    for (i = 0 ; i<netNumConfigInterfaces ; i++) {
+	netConfigInterfaces[i].flags = 0;
+	status = (netConfigInterfaces[i].init)(&(netConfigInterfaces[i]));
+	if (status == SUCCESS) {
+	    netInterfaces[netNumInterfaces] = &netConfigInterfaces[i];
+	    interPtr = netInterfaces[netNumInterfaces];
+	    netNumInterfaces++;
+	    interPtr->packetProc = NILPROC;
+	    interPtr->devNetData = (ClientData) NIL;
+	    interPtr->number = counter[interPtr->netType];
+	    counter[interPtr->netType]++;
+	    Mach_MonPrintf("%s net interface %d at 0x%x\n",
+		interPtr->name,
+		interPtr->number,
+		interPtr->ctrlAddr);
+	    sprintf(buffer, "NetOutputMutex:%d", i);
+	    Sync_SemInitDynamic(&interPtr->syncOutputMutex, 
+		buffer);
+	    sprintf(buffer, "NetMutex:%d", i);
+	    Sync_SemInitDynamic(&interPtr->mutex, buffer);
 	} 
     }
-    Sync_SemInitDynamic(&outputMutex, "Net:outputMutex");
+    net_NetworkHeaderSize[NET_NETWORK_ETHER] = sizeof(Net_EtherHdr);
+    net_NetworkHeaderSize[NET_NETWORK_ULTRA] = sizeof(Net_UltraHeader);
+    Net_ArpInit();
     return;
 }
 
@@ -133,7 +157,10 @@ Net_Init()
 void
 Net_Bin()
 {
-    Mem_Bin(NET_ETHER_MAX_BYTES);
+    register int inter;
+    for (inter = 0 ; inter < netNumInterfaces ; inter++) {
+	Mem_Bin(netInterfaces[inter]->maxBytes);
+    }
     return;
 }
 
@@ -183,21 +210,21 @@ Net_GatherCopy(scatterGatherPtr, scatterGatherLength, destAddr)
  *
  * Net_Reset --
  *
- *	Reset the network controllers.
+ *	Reset the network interface.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Reinitializes the the ethernet chips.
+ *	Reinitializes the network controller..
  *
  *----------------------------------------------------------------------
  */
 void
-Net_Reset()
+Net_Reset(interPtr)
+    Net_Interface	*interPtr;
 {
-    netEtherFuncs.reset();
-    return;
+    interPtr->reset(interPtr);
 }
 
 
@@ -224,7 +251,7 @@ Net_Reset()
  */
 
 ReturnStatus
-Net_Output(spriteID, gatherPtr, gatherLength, mutexPtr)
+Net_Output(spriteID, gatherPtr, gatherLength, mutexPtr, routePtr)
     int spriteID;			/* Host to which to send the packet */
     Net_ScatterGather *gatherPtr;	/* Specifies buffers containing the
 					 * pieces of the packet The first
@@ -238,8 +265,12 @@ Net_Output(spriteID, gatherPtr, gatherLength, mutexPtr)
 					 * doesn't mess up the caller because
 					 * its packet isn't output until
 					 * the ARP completes anyway */
+    Net_Route	*routePtr;		/* If non-NIL then used as the route
+					 * to send the packet. */
 {
-    register Net_Route *routePtr;
+    Net_Interface	*interPtr;
+    Boolean		ourRoute = FALSE;
+    ReturnStatus	status;
 
     if (spriteID < 0 || spriteID >= NET_NUM_SPRITE_HOSTS) {
 	return(NET_UNREACHABLE_NET);
@@ -248,37 +279,34 @@ Net_Output(spriteID, gatherPtr, gatherLength, mutexPtr)
     /*
      * Check for a route to the indicated host.  Use ARP to find it if needed.
      */
-    routePtr = netRouteArray[spriteID];
-    if (routePtr == (Net_Route *)NIL) {
-	routePtr = Net_Arp(spriteID, mutexPtr);
+    if (routePtr == (Net_Route *) NIL) {
+	ourRoute = TRUE;
+	routePtr = Net_IDToRoute(spriteID, 0, TRUE, mutexPtr, 0);
 	if (routePtr == (Net_Route *)NIL) {
 	    return(NET_UNREACHABLE_NET);
 	}
     }
-
-    switch(routePtr->type) {
-	case NET_ROUTE_ETHER: {
-
-		/*
-		 * Still need to decide which interface to use on a 
-		 * machine with more than one...
-		 */
+    interPtr = routePtr->interPtr;
+    switch(routePtr->protocol) {
+	case NET_PROTO_RAW : {
 		/*
 		 * The first gather buffer contains the protocol header for
-		 * which we have none for NET_ROUTE_ETHER.
+		 * which we have none for the ethernet.
 		 */
 		gatherPtr->length = 0; 	
-		INC_BYTES_SENT(gatherPtr, gatherLength);
 		gatherPtr->done = FALSE;
 		gatherPtr->mutexPtr = mutexPtr;
-		(netEtherFuncs.output)((Net_EtherHdr *)routePtr->data, 
-					    gatherPtr, gatherLength);
+		(interPtr->output) (interPtr, 
+		    routePtr->headerPtr[NET_PROTO_RAW], 
+		    gatherPtr, gatherLength);
 		while (!gatherPtr->done && mutexPtr != (Sync_Semaphore *)NIL) {
-		    (void) Sync_SlowMasterWait((unsigned int)mutexPtr, mutexPtr, 0);
+		    (void) Sync_SlowMasterWait((unsigned int)mutexPtr, 
+				mutexPtr, 0);
 		}
-		return(SUCCESS);
+		status = SUCCESS;
+		break;
 	    }
-	case NET_ROUTE_INET: {
+	case NET_PROTO_INET: {
 		/*
 		 * For the INET routes we must fill in the ipHeader in the 
 		 * first buffer of the gather array. 
@@ -289,9 +317,7 @@ Net_Output(spriteID, gatherPtr, gatherLength, mutexPtr)
 		register int	 i; 
 
 		/*
-		 * Compute the legnth of the gather vector. We can skip
-		 * vector zero because we know its size will be 
-		 * sizeof(Net_IPHeader).
+		 * Compute the length of the gather vector. 
 		 */
 		length = sizeof(Net_IPHeader);
 		gathPtr = gatherPtr + 1;
@@ -300,7 +326,6 @@ Net_Output(spriteID, gatherPtr, gatherLength, mutexPtr)
 		}
 
 
-		net_EtherStats.bytesSent += length + sizeof(Net_EtherHdr);
 		/*
 		 * Fill the  ipHeader into the first element of the 
 		 * scatter/gather from the template stored in the route
@@ -312,7 +337,7 @@ Net_Output(spriteID, gatherPtr, gatherLength, mutexPtr)
 		gatherPtr->mutexPtr = mutexPtr;
 
 		*ipHeaderPtr = *(Net_IPHeader *) 
-			    (((char *)routePtr->data)+sizeof(Net_EtherHdr));
+				    routePtr->headerPtr[NET_PROTO_INET];
 		/*
 		 * Update length and checksum. The template 
 		 * ipHeaderPtr->checksum should contain the 16 bit sum of 
@@ -326,18 +351,26 @@ Net_Output(spriteID, gatherPtr, gatherLength, mutexPtr)
 		length = ipHeaderPtr->checksum + length;
 		ipHeaderPtr->checksum = ~(length + (length >> 16));
 
-		(netEtherFuncs.output)((Net_EtherHdr *)routePtr->data, 
-						gatherPtr, gatherLength);
+		(interPtr->output)(interPtr, 
+		    routePtr->headerPtr[NET_PROTO_RAW], gatherPtr, 
+		    gatherLength);
 		while (!gatherPtr->done && mutexPtr != (Sync_Semaphore *)NIL) {
-		    (void) Sync_SlowMasterWait((unsigned int)mutexPtr, mutexPtr, 0);
+		    (void) Sync_SlowMasterWait((unsigned int)mutexPtr, 
+				mutexPtr, 0);
 		}
-		return(SUCCESS);
+		status = SUCCESS;
+		break;
 	    }
 	default:
-	    printf("Warning: Net_Output: unsupported route type: %x\n", 
-			routePtr->type);
-	    return(FAILURE);
+	    printf("Warning: Net_Output: unsupported route protocol: %x\n", 
+			routePtr->protocol);
+	    panic(NIL);
+	    status = FAILURE;
     }
+    if (ourRoute) {
+	Net_ReleaseRoute(routePtr);
+    }
+    return status;
 }
 
 
@@ -345,9 +378,9 @@ Net_Output(spriteID, gatherPtr, gatherLength, mutexPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Net_OutputRawEther --
+ * Net_RawOutput --
  *
- *	Send a packet directly onto the ethernet.
+ *	Send a packet directly onto the network.
  *
  * Results:
  *	None.
@@ -359,14 +392,14 @@ Net_Output(spriteID, gatherPtr, gatherLength, mutexPtr)
  */
 
 void
-Net_OutputRawEther(etherHdrPtr, gatherPtr, gatherLength)
-    Net_EtherHdr	*etherHdrPtr;	/* Ethernet header. */
+Net_RawOutput(interPtr, headerPtr, gatherPtr, gatherLength)
+    Net_Interface	*interPtr;	/* The network interface. */
+    Address		headerPtr;	/* Packet header. */
     Net_ScatterGather	*gatherPtr;	/* Specifies buffers containing the
 					 * pieces of the packet */
     int 		gatherLength;	/* Number of elements in gatherPtr[] */
 {
-    INC_BYTES_SENT(gatherPtr, gatherLength);
-    (netEtherFuncs.output)(etherHdrPtr, gatherPtr, gatherLength);
+    (interPtr->output)(interPtr, headerPtr, gatherPtr, gatherLength);
 }
 
 
@@ -391,20 +424,20 @@ Net_OutputRawEther(etherHdrPtr, gatherPtr, gatherLength)
  */
 
 void
-Net_RecvPoll()
+Net_RecvPoll(interPtr)
+    Net_Interface	*interPtr;	/* Network interface. */
 {
-    netEtherFuncs.intr(TRUE);
-    return;
+    if (netDebug) {
+	printf("Net_RecvPoll\n");
+    }
+    (interPtr->intr)(interPtr, TRUE);
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * Net_EtherOutputSync --
- *
- *	Send a packet to a host identified by a Sprite Host ID and wait
- *	for the packet to be sent.
+ * Net_RawOutputSync --
  *
  * Results:
  *	None.
@@ -415,26 +448,26 @@ Net_RecvPoll()
  *----------------------------------------------------------------------
  */
 void
-Net_EtherOutputSync(etherHdrPtr, gatherPtr, gatherLength)
-    Net_EtherHdr	*etherHdrPtr;	/* Pointer to ethernet header. */
+Net_RawOutputSync(interPtr, headerPtr, gatherPtr, gatherLength)
+    Net_Interface	*interPtr;	/* Network interface. */
+    Address		headerPtr;	/* Packet header. */
     Net_ScatterGather 	*gatherPtr;	/* Specifies buffers containing the
 					 * pieces of the packet */
     int 		gatherLength;	/* Number of elements in gatherPtr[] */
 {
 
-    gatherPtr->mutexPtr = &outputMutex;
+    gatherPtr->mutexPtr = &(interPtr->syncOutputMutex);
     gatherPtr->done = FALSE;
 
-    MASTER_LOCK(&outputMutex);
+    MASTER_LOCK(&(interPtr->syncOutputMutex));
 
-    INC_BYTES_SENT(gatherPtr, gatherLength);
-    netEtherFuncs.output(etherHdrPtr, gatherPtr, gatherLength);
+    (interPtr->output)(interPtr, headerPtr, gatherPtr, gatherLength);
     while (!gatherPtr->done) {
-	(void) Sync_SlowMasterWait((unsigned int)&outputMutex, 
-					&outputMutex, FALSE);
+	(void) Sync_SlowMasterWait((unsigned int)&(interPtr->syncOutputMutex), 
+				    &(interPtr->syncOutputMutex), FALSE);
     }
 
-    MASTER_UNLOCK(&outputMutex);
+    MASTER_UNLOCK(&(interPtr->syncOutputMutex));
     return;
 }
 
@@ -463,6 +496,9 @@ NetOutputWakeup(mutexPtr)
 {
     int waiting;
 
+    /*
+     * FIX THIS.
+     */
     if (dbg_UsingNetwork) {
 	return;
     }
@@ -505,9 +541,13 @@ NetOutputWakeup(mutexPtr)
  */
 
 int
-Net_Intr()
+Net_Intr(interPtr)
+    Net_Interface	*interPtr;	/* Network interface. */
 {
-    (netEtherFuncs.intr)(FALSE);
+    if (netDebug) {
+	printf("Received an interrupt on interface %s\n", interPtr->name);
+    }
+    (interPtr->intr)(interPtr, FALSE);
     return 1;
 }
 
@@ -521,6 +561,11 @@ Net_Intr()
  *
  *	The packet handler called must copy the packet to private buffers.
  *
+ *	TODO:
+ *		This routine, and the ones it calls, should not assume
+ *		that there is a packet header at the start of the
+ *		packet.  The header should be passed separately.
+ *
  * Results:
  *	None.
  *
@@ -531,57 +576,115 @@ Net_Intr()
  */
 
 void
-Net_Input(packetPtr, packetLength)
-    Address packetPtr;
-    int packetLength;
+Net_Input(interPtr, packetPtr, packetLength)
+    Net_Interface *interPtr;	/* Network interface. */
+    Address packetPtr;		/* The packet. */
+    int packetLength;		/* The length of the packet. */
 {
-    register Net_EtherHdr *etherHdrPtr;
-    int		type;
+    int		headerSize;
+    int		packetType = NET_PACKET_UNKNOWN;
+    Boolean	ultra = FALSE;
 
-    etherHdrPtr = (Net_EtherHdr *)packetPtr;
-    type = Net_NetToHostShort((unsigned short)NET_ETHER_HDR_TYPE(*etherHdrPtr));
-
+    if (netDebug) {
+	printf("Net_Input\n");
+    }
+    switch(interPtr->netType) {
+	case NET_NETWORK_ETHER : {
+	    Net_EtherHdr *etherHdrPtr;
+	    int		type;
+	    etherHdrPtr = (Net_EtherHdr *)packetPtr;
+	    type = Net_NetToHostShort((unsigned short)
+			NET_ETHER_HDR_TYPE(*etherHdrPtr));
+	    switch(type) {
+		case NET_ETHER_SPRITE:
+		    packetType = NET_PACKET_SPRITE;
+		    break;
+		case NET_ETHER_ARP:
+		    packetType = NET_PACKET_ARP;
+		    break;
+		case NET_ETHER_REVARP:
+		    packetType = NET_PACKET_RARP;
+		    break;
+		case NET_ETHER_SPRITE_DEBUG:
+		    packetType = NET_PACKET_DEBUG;
+		    break;
+		case NET_ETHER_IP:
+		    packetType = NET_PACKET_IP;
+		    break;
+		default:
+		    packetType = NET_PACKET_UNKNOWN;
+		    break;
+	    }
+	    ultra = FALSE;
+	    break;
+	}
+	case NET_NETWORK_ULTRA: {
+	    ultra = TRUE;
+	    packetType = NET_PACKET_SPRITE;
+	    break;
+	}
+	default : 
+	    printf("Net_Input: invalid net type %d\n", interPtr->netType);
+    }
+    headerSize = net_NetworkHeaderSize[interPtr->netType];
     if (dbg_UsingNetwork) {
 	/*
 	 * If the kernel debugger is running it gets all the packets. We
 	 * process ARP requests to allow hosts to talk to the debugger.
 	 */
-	if (type == NET_ETHER_ARP) {
-            NetArpInput(packetPtr, packetLength);
+	if (packetType == NET_PACKET_ARP) {
+            NetArpInput(interPtr, packetPtr, packetLength);
 	} else { 
-	    Dbg_InputPacket(packetPtr, packetLength);
+	    Dbg_InputPacket(interPtr, packetPtr, packetLength);
 	}
 	return;
     }
-    switch(type) {
-        case NET_ETHER_SPRITE:
-	    net_EtherStats.bytesReceived += packetLength;
-            Rpc_Dispatch(NET_ROUTE_ETHER, packetPtr, 
-			 (packetPtr + sizeof(Net_EtherHdr)), 
-			packetLength - sizeof(Net_EtherHdr));
+    switch(packetType) {
+        case NET_PACKET_SPRITE:
+	    if (netDebug) {
+		printf("Received a Sprite packet, calling Rpc_Dispatch\n");
+	    }
+            Rpc_Dispatch(interPtr, NET_PROTO_RAW, packetPtr, 
+		     (Address) (((char *) packetPtr) + headerSize), 
+		     packetLength - headerSize);
             break;
 
-        case NET_ETHER_ARP:
-	case NET_ETHER_REVARP:
+        case NET_PACKET_ARP:
+	case NET_PACKET_RARP:
 	    /*
 	     * The kernel gets first shot at ARP packets and then they are
 	     * forward to tbe /dev/net device.
 	     */
-            NetArpInput(packetPtr, packetLength);
-	    DevNetEtherHandler(packetPtr, packetLength);
+	    if (netDebug) {
+		if (packetType == NET_PACKET_ARP) {
+		    printf("Received an ARP packet.\n");
+		} else {
+		    printf("Received a RARP packet.\n");
+		}
+	    }
+            NetArpInput(interPtr, packetPtr, packetLength);
+	    if (interPtr->packetProc != NILPROC) {
+		(interPtr->packetProc)(interPtr, packetLength, packetPtr);
+	    }
+	    break;
+
+        case NET_PACKET_DEBUG:
+	    if (netDebug) {
+		printf("Received a debug packet.\n");
+	    }
+            EnterDebugger(interPtr, packetPtr, packetLength);
             break;
 
-        case NET_ETHER_SPRITE_DEBUG:
-            EnterDebugger(packetPtr, packetLength);
-            break;
-
-	case NET_ETHER_IP: {
+	case NET_PACKET_IP: {
 	    register Net_IPHeader *ipHeaderPtr = 
-			(Net_IPHeader *) (packetPtr + sizeof(Net_EtherHdr));
+			(Net_IPHeader *) (packetPtr + headerSize);
 	    /*
 	     * The kernel steals IP packets with the Sprite RPC protocol number.
 	     */
-	    if ( (packetLength > sizeof(Net_IPHeader)+sizeof(Net_EtherHdr)) && 
+	    if (netDebug) {
+		printf("Received an IP packet.\n");
+	    }
+	    if ( (packetLength > sizeof(Net_IPHeader)+headerSize) && 
 	         (ipHeaderPtr->protocol == NET_IP_PROTOCOL_SPRITE)) {
 		int    headerLenInBytes;
 		int    totalLenInBytes;
@@ -597,27 +700,39 @@ Net_Input(packetPtr, packetLength)
 		 */
 		if ((headerLenInBytes >= sizeof(Net_IPHeader)) &&
 		     (totalLenInBytes > headerLenInBytes) &&
-		     (totalLenInBytes <= (packetLength-sizeof(Net_EtherHdr))) &&
+		     (totalLenInBytes <= (packetLength-headerSize)) &&
 		     (Net_InetChecksum(headerLenInBytes, (Address)ipHeaderPtr)
 		                        == 0)) {
 
 		    SWAP_FRAG_OFFSET_NET_TO_HOST(ipHeaderPtr);
 		    if((!(ipHeaderPtr->flags & NET_IP_MORE_FRAGS)) &&
 		      (ipHeaderPtr->fragOffset == 0)) {
-			net_EtherStats.bytesReceived += packetLength;
-			Rpc_Dispatch(NET_ROUTE_ETHER, packetPtr, 
-		          (((char *) ipHeaderPtr) + headerLenInBytes),
+			if (netDebug) {
+			    printf(
+			"Received a Sprite IP packet, calling Rpc_Dispatch\n");
+			}
+			Rpc_Dispatch(interPtr, NET_PROTO_INET, packetPtr, 
+		           (Address)(((char *) ipHeaderPtr) + headerLenInBytes),
 				     totalLenInBytes-headerLenInBytes);
 		     }
 		}
 
 	    } else {
-		DevNetEtherHandler(packetPtr, packetLength);
+
+		if (interPtr->packetProc != NILPROC) {
+		    (interPtr->packetProc)(interPtr, packetLength, packetPtr);
+		}
 	    }
 	    break;
 	}
 	default:
-	    DevNetEtherHandler(packetPtr, packetLength);
+	    if (netDebug) {
+		printf("Received a packet with unknown type 0x%x.\n",
+		    packetType);
+	    }
+	    if (interPtr->packetProc != NILPROC) {
+		(interPtr->packetProc)(interPtr, packetLength, packetPtr);
+	    }
 	    break;
     }
     return;
@@ -646,17 +761,15 @@ Net_Input(packetPtr, packetLength)
 
 /* ARGSUSED */
 static void
-EnterDebugger(packetPtr, packetLength)
+EnterDebugger(interPtr, packetPtr, packetLength)
+    Net_Interface	*interPtr;
     Address packetPtr;
     int packetLength;
 {
     char *name;
     unsigned int  len;
 
-    /*
-     * Skip over the Ethernet header.
-     */
-    packetPtr += sizeof(Net_EtherHdr);
+    packetPtr += net_NetworkHeaderSize[interPtr->netType];
     /*
      * Copy the length out of the packet into a correctly aligned integer.
      * Correct its byte order.
@@ -679,3 +792,227 @@ EnterDebugger(packetPtr, packetLength)
     DBG_CALL;
     return;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_GetInterface --
+ *
+ *	Returns a pointer to the interface structure with the
+ *	given number and type.
+ *
+ * Results:
+ *	A pointer to a Net_Interface if one with the given number
+ *	exists, NIL otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Net_Interface *
+Net_GetInterface(netType, number)
+    Net_NetworkType	netType;	/* Type of interface. */
+    int			number;		/* Number of interface. */
+{
+    Net_Interface	*interPtr;
+    register int	i;
+
+    interPtr = (Net_Interface *) NIL;
+    for (i = 0; i < netNumInterfaces; i++) {
+	if (netInterfaces[i]->netType == netType &&
+	    netInterfaces[i]->number == number) {
+	    interPtr = netInterfaces[i];
+	    break;
+	}
+    }
+    return interPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_NextInterface --
+ *
+ * 	This routine can be used to iterate through all network
+ *	interfaces, regardless of type.  The parameter 'index'
+ *	is used to keep track of where we are in the interaction.
+ *	A pointer will be returned to first interface whose index
+ *	is equal to or greater than 'index' and that is running.
+ *	The 'index' parameter will be set to the index of the
+ *	interface upon return.  
+ *
+ * Results:
+ *	A pointer to the first interface whose number if greater than
+ *	or equal to the contents of indexPtr and is running. NIL
+ *	if no such interface exists.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Net_Interface *
+Net_NextInterface(running, indexPtr)
+    Boolean		running;	/* TRUE => returned interface	
+					 * must be in running state. */
+    int			*indexPtr;	/* Ptr to index to use. */
+{
+    register int	i;
+
+    for (i = *indexPtr; i < netNumInterfaces; i++) {
+	if (netDebug) {
+	    printf("i = %d, name = %s, running = %d\n", i, 
+		netInterfaces[i]->name, 
+		netInterfaces[i]->flags & NET_IFLAGS_RUNNING);
+	}
+	if (!running || netInterfaces[i]->flags & NET_IFLAGS_RUNNING) {
+	    *indexPtr = i;
+	    return netInterfaces[i];
+	}
+    }
+    return (Net_Interface *) NIL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_SetPacketHandler --
+ *
+ *	Routine to register a callback for each packet received
+ *	on a particular network interface.
+ *	Right now the Net_Input routine knows about the different
+ * 	types of packets and knows which routines to call.  This
+ *	routine is used to set the callback for generic packets
+ *	so that the dev module sees them. 
+ *
+ *	The handler parameter should have the following definition:
+ *		void	handler(interPtr, packetPtr, size)
+ *			Net_Interface	*interPtr; 
+ *			Address		packetPtr; 
+ *			int		size;	   
+ *
+ *	TODO:  It would probably be nice to classify packets (rpc, ip,
+ *		ether, etc) and register interest in the different
+ *		classifications. That would make Net_Input more
+ *		general.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The function parameter will be called for all 'normal' network
+ *	packets.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Net_SetPacketHandler(interPtr, handler)
+    Net_Interface	*interPtr;	/* The interface. */
+    void		(*handler)();	/* Packet handling routine. */
+{
+    interPtr->packetProc = handler;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_RemovePacketHandler --
+ *
+ *	Routine to remove a packet handler callback procedure.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Net_RemovePacketHandler(interPtr)
+    Net_Interface	*interPtr;	/* The interface. */
+{
+    interPtr->packetProc = NILPROC;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_GetStats --
+ *
+ *	Returns the event statistics for the various network 
+ *	interfaces.  The sum of the stats for all interfaces of the
+ *	given type is returned.
+ *
+ * Results:
+ *	SUCCESS if the statistics are returned, an error code otherwise
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Net_GetStats(netType, statPtr)
+    Net_NetworkType	netType; 	/* Type of interfaces to get stats
+					 * for. */
+    Net_Stats		*statPtr;	/* Statistics to fill in. */ 
+{
+    int			i;
+    ReturnStatus	status = SUCCESS;
+    Net_Stats		tmpStats;
+
+    bzero((char *) statPtr, sizeof(Net_Stats));
+    for (i = 0; i < netNumInterfaces; i++) {
+	if ((netInterfaces[i]->flags & NET_IFLAGS_RUNNING) &&
+	    (netInterfaces[i]->netType == netType)) {
+	    status = (netInterfaces[i]->getStats)(netInterfaces[i], &tmpStats);
+	    if (status != SUCCESS) {
+		break;
+	    }
+	    NetAddStats(&tmpStats, statPtr, statPtr);
+	}
+    }
+    return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetAddStats --
+ *
+ *	Add two stats structures together. This routine assumes that
+ *	the structures are composed of only integers.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+NetAddStats(aPtr, bPtr, sumPtr)
+    Net_Stats *aPtr;			/* First addend. */
+    Net_Stats *bPtr;			/* Second addend. */
+    Net_Stats *sumPtr;			/* The sum of the two. */
+{
+    Net_Stats		tmp;
+    int			i;
+
+    bzero((char *) &tmp, sizeof(tmp));
+    for (i = 0; i < sizeof(Net_Stats) / sizeof(int); i++) {
+	((int *) &tmp)[i] = ((int *) aPtr)[i] + ((int *) bPtr)[i];
+    }
+    bcopy((char *) &tmp, (char *) sumPtr, sizeof(Net_Stats));
+}
+
