@@ -542,8 +542,8 @@ ProcExitProcess(exitProcPtr, reason, status, code, thisProcess)
   		    (List_Links *)NULL) {
   		break;
   	    }
-  	    VmDeleteSharedSegment(exitProcPtr,
-  		    List_First(exitProcPtr->vmPtr->sharedSegs));
+  	    Vm_DeleteSharedSegment(exitProcPtr, (Vm_SegProcList *)
+		    List_First(exitProcPtr->vmPtr->sharedSegs));
   	}
 	if (i>0) {
 	    dprintf("ProcExitProcess: deleted shared segments\n");
