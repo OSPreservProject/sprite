@@ -104,6 +104,15 @@ Proc_Migrate(pid, nodeID)
     Proc_TraceRecord record;
     Boolean migrateSelf = FALSE;
 
+    /*
+     * It is possible for a process to try to migrate onto the machine
+     * on which it is currently executing.
+     */
+
+    if (nodeID == rpc_SpriteID) {
+	return(SUCCESS);
+    }
+    
     if (Proc_ComparePIDs(pid, PROC_ALL_PROCESSES)) {
 	status = Proc_EvictForeignProcs();
 	return(status);
@@ -131,11 +140,22 @@ Proc_Migrate(pid, nodeID)
 	}
     }
 
+
     if (proc_MigDebugLevel > 3) {
 	Sys_Printf("Proc_Migrate: migrate process %x to node %d.\n",
 		   procPtr->processID, nodeID);
     }
 
+    /*
+     * Do some sanity checking.  
+     */
+    if (procPtr->state == PROC_DEAD || procPtr->state == PROC_EXITING) {
+	if (proc_MigDebugLevel > 3) {
+	    Sys_Printf("Proc_Migrate: the process has exited.\n");
+	}
+	return(PROC_INVALID_PID);
+    }
+	
     if (proc_DoTrace && proc_MigDebugLevel > 0) {
 	record.processID = procPtr->processID;
 	record.flags = PROC_MIGTRACE_START | PROC_MIGTRACE_HOME;
@@ -856,7 +876,8 @@ ResumeExecution(procPtr, nodeID, foreign)
  *	None.
  *
  * Side effects:
- *	The process is flagged for migration.
+ *	The process is flagged for migration.  If the process is suspended,
+ *	it is resumed.
  *
  *----------------------------------------------------------------------
  */
@@ -869,6 +890,9 @@ Proc_FlagMigration(procPtr, nodeID)
 
     procPtr->genFlags |= PROC_MIG_PENDING;
     procPtr->peerHostID = nodeID;
+    if (procPtr->state == PROC_SUSPENDED) {
+	Sig_SendProc(procPtr, SIG_RESUME, 0);
+    }
     Sig_SendProc(procPtr, SIG_MIGRATE_TRAP, 0);
 
 }
@@ -1210,31 +1234,39 @@ Proc_MigrateStartTracing()
  *	Proc_Exit performed on behalf of a migrated process that has
  *	been signaled, and the signal has timed out).
  *
- * 	Additional cleanup will probably be necessary.
+ * 	Right now, this happens only if the process is killed with a
+ *	SIG_KILL.  We should also be able to kill local copies of a
+ *	process that is interrupted with ^C, but determining whether
+ *	the ^C would be caught requires a few other changes we haven't
+ *	made yet, such as keeping the signal state up-to-date on the
+ *	home node.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	The process is destroyed.
+ *	The process is killed.
  *
  *----------------------------------------------------------------------
  */
 
-/* ARGSUSED */
 void 
-Proc_DestroyMigratedProc(procPtr, reason, status, code) 
-    Proc_ControlBlock 		*procPtr;	/* Exiting process. */
-    int 			reason;		/* Why the process is dying: 
-						 * EXITED, SIGNALED, 
-						 * DESTROYED  */
-    int				status;		/* Exit status, signal # or 
-						 * destroy status. */
-    int 			code;		/* Signal sub-status */
+Proc_DestroyMigratedProc(data)
+    ClientData data;
 {
-#ifdef DOESNT_WORK    
-    ProcExitProcess(procPtr, reason, status, code, FALSE);
-#endif DOESNT_WORK
+    register Proc_ControlBlock *procPtr;	/* Exiting process. */
+
+    procPtr = Proc_LockPID((Proc_PID) data);
+    if (procPtr == (Proc_ControlBlock *) NIL ||
+	    (procPtr->state != PROC_MIGRATED)) {
+	if (proc_MigDebugLevel > 0) {
+	    Sys_Panic(SYS_WARNING,
+		      "Proc_DestroyMigratedProc: process %x not found.\n",
+		      (int) data);
+	}
+	return;
+    }
+    ProcExitProcess(procPtr, PROC_TERM_SIGNALED, SIG_KILL, 0, FALSE);
 }
 
 
