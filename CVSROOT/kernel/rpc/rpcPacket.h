@@ -6,11 +6,18 @@
  * remote procedure call and is followed by parameters and data for the
  * RPC.
  *
- * Copyright (C) 1985 Regents of the University of California
+ * Copyright (C) 1987 Regents of the University of California
  * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
  *
- * CHANGES TO THIS FILE NEED TO MIRROR CHANGES MADE TO THE UNIX 
- * HEADER FILE "fsp.h" 
+ * This packet format no longer agrees with the old-old sprite-unix
+ * hybrid (header "fsp.h")
  *
  * sccsid "Sprite $Header$"
  */
@@ -22,63 +29,59 @@
  * The Rpc header.
  */
 typedef struct RpcHdr {
-    unsigned short	flags;		/* Protocol flags, explained below */
-    unsigned short	delay;		/* Interfragment delay info */
+    unsigned int	version;	/* This is a combined version number
+					 * and byte-order indicator.  See
+					 * the defines below. */
+    unsigned int	flags;		/* Protocol flags, explained below */
     int			clientID;	/* Client Sprite host id */
     int			serverID;	/* Server Sprite host id */
-    short		channel;	/* The client channel number */
-    short		serverHint;	/* Server index hint. The server
+    int			channel;	/* The client channel number */
+    int			serverHint;	/* Server index hint. The server
 					 * machine updates this on every
 					 * packet it sends to a client.  The
 					 * channel being used for the RPC
 					 * should preserve the value sent
 					 * and return it (in this field) with
 					 * future messages to the server */
+    unsigned int	bootID;		/* Client boot timestamp.  This changes
+					 * each time a host reboots. */
     unsigned int	ID;		/* ID/sequence number. This ID is the
 					 * same on all packets pertaining
-					 * to the same RPC. For a given
-					 * channel number increases
-					 * increase from one transaction
-					 * to the next */
-    unsigned short	transport;	/* Low-er level transport protocol ID.
-					 * This should GO AWAY but the unix
-					 * file server still depends on it */
-    unsigned short	numFrags;	/* Number of fragments in packet (<=16).
+					 * to the same RPC. This increases
+					 * until the origniating host reboots */
+    unsigned int	delay;		/* Interfragment delay info */
+    unsigned int	numFrags;	/* Number of fragments in packet (<=16).
 					 * If the packet is complete, ie. no
 					 * fragmenting, then this field should
 					 * be ZERO */
-    unsigned short	fragMask;	/* Fragment bitmask ID. The I'th frag
+    unsigned int	fragMask;	/* Fragment bitmask ID. The I'th frag
 					 * has the I'th bit of this mask
 					 * set.  If no fragments then this
 					 * field should be ZERO.  On partial
 					 * acknowledgments this contains
 					 * the receiver's summary bitmask */
     int			command;	/* Rpc command, see rpcCall.h */
-    unsigned int	bootID;		/* Client boot timestamp */
-    short		paramSize;	/* Size of the parameter area */
-    short		dataSize;	/* Size of the data data area */
-    short		paramOffset;	/* This is the starting offset for the
+    int			paramSize;	/* Size of the parameter area */
+    int			dataSize;	/* Size of the data data area */
+    int			paramOffset;	/* This is the starting offset for the
 					 * block of parameter bytes sent in
 					 * this fragment.  This is zero for
 					 * unfragmented sends and for the first
 					 * fragment of a group */
-    short		dataOffset;	/* Offset for the data area. */
-} RpcHdr;
+    int			dataOffset;	/* Offset for the data area. */
+} RpcHdr;				/* 64 BYTES */
 
 /*
- * Values for the transport field. These are the same as AF_* constants in
- * the Unix kernel.  This field types the packet delivery header that
- * comes just before the RPC header.  THIS SHOULD GO AWAY but it requires
- * re-working the UNIX implementation of RPC.
- *
- *  PROTO_INET		(same as Unix AF_INET)
- *			This indicates that IP is the transport level protocol.
- *  PROTO_ETHER		(same as Unix AF_ETHER)
- *			This indicates that raw ethernet packets are
- *			used to transport packets.
+ * Version number / byte-ordering word.
+ *	RPC_NATIVE_VERSION	Version number in native format
+ *	RPC_SWAPPED_VERSION	Version number if originating on a Vax byte
+ *				ordered host and read on a MC680xx host,
+ *				or vice versa.
+ *	To change the version number increment the right-most byte
+ *	in the native version.
  */
-#define PROTO_INET	2
-#define PROTO_ETHER	12
+#define	RPC_NATIVE_VERSION	0x0f0e0001
+#define RPC_SWAPPED_VERSION	0x01000e0f
 
 /*
  * The flags field is used to type packets and for flags that
