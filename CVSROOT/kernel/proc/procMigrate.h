@@ -179,6 +179,8 @@ typedef struct {
 					   home, including evictions. */
     int			evictCalls; 	/* Number of times user-level daemon
 					   requested evictions. */
+    int			evictsNeeded; 	/* Number of times requests resulted
+					   in >= 1 evictions. */
 					   
 } Proc_MigStats;
 
