@@ -675,6 +675,10 @@ RequestDone(devPtr,scsiCmdPtr,status,scsiStatusByte,amountTransferred)
 	    devPtr->handle.locationName, status,scsiStatusByte,
 	    amountTransferred);
     }
+    if (ctrlPtr->dmaState != DMA_INACTIVE) {
+	VmMach_DMAFree(scsiCmdPtr->bufferLen,ctrlPtr->dmaBuffer);
+	ctrlPtr->dmaState = DMA_INACTIVE;
+    }
     /*
      * First check to see if this is the reponse of a HBA generated 
      * REQUEST SENSE command.  If this is the case, we can process
