@@ -542,6 +542,20 @@ Sys_StatsStub(command, option, argPtr)
 	    }
 	    break;
 	}
+	case SYS_SCHED_MORE_STATS: {
+	    Sched_OverallTimes *schedOverallPtr;
+
+	    schedOverallPtr = (Sched_OverallTimes *)argPtr;
+	    if (schedOverallPtr == (Sched_OverallTimes *)NIL ||
+		    schedOverallPtr == (Sched_OverallTimes *)0 ||
+		    schedOverallPtr == (Sched_OverallTimes *)USER_NIL) {
+		status = GEN_INVALID_ARG;
+	    } else {
+		status = Vm_CopyOut(sizeof(Sched_OverallTimes),
+			(Address)&sched_OverallTimes, argPtr);
+	    }
+	    break;
+	}
 	case SYS_SCHED_STATS: {
 	    Sched_Instrument *schedStatPtr;
 	    Time curTime;
