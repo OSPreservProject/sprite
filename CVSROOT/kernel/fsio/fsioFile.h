@@ -46,12 +46,23 @@ typedef struct FsFileReopenParams {
     FsFileID	fileID;		/* File ID of file to reopen. MUST BE FIRST */
     FsFileID	prefixFileID;	/* File ID for the prefix of this file. */
     FsUseCounts	use;		/* Reference counts */
-    Boolean	haveDirtyBlocks;/* TRUE => This open must not suceed unless the
-				 * file can be cached.  This flag is set when
-				 * dirty blocks remain in the cache for a file.
-				 */
+    Boolean	flags;		/* FS_HAVE_BLOCKS | FS_SWAP */
     int		version;	/* Expected version number for the file. */
 } FsFileReopenParams;
+
+/*
+ * File reopen flags
+ *	FS_HAVE_BLOCKS	Set when the client has dirty blocks in its cache.
+ *		This implies that it ought to be able to continue caching.
+ *		A race exists in that another client could open for writing
+ *		first, and thus invalidate the first client's data, or another
+ *		client could open for reading and possibly see stale data.
+ *	FS_SWAP	This stream flag is passed along so the server doesn't
+ *		erroneously grant cacheability to swap files.
+ *			
+ */
+#define FS_HAVE_BLOCKS		0x1
+/*resrv FS_SWAP			0x4000 */
 
 /*
  * The I/O descriptor for a local file.  Used with FS_LCL_FILE_STREAM.
@@ -100,12 +111,13 @@ typedef struct FsRmtFileIOHandle {
     int			openTimeStamp;	/* Returned on open from the server
 					 * and used to catch races with cache
 					 * consistency msgs due to other opens*/
+    int			flags;		/* FS_SWAP */
     FsFileID		prefixFileID;	/* Passed to the server so it can
 					 * properly trap out lookups that
 					 * ascend past the prefix. */
     struct Vm_Segment	*segPtr;	/* Reference to code segment needed
 					 * to flush VM cache. */
-} FsRmtFileIOHandle;			/* 192 BYTES */
+} FsRmtFileIOHandle;			/* 196 BYTES */
 
 
 /*
