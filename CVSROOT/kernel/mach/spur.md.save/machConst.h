@@ -18,27 +18,23 @@
 /*
  * The compare trap types.
  */
-#define	MACH_SYS_CALL_TRAP	0
-#define	MACH_USER_ERROR_TRAP	1
-#define	MACH_SIG_RETURN_TRAP	2
-#define	MACH_GET_WIN_MEM_TRAP	3
-#define	MACH_MAX_TRAP_TYPE	3
+#define	MACH_SYS_CALL_TRAP		0
+#define	MACH_USER_ERROR_TRAP		1
+#define	MACH_SIG_RETURN_TRAP		2
+#define	MACH_GET_WIN_MEM_TRAP		3
+#define	MACH_ENTER_DEBUGGER_TRAP	4
+#define	MACH_MAX_TRAP_TYPE		4
 
 /*
- * The return codes from the C trap handler routines:
+ * The return codes from the C trap handler routine:
  *
  *	MACH_NORM_RETURN	No special action is required before continuing
  *				execution.
  *	MACH_FAILED_COPY	A cross-address space copy failed.
- *	MACH_CALL_SIG_HANDLER	A signal handler should be called when the
- *				user process continues execution.
- *	MACH_USER_ERROR		A user process has to take a signal.
  */
 #define	MACH_NORM_RETURN		0
 #define	MACH_FAILED_COPY		1
-#define	MACH_CALL_SIG_HANDLER		2
-#define	MACH_USER_ERROR			3
-#define	MACH_MAX_RETURN_CODE		3
+#define	MACH_MAX_RETURN_CODE		1
 
 /*
  * The different type of trap handler errors.  Note that the error types 
@@ -68,6 +64,7 @@
  *	MACH_BAD_REF_FAULT	A reference fault occured which was an error.
  *	MACH_BAD_DIRTY_FAULT	A dirty fault occured which was an error.
  *	MACH_BOGUS_INTERRUPT	An interrupt occured that was an error.
+ *	MACH_DEBUGGER_CALL	A process called the debugger.
  */
 #define	MACH_USER_FPU_EXCEPT		(MACH_MAX_RETURN_CODE + 1)
 #define	MACH_KERN_FPU_EXCEPT		(MACH_MAX_RETURN_CODE + 2)
@@ -87,6 +84,7 @@
 #define	MACH_BAD_REF_FAULT		(MACH_MAX_RETURN_CODE + 16)
 #define	MACH_BAD_DIRTY_FAULT		(MACH_MAX_RETURN_CODE + 17)
 #define	MACH_BOGUS_INTERRUPT		(MACH_MAX_RETURN_CODE + 18)
+#define	MACH_BAD_SYS_CALL		(MACH_MAX_RETURN_CODE + 19)
 
 /*
  * The hardware page size.
@@ -94,11 +92,17 @@
 #define	MACH_PAGE_SIZE		4096
 
 /*
+ * The size of a single saved window and all of the saved windows.
+ */
+#define	MACH_SAVED_WINDOW_SIZE		128
+#define	MACH_SAVED_REG_SET_SIZE		(MACH_NUM_WINDOWS * MACH_SAVED_WINDOW_SIZE)
+
+/*
  * The number of registers.
  */
 #define	MACH_NUM_GLOBAL_REGS		10
 #define	MACH_NUM_REGS_PER_WINDOW	16
-#define	MACH_NUM_NUM_ACTIVE_REGS	32
+#define	MACH_NUM_ACTIVE_REGS		32
 #define	MACH_NUM_WINDOWS		8
 #define MACH_TOTAL_REGS			(MACH_NUM_GLOBAL_REGS + \
 					 MACH_NUM_REGS_PER_WINDOW * \
@@ -133,6 +137,7 @@
 /*
  * Interrupt Status/Mask Register Assignments (see page 30 of SPUR-MSA).
  */
+#define	MACH_NUM_INTR_TYPES		20
 #define	MACH_EXT_INTR_0			0x00001
 #define	MACH_EXT_INTR_1			0x00002
 #define	MACH_EXT_INTR_2			0x00004
@@ -268,7 +273,8 @@
 #define	MACH_REG_STATE_UPSW_OFFSET	(MACH_REG_STATE_KPSW_OFFSET + 4)
 #define	MACH_REG_STATE_CUR_PC_OFFSET	(MACH_REG_STATE_UPSW_OFFSET + 4)
 #define	MACH_REG_STATE_NEXT_PC_OFFSET	(MACH_REG_STATE_CUR_PC_OFFSET + 4)
-#define	MACH_REG_STATE_SWP_OFFSET	(MACH_REG_STATE_NEXT_PC_OFFSET + 4)
+#define	MACH_REG_STATE_INSERT_OFFSET	(MACH_REG_STATE_NEXT_PC_OFFSET + 4)
+#define	MACH_REG_STATE_SWP_OFFSET	(MACH_REG_STATE_INSERT_OFFSET + 4)
 #define	MACH_REG_STATE_CWP_OFFSET	(MACH_REG_STATE_SWP_OFFSET + 4)
 
 /*
@@ -283,7 +289,8 @@
 #define	MACH_TRAP_UPSW_OFFSET		(MACH_TRAP_KPSW_OFFSET + 4)
 #define	MACH_TRAP_CUR_PC_OFFSET		(MACH_TRAP_UPSW_OFFSET + 4)
 #define	MACH_TRAP_NEXT_PC_OFFSET	(MACH_TRAP_CUR_PC_OFFSET + 4)
-#define	MACH_TRAP_SWP_OFFSET		(MACH_TRAP_NEXT_PC_OFFSET + 4)
+#define	MACH_TRAP_INSERT_OFFSET		(MACH_TRAP_NEXT_PC_OFFSET + 4)
+#define	MACH_TRAP_SWP_OFFSET		(MACH_TRAP_INSERT_OFFSET + 4)
 #define	MACH_TRAP_CWP_OFFSET		(MACH_TRAP_SWP_OFFSET + 4)
 /*
  * Other misc. fields of the user state structure.
@@ -291,8 +298,7 @@
 #define	MACH_MIN_SWP_OFFSET		(MACH_TRAP_CWP_OFFSET + 4)
 #define	MACH_MAX_SWP_OFFSET		(MACH_MIN_SWP_OFFSET + 4)
 #define	MACH_NEW_CUR_PC_OFFSET		(MACH_MAX_SWP_OFFSET + 4)
-#define	MACH_NEW_USER_SP_OFFSET		(MACH_NEW_CUR_PC_OFFSET + 4)
-#define	MACH_SIG_NUM_OFFSET		(MACH_NEW_USER_SP_OFFSET + 4)
+#define	MACH_SIG_NUM_OFFSET		(MACH_NEW_CUR_PC_OFFSET + 4)
 #define	MACH_SIG_CODE_OFFSET		(MACH_SIG_NUM_OFFSET + 4)
 #define	MACH_OLD_HOLD_MASK_OFFSET	(MACH_SIG_CODE_OFFSET + 4)
 /*
@@ -304,12 +310,33 @@
 #define	MACH_SWITCH_UPSW_OFFSET		(MACH_SWITCH_KPSW_OFFSET + 4)
 #define	MACH_SWITCH_CUR_PC_OFFSET	(MACH_SWITCH_UPSW_OFFSET + 4)
 #define	MACH_SWITCH_NEXT_PC_OFFSET	(MACH_SWITCH_CUR_PC_OFFSET + 4)
-#define	MACH_SWITCH_SWP_OFFSET		(MACH_SWITCH_NEXT_PC_OFFSET + 4)
+#define	MACH_SWITCH_INSERT_OFFSET	(MACH_SWITCH_NEXT_PC_OFFSET + 4)
+#define	MACH_SWITCH_SWP_OFFSET		(MACH_SWITCH_INSERT_OFFSET + 4)
 #define	MACH_SWITCH_CWP_OFFSET		(MACH_SWITCH_SWP_OFFSET + 4)
+
 /*
  * Kernel stack bounds.
  */
 #define	MACH_KERN_STACK_START_OFFSET	(MACH_SWITCH_CWP_OFFSET + 4)
 #define	MACH_KERN_STACK_END_OFFSET	(MACH_KERN_STACK_START_OFFSET + 4)
+
+/*
+ * The different register indices into the registers in the Mach_RegState
+ * struct:
+ *
+ *	MACH_SPILL_SP		The spill stack pointer.
+ *	MACH_RETURN_VAL_REG	The register where a value is returned from
+ *				a procedure call.
+ *	MACH_INPUT_REG1		First input parameter.
+ */
+#define	MACH_SPILL_SP		4
+#define	MACH_RETURN_VAL_REG	27
+#define	MACH_INPUT_REG1		11
+
+/*
+ * The base of the user's saved window stack is the base of the stack
+ * segment.
+ */
+#define	MACH_SAVED_WINDOW_STACK_BASE	(0x40000000)
 
 #endif _MACHCONST

@@ -77,14 +77,15 @@ extern ReturnStatus (*(mach_MigratedHandlers[]))();
  * The register state for a process.
  */
 typedef struct {
-    int		trapRegs[MACH_NUM_ACTIVE_REGS][2];	/* Registers at time
-							 * of trap.*/
+    int		regs[MACH_NUM_ACTIVE_REGS][2];	/* Registers at time of trap.*/
     int		kpsw;				/* Kernel psw. */
     int		upsw;				/* User psw. */
     int		curPC;				/* Current program counter. */
     int		nextPC;				/* Next program counter. */
+    int		insert;				/* The insert register. */
     int		swp;				/* The saved window pointer. */
     int		cwp;				/* Current window pointer. */
+    int		usp;				/* User stack pointer. */
 } Mach_RegState;
 
 /*
@@ -99,8 +100,6 @@ typedef struct {
      */
     Address		newCurPC;	/* Saved first PC for when calling a
 					 * signal handler. */
-    Address		newUserSP;	/* Saved user stack pointer for when
-					 * calling a signal handler. */
     int			sigNum;		/* Signal number to pass to signal
 					 * handler. */
     int			sigCode;	/* Signal code to pass to signal
