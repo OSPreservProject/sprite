@@ -1488,8 +1488,10 @@ Fs_FileWriteBackStub(streamID, firstByte, lastByte, shouldBlock)
     ReturnStatus	status;
     Fs_Stream		*streamPtr;
     FsCacheFileInfo	*cacheInfoPtr;
+    register int	firstBlock;
+    register int	lastBlock;
+    register int	flags;
     int			blocksSkipped;
-    int			flags;
 
     status = FsGetStreamPtr(Proc_GetEffectiveProc(), 
 			    streamID, &streamPtr);
@@ -1516,8 +1518,18 @@ Fs_FileWriteBackStub(streamID, firstByte, lastByte, shouldBlock)
     if (shouldBlock) {
 	flags |= FS_FILE_WB_WAIT;
     }
-    status = FsCacheFileWriteBack(cacheInfoPtr, firstByte / FS_BLOCK_SIZE,
-		    lastByte / FS_BLOCK_SIZE, flags, &blocksSkipped);
+    if (firstByte > 0) {
+	firstBlock = firstByte / FS_BLOCK_SIZE;
+    } else {
+	firstBlock = 0;
+    }
+    if (lastByte > 0) {
+	lastBlock = lastByte / FS_BLOCK_SIZE;
+    } else {
+	lastBlock = FS_LAST_BLOCK;
+    }
+    status = FsCacheFileWriteBack(cacheInfoPtr, firstBlock, lastBlock,
+		    flags, &blocksSkipped);
 
     return(status);
 }
