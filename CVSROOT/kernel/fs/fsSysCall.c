@@ -1637,6 +1637,14 @@ Fs_ReadLinkStub(linkName, bufSize, buffer, linkSizePtr)
     if (status == SUCCESS) {
 	status = Fs_Read(streamPtr, buffer, 0, &bufSize);
 	if (status == SUCCESS) {
+	    /*
+	     * Sprite's link count includes the terminating null character
+	     * in the character count return while Unix doesn't.  Make our
+	     * count backward-compatible with Unix.
+	     */
+	    if (buffer[bufSize-1] == '\0') {
+		bufSize--;
+	    }
 	    status = Proc_ByteCopy(FALSE, sizeof(int), (Address)&bufSize, 
 			       (Address)linkSizePtr);
 	}
