@@ -715,7 +715,8 @@ endScan:
     if (curHandlePtr != (Fsio_FileIOHandle *)NIL) {
 	SOSP_ADD_LOOKUP(((int *)buf), clientID,
 	    (*(Fs_FileID *)(&(curHandlePtr->hdr))), status, sospTraceCount,
-	    SOSP_REMEMBERED_MIG, SOSP_REMEMBERED_OP);
+	    SOSP_REMEMBERED_MIG,
+	    SOSP_REMEMBERED_OP|(curHandlePtr->descPtr->fileType<<8));
     } else {
 	SOSP_ADD_LOOKUP(((int *)buf), clientID,
 	    NullFileID, status, sospTraceCount,
