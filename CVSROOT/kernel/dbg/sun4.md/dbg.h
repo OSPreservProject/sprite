@@ -77,6 +77,7 @@ typedef enum {
     DBG_BEGIN_CALL,		/* Start a call. */
     DBG_END_CALL, 		/* Clean up after a call completes. */
     DBG_CALL_FUNCTION,		/* Call a function. */
+    DBG_GET_DUMP_BOUNDS,	/* Get the bounds for the dump program. */
     DBG_UNKNOWN			/* Used for error checking */
 } Dbg_Opcode;
 
@@ -98,6 +99,7 @@ typedef enum {
 	"Set up things to start a call command",		\
 	"Clean up things after a call command has executed",	\
 	"Call a function",					\
+	"Get bounds for the dump program",			\
 	"UNKNOWN OPCODE"					\
 }								\
 
@@ -130,6 +132,19 @@ typedef enum {
     DBG_SYSLOG_TO_CONSOLE,
 } Dbg_SyslogCmd;
 
+typedef struct {
+    unsigned int	pageSize;
+    unsigned int	stackSize;
+    unsigned int	kernelCodeStart;
+    unsigned int	kernelCodeSize;
+    unsigned int	kernelDataStart;
+    unsigned int	kernelDataSize;
+    unsigned int	kernelStacksStart;
+    unsigned int	kernelStacksSize;
+    unsigned int	fileCacheStart;
+    unsigned int	fileCacheSize;
+} Dbg_DumpBounds;
+
 /*
  * Message format.
  */
@@ -147,8 +162,8 @@ typedef struct {
     } data;
 } Dbg_Msg;
 
-#define	DBG_MAX_REPLY_SIZE	1024
-#define	DBG_MAX_REQUEST_SIZE	1024
+#define	DBG_MAX_REPLY_SIZE	1400
+#define	DBG_MAX_REQUEST_SIZE	1400
 
 /*
  * The UDP port number that the kernel and kdbx use to identify a packet as
