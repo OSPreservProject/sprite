@@ -35,7 +35,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "stdlib.h"
 #include "sync.h"
 #include "fs.h"
+#include "vm.h"
+#include "fsio.h"
 #include "user/net.h"
+#include "bstring.h"
 
 Boolean devNetEtherDebug = FALSE;
 
