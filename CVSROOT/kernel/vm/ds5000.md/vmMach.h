@@ -34,6 +34,25 @@ typedef struct VmMach_SharedData {
 } VmMach_SharedData;
 
 /*
+ * Structure to allow processes to share regions of their VA with the kernel.
+ */
+
+typedef struct VmMach_KernSharedInfo {
+    List_Links	links;
+    unsigned	firstPage;		/* First virtual page in region. */
+    unsigned	lastPage;		/* Last virtual page in region. */
+    unsigned	firstPhysPage;		/* First physical page, if region
+					 * is in the user mapping region. */
+    int		flags;			/* See below. */
+} VmMach_KernSharedInfo;
+
+/*
+ * Flags in a VmMach_KernSharedInfo.
+ */
+
+#define VMMACH_KERN_SHARED_UNCACHEABLE 1	/* Is region uncacheable? */
+
+/*
  * Machine dependent data for each process.
  */
 typedef struct VmMach_ProcData {
@@ -54,6 +73,8 @@ typedef struct VmMach_ProcData {
 					 * but made address because of
 					 * header file problems.*/
     VmMach_SharedData	sharedData;	/* Data for shared memory. */
+    List_Links		kernSharedList;	/* List of VA regions shared with
+					 * the kernel. */
 } VmMach_ProcData;
 
 /*
@@ -68,9 +89,9 @@ extern unsigned *vmMach_KernelTLBMap;
 extern Boolean VmMach_MakeDebugAccessible _ARGS_((unsigned addr));
 extern ENTRY ReturnStatus VmMach_TLBFault _ARGS_((Address virtAddr));
 extern ReturnStatus VmMach_TLBModFault _ARGS_((Address virtAddr));
-extern Address VmMach_UserMap _ARGS_((int numBytes, Address physAddr,
-	Boolean firstTime, Boolean cache));
-extern ENTRY void VmMach_UserUnmap _ARGS_((void));
+extern ReturnStatus VmMach_UserMap _ARGS_((int numBytes, Address addr,
+	Address physAddr, Boolean cache, Address *newAddrPtr));
+extern ENTRY ReturnStatus VmMach_UserUnmap _ARGS_((Address addr));
 extern int VmMachCopyEnd _ARGS_((void));
 
 #endif _VMMACH
