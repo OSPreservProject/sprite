@@ -489,6 +489,10 @@ extern	void		VmLockPageInt();
 extern	void		VmUnlockPage();
 extern	void		VmUnlockPageInt();
 /*
+ * Routine to see if a page is pinned down.
+ */
+extern	Boolean		VmPagePinned();
+/*
  * Routine to handle page faults.
  */
 extern	ReturnStatus	VmDoPageIn();
@@ -500,7 +504,6 @@ extern	void		VmKillSharers();
  * Segment handling routines.
  */
 extern	ReturnStatus 	VmAddToSeg();
-extern	void 		VmDeleteFromSeg();
 extern  VmDeleteStatus 	VmSegmentDeleteInt();
 extern	void		VmDecPTUserCount();
 extern	Vm_Segment	*VmGetSegPtr();
@@ -561,5 +564,4 @@ extern	void		VmPrefetch();
  * Vm tracing.
  */
 extern	void		VmTraceSegStart();
-
 #endif _VMINT
