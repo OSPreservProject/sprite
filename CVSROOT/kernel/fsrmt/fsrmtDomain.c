@@ -54,7 +54,7 @@ typedef	struct	FsOpenReplyParam {
 /*
  *----------------------------------------------------------------------
  *
- * FsSpritePrefix --
+ * FsSpriteImport --
  *
  *	Get a handle for a prefix.  This conducts an RPC_FS_PREFIX
  *	to see if there is a server for the prefix.  If there is one this
@@ -73,30 +73,29 @@ typedef	struct	FsOpenReplyParam {
  *	
  *----------------------------------------------------------------------
  */
-
 /*ARGSUSED*/
 ReturnStatus
-FsSpritePrefix(prefixHandle, fileName, argsPtr, resultsPtr, newNameInfoPtrPtr)
-    FsHandleHeader   *prefixHandle;	/* == NIL */
-    char 	   *fileName;		/* File name to determine prefix for. */
-    Address        argsPtr;		/* Ref to FsUserIDs, IGNORED */
-    Address        resultsPtr;		/* Ref to (FsHandleHeader *) */
-    FsRedirectInfo **newNameInfoPtrPtr; /* == NIL */
+FsSpriteImport(prefix, idPtr, domainTypePtr, hdrPtrPtr)
+    char	*prefix;		/* Prefix for which to find a server. */
+    FsUserIDs	*idPtr;			/* IGNORED */
+    int		*domainTypePtr;		/* Return - FS_REMOTE_SPRITE_DOMAIN or
+					 *          FS_REMOTE_PSEUDO_DOMAIN */
+    FsHandleHeader **hdrPtrPtr;		/* Return - handle for prefix table */
 {
     ReturnStatus 	status;
     Rpc_Storage 	storage;
     FsFileID		*fileIDPtr;	/* Returned from server */
     ClientData		streamData;	/* Returned from server */
-    FsHandleHeader	**hdrPtrPtr = (FsHandleHeader **)resultsPtr;
-    int			flags = 0;
+    int			flags = FS_PREFIX;
     FsOpenReplyParam	openReplyParam;
 
     *hdrPtrPtr = (FsHandleHeader *)NIL;
+    *domainTypePtr = -1;
 
     storage.requestParamPtr = (Address) NIL;
     storage.requestParamSize = 0;
-    storage.requestDataPtr = (Address)fileName;
-    storage.requestDataSize = String_Length(fileName)+1;
+    storage.requestDataPtr = (Address)prefix;
+    storage.requestDataSize = String_Length(prefix)+1;
 
     storage.replyParamPtr = (Address)&openReplyParam;
     storage.replyParamSize = sizeof(FsOpenReplyParam);
@@ -117,7 +116,7 @@ FsSpritePrefix(prefixHandle, fileName, argsPtr, resultsPtr, newNameInfoPtrPtr)
 	 * Use the client-open routine to set up an I/O handle for the prefix.
 	 */
 	status = (*fsStreamOpTable[fileIDPtr->type].cltOpen)(fileIDPtr, &flags,
-		    rpc_SpriteID, (ClientData)streamData, fileName, hdrPtrPtr);
+		    rpc_SpriteID, (ClientData)streamData, prefix, hdrPtrPtr);
 	if (status == SUCCESS) {
 	    /*
 	     * Register the server with the recovery module so we find out
@@ -125,6 +124,7 @@ FsSpritePrefix(prefixHandle, fileName, argsPtr, resultsPtr, newNameInfoPtrPtr)
 	     */
 	    Recov_RebootRegister((*hdrPtrPtr)->fileID.serverID, FsReopen,
 				 (ClientData)NIL);
+	    *domainTypePtr = FS_REMOTE_SPRITE_DOMAIN;
 	}
     }
     return(status);
@@ -162,7 +162,7 @@ Fs_RpcPrefix(srvToken, clientID, command, storagePtr)
 					 * the exact amount of data in the 
 					 * request buffers.  The reply fields 
 					 * are initialized to NIL for the
-				 	 * pointers and 0 for the lengths.  
+					 * pointers and 0 for the lengths.  
 					 * This can be passed to Rpc_Reply */
 {
     char				*lookupName;
@@ -171,37 +171,26 @@ Fs_RpcPrefix(srvToken, clientID, command, storagePtr)
     FsFileID				rootID;
     int					domainType;
     ReturnStatus			status;
-    FsOpenReplyParam			*openReplyParamPtr;
+    FsOpenReplyParam			*openReplyPtr;
 
     status = FsPrefixLookup((char *) storagePtr->requestDataPtr,
 			FS_EXPORTED_PREFIX | FS_EXACT_PREFIX, clientID,
 			&hdrPtr, &rootID, &lookupName, &domainType, &prefixPtr);
     if (status == SUCCESS) {
 	register Rpc_ReplyMem		*replyMemPtr;
-	register FsLocalFileIOHandle	*handlePtr;
 	ClientData			streamData;
 	int				dataSize;
 
-	if (hdrPtr->fileID.type != FS_LCL_FILE_STREAM) {
-	    Sys_Panic(SYS_FATAL,
-		"Fs_RpcPrefix, found non-local exported prefix\n");
-	    return(RPC_NO_REPLY);
-	}
-	/*
-	 * Use the server-open routine to set up & allocate streamData.
-	 */
-	handlePtr = (FsLocalFileIOHandle *)hdrPtr;
-	FsHandleLock(handlePtr);
-	openReplyParamPtr = Mem_New(FsOpenReplyParam);
-	status = (*fsOpenOpTable[handlePtr->descPtr->fileType].srvOpen)
-		    (handlePtr, clientID, 0, &(openReplyParamPtr->fileID),
-		    (FsFileID *)NIL, &dataSize, &streamData);
-
+	openReplyPtr = Mem_New(FsOpenReplyParam);
+	status = (*fsDomainLookup[domainType][FS_DOMAIN_EXPORT])(hdrPtr,
+		    clientID, &openReplyPtr->fileID, &dataSize, &streamData);
 	if (status == SUCCESS) {
-	    Byte_Copy(dataSize, (Address)streamData,
-			(Address)&openReplyParamPtr->openData);
-	    Mem_Free((Address)streamData);
-	    storagePtr->replyParamPtr = (Address) (openReplyParamPtr);
+	    if (dataSize > 0) {
+		Byte_Copy(dataSize, (Address)streamData,
+			    (Address)&openReplyPtr->openData);
+		Mem_Free((Address)streamData);
+	    }
+	    storagePtr->replyParamPtr = (Address) (openReplyPtr);
 	    storagePtr->replyParamSize = sizeof(FsOpenReplyParam);
 	    storagePtr->replyDataPtr = (Address)NIL;
 	    storagePtr->replyDataSize = 0;
@@ -213,7 +202,7 @@ Fs_RpcPrefix(srvToken, clientID, command, storagePtr)
 		    (ClientData)replyMemPtr);
 	    return(SUCCESS);
 	} else {
-	    Mem_Free((Address)openReplyParamPtr);
+	    Mem_Free((Address)openReplyPtr);
 	    Sys_Panic(SYS_WARNING, "Fs_RpcPrefix, srvOpen \"%s\" failed %x\n",
 		    storagePtr->requestDataPtr, status);
 	}
@@ -363,6 +352,7 @@ Fs_RpcOpen(srvToken, clientID, command, storagePtr)
     FsRedirectInfo		*newNameInfoPtr;	/* prefix info for
 							 * redirected lookups */
     FsOpenResultsParam		*openResultsParamPtr;	/* open results, etc. */
+    int				domainType;		/* Local or Pseudo */
 
 
     if (Recov_GetClientState(clientID) & CLT_RECOV_IN_PROGRESS) {
@@ -370,21 +360,13 @@ Fs_RpcOpen(srvToken, clientID, command, storagePtr)
 	return(RPC_SERVICE_DISABLED);
     }
     openArgsPtr = (FsOpenArgs *) storagePtr->requestParamPtr;
-
-    if (openArgsPtr->prefixID.serverID != rpc_SpriteID) {
-	/*
-	 * Filesystem mis-match.
-	 */
-	return(GEN_INVALID_ARG);
-    }
-
     /*
      * Get a handle on the prefix.  We need to have it unlocked in case
      * we do I/O on the directory.
      */
     prefixHandlePtr =
 	(*fsStreamOpTable[openArgsPtr->prefixID.type].clientVerify)
-	    (&openArgsPtr->prefixID, clientID);
+	    (&openArgsPtr->prefixID, clientID, &domainType);
     if (prefixHandlePtr == (FsHandleHeader *)NIL) {
 	return(FS_STALE_HANDLE);
     }
@@ -394,8 +376,9 @@ Fs_RpcOpen(srvToken, clientID, command, storagePtr)
     openResultsParamPtr = Mem_New(FsOpenResultsParam);
     openResultsPtr = &(openResultsParamPtr->openResults);
 
-    status = FsLocalOpen(prefixHandlePtr, (char *)storagePtr->requestDataPtr,
-		(Address)openArgsPtr, (Address)openResultsPtr, &newNameInfoPtr);
+    status = (*fsDomainLookup[domainType][FS_DOMAIN_OPEN])(prefixHandlePtr,
+		(char *)storagePtr->requestDataPtr, (Address)openArgsPtr,
+		(Address)openResultsPtr, &newNameInfoPtr);
     FsHandleRelease(prefixHandlePtr, FALSE);
     if (status == SUCCESS) {
 	/*
@@ -704,7 +687,7 @@ Fs_RpcClose(srvToken, clientID, command, storagePtr)
     } else {
 
 	hdrPtr = (*fsStreamOpTable[paramsPtr->fileID.type].clientVerify)
-		    (&paramsPtr->fileID, clientID);
+		    (&paramsPtr->fileID, clientID, (int *)NIL);
 	dummy.ioHandlePtr = hdrPtr;
 	if (hdrPtr == (FsHandleHeader *) NIL) {
 	    status = FS_STALE_HANDLE;
@@ -769,8 +752,8 @@ Fs_RpcClose(srvToken, clientID, command, storagePtr)
  *
  * FsSpriteRemove --
  *
- *	Common stub for removing a file and removing a directory.  This
- *	uses the RPC_FS_UNLINK call to invoke FsLocalRemove on the file server.
+ *	This uses the RPC_FS_UNLINK call to invoke FsLocalRemove
+ *	on the file server.
  *
  * Results:
  *	None.
@@ -857,7 +840,7 @@ FsSpriteRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr,
     storage.requestDataPtr = (Address) relativeName;
     storage.requestDataSize = String_Length(relativeName) + 1;
     storage.replyParamPtr = (Address) prefixLength;
-    storage.replyParamSize = 3 * sizeof (int);
+    storage.replyParamSize = sizeof (int);
     storage.replyDataPtr = (Address)&redirectInfo;
     storage.replyDataSize = sizeof(FsRedirectInfo);
 
@@ -906,11 +889,12 @@ Fs_RpcRemove(srvToken, clientID, command, storagePtr)
     FsHandleHeader	*prefixHandlePtr;
     FsRedirectInfo	*newNameInfoPtr;
     FsLookupArgs	*lookupArgsPtr;
+    int			domainType;
 
     lookupArgsPtr = (FsLookupArgs *)storagePtr->requestParamPtr;
     prefixHandlePtr =
 	(*fsStreamOpTable[lookupArgsPtr->prefixID.type].clientVerify)
-	    (&lookupArgsPtr->prefixID, clientID);
+	    (&lookupArgsPtr->prefixID, clientID, &domainType);
     if (prefixHandlePtr == (FsHandleHeader *) NIL) {
 	return(FS_STALE_HANDLE);
     } 
@@ -919,32 +903,24 @@ Fs_RpcRemove(srvToken, clientID, command, storagePtr)
     newNameInfoPtr = (FsRedirectInfo *) NIL;
     switch (command) {
 	case RPC_FS_UNLINK:
-	    status = FsLocalRemove(prefixHandlePtr,
-		    (char *) storagePtr->requestDataPtr,
-		    (Address) lookupArgsPtr, (Address) NIL, &newNameInfoPtr);
+	    command = FS_DOMAIN_REMOVE;
 	    break;
 	case RPC_FS_RMDIR:
-	    status = FsLocalRemoveDir(prefixHandlePtr,
-		    (char *) storagePtr->requestDataPtr,
-		    (Address) lookupArgsPtr, (Address) NIL, &newNameInfoPtr);
+	    command = FS_DOMAIN_REMOVE_DIR;
 	    break;
 	default:
-	    Sys_Panic(SYS_FATAL, "Fs_RpcRemove, bad command <%d>\n", 
-		command);
-	    status = GEN_INVALID_ARG;
+	    return(GEN_INVALID_ARG);
     }
+    status = (*fsDomainLookup[domainType][command])(prefixHandlePtr,
+		    (char *) storagePtr->requestDataPtr,
+		    (Address) lookupArgsPtr, (Address) NIL, &newNameInfoPtr);
     if (status == FS_LOOKUP_REDIRECT) {
 	Rpc_ReplyMem	*replyMemPtr;
 
 	storagePtr->replyDataPtr = (Address) newNameInfoPtr;
 	storagePtr->replyDataSize = sizeof(FsRedirectInfo);
-	/*
-	 * We are only returning an int, but the Intel ethernet driver
-	 * will gratuitously pad this to 12 bytes to avoid DMA overruns.
-	 * The routine NetIEXmit needs to be fixed.  Until then we patch here.
-	 */
-	storagePtr->replyParamPtr = (Address) Mem_Alloc(3 * sizeof (int));
-	storagePtr->replyParamSize = 3 * sizeof (int);
+	storagePtr->replyParamPtr = (Address) Mem_Alloc(sizeof (int));
+	storagePtr->replyParamSize = sizeof (int);
 	*((int *) (storagePtr->replyParamPtr)) = newNameInfoPtr->prefixLength;
 
 	replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
@@ -1051,6 +1027,7 @@ Fs_RpcMakeDir(srvToken, clientID, command, storagePtr)
     FsHandleHeader	*prefixHandlePtr;
     FsRedirectInfo	*newNameInfoPtr;
     FsOpenArgs		*openArgsPtr;
+    int			domainType;
 
     openArgsPtr = (FsOpenArgs *) storagePtr->requestParamPtr;
     if (openArgsPtr->prefixID.serverID != rpc_SpriteID) {
@@ -1059,14 +1036,15 @@ Fs_RpcMakeDir(srvToken, clientID, command, storagePtr)
 
     prefixHandlePtr =
 	(*fsStreamOpTable[openArgsPtr->prefixID.type].clientVerify)
-	    (&openArgsPtr->prefixID, clientID);
+	    (&openArgsPtr->prefixID, clientID, &domainType);
     if (prefixHandlePtr == (FsHandleHeader *) NIL) {
 	return(FS_STALE_HANDLE);
     }
     FsHandleRelease(prefixHandlePtr, TRUE);
 
     newNameInfoPtr = (FsRedirectInfo *) NIL;
-    status = FsLocalMakeDir(prefixHandlePtr, (char *)storagePtr->requestDataPtr,
+    status = (*fsDomainLookup[domainType][FS_DOMAIN_MAKE_DIR])(prefixHandlePtr,
+	    (char *)storagePtr->requestDataPtr,
 	    (Address) openArgsPtr, (Address) NIL, &newNameInfoPtr);
     if (status == FS_LOOKUP_REDIRECT) {
 	Rpc_ReplyMem	*replyMemPtr;
@@ -1185,18 +1163,19 @@ Fs_RpcMakeDev(srvToken, clientID, command, storagePtr)
     FsMakeDeviceArgs	*makeDevArgsPtr;
     FsHandleHeader	*prefixHandlePtr;
     FsRedirectInfo	*newNameInfoPtr;
+    int			domainType;
 
     makeDevArgsPtr = (FsMakeDeviceArgs *) storagePtr->requestParamPtr;
     prefixHandlePtr = 
 	(*fsStreamOpTable[makeDevArgsPtr->prefixID.type].clientVerify)
-	    (&makeDevArgsPtr->prefixID, clientID);
+	    (&makeDevArgsPtr->prefixID, clientID, &domainType);
     if (prefixHandlePtr == (FsHandleHeader *) NIL) {
 	return(FS_STALE_HANDLE);
     }
     FsHandleRelease(prefixHandlePtr, TRUE);
 
     newNameInfoPtr = (FsRedirectInfo *) NIL;
-    status = FsLocalMakeDevice(prefixHandlePtr,
+    status = (*fsDomainLookup[domainType][FS_DOMAIN_MAKE_DEVICE])(prefixHandlePtr,
 	    (char *)storagePtr->requestDataPtr, (Address) makeDevArgsPtr,
 	    (Address) NIL, &newNameInfoPtr);
     if (status == FS_LOOKUP_REDIRECT) {
@@ -1334,14 +1313,15 @@ Fs_Rpc2Path(srvToken, clientID, command, storagePtr)
     Boolean				name1Error = FALSE;
     FsSprite2PathReplyParams		*replyParamsPtr;
     FsSprite2PathData			*pathDataPtr;
-    ReturnStatus			status;
+    ReturnStatus			status = SUCCESS;
+    int					domainType;
 
     paramsPtr = (FsSprite2PathParams *)storagePtr->requestParamPtr;
     pathDataPtr = (FsSprite2PathData *)storagePtr->requestDataPtr;
     lookupArgsPtr = &paramsPtr->lookupArgs;
     prefixHandle1Ptr =
 	(*fsStreamOpTable[lookupArgsPtr->prefixID.type].clientVerify)
-	    (&lookupArgsPtr->prefixID, clientID);
+	    (&lookupArgsPtr->prefixID, clientID, &domainType);
 
     if (prefixHandle1Ptr == (FsHandleHeader *)NIL) {
 	name1Error = TRUE;
@@ -1359,7 +1339,7 @@ Fs_Rpc2Path(srvToken, clientID, command, storagePtr)
     } else {
 	prefixHandle2Ptr =
 	    (*fsStreamOpTable[paramsPtr->prefixID2.type].clientVerify)
-		(&paramsPtr->prefixID2, clientID);
+		(&paramsPtr->prefixID2, clientID, (int *)NIL);
 	if (prefixHandle2Ptr == (FsHandleHeader *)NIL) {
 	    FsHandleRelease(prefixHandle1Ptr, FALSE);
 	    name1Error = FALSE;
@@ -1372,15 +1352,17 @@ Fs_Rpc2Path(srvToken, clientID, command, storagePtr)
 
     newNameInfoPtr = (FsRedirectInfo *) NIL;
     if (command == RPC_FS_RENAME) {
-	status = FsLocalRename(prefixHandle1Ptr, pathDataPtr->path1, 
-		  		prefixHandle2Ptr, pathDataPtr->path2,
-				lookupArgsPtr, &newNameInfoPtr, &name1Error);
+	command = FS_DOMAIN_RENAME;
     } else if (command == RPC_FS_LINK) {
-	status = FsLocalHardLink(prefixHandle1Ptr, pathDataPtr->path1, 
-				prefixHandle2Ptr, pathDataPtr->path2, 
-				lookupArgsPtr, &newNameInfoPtr, &name1Error);
+	command = FS_DOMAIN_HARD_LINK;
     } else {
-	Sys_Panic(SYS_FATAL, "Fs_Rpc2Path: Bad command %d\n", command);
+	Sys_Panic(SYS_WARNING, "Fs_Rpc2Path: Bad command %d\n", command);
+	status = FS_INVALID_ARG;
+    }
+    if (status == SUCCESS) {
+	status = (*fsDomainLookup[domainType][command])(prefixHandle1Ptr,
+		    pathDataPtr->path1, prefixHandle2Ptr, pathDataPtr->path2,
+		    lookupArgsPtr, &newNameInfoPtr, &name1Error);
     }
     FsHandleRelease(prefixHandle1Ptr, FALSE);
     if (prefixHandle2Ptr != (FsHandleHeader *)NIL) {
