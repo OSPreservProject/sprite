@@ -39,7 +39,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 char	machMonBuffer[BUFFER_SIZE];		/* The buffer itself. */
 char	*machMonBufferPtr = machMonBuffer;  	/* First free character
 						 * of buffer. */	
+#ifndef lint
 static	char *monBufStart = machMonBuffer;
+#endif
 
 /*
  * Forward declaration for stdio buffer write procedure used by _doprnt called
@@ -194,7 +196,7 @@ Mach_MonAbort()
  *
  * ----------------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 void
 Mach_MonReboot(rebootString)
     char	*rebootString;
@@ -266,8 +268,7 @@ Mach_MonGetNextChar()
  *
  * ----------------------------------------------------------------------------
  */
-
-
+/*ARGSUSED*/
 static void
 MonPrintfWriteProc(stream, flush)
     FILE	*stream;	/* Stream handle for printf. */
