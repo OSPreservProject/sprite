@@ -92,10 +92,17 @@ LfsReadBytes(lfsPtr, diskAddress, numBytes, bufferPtr)
     status = (*devFsOpTable[DEV_TYPE_INDEX(lfsPtr->devicePtr->type)].read)
 		(lfsPtr->devicePtr, &args.readParams, &args.reply);
     if (status != SUCCESS) {
-	LfsError(lfsPtr, status, "LfsReadBytes");
+	LfsError(lfsPtr, status, "LfsReadBytes failed");
     }
     if (numBytes < DEV_BYTES_PER_SECTOR) {
+	if (args.reply.length != DEV_BYTES_PER_SECTOR) {
+	    LfsError(lfsPtr, FAILURE, "LfsReadBytes short read");
+	}
 	bcopy(smallBuffer, bufferPtr, numBytes);
+    } else {
+	if (args.reply.length != numBytes) {
+	    LfsError(lfsPtr, FAILURE, "LfsReadBytes short read");
+	}
     }
     LFS_STATS_ADD(lfsPtr->stats.blockio.totalBytesRead, numBytes);
     return status;
@@ -155,6 +162,15 @@ LfsWriteBytes(lfsPtr, diskAddress, numBytes, bufferPtr)
 		(lfsPtr->devicePtr, &args.writeParams, &args.reply);
     if (status != SUCCESS) {
 	LfsError(lfsPtr, status, "LfsWriteBytes");
+    }
+    if (numBytes < DEV_BYTES_PER_SECTOR) {
+	if (args.reply.length != DEV_BYTES_PER_SECTOR) {
+	    LfsError(lfsPtr, FAILURE, "LfsWriteBytes short write");
+	}
+    } else {
+	if (args.reply.length != numBytes) {
+	    LfsError(lfsPtr, FAILURE, "LfsWriteBytes short write");
+	}
     }
     LFS_STATS_ADD(lfsPtr->stats.blockio.totalBytesWritten, numBytes);
     return status;
