@@ -37,7 +37,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <rpcServer.h>
 #include <procServer.h>
 #include <fsrmt.h>
-#include <lfsInt.h>
+#include <lfsTypes.h>
 #include <fsconsist.h>
 #include <bstring.h>
 #include <stdio.h>
@@ -1623,7 +1623,7 @@ char *text;
     }
     if (ISSTR(lfs.name) && ISBOOL(lfs.writeBackActive) &&
 	    PRINTLOCK(&lfs.cacheBackendLock,0) &&
-	    ISBOOL(lfs.writeBackMoreWork) && ISBOOL(shutDownActive) &&
+	    ISBOOL(lfs.writeBackMoreWork) && ISBOOL(lfs.shutDownActive) &&
 	    PRINTLOCK(&lfs.lock,0)) {
 	printf("Lfs: %s on %s\n", text, strbuf);
 	return TRUE;
@@ -1857,15 +1857,15 @@ Proc_KDumpInt(data, callInfoPtr)
 
 		    /* Maybe it's a LFS structure */
 		    lfsPtr = (Lfs *)(event-OFF(Lfs, writeWait));
-		    if (PRINTLFS(lfsPtr, "writeWait") {
+		    if (PRINTLFS(lfsPtr, "writeWait")) {
 			match++;
 		    }
 		    lfsPtr = (Lfs *)(event-OFF(Lfs, cleanSegmentsWait));
-		    if (PRINTLFS(lfsPtr, "cleanSegmentsWait") {
+		    if (PRINTLFS(lfsPtr, "cleanSegmentsWait")) {
 			match++;
 		    }
 		    lfsPtr = (Lfs *)(event-OFF(Lfs, checkPointWait));
-		    if (PRINTLFS(lfsPtr, "checkPointWait") {
+		    if (PRINTLFS(lfsPtr, "checkPointWait")) {
 			match++;
 		    }
 
