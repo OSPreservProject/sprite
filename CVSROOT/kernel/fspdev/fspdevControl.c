@@ -341,8 +341,9 @@ FsControlVerify(fileIDPtr, pdevServerHostID)
     }
     if (ctrlHandlePtr == (PdevControlIOHandle *)NIL) {
 	Sys_Panic(SYS_WARNING,
-	    "FsControlVerify, server mismatch (%d not %d) for pdev <%x,%x>\n",
-	    pdevServerHostID, serverID, fileIDPtr->major, fileIDPtr->minor);
+	    "FsControlVerify, server mismatch (%d not %d) for %s <%x,%x>\n",
+	    pdevServerHostID, serverID, FsFileTypeToString(fileIDPtr->type),
+	    fileIDPtr->major, fileIDPtr->minor);
     }
     return((FsHandleHeader *)ctrlHandlePtr);
 }
@@ -416,8 +417,9 @@ FsControlReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 		ctrlHandlePtr->seed = reopenParamsPtr->seed;
 	    } else if (ctrlHandlePtr->serverID != clientID) {
 		Sys_Panic(SYS_WARNING,
-		    "PdevControlReopen conflict, %d lost to %d, pdev <%x,%x>\n",
+		    "PdevControlReopen conflict, %d lost to %d, %s <%x,%x>\n",
 		    clientID, ctrlHandlePtr->serverID,
+		    FsFileTypeToString(ctrlHandlePtr->rmt.hdr.fileID.type),
 		    ctrlHandlePtr->rmt.hdr.fileID.major,
 		    ctrlHandlePtr->rmt.hdr.fileID.minor);
 		status = FS_FILE_BUSY;
