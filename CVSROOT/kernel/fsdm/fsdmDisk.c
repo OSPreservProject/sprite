@@ -1205,23 +1205,29 @@ Fsdm_FileDescWriteBack(handlePtr, doWriteBack)
      */
     if (descPtr->accessTime < handlePtr->cacheInfo.attr.accessTime) {
 	descPtr->accessTime = handlePtr->cacheInfo.attr.accessTime;
+#ifdef NOTDEF
 	 printf("Fsdm_FileDescWriteBack, access time changed <%d,%d> \"%s\"\n",
 		hdrPtr->fileID.major, hdrPtr->fileID.minor,
 		Fsutil_HandleName(hdrPtr));
+#endif
 	descPtr->flags |= FSDM_FD_DIRTY;
     }
     if (descPtr->dataModifyTime < handlePtr->cacheInfo.attr.modifyTime) {
 	descPtr->dataModifyTime = handlePtr->cacheInfo.attr.modifyTime;
+#ifdef NOTDEF
 	 printf("Fsdm_FileDescWriteBack, mod time changed <%d,%d> \"%s\"\n",
 		hdrPtr->fileID.major, hdrPtr->fileID.minor,
 		Fsutil_HandleName(hdrPtr));
+#endif
 	descPtr->flags |= FSDM_FD_DIRTY;
     }
     if (descPtr->dataModifyTime > descPtr->descModifyTime) {
 	descPtr->descModifyTime = descPtr->dataModifyTime;
+#ifdef NOTDEF
 	 printf("Fsdm_FileDescWriteBack, desc time changed <%d,%d> \"%s\"\n",
 		hdrPtr->fileID.major, hdrPtr->fileID.minor,
 		Fsutil_HandleName(hdrPtr));
+#endif
 	descPtr->flags |= FSDM_FD_DIRTY;
     }
     if (descPtr->flags & FSDM_FD_DIRTY) {
