@@ -121,11 +121,11 @@ FsIOClientOpen(clientList, clientID, useFlags, cached)
     clientPtr->use.ref = 0;
     clientPtr->use.write = 0;
     clientPtr->use.exec = 0;
-    clientPtr->cached = cached;
     clientPtr->openTimeStamp = 0;
     List_InitElement((List_Links *)clientPtr);
     List_Insert((List_Links *) clientPtr, LIST_ATFRONT(clientList));
 found:
+    clientPtr->cached = cached;
     clientPtr->use.ref++;
     if (useFlags & FS_WRITE) {
 	clientPtr->use.write++;
