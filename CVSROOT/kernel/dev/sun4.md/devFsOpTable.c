@@ -41,6 +41,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "raidExt.h"
 #include "tty.h"
 #include "mouse.h"
+#include "devTMR.h"
 
 static ReturnStatus NullSelectProc();
 static ReturnStatus NoDevice();
@@ -78,9 +79,9 @@ DevFsTypeOps devFsOpTable[] = {
     /*
      * SCSI Worm interface:  this device doesn't exist anymore.
      */
-    {DEV_SCSI_WORM, NoDevice, NullProc, NullProc,
-		    NullProc, NullProc, NullProc,
-		    DEV_NO_ATTACH_PROC, NoDevice},
+    {DEV_SCSI_WORM, Dev_TimerOpen, Dev_TimerRead, NullProc,
+                    Dev_TimerIOControl, NullProc, NullProc,
+                    DEV_NO_ATTACH_PROC, NoDevice},
     /*
      * The following device number is unused.
      */
