@@ -125,14 +125,17 @@ ReturnStatus
 Sync_GetLock(lockPtr)
    Sync_Lock *lockPtr;
 {
+    ReturnStatus	status = SUCCESS;
+
     Sync_LockRegister(lockPtr);
     if (Mach_TestAndSet(&(lockPtr->inUse)) != 0) {
-	Sync_SlowLock(lockPtr); 
+	status = Sync_SlowLock(lockPtr); 
     } else {
 	SyncRecordHit(lockPtr);
 	SyncStoreDbgInfo(lockPtr);
 	SyncAddPrior(lockPtr);
     }
+    return status;
 }
 
 
@@ -159,11 +162,13 @@ ReturnStatus
 Sync_Unlock(lockPtr)
     Sync_Lock *lockPtr;
 {
+    ReturnStatus	status = SUCCESS;
     lockPtr->inUse = 0;
     SyncDeleteCurrent(lockPtr);
     if (lockPtr->waiting) {
-	Sync_SlowBroadcast((int)lockPtr, &lockPtr->waiting);
+	status = Sync_SlowBroadcast((unsigned int)lockPtr, &lockPtr->waiting);
     }
+    return status;
 }
 
 /*
@@ -281,7 +286,7 @@ Sync_SlowWait(conditionPtr, lockPtr, wakeIfSignal)
 #endif
     MASTER_UNLOCK(sched_MutexPtr);
 
-    Sync_GetLock(lockPtr);
+    (void) Sync_GetLock(lockPtr);
 
     return(sigPending);
 }
@@ -880,7 +885,7 @@ Sync_ProcWait(lockPtr, wakeIfSignal)
 #endif
     MASTER_UNLOCK(sched_MutexPtr);
     if (releasedLock) {
-	Sync_GetLock(lockPtr);
+	(void) Sync_GetLock(lockPtr);
     }
     return(sigPending);
 }

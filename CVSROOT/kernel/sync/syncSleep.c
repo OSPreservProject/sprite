@@ -189,7 +189,7 @@ WaitTimeSubr(wakeupTime)
 	Timer_GetCurrentTicks(&currentTime);
     } while (Timer_TickLT(currentTime, wakeupTime) && !sigPending);
 
-    Timer_DescheduleRoutine(&wakeupElement);
+    (void) Timer_DescheduleRoutine(&wakeupElement);
 #ifdef spur
     Mach_InstCountEnd(1);
 #endif
