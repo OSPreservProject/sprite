@@ -1,9 +1,9 @@
 /* 
  * netHppi.c --
  *
- *	Routines for handling the Ultranet VME Adapter card..
+ *	Routines for handling the TMC 29K cards.
  *
- * Copyright 1990 Regents of the University of California
+ * Copyright 1992 Regents of the University of California
  * Permission to use, copy, modify, and distribute this
  * software and its documentation for any purpose and without
  * fee is hereby granted, provided that the above copyright
@@ -23,6 +23,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <mach.h>
 #include <netUltraInt.h>
 #include <dev/ultra.h>
+#include <netHppi.h>
 #include <netHppiInt.h>
 #include <dev/hppi.h>
 #include <fmt.h>
@@ -30,6 +31,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <dbg.h>
 #include <rpcPacket.h>
 #include <assert.h>
+#include <list.h>
 
 /*
  * "Borrow" the Vax format for the format of the Ultranet adapter (it
@@ -48,7 +50,12 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 Boolean		netHppiDebug = FALSE;
 Boolean		netHppiTrace = FALSE;
 int		netHppiMapThreshold = NET_ULTRA_MAP_THRESHOLD;
-static int	numHppiInterfaces;
+static unsigned char netHppiConnPar[] = {0xc6, 0x10, 0x0c, 0x00,
+					     0xff, 0xff, 0xff, 0xff,
+					     0x00, 0x00, 0x00, 0x00,
+					     0x00, 0x00, 0x00, 0x00};
+static int	numHppiInterfaces = 0;
+static NetHppiState* hppiState[NET_HPPI_MAX_INTERFACES];
 static int	packetsSunk = 0;
 static Time	sinkStartTime;
 static Time	sinkEndTime;
@@ -91,22 +98,19 @@ static Net_UltraTLAddress	wildcardAddress =
 
 static char 		*GetStatusString _ARGS_ ((int status));
 static Sync_Condition	dsndTestDone;
+static Sync_Condition	drcvTestDone;
+static Sync_Condition	iopOutputDone;
 static int		dsndCount;
 
 static void		InitQueues _ARGS_((NetHppiState *statePtr));
 static void		StandardDone _ARGS_((Net_Interface *interPtr, 
 				NetUltraXRBInfo *infoPtr));
-static void		ReadDone _ARGS_((Net_Interface *interPtr, 
-				NetUltraXRBInfo *infoPtr));
-static void		EchoDone _ARGS_((Net_Interface *interPtr, 
-				NetUltraXRBInfo *infoPtr));
 static ReturnStatus	NetHppiSendDgram _ARGS_((Net_Interface *interPtr,
 				Net_Address *netAddressPtr, int count,
 				int bufSize, Address buffer, Time *timePtr));
-static void		DgramSendDone _ARGS_((Net_Interface *interPtr, 
-				NetUltraXRBInfo *infoPtr));
-static void		OutputDone _ARGS_((Net_Interface *interPtr, 
-				NetUltraXRBInfo *infoPtr));
+static void		DgramSendDone _ARGS_((Dev_HppiSendDSND* dgramCmdPtr));
+static void		NetHppiRecvDgram _ARGS_((Net_Interface *interPtr));
+static void		DgramRecvDone _ARGS_((Dev_HppiSendDRCV* dgramCmdPtr));
 static void		SourceDone _ARGS_((Net_Interface *interPtr, 
 				NetUltraXRBInfo *infoPtr));
 static ReturnStatus	NetHppiSource _ARGS_((Net_Interface *interPtr,
@@ -116,6 +120,8 @@ static void		NetHppiResetCallback _ARGS_((ClientData data,
 				Proc_CallInfo *infoPtr));
 static void		NetHppiMsgCallback _ARGS_((ClientData data,
 			        Proc_CallInfo *infoPtr));
+static void		NetHppiCmdCallback _ARGS_((ClientData data,
+						   Proc_CallInfo *infoPtr));
 static ReturnStatus	NetHppiSetupBoard _ARGS_((NetHppiState *interPtr));
 static ReturnStatus	NetHppiStart _ARGS_((NetHppiState *statePtr));
 static ReturnStatus	NetHppiStop _ARGS_((NetHppiState *statePtr));
@@ -127,7 +133,18 @@ static ReturnStatus	NetHppiSendReq _ARGS_((NetHppiState *statePtr,
 static ReturnStatus	NetHppiSendCmd _ARGS_((NetHppiState *statePtr,
 					       int size, Address cmdPtr,
 					       int flags));
-
+static void		NetHppiConnectionAccepted _ARGS_((Dev_HppiSendALSN*
+							  connBlockPtr));
+static void		NetHppiXferCallback _ARGS_((Dev_HppiSendXfer* cmdPtr));
+static void		NetHppiOpenCallback _ARGS_((Dev_HppiSendOPEN* cmdPtr));
+static void		NetHppiConnectionCleanup _ARGS_((Dev_HppiSendRLSE*
+							 cmdPtr));
+static NetHppiOutputStub _ARGS_((Net_Interface* interPtr, Address hdrPtr,
+				 Net_ScatterGather* scatterGatherPtr,
+				 int scatterGatherLength, Boolean rpc,
+				 ReturnStatus* statusPtr));
+static void iocConnCallback _ARGS_ ((Net_HppiConnection* connPtr));
+static void iocXferCallback _ARGS_ ((Net_HppiDataRequest* dataReqPtr));
 /*
  * Macros for mapping between kernel, DVMA and VME addresses.
  */
@@ -147,7 +164,7 @@ static ReturnStatus	NetHppiSendCmd _ARGS_((NetHppiState *statePtr,
     ((unsigned int) VMMACH_DMA_START_ADDR)))
 
 #define VME_TO_DVMA(addr, statePtr) 		\
-    ((Address) (((unsigned int) (addr)) + 	\
+    ((Address) ((((unsigned int)(addr)) & 0x00ffffff) + 	\
     ((unsigned int) VMMACH_DMA_START_ADDR)))
 
 #define BUFFER_TO_VME(addr, statePtr) \
@@ -157,7 +174,8 @@ static ReturnStatus	NetHppiSendCmd _ARGS_((NetHppiState *statePtr,
     ((Address) (DVMA_TO_BUFFER(VME_TO_DVMA((addr),statePtr),(statePtr))))
 
 #define DVMA_ADDRESS(addr, statePtr) \
-    ((unsigned int) (addr) < ((unsigned int)VMMACH_DMA_START_ADDR)? FALSE :TRUE)
+    ((unsigned int)(addr) < ((unsigned int)VMMACH_DMA_START_ADDR)? FALSE :TRUE)
+
 
 /*
  *----------------------------------------------------------------------
@@ -183,6 +201,7 @@ NetHppiInit(interPtr)
     unsigned int		ctrlAddr;
     ReturnStatus		status = SUCCESS;
     NetHppiState		*statePtr;
+    unsigned long		initialTsap = 0x07d00000;
 
     /*
      * First, see if the controller is present.  We will *always* map it
@@ -195,8 +214,12 @@ NetHppiInit(interPtr)
 
     printf ("NetHppiInit: Trying to locate HPPI boards at VME24D32 0x%x.\n",
 	    ctrlAddr);
-    numHppiInterfaces += 1;
-    if (numHppiInterfaces >= NET_HPPI_MAX_INTERFACES) {
+    if (numHppiInterfaces == 0) {
+	int i;
+	for (i = 0; i < NET_HPPI_MAX_INTERFACES; i++) {
+	    hppiState[i] = NULL;
+	}
+    } else if (numHppiInterfaces > NET_HPPI_MAX_INTERFACES) {
 	printf ("NetHppiInit: too many HPPI interfaces\n");
 	status = FAILURE;
 	goto initFailed;
@@ -206,6 +229,7 @@ NetHppiInit(interPtr)
     if (statePtr == NULL) {
 	panic ("NetHppiInit: unable to allocate state area\n");
     }
+    hppiState[numHppiInterfaces] = statePtr;
 
     /*
      * Map in boards and attempt to reset them.  If the reset fails, then
@@ -217,13 +241,16 @@ NetHppiInit(interPtr)
 	VmMach_MapInDevice((Address) (ctrlAddr + NET_HPPI_SRC_CTRL_OFFSET), 3);
     statePtr->hppidReg = (NetHppiDestReg *)
 	VmMach_MapInDevice((Address) (ctrlAddr + NET_HPPI_DST_CTRL_OFFSET), 3);
+    statePtr->iopReg = (NetHppiIopReg *)
+	VmMach_MapInDevice((Address) (ctrlAddr + NET_HPPI_IOP_CTRL_OFFSET), 3);
 
-    printf ("NetHppiInit: SRC: 0x%x  DST: 0x%x\n", statePtr->hppisReg,
-	    statePtr->hppidReg);
     if ((statePtr->hppidReg == NULL) || (statePtr->hppisReg == NULL)) {
 	printf ("NetHppiInit: Unable to get map space for boards.\n");
 	status = FAILURE;
 	goto initFailed;
+    } else {
+	printf ("NetHppiInit: SRC at virtual 0x%x; DST at virtual 0x%x \n",
+		statePtr->hppisReg, statePtr->hppidReg);
     }
 
     /*
@@ -238,13 +265,15 @@ NetHppiInit(interPtr)
     statePtr->priority = NET_HPPI_INTERRUPT_PRIORITY;
     statePtr->requestLevel = NET_HPPI_VME_REQUEST_LEVEL;
     statePtr->addressSpace = NET_HPPI_VME_ADDRESS_SPACE;
+    statePtr->hppiNum = numHppiInterfaces;
     statePtr->boardFlags = 0;
+    bcopy (&initialTsap, statePtr->curTsap, sizeof (statePtr->curTsap));
     Mach_SetHandler (interPtr->vector, Net_Intr, (ClientData) interPtr);
     interPtr->init 	= NetHppiInit;
     interPtr->intr	= NetHppiIntr;
     interPtr->ioctl	= NetHppiIOControl;
     interPtr->reset 	= Net_HppiReset;
-    interPtr->output 	= NetHppiOutput;
+    interPtr->output 	= NetHppiOutputStub;
     interPtr->netType	= NET_NETWORK_ULTRA;
     interPtr->maxBytes	= NET_HPPI_MAX_BYTES;
     interPtr->minBytes	= NET_HPPI_MIN_BYTES;
@@ -267,6 +296,7 @@ NetHppiInit(interPtr)
 
 
   initFailed:
+    numHppiInterfaces += 1;
     return status;
 }
 
@@ -340,6 +370,7 @@ NetHppiHardReset(interPtr)
     statePtr->hppidReg->reset = 0;
     statePtr->hppisReg->config = NET_HPPI_SRC_CONFIG_VALUE;
     statePtr->hppidReg->config = NET_HPPI_DST_CONFIG_VALUE;
+    statePtr->outputCallback = NULL;
     InitQueues(statePtr);
     /*
      * After a reset the adapter is in the EPROM mode.
@@ -381,44 +412,60 @@ NetHppiReset(interPtr)
     ReturnStatus	status = SUCCESS;
     NetHppiState	*statePtr;	/* State of the adapter. */
     Dev_HppiReset	resetCmd;	/* reset command for both src & dst */
+    int which = 0;			/* reset SRC, DST, or both */
 
     statePtr = (NetHppiState *) interPtr->interfaceData;
+    if (which == 0) {
+	which = NET_HPPI_SRC_CMD | NET_HPPI_DST_CMD;
+    }
     if (netHppiDebug) {
-	printf ("NetHppiReset: resetting both boards.\n");
+	if (which & NET_HPPI_SRC_CMD) {
+	    printf ("NetHppiReset: resetting SRC board.\n");
+	}
+	if (which & NET_HPPI_DST_CMD) {
+	    printf ("NetHppiReset: resetting DST board.\n");
+	}
     }
 
     resetCmd.hdr.opcode = DEV_HPPI_RESET;
-    resetCmd.hdr.magic = DEV_HPPI_SRC_MAGIC;
-    status = NetHppiSendCmd (statePtr, sizeof (resetCmd), (Address)&resetCmd,
-			     NET_HPPI_SRC_CMD);
-    if (status != SUCCESS) {
-	printf ("NetHppiReset: soft reset of SRC board failed.\n");
-	return (status);
+    if (which & NET_HPPI_SRC_CMD) {
+	resetCmd.hdr.magic = DEV_HPPI_SRC_MAGIC;
+	status = NetHppiSendCmd (statePtr, sizeof (resetCmd),
+				 (Address)&resetCmd, NET_HPPI_SRC_CMD);
+	if (status != SUCCESS) {
+	    printf ("NetHppiReset: soft reset of SRC board failed.\n");
+	    return (status);
+	}
     }
 
-    resetCmd.hdr.magic = DEV_HPPI_DEST_MAGIC;
-    status = NetHppiSendCmd (statePtr, sizeof (resetCmd),
-			     (Address)&resetCmd, 0);
-    if (status != SUCCESS) {
-	printf ("NetHppiReset: soft reset of DST board failed.\n");
+    if (which & NET_HPPI_DST_CMD) {
+	resetCmd.hdr.magic = DEV_HPPI_DEST_MAGIC;
+	status = NetHppiSendCmd (statePtr, sizeof (resetCmd),
+				 (Address)&resetCmd, 0);
+	if (status != SUCCESS) {
+	    printf ("NetHppiReset: soft reset of DST board failed.\n");
+	}
     }
 
     InitQueues(statePtr);
 
-    status = NetHppiSetupBoard (statePtr);
+    statePtr->flags = NET_HPPI_STATE_EXIST;
 
-    status = NetHppiStop(statePtr);
-    if (status != NULL) {
-	printf("NetHppiReset: stop failed\n");
-	return status;
+    if (which & NET_HPPI_RESET_RESTART) {
+	status = NetHppiSetupBoard (statePtr);
+
+	status = NetHppiStop(statePtr);
+	if (status != NULL) {
+	    printf("NetHppiReset: stop failed\n");
+	    return status;
+	}
+
+	status = NetHppiStart(statePtr);
+	if (status != NULL) {
+	    printf("NetHppiReset: start failed\n");
+	    return status;
+	}
     }
-
-    status = NetHppiStart(statePtr);
-    if (status != NULL) {
-	printf("NetHppiReset: start failed\n");
-	return status;
-    }
-
     if (netHppiDebug) {
 	printf ("NetHppiReset: reset done...returning.\n");
     }
@@ -434,7 +481,6 @@ NetHppiReset(interPtr)
  * 	from outside the module since it locks the mutex.
  *
  * Results:
- *	
  *
  * Side effects:
  *	None.
@@ -520,6 +566,57 @@ Net_HppiHardReset(interPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * getSgTag --
+ *
+ *	Get a free tag for the scatter-gather array.  This assumes that
+ *	the mutex is held by the calling routine.
+ *
+ * Results:
+ *	The tag to use (or -1 if none available).
+ * Side effects:
+ *	A tag is allocated.
+ *
+ *----------------------------------------------------------------------
+ */
+static
+int
+getSgTag (statePtr)
+NetHppiState*	statePtr;
+{
+    int		i;
+    int		curTag;
+
+    for (i = 0, curTag = statePtr->curSgTag; statePtr->tags[curTag] != 0;
+	 curTag ++, i++) {
+	if (curTag == NET_HPPI_MAX_TAGS) {
+	    curTag = 1;
+	}
+	if (i == NET_HPPI_MAX_TAGS - 1) {
+	    printf ("getSgTag: no free tags!\n");
+	    return (-1);
+	}
+    }
+    statePtr->curSgTag = curTag;
+    statePtr->tags[curTag] = 1;
+
+    return (curTag);
+}
+
+static
+void
+freeSgTag (statePtr, tag)
+NetHppiState*	statePtr;
+char		tag;
+{
+    if (netHppiDebug) {
+	printf ("freeing hppi tag %d\n", tag);
+    }
+    statePtr->tags[tag] = 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NetHppiCopyFromFifo --
  *
  *	Copy a command to the appropriate FIFO (its address is passed).
@@ -558,16 +655,30 @@ NetHppiCopyFromFifo (addr, size, statePtr, which)
 	fifoAddr = &(statePtr->hppidReg->outputFifo);
     }
 
-    for (i = size; i > 0; i -= 4) {
+    if (netHppiDebug) {
+	printf ("NetHppiCopyFromFifo: trying to copy %d bytes from fifo.\n",
+		size);
+    }
+    for (i = 0; i < size; i += 4) {
 	WAIT_FOR_BIT_CLEAR (stateAddr, NET_HPPI_DELAY, DEV_HPPI_OFIFO_EMPTY);
 	if ((*stateAddr) & DEV_HPPI_OFIFO_EMPTY) {
+	    if (netHppiDebug) {
+		printf ("\nNetHppiCopyFromFifo: copy timed out.\n");
+	    }
 	    return (DEV_TIMEOUT);
 	}
-	*(addr++) = *fifoAddr;
+	*addr = *fifoAddr;
+	if (netHppiDebug) {
+	    printf ("0x%08x ", *addr);
+	    if ((i % 32) == 31) {
+		printf ("\n");
+	    }
+	}
+	addr++;
     }
 
     if (netHppiDebug) {
-	printf ("NetHppiCopyFromFifo: copied %d bytes from fifo to 0x%x\n",
+	printf ("\nNetHppiCopyFromFifo: copied %d bytes from fifo to 0x%x\n",
 		size, kaddr);
     }
     return (status);
@@ -701,8 +812,10 @@ NetHppiAcquireSrcFifo (statePtr, timeOutVal)
     NetHppiState	*statePtr;	/* state of the adapter */
     int			timeOutVal;	/* maximum time to wait */
 {
-    volatile NetHppiDestReg *destReg = statePtr->hppidReg;
     ReturnStatus status = SUCCESS;
+#if 0
+    volatile NetHppiDestReg *destReg = statePtr->hppidReg;
+#endif
 
 #if 0
     /*
@@ -810,7 +923,7 @@ NetHppiSendCmd(statePtr, size, cmdPtr, flags)
     if ((int) cmdPtr & 0x3) {
 	panic("NetHppiSendCmd: command not aligned on a word boundary\n");
     }
-    
+
     if (flags & NET_HPPI_SRC_CMD) {
 	if (flags & NET_HPPI_STATE_SRC_EPROM) {
 	    printf ("NetHppiSendCmd: SRC not running\n");
@@ -875,6 +988,7 @@ NetHppiMsgCallback (data, infoPtr)
     NetHppiState	*statePtr = (NetHppiState *)interPtr->interfaceData;
     Dev_HppiErrorMsg	errMsg;
     int			size;
+    int			numElements;
     int			i;
     int			status = SUCCESS;
 
@@ -899,8 +1013,7 @@ NetHppiMsgCallback (data, infoPtr)
 	    printf ("NetHppiMsgCallback: bad copyToSource magic number\n");
 	    goto exit;
 	}
-	NetHppiCopyFromFifo (&(copyDataMsg.element[0]), copyDataMsg.size
-			     * sizeof (Dev_HppiScatterGatherElement),
+	NetHppiCopyFromFifo (&(copyDataMsg.element[0]), copyDataMsg.size,
 			     statePtr, 0);
 	if (netHppiTrace) {
 	    outputCmd.hdr.opcode = DEV_HPPI_OUTPUT_TRACE;
@@ -908,8 +1021,9 @@ NetHppiMsgCallback (data, infoPtr)
 	    outputCmd.hdr.opcode = DEV_HPPI_OUTPUT;
 	}
 
+	numElements = copyDataMsg.size / sizeof (copyDataMsg.element[0]);
 	for (i = 0, size = sizeof (copyDataMsg.dmaWord);
-	     i < copyDataMsg.size; i++) {
+	     i < numElements; i++) {
 	    size += copyDataMsg.element[i].size;
 	}
 	copyDataMsg.dmaWord.cmd &= ~NET_ULTRA_DMA_CMD_FROM_ADAPTER;
@@ -925,7 +1039,7 @@ NetHppiMsgCallback (data, infoPtr)
 	/*
 	 * Copy scatter-gather buffers to input FIFO.
 	 */
-	for (i = 0; i < copyDataMsg.size; i++) {
+	for (i = 0; i < numElements; i++) {
 	    NetHppiCopyToFifo (VME_TO_BUFFER (copyDataMsg.element[i].address,
 					      statePtr),
 			       copyDataMsg.element[i].size, statePtr,
@@ -938,6 +1052,7 @@ NetHppiMsgCallback (data, infoPtr)
 					  statePtr, NET_HPPI_SRC_CMD);
 	    if (errMsg.magic != DEV_HPPI_ERR_MAGIC) {
 		printf ("NetHppiMsgCallback: bad SRC error magic number\n");
+		goto exit;
 	    }
 	    if (netHppiDebug) {
 		printf ("NetHppiMsgCallback: SRC error (%d words)\n",
@@ -953,6 +1068,7 @@ NetHppiMsgCallback (data, infoPtr)
 					  NET_HPPI_SRC_CMD);
 	    if (errMsg.magic != DEV_HPPI_ERR_MAGIC) {
 		printf ("NetHppiMsgCallback: bad DST error magic number\n");
+		goto exit;
 	    }
 	    if (netHppiDebug) {
 		printf ("NetHppiMsgCallback: DST error (%d words)\n",
@@ -971,6 +1087,154 @@ NetHppiMsgCallback (data, infoPtr)
     if (netHppiDebug) {
 	printf ("NetHppiMsgCallback: returning....\n");
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetHppiLoopback
+ *
+ *	Set up the HIPPI boards for loopback testing.  This can either
+ *	mean a full loopback from xbus to hipppi and back, or a partial
+ *	loop from SRC -> DST -> XBUS.
+ *
+ * Returns:
+ *	none
+ * Side effects:
+ *	Sends commands to the HIPPI boards.
+ *
+ *----------------------------------------------------------------------
+ */
+static
+void
+NetHppiLoopback (statePtr, size, callbackProc, clientData, srcPat)
+NetHppiState*	statePtr;
+int	size;		/* size in BYTES */
+void	(*callbackProc)();
+ClientData clientData;
+int	srcPat;
+{
+    Dev_HppiOutput	outputCmd;
+    Dev_HppiOutputPattern patternCmd;
+
+    if (statePtr->outputCallback != NULL) {
+	(callbackProc)(clientData, FAILURE);
+    } else {
+	statePtr->outputCallback = callbackProc;
+	statePtr->outputClientData = clientData;
+	outputCmd.fifoDataSize = 0;
+	outputCmd.iopDataSize = size;
+	outputCmd.hdr.opcode = DEV_HPPI_OUTPUT_TO_IOP;
+	NetHppiSendCmd (statePtr, sizeof (outputCmd), (Address)&outputCmd,
+			NET_HPPI_DST_CMD);
+	if (srcPat == 0) {
+	    outputCmd.hdr.opcode = DEV_HPPI_OUTPUT;
+	    NetHppiSendCmd (statePtr, sizeof (outputCmd), (Address)&outputCmd,
+			    NET_HPPI_SRC_CMD);
+	} else if (srcPat == 1) {
+	    patternCmd.hdr.opcode = DEV_HPPI_OUTPUT_PATTERN;
+	    patternCmd.size = size;
+	    patternCmd.start = 0;
+	    patternCmd.increment = 0x00010001;
+	    NetHppiSendCmd (statePtr, sizeof (patternCmd),(Address)&patternCmd,
+			    NET_HPPI_SRC_CMD);
+	}
+    }
+}
+
+static
+void
+iopOutputCallback (statePtr, status)
+NetHppiState*	statePtr;
+ReturnStatus	status;
+{
+    MASTER_LOCK (&(statePtr->interPtr->mutex));
+    if (!(statePtr->flags & NET_HPPI_STATE_IOP_OUTPUT_TEST)) {
+	printf ("Hppi iopOutputCallback: not testing iop?\n");
+    }
+    statePtr->flags &= ~NET_HPPI_STATE_IOP_OUTPUT_TEST;
+    Sync_MasterBroadcast (&iopOutputDone);
+    MASTER_UNLOCK (&(statePtr->interPtr->mutex));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_HppiLoopback
+ *
+ *	This routine is intended ONLY for debugging.  It calls NetHppiLoopback
+ *	to send data from IOP bus -> HIPPI-S -> HIPPI-D -> IOP bus.
+ *	The supplied callback routine will be called when the
+ *	transfer completes.  Note that the callback may occur at interrupt
+ *	level.  Also, only one of these transfers may be outstanding at any
+ *	time.  If this is called while there is still an outstanding output
+ *	command, the callback will immediately be called with FAILURE status.
+ *
+ * Returns:
+ *	none
+ * Side effects:
+ *	Commands are sent to the HIPPI-D and HIPPI-S boards.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Net_HppiLoopback (hippiNum, size, callbackProc, clientData)
+int	hippiNum;
+int	size;		/* size in BYTES */
+void	(*callbackProc)();
+ClientData clientData;
+{
+    NetHppiState*	statePtr;
+
+    if (netHppiDebug) {
+	printf ("Net_HppiLoopback: called for unit %d.\n", hippiNum);
+    }
+    if ((hippiNum >= NET_HPPI_MAX_INTERFACES) ||
+	(statePtr = hppiState[hippiNum]) == NULL) {
+	(callbackProc)(clientData, DEV_INVALID_UNIT);
+	return;
+    }
+    MASTER_LOCK (&(statePtr->interPtr->mutex));
+    NetHppiLoopback (statePtr, size, callbackProc, clientData, 0);
+    MASTER_UNLOCK (&(statePtr->interPtr->mutex));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_HppiSrcPattern
+ *
+ *	This routine is almost identical to Net_HppiLoopback, except
+ *	that the HIPPI source board is set up to provide a fixed
+ *	pattern rather than use data from the IOP bus.
+ *
+ * Returns:
+ *	none
+ * Side effects:
+ *	Sets up HIPPI boards.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Net_HppiSrcPattern (hippiNum, size, callbackProc, clientData)
+int	hippiNum;
+int	size;		/* size in BYTES */
+void	(*callbackProc)();
+ClientData clientData;
+{
+    NetHppiState*	statePtr;
+
+    if (netHppiDebug) {
+	printf ("Net_HppiSrcPattern: called for unit %d.\n", hippiNum);
+    }
+    if ((hippiNum >= NET_HPPI_MAX_INTERFACES) ||
+	(statePtr = hppiState[hippiNum]) == NULL) {
+	(callbackProc)(clientData, DEV_INVALID_UNIT);
+	return;
+    }
+    MASTER_LOCK (&(statePtr->interPtr->mutex));
+    NetHppiLoopback (statePtr, size, callbackProc, clientData, 1);
+    MASTER_UNLOCK (&(statePtr->interPtr->mutex));
 }
 
 /*
@@ -999,21 +1263,44 @@ NetHppiIntr(interPtr, polling)
     NetUltraXRB		*xrbPtr;
     NetUltraXRB		*nextXRBPtr;
     NetHppiState	*statePtr;
-    NetUltraDMAInfo	*dmaPtr;
+    volatile NetUltraDMAInfo *dmaPtr;
     NetUltraRequestHdr  *hdrPtr;
     NetUltraXRBInfo	*infoPtr;
     int			processed;
     NetUltraTraceInfo	*tracePtr;
     Address		buffer;
     int			hppiStatus;
+    unsigned int	response;
 
+    statePtr = (NetHppiState *) interPtr->interfaceData;
+    response = statePtr->hppidReg->responseData;
+    /*
+     * Acknowledge the interrupts by setting(!) the interrupt bits in the
+     * status registers.
+     */
+    statePtr->hppisReg->status = NET_HPPI_SRC_STATUS_INTR;
+    statePtr->hppidReg->status = NET_HPPI_DST_STATUS_INTR;
     MASTER_LOCK(&interPtr->mutex);
+    if (response == DEV_HPPI_INTR_MAGIC) {
+	void (*cb)();
+	if ((cb = statePtr->outputCallback) != NULL) {
+	    if (netHppiDebug) {
+		printf ("Received a HPPI testing interrupt.\n");
+	    }
+	    statePtr->outputCallback = NULL;
+	    MASTER_UNLOCK (&interPtr->mutex);
+	    (cb)(statePtr->outputClientData, SUCCESS);
+	    MASTER_LOCK (&interPtr->mutex);
+	} else {
+	    printf ("Received a HPPI testing interrupt with no callback.\n");
+	}
+	goto intrExit;
+    }
 #ifndef CLEAN
     if (netHppiDebug) {
 	printf("Received an HPPI interrupt.\n");
     }
 #endif
-    statePtr = (NetHppiState *) interPtr->interfaceData;
     xrbPtr = statePtr->nextToHostPtr;
 #ifndef CLEAN
     if (netHppiTrace) {
@@ -1035,107 +1322,101 @@ NetHppiIntr(interPtr, polling)
 	} else {
 	    nextXRBPtr = xrbPtr + 1;
 	}
-	hdrPtr = (NetUltraRequestHdr *) &xrbPtr->request;
-	infoPtr = statePtr->tagToXRBInfo[(int)hdrPtr->infoPtr];
 #ifndef CLEAN
 	if (netHppiDebug) {
-	    printf ("NetHppiIntr: infoPtr = 0x%x\n", infoPtr);
+	    printf ("NetHppiIntr: xrbPtr = 0x%x\n", xrbPtr);
 	}
 #endif
-	statePtr->nextToHostPtr = nextXRBPtr;
-	dmaPtr = &xrbPtr->dma;
-	if (!(dmaPtr->cmd & NET_ULTRA_DMA_CMD_FROM_ADAPTER)) {
-	    printf("NetHppiIntr: cmd (0x%x) not from adapter?\n", dmaPtr->cmd);
-	    goto endLoop;
-	}
-	if ((dmaPtr->cmd & NET_ULTRA_DMA_CMD_MASK) != NET_ULTRA_DMA_CMD_XRB) {
-	    printf("NetHppiIntr: dmaPtr->cmd = 0x%x\n", dmaPtr->cmd);
-	    goto endLoop;
-	}
-	if (infoPtr->flags & NET_ULTRA_INFO_PENDING) {
+	if (xrbPtr->filled == DEV_HPPI_FILLED_CMD) {
+	    Dev_HppiCmdHdr*	hdr;
+	    statePtr->nextToHostPtr = nextXRBPtr;
 #ifndef CLEAN
 	    if (netHppiDebug) {
-		printf("NetHppiIntr: processing 0x%x\n", infoPtr);
-	    }
-	    if (netHppiTrace) {
-		NEXT_TRACE(statePtr, &tracePtr);
-		tracePtr->event = PROCESS_XRB;
-		tracePtr->index = xrbPtr - statePtr->firstToHostPtr;
-		tracePtr->infoPtr = infoPtr;
-		Timer_GetCurrentTicks(&tracePtr->ticks);
+		hdr = (Dev_HppiCmdHdr*)&(xrbPtr->request);
+		printf ("NetHppiIntr: processing command 0x%x\n", hdr->opcode);
 	    }
 #endif
-	    infoPtr->xrbPtr = xrbPtr;
-	    if (statePtr->flags & NET_HPPI_STATE_STATS) {
-		if (hdrPtr->cmd == NET_ULTRA_DGRAM_RECV_REQ) {
-#if 0
-		    statePtr->stats.packetsReceived++;
-		    statePtr->stats.bytesReceived += hdrPtr->size;
-		    statePtr->stats.receivedHistogram[hdrPtr->size >> 10]++;
-#endif
-		}
-	    }
 	    /*
-	     * Mark the info as not pending.
-	     * Clearing the pending bit ensures
-	     * that this packet does not get processed twice, since the
-	     * master lock around the interface will get released before
-	     * calling the RPC system, so that the RPC system can
-	     * output a packet. Do not
-	     * clear the filled bit since we are using the contents of
-	     * the xrb and we don't want the adapter to overwrite it
-	     * yet. 
+	     * This could get complicated, and will always require callbacks
+	     * anyway, so just schedule callback to process the return.  The
+	     * command will always have an xrbId and xrbBufId which identify
+	     * the originator of the command.  Don't clear the filled field;
+	     * that will be done by the callback.
 	     */
-	    infoPtr->flags &= ~NET_ULTRA_INFO_PENDING;
-	    if (infoPtr->doneProc != NILPROC) {
-		(infoPtr->doneProc)(interPtr, infoPtr);
-	    }
-	    if (infoPtr->flags & NET_ULTRA_INFO_STD_BUFFER) {
-		if (infoPtr->flags & NET_ULTRA_INFO_REMAP) {
-		    VmMach_DMAFree(hdrPtr->size, 
-			VME_TO_DVMA(hdrPtr->buffer, statePtr));
-		    buffer = infoPtr->buffer;
-		} else {
-		    buffer = VME_TO_BUFFER(hdrPtr->buffer, statePtr);
-		}
-		List_InitElement((List_Links *) buffer);
-		List_Insert((List_Links *) buffer,
-		       LIST_ATREAR(statePtr->freeBufferList));
-	    }
-	    List_Remove((List_Links *) infoPtr);
-	    List_Insert((List_Links *) infoPtr, 
-		LIST_ATREAR(statePtr->freeXRBInfoList));
-	    processed++;
+	    Proc_CallFunc (NetHppiCmdCallback, (ClientData)xrbPtr, 0);
+	    processed += 1;
 	} else {
-#ifndef CLEAN
-	    if (netHppiTrace) {
-		NEXT_TRACE(statePtr, &tracePtr);
-		tracePtr->event = INFO_NOT_PENDING;
-		tracePtr->index = xrbPtr - statePtr->firstToHostPtr;
-		tracePtr->infoPtr = infoPtr;
+	    hdrPtr = (NetUltraRequestHdr *) &xrbPtr->request;
+	    infoPtr = statePtr->tagToXRBInfo[(int)hdrPtr->infoPtr];
+	    statePtr->nextToHostPtr = nextXRBPtr;
+	    dmaPtr = &xrbPtr->dma;
+	    if (!(dmaPtr->cmd & NET_ULTRA_DMA_CMD_FROM_ADAPTER)) {
+		printf("NetHppiIntr: cmd (0x%x) not from adapter?\n", dmaPtr->cmd);
+		goto endLoop;
 	    }
+	    if ((dmaPtr->cmd & NET_ULTRA_DMA_CMD_MASK) != NET_ULTRA_DMA_CMD_XRB) {
+		printf("NetHppiIntr: dmaPtr->cmd = 0x%x\n", dmaPtr->cmd);
+		goto endLoop;
+	    }
+	    if (infoPtr->flags & NET_ULTRA_INFO_PENDING) {
+#ifndef CLEAN
+		if (netHppiDebug) {
+		    printf("NetHppiIntr: processing 0x%x\n", infoPtr);
+		}
+		if (netHppiTrace) {
+		    NEXT_TRACE(statePtr, &tracePtr);
+		    tracePtr->event = PROCESS_XRB;
+		    tracePtr->index = xrbPtr - statePtr->firstToHostPtr;
+		    tracePtr->infoPtr = infoPtr;
+		    Timer_GetCurrentTicks(&tracePtr->ticks);
+		}
 #endif
+		infoPtr->xrbPtr = xrbPtr;
+		/*
+		 * Mark the info as not pending.
+		 * Clearing the pending bit ensures
+		 * that this packet does not get processed twice, since the
+		 * master lock around the interface will get released before
+		 * calling the RPC system, so that the RPC system can
+		 * output a packet. Do not
+		 * clear the filled bit since we are using the contents of
+		 * the xrb and we don't want the adapter to overwrite it
+		 * yet. 
+		 */
+		infoPtr->flags &= ~NET_ULTRA_INFO_PENDING;
+		if (infoPtr->doneProc != NILPROC) {
+		    (infoPtr->doneProc)(interPtr, infoPtr);
+		}
+		if (infoPtr->flags & NET_ULTRA_INFO_STD_BUFFER) {
+		    if (infoPtr->flags & NET_ULTRA_INFO_REMAP) {
+			VmMach_DMAFree(hdrPtr->size, 
+				       VME_TO_DVMA(hdrPtr->buffer, statePtr));
+			buffer = infoPtr->buffer;
+		    } else {
+			buffer = VME_TO_BUFFER(hdrPtr->buffer, statePtr);
+		    }
+		    List_InitElement((List_Links *) buffer);
+		    List_Insert((List_Links *) buffer,
+				LIST_ATREAR(statePtr->freeBufferList));
+		}
+		List_Remove((List_Links *) infoPtr);
+		List_Insert((List_Links *) infoPtr, 
+			    LIST_ATREAR(statePtr->freeXRBInfoList));
+		processed++;
+	    } else {
+#ifndef CLEAN
+		if (netHppiTrace) {
+		    NEXT_TRACE(statePtr, &tracePtr);
+		    tracePtr->event = INFO_NOT_PENDING;
+		    tracePtr->index = xrbPtr - statePtr->firstToHostPtr;
+		    tracePtr->infoPtr = infoPtr;
+		}
+#endif
+	    }
 	}
 endLoop: 
 	xrbPtr->filled = 0;
 	xrbPtr = nextXRBPtr;
-	
-	/*
-	 * For the HPPI adapter, there is never a need to check for
-	 * free XRBs to the adapter, since all are sent as soon as
-	 * they are composed.  This may change in the future.
-	 */
-#if 0
-	/*
-	 * Check and see if there is a free xrb in the "to adapter"
-	 * queue.  Presumably the appearance of one in the "to host"
-	 * queue implies one freed up in the "to adapter" queue.
-	 */
-	if ((statePtr->nextToAdapterPtr->filled != 0) && 
-	    (statePtr->toAdapterAvail.waiting == TRUE)) {
-	    Sync_Broadcast(&statePtr->toAdapterAvail);
-	}
-#endif
     }
 
 
@@ -1168,14 +1449,9 @@ endLoop:
 	}
     }
 #endif
+  intrExit:
     MASTER_UNLOCK(&interPtr->mutex);
 
-    /*
-     * Acknowledge the interrupts by setting(!) the interrupt bits in the
-     * status registers.
-     */
-    statePtr->hppisReg->status = NET_HPPI_SRC_STATUS_INTR;
-    statePtr->hppidReg->status = NET_HPPI_DST_STATUS_INTR;
 }
 
 /*
@@ -1398,6 +1674,12 @@ NetHppiIOControl(interPtr, ioctlPtr, replyPtr)
 	case IOC_HPPI_HARD_RESET:
 	    Net_HppiHardReset(interPtr);
 	    break;
+#if 0
+	case IOC_HPPI_SRC_RESET:
+	    break;
+	case IOC_HPPI_DST_RESET:
+	    break;
+#endif
 	case IOC_HPPI_START: {
 	    MASTER_LOCK(&interPtr->mutex);
 	    status = NetHppiStart(statePtr);
@@ -1441,6 +1723,14 @@ NetHppiIOControl(interPtr, ioctlPtr, replyPtr)
 		}
 		status = Mach_Probe (sizeof (int), (char *)&(writeCmd.value),
 			(char *)(statePtr->hppidReg) + writeCmd.offset);
+	    } else if (writeCmd.board == DEV_HPPI_IOP_BOARD) {
+		if (writeCmd.offset >= sizeof (NetHppiIopReg)) {
+		    printf ("HPPI_WRITE_REG: bad IOP register offset 0x%x\n",
+			    writeCmd.offset);
+		    return GEN_INVALID_ARG;
+		}
+		status = Mach_Probe (sizeof (int), (char *)&(writeCmd.value),
+			(char *)(statePtr->iopReg) + writeCmd.offset);
 	    } else {
 		return GEN_INVALID_ARG;
 	    }
@@ -1476,6 +1766,14 @@ NetHppiIOControl(interPtr, ioctlPtr, replyPtr)
 		    return GEN_INVALID_ARG;
 		}
 		status = Mach_Probe (sizeof(int),(char *)(statePtr->hppidReg) +
+				     readCmd.offset, (char *)&regValue);
+	    } else if (readCmd.board == DEV_HPPI_IOP_BOARD) {
+		if (readCmd.offset >= sizeof (NetHppiIopReg)) {
+		    printf ("HPPI_READ_REG: bad IOP register offset 0x%x\n",
+			    readCmd.offset);
+		    return GEN_INVALID_ARG;
+		}
+		status = Mach_Probe (sizeof(int), (char *)(statePtr->iopReg) +
 				     readCmd.offset, (char *)&regValue);
 	    } else {
 		return GEN_INVALID_ARG;
@@ -1717,6 +2015,20 @@ NetHppiIOControl(interPtr, ioctlPtr, replyPtr)
 	    }
 	    break;
 	}
+
+	case IOC_HPPI_RECV_DGRAM: {
+	    if (statePtr->flags & NET_HPPI_STATE_SINK) {
+		if (netHppiDebug) {
+		    printf ("NetHppiIOControl: already sinking dgrams.\n");
+		}
+		return FAILURE;
+	    }
+	    statePtr->flags |= NET_HPPI_STATE_SINK;
+	    statePtr->flags &= ~NET_HPPI_STATE_NORMAL;
+	    Proc_CallFunc (NetHppiRecvDgram, (ClientData)interPtr, 0);
+	    break;
+	}
+
 	case IOC_HPPI_ECHO: {
 	    Dev_UltraEcho		echo;
 	    inSize = ioctlPtr->inBufSize;
@@ -1896,7 +2208,30 @@ NetHppiIOControl(interPtr, ioctlPtr, replyPtr)
 	    }
 	    break;
 	}
-	case IOC_HPPI_SET_BOARD_FLAGS: {
+
+	case IOC_HPPI_SET_TSAP: {
+	    char newTsap[4];
+
+	    inSize = outSize = sizeof (int);
+	    fmtStatus = Fmt_Convert("bbbb", ioctlPtr->format, &inSize,
+				    ioctlPtr->inBuffer, mach_Format, &outSize,
+				    (Address)&newTsap);
+	    if (fmtStatus != FMT_OK) {
+		printf("Format of HPPI_SET_TSAP parm failed, 0x%x\n",
+		    fmtStatus);
+		return GEN_INVALID_ARG;
+	    }
+	    if (netHppiDebug) {
+		printf ("NetHppiIOControl: setting TSAP to %02x%02x%02x%02x\n",
+			(unsigned char)newTsap[0], (unsigned char)newTsap[1],
+			(unsigned char)newTsap[2], (unsigned char)newTsap[3]);
+	    }
+	    bcopy (newTsap, statePtr->curTsap, sizeof (statePtr->curTsap));
+	    break;
+	}
+	case IOC_HPPI_SET_BOARD_FLAGS:
+	case IOC_HPPI_SET_SRC_BOARD_FLAGS:
+	case IOC_HPPI_SET_DST_BOARD_FLAGS: {
 	    Dev_HppiSetBoardFlags flagCmd;
 	    inSize = outSize = sizeof (int);
 	    fmtStatus = Fmt_Convert("w", ioctlPtr->format, &inSize,
@@ -1909,15 +2244,199 @@ NetHppiIOControl(interPtr, ioctlPtr, replyPtr)
 	    }
 	    statePtr->boardFlags = flagCmd.flags;
 	    flagCmd.hdr.opcode = DEV_HPPI_SET_BOARD_FLAGS;
-	    status = NetHppiSendCmd (statePtr, sizeof (flagCmd),
-				     (Address)&flagCmd, NET_HPPI_SRC_CMD);
-	    if (status != SUCCESS) {
-		printf ("HPPI_SET_BOARD_FLAGS: SRC cmd failed\n");
-	    } else {
-		status = NetHppiSendCmd (statePtr, sizeof(flagCmd),
+	    if ((ioctlPtr->command == IOC_HPPI_SET_BOARD_FLAGS) ||
+		(ioctlPtr->command == IOC_HPPI_SET_SRC_BOARD_FLAGS)) {
+		status = NetHppiSendCmd (statePtr, sizeof (flagCmd),
+					 (Address)&flagCmd, NET_HPPI_SRC_CMD);
+		if (status != SUCCESS) {
+		    printf ("HPPI_SET_BOARD_FLAGS: SRC cmd failed\n");
+		    return (status);
+		}
+	    }
+	    if ((ioctlPtr->command == IOC_HPPI_SET_BOARD_FLAGS) ||
+		(ioctlPtr->command == IOC_HPPI_SET_DST_BOARD_FLAGS)) {
+		status = NetHppiSendCmd (statePtr, sizeof (flagCmd),
 					 (Address)&flagCmd, 0);
+		if (status != SUCCESS) {
+		    printf ("HPPI_SET_BOARD_FLAGS: DST cmd failed\n");
+		    return (status);
+		}
 	    }
 	    break;
+	}
+
+	/*
+	 * NOTE: there is a memory leak in the following IOC call.  This
+	 * call is to be used for testing purposes ONLY!
+	 */
+	case IOC_HPPI_CONNECTION_OPEN: {
+	    Net_HppiConnection*	connPtr;
+	    Sync_Condition	gotOpen;
+
+	    connPtr = (Net_HppiConnection*)malloc(sizeof (Net_HppiConnection));
+	    inSize = outSize = sizeof (Net_HppiConnection);
+	    fmtStatus = Fmt_Convert("w9", ioctlPtr->format, &inSize,
+				    ioctlPtr->inBuffer, mach_Format,
+				    &outSize, (Address)connPtr);
+	    if (fmtStatus != FMT_OK) {
+		printf("Format HPPI_CONNECTION_OPEN failed, 0x%x\n",
+		    fmtStatus);
+		return GEN_INVALID_ARG;
+	    }
+	    connPtr->userData = (ClientData)&gotOpen;
+	    connPtr->interPtr = interPtr;
+	    connPtr->callbackProc = iocConnCallback;
+	    status = Net_HppiConnectionOpen (connPtr);
+	    if (status != SUCCESS) {
+		printf ("HPPI_CONNECTION_OPEN: couldn't open 0x%x\n",
+			status);
+		return (FAILURE);
+	    }
+	    if (netHppiDebug) {
+		printf ("HPPI_CONNECTION_OPEN: waiting...\n");
+	    }
+	    MASTER_LOCK (&(interPtr->mutex));
+	    Sync_MasterWait(&gotOpen, &(interPtr->mutex), FALSE);
+	    MASTER_UNLOCK (&(interPtr->mutex));
+	    if (netHppiDebug) {
+		printf ("HPPI_CONNECTION_OPEN: returned from wait.\n");
+	    }
+	    connPtr->userData = (ClientData)connPtr;
+	    inSize = outSize = sizeof (Net_HppiConnection);
+	    fmtStatus = Fmt_Convert("w9", mach_Format, &inSize,
+				    (Address)connPtr, ioctlPtr->format,
+				    &outSize, ioctlPtr->outBuffer);
+	    if (fmtStatus != FMT_OK) {
+		printf("Return format HPPI_CONNECTION_OPEN failed, 0x%x\n",
+		    fmtStatus);
+		return GEN_INVALID_ARG;
+	    }
+	    status = connPtr->status;
+	    break;
+	}
+
+	case IOC_HPPI_CONNECTION_LISTEN: {
+	    Net_HppiConnection	conn, *connPtr;
+	    Sync_Condition	gotListen;
+
+	    inSize = outSize = sizeof (Net_HppiConnection);
+	    fmtStatus = Fmt_Convert("w9", ioctlPtr->format, &inSize,
+				    ioctlPtr->inBuffer, mach_Format,
+				    &outSize, (Address)&conn);
+	    if (fmtStatus != FMT_OK) {
+		printf("Return format HPPI_CONNECTION_LISTEN failed, 0x%x\n",
+		    fmtStatus);
+		return GEN_INVALID_ARG;
+	    }
+	    connPtr = (Net_HppiConnection*)conn.userData;
+	    connPtr->callbackProc = iocConnCallback;
+	    connPtr->interPtr = interPtr;
+	    connPtr->userData = (ClientData)&gotListen;
+	    status = Net_HppiConnectionListen (connPtr);
+	    if (status != SUCCESS) {
+		printf ("HPPI_CONNECTION_LISTEN: couldn't listen 0x%x\n",
+			status);
+		return (FAILURE);
+	    }
+	    if (netHppiDebug) {
+		printf ("HPPI_CONNECTION_LISTEN: waiting...\n");
+	    }
+	    MASTER_LOCK (&(interPtr->mutex));
+	    Sync_MasterWait(&gotListen, &(interPtr->mutex), FALSE);
+	    MASTER_UNLOCK (&(interPtr->mutex));
+	    if (netHppiDebug) {
+		printf ("HPPI_CONNECTION_LISTEN: returned from wait.\n");
+	    }
+	    conn.status = connPtr->status;
+	    inSize = outSize = sizeof (Net_HppiConnection);
+	    fmtStatus = Fmt_Convert("w9", mach_Format, &inSize,
+				    (Address)&conn, ioctlPtr->format,
+				    &outSize, ioctlPtr->outBuffer);
+	    if (fmtStatus != FMT_OK) {
+		printf("Return format HPPI_CONNECTION_LISTEN failed, 0x%x\n",
+		    fmtStatus);
+		return GEN_INVALID_ARG;
+	    }
+	    break;
+	}
+
+	case IOC_HPPI_CONNECTION_SEND:
+	case IOC_HPPI_CONNECTION_RECV:
+	{
+	    Net_HppiConnection	conn, *connPtr;
+	    Net_HppiDataRequest	dataReq;
+	    Sync_Condition	dataDone;
+
+	    inSize = outSize = sizeof (Net_HppiConnection);
+	    fmtStatus = Fmt_Convert("w9", ioctlPtr->format, &inSize,
+				    ioctlPtr->inBuffer, mach_Format,
+				    &outSize, (Address)&conn);
+	    if (fmtStatus != FMT_OK) {
+		printf("Return format HPPI_CONNECTION_xfer failed, 0x%x\n",
+		    fmtStatus);
+		return GEN_INVALID_ARG;
+	    }
+	    connPtr = (Net_HppiConnection*)conn.userData;
+	    connPtr->interPtr = interPtr;
+	    dataReq.interPtr = interPtr;
+	    dataReq.connectionId = connPtr->connectionId;
+	    dataReq.userData = (ClientData)&dataDone;
+	    dataReq.callbackProc = iocXferCallback;
+	    dataReq.xferSize = 100;
+	    dataReq.xferOffset = 0;
+	    dataReq.sgSize = 1;
+	    dataReq.sg[0].addr = (Address)0xff905000;
+	    dataReq.sg[0].length = 100;
+	    if (ioctlPtr->command == IOC_HPPI_CONNECTION_SEND) {
+		status = Net_HppiSendData (connPtr, &dataReq);
+	    } else {
+		status = Net_HppiReceiveData (connPtr, &dataReq);
+	    }
+	    if (status != SUCCESS) {
+		printf ("HPPI_CONNECTION_xfer: couldn't transfer 0x%x\n",
+			status);
+		return (FAILURE);
+	    }
+	    if (netHppiDebug) {
+		printf ("HPPI_CONNECTION_xfer: waiting...\n");
+	    }
+	    MASTER_LOCK (&(interPtr->mutex));
+	    Sync_MasterWait(&dataDone, &(interPtr->mutex), FALSE);
+	    MASTER_UNLOCK (&(interPtr->mutex));
+	    if (netHppiDebug) {
+		printf ("HPPI_CONNECTION_xfer: returned from wait.\n");
+	    }
+	    conn.status = connPtr->status;
+	    inSize = outSize = sizeof (Net_HppiConnection);
+	    fmtStatus = Fmt_Convert("w9", mach_Format, &inSize,
+				    (Address)&conn, ioctlPtr->format,
+				    &outSize, ioctlPtr->outBuffer);
+	    if (fmtStatus != FMT_OK) {
+		printf("Return format HPPI_CONNECTION_xfer failed, 0x%x\n",
+		    fmtStatus);
+		return GEN_INVALID_ARG;
+	    }
+	    status = dataReq.status;
+	    break;
+	}
+	case IOC_HPPI_IOP_OUTPUT: {
+	    int ioSize;
+
+	    inSize = outSize = sizeof (ioSize);
+	    fmtStatus = Fmt_Convert ("w", ioctlPtr->format, &inSize,
+				     (Address)ioctlPtr->inBuffer,
+				     mach_Format, &outSize, (Address)&ioSize);
+	    if (fmtStatus != FMT_OK) {
+		printf("Format of IOC_HPPI_IOP_OUTPUT size failed, 0x%x\n",
+		    fmtStatus);
+		return GEN_INVALID_ARG;
+	    }
+	    MASTER_LOCK (&interPtr->mutex);
+	    statePtr->flags |= NET_HPPI_STATE_IOP_OUTPUT_TEST;
+	    NetHppiLoopback (statePtr, ioSize, iopOutputCallback,
+			     (ClientData)statePtr, 0);
+	    Sync_MasterWait (&iopOutputDone, &(interPtr->mutex), TRUE);
+	    MASTER_UNLOCK (&interPtr->mutex);
 	}
 	default: {
 	    printf("NetHppiIOControl: unknown ioctl 0x%x\n",
@@ -2350,72 +2869,14 @@ InitQueues(statePtr)
 	List_InitElement(itemPtr);
 	List_Insert(itemPtr, LIST_ATREAR(statePtr->freeBufferList));
     }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * NetUltraPendingRead --
- *
- *	Send a pending read to the adapter.
- *
- * Results:
- *	Standard Sprite return status.
- *
- * Side effects:
- *	A "read datagram" XRB is sent to the adapter.
- *
- *----------------------------------------------------------------------
- */
-
-ReturnStatus
-NetHppiPendingRead(interPtr, size, buffer)
-    Net_Interface	*interPtr;	/* Interface to read from. */
-    int			size;		/* Size of the data buffer. */
-    Address		buffer;		/* Address of the buffer in DMA space */
-{
-    NetHppiState		*statePtr;
-    NetUltraRequest		request;
-    NetUltraDatagramRequest	*dgramReqPtr;
-    NetUltraRequestHdr		*hdrPtr;
-    ReturnStatus		status = SUCCESS;
-    Net_ScatterGather		scatter;
-
-    statePtr = (NetHppiState *) interPtr->interfaceData;
-#ifndef CLEAN
-    if (netHppiDebug) {
-	printf("NetHppiPendingRead: queuing a pending read.\n");
-	printf("Buffer size = %d, buffer = 0x%x\n", size, buffer);
+    for (i = 0; i < NET_HPPI_MAX_TAGS; i++) {
+	statePtr->tags[i] = 0;
     }
-#endif
-    bzero((char *) &request, sizeof(request));
-    dgramReqPtr = &request.dgram;
-    hdrPtr = &dgramReqPtr->hdr;
-    dgramReqPtr->remoteAddress = wildcardAddress;
-    dgramReqPtr->localAddress = wildcardAddress;
-    hdrPtr->cmd = NET_ULTRA_DGRAM_RECV_REQ;
-    /*
-     * Save room at the beginning of the buffer for the datagram request
-     * block.  The higher-level software expects the packet header to
-     * proceed the packet (this should be fixed sometime).
-     */
-#if 0
-    buffer += sizeof(NetUltraDatagramRequest);
-    size -= sizeof(NetUltraDatagramRequest);
-#endif
-    scatter.bufAddr = buffer;
-    scatter.length = size;
-    status = NetHppiSendReq(statePtr, ReadDone, (ClientData) 0, FALSE,  
-	1, &scatter, sizeof(NetUltraDatagramRequest), &request);
-    if (status != SUCCESS) {
-	printf("NetHppiPendingRead: could not send request to adapter\n");
+    statePtr->curSgTag = 1;
+    for (i = 0; i < NET_HPPI_MAX_CONNECTIONS; i++) {
+	statePtr->connection[i].flags = 0;
+	statePtr->connection[i].statePtr = statePtr;
     }
-#ifndef CLEAN
-    if (netHppiDebug) {
-	printf("NetHppiPendingRead: returning.\n");
-    }
-#endif
-    return status;
 }
 
 /*
@@ -2453,10 +2914,8 @@ NetHppiStart(statePtr)
     interPtr = statePtr->interPtr;
     startPtr = &request.start;
     hdrPtr = &startPtr->hdr;
-    if (Net_AddrCmp(&interPtr->netAddress[NET_PROTO_RAW],
-		&netZeroAddress)){
-	printf(
-"NetHppiStart: can't send start command - adapter address not set\n");
+    if (!Net_AddrCmp(&interPtr->netAddress[NET_PROTO_RAW], &netZeroAddress)) {
+	printf("NetHppiStart: can't send start cmd-adapter address not set\n");
 	status = FAILURE;
 	goto exit;
     }
@@ -2499,8 +2958,12 @@ NetHppiStart(statePtr)
      * to bcopy the netAddress minus its first byte.
      */
     startPtr->netAddressSize = 7;
+#if 0
     bcopy(&(((char *) &interPtr->netAddress[NET_PROTO_RAW])[1]),
 	(char *) &startPtr->netAddressBuf, sizeof(Net_UltraAddress)-1);
+#endif
+    bcopy ((char *)&(interPtr->netAddress[NET_PROTO_RAW].address.ultra) + 1,
+	   startPtr->netAddressBuf, startPtr->netAddressSize);
     startPtr->netAddressBuf[0] = 0x49;
     startPtr->netAddressBuf[5] = 0xfe;
     status = NetHppiSendReq(statePtr, StandardDone, 
@@ -2521,7 +2984,7 @@ NetHppiStart(statePtr)
 		hdrPtr->status, GetStatusString(hdrPtr->status));
 	}
 	if (netHppiDebug) {
-	    printf("Ultranet adapter started\n");
+	    printf("Ultranet hub started\n");
 	    printf("Ucode %d\n", startPtr->ucodeRel);
 	    printf("Adapter type %d, adapter hw %d\n", startPtr->adapterType,
 		startPtr->adapterHW);
@@ -2547,29 +3010,13 @@ NetHppiStart(statePtr)
 	    printf("NetUltraStart: WARNING: max bytes reset to %d\n",
 		interPtr->maxBytes);
 	}
+	statePtr->maxBytesPower = startPtr->adapterMaxBytes;
 	statePtr->flags |= NET_HPPI_STATE_START;
-	/*
-	 * Now queue up pending reads. 
-	 */
-	for (i = 0; i < statePtr->maxReadPending; i++) {
-	    List_Links		*itemPtr;
-	    Address	buffer;
-	    itemPtr = List_First(statePtr->freeBufferList);
-	    if (itemPtr == statePtr->freeBufferList) {
-		panic("NetUltraOutput: list screwup\n");
-	    }
-	    List_Remove(itemPtr);
-	    buffer = BUFFER_TO_DVMA(itemPtr, statePtr);
-	    status = NetHppiPendingRead(interPtr, statePtr->bufferSize,
-			buffer);
-	    if (status != SUCCESS) {
-		printf("NetHppiStart: could not queue pending read.\n");
-	    }
-	}
     } else {
 	printf("NetHppiStart: start command failed <0x%x> : %s\n",
 	    hdrPtr->status, GetStatusString(hdrPtr->status));
     }
+
 exit:
     return status;
 }
@@ -2638,196 +3085,6 @@ exit:
 /*
  *----------------------------------------------------------------------
  *
- * ReadDone --
- *
- *	This routine is called from the interrupt handler when a read
- *	request completes.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-ReadDone(interPtr, infoPtr)
-    Net_Interface	*interPtr;	/* Interface. */
-    NetUltraXRBInfo	*infoPtr;	/* Info about XRB that completed. */
-{
-    NetUltraXRB			*xrbPtr;
-    NetUltraDatagramRequest	*reqPtr;
-    NetUltraRequestHdr		*hdrPtr;
-    NetHppiState		*statePtr;
-    int				size;
-    Address			buffer = (Address) NIL;
-    ReturnStatus		status = SUCCESS;
-
-    xrbPtr = infoPtr->xrbPtr;
-    reqPtr = &xrbPtr->request.dgram;
-    hdrPtr = &reqPtr->hdr;
-
-    statePtr = (NetHppiState *) interPtr->interfaceData;
-    if (!(hdrPtr->status & NET_ULTRA_STATUS_OK)) {
-	int i;
-	printf ("ReadDone: contents of failed XRB:\n");
-	for (i = 0; i < 32; i++) {
-	    printf ("%08x ", *((int *)xrbPtr + i));
-	    if ((i % 8) == 7) {
-		printf ("\n");
-	    }
-	}
-	panic("ReadDone: read failed 0x%x [%s] (continuable)\n",
-	      hdrPtr->status, GetStatusString (hdrPtr->status));
-    } else {
-#ifndef CLEAN
-	if (netHppiDebug) {
-	    char	local[32];
-	    char	remote[32];
-	    printf("ReadDone: received a packet.\n");
-	    *local = '\0';
-	    *remote = '\0';
-	    (void) Net_UltraAddrToString(&reqPtr->localAddress.address, 
-		    local);
-	    (void) Net_UltraAddrToString(&reqPtr->remoteAddress.address,
-		    remote);
-	    printf("Local address: %s\n", local);
-	    printf("Remote address: %s\n", remote);
-	    printf("Data size = %d\n", hdrPtr->size);
-	    if (hdrPtr->size > 0) {
-		printf("Data: %s\n", hdrPtr->buffer + VMMACH_DMA_START_ADDR);
-	    }
-	}
-#endif
-	/*
-	 * Adjust size and start of buffer to account for the space
-	 * for the request block.
-	 */
-	buffer = VME_TO_BUFFER(hdrPtr->buffer, statePtr);
-	size = hdrPtr->size;
-	if (statePtr->flags & NET_HPPI_STATE_NORMAL) {
-	    /* 
-	     * Copy the request block (packet header) to the start of the
-	     * packet. 
-	     */
-
-	    *((NetUltraDatagramRequest *) buffer) = *reqPtr;
-	    /*
-	     * Release the lock around interface so that the RPC system
-	     * can output a packet in response to this one.  The XRB is
-	     * still marked as filled, so the adapter won't overwrite it.
-	     * Also the XRBinfo is not marked as pending, so the interrupt
-	     * routine won't re-process the packet should it loop around
-	     * the queue before Net_Input returns.
-	     */
-	    MASTER_UNLOCK(&interPtr->mutex);
-	    Net_Input(interPtr, buffer, size);
-	    MASTER_LOCK(&interPtr->mutex);
-	} else if (statePtr->flags & NET_HPPI_STATE_ECHO) {
-	    Net_ScatterGather		tmpScatter;
-	    if (netHppiDebug) {
-		printf("ReadDone: returning datagram to sender.\n");
-	    }
-	    hdrPtr->cmd = NET_ULTRA_DGRAM_SEND_REQ;
-	    hdrPtr->status = 0;
-	    tmpScatter.bufAddr = BUFFER_TO_DVMA(buffer, statePtr);
-	    tmpScatter.length = hdrPtr->size;
-	    status = NetHppiSendReq(statePtr, EchoDone, (ClientData) NIL, 
-			FALSE, 1, &tmpScatter,sizeof(NetUltraDatagramRequest),
-			(NetUltraRequest *) reqPtr);
-	    if (status != SUCCESS) {
-		panic("ReadDone: unable to return datagram to sender.\n");
-	    }
-	} else if (statePtr->flags & NET_HPPI_STATE_DSND_TEST) {
-	    Net_ScatterGather		tmpScatter;
-	    dsndCount--;
-	    if (dsndCount > 0) {
-		if (netHppiDebug) {
-		    printf("ReadDone: returning datagram to sender.\n");
-		}
-		hdrPtr->cmd = NET_ULTRA_DGRAM_SEND_REQ;
-		hdrPtr->status = 0;
-		tmpScatter.bufAddr = BUFFER_TO_DVMA(buffer, statePtr);
-		tmpScatter.length = hdrPtr->size;
-		status = NetHppiSendReq(statePtr, EchoDone, (ClientData) NIL, 
-			    FALSE, 1, &tmpScatter,
-			    sizeof(NetUltraDatagramRequest),
-			    (NetUltraRequest *) reqPtr);
-		if (status != SUCCESS) {
-		    panic("ReadDone: unable to return datagram to sender.\n");
-		}
-	    } else {
-
-		/*
-		 * Notify the waiting process that the last datagram has
-		 * arrived.
-		 */
-		Sync_Broadcast(&dsndTestDone);
-	    }
-	} else if (statePtr->flags & NET_HPPI_STATE_SINK) {
-	    packetsSunk++;
-	}
-    }
-    statePtr->numReadPending--;
-    if (statePtr->numReadPending < 0) {
-	panic("ReadDone: number of pending reads < 0.\n");
-    }
-    /* 
-     * This may introduce a deadlock if the queues are of size 1, 
-     * since the XRB and info structures are
-     * not freed until this routine (ReadDone) returns, and 
-     * NetUltraPendingRead needs to use these structures.  If the queues
-     * are greater than 1 then NetUltraPendingRead may have to
-     * wait for an XRB to free up, but that should be ok.
-     */
-    status = NetHppiPendingRead(interPtr, statePtr->bufferSize, 
-		BUFFER_TO_DVMA(buffer,statePtr));
-    if (status != SUCCESS) {
-	printf("ReadDone: could not queue next pending read.\n");
-    }
-#ifndef CLEAN
-    if (netHppiDebug) {
-	printf("ReadDone: returning.\n");
-    }
-#endif
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * EchoDone --
- *
- *	This routine is called when the write of a datagram that is
- *	being echoed back to the sender completes.  All it does is
- *	decrement the number of pending writes.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-/*ARGSUSED*/
-static void
-EchoDone(interPtr, infoPtr)
-    Net_Interface	*interPtr;	/* Interface. */
-    NetUltraXRBInfo	*infoPtr;	/* Info about XRB that completed. */
-{
-    NetHppiState	*statePtr;
-
-    statePtr = (NetHppiState *) interPtr->interfaceData;
-    statePtr->numWritePending--;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * NetHppiSendDgram --
  *
  *	This routine will send a datagram to the specified host.  It
@@ -2854,80 +3111,68 @@ NetHppiSendDgram(interPtr, netAddressPtr, count, bufSize, buffer, timePtr)
 						 * time to send datagrams. */
 {
     NetHppiState		*statePtr;
-    NetUltraRequest		request;
-    NetUltraDatagramRequest	*dgramReqPtr;
-    NetUltraRequestHdr		*hdrPtr;
     ReturnStatus		status;
     Timer_Ticks 		startTime;
     Timer_Ticks 		endTime;
-    Timer_Ticks 		curTime;
-    NetUltraTraceInfo		*tracePtr;
-    Net_ScatterGather		scatter;
-    char			*ptr;
+    Dev_HppiSendDSND		dgramCmd;
 
     MASTER_LOCK(&interPtr->mutex);
-#ifndef CLEAN
     if (netHppiDebug) {
 	char	address[100];
 	(void) Net_AddrToString(netAddressPtr, address);
 	printf("NetHppiSendDgram: sending %d bytes to %s\n", bufSize, address);
     }
-#endif
     statePtr = (NetHppiState *) interPtr->interfaceData;
     if (!(statePtr->flags & NET_HPPI_STATE_START)) {
-	printf("NetUltraSendDgram: adapter not started!\n");
+	printf("NetHppiSendDgram: adapter not started!\n");
 	status = FAILURE;
 	goto exit;
     }
-    bzero((char *) &request, sizeof(request));
-    dgramReqPtr = &request.dgram;
-    hdrPtr = &dgramReqPtr->hdr;
-    dgramReqPtr->remoteAddress = wildcardAddress;
-    dgramReqPtr->remoteAddress.tsapSize = 2;
-    dgramReqPtr->remoteAddress.tsap[1] = 1;
-    dgramReqPtr->remoteAddress.address = netAddressPtr->address.ultra;
-    ptr = (char *) &dgramReqPtr->remoteAddress.address;
-    ptr[1] = 0x49;
-    ptr[6] = 0xfe;
-    dgramReqPtr->localAddress = wildcardAddress;
-    dgramReqPtr->localAddress.tsapSize = 2;
-    dgramReqPtr->localAddress.tsap[1] = 1;
-    dgramReqPtr->localAddress.address = 
-	interPtr->netAddress[NET_PROTO_RAW].address.ultra;
-    ptr = (char *) &dgramReqPtr->localAddress.address;
-    ptr[1] = 0x49;
-    ptr[6] = 0xfe;
-    hdrPtr->cmd = NET_ULTRA_DGRAM_SEND_REQ;
-    if (buffer != (Address)NIL) {
-	scatter.bufAddr = buffer;
-    } else {
-	/*
-	 * Send bogus data.
-	 */
-	scatter.bufAddr = statePtr->buffers;
+    bzero((char *) &dgramCmd, sizeof(dgramCmd));
+    dgramCmd.hdr.opcode = DEV_HPPI_SEND_DSND;
+    dgramCmd.xrbHdr.xrbId = (uint32)interPtr;
+    dgramCmd.xrbHdr.xrbBufId = (uint32)&dgramCmd;
+    bcopy ((char*)&(netAddressPtr->address.ultra)+1, &(dgramCmd.xrbRemTA),
+	   sizeof (dgramCmd.xrbRemTA));
+    dgramCmd.xrbRemTA[0] = 0x49;
+    dgramCmd.xrbRemTA[5] = 0xfe;
+    bcopy ((char *)&(interPtr->netAddress[NET_PROTO_RAW].address.ultra) + 1,
+	   &(dgramCmd.xrbLocTA), sizeof (dgramCmd.xrbLocTA));
+    dgramCmd.xrbLocTA[0] = 0x49;
+    dgramCmd.xrbLocTA[5] = 0xfe;
+    bcopy (statePtr->curTsap, dgramCmd.tsap, sizeof (dgramCmd.tsap));
+
+    if (buffer == (Address)NIL) {
+	buffer = statePtr->buffers;
     }
-    scatter.length = bufSize;
+    dgramCmd.fifoDataSize = bufSize;
+    dgramCmd.iopDataSize = 0;
+    dgramCmd.xrbHdr.tag = 1;
     statePtr->flags |= NET_HPPI_STATE_DSND_TEST;
     statePtr->flags &= ~NET_HPPI_STATE_NORMAL;
     dsndCount = count;
-#ifndef CLEAN
-    if (netHppiTrace) {
-	NEXT_TRACE(statePtr, &tracePtr);
-	tracePtr->event = DSND;
-	Timer_GetCurrentTicks(&curTime);
-	tracePtr->ticks = curTime;
-    }
-#endif
     Timer_GetCurrentTicks(&startTime);
-    status = NetHppiSendReq(statePtr, DgramSendDone, (ClientData)&dsndTestDone,
-		FALSE, 1, &scatter, sizeof(NetUltraDatagramRequest), &request);
+
+    status = NetHppiSendCmd (statePtr, sizeof (dgramCmd), (Address)&dgramCmd,
+			     NET_HPPI_SRC_CMD);
     if (status != SUCCESS) {
 	if (netHppiDebug) {
-	    printf ("NetHppiSendDgram: request failed 0x%x\n", status);
+	    printf ("NetHppiSendDgram: command failed 0x%x\n", status);
 	}
 	goto exit;
     }
-    Sync_MasterWait(&(dsndTestDone), &(interPtr->mutex), FALSE);
+    status = NetHppiCopyToFifo (buffer, bufSize, statePtr, NET_HPPI_SRC_CMD);
+    if (status != SUCCESS) {
+	if (netHppiDebug) {
+	    printf ("NetHppiSendDgram: data copy failed 0x%x\n", status);
+	}
+	goto exit;
+    }
+
+    if (netHppiDebug) {
+	printf ("NetHppiSendDgram: waiting for dgram to return.\n");
+    }
+    Sync_MasterWait(&dsndTestDone, &(interPtr->mutex), FALSE);
     Timer_GetCurrentTicks(&endTime);
 #ifndef CLEAN
     if (netHppiDebug) {
@@ -2961,20 +3206,12 @@ exit:
  */
 
 static void
-DgramSendDone(interPtr, infoPtr)
-    Net_Interface	*interPtr;	/* Interface. */
-    NetUltraXRBInfo	*infoPtr;	/* Info about XRB that completed. */
+DgramSendDone(dgramCmdPtr)
+Dev_HppiSendDSND*	dgramCmdPtr;
 {
-    NetUltraXRB			*xrbPtr;
-    NetUltraDatagramRequest	*reqPtr;
-    NetUltraRequestHdr		*hdrPtr;
-
-    xrbPtr = infoPtr->xrbPtr;
-    reqPtr = &xrbPtr->request.dgram;
-    hdrPtr = &reqPtr->hdr;
-
-    if (!(hdrPtr->status & NET_ULTRA_STATUS_OK)) {
-	panic("DgramSendDone: dgram send failed 0x%x\n", hdrPtr->status);
+    if (!(dgramCmdPtr->xrbHdr.status & NET_ULTRA_STATUS_OK)) {
+	printf ("DgramSendDone: dgram send failed 0x%x\n",
+		dgramCmdPtr->xrbHdr.status);
     } else {
 #ifndef CLEAN
 	if (netHppiDebug) {
@@ -2982,13 +3219,9 @@ DgramSendDone(interPtr, infoPtr)
 	}
 #endif
     }
-    ((NetHppiState *) interPtr->interfaceData)->numWritePending--;
-    if (((NetHppiState *) interPtr->interfaceData)->numWritePending < 0) {
-	panic("DgramSendDone: number of pending writes < 0.\n");
-    }
-    if (infoPtr->doneData != (ClientData) NIL) {
-	Sync_Broadcast((Sync_Condition *) infoPtr->doneData);
-    }
+
+    Sync_MasterBroadcast ((Sync_Condition *) &dsndTestDone);
+
 #ifndef CLEAN
     if (netHppiDebug) {
 	printf("DgramSendDone: returning.\n");
@@ -3001,125 +3234,205 @@ DgramSendDone(interPtr, infoPtr)
 /*
  *----------------------------------------------------------------------
  *
- * NetHppiOutput --
+ * NetHppiRecvDgram --
  *
- *	Puts the outgoing packet into the queue to the adapter.
- *	Since the ultranet adapter does not to scatter/gather
- *	we have to get a free write buffer and copy the data
- *	into the buffer.
+ *	This routine will receive a datagram.  The receive address is
+ *	ignored, as is the buffer address (the link board memory will
+ *	be used).  This is intended for debugging purposes, and is pretty
+ *	slow.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	The packet is put into the queue and the adapter is notified.
+ *	A read is queued to the adapter.
  *
  *----------------------------------------------------------------------
  */
 
-ReturnStatus
-NetHppiOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength, rpc,
-	    statusPtr)
-    Net_Interface		*interPtr;	/* The interface to use. */
-    Address			hdrPtr;		/* Packet header. */
-    Net_ScatterGather		*scatterGatherPtr; /* Scatter/gather elements.*/
-    int				scatterGatherLength; /* Number of elements in
-						      * scatter/gather list. */
-    Boolean			rpc;		/* Is this an RPC packet? */
-    ReturnStatus		*statusPtr;	/* Place to store status. */
+static
+void
+NetHppiRecvDgram(interPtr)
+Net_Interface	*interPtr;		/* Interface to send on. */
 {
-    NetHppiState		*statePtr;
+    int			bufSize;		/* Size of data buffer. */
+    Address		buffer;			/* Data to send. */
+    NetHppiState	*statePtr = (NetHppiState*)interPtr->interfaceData;
     ReturnStatus		status = SUCCESS;
-    Net_UltraHeader		*ultraHdrPtr = (Net_UltraHeader *) hdrPtr;
+    Timer_Ticks 		startTime;
+    Timer_Ticks 		endTime;
+    Dev_HppiSendDRCV		dgramCmd;
+    Dev_HppiScatterGather	sgCmd;
+    int				sgCmdSize;
 
-    statePtr = (NetHppiState *) interPtr->interfaceData;
-    if ((ultraHdrPtr->cmd != NET_ULTRA_DGRAM_SEND_REQ) && 
-	(ultraHdrPtr->cmd != 0)) {
-	printf("Invalid header to NetUltraOutput.\n");
-	return FAILURE;
-    }
-    /*
-     * If the cmd is 0 then the packet is from the network device.
-     */
-    if (ultraHdrPtr->cmd == 0) {
-	ultraHdrPtr->cmd = NET_ULTRA_DGRAM_SEND_REQ;
-    }
     MASTER_LOCK(&interPtr->mutex);
-    if (netHppiDebug) {
-	char	address[100];
-	(void) Net_UltraAddrToString(&ultraHdrPtr->remoteAddress.address, 
-		    address);
-	printf("NetHppiOutput: sending to %s\n", address);
+    while ((statePtr->flags & NET_HPPI_STATE_SINK) && (status == SUCCESS)) {
+	bufSize = 0x8000;
+	buffer = (Address)NET_HPPI_DUAL_PORT_RAM + 0x8000;
+#if 0
+	if (netHppiDebug) {
+	    char	address[100];
+	    (void) Net_AddrToString(netAddressPtr, address);
+	    printf("NetHppiRecvDgram: receiving %d bytes\n", bufSize);
+	}
+#endif
+	statePtr = (NetHppiState *) interPtr->interfaceData;
+	if (!(statePtr->flags & NET_HPPI_STATE_START)) {
+	    printf("NetHppiRecvDgram: adapter not started!\n");
+	    status = FAILURE;
+	    goto exit;
+	}
+	/*
+	 * Send the scatter-gather array.  Use the link board memory to store
+	 * the return data.
+	 */
+	sgCmd.size = 1;
+	sgCmd.offset = 0;
+	if ((sgCmd.tag = getSgTag (statePtr)) == -1) {
+	    printf ("NetHppiRecvDgram: couldn't get SG tag.\n");
+	    status = FAILURE;
+	    goto exit;
+	}
+	sgCmd.element[0].address = (uint32)buffer;
+	sgCmd.element[0].size = (uint32)bufSize;
+	sgCmd.hdr.opcode = DEV_HPPI_SCATTER_GATHER;
+	sgCmdSize = (sizeof (sgCmd) - sizeof (sgCmd.element)) +
+	    (sgCmd.size * sizeof (sgCmd.element[0]));
+	status = NetHppiSendCmd (statePtr, sgCmdSize, (Address)&sgCmd,
+				 NET_HPPI_DST_CMD);
+	if (status != SUCCESS) {
+	    printf ("NetHppiDgramRecv: SG command failed 0x%x\n", status);
+	    goto exit;
+	}
+	
+	bzero((char *) &dgramCmd, sizeof(dgramCmd));
+	dgramCmd.hdr.opcode = DEV_HPPI_SEND_DRCV;
+	dgramCmd.xrbHdr.xrbId = (uint32)interPtr;
+	dgramCmd.xrbHdr.xrbBufId = (uint32)&dgramCmd;
+	dgramCmd.xrbHdr.tag = sgCmd.tag;
+	bzero (&dgramCmd.xrbRemTA, sizeof (dgramCmd.xrbRemTA));
+	bzero (&dgramCmd.xrbLocTA, sizeof (dgramCmd.xrbLocTA));
+	bcopy (statePtr->curTsap, dgramCmd.tsap, sizeof (dgramCmd.tsap));
+#if 0
+	dgramCmd.xrbRemTA[1] = 0x49;
+	dgramCmd.xrbRemTA[6] = 0xfe;
+	dgramCmd.xrbLocTA[1] = 0x49;
+	dgramCmd.xrbLocTA[6] = 0xfe;
+#endif
+	dgramCmd.cnt = bufSize;
+	
+	if (buffer == (Address)NIL) {
+	    buffer = statePtr->buffers;
+	}
+	Timer_GetCurrentTicks(&startTime);
+	
+	status = NetHppiSendCmd (statePtr, sizeof (dgramCmd),
+				 (Address)&dgramCmd, NET_HPPI_SRC_CMD);
+	if (status != SUCCESS) {
+	    if (netHppiDebug) {
+		printf ("NetHppiRecvDgram: command failed 0x%x\n", status);
+	    }
+	    goto exit;
+	}
+	
+	if (netHppiDebug) {
+	    printf ("NetHppiRecvDgram: waiting to receive dgram.\n");
+	}
+	Sync_MasterWait(&drcvTestDone, &(interPtr->mutex), FALSE);
+	Timer_GetCurrentTicks(&endTime);
+#ifndef CLEAN
+	if (netHppiDebug) {
+	    printf("NetHppiRecvDgram: test done.\n");
+	} 
+#endif
+	Timer_SubtractTicks(endTime, startTime, &endTime);
+#if 0
+	Timer_TicksToTime(endTime, timePtr);
+#endif
+      exit:
+	;
     }
-    status = NetHppiSendReq(statePtr, OutputDone, 
-		(ClientData) statusPtr, rpc, scatterGatherLength, 
-		scatterGatherPtr, sizeof(Net_UltraHeader), 
-		(NetUltraRequest *) ultraHdrPtr);
-    if (status != SUCCESS) {
-	printf("NetHppiOutput: packet not sent\n");
-    }
+    statePtr->flags &= ~NET_HPPI_STATE_SINK;
     MASTER_UNLOCK(&interPtr->mutex);
-    return status;
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * OutputDone --
+ * DgramRecvDone --
  *
- *	This routine is called by the interrupt handler when a packet
- *	sent by NetUltraOutput completes.
+ *	Called by the interrupt handler when the datagram requested by
+ * 	NetUltraRecvDgram is actually received.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	The write buffer associated with the command is added to
- * 	the list of free write buffers.
+ *	The process waiting for the datagram to be received is notified.
  *
  *----------------------------------------------------------------------
  */
 
 static void
-OutputDone(interPtr, infoPtr)
-    Net_Interface	*interPtr;	/* Interface. */
-    NetUltraXRBInfo	*infoPtr;	/* Info about XRB that completed. */
+DgramRecvDone(dgramCmdPtr)
+Dev_HppiSendDRCV*	dgramCmdPtr;
 {
-    NetUltraRequestHdr		*hdrPtr;
-    NetHppiState		*statePtr;
-    ReturnStatus		*statusPtr;
-    ReturnStatus		status = SUCCESS;
+    Net_Interface*	interPtr;
+    NetHppiState*	statePtr;
 
-    hdrPtr = &(infoPtr->xrbPtr->request.dgram.hdr);
-    statusPtr = (ReturnStatus *) infoPtr->doneData;
+    interPtr = (Net_Interface*)(dgramCmdPtr->xrbHdr.xrbId);
+    statePtr = (NetHppiState*)(interPtr->interfaceData);
+    if (!(dgramCmdPtr->xrbHdr.status & NET_ULTRA_STATUS_OK)) {
+	printf ("DgramRecvDone: dgram recv failed (status=0x%x)\n",
+		dgramCmdPtr->xrbHdr.status);
+	printf ("DgramRecvDone: terminating datagram sinking...\n");
+	MASTER_LOCK (&interPtr->mutex);
+	statePtr->flags &= ~NET_HPPI_STATE_SINK;
+	statePtr->flags |= NET_HPPI_STATE_NORMAL;
+	MASTER_UNLOCK (&interPtr->mutex);
+    } else {
+#ifndef CLEAN
+	if (netHppiDebug) {
+	    printf("DgramRecvDone: got datagram of size 0x%x\n",
+		   dgramCmdPtr->cnt);
+	}
+#endif
+    }
 
-    statePtr = (NetHppiState *) interPtr->interfaceData;
-    if (!(hdrPtr->status & NET_ULTRA_STATUS_OK)) {
-	printf("Warning: OutputDone: write failed 0x%x\n", hdrPtr->status);
-	status = FAILURE;
-    } 
+    Sync_MasterBroadcast ((Sync_Condition *) &drcvTestDone);
+
 #ifndef CLEAN
     if (netHppiDebug) {
-	printf("OutputDone: packet sent\n");
+	printf("DgramRecvDone: returning.\n");
     }
 #endif
-    statePtr->numWritePending--;
-    if (statePtr->numWritePending < 0) {
-	panic("OutputDone: number of pending writes < 0.\n");
-    }
-    /*
-     * Return status to the waiting process.
-     */
-    if (statusPtr != (ReturnStatus *) NIL) {
-	*statusPtr = status;
-    }
-    /*
-     * Wakeup any process waiting for the packet to be sent.
-     */
-    infoPtr->scatterPtr->done = TRUE;
-    if (infoPtr->scatterPtr->mutexPtr != (Sync_Semaphore *) NIL) {
-	NetOutputWakeup(infoPtr->scatterPtr->mutexPtr);
-    }
+
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetHppiOutputStub --
+ *
+ *	Return FAILURE -- the network shouldn't be trying to output
+ *	RPC packets.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+NetHppiOutputStub(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength,
+		  rpc, statusPtr)
+    Net_Interface		*interPtr;	/* The interface to use. */
+    Address			hdrPtr;		/* Packet header. */
+    Net_ScatterGather		*scatterGatherPtr; /* Scatter/gather elems.*/
+    int				scatterGatherLength; /* Number of elements in
+						      * scatter/gather list. */
+    Boolean			rpc;		/* Is this an RPC packet? */
+    ReturnStatus		*statusPtr;	/* Place to store status. */
+{
+    printf ("NetHppiOutputStub: shouldn't call HPPI for normal output.\n");
+    return FAILURE;
 }
 
 /*
@@ -3167,7 +3480,7 @@ NetHppiSource(interPtr, netAddressPtr, count, bufSize, buffer, timePtr)
     if (netHppiDebug) {
 	char	address[100];
 	(void) Net_AddrToString(netAddressPtr, address);
-	printf("NetUltraSendDgram: sending to %s\n", address);
+	printf("NetHppiSendDgram: sending to %s\n", address);
     }
 #endif
     statePtr = (NetHppiState *) interPtr->interfaceData;
@@ -3414,4 +3727,738 @@ StandardDone(interPtr, infoPtr)
     if (infoPtr->doneData != (ClientData) NIL) {
 	Sync_Broadcast((Sync_Condition *) infoPtr->doneData);
     }
+}
+
+
+/*----------------------------------------------------------------------
+ *
+ * setLocalAddress --
+ *
+ *	Copy the current interface's network address into the passed
+ *	location.
+ *
+ * Results:
+ *	None.
+ * Side effects:
+ *	Copies a network address.
+ *
+ *----------------------------------------------------------------------
+ */
+static
+void
+setLocalAddress (interPtr, netAddrPtr)
+Net_Interface*	interPtr;
+char*		netAddrPtr;
+{
+    bcopy ((char *)&(interPtr->netAddress[NET_PROTO_RAW].address.ultra) + 1,
+	   netAddrPtr, 7);
+    netAddrPtr[0] = 0x49;
+    netAddrPtr[5] = 0xfe;
+
+}
+
+/*----------------------------------------------------------------------
+ *
+ * NetHppiCmdCallback --
+ *
+ *	This is the routine scheduled when a completed command is sent
+ *	into the ring buffer.  It is called once for each command, and
+ *	is passed the address of the buffer to deal with.  It simply
+ *	calls the appropriate handler for the type of message.
+ *
+ * Results:
+ *	none
+ * Side effects:
+ *	none
+ *
+ *----------------------------------------------------------------------
+ */
+void
+NetHppiCmdCallback (data, callInfoPtr)
+ClientData	data;
+Proc_CallInfo*	callInfoPtr;
+{
+    Dev_HppiSendXfer*	cmdPtr;
+    NetUltraXRB*	xrbPtr = (NetUltraXRB*)data;
+    NetHppiConnState*	connStatePtr;
+
+    cmdPtr = (Dev_HppiSendXfer*)&(xrbPtr->request);
+    if (cmdPtr->hdr.magic != DEV_HPPI_DEST_MAGIC) {
+	panic ("NetHppiCmdCallback: bad magic number in command (0x%x)\n",
+	       cmdPtr->hdr.magic);
+    }
+    connStatePtr = (NetHppiConnState*)cmdPtr->xrbHdr.xrbId;
+    switch (cmdPtr->hdr.opcode) {
+      case DEV_HPPI_SEND_ALSN:
+	NetHppiConnectionAccepted ((Dev_HppiSendALSN*)cmdPtr);
+	break;
+      case DEV_HPPI_SEND_OPEN:
+	NetHppiOpenCallback ((Dev_HppiSendOPEN*)cmdPtr);
+	break;
+      case DEV_HPPI_SEND_CONN:
+	break;
+      case DEV_HPPI_SEND_CLSE:
+	/*
+	 * The ISO reason code will be garbage, but the cleanup code
+	 * will ignore it in case of an abrupt (CLSE) close.
+	 */
+	NetHppiConnectionCleanup ((Dev_HppiSendRLSE*)cmdPtr);
+	break;
+      case DEV_HPPI_SEND_RLSE:
+	NetHppiConnectionCleanup ((Dev_HppiSendRLSE*)cmdPtr);
+	break;
+      case DEV_HPPI_SEND_SEND:
+      case DEV_HPPI_SEND_SEOM:
+      case DEV_HPPI_SEND_RECV:
+	NetHppiXferCallback ((Dev_HppiSendXfer*)cmdPtr);
+	break;
+      case DEV_HPPI_SEND_DRCV:
+	DgramRecvDone ((Dev_HppiSendDRCV*)cmdPtr);
+	break;
+      case DEV_HPPI_SEND_DSND:
+	DgramSendDone ((Dev_HppiSendDSND*)cmdPtr);
+	break;
+      default:
+	printf ("NetHppiCmdCallback: unknown command (0x%x)\n",
+		cmdPtr->hdr.opcode);
+	break;
+    }
+    /*
+     * Now that we're done with the packet, we can declare it empty.
+     */
+    xrbPtr->filled = 0;
+}
+
+
+/*----------------------------------------------------------------------
+ *
+ * NetHppiOpenCallback --
+ *
+ *	This procedure is called back when an open request returns.
+ *	It fills in the appropriate fields in the connection state
+ *	information, and then calls back the user-specified callback
+ *	routine.
+ *
+ * Returns:
+ *	none
+ * Side effects:
+ *	Fills in connection state data structure.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+NetHppiOpenCallback (openBlockPtr)
+Dev_HppiSendOPEN*	openBlockPtr;
+{
+    Net_Interface*	interPtr;
+    NetHppiConnState*	connStatePtr;
+    Net_HppiConnection*	connPtr;
+    Boolean		doCallback = TRUE;
+
+    connStatePtr = (NetHppiConnState*)openBlockPtr->xrbHdr.xrbId;
+    connPtr = (Net_HppiConnection*)openBlockPtr->xrbHdr.xrbBufId;
+    interPtr = connPtr->interPtr;
+    MASTER_LOCK (&interPtr->mutex);
+    if (connStatePtr->flags & NET_HPPI_CONN_STATE_OPEN) {
+	doCallback = FALSE;
+	printf ("NetHppiOpenCallback: connection already open!\n");
+	goto exit;
+    } else if (!(connStatePtr->flags & NET_HPPI_CONN_STATE_INUSE)) {
+	doCallback = FALSE;
+	printf ("NetHppiOpenCallback: connection not in use?!\n");
+	goto exit;
+    }
+    if (openBlockPtr->xrbHdr.status != NET_ULTRA_STATUS_OK) {
+	connStatePtr->flags &= ~NET_HPPI_CONN_STATE_INUSE;
+	connPtr->status = NET_NOT_CONNECTED;
+    } else {
+	connStatePtr->flags |= NET_HPPI_CONN_STATE_OPEN;
+	connStatePtr->xrbRef = openBlockPtr->xrbHdr.xrbRef;
+	connPtr->status = SUCCESS;
+    }
+
+  exit:
+    MASTER_UNLOCK (&interPtr->mutex);
+    if (doCallback) {
+	(*connPtr->callbackProc)(connPtr);
+    }
+}
+
+/*----------------------------------------------------------------------
+ *
+ * Net_HppiConnectionOpen --
+ *
+ *	Open a virtual circuit.  This must be done before attempting
+ *	to listen on a virtual circuit.  The calling semantics are
+ *	similar to Net_HppiConnectionListen.
+ *
+ * Returns:
+ *	Standard Sprite return status.
+ * Side effects:
+ *	Sends a HPPI open request.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Net_HppiConnectionOpen (connStatusPtr)
+Net_HppiConnection*	connStatusPtr;
+{
+    ReturnStatus	status = SUCCESS;
+    NetHppiState*	statePtr;
+    NetHppiConnState*	connStatePtr;
+    Dev_HppiSendOPEN	adapOpen;
+    Net_Interface*	interPtr;
+    int			connId;
+
+    interPtr = connStatusPtr->interPtr;
+    statePtr = (NetHppiState*)(interPtr->interfaceData);
+    MASTER_LOCK (&interPtr->mutex);
+
+    /*
+     * Find a free connection ID.
+     */
+    for (connId = 0; connId < NET_HPPI_MAX_CONNECTIONS; connId += 1) {
+	if (!(statePtr->connection[connId].flags & NET_HPPI_CONN_STATE_INUSE)){
+	    break;
+	}
+    }
+    if (connId == NET_HPPI_MAX_CONNECTIONS) {
+	printf ("Net_HppiConnectionListen: no connections available.\n");
+	status = NET_NO_CONNECTS;
+	goto exit;
+    }
+    connStatusPtr->connectionId = connId;
+    connStatePtr = &(statePtr->connection[connId]);
+    connStatePtr->userConnInfo = connStatusPtr;
+    connStatePtr = &(statePtr->connection[connId]);
+    connStatePtr->flags = NET_HPPI_CONN_STATE_INUSE;
+    adapOpen.xrbHdr.xrbId = (uint32)connStatePtr;
+    adapOpen.xrbHdr.xrbBufId = (uint32)connStatusPtr;
+    adapOpen.xrbHdr.xrbRef = 0;
+    adapOpen.xrbHdr.tag = 1;
+    adapOpen.hdr.opcode = DEV_HPPI_SEND_OPEN;
+    NetHppiSendCmd (statePtr, sizeof (adapOpen), (Address)&adapOpen,
+		    NET_HPPI_SRC_CMD);
+  exit:
+    MASTER_UNLOCK (&interPtr->mutex);
+    return (status);
+}
+
+/*----------------------------------------------------------------------
+ *
+ * NetHppiConnectionAccepted --
+ *
+ *	This is called via callback when a request block accepting a
+ *	connection comes in.  Since it's always called via a Proc_Callfunc,
+ *	the connection callback is called directly at the end of the
+ *	routine.
+ *
+ * Results:
+ *	none
+ * Side effects:
+ *	Calls a callback routine specified when the connection was requested.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+NetHppiConnectionAccepted (connBlockPtr)
+Dev_HppiSendALSN*	connBlockPtr;
+{
+    NetHppiState*	statePtr;
+    NetHppiConnState*	connStatePtr;
+    Net_HppiConnection*	connPtr;
+    Net_Interface*	interPtr;
+    Boolean		doCallback = TRUE;
+
+    connStatePtr = (NetHppiConnState*)connBlockPtr->xrbHdr.xrbId;
+    connPtr = connStatePtr->userConnInfo;
+    interPtr = connPtr->interPtr;
+    statePtr = (NetHppiState*)interPtr->interfaceData;
+
+    MASTER_LOCK (&interPtr->mutex);
+    if (!(connStatePtr->flags & NET_HPPI_CONN_STATE_LISTEN)) {
+	MASTER_UNLOCK (&interPtr->mutex);
+	printf ("NetHppiConnectionEstablish: connection %d not listening?\n",
+		connPtr->connectionId);
+	return;
+    }
+
+    if (connBlockPtr->xrbHdr.status == NET_HPPI_STATUS_CONN_REQ) {
+	if (netHppiDebug) {
+	    printf ("NetHppiConnectionAccepted: connection requested.\n");
+	}
+	doCallback = FALSE;
+    } else if (connBlockPtr->xrbHdr.status != NET_ULTRA_STATUS_OK) {
+	if (netHppiDebug) {
+	    printf ("NetHppiConnectionAccepted: bad ultra status 0x%x\n",
+		    connBlockPtr->xrbHdr.status);
+	}
+	connStatePtr->flags &= ~NET_HPPI_CONN_STATE_INUSE;
+	connPtr->status = NET_NOT_CONNECTED;
+    } else {
+	/*
+	 * Connection established, so set up shop.
+	 */
+	connStatePtr->flags |= NET_HPPI_CONN_STATE_CONNECTED;
+	connStatePtr->flags &= ~NET_HPPI_CONN_STATE_LISTEN;
+	connStatePtr->numOutstandingRecv = 0;
+	connStatePtr->numOutstandingSend = 0;
+	List_Init (&connStatePtr->sendHdr);
+	List_Init (&connStatePtr->recvHdr);
+	connPtr->status = SUCCESS;
+    }
+    MASTER_UNLOCK (&interPtr->mutex);
+    if (doCallback) {
+	if (netHppiDebug) {
+	    printf ("NetHppiConnectionAccepted: doing user callback.\n");
+	}
+	(*connPtr->callbackProc)(connPtr);
+    }
+}
+
+/*----------------------------------------------------------------------
+ *
+ * Net_HppiConnectionListen --
+ *
+ *	Send an ALSN command to the HIPPI boards, and wait for a
+ *	connection request.  When one is received, the callback
+ *	routine will be called.
+ *
+ * Results:
+ *	Standard Sprite return status.
+ * Side effects:
+ *	Sends ALSN command to Ultra hub.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Net_HppiConnectionListen (connStatusPtr)
+Net_HppiConnection*	connStatusPtr;
+{
+    ReturnStatus	status = SUCCESS;
+    NetHppiState	*statePtr;
+    NetHppiConnState	*connStatePtr;
+    Dev_HppiSendALSN	adapListen;
+    Net_Interface*	interPtr;
+
+    interPtr = connStatusPtr->interPtr;
+    statePtr = (NetHppiState*)(interPtr->interfaceData);
+    connStatePtr = &(statePtr->connection[connStatusPtr->connectionId]);
+    MASTER_LOCK (&interPtr->mutex);
+    if (!(statePtr->flags & NET_HPPI_STATE_START)) {
+	printf ("Net_HppiConnectionListen: adapter not started!\n");
+	status = FAILURE;
+	goto exit;
+    }
+    if (!(connStatePtr->flags & NET_HPPI_CONN_STATE_OPEN)) {
+	printf ("Net_HppiConnectionListen: channel not open!\n");
+	status = FAILURE;
+	goto exit;
+    }
+
+    if (netHppiDebug) {
+	printf ("Net_HppiConnectionListen: using connection %d\n",
+		connStatusPtr->connectionId);
+    }
+    connStatePtr->flags |= NET_HPPI_CONN_STATE_LISTEN;
+    adapListen.xrbHdr.xrbRef = connStatePtr->xrbRef;
+    adapListen.xrbHdr.xrbId = (uint32)connStatePtr;
+    adapListen.xrbHdr.xrbBufId = (uint32)connStatusPtr;
+    adapListen.xrbHdr.tag = 1;
+    adapListen.hdr.opcode = DEV_HPPI_SEND_ALSN;
+    bcopy (&netHppiConnPar,&adapListen.xrbConPar,sizeof(adapListen.xrbConPar));
+    adapListen.xrbConPar[1] = statePtr->maxBytesPower;
+    /*
+     * Set remote address to wildcard.  Set local to our address.
+     */
+    bzero (&adapListen.xrbRemTA, sizeof (adapListen.xrbRemTA));
+    setLocalAddress (interPtr, &(adapListen.xrbLocTA));
+    bcopy (statePtr->curTsap, adapListen.tsap, sizeof (adapListen.tsap));
+    NetHppiSendCmd (statePtr, sizeof (adapListen), (Address)&adapListen,
+		    NET_HPPI_SRC_CMD);
+
+  exit:
+    MASTER_UNLOCK (&interPtr->mutex);
+    return status;
+}
+
+/*----------------------------------------------------------------------
+ *
+ * NetHppiConnectionCleanup --
+ *
+ *	Tear down the state associated with a connection.  This aborts
+ *	all outstanding requests and frees the connection to be reused.
+ *	It is called when a request block indicating a closed connection
+ *	is received.  This could be the result of either end wanting
+ *	to close the connection.
+ *
+ * Results:
+ *	Standard Sprite return status.
+ * Side effects:
+ *	Many callbacks are scheduled.
+ *
+ *----------------------------------------------------------------------
+ */
+static
+void
+NetHppiConnectionCleanup (cmdPtr)
+Dev_HppiSendRLSE*	cmdPtr;
+{
+    NetHppiState*	statePtr;
+    NetHppiConnState*	connStatePtr;
+    Net_Interface*	interPtr;
+    Net_HppiConnection*	connPtr;
+    List_Links		freeUpList;
+    Net_HppiDataRequest* reqPtr;
+
+    connStatePtr = (NetHppiConnState*)cmdPtr->xrbHdr.xrbId;
+    connPtr = (Net_HppiConnection*)cmdPtr->xrbHdr.xrbBufId;
+    statePtr = connStatePtr->statePtr;
+    interPtr = statePtr->interPtr;
+
+    /*
+     * At this point, we can free up any remaining data requests,
+     * as the connection has been officially closed.
+     */
+    List_Init (&freeUpList);
+    MASTER_LOCK (&interPtr->mutex);
+    List_ListInsert (&connStatePtr->recvHdr, LIST_ATFRONT (&freeUpList));
+    List_ListInsert (&connStatePtr->sendHdr, LIST_ATFRONT (&freeUpList));
+    /*
+     * Now that we've pulled the lists off the state pointer, the connection
+     * may be reused (even before we've made all the callbacks for the
+     * old connection), so mark the connection as free.
+     */
+    connStatePtr->flags = 0;
+    MASTER_UNLOCK (&interPtr->mutex);
+
+    /*
+     * Send a callback for each of the still-outstanding requests.
+     */
+    while (!List_IsEmpty (&freeUpList)) {
+	reqPtr = (Net_HppiDataRequest*)List_First (&freeUpList);
+	List_Remove ((List_Links*)reqPtr);
+	freeSgTag (statePtr, reqPtr->status);
+	reqPtr->status = GEN_ABORTED_BY_SIGNAL;
+	(*reqPtr->callbackProc)(reqPtr);
+    }
+    /*
+     * Callback to indicate that the connection has finished closing.
+     */
+    (*connPtr->callbackProc)(connPtr);
+}
+
+/*----------------------------------------------------------------------
+ *
+ * Net_HppiConnectionClose --
+ *
+ *	Close a connection that was already open.  This routine will
+ *	call the routine to actually send a close packet to the adapter.
+ *	The connection state won't be nuked until the close packet
+ *	successfully returns.
+ *
+ * Results:
+ *	Sprite return status.
+ * Side effects:
+ *	A HIPPI connection is closed.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Net_HppiConnectionClose (connPtr)
+Net_HppiConnection*	connPtr;
+{
+    ReturnStatus	status = SUCCESS;
+    Dev_HppiSendRLSE	rlseCmd;
+    Net_Interface*	interPtr;
+    NetHppiState*	statePtr;
+    NetHppiConnState*	connStatePtr;
+
+    if ((connPtr->connectionId < 0) ||
+	(connPtr->connectionId > NET_HPPI_MAX_CONNECTIONS)) {
+	return (FAILURE);
+    }
+    interPtr = connPtr->interPtr;
+    statePtr = (NetHppiState*)interPtr->interfaceData;
+    connStatePtr = &(statePtr->connection[connPtr->connectionId]);
+    MASTER_LOCK (&interPtr->mutex);
+    if (!(connStatePtr->flags & NET_HPPI_CONN_STATE_CONNECTED)) {
+	if (netHppiDebug) {
+	    printf ("Net_HppiConnectionClose: connection %d not connected.\n",
+		    connPtr->connectionId);
+	}
+	status = NET_NOT_CONNECTED;
+	goto exit;
+    }
+    connStatePtr->flags &= ~NET_HPPI_CONN_STATE_CONNECTED;
+    rlseCmd.xrbHdr.xrbId = (uint32)connStatePtr;
+    rlseCmd.xrbHdr.xrbBufId = (uint32)connPtr;
+    rlseCmd.xrbHdr.xrbRef = connStatePtr->xrbRef;
+    rlseCmd.xrbHdr.tag = 1;
+    rlseCmd.hdr.opcode = DEV_HPPI_SEND_RLSE;
+    status =  NetHppiSendCmd (statePtr, sizeof (rlseCmd), (Address)&rlseCmd,
+			      NET_HPPI_SRC_CMD);
+  exit:
+    MASTER_UNLOCK (&interPtr->mutex);
+    if (status != SUCCESS) {
+	printf ("Net_HppiConnectionClose: couldn't send RLSE command.\n");
+    }
+
+    return status;
+}
+
+/*----------------------------------------------------------------------
+ *
+ * NetHppiXferCallback --
+ *
+ *	The callback for data being sent or received.  Translate the Ultra
+ *	status into some kind of return code, and fill in the field in
+ *	the transfer request block.  Unhook the block from the connection
+ *	state, and then callback the upper-level routine.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+NetHppiXferCallback (cmdPtr)
+Dev_HppiSendXfer*	cmdPtr;
+{
+    Net_HppiDataRequest*	dataReqPtr;
+    NetHppiConnState*		connStatePtr;
+    NetHppiState*		statePtr;
+
+    dataReqPtr = (Net_HppiDataRequest*)cmdPtr->xrbHdr.xrbBufId;
+    connStatePtr = (NetHppiConnState*)cmdPtr->xrbHdr.xrbId;
+    statePtr = connStatePtr->statePtr;
+    if (netHppiDebug) {
+	printf ("NetHppiXferCallback: returning call for request at 0x%x\n",
+		dataReqPtr);
+    }
+
+    MASTER_LOCK (&statePtr->interPtr->mutex);
+    if (!(connStatePtr->flags & NET_HPPI_CONN_STATE_CONNECTED)) {
+	if (netHppiDebug) {
+	    printf ("NetHppiXferCallback: connection no longer valid.\n");
+	}
+	MASTER_UNLOCK (&statePtr->interPtr->mutex);
+	return;
+    }
+    freeSgTag (statePtr, dataReqPtr->status);
+    if (cmdPtr->xrbHdr.status & NET_ULTRA_STATUS_OK) {
+	dataReqPtr->status = SUCCESS;
+    } else {
+	if (netHppiDebug) {
+	    printf ("NetHppiXferCallback: got bad status 0x%x\n",
+		    cmdPtr->xrbHdr.status);
+	}
+	dataReqPtr->status = FAILURE;
+    }
+
+    List_Remove ((List_Links*)dataReqPtr);
+    if (cmdPtr->hdr.opcode == DEV_HPPI_SEND_RECV) {
+	connStatePtr->numOutstandingRecv -= 1;
+    } else {
+	connStatePtr->numOutstandingSend -= 1;
+    }
+    /*
+     * Copy the actual transfer size back to the data request block.
+     */
+    dataReqPtr->xferSize = cmdPtr->cnt;
+    MASTER_UNLOCK (&statePtr->interPtr->mutex);
+
+    /*
+     * Unmap buffers here if necessary (not yet implemented).
+     */
+    (*dataReqPtr->callbackProc)(dataReqPtr);
+}
+
+/*----------------------------------------------------------------------
+ *
+ * NetHppiXferData --
+ *
+ *	Common code for sending or receiving data on an established
+ *	connection.  The data is mapped into VME space if necessary.
+ *	Next, the appropriate scatter-gather array is sent to the
+ *	DST board.  Finally, the request block is sent out to the
+ *	SRC board.
+ *
+ * Returns:
+ *	Standard Sprite return status.
+ * Side effects:
+ *	none
+ *
+ *----------------------------------------------------------------------
+ */
+static
+ReturnStatus
+NetHppiXferData (connPtr, dataReqPtr, which)
+Net_HppiConnection*	connPtr;	/* -> connection id block */
+Net_HppiDataRequest*	dataReqPtr;	/* -> data request */
+int			which;		/* send or receive? */
+{
+    NetHppiState*	statePtr;
+    NetHppiConnState*	connStatePtr;
+    Dev_HppiSendXfer	sendCmd;
+    Dev_HppiScatterGather sgCmd;
+    Net_Interface*	interPtr = connPtr->interPtr;
+    ReturnStatus	status = SUCCESS;
+    int			sgCmdSize;
+    int			i;
+
+    statePtr = (NetHppiState *)connPtr->interPtr->interfaceData;
+    if ((connPtr->connectionId < 0) ||
+	(connPtr->connectionId > NET_HPPI_MAX_CONNECTIONS)) {
+	if (netHppiDebug) {
+	    printf ("NetHppiXferData: bad connection id (%d)\n",
+		    connPtr->connectionId);
+	}
+	return (FAILURE);
+    }
+    connStatePtr = &(statePtr->connection[connPtr->connectionId]);
+
+    MASTER_LOCK (&interPtr->mutex);
+    if (!(connStatePtr->flags & NET_HPPI_CONN_STATE_CONNECTED)) {
+	status = NET_NOT_CONNECTED;
+	goto exit;
+    }
+    /*
+     * Set up the scatter-gather command.  Map in buffers if necessary.
+     */
+    for (i = 0; i < dataReqPtr->sgSize; i++) {
+	sgCmd.element[i].size = dataReqPtr->sg[i].length;
+	/*
+	 * Must map buffer into VME if necessary.  This isn't done yet.
+	 */
+	sgCmd.element[i].address = (uint32)dataReqPtr->sg[i].addr;
+    }
+    sgCmd.size = dataReqPtr->sgSize;
+    sgCmd.offset = dataReqPtr->xferOffset;
+    sgCmd.hdr.opcode = DEV_HPPI_SCATTER_GATHER;
+    sgCmdSize = sizeof (sgCmd) - sizeof (sgCmd.element) +
+	(sgCmd.size * sizeof (sgCmd.element[0]));
+
+    if ((sgCmd.tag = getSgTag (statePtr)) == -1) {
+	status = FAILURE;
+	goto exit;
+    }
+
+    dataReqPtr->status = sendCmd.xrbHdr.tag = sgCmd.tag;
+    if (netHppiDebug) {
+	printf ("NetHppiXferData: setting SG tag to %d\n", dataReqPtr->status);
+    }
+    /*
+     * Add the request to the chain associated with the connection.
+     */
+    if (which == NET_HPPI_SEND) {
+	if (connStatePtr->numOutstandingSend >= connPtr->outstandingSends) {
+	    status = GEN_ENOENT;
+	    goto exit;
+	}
+	connStatePtr->numOutstandingSend += 1;
+	List_Insert ((List_Links *)dataReqPtr, &(connStatePtr->sendHdr));
+    } else {
+	if (connStatePtr->numOutstandingRecv >= connPtr->outstandingRecvs) {
+	    status = GEN_ENOENT;
+	    goto exit;
+	}
+	connStatePtr->numOutstandingRecv += 1;
+	List_Insert ((List_Links *)dataReqPtr, &(connStatePtr->recvHdr));
+    }
+    /*
+     * Send the scatter-gather command to the DST board.
+     */
+    status = NetHppiSendCmd (statePtr, sgCmdSize, (Address)&sgCmd,
+			     NET_HPPI_DST_CMD);
+    if (status != SUCCESS) {
+	goto exit;
+    }
+
+    /*
+     * Build the data request command and send it to the SRC board.
+     */
+    sendCmd.xrbHdr.tag = sgCmd.tag;
+    sendCmd.xrbHdr.xrbRef = connStatePtr->xrbRef;
+    sendCmd.xrbHdr.xrbId = (uint32)connStatePtr;
+    sendCmd.xrbHdr.xrbBufId = (uint32)dataReqPtr;
+    sendCmd.cnt = dataReqPtr->xferSize;
+    if (which == NET_HPPI_SEND) {
+	sendCmd.hdr.opcode = DEV_HPPI_SEND_SEND;
+    } else {
+	sendCmd.hdr.opcode = DEV_HPPI_SEND_RECV;
+    }
+    status = NetHppiSendCmd (statePtr, sizeof (sendCmd), (Address)&sendCmd,
+			     NET_HPPI_SRC_CMD);
+  exit:
+    MASTER_UNLOCK (&interPtr->mutex);
+    return status;
+}
+
+/*----------------------------------------------------------------------
+ *
+ * Net_HppiSendData --
+ *
+ *	Send data over an established connection.
+ *
+ * Results:
+ *	Standard Sprite return status.
+ * Side effects:
+ *	Data sent over the HIPPI boards.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Net_HppiSendData (connPtr, dataReqPtr)
+Net_HppiConnection*	connPtr;
+Net_HppiDataRequest*	dataReqPtr;
+{
+    return (NetHppiXferData (connPtr, dataReqPtr, NET_HPPI_SEND));
+}
+
+/*----------------------------------------------------------------------
+ *
+ * Net_HppiReceiveData --
+ *
+ *	Queue up a request to receive data over an established connection.
+ *	The callback routine will be called when all of the data is
+ *	received.  The data must be contiguous within the connection (ie,
+ *	only one start offset and length), but may be placed according
+ *	to the request's scatter-gather array.
+ *
+ * Results:
+ *	Standard Sprite return status.
+ * Side effects:
+ *	Requests that data be received.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Net_HppiReceiveData (connPtr, dataReqPtr)
+Net_HppiConnection*	connPtr;
+Net_HppiDataRequest*	dataReqPtr;
+{
+    return (NetHppiXferData (connPtr, dataReqPtr, NET_HPPI_RECV));
+}
+
+/*----------------------------------------------------------------------
+ *
+ * iocConnCallback
+ *
+ *	Callback for the IOC connection call.  This wakes up the waiting
+ *	IOC.
+ *
+ *----------------------------------------------------------------------
+ */
+static
+void
+iocConnCallback (connPtr)
+Net_HppiConnection*	connPtr;
+{
+    Sync_Broadcast ((Sync_Condition *) connPtr->userData);
+}
+
+static
+void
+iocXferCallback (dataReqPtr)
+Net_HppiDataRequest*	dataReqPtr;
+{
+    Sync_Broadcast ((Sync_Condition *) dataReqPtr->userData);
 }
