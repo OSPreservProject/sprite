@@ -560,7 +560,15 @@ refreshWell:
  */
 	wr_kpsw		r0, $0
 	invalidate_ib
+#ifdef WITH_IBUFFER
+#ifdef WITH_PREFETCH
 	add_nt		r1, r0, $(MACH_KPSW_PREFETCH_ENA | MACH_KPSW_IBUFFER_ENA | MACH_KPSW_VIRT_DFETCH_ENA | MACH_KPSW_VIRT_IFETCH_ENA | MACH_KPSW_FAULT_TRAP_ENA | MACH_KPSW_ERROR_TRAP_ENA | MACH_KPSW_ALL_TRAPS_ENA)
+#else
+	add_nt		r1, r0, $(MACH_KPSW_IBUFFER_ENA | MACH_KPSW_VIRT_DFETCH_ENA | MACH_KPSW_VIRT_IFETCH_ENA | MACH_KPSW_FAULT_TRAP_ENA | MACH_KPSW_ERROR_TRAP_ENA | MACH_KPSW_ALL_TRAPS_ENA)
+#endif
+#else
+	add_nt		r1, r0, $(MACH_KPSW_VIRT_DFETCH_ENA | MACH_KPSW_VIRT_IFETCH_ENA | MACH_KPSW_FAULT_TRAP_ENA | MACH_KPSW_ERROR_TRAP_ENA | MACH_KPSW_ALL_TRAPS_ENA)
+#endif
 	LD_PC_RELATIVE(r2, mainAddr)
 	jump_reg	r2, $0
 	wr_kpsw		r1, $0
@@ -2895,6 +2903,10 @@ _Mach_ContextSwitch:
 	add_nt		OUTPUT_REG1, INPUT_REG2, $0
 	call		_VmMach_SetupContext
 	Nop
+	/*
+	 * Clear any possible bogus entries from the instruction buffer.
+	 */
+	invalidate_ib
 	/*
 	 * Grab a pointer to the state structure to save to.  Note that
 	 * the restore and save state routines do not touch any of the
