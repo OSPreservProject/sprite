@@ -220,7 +220,8 @@ extern	void		SyncDeleteCurrentLock();
 extern 	void		SyncMergePriorLocks();
 extern	void		Sync_RegisterAnyLock();
 extern	void		Sync_CheckoutAnyLock();
-extern	void		Sync_PrintLockStats();
+extern	ReturnStatus	Sync_GetLockStats();
+extern	ReturnStatus	Sync_ResetLockStats();
 
 extern Sync_RegElement  *regQueuePtr;
 
@@ -292,6 +293,7 @@ extern Sync_RegElement  *regQueuePtr;
 	    (semaphore)->hit++; \
 	    (semaphore)->holderPC = Mach_GetPC(); \
 	    (semaphore)->holderPCBPtr = Proc_GetCurrentProc(); \
+	    Sync_LockRegister(semaphore);				\
 	    SyncAddPrior((semaphore)->type, &((semaphore)->priorCount), \
 			     (semaphore)->priorTypes, (Address) (semaphore), \
 			     (semaphore)->holderPCBPtr); \
@@ -330,6 +332,7 @@ extern Sync_RegElement  *regQueuePtr;
 	(semaphore)->hit++; \
 	(semaphore)->holderPC = Mach_GetPC(); \
 	(semaphore)->holderPCBPtr = Proc_GetCurrentProc(); \
+	Sync_LockRegister(semaphore);				\
 	SyncAddPrior((semaphore)->type, &((semaphore)->priorCount), \
 			     (semaphore)->priorTypes, (Address) (semaphore), \
 			     (semaphore)->holderPCBPtr); \
