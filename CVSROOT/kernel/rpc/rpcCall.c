@@ -120,6 +120,12 @@ Rpc_Call(serverID, command, storagePtr)
 	       serverID == rpc_SpriteID) {
 	Sys_Panic(SYS_FATAL, "Trying to RPC to myself");
 	return(GEN_INVALID_ARG);
+    } else if ((serverID == RPC_BROADCAST_SERVER_ID) && 
+	       ! (command == RPC_FS_UNIX_PREFIX ||
+		  command == RPC_FS_SPRITE_PREFIX ||
+		  command == RPC_GETTIME)) {
+	Sys_Panic(SYS_FATAL, "Trying to broadcast a non-prefix RPC");
+	return(GEN_INVALID_ARG);
     }
 #ifdef TIMESTAMP
     RPC_NIL_TRACE(RPC_CLIENT_A, "Rpc_Call");
