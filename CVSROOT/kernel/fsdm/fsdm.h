@@ -96,11 +96,13 @@ typedef struct Fsdm_DiskHeader {
  * like the number of free blocks and free file descriptors.  This info
  * is located just before the domain header.
  */
+#define FSDM_SUMMARY_PREFIX_LENGTH	64
 typedef struct Fsdm_SummaryInfo {
     int		numFreeKbytes;		/* Free space in kbytes, not blocks */
     int		numFreeFileDesc;	/* Number of free file descriptors */
     int		state;			/* Unused. */
-    char	domainPrefix[64];	/* Last prefix used for the domain */
+    char	domainPrefix[FSDM_SUMMARY_PREFIX_LENGTH];
+					/* Last prefix used for the domain */
     int		domainNumber;		/* The domain number of the domain
 					 * under which this file system was
 					 * last mounted. */
@@ -118,7 +120,8 @@ typedef struct Fsdm_SummaryInfo {
 					 * domain. Used to prevent infinite
 					 * looping.
 					 */
-
+    char pad[DEV_BYTES_PER_SECTOR -
+	     (8 * sizeof(int) + FSDM_SUMMARY_PREFIX_LENGTH)];
 } Fsdm_SummaryInfo;
 
 /*
