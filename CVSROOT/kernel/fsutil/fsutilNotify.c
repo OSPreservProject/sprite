@@ -18,14 +18,16 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsutil.h"
-#include "fsNameOps.h"
-#include "proc.h"
-#include "sync.h"
-#include "rpc.h"
-#include "net.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsNameOps.h>
+#include <proc.h>
+#include <sync.h>
+#include <rpc.h>
+#include <net.h>
+
+#include <stdio.h>
 
 static Sync_Lock notifyLock = Sync_LockInitStatic("Fs:notifyLock");
 #define LOCKPTR (&notifyLock)
