@@ -251,3 +251,33 @@ FsWaitListRemove(list, waitPtr)
     }
     UNLOCK_MONITOR;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsWaitListDelete --
+ *
+ *	Delete and Free all entries from a wait list.  This is used
+ *	when removing handles.
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	Calls Mem_Free and deletes from the list.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+FsWaitListDelete(list)
+    List_Links *list;		/* List to clean up. */
+{
+    register Sync_RemoteWaiter *myWaitPtr;
+
+    LIST_FORALL(list, (List_Links *) myWaitPtr) {
+	List_Remove((List_Links *) myWaitPtr);
+	Mem_Free((Address) myWaitPtr);
+    }
+}
+
