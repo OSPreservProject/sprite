@@ -483,31 +483,43 @@ Lfs_DomainInfo(domainPtr, domainInfoPtr)
     Lfs		*lfsPtr = LfsFromDomainPtr(domainPtr);
     LfsSegUsage *usagePtr = &(lfsPtr->usageArray);
     LfsSegUsageCheckPoint *cp = &(usagePtr->checkPoint);
-    int		numSegAvail, numBlocksAvail;
+    int		 numBlocks;
 
     /*
-     * Compute the number of segments available for blocks.
+     * Compute the number of blocks available for data.
      */
-    numSegAvail = usagePtr->params.numberSegments - 
-				usagePtr->params.minNumClean;
+    numBlocks = usagePtr->params.numberSegments * LfsSegSizeInBlocks(lfsPtr) -
+					usagePtr->params.minFreeBlocks;
 
-    domainInfoPtr->maxKbytes = (LfsSegSize(lfsPtr)/1024) * numSegAvail;
+    domainInfoPtr->maxKbytes = LfsBlocksToBytes(lfsPtr, numBlocks) / 1024;
+
 
     /*
-     * Compute the number of block available.
+     * Compute the number of free blocks available for data.
      */
-    numBlocksAvail = cp->freeBlocks - usagePtr->params.minFreeBlocks;
-    if (numBlocksAvail < 0) {
-	numBlocksAvail = 0;
+    numBlocks = cp->freeBlocks - usagePtr->params.minFreeBlocks;
+    if (numBlocks < 0) {
+	numBlocks = 0;
     }
+    domainInfoPtr->freeKbytes = LfsBlocksToBytes(lfsPtr, numBlocks) / 1024;
 
-    domainInfoPtr->freeKbytes = LfsBlocksToBytes(lfsPtr, numBlocksAvail) / 1024;
+#ifdef sprite
+	/*
+	 * The Sprite df command assumes that the file system reserves 
+	 * 10% of the disk.  It prints maxKbytes as .9 * maxKbytes and
+	 * freeKbytes as freeKbytes - .1*maxKbytes.  To get df to look
+	 * right we adjust the numbers returned. We use /10 rather
+	 * *.10 to avoid floating point in kernel.
+	 */
+    domainInfoPtr->maxKbytes = (domainInfoPtr->maxKbytes * 10)/9;
+    domainInfoPtr->freeKbytes += (domainInfoPtr->maxKbytes/10);
+#endif
 
     domainInfoPtr->maxFileDesc = lfsPtr->descMap.params.maxDesc;
     domainInfoPtr->freeFileDesc = lfsPtr->descMap.params.maxDesc -
 				  lfsPtr->descMap.checkPoint.numAllocDesc;
     domainInfoPtr->blockSize = FS_BLOCK_SIZE;
-    domainInfoPtr->optSize = FS_BLOCK_SIZE;
+    domainInfoPtr->optSize = LfsSegSize(lfsPtr);
 
 
     return(SUCCESS);
@@ -976,10 +988,6 @@ LfsSegUsageAttach(lfsPtr, checkPointSize, checkPointPtr)
 	LfsError(lfsPtr, status,"Can't loading descriptor map stableMem\n");
 	return status;
     }
-    printf("LfsSegUsageAttach - logEnd <%d,%d>, numClean %d numDirty %d numFull %d\n",
-		cp->currentSegment, cp->currentBlockOffset,
-		cp->numClean, cp->numDirty,
-		usagePtr->params.numberSegments - cp->numClean - cp->numDirty);
     return status;
 }
 
