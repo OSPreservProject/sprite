@@ -38,7 +38,7 @@ static Sync_Lock fileHashLock = SYNC_LOCK_INIT_STATIC();
 /*
  * Hash tables for object handles.  These are kept in LRU order and
  * a soft limit on their number is enforced.  If the number of handles
- * gets beyond fsStat.handle.maxNumber then LRU replacement is done until
+ * gets beyond fsStats.handle.maxNumber then LRU replacement is done until
  * handleScavengeThreashold (1/16) are replaced.  If all handles are in
  * use the max table size is allowed to grow by handleLimitInc (1/64).
  * The table never shrinks on the premise that once it has grown the
@@ -225,7 +225,7 @@ FsHandleInstall(fileIDPtr, size, name, hdrPtrPtr)
 
     do {
 	found = FsHandleInstallInt(fileIDPtr, size, name,
-		    fsStat.handle.maxNumber, hdrPtrPtr);
+		    fsStats.handle.maxNumber, hdrPtrPtr);
 	if (*hdrPtrPtr == (FsHandleHeader *)NIL) {
 	    /*
 	     * Limit would be exceeded, recycle some handles.
@@ -254,9 +254,9 @@ FsHandleInstall(fileIDPtr, size, name, hdrPtrPtr)
 		/*
 		 * All handles in use, grow the table a bit.
 		 */
-		fsStat.handle.maxNumber += handleLimitInc;
-		handleLimitInc = LIMIT_INC(fsStat.handle.maxNumber);
-		handleScavengeThreashold = THREASHOLD(fsStat.handle.maxNumber);
+		fsStats.handle.maxNumber += handleLimitInc;
+		handleLimitInc = LIMIT_INC(fsStats.handle.maxNumber);
+		handleScavengeThreashold = THREASHOLD(fsStats.handle.maxNumber);
 	    }
 	}
     } while (*hdrPtrPtr == (FsHandleHeader *)NIL);
