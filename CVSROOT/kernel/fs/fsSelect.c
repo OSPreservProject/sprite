@@ -332,21 +332,23 @@ Fs_NewSelectStub(numStreams, userReadMaskPtr, userWriteMaskPtr,
 	    writeStatus = Vm_CopyOut(sizeof(timeout), (Address) &timeout, 
 	                        (Address) userTimeoutPtr);
 	}
+	if (writeStatus != SUCCESS) {
+	    status = SYS_ARG_NOACCESS;
+	}
     }
     /*
      * Note: I'm not convinced this is correct.  The code here before
      * was wrong, but I don't know if I got this right.  I think this
      * does the right thing for a timeout, but I'm not sure. -Ken
      */
-    if (writeStatus == SUCCESS) {
-	if (status == SUCCESS) {
-	    return numReady;
-	} else if (status == FS_TIMEOUT) {
-	    return 0;
-	}
+    if (status == SUCCESS) {
+	return numReady;
+    } else if (status == FS_TIMEOUT) {
+	return 0;
+    } else {
+	Mach_SetErrno(EACCES);
+	return -1;
     }
-    Mach_SetErrno(EACCES);
-    return -1;
 }
 
 /*ARGSUSED*/
