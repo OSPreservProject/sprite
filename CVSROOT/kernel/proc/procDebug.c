@@ -30,6 +30,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "proc.h"
+#include "procMigrate.h"
 #include "status.h"
 #include "sync.h"
 #include "sched.h"
@@ -347,7 +348,8 @@ Proc_SuspendProcess(procPtr, debug, termReason, termStatus, termCode)
     procPtr->termStatus	= termStatus;
     procPtr->termCode	= termCode;
 
-    if (procPtr->genFlags & PROC_FOREIGN) {
+    if (debug &&
+	(procPtr->genFlags & PROC_FOREIGN) && (proc_MigDebugLevel > 4)) {
 	Sys_Panic(SYS_WARNING,
 		"Migrated process being placed on debug list.\n");
     }
