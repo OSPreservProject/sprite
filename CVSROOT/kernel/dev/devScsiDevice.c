@@ -24,7 +24,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "dev/scsi.h"
 #include "scsi.h"
 #include "devQueue.h"
-#include "user/fs.h"
+#include "fs.h"
 #include "sync.h"	
 #include "stdlib.h"
 
@@ -384,7 +384,7 @@ DevScsiIOControl(devPtr, ioctlPtr, replyPtr)
 	 * block and the output buffer can hold the return status.
 	 */
 	if ((ioctlPtr->inBufSize < sizeof(Dev_ScsiCommand)) ||
-	    (outBufSize < sizeof(Dev_ScsiStatus))) {
+	    (ioctlPtr->outBufSize < sizeof(Dev_ScsiStatus))) {
 	    return(GEN_INVALID_ARG);
 	}
 	cmdPtr = (Dev_ScsiCommand *) ioctlPtr->inBuffer;
@@ -402,7 +402,7 @@ DevScsiIOControl(devPtr, ioctlPtr, replyPtr)
 	scsiCmd.dataToDevice = cmdPtr->dataToDevice;
 	scsiCmd.bufferLen = cmdPtr->bufferLen;
 	scsiCmd.buffer = malloc(scsiCmd.bufferLen);
-	statusPtr->senseDataLen = outBufSize - sizeof(Dev_ScsiStatus);
+	statusPtr->senseDataLen = ioctlPtr->outBufSize - sizeof(Dev_ScsiStatus);
 	status = DevScsiSendCmdSync(devPtr, &scsiCmd, &statusByte,
 		&(statusPtr->amountTransferred), &(statusPtr->senseDataLen),
 		ioctlPtr->outBuffer + sizeof(Dev_ScsiStatus));
