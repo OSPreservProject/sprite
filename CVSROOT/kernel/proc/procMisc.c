@@ -37,6 +37,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <rpcServer.h>
 #include <procServer.h>
 #include <fsrmt.h>
+#include <lfs.h>
 #include <fsconsist.h>
 #include <bstring.h>
 #include <stdio.h>
@@ -1343,8 +1344,9 @@ static int FINDPID _ARGS_((Proc_ControlBlock *x));
 static int PRINTRPCCLIENT _ARGS_((RpcClientChannel *x));
 static int PRINTRPCSERVER _ARGS_((RpcServerState *x));
 static int PRINTSERVERPROC _ARGS_((ServerInfo *x));
-static int PRINTLOCK _ARGS_((Sync_Lock *x));
+static int PRINTLOCK _ARGS_((Sync_Lock *x, int print));
 static int PRINTSEM _ARGS_((Sync_Semaphore *x));
+static int PRINTLFS _ARGS_((Lfs *x, char *text));
 
 /*
  * Read in some memory.
@@ -1609,18 +1611,43 @@ ServerInfo *x;
 }
 
 /*
- * Print if x is a lock.
+ * Print if x is a Lfs structure
  */
-static int PRINTLOCK(x)
+static int PRINTLFS(x, text)
+Lfs *x;
+char *text;
+{
+    Lfs lfs;
+    if (!READIN(Lfs,x,&lfs)) {
+	return FALSE;
+    }
+    if (ISSTR(lfs.name) && ISBOOL(lfs.writeBackActive) &&
+	    PRINTLOCK(&lfs.cacheBackendLock,0) &&
+	    ISBOOL(lfs.writeBackMoreWork) && ISBOOL(shutDownActive) &&
+	    PRINTLOCK(&lfs.lock,0)) {
+	printf("Lfs: %s on %s\n", text, strbuf);
+	return TRUE;
+    }
+    return FALSE;
+}
+
+/*
+ * Print if x is a lock.
+ * Or just return true/false if print=0;
+ */
+static int PRINTLOCK(x,print)
 Sync_Lock *x;
+int print;
 {
     Sync_Lock lock;
     if (READIN(Sync_Lock,x,&lock) && ISBOOL(lock.inUse) &&
 	    ISBOOL(lock.waiting) &&
 	    ISALIGNZ(lock.holderPC) && ISPCBZ(lock.holderPCBPtr) &&
 	    ISSTR(lock.name)) {
-	printf("lock \"%s\" at %x", strbuf, lock.holderPC);
-	if (FINDPID(lock.holderPCBPtr)) {
+	if (print) {
+	    printf("lock \"%s\" at %x", strbuf, lock.holderPC);
+	}
+	if (print && FINDPID(lock.holderPCBPtr)) {
 	    printf(" held by process %x", FINDPID(lock.holderPCBPtr));
 	}
 	return TRUE;
@@ -1710,6 +1737,7 @@ Proc_KDumpInt(data, callInfoPtr)
     ServerInfo *serverProcPtr;
     Sync_Lock *syncLockPtr;
     Fsconsist_Info consistInfo;
+    Lfs *lfsPtr;
     int match;
 
     for (i = 0; i < proc_MaxNumProcesses; i++) {
@@ -1739,7 +1767,7 @@ Proc_KDumpInt(data, callInfoPtr)
 			goto found;
 		    }
 		}
-		if (PRINTLOCK((Sync_Lock *)event)) {
+		if (PRINTLOCK((Sync_Lock *)event,1)) {
 			/* Sync_Lock / Sync_KernelLock */
 		} else if ((Proc_ControlBlock *)event==procPtr) {
 		    /* Proc_ControlBlock */
@@ -1810,7 +1838,7 @@ Proc_KDumpInt(data, callInfoPtr)
 		    /* Or we might be blocked on Fsconsist_Info */
 		    syncLockPtr = (Sync_Lock *)(event-
 			    OFF(Fsconsist_Info,consistDone));
-		    if (PRINTLOCK(syncLockPtr)) {
+		    if (PRINTLOCK(syncLockPtr,1)) {
 			printf(" (consistDone)\n");
 			match++;
 			if (READIN(Fsconsist_Info,syncLockPtr,&consistInfo)) {
@@ -1819,13 +1847,28 @@ Proc_KDumpInt(data, callInfoPtr)
 		    }
 		    syncLockPtr = (Sync_Lock *)(event-
 			    OFF(Fsconsist_Info,repliesIn));
-		    if (PRINTLOCK(syncLockPtr)) {
+		    if (PRINTLOCK(syncLockPtr,1)) {
 			printf(" (repliesIn)\n");
 			match++;
 			if (READIN(Fsconsist_Info,syncLockPtr,&consistInfo)) {
 			    (void) PRINTHANDLE("handle:", consistInfo.hdrPtr);
 			}
 		    }
+
+		    /* Maybe it's a LFS structure */
+		    lfsPtr = (Lfs *)(event-OFF(Lfs, writeWait));
+		    if (PRINTLFS(lfsPtr, "writeWait") {
+			match++;
+		    }
+		    lfsPtr = (Lfs *)(event-OFF(Lfs, cleanSegmentsWait));
+		    if (PRINTLFS(lfsPtr, "cleanSegmentsWait") {
+			match++;
+		    }
+		    lfsPtr = (Lfs *)(event-OFF(Lfs, checkPointWait));
+		    if (PRINTLFS(lfsPtr, "checkPointWait") {
+			match++;
+		    }
+
 		    /* Or maybe something else. */
 		    serverProcPtr = (ServerInfo *)(event-
 			    OFF(ServerInfo, condition));
