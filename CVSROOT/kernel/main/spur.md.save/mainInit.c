@@ -17,6 +17,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "dev.h"
 #include "mem.h"
 #include "net.h"
+#include "mach.h"
 #include "proc.h"
 #include "prof.h"
 #include "rpc.h"
@@ -28,6 +29,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vm.h"
 #include "machMon.h"
 #include "devAddrs.h"
+#include "user/sysStats.h"
 #include "mach.h"
 
 extern void Fs_WakeupProc();
@@ -36,7 +38,7 @@ extern void Fs_HandleScavenge();
 /*
  *  Pathname of the Init program.
  */
-#define INIT	 	"/tmp/spurt"
+#define INIT	 	"/initsprite.spur"
 
 /*
  * Flags defined in individual's mainHook.c to modify the startup behavior. 
@@ -45,7 +47,6 @@ extern void Fs_HandleScavenge();
 extern Boolean main_Debug;	/* If TRUE then enter the debugger */
 extern Boolean main_DoProf;	/* If TRUE then start profiling */
 extern Boolean main_DoDumpInit;	/* If TRUE then initialize dump routines */
-extern Boolean main_UseAltInit;	/* IF TRUE then try to use /initSprite.new */
 extern Boolean main_AllowNMI;	/* If TRUE then allow non-maskable interrupts.*/
 
 extern int main_NumRpcServers;	/* # of rpc servers to spawn off */
@@ -88,7 +89,8 @@ main()
     int		i;
     char	*SpriteVersion();
 
-    bootProgress = 1;
+    bootProgress = 1; 
+    led_display(bootProgress,0,0);
     /*
      * Initialize variables specific to a given kernel.  
      * IMPORTANT: Only variable assignments and nothing else can be
@@ -100,9 +102,11 @@ main()
      * Initialize machine dependent info.  MUST BE CALLED HERE!!!.
      */
     bootProgress = 2;
+    led_display(bootProgress,0,0);
     Mach_Init();
 
     bootProgress = 3;
+    led_display(bootProgress,0,0);
     /*
      * Initialize the debugger.
      */
@@ -117,6 +121,7 @@ main()
 	Mach_MonPrintf("Calling Sys_Init().\n");
     }
     bootProgress = 4;
+    led_display(bootProgress,0,0);
     Sys_Init();
 
     /*
@@ -128,6 +133,7 @@ main()
 	Mach_MonPrintf("Calling Vm_BootInit().\n");
     }
     bootProgress = 5;
+    led_display(bootProgress,0,0);
     Vm_BootInit();
 
     /*
@@ -138,6 +144,7 @@ main()
 	Mach_MonPrintf("Calling Dev_Init().\n");
     }
     bootProgress = 6;
+    led_display(bootProgress,0,0);
     Dev_Init();
 
     /*
@@ -149,30 +156,35 @@ main()
 	Mach_MonPrintf("Calling Timer_Init().\n");
     }
     bootProgress = 7;
+    led_display(bootProgress,0,0);
     Timer_Init();
 
     if (main_PrintInitRoutines) {
 	Mach_MonPrintf("Calling Sig_Init().\n");
     }
     bootProgress = 8;
+    led_display(bootProgress,0,0);
     Sig_Init();
 
     if (main_PrintInitRoutines) {
 	Mach_MonPrintf("Calling Proc_InitTable().\n");
     }
     bootProgress = 9;
+    led_display(bootProgress,0,0);
     Proc_InitTable();
 
     if (main_PrintInitRoutines) {
 	Mach_MonPrintf("Calling Sched_Init().\n");
     }
     bootProgress = 10;
+    led_display(bootProgress,0,0);
     Sched_Init();
 
     if (main_PrintInitRoutines) {
 	Mach_MonPrintf("Calling Sync_Init().\n");
     }
     bootProgress = 11;
+    led_display(bootProgress,0,0);
     Sync_Init();
 
     /*
@@ -195,6 +207,7 @@ main()
 	Mach_MonPrintf("Calling Vm_Init\n");
     }
     bootProgress = 12;
+    led_display(bootProgress,0,0);
     Vm_Init();
 
     /*
@@ -210,6 +223,7 @@ main()
 	Mach_MonPrintf("Calling Proc_InitMainProc\n");
     }
     bootProgress = 13;
+    led_display(bootProgress,0,0);
     Proc_InitMainProc();
 
     /*
@@ -219,6 +233,7 @@ main()
 	Mach_MonPrintf("Calling Proc_ServerInit\n");
     }
     bootProgress = 14;
+    led_display(bootProgress,0,0);
     Proc_ServerInit();
 
     /*
@@ -229,6 +244,7 @@ main()
 	Mach_MonPrintf("Calling Net_Init\n");
     }
     bootProgress = 15;
+    led_display(bootProgress,0,0);
     Net_Init();
 
     /*
@@ -239,6 +255,7 @@ main()
 	Mach_MonPrintf("Calling Recov_Init\n");
     }
     bootProgress = 16;
+    led_display(bootProgress,0,0);
     Recov_Init();
 
     /*
@@ -250,6 +267,7 @@ main()
     if (main_PrintInitRoutines) {
 	Mach_MonPrintf("Calling Rpc_Init\n");
     }
+    led_display(bootProgress,0,0);
     bootProgress = 17;
     Rpc_Init();
 
@@ -262,6 +280,7 @@ main()
 	Mach_MonPrintf("Calling Dev_Config\n");
     }
     bootProgress = 18;
+    led_display(bootProgress,0,0);
     Dev_Config();
 
     /*
@@ -280,6 +299,7 @@ main()
 	Mach_MonPrintf("Enabling interrupts\n");
     }
     bootProgress =  19;
+    led_display(bootProgress,0,0);
     ENABLE_INTR();
 
     if (main_Debug) {
@@ -289,6 +309,7 @@ main()
      * Sleep for a few seconds to calibrate the idle time ticks.
      */
     bootProgress =  20;
+    led_display(bootProgress,0,0);
     Sched_TimeTicks();
 
     /*
@@ -309,6 +330,7 @@ main()
 	Mach_MonPrintf("Call Rpc_Start\n");
     }
     bootProgress = 21;
+    led_display(bootProgress,0,0);
     Rpc_Start();
 
     /*
@@ -319,29 +341,32 @@ main()
 	Mach_MonPrintf("Call Fs_Init\n");
     }
     bootProgress = 22;
+    led_display(bootProgress,0,0);
     Fs_Init();
 
     /*
      * Before starting up any more processes get a current directory
      * for the main process.  Subsequent new procs will inherit it.
-     */
+     */ 
 
     if (main_PrintInitRoutines) {
 	Mach_MonPrintf("Call Fs_ProcInit\n");
     }
     bootProgress = 23;
+    led_display(bootProgress,0,0);
     Fs_ProcInit();
 
     if (main_PrintInitRoutines) {
 	Mach_MonPrintf("Bunch of call funcs\n");
     }
     bootProgress = 24;
+    led_display(bootProgress,0,0);
     /*
      * Start the clock daemon and the routine that opens up the swap directory.
      */
-/*
+
     Proc_CallFunc(Vm_Clock, (ClientData) NIL, 0);
-*/
+
     Proc_CallFunc(Vm_OpenSwapDirectory, (ClientData) NIL, 0);
 
     /*
@@ -405,13 +430,16 @@ main()
 	Mach_MonPrintf("Creating Init\n");
     }
     bootProgress = 25;
+    led_display(bootProgress,0,0);
 /*
     Init_ProcFsState();
 */
     Proc_NewProc((Address) Init, PROC_KERNEL, FALSE, &pid, "Init");
 
     bootProgress = 26;
+    led_display(bootProgress,0,0);
 
+#ifdef notdef
     {
 	Fs_Stream	*filePtr;
 	ReturnStatus	status;
@@ -433,6 +461,7 @@ main()
 	    Sys_Panic(SYS_FATAL, "Close returned %x\n", status);
 	}
     }
+#endif
     (void) Sync_WaitTime(time_OneYear);
     Sys_Printf("Main exiting\n");
     Proc_Exit(0);
@@ -476,12 +505,13 @@ Init()
     /*
      * Indicate that we are alive.
      */
-    led_display(0xc1, 0, 0);
-
+    led_display(0x00, 0, 0);
+#ifdef notdef
     for (i = 0; i <= 5; i += 3) {
 	Sync_WaitTime(time_OneSecond);
 	led_display(0xe0 | i, 0, 0);
     }
+#endif
 #ifdef notdef
     /*
      * Fork a new process and then play tag with it.
@@ -493,12 +523,15 @@ Init()
     if (main_PrintInitRoutines) {
 	Mach_MonPrintf("In Init\n");
     }
+#ifdef notdef
     if (main_AltInit != 0) {
 	altInitArgs[0] = main_AltInit;
 	Sys_Printf("Execing \"%s\"\n", altInitArgs[0]);
 	status = Proc_KernExec(altInitArgs[0], initArgs);
 	Sys_Panic(SYS_WARNING, "Init: Could not exec %s.\n", altInitArgs[0]);
     }
+#endif
+    Rpc_GetStats(SYS_RPC_ENABLE_SERVICE,1,0);
     status = Proc_KernExec(initArgs[0], initArgs);
     Sys_Panic(SYS_WARNING, "Init: Could not exec %s.\n", initArgs[0]);
 
