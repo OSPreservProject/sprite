@@ -663,3 +663,28 @@ Fixed a few compat bugs:
     The wrong index parameter was passed to Net_IDToRoute by Rpc_Output.
     FDDI implementation.
 
+
+1.115	Tue Jul 14 22:16:30 PDT 1992
+    Use uncached FDDI buffers until we figure out what goes wrong on shutdown.
+    Added Sys_GetHostName and Sys_SetHostName system calls.
+    Removed Mike Nelson's old Ultrix compatiblity code for the DecStations.
+    Magic number for returning SYS_INVALID_SYSTEM_CALL was wrong in the sun3
+	kernel.
+    Got rid of locking int NetDFIntr due to deadlock in RPC system.
+    RAID changes:
+	Fixed bug where data was sometimes trashed during writes with a 
+	    failed disk.
+	Fixed up consistency problems while a disk is failed.
+	Redid logging.
+    OutputPacket no longer panics if the packet it too large (lance driver).
+    VME link board device driver improved.
+    Initial version of the Xbus board driver.
+    Make the lock in Rpc_Histogram always be a kernel lock.
+    Resurrect SCSI circular buffer to investigate 'cmd aborted' messages on
+	Lust.
+    Added tests to various RPCs to verify that the param and data blocks are
+	big enough.
+    Fsprefix_Clear didn't unlock the monitor on one error condition. This
+	caused the machines in Cory to hang during recovery.
+
+
