@@ -643,6 +643,7 @@ Fs_Close(streamPtr)
 {
     register ReturnStatus 	status;
     Proc_ControlBlock		*procPtr;
+    Boolean			retry;
 
     if (streamPtr == (Fs_Stream *)NIL) {
 	/*
@@ -659,13 +660,16 @@ Fs_Close(streamPtr)
 	 * we don't close the I/O handle yet.
 	 */
 	Fsutil_HandleRelease(streamPtr, TRUE);
-	status = SUCCESS;
-    } else {
-	/*
-	 * Call the stream type close routine to clean up this reference
-	 * to the I/O handle.
-	 */
-	Fsutil_HandleLock(streamPtr->ioHandlePtr);
+	return SUCCESS;
+    }
+    /*
+     * Call the stream type close routine to clean up this reference
+     * to the I/O handle.
+     */
+    Fsutil_HandleLock(streamPtr->ioHandlePtr);
+
+    do {
+	retry = FALSE;
 	status = (fsio_StreamOpTable[streamPtr->ioHandlePtr->fileID.type].close)
 		(streamPtr, rpc_SpriteID, procPtr->processID, streamPtr->flags,
 		0, (ClientData)NIL);
@@ -687,11 +691,33 @@ Fs_Close(streamPtr)
 	status = FspdevServerStreamClose(streamPtr, rpc_SpriteID,procPtr->processID,
 		streamPtr->flags, 0, (ClientData)NIL);
 #endif /* lint */
-	if (Fsio_StreamClientClose(&streamPtr->clientList, rpc_SpriteID)) {
-	    Fsio_StreamDestroy(streamPtr);
-	} else {
-	    Fsutil_HandleRelease(streamPtr, TRUE);
+	/*
+	 * If the server will recover quickly, then it should be okay
+	 * to hang here.  We didn't use to.  This may be a problem for
+	 * some kinds of recovery -- we'll see.
+	 */
+	switch(status) {
+	case SUCCESS:
+	    break;
+	case RPC_TIMEOUT:
+	case RPC_SERVICE_DISABLED:
+	case FS_STALE_HANDLE:
+	    status = Fsutil_WaitForRecovery(streamPtr->ioHandlePtr, status);
+	    if (status == SUCCESS) {
+		retry = TRUE;
+		break;
+	    } else {
+		return(status);
+	    }
+	default:
+	    break;
 	}
+    } while (retry);
+
+    if (Fsio_StreamClientClose(&streamPtr->clientList, rpc_SpriteID)) {
+	Fsio_StreamDestroy(streamPtr);
+    } else {
+	Fsutil_HandleRelease(streamPtr, TRUE);
     }
     return(status);
 }
