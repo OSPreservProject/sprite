@@ -699,8 +699,6 @@ FsRemoteHandleScavenge(hdrPtr)
     FsHandleHeader *hdrPtr;
 {
     if (OkToScavenge(&((FsRemoteIOHandle *)hdrPtr)->recovery)) {
-	printf("FsRemoteHandleScavenge: removing handle for \"%s\"\n",
-	    FsHandleName(hdrPtr));
 	FsRecoverySyncLockCleanup(&((FsRemoteIOHandle *)hdrPtr)->recovery);
 	FsHandleRemove(hdrPtr);
 	return(TRUE);
