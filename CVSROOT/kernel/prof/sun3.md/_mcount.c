@@ -121,7 +121,7 @@ mcount()
     }
 
     instructionNumber = 
-	    (callerPC - (unsigned int) &spriteStart) >> PROF_INSTR_SIZE_SHIFT;
+	    (callerPC - (unsigned int) &spriteStart) >> PROF_ARC_SHIFT;
     if (instructionNumber > profArcIndexSize) {
 	Sys_Panic(SYS_WARNING,
 		  "_mcount: Index (%d) exceeds bounds (%d) of index array.\n",

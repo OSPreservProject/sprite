@@ -28,6 +28,7 @@
 
 #define PROF_PC_GROUP_SIZE	2
 #define PROF_GROUP_SHIFT	1
+#define PROF_ARC_GROUP_SHIFT	2
 #define PROF_INSTR_SIZE_SHIFT	1
 #define PROF_PC_SHIFT		(PROF_GROUP_SHIFT + PROF_INSTR_SIZE_SHIFT)
 
@@ -42,10 +43,11 @@
 
 /*
  * A raw call graph arc just includes the callee's PC and the number of
- * times the arc was executed.  The caller of the arc is implied (one-for-one)
- * by the index of the arcIndex index. (index of the index...)
+ * times the arc was executed.  The caller of the arc is the index of the
+ * arcIndex index shifted by PROF_ARC_SHIFT.
  */
-
+#define PROF_ARC_GROUP_SHIFT	2
+#define PROF_ARC_SHIFT		(PROF_ARC_GROUP_SHIFT + PROF_INSTR_SIZE_SHIFT)
 typedef struct ProfRawArc {
 	int	calleePC;
 	int	count;

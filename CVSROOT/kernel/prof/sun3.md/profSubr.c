@@ -96,7 +96,8 @@ Prof_Init()
      * to PC to index calculations done in mcount and Prof_CollectInfo.
      */
 
-    numInstructions = ((int)&etext - (int)&spriteStart) / sizeof(short);
+    numInstructions = ((unsigned)&etext - (unsigned)&spriteStart) >>
+						    PROF_INSTR_SIZE_SHIFT;
     Sys_Printf("Prof_Init: # instructions in kernel = %d\n", numInstructions);
 
     /*
@@ -110,11 +111,9 @@ Prof_Init()
     /*
      * Allocate an array indexed by PC and containing a pointer
      * to the call graph arc that starts at that PC.  This array is
-     * large enough to have a header pointer for every instruction
-     * so that the calling PC can be infered from the array index.
+     * compressed by the arc group size.
      */
-
-    profArcIndexSize = numInstructions;
+    profArcIndexSize = numInstructions >> PROF_ARC_GROUP_SHIFT;
     profArcIndex = 
 	(ProfRawArc **) Vm_RawAlloc(profArcIndexSize * sizeof(ProfRawArc *));
 
@@ -345,7 +344,7 @@ Prof_Dump(dumpName)
 	/*
 	 * Reverse the PC to index calculation done in mcount.
 	 */
-	arc.callerPC = (int)&spriteStart + (index << PROF_INSTR_SIZE_SHIFT);
+	arc.callerPC = (int)&spriteStart + (index << PROF_ARC_SHIFT);
 
 	do {
 	    arc.calleePC = rawArcPtr->calleePC;
