@@ -194,7 +194,7 @@ FsSetIDs(procPtr, idPtr)
     idPtr->user = procPtr->effectiveUserID;
 
     fsPtr = procPtr->fsPtr;
-    if (fsPtr = (Fs_ProcessState *)NIL) {
+    if (fsPtr == (Fs_ProcessState *)NIL) {
 	/*
 	 * Exiting processes remove swap files after clearing fs state.
 	 */
