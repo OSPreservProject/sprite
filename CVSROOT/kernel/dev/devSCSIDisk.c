@@ -32,6 +32,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "stdlib.h"
 #include "dev/scsi.h"
 #include "dbg.h"
+#include "fsDisk.h"
 
 typedef struct DiskMap {
     int	 firstSector;
@@ -90,15 +91,16 @@ FillInLabel(devPtr,diskPtr)
     ScsiDevice		 *devPtr; /* SCSI Handle for device. */
     ScsiDisk		 *diskPtr;  /* Disk state stucture to read label. */
 {
-    register ReturnStatus status;
-    ScsiCmd     labelReadCmd;
-    Sun_DiskLabel *diskLabelPtr;
-    char	labelBuffer[SCSI_DISK_SECTOR_SIZE];
-    unsigned char statusByte;
-    int		senseLength;
-    char	senseBuffer[SCSI_MAX_SENSE_LEN];
-    int	byteCount;
-    int part;
+    register ReturnStatus	status;
+    ScsiCmd			labelReadCmd;
+    Sun_DiskLabel		*diskLabelPtr;
+    FsDiskHeader		*diskHdrPtr;
+    char			labelBuffer[SCSI_DISK_SECTOR_SIZE];
+    unsigned char		statusByte;
+    int				senseLength;
+    char			senseBuffer[SCSI_MAX_SENSE_LEN];
+    int				byteCount;
+    int				part;
 
     /*
      * The label of a SCSI command resides in the first sector. Format
@@ -121,25 +123,57 @@ FillInLabel(devPtr,diskPtr)
 	return(status);
     }
     diskLabelPtr = (Sun_DiskLabel *) labelBuffer;
-    /*
-     * XXX - Should really check if label is valid.
-     */
-    printf("%s: %s\n", devPtr->locationName, diskLabelPtr->asciiLabel);
-
-    diskPtr->sizeInSectors = diskLabelPtr->numSectors * diskLabelPtr->numHeads *
-			  diskLabelPtr->numCylinders;
-
-    printf(" Partitions ");
-    for (part = 0; part < DEV_NUM_DISK_PARTS; part++) {
-	diskPtr->map[part].firstSector = diskLabelPtr->map[part].cylinder *
-					 diskLabelPtr->numHeads * 
-					 diskLabelPtr->numSectors;
-	diskPtr->map[part].sizeInSectors = diskLabelPtr->map[part].numBlocks;
-	printf(" (%d,%d)", diskPtr->map[part].firstSector,
-				   diskPtr->map[part].sizeInSectors);
+    if (diskLabelPtr->magic == SUN_DISK_MAGIC) {
+	/*
+	 * XXX - Should really check if label is valid.
+	 */
+	printf("%s: %s\n", devPtr->locationName, diskLabelPtr->asciiLabel);
+    
+	diskPtr->sizeInSectors = diskLabelPtr->numSectors * 
+			    diskLabelPtr->numHeads * diskLabelPtr->numCylinders;
+    
+	printf(" Partitions ");
+	for (part = 0; part < DEV_NUM_DISK_PARTS; part++) {
+	    diskPtr->map[part].firstSector = diskLabelPtr->map[part].cylinder *
+					     diskLabelPtr->numHeads * 
+					     diskLabelPtr->numSectors;
+	    diskPtr->map[part].sizeInSectors =
+					diskLabelPtr->map[part].numBlocks;
+	    printf(" (%d,%d)", diskPtr->map[part].firstSector,
+				       diskPtr->map[part].sizeInSectors);
+	}
+	printf("\n");
+	return(SUCCESS);
     }
-    printf("\n");
-    return(SUCCESS);
+    /*
+     * The disk isn't in SUN format so try Sprite format.
+     */
+    diskHdrPtr = (FsDiskHeader *)labelBuffer;
+    if (diskHdrPtr->magic == FS_DISK_MAGIC) {
+	/*
+	 * XXX - Should really check if label is valid.
+	 */
+	printf("%s: %s\n", devPtr->locationName, diskHdrPtr->asciiLabel);
+
+	diskPtr->sizeInSectors = diskHdrPtr->numSectors * 
+				 diskHdrPtr->numHeads *
+			         diskHdrPtr->numCylinders;
+
+	printf(" Partitions ");
+	for (part = 0; part < DEV_NUM_DISK_PARTS; part++) {
+	    diskPtr->map[part].firstSector = 
+				diskHdrPtr->map[part].firstCylinder *
+				diskHdrPtr->numHeads * diskHdrPtr->numSectors;
+	    diskPtr->map[part].sizeInSectors =
+				diskHdrPtr->map[part].numCylinders *
+				diskHdrPtr->numHeads * diskHdrPtr->numSectors;
+	    printf(" (%d,%d)", diskPtr->map[part].firstSector,
+				   diskPtr->map[part].sizeInSectors);
+	}
+	printf("\n");
+	return(SUCCESS);
+    }
+    return(FAILURE);
 }
 
 /*
@@ -537,6 +571,8 @@ BlockIOProc(handlePtr, requestPtr)
 	/*
 	 * The offset is past the end of the partition.
 	 */
+	printf("BlockIOProc: firstSector(%d) > lastSector (%d)\n",
+						    firstSector, lastSector);
 	RequestDone(requestPtr,SUCCESS,0);
 	return SUCCESS;
     } 
