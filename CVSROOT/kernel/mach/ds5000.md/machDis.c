@@ -200,6 +200,7 @@ MachEmulateBranch(regsPtr, instPC, fpcCSR, allowNonBranch)
 	    } else {
 		panic("MachEmulateBranch: Bad coproc branch instruction\n");
 	    }
+	    break;
 	}
 	default:
 	    if (allowNonBranch) {
