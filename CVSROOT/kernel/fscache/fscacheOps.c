@@ -963,7 +963,7 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	 * If the block is write-thru then write the data through to the 
 	 * server and then check the block back in as clean.
 	 * THIS IS A GORY HACK that limits the use of FS_SERVER_WRITE_THRU
-	 * to the client side of things.
+	 * to the client.
 	 */
 	if (flags & FS_SERVER_WRITE_THRU) {
 	    Fs_Stream	dummyStream;
@@ -1002,7 +1002,9 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	    blockSize = FS_BLOCK_SIZE;
 	}
 	Fscache_UnlockBlock(blockPtr, (unsigned) modTime, blockAddr,
-				blockSize, FSCACHE_CLEAR_READ_AHEAD);
+		blockSize, FSCACHE_CLEAR_READ_AHEAD |
+		((flags&FS_WRITE_TO_DISK) ?
+		    FSCACHE_WRITE_TO_DISK : 0));
     }
 
     *lenPtr = offset - oldOffset;

@@ -1300,7 +1300,8 @@ Fscache_UnlockBlock(blockPtr, timeDirtied, diskBlock, blockSize, flags)
 				   should be the same as blockPtr->blockNum.*/
     int		 blockSize;	/* The number of valid bytes in this block. */
     int		 flags;		/* FSCACHE_DELETE_BLOCK | FSCACHE_CLEAR_READ_AHEAD |
-				 * FSCACHE_BLOCK_UNNEEDED | FSCACHE_DONT_WRITE_THRU */
+				 * FSCACHE_BLOCK_UNNEEDED | FSCACHE_DONT_WRITE_THRU
+				 * FSCACHE_WRITE_TO_DISK */
 {
     LOCK_MONITOR;
 
@@ -1421,11 +1422,12 @@ Fscache_UnlockBlock(blockPtr, timeDirtied, diskBlock, blockSize, flags)
 	/*
 	 * Force the block out if in write-thru or asap mode.
 	 */
-	if ((blockPtr->flags & (FSCACHE_BLOCK_DIRTY | FSCACHE_BLOCK_BEING_WRITTEN)) &&
+	if (((blockPtr->flags & (FSCACHE_BLOCK_DIRTY | FSCACHE_BLOCK_BEING_WRITTEN)) &&
 	    ((fsutil_WriteThrough || fsutil_WriteBackASAP) &&
 	     !(flags & FSCACHE_DONT_WRITE_THRU)) &&
 	    (!fsutil_DelayTmpFiles ||
-	     Fsdm_FindFileType(blockPtr->cacheInfoPtr) != FSUTIL_FILE_TYPE_TMP)) {
+	     Fsdm_FindFileType(blockPtr->cacheInfoPtr) != FSUTIL_FILE_TYPE_TMP))
+		 || (flags & FSCACHE_WRITE_TO_DISK)) {
 	    /*
 	     * Set the write-thru flag for the block so that the block will
 	     * keep getting written until it is clean.  This is in case
@@ -1455,7 +1457,7 @@ Fscache_UnlockBlock(blockPtr, timeDirtied, diskBlock, blockSize, flags)
 			break;
 		    }
 		} while (blockPtr->flags & 
-			    (FSCACHE_BLOCK_DIRTY | FSCACHE_BLOCK_BEING_WRITTEN));
+			(FSCACHE_BLOCK_DIRTY | FSCACHE_BLOCK_BEING_WRITTEN));
 	    }
 	}
     }
