@@ -84,22 +84,24 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "vmStat.h"
-#include "vmMachInt.h"
+#include "vmMach.h"
 #include "vm.h"
 #include "vmInt.h"
 #include "user/vm.h"
 #include "sync.h"
 #include "dbg.h"
 #include "list.h"
-#include "machine.h"
 #include "lock.h"
 #include "sys.h"
 #include "byte.h"
+#include "mem.h"
+#include "machine.h"
 
-Boolean	vm_CanCOW = TRUE;
+Boolean	vm_CanCOW = FALSE;
 
 void		DoFork();
 void		GiveAwayPage();
+void		ReleaseCOW();
 Boolean		COWStart();
 Vm_Segment	*FindNewMasterSeg();
 Boolean		IsResident();
@@ -108,40 +110,7 @@ void		SetPTE();
 void		CopyPage();
 ReturnStatus	COR();
 void		COW();
-int		GetMasterPF();
-
-Vm_PTE	resPTE;
-Vm_PTE	swapPTE;
-
-
-/*
- *----------------------------------------------------------------------
- *
- * VmCOWInit --
- *
- *	Initialize copy-on-write.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Page table entry setup.
- *
- *----------------------------------------------------------------------
- */
-void
-VmCOWInit()
-{
-    resPTE = vm_ZeroPTE;
-    resPTE.validPage = 1;
-    resPTE.resident = 1;
-    resPTE.referenced = 1;
-    resPTE.modified = 1;
-    resPTE.protection = VM_URW_PROT;
-    swapPTE = vm_ZeroPTE;
-    swapPTE.validPage = 1;
-    swapPTE.onSwap = 1;
-}
+unsigned int	GetMasterPF();
 
 
 /*
@@ -204,16 +173,13 @@ DoFork(srcSegPtr, destSegPtr)
     register	int	lastPage;
     register	int	numCORPages = 0;
     register	int	numCOWPages = 0;
-    VmVirtAddr		virtAddr;
+    register	Vm_PTE	corPTE;
+    Vm_VirtAddr		virtAddr;
     VmCOWInfo		*cowInfoPtr;
-    Vm_PTE		corPTE;
 
     LOCK_MONITOR;
 
-    corPTE = vm_ZeroPTE;
-    corPTE.validPage = 1;
-    corPTE.protection = VM_KRW_PROT;
-    corPTE.pfNum = srcSegPtr->segNum;
+    corPTE = VM_VIRT_RES_BIT | VM_COR_BIT | srcSegPtr->segNum;
 
     if (srcSegPtr->type == VM_HEAP) {
 	virtPage = srcSegPtr->offset;
@@ -221,8 +187,8 @@ DoFork(srcSegPtr, destSegPtr)
 	srcPTEPtr = srcSegPtr->ptPtr;
 	destPTEPtr = destSegPtr->ptPtr;
     } else {
-	virtPage = MACH_LAST_USER_STACK_PAGE - srcSegPtr->numPages + 1;
-	lastPage = MACH_LAST_USER_STACK_PAGE;
+	virtPage = mach_LastUserStackPage - srcSegPtr->numPages + 1;
+	lastPage = mach_LastUserStackPage;
 	srcPTEPtr = VmGetPTEPtr(srcSegPtr, virtPage);
 	destPTEPtr = VmGetPTEPtr(destSegPtr, virtPage);
     }
@@ -231,43 +197,42 @@ DoFork(srcSegPtr, destSegPtr)
     virtAddr.flags = 0;
     for (; virtPage <= lastPage;
 	 virtPage++, VmIncPTEPtr(srcPTEPtr, 1), VmIncPTEPtr(destPTEPtr, 1)) {
-	if (!srcPTEPtr->validPage) {
-	    *destPTEPtr = vm_ZeroPTE;
+	if (!(*srcPTEPtr & VM_VIRT_RES_BIT)) {
+	    *destPTEPtr = 0;
 	    continue;
 	}
-	while (srcPTEPtr->inProgress) {
+	while (*srcPTEPtr & VM_IN_PROGRESS_BIT) {
 	    (void)Sync_Wait(&srcSegPtr->condition, FALSE);
 	}
-	if (srcPTEPtr->protection == VM_URW_PROT) {
-	    if (srcPTEPtr->resident || srcPTEPtr->onSwap) {
-		/*
-		 * Need to make the src copy-on-write and the dest copy-on-ref.
-		 */
-		virtAddr.page = virtPage;
-		VmSetPageProtInt(&virtAddr, srcPTEPtr, VM_UR_PROT);
-		numCOWPages++;
-		*destPTEPtr = corPTE;
-		numCORPages++;
-	    } else {
-		/*
-		 * Just a normal everyday pte (zerofill or load from FS).
-		 */
-		*destPTEPtr = *srcPTEPtr;
-	    }
-	} else if (srcPTEPtr->protection == VM_UR_PROT) {
+	if (*srcPTEPtr & VM_COW_BIT) {
 	    /*
 	     * This page is already copy-on-write.  Make child copy-on-ref
 	     * off of the parent segment.
 	     */
 	    *destPTEPtr = corPTE;
 	    numCORPages++;
-	} else {
+	} else if (*srcPTEPtr & VM_COR_BIT) {
 	    /*
 	     * This page is already copy-on-reference.  Make the child be
 	     * copy-on-ref on the same segment.
 	     */
 	    *destPTEPtr = *srcPTEPtr;
 	    numCORPages++;
+	} else if (*srcPTEPtr & (VM_PHYS_RES_BIT | VM_ON_SWAP_BIT)) {
+	    /*
+	     * Need to make the src copy-on-write and the dest copy-on-ref.
+	     */
+	    virtAddr.page = virtPage;
+	    *srcPTEPtr |= VM_COW_BIT;
+	    VmMach_SetPageProt(&virtAddr, *srcPTEPtr);
+	    numCOWPages++;
+	    *destPTEPtr = corPTE;
+	    numCORPages++;
+	} else {
+	    /*
+	     * Just a normal everyday pte (zerofill or load from FS).
+	     */
+	    *destPTEPtr = *srcPTEPtr;
 	}
     }
 
@@ -310,47 +275,39 @@ DoFork(srcSegPtr, destSegPtr)
  *
  *----------------------------------------------------------------------
  */
-void
+ReturnStatus
 VmCOWCopySeg(segPtr)
     register	Vm_Segment	*segPtr;
 {
     register	Vm_PTE		*ptePtr;
     VmCOWInfo			*cowInfoPtr;
-    VmVirtAddr			virtAddr;
+    Vm_VirtAddr			virtAddr;
     int				firstPage;
     int				lastPage;
+    ReturnStatus		status;
 
     if (segPtr->type == VM_STACK) {
-	firstPage = MACH_LAST_USER_STACK_PAGE - segPtr->numPages + 1;
+	firstPage = mach_LastUserStackPage - segPtr->numPages + 1;
     } else {
 	firstPage = segPtr->offset;
     }
     lastPage = firstPage + segPtr->numPages - 1;
     cowInfoPtr = (VmCOWInfo *)NIL;
     if (!COWStart(segPtr, &cowInfoPtr)) {
-	return;
+	return(SUCCESS);
     }
     virtAddr.segPtr = segPtr;
     virtAddr.flags = 0;
     for (virtAddr.page = firstPage, ptePtr = VmGetPTEPtr(segPtr, firstPage);
 	 virtAddr.page <= lastPage;
 	 virtAddr.page++, VmIncPTEPtr(ptePtr, 1)) {
-	if (!ptePtr->validPage || ptePtr->protection == VM_URW_PROT) {
-	    /*
-	     * Page isn't valid or it is not COW or COR.
-	     */
-	    continue;
-	}
-	if (ptePtr->protection == VM_UR_PROT) {
-	    /*
-	     * This page is copy-on-write.
-	     */
+	if (*ptePtr & VM_COW_BIT) {
 	    COW(&virtAddr, ptePtr, IsResident(ptePtr), FALSE);
-	} else {
-	    /*
-	     * This page is copy-on-reference.
-	     */
-	    COR(&virtAddr, ptePtr);
+	} else if (*ptePtr & VM_COR_BIT) {
+	    status = COR(&virtAddr, ptePtr);
+	    if (status != SUCCESS) {
+		return(status);
+	    }
 	}
     }
 
@@ -359,6 +316,7 @@ VmCOWCopySeg(segPtr)
     if (cowInfoPtr != (VmCOWInfo *)NIL) {
 	Mem_Free((Address)cowInfoPtr);
     }
+    return(SUCCESS);
 }
 
 
@@ -391,10 +349,9 @@ VmCOWDeleteFromSeg(segPtr, firstPage, lastPage)
 						 * if want the highest possible
 						 * page. */
 {
-    register	Vm_Segment	*mastSegPtr;
     register	Vm_PTE		*ptePtr;
     VmCOWInfo			*cowInfoPtr;
-    VmVirtAddr			virtAddr;
+    Vm_VirtAddr			virtAddr;
 
     if (firstPage == -1) {
 	/*
@@ -402,7 +359,7 @@ VmCOWDeleteFromSeg(segPtr, firstPage, lastPage)
 	 * is only done when the segment is deleted.
 	 */
 	if (segPtr->type == VM_STACK) {
-	    firstPage = MACH_LAST_USER_STACK_PAGE - segPtr->numPages + 1;
+	    firstPage = mach_LastUserStackPage - segPtr->numPages + 1;
 	} else {
 	    firstPage = segPtr->offset;
 	}
@@ -417,23 +374,14 @@ VmCOWDeleteFromSeg(segPtr, firstPage, lastPage)
     for (ptePtr = VmGetPTEPtr(segPtr, firstPage);
 	 firstPage <= lastPage;
 	 firstPage++, VmIncPTEPtr(ptePtr, 1)) {
-	if (!ptePtr->validPage || ptePtr->protection == VM_URW_PROT) {
-	    /*
-	     * Page isn't valid or it is not COW or COR.
-	     */
-	    continue;
-	}
-	if (ptePtr->protection == VM_UR_PROT) {
-	    /*
-	     * Page is copy-on-write.
-	     */
+	if (*ptePtr & VM_COW_BIT) {
 	    virtAddr.page = firstPage;
 	    COW(&virtAddr, ptePtr, IsResident(ptePtr), TRUE);
-	} else {
-	    /*
-	     * Page is copy-on-reference.
-	     */
+	} else if (*ptePtr & VM_COR_BIT) {
 	    segPtr->numCORPages--;
+	    if (segPtr->numCORPages < 0) {
+		Sys_Panic(SYS_FATAL, "VmCOWDeleteFromSeg: numCORPages < 0\n");
+	    }
 	}
     }
 
@@ -539,10 +487,11 @@ FindNewMasterSeg(segPtr, page, othersPtr)
     newSegPtr = (Vm_Segment *)List_Next((List_Links  *)segPtr);
     while (!List_IsAtEnd(cowList, (List_Links *)newSegPtr)) {
 	ptePtr = VmGetPTEPtr(newSegPtr, page);
-	if (ptePtr->validPage && ptePtr->protection == VM_KRW_PROT &&
-	    ptePtr->pfNum == segPtr->segNum) {
+	if ((*ptePtr & VM_COR_BIT) &&
+	    VmGetPageFrame(*ptePtr) == segPtr->segNum) {
 	    if (mastSegPtr != (Vm_Segment *)NIL) {
-		ptePtr->pfNum = mastSegPtr->segNum;
+		*ptePtr &= ~VM_PAGE_FRAME_FIELD;
+		*ptePtr |= mastSegPtr->segNum;
 		*othersPtr = TRUE;
 	    } else {
 		mastSegPtr = newSegPtr;
@@ -577,8 +526,8 @@ IsResident(ptePtr)
 
     LOCK_MONITOR;
 
-    if (ptePtr->resident) {
-	VmLockPageInt(VmPhysToVirtPage(ptePtr->pfNum));
+    if (*ptePtr & VM_PHYS_RES_BIT) {
+	VmLockPageInt(VmGetPageFrame(*ptePtr));
 	retVal = TRUE;
     } else {
 	retVal = FALSE;
@@ -588,7 +537,6 @@ IsResident(ptePtr)
 
     return(retVal);
 }
-
 
 
 /*
@@ -616,6 +564,7 @@ COWEnd(segPtr, cowInfoPtrPtr)
 {
     register	VmCOWInfo	*cowInfoPtr;
 
+
     LOCK_MONITOR;
 
     cowInfoPtr = segPtr->cowInfoPtr;
@@ -629,9 +578,11 @@ COWEnd(segPtr, cowInfoPtrPtr)
     if (cowInfoPtr->numSegs == 0) {
 	*cowInfoPtrPtr = cowInfoPtr;
     } else if (cowInfoPtr->numSegs == 1) {
-	Vm_Segment	*cowSegPtr;
-	int		firstPage;
-
+	register Vm_Segment	*cowSegPtr;
+	register Vm_PTE		*ptePtr;
+	int			firstPage;
+	int			lastPage;
+	register int		i;
 	/*
 	 * Only one segment left.  Return this segment back to normal
 	 * protection and clean up.
@@ -640,13 +591,18 @@ COWEnd(segPtr, cowInfoPtrPtr)
 	cowSegPtr = (Vm_Segment *)List_First(&cowInfoPtr->cowList);
 	cowSegPtr->cowInfoPtr = (VmCOWInfo *)NIL;
 	if (cowSegPtr->type == VM_STACK) {
-	    firstPage = MACH_LAST_USER_STACK_PAGE - cowSegPtr->numPages + 1;
+	    firstPage = mach_LastUserStackPage - cowSegPtr->numPages + 1;
 	} else {
 	    firstPage = cowSegPtr->offset;
 	}
-	VmSetSegProtInt(cowSegPtr, firstPage, 
-			firstPage + cowSegPtr->numPages - 1,
-		        VM_URW_PROT, TRUE);
+	lastPage = firstPage + cowSegPtr->numPages - 1;
+	for (ptePtr = VmGetPTEPtr(cowSegPtr, firstPage),
+		i = cowSegPtr->numPages;
+	     i > 0;
+	     i--, VmIncPTEPtr(ptePtr, 1)) {
+	    *ptePtr &= ~(VM_COW_BIT | VM_COR_BIT);
+	}
+	VmMach_SetSegProt(cowSegPtr, firstPage, lastPage, TRUE);
 	cowSegPtr->numCORPages = 0;
 	cowSegPtr->numCOWPages = 0;
     }
@@ -675,7 +631,7 @@ COWEnd(segPtr, cowInfoPtrPtr)
  */
 ReturnStatus
 VmCOR(virtAddrPtr)
-    register	VmVirtAddr	*virtAddrPtr;
+    register	Vm_VirtAddr	*virtAddrPtr;
 {
     register	Vm_PTE		*ptePtr;
     VmCOWInfo			*cowInfoPtr;
@@ -688,7 +644,7 @@ VmCOR(virtAddrPtr)
 	return(SUCCESS);
     }
     ptePtr = VmGetPTEPtr(virtAddrPtr->segPtr, virtAddrPtr->page);
-    if (ptePtr->protection != VM_KRW_PROT) {
+    if (!(*ptePtr & VM_COR_BIT)) {
 	vmStat.quickCORFaults++;
 	return(SUCCESS);
     }
@@ -704,6 +660,7 @@ VmCOR(virtAddrPtr)
     return(status);
 }
 
+Boolean	cowStop = FALSE;
 
 
 /*
@@ -724,19 +681,22 @@ VmCOR(virtAddrPtr)
  */
 ReturnStatus
 COR(virtAddrPtr, ptePtr)
-    register	VmVirtAddr	*virtAddrPtr;
+    register	Vm_VirtAddr	*virtAddrPtr;
     register	Vm_PTE		*ptePtr;
 {
     register	Vm_Segment	*mastSegPtr;
-    int				virtFrameNum;
-    int				mastVirtPF;
+    unsigned	int		virtFrameNum;
+    unsigned	int		mastVirtPF;
     ReturnStatus		status;
-    Vm_PTE			pte;
 
-    mastSegPtr = VmGetSegPtr(ptePtr->pfNum);
+    if (cowStop && virtAddrPtr->page == 
+	virtAddrPtr->segPtr->offset + virtAddrPtr->segPtr->numPages - 1) {
+	Sys_Panic(SYS_FATAL, "COR stop\n");
+    }
+    mastSegPtr = VmGetSegPtr((int) (VmGetPageFrame(*ptePtr)));
     virtFrameNum = VmPageAllocate(virtAddrPtr, TRUE);
     mastVirtPF = GetMasterPF(mastSegPtr, virtAddrPtr->page);
-    if (mastVirtPF > 0) {
+    if (mastVirtPF != 0) {
 	/*
 	 * The page is resident in memory so copy it.
 	 */
@@ -746,7 +706,7 @@ COR(virtAddrPtr, ptePtr)
 	/*
 	 * Load the page off of swap space.
 	 */
-	VmVirtAddr	virtAddr;
+	Vm_VirtAddr	virtAddr;
 
 	virtAddr.segPtr = mastSegPtr;
 	virtAddr.page = virtAddrPtr->page;
@@ -760,9 +720,12 @@ COR(virtAddrPtr, ptePtr)
     }
 
     virtAddrPtr->segPtr->numCORPages--;
-    pte = resPTE;
-    pte.pfNum = VmVirtToPhysPage(virtFrameNum);
-    SetPTE(virtAddrPtr, pte);
+    if (virtAddrPtr->segPtr->numCORPages < 0) {
+	Sys_Panic(SYS_FATAL, "COR: numCORPages < 0\n");
+    }
+    virtAddrPtr->segPtr->resPages++;
+    SetPTE(virtAddrPtr, (Vm_PTE)(VM_VIRT_RES_BIT | VM_PHYS_RES_BIT | 
+			 VM_REFERENCED_BIT | VM_MODIFIED_BIT | virtFrameNum));
     VmUnlockPage(virtFrameNum);
     return(SUCCESS);
 }
@@ -785,19 +748,19 @@ COR(virtAddrPtr, ptePtr)
  *
  *----------------------------------------------------------------------
  */
-ENTRY int
+ENTRY unsigned int
 GetMasterPF(mastSegPtr, virtPage)
     Vm_Segment	*mastSegPtr;
     int		virtPage;
 {
-    int			pf;
+    unsigned	int	pf;
     register	Vm_PTE	*mastPTEPtr;
 
     LOCK_MONITOR;
 
     mastPTEPtr = VmGetPTEPtr(mastSegPtr, virtPage);
-    if (mastPTEPtr->resident) {
-	pf = VmPhysToVirtPage(mastPTEPtr->pfNum);
+    if (*mastPTEPtr & VM_PHYS_RES_BIT) {
+	pf = VmGetPageFrame(*mastPTEPtr);
 	VmLockPageInt(pf);
     } else {
 	pf = 0;
@@ -828,12 +791,10 @@ GetMasterPF(mastSegPtr, virtPage)
  */
 void
 VmCOW(virtAddrPtr)
-    register	VmVirtAddr	*virtAddrPtr;
+    register	Vm_VirtAddr	*virtAddrPtr;
 {
     register	Vm_PTE		*ptePtr;
     VmCOWInfo			*cowInfoPtr;
-    register	Vm_Segment	*mastSegPtr;
-    Boolean			others;
 
     vmStat.numCOWFaults++;
     cowInfoPtr = (VmCOWInfo *)NIL;
@@ -842,7 +803,7 @@ VmCOW(virtAddrPtr)
 	return;
     }
     ptePtr = VmGetPTEPtr(virtAddrPtr->segPtr, virtAddrPtr->page);
-    if (ptePtr->protection != VM_UR_PROT) {
+    if (!(*ptePtr & VM_COW_BIT)) {
 	vmStat.quickCOWFaults++;
 	return;
     }
@@ -878,7 +839,7 @@ VmCOW(virtAddrPtr)
  */
 static void
 COW(virtAddrPtr, ptePtr, isResident, deletePage)
-    register	VmVirtAddr	*virtAddrPtr;	/* Virtual address to copy.*/
+    register	Vm_VirtAddr	*virtAddrPtr;	/* Virtual address to copy.*/
     register	Vm_PTE		*ptePtr;	/* Pointer to the page table
 						 * entry. */
     Boolean			isResident;	/* TRUE => The page is resident
@@ -888,15 +849,22 @@ COW(virtAddrPtr, ptePtr, isResident, deletePage)
 						 *         after copying. */
 {
     register	Vm_Segment	*mastSegPtr;
-    VmVirtAddr			virtAddr;
+    Vm_VirtAddr			virtAddr;
     Boolean			others;
-    int				virtFrameNum;
+    unsigned int		virtFrameNum;
     Vm_PTE			pte;
 
+    if (cowStop && virtAddrPtr->page == 
+	virtAddrPtr->segPtr->offset + virtAddrPtr->segPtr->numPages - 1) {
+	Sys_Panic(SYS_FATAL, "COW stop\n");
+    }
     mastSegPtr = FindNewMasterSeg(virtAddrPtr->segPtr, virtAddrPtr->page,
 				  &others);
     if (mastSegPtr != (Vm_Segment *)NIL) {
 	mastSegPtr->numCORPages--;
+	if (mastSegPtr->numCORPages < 0) {
+	    Sys_Panic(SYS_FATAL, "COW: numCORPages < 0\n");
+	}
 	if (others) {
 	    mastSegPtr->numCOWPages++;
 	}
@@ -912,28 +880,33 @@ COW(virtAddrPtr, ptePtr, isResident, deletePage)
 		 * This page is being invalidated. In this case just give
 		 * away the page, no need to copy it.
 		 */
-		GiveAwayPage(virtAddrPtr->segPtr, virtAddrPtr->page,
+		GiveAwayPage(virtAddrPtr->segPtr, virtAddrPtr->page, ptePtr,
 			     mastSegPtr, others);
 	    } else {
 		/*
 		 * Copy the page.
 		 */
 		virtFrameNum = VmPageAllocate(&virtAddr, TRUE);
-		CopyPage(VmPhysToVirtPage(ptePtr->pfNum), virtFrameNum);
-		pte = resPTE;
-		pte.pfNum = VmVirtToPhysPage(virtFrameNum);
-		pte.protection = others ? VM_UR_PROT : VM_URW_PROT;
+		CopyPage(VmGetPageFrame(*ptePtr), virtFrameNum);
+		pte = VM_VIRT_RES_BIT | VM_PHYS_RES_BIT | 
+		      VM_REFERENCED_BIT | VM_MODIFIED_BIT | virtFrameNum;
+		if (others) {
+		    pte |= VM_COW_BIT;
+		}
+		mastSegPtr->resPages++;
 		SetPTE(&virtAddr, pte);
 		VmUnlockPage(virtFrameNum);
-		VmUnlockPage(VmPhysToVirtPage(ptePtr->pfNum));
+		VmUnlockPage(VmGetPageFrame(*ptePtr));
 	    }
 	} else {
 	    /*
 	     * The page is on swap space.
 	     */
 	    VmCopySwapPage(virtAddrPtr->segPtr, virtAddrPtr->page, mastSegPtr);
-	    pte = swapPTE;
-	    pte.protection = others ? VM_UR_PROT : VM_URW_PROT;
+	    pte = VM_VIRT_RES_BIT | VM_ON_SWAP_BIT;
+	    if (others) {
+		pte |= VM_COW_BIT;
+	    }
 	    SetPTE(&virtAddr, pte);
 	}
 	if (mastSegPtr->numCOWPages == 0 && mastSegPtr->numCORPages == 0) {
@@ -946,17 +919,16 @@ COW(virtAddrPtr, ptePtr, isResident, deletePage)
     }
 
     /*
-     * Change callers protection back to normal if the pte is not being 
-     * deleted.  No need to waste our time otherwise.
+     * Change from copy-on-write back to normal if it has not already been
+     * done by some other routine.
      */
-    if (!deletePage) {
-	/*
-	 * Change callers protection back to normal if the pte is still valid.
-	 * No need to waste our time otherwise.
-	 */
-	VmSetPageProt(virtAddrPtr, ptePtr, VM_URW_PROT);
+    if (*ptePtr & VM_COW_BIT) {
+	ReleaseCOW(ptePtr);
     }
     virtAddrPtr->segPtr->numCOWPages--;
+    if (virtAddrPtr->segPtr->numCOWPages < 0) {
+	Sys_Panic(SYS_FATAL, "COW: numCOWPages < 0\n");
+    }
 }
 
 
@@ -978,30 +950,43 @@ COW(virtAddrPtr, ptePtr, isResident, deletePage)
  *----------------------------------------------------------------------
  */
 ENTRY static void
-GiveAwayPage(srcSegPtr, virtPage, destSegPtr, others)
+GiveAwayPage(srcSegPtr, virtPage, srcPTEPtr, destSegPtr, others)
     register	Vm_Segment	*srcSegPtr;	/* Segment to take page from.*/
     int				virtPage;	/* Virtual page to give away.*/
+    register	Vm_PTE		*srcPTEPtr;	/* PTE for the segment to take
+						 * the page away from. */
     register	Vm_Segment	*destSegPtr;	/* Segment to give page to. */
     Boolean			others;		/* TRUE => other segments that
 						 * are copy-on-write on 
 						 * the destination segment. */
 {
-    VmVirtAddr	virtAddr;
-    Vm_PTE	pte;
+    Vm_VirtAddr		virtAddr;
+    register	Vm_PTE	*destPTEPtr;
+    unsigned	int	pageFrame;
+    Boolean		referenced;
+    Boolean		modified;
 
     LOCK_MONITOR;
 
     virtAddr.segPtr = srcSegPtr;
     virtAddr.page = virtPage;
     virtAddr.flags = 0;
-    pte = VmGetPTE(&virtAddr);
-    VmPageInvalidateInt(&virtAddr);
-    virtAddr.segPtr = destSegPtr;
-    if (!others) {
-	pte.protection = VM_URW_PROT;
+    pageFrame = VmGetPageFrame(*srcPTEPtr);
+    destPTEPtr = VmGetPTEPtr(destSegPtr, virtPage);
+    *destPTEPtr = *srcPTEPtr;
+    *srcPTEPtr = 0;
+    VmMach_GetRefModBits(&virtAddr, pageFrame, &referenced, &modified);
+    if (referenced) {
+	*destPTEPtr |= VM_REFERENCED_BIT;
     }
-    VmSetPTE(&virtAddr, pte, TRUE);
-    VmPageSwitch(VmPhysToVirtPage(pte.pfNum), destSegPtr);
+    if (modified) {
+	*destPTEPtr |= VM_MODIFIED_BIT;
+    }
+    VmMach_PageInvalidate(&virtAddr, pageFrame, FALSE);
+    if (others) {
+	*destPTEPtr |= VM_COW_BIT;
+    }
+    VmPageSwitch(VmGetPageFrame(*destPTEPtr), destSegPtr);
 
     UNLOCK_MONITOR;
 }
@@ -1023,12 +1008,14 @@ GiveAwayPage(srcSegPtr, virtPage, destSegPtr, others)
  */
 ENTRY static void
 SetPTE(virtAddrPtr, pte)
-    VmVirtAddr	*virtAddrPtr;
+    Vm_VirtAddr	*virtAddrPtr;
     Vm_PTE	pte;
 {
+    Vm_PTE	*ptePtr;
     LOCK_MONITOR;
 
-    VmSetPTE(virtAddrPtr, pte, pte.resident);
+    ptePtr = VmGetPTEPtr(virtAddrPtr->segPtr, virtAddrPtr->page);
+    *ptePtr = pte;
 
     UNLOCK_MONITOR;
 }
@@ -1051,15 +1038,42 @@ SetPTE(virtAddrPtr, pte)
  */
 static void
 CopyPage(srcPF, destPF)
-    int	srcPF;
-    int	destPF;
+    unsigned	int	srcPF;
+    unsigned	int	destPF;
 {
     register	Address	srcMappedAddr;
     register	Address	destMappedAddr;
 
     srcMappedAddr = VmMapPage(srcPF);
     destMappedAddr = VmMapPage(destPF);
-    Byte_Copy(VM_PAGE_SIZE, srcMappedAddr, destMappedAddr);
+    Byte_Copy(vm_PageSize, srcMappedAddr, destMappedAddr);
     VmUnmapPage(srcMappedAddr);
     VmUnmapPage(destMappedAddr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ReleaseCOW --
+ *
+ *	Make the page no longer copy-on-write.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+ReleaseCOW(ptePtr)
+    Vm_PTE	*ptePtr;
+{
+    LOCK_MONITOR;
+
+    *ptePtr &= ~VM_COW_BIT;
+
+    UNLOCK_MONITOR;
 }

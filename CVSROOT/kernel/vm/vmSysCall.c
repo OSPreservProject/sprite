@@ -18,7 +18,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "user/vm.h"
 #include "sync.h"
 #include "sys.h"
-#include "machineConst.h"
+#include "byte.h"
+#include "machine.h"
 
 
 /*
@@ -40,7 +41,7 @@ ReturnStatus
 Vm_PageSize(pageSizePtr)
     int	*pageSizePtr;
 {
-    int			pageSize = VM_PAGE_SIZE;
+    int			pageSize = vm_PageSize;
 
     if (Vm_CopyOut(4, (Address) &pageSize, (Address) pageSizePtr) != SUCCESS) {
 	return(SYS_ARG_NOACCESS);
@@ -94,8 +95,8 @@ Vm_CreateVA(address, size)
     Proc_ControlBlock	*procPtr;
 
     procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
-    firstPage = (unsigned) (address) >> VM_PAGE_SHIFT;
-    lastPage = (unsigned) ((int) address + size - 1) >> VM_PAGE_SHIFT;
+    firstPage = (unsigned) (address) >> vmPageShift;
+    lastPage = (unsigned) ((int) address + size - 1) >> vmPageShift;
 
     segPtr = (Vm_Segment *) procPtr->vmPtr->segPtrArray[VM_HEAP];
 
@@ -111,9 +112,9 @@ Vm_CreateVA(address, size)
      * Make sure that the ending page is not greater than the highest
      * possible page.  Since there must be one stack page and one page
      * between the stack and the heap, the highest possible heap page is
-     * MACH_LAST_USER_STACK_PAGE - 2.
+     * mach_LastUserStackPage - 2.
      */
-    if (lastPage > MACH_LAST_USER_STACK_PAGE - 2) {
+    if (lastPage > mach_LastUserStackPage - 2) {
 	return(VM_SEG_TOO_LARGE);
     }
 
@@ -152,8 +153,8 @@ Vm_DestroyVA(address, size)
     Proc_ControlBlock	*procPtr;
 
     procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
-    firstPage = (unsigned) (address) >> VM_PAGE_SHIFT;
-    lastPage = (unsigned) ((int) address + size - 1) >> VM_PAGE_SHIFT;
+    firstPage = (unsigned) (address) >> vmPageShift;
+    lastPage = (unsigned) ((int) address + size - 1) >> vmPageShift;
 
     segPtr = (Vm_Segment *) procPtr->vmPtr->segPtrArray[VM_HEAP];
 
@@ -169,7 +170,7 @@ Vm_DestroyVA(address, size)
      * Make pages between firstPage and lastPage not members of the segment's
      * virtual address spac.e
      */
-    VmDeleteFromSeg(segPtr, firstPage, lastPage);
+    Vm_DeleteFromSeg(segPtr, firstPage, lastPage);
 
     return(SUCCESS);
 }
@@ -228,10 +229,10 @@ Vm_Cmd(command, arg)
 	    copySize = arg;
 	    break;
 	case VM_DO_COPY_IN:
-	    Vm_CopyIn(copySize, (Address) arg, buffer);
+	    (void)Vm_CopyIn(copySize, (Address) arg, buffer);
 	    break;
 	case VM_DO_COPY_OUT:
-	    Vm_CopyOut(copySize, buffer, (Address) arg);
+	    (void)Vm_CopyOut(copySize, buffer, (Address) arg);
 	    break;
 	case VM_DO_MAKE_ACCESS_IN:
 	    Vm_MakeAccessible(0, copySize, (Address) arg, &numBytes,
@@ -247,7 +248,7 @@ Vm_Cmd(command, arg)
 	    break;
 	case VM_GET_STATS:
 	    vmStat.kernMemPages = 
-	    		((int) vmMemEnd - MACH_KERNEL_START) / VM_PAGE_SIZE;
+		    (unsigned int)(vmMemEnd - mach_KernStart) / vm_PageSize;
 	    if (Vm_CopyOut(sizeof(Vm_Stat), (Address) &vmStat, 
 			   (Address) arg) != SUCCESS) {
 		status = SYS_ARG_NOACCESS;

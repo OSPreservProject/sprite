@@ -34,7 +34,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "vmStat.h"
-#include "vmMachInt.h"
+#include "vmMach.h"
 #include "vm.h"
 #include "vmInt.h"
 #include "user/vm.h"
@@ -129,8 +129,7 @@ void	PutOnFreeList();
 void
 VmCoreMapAlloc()
 {
-    vmStat.numPhysPages = VmMachGetNumPages();
-    Sys_Printf("Available memory %d\n", vmStat.numPhysPages * VM_PAGE_SIZE);
+    Sys_Printf("Available memory %d\n", vmStat.numPhysPages * vm_PageSize);
     coreMap = (VmCore *) Vm_BootAlloc(sizeof(VmCore) * vmStat.numPhysPages);
 }
 
@@ -158,7 +157,6 @@ VmCoreMapInit()
     /*   
      * Initialize the core allocate, dirty, free and reserve lists.
      */
-
     List_Init(allocPageList);
     List_Init(dirtyPageList);
     List_Init(freePageList);
@@ -174,8 +172,9 @@ VmCoreMapInit()
 	corePtr->links.prevPtr = (List_Links *) NIL;
         corePtr->lockCount = 1;
         corePtr->flags = 0;
-        corePtr->virtPage.segPtr = vmSysSegPtr;
-        corePtr->virtPage.page = i + (MACH_KERNEL_START >> VM_PAGE_SHIFT);
+        corePtr->virtPage.segPtr = vm_SysSegPtr;
+        corePtr->virtPage.page = 
+			i + ((unsigned int)mach_KernStart >> vmPageShift);
     }
     /*
      * The first NUM_RESERVED_PAGES are put onto the reserve list.
@@ -227,7 +226,8 @@ PutOnAllocListFront(corePtr)
     register	VmCore	*corePtr;
 {
     if (vmStat.numReservePages < NUM_RESERVE_PAGES) {
-	VmPageInvalidateInt(&(corePtr->virtPage));
+	VmPageInvalidateInt(&(corePtr->virtPage),
+	    VmGetPTEPtr(corePtr->virtPage.segPtr, corePtr->virtPage.page));
 	PutOnReserveList(corePtr);
     } else {
 	VmListInsert((List_Links *) corePtr, LIST_ATFRONT(allocPageList));
@@ -277,11 +277,11 @@ PutOnAllocListRear(corePtr)
 
 ENTRY static void
 PutOnAllocList(virtAddrPtr, page)
-    VmVirtAddr	*virtAddrPtr;	/* The translated virtual address that 
-				   indicates the segment and virtual page 
-				   that this physical page is being allocated 
-				   for */
-    int		page;
+    Vm_VirtAddr		*virtAddrPtr;	/* The translated virtual address that 
+					 * indicates the segment and virtual
+					 * page that this physical page is
+					 * being allocated for */
+    unsigned int	page;
 {
     register	VmCore	*corePtr; 
     Time		curTime;
@@ -295,7 +295,7 @@ PutOnAllocList(virtAddrPtr, page)
      * map entry.  If page is for a kernel process then don't put it onto
      * the end of the allocate list.
      */
-    if (virtAddrPtr->segPtr != vmSysSegPtr) {
+    if (virtAddrPtr->segPtr != vm_SysSegPtr) {
 	PutOnAllocListRear(corePtr);
     }
 
@@ -369,14 +369,14 @@ PutOnReserveList(corePtr)
  *	Reserve list modified and core map entry modified.
  * ----------------------------------------------------------------------------
  */
-INTERNAL int
+INTERNAL unsigned int
 VmGetReservePage(virtAddrPtr)
-    VmVirtAddr	*virtAddrPtr;
+    Vm_VirtAddr	*virtAddrPtr;
 {
     VmCore	*corePtr;
 
     if (List_IsEmpty(reservePageList)) {
-	return(-1);
+	return(VM_NO_MEM_VAL);
     }
     Sys_Printf("Taking from reserve list\n");
     vmStat.reservePagesUsed++;
@@ -459,7 +459,7 @@ TakeOffFreeList(corePtr)
  */
 INTERNAL void
 VmPutOnFreePageList(pfNum)
-    int	pfNum;		/* The page frame to be freed. */
+    unsigned	int	pfNum;		/* The page frame to be freed. */
 {
     if (pfNum == 0) {
 	/*
@@ -551,7 +551,7 @@ TakeOffDirtyList(corePtr)
  */
 ENTRY void
 VmPutOnDirtyList(pfNum)
-    int	pfNum;
+    unsigned	int	pfNum;
 {
     register	VmCore	*corePtr; 
 
@@ -565,6 +565,123 @@ VmPutOnDirtyList(pfNum)
     corePtr->flags |= VM_DONT_FREE_UNTIL_CLEAN;
 
     UNLOCK_MONITOR;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ *	Routines to validate and invalidate pages.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmPageValidate --
+ *
+ *     	Validate the page at the given virtual address.
+ *
+ * Results:
+ *     	None.
+ *
+ * Side effects:
+ *	None.
+ * ----------------------------------------------------------------------------
+ */
+ENTRY void
+VmPageValidate(virtAddrPtr)
+    Vm_VirtAddr	*virtAddrPtr;
+{
+    LOCK_MONITOR;
+
+    VmPageValidateInt(virtAddrPtr, 
+		      VmGetPTEPtr(virtAddrPtr->segPtr, virtAddrPtr->page));
+
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmPageValidateInt --
+ *
+ *     	Validate the page at the given virtual address.
+ *
+ * Results:
+ *     	None.
+ *
+ * Side effects:
+ *	None.
+ * ----------------------------------------------------------------------------
+ */
+INTERNAL void
+VmPageValidateInt(virtAddrPtr, ptePtr)
+    Vm_VirtAddr		*virtAddrPtr;
+    register	Vm_PTE	*ptePtr;
+{
+    if  (!(*ptePtr & VM_PHYS_RES_BIT)) {
+	virtAddrPtr->segPtr->resPages++;
+	*ptePtr |= VM_PHYS_RES_BIT;
+    }
+    VmMach_PageValidate(virtAddrPtr, *ptePtr);
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmPageInvalidate --
+ *
+ *     	Invalidate the page at the given virtual address.
+ *
+ * Results:
+ *     	None.
+ *
+ * Side effects:
+ *	None.
+ * ----------------------------------------------------------------------------
+ */
+ENTRY void
+VmPageInvalidate(virtAddrPtr)
+    register	Vm_VirtAddr	*virtAddrPtr;
+{
+    LOCK_MONITOR;
+
+    VmPageInvalidateInt(virtAddrPtr, 
+	VmGetPTEPtr(virtAddrPtr->segPtr, virtAddrPtr->page));
+
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmPageInvalidateInt --
+ *
+ *     	Invalidate the page at the given virtual address.
+ *
+ * Results:
+ *     	None.
+ *
+ * Side effects:
+ *	None.
+ * ----------------------------------------------------------------------------
+ */
+INTERNAL void
+VmPageInvalidateInt(virtAddrPtr, ptePtr)
+    Vm_VirtAddr		*virtAddrPtr;
+    register	Vm_PTE	*ptePtr;
+{
+    if (*ptePtr & VM_PHYS_RES_BIT) {
+	virtAddrPtr->segPtr->resPages--;
+	VmMach_PageInvalidate(virtAddrPtr, VmGetPageFrame(*ptePtr), FALSE);
+	*ptePtr &= ~(VM_PHYS_RES_BIT | VM_PAGE_FRAME_FIELD);
+    }
 }
 
 
@@ -593,7 +710,7 @@ VmPutOnDirtyList(pfNum)
  */
 INTERNAL void
 VmLockPageInt(pfNum)
-    int		pfNum;
+    unsigned	int		pfNum;
 {
     coreMap[pfNum].lockCount++;
 }
@@ -616,7 +733,7 @@ VmLockPageInt(pfNum)
  */
 ENTRY void
 VmUnlockPage(pfNum)
-    int		pfNum;
+    unsigned	int	pfNum;
 {
     LOCK_MONITOR;
     coreMap[pfNum].lockCount--;
@@ -744,7 +861,7 @@ Vm_GetRefTime()
 ENTRY static void
 GetRefTime(refTimePtr, pagePtr)
     register	int	*refTimePtr;
-    int			*pagePtr;
+    unsigned	int	*pagePtr;
 {
     register	VmCore	*corePtr; 
 
@@ -767,7 +884,7 @@ GetRefTime(refTimePtr, pagePtr)
 		*refTimePtr = corePtr->lastRef;
 	    }
 	}
-	*pagePtr = -1;
+	*pagePtr = VM_NO_MEM_VAL;
     }
 
     UNLOCK_MONITOR;
@@ -789,23 +906,23 @@ GetRefTime(refTimePtr, pagePtr)
  *     	Grab the monitor lock and call VmPageAllocate.
  *
  * Results:
- *     	The physical page number that is allocated.
+ *     	The virtual page number that is allocated.
  *
  * Side effects:
  *     	None.
  *
  * ----------------------------------------------------------------------------
  */
-ENTRY static int
+ENTRY static unsigned	int
 DoPageAllocate(virtAddrPtr, canBlock)
-    VmVirtAddr	*virtAddrPtr;	/* The translated virtual address that 
+    Vm_VirtAddr	*virtAddrPtr;	/* The translated virtual address that 
 				   indicates the segment and virtual page 
 				   that this physical page is being allocated 
 				   for */
     Boolean	canBlock;	/* TRUE if can block if hit enough consecutive
 				   dirty pages. */
 {
-    int page;
+    unsigned	int page;
 
     LOCK_MONITOR;
 
@@ -836,28 +953,29 @@ DoPageAllocate(virtAddrPtr, canBlock)
  *
  * ----------------------------------------------------------------------------
  */
-
-int
+unsigned int
 VmPageAllocate(virtAddrPtr, canBlock)
-    VmVirtAddr	*virtAddrPtr;	/* The translated virtual address that 
+    Vm_VirtAddr	*virtAddrPtr;	/* The translated virtual address that 
 				   indicates the segment and virtual page 
 				   that this physical page is being allocated 
 				   for */
     Boolean	canBlock;	/* TRUE if can block if hit enough consecutive
 				   dirty pages. */
 {
-    int			page;
+    unsigned	int	page;
     int			refTime;
+    int			tPage;
 
     vmStat.numAllocs++;
 
     GetRefTime(&refTime, &page);
-    if (page == -1) {
-	Fs_GetPageFromFS(refTime, &page);
-	if (page == -1) {
+    if (page == VM_NO_MEM_VAL) {
+	Fs_GetPageFromFS(refTime, &tPage);
+	if (tPage == -1) {
 	    vmStat.pageAllocs++;
 	    return(DoPageAllocate(virtAddrPtr, canBlock));
 	} else {
+	    page = tPage;
 	    vmStat.gotPageFromFS++;
 	    if (vmDebug) {
 		Sys_Printf("VmPageAllocate: Took page from FS (refTime = %d)\n",
@@ -899,9 +1017,9 @@ VmPageAllocate(virtAddrPtr, canBlock)
  *
  * ----------------------------------------------------------------------------
  */
-INTERNAL int
+INTERNAL unsigned int
 VmPageAllocateInt(virtAddrPtr, canBlock)
-    VmVirtAddr	*virtAddrPtr;	/* The translated virtual address that 
+    Vm_VirtAddr	*virtAddrPtr;	/* The translated virtual address that 
 				   indicates the segment and virtual page 
 				   that this physical page is being allocated 
 				   for */
@@ -909,10 +1027,12 @@ VmPageAllocateInt(virtAddrPtr, canBlock)
 				   dirty pages. */
 {
     register	VmCore	*corePtr; 
-    Vm_PTE		pte;
+    register	Vm_PTE	*ptePtr;
     Time		curTime;
     List_Links		endMarker;
     int			pageCount;
+    Boolean		referenced;
+    Boolean		modified;
 
     Timer_GetTimeOfDay(&curTime, (int *) NIL, (Boolean *) NIL);
 
@@ -936,7 +1056,8 @@ again:
 	/*
 	 * Loop examining the page on the front of the allocate list until 
 	 * a free or unreferenced, unmodified, unlocked page frame is found.
-	 * If the whole list is examined and nothing found, then return -1.
+	 * If the whole list is examined and nothing found, then return 
+	 * VM_NO_MEM_VAL.
 	 */
 	while (TRUE) {
 	    corePtr = (VmCore *) List_First(allocPageList);
@@ -950,7 +1071,7 @@ again:
 		VmListRemove((List_Links *) &endMarker);
 		if (!canBlock) {
 		    Sys_Printf("VmPageAllocateInt: All of memory is dirty (%d pages examined).\n", pageCount);
-		    return(-1);
+		    return(VM_NO_MEM_VAL);
 		} else {
 		    /*
 		     * There were no pages available.   This can only happen
@@ -970,18 +1091,21 @@ again:
 		VmListMove((List_Links *) corePtr, LIST_ATREAR(allocPageList));
 		continue;
 	    }
-		
+
+	    ptePtr = VmGetPTEPtr(corePtr->virtPage.segPtr, 
+				 corePtr->virtPage.page);
+	    VmMach_GetRefModBits(&corePtr->virtPage, VmGetPageFrame(*ptePtr),
+				 &referenced, &modified);
 	    /*
 	     * Now make sure that the page has not been referenced.  It it has
 	     * then clear the reference bit and put it onto the end of the
 	     * allocate list.
 	     */
-	    pte = VmGetPTE(&corePtr->virtPage);
-	    if (pte.referenced) {
+	    if ((*ptePtr & VM_REFERENCED_BIT) || referenced) {
 		vmStat.refSearched++;
-		pte.referenced = 0;
 		corePtr->lastRef = curTime.seconds;
-		VmSetPTE(&corePtr->virtPage, pte, FALSE);
+		VmMach_ClearRefBit(&corePtr->virtPage, VmGetPageFrame(*ptePtr));
+		*ptePtr &= ~VM_REFERENCED_BIT;
 		VmListMove((List_Links *) corePtr, LIST_ATREAR(allocPageList));
 		/*
 		 * Set the last page marker so that we will try to examine this
@@ -1002,7 +1126,7 @@ again:
 	     * it must be determined if it is dirty.  If it is then put it onto
 	     * the dirty list.
 	     */
-	    if (pte.modified || (vmForceSwap && !pte.onSwap)) {
+	    if ((*ptePtr & VM_MODIFIED_BIT) || modified) {
 		vmStat.dirtySearched++;
 		TakeOffAllocList(corePtr);
 		PutOnDirtyList(corePtr);
@@ -1012,7 +1136,7 @@ again:
 	    /*
 	     * We can take this page.  Invalidate the page for the old segment.
 	     */
-	    VmPageInvalidateInt(&(corePtr->virtPage));
+	    VmPageInvalidateInt(&(corePtr->virtPage), ptePtr);
 	    TakeOffAllocList(corePtr);
 	    VmListRemove(&endMarker);
 	    break;
@@ -1024,7 +1148,7 @@ again:
      * it back onto the allocate list because kernel pages don't exist on
      * the allocate list.  Otherwise move it to the rear of the allocate list.
      */
-    if (virtAddrPtr->segPtr != vmSysSegPtr) {
+    if (virtAddrPtr->segPtr != vm_SysSegPtr) {
 	PutOnAllocListRear(corePtr);
     }
     corePtr->virtPage = *virtAddrPtr;
@@ -1057,7 +1181,7 @@ again:
  */
 INTERNAL void
 VmPageFreeInt(pfNum)
-    int	pfNum;		/* The page frame to be freed. */
+    unsigned	int	pfNum;		/* The page frame to be freed. */
 {
     register	VmCore	*corePtr; 
 
@@ -1066,7 +1190,7 @@ VmPageFreeInt(pfNum)
     corePtr->flags |= VM_FREE_PAGE;
     corePtr->lockCount = 0;
 
-    if (corePtr->virtPage.segPtr == vmSysSegPtr) {
+    if (corePtr->virtPage.segPtr == vm_SysSegPtr) {
         /*
 	 * Pages given to the kernel are removed from the allocate list when
 	 * they are allocated.  Therefore just put it back onto the free list.
@@ -1121,7 +1245,7 @@ VmPageFreeInt(pfNum)
  */
 ENTRY void
 VmPageFree(pfNum)
-    int	pfNum;		/* The page frame to be freed. */
+    unsigned	int	pfNum;		/* The page frame to be freed. */
 {
     LOCK_MONITOR;
 
@@ -1164,15 +1288,14 @@ VmPageFree(pfNum)
  *
  * ----------------------------------------------------------------------------
  */
-
 ReturnStatus
 Vm_PageIn(virtAddr, protFault)
-    int 	virtAddr;	/* The virtual address of the desired page */
+    Address 	virtAddr;	/* The virtual address of the desired page */
     Boolean	protFault;	/* TRUE if fault is because of a protection
 				 * violation. */
 
 {
-    VmVirtAddr	 	transVirtAddr;	
+    Vm_VirtAddr	 	transVirtAddr;	
     ReturnStatus 	status;
     Proc_ControlBlock	*procPtr;
 				
@@ -1239,20 +1362,20 @@ typedef enum {
  */
 ENTRY static PrepareResult
 PreparePage(virtAddrPtr, protFault, ptePtrPtr)
-    register VmVirtAddr *virtAddrPtr; 	/* The translated virtual address */
-    Vm_PTE		**ptePtrPtr;	/* The page table entry for the virtual 
-					 * address */
+    register Vm_VirtAddr *virtAddrPtr; 	/* The translated virtual address */
     Boolean		protFault;	/* TRUE if faulted because of a
 					 * protection fault. */
+    Vm_PTE		**ptePtrPtr;	/* The page table entry for the virtual 
+					 * address */
 {
-    register	Vm_PTE	*curPtePtr;
+    register	Vm_PTE	*curPTEPtr;
     PrepareResult	retVal;
 
     LOCK_MONITOR;
 
-    curPtePtr = VmGetPTEPtr(virtAddrPtr->segPtr, virtAddrPtr->page);
+    curPTEPtr = VmGetPTEPtr(virtAddrPtr->segPtr, virtAddrPtr->page);
 again:
-    if (curPtePtr->inProgress) {
+    if (*curPTEPtr & VM_IN_PROGRESS_BIT) {
 	/*
 	 * The page is being faulted on by someone else.  In this case wait
 	 * for the page fault to complete.  When wakeup have to get the new
@@ -1261,29 +1384,29 @@ again:
 	vmStat.collFaults++;
 	(void) Sync_Wait(&virtAddrPtr->segPtr->condition, FALSE);
 	goto again;
-    } else if (curPtePtr->protection == VM_KRW_PROT) {
+    } else if (*curPTEPtr & VM_COR_BIT) {
 	/*
 	 * Copy-on-reference fault.
 	 */
 	retVal = IS_COR;
-    } else if (protFault && curPtePtr->protection == VM_UR_PROT && 
-	       curPtePtr->resident) {
+    } else if (protFault && (*curPTEPtr & VM_COW_BIT) && 
+	       (*curPTEPtr & VM_PHYS_RES_BIT)) {
 	/*
 	 * Copy-on-write fault.
 	 */
 	retVal = IS_COW;
-    } else if (curPtePtr->pfNum != 0) {
+    } else if (*curPTEPtr & VM_PHYS_RES_BIT) {
 	/*
-	 * The page must already be in memory.
+	 * The page is already be in memory.
 	 */
 	vmStat.quickFaults++;
-	VmPageValidateInt(virtAddrPtr);
+	VmPageValidateInt(virtAddrPtr, curPTEPtr);
         retVal = IS_DONE;
     } else {
-	curPtePtr->inProgress = 1;
+	*curPTEPtr |= VM_IN_PROGRESS_BIT;
 	retVal = NOT_DONE;
     }
-    *ptePtrPtr = curPtePtr;
+    *ptePtrPtr = curPTEPtr;
 
     UNLOCK_MONITOR;
     return(retVal);
@@ -1311,28 +1434,20 @@ again:
  */
 ENTRY static void
 FinishPage(transVirtAddrPtr, ptePtr) 
-    VmVirtAddr	*transVirtAddrPtr;
-    Vm_PTE	*ptePtr;
+    register	Vm_VirtAddr	*transVirtAddrPtr;
+    register	Vm_PTE		*ptePtr;
 {
     LOCK_MONITOR;
 
     /*
-     * Make the page accessible.
+     * Make the page accessible to the user.
      */
-    VmPageValidateInt(transVirtAddrPtr);
-
-    /*
-     * Clear the zero fill bit here since we just filled the page so if it
-     * was zero fill it can't be anymore.
-     */
-    ptePtr->zeroFill = 0;
-
-    coreMap[VmPhysToVirtPage(ptePtr->pfNum)].lockCount--;
-
+    VmPageValidateInt(transVirtAddrPtr, ptePtr);
+    coreMap[VmGetPageFrame(*ptePtr)].lockCount--;
+    *ptePtr &= ~(VM_ZERO_FILL_BIT | VM_IN_PROGRESS_BIT);
     /*
      * Wakeup processes waiting for this pagein to complete.
      */
-    ptePtr->inProgress = 0;
     Sync_Broadcast(&transVirtAddrPtr->segPtr->condition);
 
     UNLOCK_MONITOR;
@@ -1362,16 +1477,16 @@ void	KillSharers();
  */
 ReturnStatus
 VmDoPageIn(virtAddrPtr, protFault)
-    VmVirtAddr	*virtAddrPtr;	/* The virtual address of the page that needs
-				 * to be read in. */
-    Boolean	protFault;	/* TRUE if fault if because of a protection
-				 * violation. */
+    register	Vm_VirtAddr	*virtAddrPtr;	/* The virtual address of the
+						 * page to be faulted in. */
+    Boolean			protFault;	/* TRUE if fault if because of 
+						 * a protection violation. */
 {
     register	Vm_PTE 	*ptePtr;
-    Vm_PTE 		*tPtePtr;
+    Vm_PTE 		*tPTEPtr;
     ReturnStatus	status;
     int			lastPage;
-    int			virtFrameNum;
+    unsigned	int	virtFrameNum;
     PrepareResult	result;
 
     vmStat.totalFaults++;
@@ -1396,14 +1511,12 @@ VmDoPageIn(virtAddrPtr, protFault)
      * or automatically expand the stack if stack segment.
      */
     if (!VmCheckBounds(virtAddrPtr)) {
-
 	if (virtAddrPtr->segPtr->type == VM_STACK) {
 
 	    /*
 	     * If this is a stack segment, then automatically grow it.
 	     */
-	    lastPage = MACH_LAST_USER_STACK_PAGE - 
-					virtAddrPtr->segPtr->numPages;
+	    lastPage = mach_LastUserStackPage - virtAddrPtr->segPtr->numPages;
 	    status = VmAddToSeg(virtAddrPtr->segPtr, virtAddrPtr->page, 
 				lastPage);
 	    if (status != SUCCESS) {
@@ -1430,7 +1543,7 @@ VmDoPageIn(virtAddrPtr, protFault)
 	/*
 	 * Do the first part of the page-in.
 	 */
-	result = PreparePage(virtAddrPtr, protFault, &tPtePtr);
+	result = PreparePage(virtAddrPtr, protFault, &tPTEPtr);
 	if (!vm_CanCOW && (result == IS_COR || result == IS_COW)) {
 	    Sys_Panic(SYS_FATAL, "VmDoPageIn: Bogus COW or COR\n");
 	}
@@ -1449,32 +1562,32 @@ VmDoPageIn(virtAddrPtr, protFault)
     if (result == IS_DONE) {
 	return(SUCCESS);
     }
-    ptePtr = tPtePtr;
+    ptePtr = tPTEPtr;
 
     /*
      * Allocate a page.
      */
     virtFrameNum = VmPageAllocate(virtAddrPtr, TRUE);
-    ptePtr->pfNum = VmVirtToPhysPage(virtFrameNum);
+    *ptePtr |= virtFrameNum;
 
     /*
      * Call the appropriate routine to fill the page.
      */
-    if (ptePtr->zeroFill) {
+    if (*ptePtr & VM_ZERO_FILL_BIT) {
 	vmStat.zeroFilled++;
-	VmZeroPage((int) virtFrameNum);
-	VmSetModBit(ptePtr);
+	VmZeroPage(virtFrameNum);
+	*ptePtr |= VM_MODIFIED_BIT;
 	status = SUCCESS;
-    } else if (ptePtr->onSwap) {
+    } else if (*ptePtr & VM_ON_SWAP_BIT) {
 	vmStat.psFilled++;
-	status = VmPageServerRead(virtAddrPtr, (int) virtFrameNum);
+	status = VmPageServerRead(virtAddrPtr, virtFrameNum);
     } else {
 	vmStat.fsFilled++;
-	status = VmFileServerRead(virtAddrPtr, (int) virtFrameNum);
+	status = VmFileServerRead(virtAddrPtr, virtFrameNum);
     }
 
-    VmSetRefBit(ptePtr);
-    
+    *ptePtr |= VM_REFERENCED_BIT;
+
     /*
      * Finish up the page-in process.
      */
@@ -1492,8 +1605,9 @@ VmDoPageIn(virtAddrPtr, protFault)
 }
 
 
-/*-----------------------------------------------------------------------
- * 			Routines for writing out dirty pages		
+/*----------------------------------------------------------------------------
+ *
+ * 		Routines for writing out dirty pages		
  *
  * Dirty pages are written to the swap file by the function PageOut.
  * PageOut is called by using the Proc_CallFunc routine which invokes
@@ -1582,7 +1696,7 @@ PageOutPutAndGet(corePtrPtr, status, recStreamPtrPtr)
 					 * pointer is returned if no recovery
 					 * is necessary. */
 {
-    Vm_PTE		pte;
+    register	Vm_PTE	*ptePtr;
     register	VmCore	*corePtr;
 
     LOCK_MONITOR;
@@ -1598,6 +1712,7 @@ PageOutPutAndGet(corePtrPtr, status, recStreamPtrPtr)
     } else {
 	switch (status) {
 	    case RPC_TIMEOUT:
+	    case RPC_SERVICE_DISABLED:
 	    case FS_STALE_HANDLE:
 		if (vmSwapStreamPtr != (Fs_Stream *)NIL) {
 		    if (!swapDown) {
@@ -1645,7 +1760,8 @@ PageOutPutAndGet(corePtrPtr, status, recStreamPtrPtr)
 	 */
         if (corePtr->virtPage.segPtr->flags & VM_SEG_DEAD) {
 	    vmStat.numDirtyPages--;
-	    VmPageInvalidateInt(&corePtr->virtPage);
+	    VmPageInvalidateInt(&corePtr->virtPage,
+		VmGetPTEPtr(corePtr->virtPage.segPtr, corePtr->virtPage.page));
 	    PutOnFreeList(corePtr);
 	    corePtr = (VmCore *) NIL;
 	} else {
@@ -1659,10 +1775,10 @@ PageOutPutAndGet(corePtrPtr, status, recStreamPtrPtr)
 	 * In addition the modified bit must be cleared here since the page
 	 * could get modified while it is being cleaned.
 	 */
-	pte = VmGetPTE(&corePtr->virtPage);
-	pte.onSwap = 1;
-	pte.modified = 0;
-	VmSetPTE(&corePtr->virtPage, pte, FALSE);
+	ptePtr = VmGetPTEPtr(corePtr->virtPage.segPtr, corePtr->virtPage.page);
+	*ptePtr |= VM_ON_SWAP_BIT;
+	*ptePtr &= ~VM_MODIFIED_BIT;
+	VmMach_ClearModBit(&corePtr->virtPage, VmGetPageFrame(*ptePtr));
 	corePtr->flags |= VM_PAGE_BEING_CLEANED;
     } else {
 	/*
@@ -1756,10 +1872,12 @@ PageOut(data, callInfoPtr)
 	if (corePtr == (VmCore *) NIL) {
 	    break;
 	}
-	status = VmPageServerWrite(&corePtr->virtPage, corePtr - coreMap);
+	status = VmPageServerWrite(&corePtr->virtPage, 
+				   (unsigned int) (corePtr - coreMap));
 	if (status != SUCCESS) {
 	    if (vmSwapStreamPtr == (Fs_Stream *)NIL ||
-	        (status != RPC_TIMEOUT && status != FS_STALE_HANDLE)) {
+	        (status != RPC_TIMEOUT && status != FS_STALE_HANDLE &&
+		 status != RPC_SERVICE_DISABLED)) {
 		/*
 		 * Non-recoverable error on page write, so kill all users of 
 		 * this segment.
@@ -1806,14 +1924,12 @@ Vm_Clock(data, callInfoPtr)
 {
     static Boolean initialized = FALSE;
 
-    VmCore	*corePtr;	/* Pointer to the page in the core table
-				   that is currently being examined */
-    Vm_PTE	pte;		/* The pte for the page being 
-				   examined */
-    int		i;
-    VmVirtAddr	virtAddr;	/* The virtual address structure for
-				   the page being examined */
-    Time	curTime;
+    register	VmCore	*corePtr;
+    register	Vm_PTE	*ptePtr;
+    int			i;
+    Time		curTime;
+    Boolean		referenced;
+    Boolean		modified;
 
     LOCK_MONITOR;
 
@@ -1846,10 +1962,8 @@ Vm_Clock(data, callInfoPtr)
 	    corePtr->lockCount > 0) {
 	    continue;
 	}
-	    
-	virtAddr = corePtr->virtPage;
 
-	pte = VmGetPTE(&virtAddr);
+	ptePtr = VmGetPTEPtr(corePtr->virtPage.segPtr, corePtr->virtPage.page);
 
 	/*
 	 * If the page has been referenced, then put it on the end of the
@@ -1857,11 +1971,13 @@ Vm_Clock(data, callInfoPtr)
 	 *
 	 * NOTE: vmForceRef is for instrumenting the virtual memory system.
 	 */
-	if (vmForceRef || pte.referenced) {
+	VmMach_GetRefModBits(&corePtr->virtPage, VmGetPageFrame(*ptePtr),
+			     &referenced, &modified);
+	if ((*ptePtr & VM_REFERENCED_BIT) || referenced) {
 	    VmListMove((List_Links *) corePtr, LIST_ATREAR(allocPageList));
-	    pte.referenced = 0;
 	    corePtr->lastRef = curTime.seconds;
-	    VmSetPTE(&virtAddr, pte, FALSE);
+	    *ptePtr &= ~VM_REFERENCED_BIT;
+	    VmMach_ClearRefBit(&corePtr->virtPage, VmGetPageFrame(*ptePtr));
 	}
     }
 
@@ -1894,7 +2010,7 @@ Vm_Clock(data, callInfoPtr)
 int
 Vm_GetPageSize()
 {
-    return(VM_PAGE_SIZE);
+    return(vm_PageSize);
 }
 
 
@@ -1919,29 +2035,28 @@ Vm_MapBlock(addr)
     Address	addr;	/* Address where to map in pages. */
 {
     register	Vm_PTE	*ptePtr;
-    VmVirtAddr		virtAddr;
-    int			page;
+    Vm_VirtAddr		virtAddr;
+    unsigned	int	page;
 
     vmStat.fsMap++;
 
-    virtAddr.page = (unsigned int) addr >> VM_PAGE_SHIFT;
+    virtAddr.page = (unsigned int) addr >> vmPageShift;
     virtAddr.offset = 0;
-    virtAddr.segPtr = vmSysSegPtr;
-    ptePtr = VmGetPTEPtr(vmSysSegPtr, virtAddr.page);
+    virtAddr.segPtr = vm_SysSegPtr;
+    ptePtr = VmGetPTEPtr(vm_SysSegPtr, virtAddr.page);
 
     /*
      * Allocate a block.  We know that the page size is not smaller than
      * the block size so that one page will suffice.
      */
-    ptePtr->protection = VM_KRW_PROT;
     page = DoPageAllocate(&virtAddr, FALSE);
-    if (page == -1) {
+    if (page == VM_NO_MEM_VAL) {
 	/*
 	 * Couldn't get any memory.  
 	 */
 	return(0);
     }
-    ptePtr->pfNum = VmVirtToPhysPage(page);
+    *ptePtr |= page;
     VmPageValidate(&virtAddr);
 
     return(1);
@@ -1970,25 +2085,25 @@ Vm_UnmapBlock(addr, retOnePage, pageNumPtr)
     Boolean	retOnePage;	/* TRUE => don't put one of the pages on
 				 * the free list and return its value in
 				 * *pageNumPtr. */
-    int		*pageNumPtr;	/* One of the pages that was unmapped. */
+    unsigned int *pageNumPtr;	/* One of the pages that was unmapped. */
 {
     register	Vm_PTE	*ptePtr;
-    VmVirtAddr		virtAddr;
+    Vm_VirtAddr		virtAddr;
 
     vmStat.fsUnmap++;
 
-    virtAddr.page = (unsigned int) addr >> VM_PAGE_SHIFT;
+    virtAddr.page = (unsigned int) addr >> vmPageShift;
     virtAddr.offset = 0;
-    virtAddr.segPtr = vmSysSegPtr;
-    ptePtr = VmGetPTEPtr(vmSysSegPtr, virtAddr.page);
+    virtAddr.segPtr = vm_SysSegPtr;
+    ptePtr = VmGetPTEPtr(vm_SysSegPtr, virtAddr.page);
 
     if (retOnePage) {
-	*pageNumPtr = (int) VmPhysToVirtPage(ptePtr->pfNum);
+	*pageNumPtr = VmGetPageFrame(*ptePtr);
     } else {
 	/*
 	 * If we aren't supposed to return the page, then free it.
 	 */
-	VmPageFree((int) VmPhysToVirtPage(ptePtr->pfNum));
+	VmPageFree(VmGetPageFrame(*ptePtr));
     }
     VmPageInvalidate(&virtAddr);
 
@@ -2026,18 +2141,19 @@ Vm_FsCacheSize(startAddrPtr, endAddrPtr)
      */
     vmStat.minVMPages = vmStat.numFreePages / MIN_VM_PAGE_FRACTION;
 
-    *startAddrPtr = (Address) VM_BLOCK_CACHE_BASE;
+    *startAddrPtr = vmBlockCacheBaseAddr;
     /*
      * We aren't going to get any more free pages so limit the maximum number
      * of blocks in the cache to the number of free pages that we have minus
      * the minimum amount of free pages that we keep for user
      * processes to run.
      */
-    numPages = (VM_BLOCK_CACHE_END - VM_BLOCK_CACHE_BASE) / VM_PAGE_SIZE;
+    numPages = ((unsigned int)vmBlockCacheEndAddr - 
+		(unsigned int)vmBlockCacheBaseAddr) / vm_PageSize;
     if (numPages > vmStat.numFreePages - vmStat.minVMPages) {
 	numPages = vmStat.numFreePages - vmStat.minVMPages;
     }
-    *endAddrPtr = (Address) (VM_BLOCK_CACHE_BASE + numPages * VM_PAGE_SIZE - 1);
+    *endAddrPtr = vmBlockCacheBaseAddr + numPages * vm_PageSize - 1;
 }
 
 /*---------------------------------------------------------------------------

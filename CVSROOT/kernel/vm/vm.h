@@ -21,10 +21,42 @@
 #include "procAOUT.h"
 #include "sync.h"
 
+#ifdef SUN3
+#define	VM_DMA_START_ADDR		0xFF00000
+#define	VM_DMA_SIZE			0x0100000
+#else
+#define	VM_DMA_START_ADDR		0xF00000
+#define VM_DMA_SIZE			0x040000
+#endif
+
+/* BEGIN CRAP */
 /*
- * A pte with a zero value.
+ * Temporary crap to let dev work for now.
  */
-Vm_PTE	vm_ZeroPTE;
+typedef struct {
+    Address	baseAddr;	/* Base virtual address to start 
+				   allocating at. */
+    Address	endAddr;	/* Last possible virtual address plus one. */
+} Vm_DevBuffer;
+
+extern	Address		Vm_MapInDevice();
+extern	void		Vm_DevBufferInit();
+extern	Address		Vm_DevBufferAlloc();
+extern	Address		Vm_DevBufferMap();
+extern	void		Vm_GetDevicePage();
+extern	ReturnStatus	Vm_MapKernelIntoUser();
+/* END CRAP */
+
+/*
+ * Structure to represent a translated virtual address
+ */
+typedef struct {
+    struct	Vm_Segment	*segPtr;
+    int 			page;
+    int 			offset;
+    int				flags;	/* Flags used after parsing a virtual
+					 * address. */
+} Vm_VirtAddr;
 
 /*
  * The type of segment.
@@ -38,6 +70,59 @@ Vm_PTE	vm_ZeroPTE;
  * Number of segments
  */
 #define	VM_NUM_SEGMENTS		4
+
+/*
+ * A page table entry.
+ */
+typedef unsigned int	Vm_PTE;
+
+/*
+ * Flags to set and extract the fields of the PTE.
+ *
+ *	VM_VIRT_RES_BIT		The page is resident in the segments virtual
+ *				address space.
+ *	VM_PHYS_RES_BIT		The page is physically resident in memory.
+ *      VM_ZERO_FILL_BIT	The page should be filled on demand with zeros.
+ *	VM_ON_SWAP_BIT		The page is on swap space.
+ *	VM_IN_PROGRESS_BIT	A page fault is occuring on this page.
+ *	VM_COR_BIT		The page is copy-on-reference.
+ *	VM_COW_BIT		The page is copy-on-write.
+ *	VM_REFERENCED_BIT	The page has been referenced.
+ *	VM_MODIFIED_BIT		The page has been modified.
+ *      VM_READ_ONLY_PROT	The page is read-only.
+ *	VM_PAGE_FRAME_FIELD	The virtual page frame that this page is 
+ *				resident in.
+ */
+#define	VM_VIRT_RES_BIT		0x80000000
+#define VM_PHYS_RES_BIT		0x40000000
+#define VM_ZERO_FILL_BIT	0x20000000
+#define VM_ON_SWAP_BIT		0x10000000
+#define VM_IN_PROGRESS_BIT	0x08000000
+#define VM_COR_BIT		0x04000000
+#define VM_COW_BIT		0x02000000
+#define VM_REFERENCED_BIT	0x01000000
+#define VM_MODIFIED_BIT		0x00800000
+#define VM_READ_ONLY_PROT	0x00400000
+#define VM_PAGE_FRAME_FIELD	0x000fffff
+
+/*
+ * Function to get a page frame out of a PTE and change its type to be
+ * an unsigned int.
+ */
+#define VmGetPageFrame(pte) ((unsigned int) ((pte) & VM_PAGE_FRAME_FIELD))
+
+/*
+ * The page size.
+ */
+extern	int	vm_PageSize;
+
+/*
+ * Values for the vm flags in the proc table.
+ *
+ * VM_COPY_IN_PROGRESS          Data is being copied from/to this process
+ *                              to/from the kernel's VAS.
+ */
+#define VM_COPY_IN_PROGRESS             0x01
 
 /*
  * The type of accessibility desired when making a piece of data user
@@ -108,7 +193,7 @@ typedef struct Vm_Segment {
 					 * for this segment. */
     Vm_PTE		*ptPtr;		/* Pointer to the page table for this 
 					   segment */
-    struct VmMachData	*machData;	/* Pointer to machine dependent data */
+    struct VmMach_SegData *machPtr;	/* Pointer to machine dependent data */
     int			flags;		/* Flags to give information about the
 					   segment table entry. */
     List_Links		procListHdr;	/* Header node for list of processes
@@ -130,13 +215,9 @@ typedef struct Vm_Segment {
 } Vm_Segment;
 
 /*
- * Virtual memory bit map structure.
+ * Pointer to the system segment.
  */
-typedef struct {
-    Address	baseAddr;	/* Base virtual address to start 
-				   allocating at. */
-    Address	endAddr;	/* Last possible virtual address plus one. */
-} Vm_DevBuffer;
+extern 	Vm_Segment	*vm_SysSegPtr;
 
 /*
  * Information stored by each process.
@@ -144,7 +225,7 @@ typedef struct {
 typedef struct Vm_ProcInfo {
     Vm_Segment			*segPtrArray[VM_NUM_SEGMENTS];
     int				vmFlags;
-    struct VmMachProcInfo	*machPtr;
+    struct VmMach_ProcData	*machPtr;
 } Vm_ProcInfo;
 
 /*
@@ -167,6 +248,7 @@ extern	Vm_Segment  	*Vm_SegmentNew();
 extern	ReturnStatus 	Vm_SegmentDup();
 extern	void		Vm_SegmentDelete();
 extern	void		Vm_ChangeCodeProt();
+extern	void		Vm_DeleteFromSeg();
 
 /*
  * Procedures for pages.
@@ -179,12 +261,13 @@ extern	int		Vm_GetPageSize();
 /*
  * Procedures for page tables.
  */
-extern	void	Vm_InitPageTable();
+extern	void		Vm_ValidatePages();
 
 /*
- * Procedure to allocate bytes of memory after boot time.
+ * Procedure to allocate bytes of memory
  */
-extern	Address	Vm_RawAlloc();
+extern	Address		Vm_BootAlloc();
+extern	Address		Vm_RawAlloc();
 
 /*
  * Procedures for process migration.
@@ -210,10 +293,36 @@ extern	ReturnStatus	Vm_DestroyVA();
 extern	ReturnStatus	Vm_Cmd();
 extern	ReturnStatus	Vm_GetSegInfo();
 
+/*
+ * Procedures to get to user addresses.
+ */
+extern	ReturnStatus	Vm_CopyIn();
+extern	ReturnStatus	Vm_CopyOut();
+extern	ReturnStatus	Vm_CopyInProc();
+extern	ReturnStatus	Vm_CopyOutProc();
+extern	ReturnStatus	Vm_StringNCopy();
+extern	void		Vm_MakeAccessible();
+extern	void		Vm_MakeUnaccessible();
+
 /* 
  * Procedures for recovery.
  */
 extern	void		Vm_OpenSwapDirectory();
 extern	void		Vm_Recovery();
+
+/*
+ * Miscellaneous procedures.
+ */
+extern	int		Vm_GetKernelStack();
+extern	void		Vm_FreeKernelStack();
+extern	void		Vm_ProcInit();
+
+/*
+ * Routines to provide access to internal virtual memory stuff for the machine
+ * dependent code.
+ */
+extern	unsigned int	Vm_KernPageAllocate();
+extern	void		Vm_KernPageFree();
+extern	unsigned int	Vm_GetKernPageFrame();
 
 #endif _VM

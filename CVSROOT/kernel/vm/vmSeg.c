@@ -23,9 +23,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "list.h"
 #include "mem.h"
 #include "byte.h"
-#include "machineConst.h"
+#include "machine.h"
 #include "fs.h"
 #include "status.h"
+#include "string.h"
 
 /*
  * TRUE if sticky segments are disabled.
@@ -36,7 +37,7 @@ Boolean	vm_NoStickySegments = FALSE;
  * Declaration of variables global to this module.
  */
 
-Vm_Segment		*vmSysSegPtr;
+Vm_Segment		*vm_SysSegPtr;
 
 /*
  * Variables local to this file.
@@ -91,7 +92,7 @@ VmSegTableAlloc()
 		(Vm_Segment *) Vm_BootAlloc(sizeof(Vm_Segment) * numSegments);
     Byte_Zero(numSegments * sizeof(Vm_Segment), (Address)segmentTable);
 
-    vmSysSegPtr = &(segmentTable[VM_SYSTEM_SEGMENT]);
+    vm_SysSegPtr = &(segmentTable[VM_SYSTEM_SEGMENT]);
 }
 
 
@@ -129,12 +130,12 @@ VmSegTableInit()
      * table and the machine dependent data field are initialized by the 
      * machine dependent routines in Vm_Init.
      */
-    vmSysSegPtr->refCount = 1;
-    vmSysSegPtr->type = VM_SYSTEM;
-    vmSysSegPtr->offset = MACH_KERNEL_START >> VM_PAGE_SHIFT;
-    vmSysSegPtr->flags = 0;
-    vmSysSegPtr->numPages = vmFirstFreePage;
-    vmSysSegPtr->resPages = vmFirstFreePage;
+    vm_SysSegPtr->refCount = 1;
+    vm_SysSegPtr->type = VM_SYSTEM;
+    vm_SysSegPtr->offset = (unsigned int)mach_KernStart >> vmPageShift;
+    vm_SysSegPtr->flags = 0;
+    vm_SysSegPtr->numPages = vmFirstFreePage;
+    vm_SysSegPtr->resPages = vmFirstFreePage;
 
     for (i = 0, segPtr = segmentTable; i < numSegments; i++, segPtr++) {
 	segPtr->filePtr = (Fs_Stream *)NIL;
@@ -182,16 +183,18 @@ CleanSegment(segPtr, spacePtr, fileInfoPtr)
 {
     register	Vm_PTE	*ptePtr;
     register	int    	i;
+    Vm_VirtAddr		virtAddr;
     Vm_Segment		**segPtrPtr;
 
     segPtr->flags |= VM_SEG_DEAD;
 
+    virtAddr.segPtr = segPtr;
     if (segPtr->type == VM_STACK) {
-	ptePtr = VmGetPTEPtr(segPtr, 
-			     MACH_LAST_USER_STACK_PAGE - segPtr->numPages + 1);
+	virtAddr.page = mach_LastUserStackPage - segPtr->numPages + 1;
     } else {
-	ptePtr = segPtr->ptPtr;
+	virtAddr.page = segPtr->offset;
     }
+    ptePtr = VmGetPTEPtr(segPtr, virtAddr.page);
 
     if (segPtr->filePtr != (Fs_Stream *) NIL) {
 	/*
@@ -218,19 +221,21 @@ CleanSegment(segPtr, spacePtr, fileInfoPtr)
     /*
      * Free all pages that this segment has in real memory.
      */
-    for (i = segPtr->numPages; i > 0; i--, VmIncPTEPtr(ptePtr, 1)) {
-	if (ptePtr->resident) {
-	    VmPageFreeInt((int) VmPhysToVirtPage(ptePtr->pfNum));
+    for (i = segPtr->numPages; 
+         i > 0; 
+	 i--, VmIncPTEPtr(ptePtr, 1), virtAddr.page++) {
+	if (*ptePtr & VM_PHYS_RES_BIT) {
+	    VmMach_PageInvalidate(&virtAddr, VmGetPageFrame(*ptePtr),
+				  TRUE);
+	    VmPageFreeInt(VmGetPageFrame(*ptePtr));
 	}
     }
 
-    segPtr->resPages = 0 ;
+    segPtr->resPages = 0;
 
-    /*
-     * Do any monitor level machine dependent cleanup.  This routine will
-     * fill in *spacePtr with space to be deallocated.
-     */
-    VmMachSegClean(segPtr, spacePtr);
+    spacePtr->spaceToFree = TRUE;
+    spacePtr->ptPtr = segPtr->ptPtr;
+    segPtr->ptPtr = (Vm_PTE *) NIL;
 }
 
 
@@ -345,15 +350,23 @@ GetNewSegment(type, filePtr, fileAddr, numPages, offset, procPtr,
     segPtr->type = type;
     segPtr->offset = offset;
     segPtr->swapFileName = (char *) NIL;
-    VmMachSegInit(segPtr, *spacePtr);
-
+    segPtr->ptPtr = spacePtr->ptPtr;
+    segPtr->ptSize = spacePtr->ptSize;
+    Byte_Zero(segPtr->ptSize * sizeof(Vm_PTE), (Address)segPtr->ptPtr);
+    /*
+     * If this is a stack segment, the page table grows backwards.  Therefore
+     * all of the extra page table that we allocated must be taken off of the
+     * offset where the stack was supposed to begin.
+     */
+    if (segPtr->type == VM_STACK) {
+	segPtr->offset = mach_LastUserStackPage - segPtr->ptSize + 1;
+    }
     /*
      * Put the process into the list of processes sharing this segment.
      */
     procLinkPtr = spacePtr->procLinkPtr;
     procLinkPtr->procPtr = procPtr;
     List_Insert((List_Links *) procLinkPtr, LIST_ATFRONT(segPtr->procList));
-
     /*
      * If a dead or inactive segment was used then return the space that it 
      * used in *spacePtr.
@@ -633,19 +646,27 @@ Vm_SegmentNew(type, filePtr, fileAddr, numPages, offset, procPtr)
     VmFileInfo			fileInfo;
 
     space.procLinkPtr = (VmProcLink *) Mem_Alloc(sizeof(VmProcLink));
-
-    VmMachAllocSpace(type, numPages, &space);
-    
+    if (type == VM_CODE) {
+	space.ptPtr = (Vm_PTE *) Mem_Alloc(sizeof(Vm_PTE) * numPages);
+	space.ptSize = numPages;
+    } else {
+	space.ptSize = ((numPages - 1) / vmPageTableInc + 1) * vmPageTableInc;
+	space.ptPtr = (Vm_PTE *) Mem_Alloc(sizeof(Vm_PTE) * space.ptSize);
+    }
     fileInfo.objStreamPtr = (Fs_Stream *) NIL;
     fileInfo.swapStreamPtr = (Fs_Stream *) NIL;
     segPtr = GetNewSegment(type, filePtr, fileAddr, numPages, offset, procPtr,
 			   &space, &fileInfo);
-
+    if (segPtr != (Vm_Segment *)NIL) {
+	VmMach_SegInit(segPtr);
+    }
     if (space.spaceToFree) {
 	if (space.procLinkPtr != (VmProcLink *) NIL) {
 	    Mem_Free((Address) space.procLinkPtr);
 	}
-	VmMachFreeSpace(space);
+	if (space.ptPtr != (Vm_PTE *)NIL) {
+	    Mem_Free((Address)space.ptPtr);
+	}
     }
     if (fileInfo.objStreamPtr != (Fs_Stream *) NIL) {
 	Fs_Close(fileInfo.objStreamPtr);
@@ -818,7 +839,10 @@ Vm_SegmentDelete(segPtr, procPtr)
 	    VmCOWDeleteFromSeg(segPtr, -1, -1);
 	}
 	VmCleanSegment(segPtr, &space, FALSE, &fileInfo);
-	VmMachFreeSpace(space);
+	VmMach_SegDelete(segPtr);
+	if (space.ptPtr != (Vm_PTE *) NIL) {
+	    Mem_Free((Address) space.ptPtr);
+	}
 	if (segPtr->flags & VM_SWAP_FILE_OPENED) {
 	    VmSwapFileRemove(segPtr->swapFilePtr, segPtr->swapFileName);
 	}
@@ -861,7 +885,9 @@ VmCleanSegment(segPtr, spacePtr, migrating, fileInfoPtr)
     if (!migrating) {
 	CleanSegment(segPtr, spacePtr, fileInfoPtr);
     } else {
-	VmMachSegClean(segPtr, spacePtr);
+	spacePtr->spaceToFree = TRUE;
+	spacePtr->ptPtr = segPtr->ptPtr;
+	segPtr->ptPtr = (Vm_PTE *) NIL;
     }
 
     UNLOCK_MONITOR;
@@ -874,7 +900,7 @@ void	EndDelete();
 /*
  *----------------------------------------------------------------------
  *
- * VmDeleteFromSeg --
+ * Vm_DeleteFromSeg --
  *
  *	Take the range of virtual page numbers for the given heap segment,
  *	invalidate them, make them unaccessible and make the segment
@@ -889,7 +915,7 @@ void	EndDelete();
  *----------------------------------------------------------------------
  */
 void
-VmDeleteFromSeg(segPtr, firstPage, lastPage)
+Vm_DeleteFromSeg(segPtr, firstPage, lastPage)
     Vm_Segment 	*segPtr;	/* The segment whose pages are being
 				   invalidated. */
     int		firstPage;	/* The first page to invalidate */
@@ -902,7 +928,7 @@ VmDeleteFromSeg(segPtr, firstPage, lastPage)
      * synchronization.  The problem is that during and after cleaning up
      * the copy-on-write dependencies, page faults and copy-on-write forks
      * in the segment must be prevented since cleanup is done at non-monitor
-     * level.  This is done by using the VM_DELETING_VA flag.  When this flag 
+     * level.  This is done by using the VM_ADD_DEL_VA flag.  When this flag 
      * is set page faults and forks are blocked.  This flag is set by
      * StartDelete and cleared by EndDelete.  The flag is looked at by
      * VmVirtAddrParse (the routine that is called before any page fault
@@ -969,7 +995,7 @@ StartDelete(segPtr, firstPage, lastPagePtr)
 	 * we are expanding it.
 	 */
 	segPtr->notExpandCount = 1;
-	segPtr->flags |= VM_DELETING_VA;
+	segPtr->flags |= VM_ADD_DEL_VA;
 	retVal = TRUE;
     } else {
 	retVal = FALSE;
@@ -1001,8 +1027,8 @@ EndDelete(segPtr, firstPage, lastPage)
     int				lastPage;
 {
     register	Vm_PTE	*ptePtr;
-    VmVirtAddr		virtAddr;
-    int			pfNum;
+    Vm_VirtAddr		virtAddr;
+    unsigned	int	pfNum;
 
     LOCK_MONITOR;
 
@@ -1017,22 +1043,21 @@ EndDelete(segPtr, firstPage, lastPage)
     for (virtAddr.page = firstPage, ptePtr = VmGetPTEPtr(segPtr, firstPage);
 	 virtAddr.page <= lastPage;
 	 virtAddr.page++, VmIncPTEPtr(ptePtr, 1)) {
-	 if (ptePtr->resident) {
-	    pfNum = VmPhysToVirtPage(ptePtr->pfNum);
-	    VmPageInvalidateInt(&virtAddr);
-	    *ptePtr = vm_ZeroPTE;
+	if (*ptePtr & VM_PHYS_RES_BIT) {
+	    VmMach_PageInvalidate(&virtAddr, VmGetPageFrame(*ptePtr), FALSE);
+	    segPtr->resPages--;
+	    pfNum = VmGetPageFrame(*ptePtr);
+	    *ptePtr = 0;
 	    VmPageFreeInt(pfNum);
-	    ptePtr->onSwap = 0;
-	} else {
-	    *ptePtr = vm_ZeroPTE;
 	}
+	*ptePtr = 0;
     }
 
     /*
      * The segment can now be expanded.
      */
     segPtr->notExpandCount = 0;
-    segPtr->flags &= ~VM_DELETING_VA;
+    segPtr->flags &= ~VM_ADD_DEL_VA;
     Sync_Broadcast(&segPtr->condition);
 
     UNLOCK_MONITOR;
@@ -1070,6 +1095,10 @@ VmDecExpandCount(segPtr)
     UNLOCK_MONITOR;
 }
 
+void	StartExpansion();
+void	EndExpansion();
+void	AllocMoreSpace();
+
 
 /*
  *----------------------------------------------------------------------
@@ -1100,21 +1129,247 @@ VmAddToSeg(segPtr, firstPage, lastPage)
     VmSpace	newSpace;
     VmSpace	oldSpace;
     int		retValue;
+    int		newNumPages;
+
+    /*
+     * The only segments that can be expanded are the stack and heap segments.
+     */
+    if (segPtr->type == VM_CODE || segPtr->type == VM_SYSTEM) {
+	return(VM_WRONG_SEG_TYPE);
+    }
+
+    StartExpansion(segPtr);
 
     if (segPtr->type == VM_STACK) {
-	VmMachAllocMoreSpace(segPtr, firstPage, &newSpace);
+	newNumPages = mach_LastUserStackPage - firstPage + 1;
+	AllocMoreSpace(segPtr, newNumPages, &newSpace);
     } else {
-	VmMachAllocMoreSpace(segPtr, lastPage, &newSpace);
+	newNumPages = lastPage - segPtr->offset + 1;
+	AllocMoreSpace(segPtr, newNumPages, &newSpace);
     }
 
-    retValue = VmMachAddToSeg(segPtr, firstPage, lastPage, newSpace, 
-				&oldSpace);
-
-    if (oldSpace.spaceToFree) {
-	VmMachFreeSpace(oldSpace);
+    retValue = AddToSeg(segPtr, firstPage, lastPage, newNumPages, 
+			newSpace, &oldSpace);
+    if (oldSpace.spaceToFree && oldSpace.ptPtr != (Vm_PTE *)NIL) {
+	Mem_Free((Address)oldSpace.ptPtr);
     }
+    VmMach_SegExpand(segPtr);
+
+    EndExpansion(segPtr);
 
     return(retValue);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StartExpansion --
+ *
+ *	Mark the page tables as expansion in progress so that no other
+ *	expansions or deletions can happen on the segment.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Expand count incremented and VM_ADD_DEL_VA flag set.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+StartExpansion(segPtr)
+    Vm_Segment	*segPtr;
+{
+    LOCK_MONITOR;
+
+    while (segPtr->notExpandCount > 0) {
+	(void)Sync_Wait(&segPtr->condition, FALSE);
+    }
+    segPtr->flags |= VM_ADD_DEL_VA;
+    segPtr->notExpandCount++;
+
+    UNLOCK_MONITOR;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * EndExpansion --
+ *
+ *	Release the lock on the page tables that prevents expansions and
+ *	deletions from the segment.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Expand count decremented and VM_ADD_DEL_VA flag cleared.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+EndExpansion(segPtr)
+    Vm_Segment	*segPtr;
+{
+    LOCK_MONITOR;
+
+    segPtr->flags &= ~VM_ADD_DEL_VA;
+    segPtr->notExpandCount--;
+    Sync_Broadcast(&segPtr->condition);
+
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AllocMoreSpace --
+ *
+ *	Allocate more space for the page tables for this segment that is
+ *	growing.  endVirtPage is the highest accessible page if it is
+ *	a heap segment and the lowest accessible page if it is a stack
+ * 	segment.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The page table might be expanded.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+AllocMoreSpace(segPtr, newNumPages, spacePtr)
+    register	Vm_Segment	*segPtr;
+    int				newNumPages;
+    register	VmSpace		*spacePtr;
+{
+    /*
+     * Find out the new size of the page table.
+     */
+    spacePtr->ptSize = ((newNumPages - 1)/vmPageTableInc + 1) * vmPageTableInc;
+    /*
+     * Since page tables never get smaller we can see if the page table
+     * is already big enough.
+     */
+    if (spacePtr->ptSize <= segPtr->ptSize) {
+	spacePtr->ptPtr = (Vm_PTE *) NIL;
+    } else {
+	spacePtr->ptPtr = (Vm_PTE *)Mem_Alloc(sizeof(Vm_PTE) * spacePtr->ptSize);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AddToSeg --
+ *
+ *	Make all pages between firstPage and lastPage be in the segments 
+ *	virtual address space.
+ *
+ * Results:
+ *	An error if for some reason the range of virtual pages cannot be
+ *	put into the segment's VAS.  Otherwise SUCCESS is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY ReturnStatus 
+AddToSeg(segPtr, firstPage, lastPage, newNumPages, newSpace, oldSpacePtr)
+    register	Vm_Segment	*segPtr;	/* The segment to add the
+						   virtual pages to. */
+    int				firstPage;	/* The lowest page to put
+						   into the VAS. */
+    int				lastPage;	/* The highest page to put
+						   into the VAS. */
+    int				newNumPages;	/* The new number of pages
+						 * that will be in the
+						 * segment. */
+    VmSpace			newSpace;	/* Pointer to new page table
+						   if the segment has to
+						   be expanded. */
+    VmSpace			*oldSpacePtr;	/* Place to return pointer
+						   to space to free. */
+{
+    int				copySize;
+    int				byteOffset;
+    register	VmProcLink	*procLinkPtr;
+    register	Vm_Segment	*otherSegPtr;
+
+    LOCK_MONITOR;
+
+    *oldSpacePtr = newSpace;
+    oldSpacePtr->spaceToFree = TRUE;
+
+    copySize = segPtr->ptSize * sizeof(Vm_PTE);
+    if (newNumPages > segPtr->ptSize) {
+	if (segPtr->type == VM_HEAP) {
+	    /*
+	     * Go through all proc table entries for all processes sharing
+	     * this segment and make sure that no stack segment is too large.
+	     */
+	    LIST_FORALL(segPtr->procList, (List_Links *) procLinkPtr) {
+		otherSegPtr = 
+			procLinkPtr->procPtr->vmPtr->segPtrArray[VM_STACK];
+		if (newSpace.ptSize + segPtr->offset >= otherSegPtr->offset) {
+		    UNLOCK_MONITOR;
+		    return(VM_SEG_TOO_LARGE);
+		}
+	    }
+	    /*
+	     * This isn't a stack segment so just copy the page table 
+	     * into the lower part, and zero the rest.
+	     */
+	    Byte_Copy(copySize, (Address) segPtr->ptPtr, 
+			(Address) newSpace.ptPtr);
+	    Byte_Zero((newSpace.ptSize - segPtr->ptSize)  * sizeof(Vm_PTE),
+		      (Address) ((int) (newSpace.ptPtr) + copySize));
+	} else {
+	    /*
+	     * Make sure that the heap segment isn't too big.  If it is then 
+	     * abort.
+	     */
+	    otherSegPtr = proc_RunningProcesses[0]->vmPtr->segPtrArray[VM_HEAP];
+	    if (otherSegPtr->offset + otherSegPtr->ptSize >= 
+		mach_LastUserStackPage - newSpace.ptSize + 1) {
+		UNLOCK_MONITOR;
+		return(VM_SEG_TOO_LARGE);
+	    }
+	    /*
+	     * In this case the current page table has to be copied to the 
+	     * high part of the new page table and the lower part has to be 
+	     * zeroed.  Also the offset has to be adjusted to compensate for 
+	     * making the page table bigger than requested.
+	     */
+	    byteOffset = (newSpace.ptSize - segPtr->ptSize) * sizeof(Vm_PTE);
+	    Byte_Copy(copySize, (Address) segPtr->ptPtr, 
+		      (Address) ((int) (newSpace.ptPtr) + byteOffset));
+	    Byte_Zero(byteOffset, (Address) newSpace.ptPtr);
+	    segPtr->offset -= newSpace.ptSize - segPtr->ptSize;
+	}
+	oldSpacePtr->ptPtr = segPtr->ptPtr;
+	segPtr->ptPtr = newSpace.ptPtr;
+	segPtr->ptSize = newSpace.ptSize;
+    }
+    if (newNumPages > segPtr->numPages) {
+	segPtr->numPages = newNumPages;
+    }
+    /* 
+     * Make all pages between firstPage and lastPage zero-fill-on-demand
+     * members of the segment's virtual address space.
+     */
+    VmValidatePagesInt(segPtr, firstPage, lastPage, TRUE, FALSE);
+
+    UNLOCK_MONITOR;
+
+    return(SUCCESS);
 }
 
 void	IncExpandCount();
@@ -1154,12 +1409,12 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
 {
     register	Vm_Segment	*destSegPtr;
     ReturnStatus		status;
-    register	Vm_PTE	*srcPtePtr;
-    register	Vm_PTE	*destPtePtr;
-    Vm_PTE		*tSrcPtePtr;
-    Vm_PTE		*tDestPtePtr;
-    VmVirtAddr		srcVirtAddr;
-    VmVirtAddr		destVirtAddr;
+    register	Vm_PTE	*srcPTEPtr;
+    register	Vm_PTE	*destPTEPtr;
+    Vm_PTE		*tSrcPTEPtr;
+    Vm_PTE		*tDestPTEPtr;
+    Vm_VirtAddr		srcVirtAddr;
+    Vm_VirtAddr		destVirtAddr;
     int			i;
     Address		srcAddr;
     Address		destAddr;
@@ -1210,46 +1465,39 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
      * No copy-on-write.  Do a full fledged copy of the source segment to
      * the dest segment.
      */
-    CopyInfo(srcSegPtr, destSegPtr, &tSrcPtePtr, &tDestPtePtr, &srcVirtAddr,
+    CopyInfo(srcSegPtr, destSegPtr, &tSrcPTEPtr, &tDestPTEPtr, &srcVirtAddr,
 	     &destVirtAddr);
     srcAddr = (Address) NIL;
 
     /*
      * Copy over memory.
      */
-    for (i = 0, srcPtePtr = tSrcPtePtr, destPtePtr = tDestPtePtr; 
+    for (i = 0, srcPTEPtr = tSrcPTEPtr, destPTEPtr = tDestPTEPtr; 
 	 i < destSegPtr->numPages; 
-	 i++, VmIncPTEPtr(srcPtePtr, 1), VmIncPTEPtr(destPtePtr, 1), 
+	 i++, VmIncPTEPtr(srcPTEPtr, 1), VmIncPTEPtr(destPTEPtr, 1), 
 		destVirtAddr.page++) {
-	if (CopyPage(srcPtePtr, destPtePtr)) {
-	    destPtePtr->pfNum = 
-		    VmVirtToPhysPage(VmPageAllocate(&destVirtAddr, TRUE));
+	if (CopyPage(srcSegPtr, srcPTEPtr, destPTEPtr)) {
+	    *destPTEPtr |= VM_REFERENCED_BIT | VM_MODIFIED_BIT |
+	                   VmPageAllocate(&destVirtAddr, TRUE);
 	    destSegPtr->resPages++;
-	    VmSetRefBit(destPtePtr);
-	    VmSetModBit(destPtePtr);
-	    VmMachSegDup(&destVirtAddr);
 	    if (srcAddr == (Address) NIL) {
-		srcAddr = 
-		    VmMapPage((int) VmPhysToVirtPage(srcPtePtr->pfNum));
-		destAddr = 
-		    VmMapPage((int) VmPhysToVirtPage(destPtePtr->pfNum));
+		srcAddr = VmMapPage(VmGetPageFrame(*srcPTEPtr));
+		destAddr = VmMapPage(VmGetPageFrame(*destPTEPtr));
 	    } else {
-		VmRemapPage(srcAddr, 
-			    (int) VmPhysToVirtPage(srcPtePtr->pfNum));
-		VmRemapPage(destAddr, 
-			    (int) VmPhysToVirtPage(destPtePtr->pfNum));
+		VmRemapPage(srcAddr, VmGetPageFrame(*srcPTEPtr));
+		VmRemapPage(destAddr, VmGetPageFrame(*destPTEPtr));
 	    }
-	    Byte_Copy(VM_PAGE_SIZE, srcAddr, destAddr);
-	    VmUnlockPage((int) VmPhysToVirtPage(srcPtePtr->pfNum));
-	    VmUnlockPage((int) VmPhysToVirtPage(destPtePtr->pfNum));
+	    Byte_Copy(vm_PageSize, srcAddr, destAddr);
+	    VmUnlockPage(VmGetPageFrame(*srcPTEPtr));
+	    VmUnlockPage(VmGetPageFrame(*destPTEPtr));
 	}
     }
     /*
      * Unmap any mapped pages.
      */
     if (srcAddr != (Address) NIL) {
-        VmUnmapPageInt(srcAddr);
-        VmUnmapPageInt(destAddr);
+        VmUnmapPage(srcAddr);
+        VmUnmapPage(destAddr);
     }
 
     /*
@@ -1297,7 +1545,7 @@ IncExpandCount(segPtr)
 {
     LOCK_MONITOR;
 
-    while (segPtr->flags & VM_DELETING_VA) {
+    while (segPtr->flags & VM_ADD_DEL_VA) {
 	(void)Sync_Wait(&segPtr->condition, FALSE);
     }
     segPtr->notExpandCount++;
@@ -1324,27 +1572,26 @@ IncExpandCount(segPtr)
  *----------------------------------------------------------------------
  */
 ENTRY static void
-CopyInfo(srcSegPtr, destSegPtr, srcPtePtrPtr, destPtePtrPtr, 
+CopyInfo(srcSegPtr, destSegPtr, srcPTEPtrPtr, destPTEPtrPtr, 
 	 srcVirtAddrPtr, destVirtAddrPtr)
     register	Vm_Segment	*srcSegPtr;
     register	Vm_Segment	*destSegPtr;
-    register	Vm_PTE		**srcPtePtrPtr;
-    register	Vm_PTE		**destPtePtrPtr;
-    VmVirtAddr			*srcVirtAddrPtr;
-    VmVirtAddr			*destVirtAddrPtr;
+    register	Vm_PTE		**srcPTEPtrPtr;
+    register	Vm_PTE		**destPTEPtrPtr;
+    Vm_VirtAddr			*srcVirtAddrPtr;
+    Vm_VirtAddr			*destVirtAddrPtr;
 {
     LOCK_MONITOR;
 
     if (srcSegPtr->type == VM_HEAP) {
-	*srcPtePtrPtr = srcSegPtr->ptPtr;
-	*destPtePtrPtr = destSegPtr->ptPtr;
+	*srcPTEPtrPtr = srcSegPtr->ptPtr;
+	*destPTEPtrPtr = destSegPtr->ptPtr;
 	destVirtAddrPtr->page = srcSegPtr->offset;
     } else {
-	destVirtAddrPtr->page = MACH_LAST_USER_STACK_PAGE - 
+	destVirtAddrPtr->page = mach_LastUserStackPage - 
 						srcSegPtr->numPages + 1;
-	*srcPtePtrPtr = VmGetPTEPtr(srcSegPtr, destVirtAddrPtr->page);
-	*destPtePtrPtr = 
-		VmGetDupPTEPtr(srcSegPtr, destSegPtr, destVirtAddrPtr->page);
+	*srcPTEPtrPtr = VmGetPTEPtr(srcSegPtr, destVirtAddrPtr->page);
+	*destPTEPtrPtr = VmGetPTEPtr(destSegPtr, destVirtAddrPtr->page);
     }
     destVirtAddrPtr->segPtr = destSegPtr;
     srcVirtAddrPtr->segPtr = srcSegPtr;
@@ -1371,34 +1618,38 @@ CopyInfo(srcSegPtr, destSegPtr, srcPtePtrPtr, destPtePtrPtr,
  *----------------------------------------------------------------------
  */
 ENTRY static Boolean
-CopyPage(srcPtePtr, destPtePtr)
-    register	Vm_PTE		*srcPtePtr;
-    register	Vm_PTE		*destPtePtr;
+CopyPage(srcSegPtr, srcPTEPtr, destPTEPtr)
+    Vm_Segment			*srcSegPtr;
+    register	Vm_PTE		*srcPTEPtr;
+    register	Vm_PTE		*destPTEPtr;
 {
     Boolean	residentPage;
 
     LOCK_MONITOR;
 
-    residentPage = srcPtePtr->resident;
-    *destPtePtr = *srcPtePtr;
-
+    while (*srcPTEPtr & VM_IN_PROGRESS_BIT) {
+	(void)Sync_Wait(&srcSegPtr->condition, FALSE);
+    }
+    residentPage = *srcPTEPtr & VM_PHYS_RES_BIT;
+    *destPTEPtr = *srcPTEPtr;
     if (residentPage) {
 	/*
 	 * Copy over all resident pages.  Can reload swapped pages but its a 
 	 * lot cheaper to do a memory-to-memory copy than send an RPC to the
 	 * server to copy the page on swap space.  
 	 */
-	VmLockPageInt((int) VmPhysToVirtPage(srcPtePtr->pfNum));
-	destPtePtr->inProgress = 0;
-	destPtePtr->onSwap = 0;
+	VmLockPageInt(VmGetPageFrame(*srcPTEPtr));
+	*destPTEPtr &= ~(VM_ON_SWAP_BIT | VM_PAGE_FRAME_FIELD);
     } else {
-	destPtePtr->pfNum = 0;
+	*destPTEPtr &= ~VM_PAGE_FRAME_FIELD;
 	/* 
 	 * This page is on the swap file but not in memory so we are
 	 * going to have to copy over the swap space for this page.
 	 * Use the in-progress bit to mark this fact.
 	 */
-	destPtePtr->inProgress = destPtePtr->onSwap;
+	if (*destPTEPtr & VM_ON_SWAP_BIT) {
+	    *destPTEPtr |= VM_IN_PROGRESS_BIT;
+	}
     }
 
     UNLOCK_MONITOR;
@@ -1519,7 +1770,7 @@ Vm_GetSegInfo(procPtr, segNum, segBufPtr)
 	maxSegAddr = &(segmentTable[numSegments - 1]);
 	for (i = VM_CODE; i <= VM_STACK; i++, segBufPtr++) {
 	    if (pcb.genFlags & PROC_KERNEL) {
-		segPtr = vmSysSegPtr;
+		segPtr = vm_SysSegPtr;
 	    } else {
 		segPtr = pcb.vmPtr->segPtrArray[i];
 		if (segPtr < minSegAddr || segPtr > maxSegAddr) {

@@ -22,7 +22,7 @@
  *
  * ----------------------------------------------------------------------------
  */
-ReturnStatus
+void
 VmListInsert(itemPtr, destPtr)
     register	List_Links *itemPtr;	/* structure to insert */
     register	List_Links *destPtr;	/* structure after which to insert it */
@@ -34,13 +34,12 @@ VmListInsert(itemPtr, destPtr)
 
     if (itemPtr == (List_Links *) NIL || destPtr == (List_Links *) NIL
 	    || !itemPtr || !destPtr || (itemPtr == destPtr)) {
-	return(FAILURE);
+	Sys_Panic(SYS_FATAL, "VmListInsert: Bad item or dest ptr.\n");
     }
     itemPtr->nextPtr = destPtr->nextPtr;
     itemPtr->prevPtr = destPtr;
     destPtr->nextPtr->prevPtr = itemPtr;
     destPtr->nextPtr = itemPtr;
-    return(SUCCESS);
 }
 
 
@@ -60,7 +59,7 @@ VmListInsert(itemPtr, destPtr)
  *
  * ----------------------------------------------------------------------------
  */
-ReturnStatus
+void
 VmListRemove(itemPtr)
     register	List_Links *itemPtr;	/* list element to remove */
 {
@@ -70,13 +69,12 @@ VmListRemove(itemPtr)
     }
     if (itemPtr == (List_Links *) NIL || itemPtr == itemPtr->nextPtr
 	    || !itemPtr) {
-	return(FAILURE);
+	Sys_Panic(SYS_FATAL, "VmListRemove: Bad itemPtr.\n");
     }
     itemPtr->prevPtr->nextPtr = itemPtr->nextPtr;
     itemPtr->nextPtr->prevPtr = itemPtr->prevPtr;
     itemPtr->prevPtr = (List_Links *) NIL;
     itemPtr->nextPtr = (List_Links *) NIL;
-    return(SUCCESS);
 }
 
 
@@ -96,31 +94,22 @@ VmListRemove(itemPtr)
  *
  * ----------------------------------------------------------------------------
  */
-ReturnStatus
+void
 VmListMove(itemPtr, destPtr)
     register List_Links *itemPtr; /* list element to be moved */
     register List_Links *destPtr; /* element after which it is to be placed */
 {
-    ReturnStatus status;
-
     if (itemPtr == (List_Links *) NIL || destPtr == (List_Links *) NIL
 	    || !itemPtr || !destPtr) {
-	return(FAILURE);
+	Sys_Panic(SYS_FATAL, "VmListMove: Bad item or dest ptr.\n");
     }
     /*
      * It is conceivable that someone will try to move a list element to
      * be after itself.
      */
     if (itemPtr != destPtr) {
-	status = VmListRemove(itemPtr);
-	if (status != SUCCESS) {
-	    return(status);
-	}
-	status = VmListInsert(itemPtr, destPtr);
-	if (status != SUCCESS) {
-	    return(status);
-	}
+	VmListRemove(itemPtr);
+	VmListInsert(itemPtr, destPtr);
     }    
-    return(SUCCESS);
 }
 

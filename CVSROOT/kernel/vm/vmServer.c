@@ -20,7 +20,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sync.h"
 #include "dbg.h"
 #include "list.h"
-#include "machine.h"
 #include "cvt.h"
 #include "byte.h"
 #include "string.h"
@@ -181,8 +180,8 @@ VmSwapFileUnlock(segPtr)
 
 ReturnStatus
 VmPageServerRead(virtAddrPtr, pageFrame)
-    VmVirtAddr	*virtAddrPtr;
-    int		pageFrame;
+    Vm_VirtAddr			*virtAddrPtr;
+    unsigned	int		pageFrame;
 {
     register	int		mappedAddr;
     register	Vm_Segment	*segPtr;
@@ -196,7 +195,7 @@ VmPageServerRead(virtAddrPtr, pageFrame)
     }
 
     if (segPtr->type == VM_STACK) {
-	pageToRead = MACH_LAST_USER_STACK_PAGE - virtAddrPtr->page;
+	pageToRead = mach_LastUserStackPage - virtAddrPtr->page;
     } else {
 	pageToRead = virtAddrPtr->page - segPtr->offset;
     }
@@ -207,8 +206,8 @@ VmPageServerRead(virtAddrPtr, pageFrame)
      */
     mappedAddr = (int) VmMapPage(pageFrame);
     status = Fs_PageRead(segPtr->swapFilePtr, (Address) mappedAddr,
-			 pageToRead << VM_PAGE_SHIFT,
-			 VM_PAGE_SIZE);
+			 pageToRead << vmPageShift,
+			 vm_PageSize);
     VmUnmapPage((Address) mappedAddr);
 
     return(status);
@@ -232,6 +231,7 @@ VmPageServerRead(virtAddrPtr, pageFrame)
  *
  *----------------------------------------------------------------------
  */
+/* ARGSUSED */
 void
 Vm_OpenSwapDirectory(data, callInfoPtr)
     ClientData		data;	
@@ -397,8 +397,8 @@ VmMakeSwapName(segNum, fileName)
 
 ReturnStatus
 VmPageServerWrite(virtAddrPtr, pageFrame)
-    VmVirtAddr	*virtAddrPtr;
-    int		pageFrame;
+    Vm_VirtAddr		*virtAddrPtr;
+    unsigned int	pageFrame;
 {
     register	int		mappedAddr;
     register	Vm_Segment	*segPtr;
@@ -424,7 +424,7 @@ VmPageServerWrite(virtAddrPtr, pageFrame)
     VmSwapFileUnlock(segPtr);
 
     if (segPtr->type == VM_STACK) {
-	pageToWrite = MACH_LAST_USER_STACK_PAGE - virtAddrPtr->page;
+	pageToWrite = mach_LastUserStackPage - virtAddrPtr->page;
     } else {
 	pageToWrite = virtAddrPtr->page - segPtr->offset;
     }
@@ -434,7 +434,7 @@ VmPageServerWrite(virtAddrPtr, pageFrame)
      */
     mappedAddr = (int) VmMapPage(pageFrame);
     status = Fs_PageWrite(segPtr->swapFilePtr, (Address) mappedAddr,
-			  pageToWrite << VM_PAGE_SHIFT, VM_PAGE_SIZE);
+			  pageToWrite << vmPageShift, vm_PageSize);
     VmUnmapPage((Address) mappedAddr);
 
 #ifdef notdef
@@ -491,7 +491,7 @@ VmCopySwapSpace(srcSegPtr, destSegPtr)
 
     if (destSegPtr->type == VM_STACK) {
 	page = destSegPtr->numPages - 1;
-    	ptePtr = VmGetPTEPtr(destSegPtr, MACH_LAST_USER_STACK_PAGE - 
+	ptePtr = VmGetPTEPtr(destSegPtr, mach_LastUserStackPage - 
 			                 destSegPtr->numPages + 1);
     } else {
 	page = 0;
@@ -506,8 +506,8 @@ VmCopySwapSpace(srcSegPtr, destSegPtr)
 
     for (i = 0; i < destSegPtr->numPages; i++, VmIncPTEPtr(ptePtr, 1)) {
 
-	if (ptePtr->inProgress) {
-	    ptePtr->inProgress = 0;
+	if (*ptePtr & VM_IN_PROGRESS_BIT) {
+	    *ptePtr &= ~VM_IN_PROGRESS_BIT;
 	    /*
 	     * The page is on the swap file and not in memory.  Need to copy
 	     * the page in the file.
@@ -515,7 +515,7 @@ VmCopySwapSpace(srcSegPtr, destSegPtr)
 	    vmStat.swapPagesCopied++;
 	    status = Fs_PageCopy(srcSegPtr->swapFilePtr, 
 				destSegPtr->swapFilePtr, 
-				page << VM_PAGE_SHIFT, VM_PAGE_SIZE);
+				page << vmPageShift, vm_PageSize);
 	    if (status != SUCCESS) {
 		break;
 	    }
@@ -556,8 +556,8 @@ VmCopySwapSpace(srcSegPtr, destSegPtr)
 
 ReturnStatus
 VmFileServerRead(virtAddrPtr, pageFrame)
-    VmVirtAddr	*virtAddrPtr;
-    int		pageFrame;
+    Vm_VirtAddr		*virtAddrPtr;
+    unsigned int	pageFrame;
 {
     register	int		mappedAddr;
     register	Vm_Segment	*segPtr;
@@ -575,16 +575,16 @@ VmFileServerRead(virtAddrPtr, pageFrame)
 
     /*
      * Read the page from the file server.  The address to read is just the
-     * page offset into the segment ((page - offset) << VM_PAGE_SHIFT) plus
+     * page offset into the segment ((page - offset) << vmPageShift) plus
      * the offset of this segment into the file (fileAddr).
      */
 
-    length = VM_PAGE_SIZE;
-    offset = ((virtAddrPtr->page - segPtr->offset) << VM_PAGE_SHIFT) + 
+    length = vm_PageSize;
+    offset = ((virtAddrPtr->page - segPtr->offset) << vmPageShift) + 
 		segPtr->fileAddr;
     status = Fs_Read(segPtr->filePtr, (Address) mappedAddr, offset, &length);
     VmUnmapPage((Address) mappedAddr);
-    if (status != SUCCESS || length != VM_PAGE_SIZE) {
+    if (status != SUCCESS || length != vm_PageSize) {
 	if (status != SUCCESS) {
 	    Sys_Panic(SYS_WARNING, 
 		      "VmFileServerRead: Error %x from Fs_Read\n", status);
@@ -599,7 +599,7 @@ VmFileServerRead(virtAddrPtr, pageFrame)
 	 * Tell the file system that we just read some file system blocks
 	 * into virtual memory.
 	 */
-	Fs_CacheBlocksUnneeded(segPtr->filePtr, offset, VM_PAGE_SIZE, TRUE);
+	Fs_CacheBlocksUnneeded(segPtr->filePtr, offset, vm_PageSize, TRUE);
     }
 
     return(SUCCESS);
@@ -649,14 +649,14 @@ VmCopySwapPage(srcSegPtr, virtPage, destSegPtr)
 
     vmStat.swapPagesCopied++;
     if (destSegPtr->type == VM_STACK) {
-	pageToCopy = MACH_LAST_USER_STACK_PAGE - virtPage;
+	pageToCopy = mach_LastUserStackPage - virtPage;
     } else {
 	pageToCopy = virtPage - destSegPtr->offset;
     }
 
     status = Fs_PageCopy(srcSegPtr->swapFilePtr, 
 			 destSegPtr->swapFilePtr, 
-			 pageToCopy << VM_PAGE_SHIFT, VM_PAGE_SIZE);
+			 pageToCopy << vmPageShift, vm_PageSize);
 
     return(status);
 }

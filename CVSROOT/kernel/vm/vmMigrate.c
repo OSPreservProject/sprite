@@ -12,8 +12,8 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-
 #include "sprite.h"
+#include "vmMach.h"
 #include "vm.h"
 #include "vmInt.h"
 #include "lock.h"
@@ -56,12 +56,12 @@ Boolean vmMigLeakDebug = FALSE;
 /* ARGSUSED */
 ENTRY ReturnStatus
 Vm_FreezeSegments(procPtr, nodeID, procListPtr, numProcsPtr)
-    Proc_ControlBlock 	*procPtr;	/* The process being migrated */
-    int nodeID;			        /* Node to which it migrates */
-    List_Links **procListPtr;	/* pointer to header of process list */
-    int *numProcsPtr;		/* number of processes sharing */
+    Proc_ControlBlock	*procPtr;	/* The process being migrated */
+    int			nodeID;	        /* Node to which it migrates */
+    List_Links		**procListPtr;	/* Pointer to header of process list */
+    int			*numProcsPtr;	/* Number of processes sharing */
 {
-    Vm_Segment 		*segPtr;	/* pointer to its heap segment info */
+    Vm_Segment 		*segPtr;
 #ifdef WONT_WORK_YET
     register VmProcLink	*procLinkPtr;
     register Proc_ControlBlock	*shareProcPtr;
@@ -115,13 +115,12 @@ Vm_FreezeSegments(procPtr, nodeID, procListPtr, numProcsPtr)
  *
  *----------------------------------------------------------------------
  */
-
 ReturnStatus
 Vm_MigrateSegment(segPtr, bufferPtr, bufferSizePtr, numPagesPtr)
-    Vm_Segment 		*segPtr;	/* pointer to segment to migrate */
-    Address *bufferPtr;
-    int *bufferSizePtr;
-    int *numPagesPtr;			     /* Number of pages flushed */
+    Vm_Segment 	*segPtr;	/* Pointer to segment to migrate */
+    Address	*bufferPtr;
+    int		*bufferSizePtr;
+    int		*numPagesPtr;	/* Number of pages flushed */
 {
     ReturnStatus status;
 
@@ -139,7 +138,6 @@ Vm_MigrateSegment(segPtr, bufferPtr, bufferSizePtr, numPagesPtr)
 #endif
     return(status);
 }
-
 
 
 /*
@@ -165,16 +163,15 @@ Vm_MigrateSegment(segPtr, bufferPtr, bufferSizePtr, numPagesPtr)
 
 static ReturnStatus
 EncapsulateInfo(segPtr, bufferPtr, bufferSizePtr)
-    Vm_Segment 	*segPtr;	/* Pointer to the segment to be migrated */
-    Address *bufferPtr;
-    int *bufferSizePtr;
+    Vm_Segment	*segPtr;	/* Pointer to the segment to be migrated */
+    Address	*bufferPtr;
+    int		*bufferSizePtr;
 {
     Address buffer;
     Address ptr;
     int bufferSize;
     int varSize;
     ReturnStatus status;
-
 
     if (segPtr->type != VM_CODE) {
 	varSize = segPtr->ptSize * sizeof(Vm_PTE);
@@ -228,8 +225,8 @@ EncapsulateInfo(segPtr, bufferPtr, bufferSizePtr)
 
 ReturnStatus
 Vm_ReceiveSegmentInfo(procPtr, buffer)
-    Proc_ControlBlock *procPtr;	/* control block for foreign process */
-    Address buffer;		/* buffer containing segment information */
+    Proc_ControlBlock	*procPtr;/* Control block for foreign process */
+    Address		buffer;	 /* Buffer containing segment information */
 {
     int 	offset;
     int 	fileAddr;
@@ -240,11 +237,11 @@ Vm_ReceiveSegmentInfo(procPtr, buffer)
     Vm_Segment 	*segPtr;
     ReturnStatus status;
     Fs_Stream 	*filePtr;
-    Vm_PTE 	pte;
     int 	fsInfoSize;
     Vm_ExecInfo	*execInfoPtr;
     Vm_ExecInfo	*oldExecInfoPtr;
     Boolean	usedFile;
+    Vm_PTE	pte;
 
     fsInfoSize = Fs_GetEncapSize();
 
@@ -278,10 +275,8 @@ Vm_ReceiveSegmentInfo(procPtr, buffer)
 		}
 		Vm_InitCode(filePtr, segPtr, oldExecInfoPtr);
 		Byte_Zero(sizeof(pte), (Address) &pte);
-		pte.validPage = 1;
-		pte.protection = VM_URW_PROT;
-		Vm_InitPageTable(segPtr, &pte, offset, 
-				 offset + numPages - 1, TRUE);
+		Vm_ValidatePages(segPtr, offset, 
+				 offset + numPages - 1, FALSE, TRUE);
 	    } else {
 		if (!usedFile) {
 		    Fs_Close(filePtr);
@@ -347,7 +342,6 @@ Vm_ReceiveSegmentInfo(procPtr, buffer)
  *
  *----------------------------------------------------------------------
  */
-
 ENTRY static void
 LoadSegment(length, buffer, segPtr)
     int				length;
@@ -379,15 +373,14 @@ LoadSegment(length, buffer, segPtr)
  *
  * ----------------------------------------------------------------------------
  */
-
 static ReturnStatus
 FlushSegment(segPtr)
     Vm_Segment 	*segPtr;	/* Pointer to the segment to be flushed */
 {
     Vm_PTE		*ptePtr;
-    VmVirtAddr		virtAddr;
+    Vm_VirtAddr		virtAddr;
     int    		i;
-    Vm_PTE		*firstPtePtr;
+    Vm_PTE		*firstPTEPtr;
     int			firstPage;
     ReturnStatus	status;
 
@@ -408,7 +401,7 @@ FlushSegment(segPtr)
     virtAddr.segPtr = segPtr;
 
     if (segPtr->type == VM_STACK) {
-	virtAddr.page = MACH_LAST_USER_STACK_PAGE - segPtr->numPages + 1;
+	virtAddr.page = mach_LastUserStackPage - segPtr->numPages + 1;
 	ptePtr = VmGetPTEPtr(segPtr, virtAddr.page);
     } else {
 	virtAddr.page = segPtr->offset;
@@ -423,47 +416,38 @@ FlushSegment(segPtr)
      * written to disk at once since the writes are asynchronous.
      */
     
-    firstPtePtr = ptePtr;
+    firstPTEPtr = ptePtr;
     firstPage = virtAddr.page;
-    
+
     for (i = 0; 
 	 i < segPtr->numPages; 
 	 i++, virtAddr.page++, VmIncPTEPtr(ptePtr, 1)) {
-
 	/*
 	 * If the page is not resident in memory then go to the next page.
 	 */
-
-	if (!(ptePtr->resident && ptePtr->modified)) {
+	if (!(*ptePtr & VM_PHYS_RES_BIT)) {
 	    continue;
 	}
-
 	/*
 	 * The page is dirty so put it on the dirty list.  Wait later on
 	 * for it to be written out.
 	 */
-
-	VmPutOnDirtyList((int) VmPhysToVirtPage(ptePtr->pfNum));
+	VmPutOnDirtyList(VmGetPageFrame(*ptePtr));
     }
-    ptePtr = firstPtePtr;
+    ptePtr = firstPTEPtr;
     virtAddr.page = firstPage;
     for (i = 0; 
 	 i < segPtr->numPages; 
 	 i++, virtAddr.page++, VmIncPTEPtr(ptePtr, 1)) {
-
 	/*
 	 * If the page is not resident in memory then go to the next page.
 	 */
-
-	if (!(ptePtr->resident)) {
+	if (!(*ptePtr & VM_PHYS_RES_BIT)) {
 	    continue;
 	}
-
-	VmPageFree((int) VmPhysToVirtPage(ptePtr->pfNum));
-	ptePtr->resident = 0;
-	ptePtr->pfNum = 0;
-	ptePtr->modified = 0;
-	ptePtr->onSwap = 1;
+	VmPageFree(VmGetPageFrame(*ptePtr));
+	segPtr->resPages--;
+	*ptePtr = VM_VIRT_RES_BIT | VM_ON_SWAP_BIT;
     }
     return(SUCCESS);
 }
@@ -487,27 +471,27 @@ FlushSegment(segPtr)
  *
  * ----------------------------------------------------------------------------
  */
-
 ENTRY static void
 PrepareFlush(segPtr, numPagesPtr)
-    Vm_Segment 	*segPtr;	/* Pointer to the segment to be flushed */
-    int *numPagesPtr;			     /* Number of pages flushed */
+    Vm_Segment	*segPtr;	/* Pointer to the segment to be flushed */
+    int		*numPagesPtr;	/* Number of pages flushed */
 {
-    Vm_PTE  	hardPte;
-    Vm_PTE	*softPtePtr;
-    VmVirtAddr	virtAddr;
-    register int    i;
+    Vm_PTE		*ptePtr;
+    Vm_VirtAddr		virtAddr;
+    Boolean		referenced;
+    Boolean		modified;
+    register int	i;
 
     LOCK_MONITOR;
 
     virtAddr.segPtr = segPtr;
 
     if (segPtr->type == VM_STACK) {
-	virtAddr.page = MACH_LAST_USER_STACK_PAGE - segPtr->numPages + 1;
-	softPtePtr = VmGetPTEPtr(segPtr, virtAddr.page);
+	virtAddr.page = mach_LastUserStackPage - segPtr->numPages + 1;
+	ptePtr = VmGetPTEPtr(segPtr, virtAddr.page);
     } else {
 	virtAddr.page = segPtr->offset;
-	softPtePtr = segPtr->ptPtr;
+	ptePtr = segPtr->ptPtr;
     }
 
     /*
@@ -517,34 +501,26 @@ PrepareFlush(segPtr, numPagesPtr)
 
     for (i = 0; 
 	 i < segPtr->numPages; 
-	 i++, virtAddr.page++, VmIncPTEPtr(softPtePtr, 1)) {
-
-        /*
-	 * Get the hardware page table entry for this page.
-	 */
-
-	hardPte = VmGetPTE(&virtAddr);
-
+	 i++, virtAddr.page++, VmIncPTEPtr(ptePtr, 1)) {
 	/*
 	 * If the page is not resident in memory then go to the next page.
 	 */
-
-	if (!hardPte.resident) {
+	if (!(*ptePtr & VM_PHYS_RES_BIT)) {
 	    continue;
 	}
-
 	/*
 	 * The page is resident so lock it if it needs to be written, or else
 	 * free the page frame.
 	 */
-
-	if (hardPte.modified) {
-	    VmLockPageInt((int) VmPhysToVirtPage(hardPte.pfNum));
+	VmMach_GetRefModBits(&virtAddr, VmGetPageFrame(*ptePtr), &referenced,
+			     &modified);
+	if (modified) {
+	    VmLockPageInt(VmGetPageFrame(*ptePtr));
 	    *numPagesPtr += 1;
 	} else {
-	    VmPageFreeInt((int) VmPhysToVirtPage(hardPte.pfNum));
-	    softPtePtr->resident = 0;
-	    softPtePtr->pfNum = 0;
+	    VmPageFreeInt(VmGetPageFrame(*ptePtr));
+	    *ptePtr &= ~(VM_PHYS_RES_BIT | VM_PAGE_FRAME_FIELD);
+	    segPtr->resPages--;
 	}
     }
 
@@ -572,7 +548,6 @@ PrepareFlush(segPtr, numPagesPtr)
  *
  * ----------------------------------------------------------------------------
  */
-
 static void
 FreeSegment(segPtr)
     register	Vm_Segment      *segPtr;
@@ -587,8 +562,11 @@ FreeSegment(segPtr)
 	if (vm_CanCOW) {
 	    VmCOWDeleteFromSeg(segPtr, -1, -1);
 	}
+	VmMach_SegDelete(segPtr);
 	VmCleanSegment(segPtr, &space, TRUE, &fileInfo);
-	VmMachFreeSpace(space);
+	if (space.spaceToFree && space.ptPtr != (Vm_PTE *)NIL) {
+	    Mem_Free((Address)space.ptPtr);
+	}
 	VmPutOnFreeSegList(segPtr);
     }
 }
@@ -611,10 +589,9 @@ FreeSegment(segPtr)
  *
  * ----------------------------------------------------------------------------
  */
-
 void
 Vm_MigSegmentDelete(segPtr)
-    register	Vm_Segment      *segPtr;
+    Vm_Segment      *segPtr;
 {
     if (segPtr != (Vm_Segment *) NIL) {
 	FreeSegment(segPtr);

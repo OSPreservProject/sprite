@@ -12,7 +12,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 #include "sprite.h"
-#include "vmSunConst.h"
 #include "vm.h"
 #include "vmInt.h"
 #include "list.h"
@@ -24,10 +23,12 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sys.h"
 #include "dbg.h"
 
+Address	vmStackBaseAddr;
+Address	vmStackEndAddr;
+
 /*
  * Monitor declarations.
  */
-
 Sync_Lock	stackLock = {0, 0};
 #define	LOCKPTR	&stackLock
 
@@ -40,17 +41,55 @@ typedef struct {
 } StackList;
 
 /*
- * There are an array of stack list elements, one per stack.
+ * Array ofstack list information.
  */
-static	StackList	stackListElements[VM_MAX_PROCESSES];
+static	StackList	*stackListElements;
 
 /*
  * There are two stack lists: in use stacks and free stacks.
  */
-List_Links	activeListHdr;
+static	List_Links	activeListHdr;
 #define	activeList	(&activeListHdr)
-List_Links	freeListHdr;
+static	List_Links	freeListHdr;
 #define	freeList	(&freeListHdr)
+
+static	int	numStackPages;
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmStackInit --
+ *
+ *      Allocate and initialize the stack stuff.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Stack information is allocated and initialization.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+VmStackInit()
+{
+    Address	addr;
+    int		i;
+
+    stackListElements =
+	    (StackList *)Vm_BootAlloc(vmMaxProcesses * sizeof(StackList));
+    List_Init(activeList);
+    List_Init(freeList);
+    for (i = 0, addr = vmStackBaseAddr;
+	 addr < vmStackEndAddr;
+	 i++, addr += mach_KernStackSize) {
+	 stackListElements[i].startAddr = (Address) addr;
+	 List_Insert((List_Links *) &stackListElements[i], 
+		     LIST_ATREAR(freeList));
+    }
+    numStackPages = mach_KernStackSize >> vmPageShift;
+}
 
 
 /*
@@ -69,7 +108,6 @@ List_Links	freeListHdr;
  *
  * ----------------------------------------------------------------------------
  */
-
 ENTRY int
 Vm_GetKernelStack(progCounter, startFunc)
     int		progCounter;	/* Program counter of where to start 
@@ -82,25 +120,9 @@ Vm_GetKernelStack(progCounter, startFunc)
     register	Vm_PTE		*ptePtr;
     register	StackList	*stackListPtr;
     register	int		i;
-    VmVirtAddr			virtAddr;
-    static	Boolean		init = FALSE;
+    Vm_VirtAddr			virtAddr;
 
     LOCK_MONITOR;
-
-    if (!init) {
-	unsigned	int	addr;
-
-	init = TRUE;
-	List_Init(activeList);
-	List_Init(freeList);
-	for (i = 0, addr = VM_STACK_BASE_ADDR; 
-	     addr < VM_STACK_END_ADDR + VM_PAGE_SIZE;
-	     i++, addr += MACH_NUM_STACK_PAGES * VM_PAGE_SIZE) {
-	     stackListElements[i].startAddr = (Address) addr;
-	     List_Insert((List_Links *) &stackListElements[i], 
-			 LIST_ATREAR(freeList));
-	}
-    }
 
     /*
      * Get the first free stack.
@@ -117,15 +139,14 @@ Vm_GetKernelStack(progCounter, startFunc)
      * We allocate page table entries for all pages except the first which
      * is protected.
      */
-    virtAddr.segPtr = vmSysSegPtr;
+    virtAddr.segPtr = vm_SysSegPtr;
     virtAddr.page = 
-	    (((unsigned int) stackListPtr->startAddr) >> VM_PAGE_SHIFT) + 1;
+	    (((unsigned int) stackListPtr->startAddr) >> vmPageShift) + 1;
     virtAddr.offset = 0;
-    for (i = 1, ptePtr = VmGetPTEPtr(vmSysSegPtr, virtAddr.page);
-	 i < MACH_NUM_STACK_PAGES;
+    for (i = 1, ptePtr = VmGetPTEPtr(vm_SysSegPtr, virtAddr.page);
+	 i < numStackPages;
 	 i++, VmIncPTEPtr(ptePtr, 1), virtAddr.page++) {
-	ptePtr->protection = VM_KRW_PROT;
-	ptePtr->pfNum = VmVirtToPhysPage(VmPageAllocate(&virtAddr, TRUE));
+	*ptePtr |= VmPageAllocate(&virtAddr, TRUE);
 	vmStat.kernStackPages++;
 	VmPageValidate(&virtAddr);
     }
@@ -157,13 +178,12 @@ Vm_GetKernelStack(progCounter, startFunc)
  *
  * ----------------------------------------------------------------------------
  */
-
 ENTRY void
 Vm_FreeKernelStack(stackBase)
     int		stackBase;	/* Virtual address of the stack that is being
 				   freed. */
 {
-    VmVirtAddr			virtAddr;
+    Vm_VirtAddr			virtAddr;
     register	int		i;
     register	Vm_PTE		*ptePtr;
     register	StackList	*stackListPtr;
@@ -173,14 +193,14 @@ Vm_FreeKernelStack(stackBase)
     /*
      * Unmap the stack and free its pages.
      */
-    virtAddr.segPtr = vmSysSegPtr;
-    virtAddr.page = ((unsigned int) (stackBase) >> VM_PAGE_SHIFT) + 1;
+    virtAddr.segPtr = vm_SysSegPtr;
+    virtAddr.page = ((unsigned int) (stackBase) >> vmPageShift) + 1;
     virtAddr.offset = 0;
-    for (i = 1, ptePtr = VmGetPTEPtr(vmSysSegPtr, virtAddr.page);
-	 i < MACH_NUM_STACK_PAGES; 
+    for (i = 1, ptePtr = VmGetPTEPtr(vm_SysSegPtr, virtAddr.page);
+	 i < numStackPages; 
 	 i++, VmIncPTEPtr(ptePtr, 1), virtAddr.page++) {
 	vmStat.kernStackPages--;
-	VmPageFree((int) VmPhysToVirtPage(ptePtr->pfNum));
+	VmPageFree(VmGetPageFrame(*ptePtr));
 	VmPageInvalidate(&virtAddr);
     }
 

@@ -14,7 +14,7 @@
 #ifndef _VMINT
 #define _VMINT
 
-#include "vmMachInt.h"
+#include "vmMach.h"
 #include "fs.h"
 #include "list.h"
 #include "sync.h"
@@ -22,42 +22,38 @@
 #include "status.h"
 
 /*
- * The number of the first page frame in physical memory that is not owned 
- * by the kernel.
+ * Value returned for a page frame when none are available.
  */
-extern	int	vmFirstFreePage;
+#define VM_NO_MEM_VAL	0x7fffffff
 
-/*
- * The pointer to memory allocated at boot time.
- */
-extern	Address	vmMemEnd;
-
-/*
- * Flag that is set once we can no longer allocate memory using the boot
- * allocation routine.
- */
-extern	Boolean	vmNoBootAlloc;
-
-/*
- * A stream to the swap directory. 
- */
-extern	Fs_Stream	*vmSwapStreamPtr;
-
-/*
- * Structure to represent a translated virtual address
- */
-
-typedef struct {
-    struct	Vm_Segment	*segPtr;
-    int 			page;
-    int 			offset;
-    int				flags;	/* Flags used after parsing a virtual
-					 * address. */
-} VmVirtAddr;
+extern	int	vmFirstFreePage;	/* The first page frame that is not
+					 * owned by the kernel. */
+extern	Address	vmMemEnd;		/* End of kernel memory. */
+extern	Boolean	vmNoBootAlloc;		/* TRUE implies can no longer use 
+					 * Vm_BootAlloc. */
+extern	Fs_Stream *vmSwapStreamPtr;	/* Swap directory stream. */
+extern	int	vmPageShift;		/* Log base 2 of vmPageSize. */
+extern	int	vmPageTableInc;		/* The size in which page tables can
+					 * grow. */
+extern	int	vmKernMemSize;		/* Amount of code + data available for
+					 * the kernel. */
+extern	int	vmMaxProcesses;		/* The maximum number of processes that
+					 * are supported by virtual memory. */
+extern	int	vmNumMappedPages;	/* The maximum number of pages that
+					 * can be mapped in by the kernel at
+					 * one time. */
+extern	Address	vmStackBaseAddr;	/* Base of where kernel stacks are. */
+extern	Address	vmStackEndAddr;		/* End of where kernel stacks are. */
+extern	Address	vmMapBaseAddr;		/* Base of where to map pages. */
+extern	Address	vmMapEndAddr;		/* End of where to map pages. */
+extern	int	vmMapBasePage;		/* First page to use for mapping. */
+extern	int	vmMapEndPage;		/* Last page to use for mapping. */
+extern	Address	vmBlockCacheBaseAddr;	/* Base of the file system cache. */
+extern	Address	vmBlockCacheEndAddr;	/* End of the file system cache. */
 
 /*
  * Values for flags field.  Lower 8 bits are for our use, next 8 bits are 
- * machine dependent and are defined in vmMachInt.h.
+ * machine dependent.
  *
  *	VM_HEAP_NOT_EXPANDABLE	The heap segment for the current process has
  *				been made not expandable.
@@ -67,7 +63,6 @@ typedef struct {
 /*
  * Structure that contains file information that needs to be freed.
  */
-
 typedef struct {
     Fs_Stream	*objStreamPtr;
     Fs_Stream	*swapStreamPtr;
@@ -134,7 +129,6 @@ typedef	struct {
 					   space that has to be deallocated.*/
     Vm_PTE		*ptPtr;		/* Pointer to page table */
     int			ptSize;		/* Size of page table. */
-    VmMachData		*machData;	/* Pointer to machine dependent data */
     VmProcLink		*procLinkPtr;	/* Pointer to proc list element. */
 } VmSpace;
 
@@ -156,10 +150,9 @@ typedef enum {
 } VmDeleteStatus;
 
 /*
- * System segment number and pointer to it.
+ * System segment number.
  */
 #define VM_SYSTEM_SEGMENT       0
-extern 	Vm_Segment	*vmSysSegPtr;
 
 /*
  * Segment table flags:
@@ -175,8 +168,7 @@ extern 	Vm_Segment	*vmSysSegPtr;
  *				opened or written to.
  *   VM_SEG_DEAD		This segment is in the process of being
  *				deleted.
- *   VM_DELETING_VA		A range of virtual addresses are being deleted
- *				from this segment.
+ *   VM_ADD_DEL_VA		Are adding to or deleting from this segment.
  */
 
 #define	VM_SEG_FREE			0x01
@@ -186,7 +178,7 @@ extern 	Vm_Segment	*vmSysSegPtr;
 #define	VM_SWAP_FILE_OPENED		0x10
 #define	VM_SWAP_FILE_LOCKED		0x20
 #define	VM_SEG_DEAD			0x40
-#define	VM_DELETING_VA			0x80
+#define	VM_ADD_DEL_VA			0x80
 
 
 /*---------------------------------------------------------------------------*/
@@ -211,7 +203,7 @@ extern 	Vm_Segment	*vmSysSegPtr;
 typedef struct VmCore {
     List_Links	links;		/* Links for allocate and dirty lists */
 
-    VmVirtAddr	virtPage;	/* The virtual page information for this page */
+    Vm_VirtAddr	virtPage;	/* The virtual page information for this page */
 
     int		lockCount;	/* The number of times that this page has been
 				   locked down (i.e. made unpageable). */
@@ -253,6 +245,17 @@ typedef struct VmCOWInfo {
     Boolean		copyInProgress;
 } VmCOWInfo;
 
+/*
+ * Macro to get a pointer to a page table entry.
+ */
+#define	VmGetPTEPtr(segPtr, page) \
+    (&((segPtr)->ptPtr[(page) - (segPtr)->offset]))
+
+/*
+ * Macro to increment a page table pointer.
+ */
+#define	VmIncPTEPtr(ptePtr, val) ((ptePtr) += val)
+
 
 /*----------------------------------------------------------------------------*/
 
@@ -262,14 +265,15 @@ typedef struct VmCOWInfo {
 extern	void	VmSegTableAlloc();
 extern	void	VmSegTableInit();
 extern	void	VmSwapFileInit();
+extern	void	VmStackInit();
 extern	void	VmCoreMapAlloc();
 extern	void	VmCoreMapInit();
 /*
  * Internal virtual memory procedures.
  */
-extern	int		VmPageAllocate();
-extern	int		VmPageAllocateInt();
-extern	int		VmGetReservePage();
+extern	unsigned int	VmPageAllocate();
+extern	unsigned int	VmPageAllocateInt();
+extern	unsigned int	VmGetReservePage();
 extern	void		VmPageFree();
 extern	void		VmPutOnFreeSegList();
 extern	void		VmPutOnFreePageList();
@@ -281,11 +285,19 @@ extern	void		VmDecExpandCount();
 extern	ReturnStatus 	VmAddToSeg();
 extern	void 		VmDeleteFromSeg();
 extern  VmDeleteStatus 	VmSegmentDeleteInt();
-extern	void		VmSetSegProtInt();
-extern	void		VmSetPageProt();
-extern	void		VmSetPageProtInt();
 extern	void		VmPageSwitch();
 extern	Vm_Segment	*VmGetSegPtr();
+extern	void		VmPageValidate();
+extern	void		VmPageValidateInt();
+extern	void		VmPageInvalidate();
+extern	void		VmPageInvalidateInt();
+extern	void		VmValidatePagesInt();
+extern	void		VmCleanSegment();
+extern	void		VmListMove();
+extern	void		VmListRemove();
+extern	void		VmListInsert();
+extern	void		VmVirtAddrParse();
+extern	void		VmZeroPage();
 
 /*
  * Routines for copy-on-write and copy-on-reference.
@@ -314,5 +326,12 @@ extern	void 		VmSwapFileUnlock();
 
 extern	ReturnStatus	VmOpenSwapByName();
 extern  ENTRY void	VmPutOnDirtyList();
+
+/*
+ * Procedures for mapping.
+ */
+extern	Address		VmMapPage();
+extern	void		VmUnmapPage();
+extern	void		VmRemapPage();
 
 #endif _VMINT
