@@ -49,6 +49,18 @@ int mach_NumProcessors = NUM_PROCESSORS;
 Boolean mach_AtInterruptLevel = FALSE;
 
 /*
+ * The machine type string is imported by the file system and
+ * used when expanding $MACHINE in file names.
+ */
+
+#ifdef SUN3
+char *mach_MachineType = "sun3";
+#endif
+#ifdef SUN2
+char *mach_MachineType = "sun2";
+#endif
+
+/*
  *  Count of number of ``calls'' to enable interrupts minus number of calls
  *  to disable interrupts.  Kept on a per-processor basis.
  */
