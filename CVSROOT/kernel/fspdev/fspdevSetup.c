@@ -87,32 +87,29 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 {
     register	ReturnStatus status = SUCCESS;
     FsFileID	ioFileID;
-    Boolean	found;
     register	PdevControlIOHandle *ctrlHandlePtr;
     register	Fs_Stream *streamPtr;
     register	FsPdevState *pdevStatePtr;
 
     /*
      * The control I/O handle is identified by the fileID of the pseudo-device
-     * file with type CONTROL.  The minor field has the disk decriptor version
-     * number xor'ed into it to avoid conflict when you delete the
+     * file with type CONTROL, and with the decriptor version number
+     * xor'ed into the minor number to avoid conflict when you delete the
      * pdev file and recreate one with the same file number (minor field).
-     * Note, if this mapping is changed here on the file server, then
-     * regular control stream recovery by clients won't work.  They will
-     * recover their control handles, but we will map to a different handle
-     * and thus think there is no server process.
      */
     ioFileID = handlePtr->hdr.fileID;
     ioFileID.type = FS_CONTROL_STREAM;
-    ioFileID.minor ^= (handlePtr->descPtr->version << 16);
-    ctrlHandlePtr = FsControlHandleInit(&ioFileID, handlePtr->hdr.name,
-					&found);
+    ioFileID.serverID = rpc_SpriteID;
+    ioFileID.major = handlePtr->hdr.fileID.major;
+    ioFileID.minor = handlePtr->hdr.fileID.minor ^
+		    (handlePtr->descPtr->version << 16);
+    ctrlHandlePtr = FsControlHandleInit(&ioFileID, handlePtr->hdr.name);
 
     if (useFlags & FS_PDEV_MASTER) {
 	/*
 	 * When a server opens we ensure there is only one.
 	 */
-	if (found && ctrlHandlePtr->serverID != NIL) {
+	if (ctrlHandlePtr->serverID != NIL) {
 	    status = FS_FILE_BUSY;
 	} else {
 	    /*
@@ -143,7 +140,7 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	     * at the name of the pseudo-device, what else?
 	     */
 	    *ioFileIDPtr = handlePtr->hdr.fileID;
-	} else if (!found || ctrlHandlePtr->serverID == NIL) {
+	} else if (ctrlHandlePtr->serverID == NIL) {
 	    /*
 	     * No server process.
 	     */
@@ -261,21 +258,126 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 	goto exit;
     }
 
+    if (ctrlHandlePtr->rmt.hdr.fileID.serverID != rpc_SpriteID) {
+	/*
+	 * Extract the seed from the minor field (see the SrvOpen routine).
+	 * This done in case of recovery when we'll need to reset the
+	 * seed kept on the file server.
+	 */
+	ctrlHandlePtr->seed = ioFileIDPtr->minor & 0x0FFF;
+    }
+
+    cltHandlePtr = FsPdevConnect(ioFileIDPtr, clientID, name);
+    if (cltHandlePtr == (PdevClientIOHandle *)NIL) {
+	goto exit;
+    }
     /*
-     * Extract the seed from the minor field (see the SrvOpen routine).
-     * This done in case of recovery when we'll need to reset the
-     * seed kept on the file server.
+     * Put the client on its own stream list.
      */
-    ctrlHandlePtr->seed = ioFileIDPtr->minor & 0x0FFF;
+    cltStreamPtr = FsStreamAddClient(&pdevStatePtr->streamID, clientID,
+		(FsHandleHeader *)cltHandlePtr, *flagsPtr, name, &found);
+    FsHandleRelease(cltStreamPtr, TRUE);
+    FsHandleUnlock(cltHandlePtr);
+    /*
+     * Set up a stream for the server process.  This will be picked
+     * up by FsControlRead and converted to a user-level streamID.
+     */
+    srvStreamPtr = FsStreamNewClient(rpc_SpriteID, rpc_SpriteID,
+			    (FsHandleHeader *)cltHandlePtr->pdevHandlePtr,
+			    FS_READ|FS_USER, name);
+    notifyPtr = Mem_New(PdevNotify);
+    notifyPtr->streamPtr = srvStreamPtr;
+    List_InitElement((List_Links *)notifyPtr);
+    List_Insert((List_Links *)notifyPtr,
+		LIST_ATREAR(&ctrlHandlePtr->queueHdr));
+    FsHandleUnlock(srvStreamPtr);
+
+    FsFastWaitListNotify(&ctrlHandlePtr->readWaitList);
+    FsHandleRelease(ctrlHandlePtr, TRUE);
+    /*
+     * Now that the request response stream is set up we do
+     * our first transaction with the server process to see if it
+     * will accept the open.  We unlock the handle and rely on the
+     * per-connection monitor lock instead.  This is important because a
+     * buggy pseudo-device server could be ignoring this connection
+     * request indefinitely, and leaving handles locked for long periods
+     * clogs up handle scavenging, and potentially recovery callbacks too.
+     */
+    if (clientID == rpc_SpriteID) {
+	procPtr = Proc_GetEffectiveProc();
+	procID = procPtr->processID;
+	uid = procPtr->effectiveUserID;
+    } else {
+	procID = pdevStatePtr->procID;
+	uid = pdevStatePtr->uid;
+    }
+    status = FsPseudoStreamOpen(cltHandlePtr->pdevHandlePtr, *flagsPtr,
+				clientID, procID, uid);
+    if (status == SUCCESS) {
+	*ioHandlePtrPtr = (FsHandleHeader *)cltHandlePtr;
+    } else {
+	/*
+	 * Clean up client side, we assume server closes its half.
+	 */
+	FsHandleInvalidate((FsHandleHeader *) cltHandlePtr);
+	FsHandleRemove(cltHandlePtr);
+	(void)FsStreamClientClose(&cltStreamPtr->clientList, clientID);
+	if (!found) {
+	    /*
+	     * The client's stream wasn't already around from being installed
+	     * in Fs_Open, so we nuke the shadow stream we've created.
+	     */
+	    FsStreamDispose(cltStreamPtr);
+	}
+    }
+exit:
+    Mem_Free((Address)streamData);
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsPdevConnect --
+ *
+ *	This sets up a pseduo-device connection.  This is called from
+ *	the PseudoStreamCltOpen routine with ordinary pseudo-devices,
+ *	and from FsPfsCltOpen to set up the naming connection to a
+ *	pseudo-filesystem server, and during an IOC_PFS_OPEN by a
+ *	pseudo-filesystem server to set up a connection to a client.
+ * 
+ * Results:
+ *	A pointer to a PdevClientIOHandle that references a PdevServerIOHandle.
+ *	The client handle is returned locked, but the server handle it
+ *	references is not locked.
+ *
+ * Side effects:
+ *	Creates the client's I/O handle.  Calls FsServerStreamCreate
+ *	which sets up the servers corresponding I/O handle.
+ *	Top-level streams are not created, that is left to our caller because
+ *	of the various ways the connection will be used and set up.
+ *
+ *----------------------------------------------------------------------
+ */
+
+PdevClientIOHandle *
+FsPdevConnect(ioFileIDPtr, clientID, name)
+    register FsFileID	*ioFileIDPtr;	/* I/O fileID */
+    int			clientID;	/* Host ID of client-side */
+    char		*name;		/* File name for error msgs */
+{
+    Boolean			found;
+    FsHandleHeader		*hdrPtr;
+    register PdevClientIOHandle	*cltHandlePtr;
 
     found = FsHandleInstall(ioFileIDPtr, sizeof(PdevClientIOHandle), name,
-			    ioHandlePtrPtr);
-    cltHandlePtr = (PdevClientIOHandle *)(*ioHandlePtrPtr);
+			    &hdrPtr);
+    cltHandlePtr = (PdevClientIOHandle *)hdrPtr;
     if (found) {
 	if ((cltHandlePtr->pdevHandlePtr != (PdevServerIOHandle *)NIL) &&
 	    (cltHandlePtr->pdevHandlePtr->clientPID != (unsigned int)NIL)) {
 	    Sys_Panic(SYS_WARNING,
-		"FsPseudoStreamCltOpen found client handle\n");
+		"FsPdevConnect found client handle\n");
 	    Sys_Printf("Check (and kill) client process %x\n",
 		cltHandlePtr->pdevHandlePtr->clientPID);
 	}
@@ -287,96 +389,35 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 	FsHandleRelease(cltHandlePtr, TRUE);
 
 	found = FsHandleInstall(ioFileIDPtr, sizeof(PdevClientIOHandle), name,
-			ioHandlePtrPtr);
-	cltHandlePtr = (PdevClientIOHandle *)(*ioHandlePtrPtr);
+			&hdrPtr);
+	cltHandlePtr = (PdevClientIOHandle *)hdrPtr;
 	if (found) {
-	    Sys_Panic(SYS_FATAL, "FsPseudoStreamCltOpen handle still there\n");
+	    Sys_Panic(SYS_FATAL, "FsPdevConnect handle still there\n");
 	}
-    }
-    /*
-     * Put the client on the stream list.
-     */
-    cltStreamPtr = FsStreamAddClient(&pdevStatePtr->streamID, clientID,
-		(FsHandleHeader *)cltHandlePtr, *flagsPtr, name, &found);
-    FsHandleRelease(cltStreamPtr, TRUE);
-    /*
-     * We have to look around and decide if we are being called
-     * from Fs_Open, or via RPC from a remote client.  A remote client's
-     * processID and uid are passed to us via the FsPdevState.
-     */
-    if (clientID == rpc_SpriteID) {
-	procPtr = Proc_GetEffectiveProc();
-	procID = procPtr->processID;
-	uid = procPtr->effectiveUserID;
-    } else {
-	procID = pdevStatePtr->procID;
-	uid = pdevStatePtr->uid;
     }
     /*
      * Set up the connection state and hook the client handle to it.
      */
     cltHandlePtr->pdevHandlePtr = FsServerStreamCreate(ioFileIDPtr, name);
     if (cltHandlePtr->pdevHandlePtr == (PdevServerIOHandle *)NIL) {
-	status = FAILURE;
-    } else {
-	/*
-	 * Set up a stream for the server process.  This will be picked
-	 * up by FsControlRead and converted to a user-level streamID.
-	 */
-	srvStreamPtr = FsStreamNewClient(rpc_SpriteID, rpc_SpriteID,
-				(FsHandleHeader *)cltHandlePtr->pdevHandlePtr,
-				FS_READ|FS_USER, name);
-	notifyPtr = Mem_New(PdevNotify);
-	notifyPtr->streamPtr = srvStreamPtr;
-	List_InitElement((List_Links *)notifyPtr);
-	List_Insert((List_Links *)notifyPtr,
-		    LIST_ATREAR(&ctrlHandlePtr->queueHdr));
-	FsHandleUnlock(srvStreamPtr);
-
-	FsFastWaitListNotify(&ctrlHandlePtr->readWaitList);
-	FsHandleUnlock(cltHandlePtr->pdevHandlePtr);
-	/*
-	 * Set up the client list in case the client is remote.
-	 */
-	List_Init(&cltHandlePtr->clientList);
-	(void)FsIOClientOpen(&cltHandlePtr->clientList, clientID, 0, FALSE);
-	FsHandleRelease(ctrlHandlePtr, TRUE);
-	/*
-	 * Grab an extra reference to the server's handle so the
-	 * server close routine can remove the handle and it won't
-	 * go away until the client also closes.
-	 */
-	(void)FsHandleDup((FsHandleHeader *)cltHandlePtr->pdevHandlePtr);
-	FsHandleUnlock(cltHandlePtr->pdevHandlePtr);
-	/*
-	 * Now that the request response stream is set up we do
-	 * our first transaction with the server process to see if it
-	 * will accept the open.  We unlock the handle and rely on the
-	 * per-connection monitor lock instead.  This is important because a
-	 * buggy pseudo-device server could be ignoring this connection
-	 * request indefinitely, and leaving handles locked for long periods
-	 * clogs up handle scavenging, and potentially recovery callbacks too.
-	 */
-	FsHandleUnlock(cltHandlePtr);
-	status = FsPseudoStreamOpen(cltHandlePtr->pdevHandlePtr, *flagsPtr,
-				    clientID, procID, uid);
-    }
-    if (status == SUCCESS) {
-	*ioHandlePtrPtr = (FsHandleHeader *)cltHandlePtr;
-    } else {
-	FsHandleInvalidate((FsHandleHeader *) cltHandlePtr);
 	FsHandleRemove(cltHandlePtr);
-	(void)FsStreamClientClose(&cltStreamPtr->clientList, clientID);
-	if (!found) {
-	    /*
-	     * Nuke shadow stream.
-	     */
-	    FsStreamDispose(cltStreamPtr);
-	}
+	return((PdevClientIOHandle *)NIL);
     }
-exit:
-    Mem_Free((Address)streamData);
-    return(status);
+    /*
+     * Set up the client list in case the client is remote.
+     */
+    List_Init(&cltHandlePtr->clientList);
+    (void)FsIOClientOpen(&cltHandlePtr->clientList, clientID, 0, FALSE);
+    /*
+     * Grab an extra reference to the server's handle so the
+     * server close routine can remove the handle and it won't
+     * go away until the client also closes.
+     */
+    FsHandleUnlock(cltHandlePtr->pdevHandlePtr);
+    (void)FsHandleDup((FsHandleHeader *)cltHandlePtr->pdevHandlePtr);
+    FsHandleUnlock(cltHandlePtr->pdevHandlePtr);
+
+    return(cltHandlePtr);
 }
 
 /*
@@ -415,24 +456,37 @@ FsRmtPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
     register FsRecoveryInfo *recovPtr;
     Proc_ControlBlock *procPtr;
     FsRemoteIOHandle *rmtHandlePtr;
+    int myStreamType;
+    int serverStreamType = -1;
     Boolean found;
 
     /*
-     * Invoke via RPC FsPseudoStreamCltOpen.  Here we use the procID field
-     * of the FsPdevState so that FsPseudoStreamCltOpen can pass them
-     * to FsServerStreamCreate.
+     * We are called for both FS_RMT_PFS_STREAM and FS_RMT_PSEUDO_STREAM.
+     * These two differ only in the CltOpen routine called on the server.
+     */
+    myStreamType = ioFileIDPtr->type;
+    if (myStreamType > 0 && myStreamType < FS_NUM_STREAM_TYPES) {
+	serverStreamType = fsRmtToLclType[myStreamType];
+    }
+    if (serverStreamType != FS_LCL_PSEUDO_STREAM &&
+	serverStreamType != FS_LCL_PFS_STREAM) {
+	Sys_Panic(SYS_FATAL, "FsRmtPseudoStreamCltOpen, bad call\n");
+	return(FAILURE);
+    }
+    /*
+     * Use RPC to invoke either FsPseudoStreamCltOpen or FsPfsStreamCltOpen.
      */
     procPtr = Proc_GetEffectiveProc();
     pdevStatePtr->procID = procPtr->processID;
     pdevStatePtr->uid = procPtr->effectiveUserID;
-    ioFileIDPtr->type = FS_LCL_PSEUDO_STREAM;
+    ioFileIDPtr->type = serverStreamType;
     status = FsDeviceRemoteOpen(ioFileIDPtr, *flagsPtr,	sizeof(FsPdevState),
 				(ClientData)pdevStatePtr);
     if (status == SUCCESS) {
 	/*
 	 * Install a remote I/O handle and initialize its recovery state.
 	 */
-	ioFileIDPtr->type = FS_RMT_PSEUDO_STREAM;
+	ioFileIDPtr->type = myStreamType;
 	found = FsHandleInstall(ioFileIDPtr, sizeof(FsRemoteIOHandle), name,
 		(FsHandleHeader **)&rmtHandlePtr);
 	recovPtr = &rmtHandlePtr->recovery;
@@ -761,7 +815,15 @@ FsRmtPseudoStreamVerify(fileIDPtr, clientID, domainTypePtr)
     register FsClientInfo	*clientPtr;
     Boolean			found = FALSE;
 
-    fileIDPtr->type = FS_LCL_PSEUDO_STREAM;
+    if (fileIDPtr->type > 0 && fileIDPtr->type < FS_NUM_STREAM_TYPES) {
+	fileIDPtr->type = fsRmtToLclType[fileIDPtr->type];
+    }
+    if (fileIDPtr->type != FS_LCL_PSEUDO_STREAM &&
+	fileIDPtr->type != FS_LCL_PFS_STREAM) {
+	Sys_Panic(SYS_WARNING, "FsRmtPseudoStreamVerify, bad type <%d>\n",
+	    fileIDPtr->type);
+	return((FsHandleHeader *)NIL);
+    }
     cltHandlePtr = FsHandleFetchType(PdevClientIOHandle, fileIDPtr);
     if (cltHandlePtr != (PdevClientIOHandle *)NIL) {
 	LIST_FORALL(&cltHandlePtr->clientList, (List_Links *) clientPtr) {
@@ -777,8 +839,9 @@ FsRmtPseudoStreamVerify(fileIDPtr, clientID, domainTypePtr)
     }
     if (!found) {
 	Sys_Panic(SYS_WARNING,
-	    "FsRmtPseudoDeviceVerify, client %d not known for pdev <%x,%x>\n",
-	    clientID, fileIDPtr->major, fileIDPtr->minor);
+	    "FsRmtPseudoDeviceVerify, client %d not known for %s <%x,%x>\n",
+	    clientID, FsFileTypeToString(fileIDPtr->type),
+	    fileIDPtr->major, fileIDPtr->minor);
     }
     if (domainTypePtr != (int *)NIL) {
 	*domainTypePtr = FS_PSEUDO_DOMAIN;
