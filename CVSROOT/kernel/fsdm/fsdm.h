@@ -306,7 +306,7 @@ typedef struct FsFileDescriptor {
     int devServerID;	/* ID of the host that controls the device */
     short devType;	/* For devices, their type.  For others this is the
 			 * type of disk the file is stored on */
-    short devUnit;	/* For devices, their unit number.  For others,
+    unsigned short devUnit;	/* For devices, their unit number.  For others,
 			 * the unit indicates the disk partition */
     /*
      * All times in seconds since Jan 1 1970, Greenwich time.
