@@ -23,6 +23,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sync.h"
 #include "sys.h"
 
+
+
 static	Sync_Condition	mappingCondition;
 
 int	vmNumMappedPages = 16;
@@ -78,6 +80,13 @@ VmMapPage(pfNum)
 		virtAddr.offset = 0;
 		*ptePtr |= VM_PHYS_RES_BIT | pfNum;
 		VmMach_PageValidate(&virtAddr, *ptePtr);
+#ifdef spur
+		/*
+		 * Until we figure out how to handle virtual synonyms on 
+		 * SPUR, we always make map address noncachable. 
+		 */
+		VmMach_MakeNonCachable(&virtAddr, *ptePtr);
+#endif
 		UNLOCK_MONITOR;
 		return((Address) (virtPage << vmPageShift));
 	    }
@@ -130,6 +139,13 @@ VmRemapPage(addr, pfNum)
     *ptePtr &= ~VM_PAGE_FRAME_FIELD;
     *ptePtr |= pfNum;
     VmMach_PageValidate(&virtAddr, *ptePtr);
+#ifdef spur
+    /*
+     * Until we figure out how to handle virtual synonyms on 
+     * SPUR, we always make map address noncachable. 
+     */
+    VmMach_MakeNonCachable(&virtAddr, *ptePtr);
+#endif
 
     UNLOCK_MONITOR;
 }
