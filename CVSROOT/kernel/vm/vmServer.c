@@ -312,8 +312,8 @@ VmOpenSwapFile(segPtr)
 	swapFileNamePtr = segPtr->swapFileName;
     }
     status = Fs_Open(swapFileNamePtr, 
-		     FS_READ | FS_WRITE | FS_CREATE | FS_TRUNC, FS_FILE,
-		     0660, &segPtr->swapFilePtr);
+		     FS_READ | FS_WRITE | FS_CREATE | FS_TRUNC | FS_SWAP,
+		     FS_FILE, 0660, &segPtr->swapFilePtr);
     if (origID != NIL) {
 	procPtr->effectiveUserID = origID;
     }
