@@ -894,7 +894,7 @@ MachVMFault(faultType, PC, isDestAddr, destAddr, kpsw)
     }
     if (faultType & MACH_VM_FAULT_DIRTY_BIT) {
 	if (!isDestAddr) {
-	    Sys_Panic(SYS_PANIC, "MachVMFault: PC dirty??\n");
+	    Sys_Panic(SYS_FATAL, "MachVMFault: PC dirty??\n");
 	} else {
 	    VmMach_SetModBit(destAddr);
 	}
