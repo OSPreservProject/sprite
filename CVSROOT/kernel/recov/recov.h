@@ -55,8 +55,12 @@ extern int recov_PrintLevel;
  *				to block RPC server processes until the
  *				crash recovery actions have completed.
  *	RECOV_WANT_RECOVERY	Set if another module wants a callback at reboot
- *	RECOV_PINGING_HOST	Set while we ping a host to see when it reboots
- *	RECOV_REBOOT_CALLBACKS	Set while reboot callbacks are pending.	
+ *	RECOV_PINGING_HOST	Set for hosts we ping to see when it reboots.
+ *	RECOV_REBOOT_CALLBACKS	Set while reboot callbacks are pending.
+ *	RECOV_FAILURE		Set if a communication failure occurs during
+ *				the reboot callbacks.  This triggers another
+ *				invokation of the reboot callbacks so that
+ *				a client can't miss out on recovery.
  *
  *	RECOV_CRASH		artificial state to trace RecovCrashCallBacks
  *	RECOV_REBOOT		artificial state to trace RecovRebootCallBacks
@@ -65,10 +69,11 @@ extern int recov_PrintLevel;
 #define RECOV_HOST_ALIVE	0x1
 #define RECOV_HOST_DYING	0x2
 #define RECOV_HOST_DEAD		0x4
+
 #define RECOV_HOST_BOOTING	0x10
 #define RECOV_CRASH		0x20
 #define RECOV_REBOOT		0x40
-
+#define RECOV_FAILURE		0x80
 
 #define RECOV_CRASH_CALLBACKS	0x0100
 #define RECOV_WANT_RECOVERY	0x0200
@@ -80,7 +85,7 @@ extern int recov_PrintLevel;
  * immidiately after a timeout.  Otherwise the host lingers in
  * the RECOV_HOST_DYING state for recov_CrashDelay seconds.
  */
-#define dying_state
+#undef dying_state
 
 /*
  * Host state flags for use by Recov clients.  These flags are set
