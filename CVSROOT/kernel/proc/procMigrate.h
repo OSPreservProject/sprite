@@ -188,10 +188,19 @@ typedef struct {
     Proc_Time		remoteCPUTime;   /* Cumulative time used by all
 					   processes belonging to this host,
 					   while executing remotely. */
+    int			evictionsInProgress;
+    					/* Number of processes currently
+					   being evicted. */
 					   
 } Proc_MigStats;
 
-  
+/*
+ * Macros to manipulate this structure using a monitor.
+ */
+#define PROC_MIG_INC_STAT(stat) Proc_MigAddToCounter(&proc_MigStats.stat, 1)
+#define PROC_MIG_DEC_STAT(stat) Proc_MigAddToCounter(&proc_MigStats.stat, -1)
+
+
 
 
 /*
