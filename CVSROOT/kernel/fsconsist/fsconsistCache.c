@@ -1268,7 +1268,7 @@ FsConsistKill(consistPtr, clientID, refPtr, writePtr, execPtr)
 	if (msgPtr->clientID == clientID) {
 	    List_Remove((List_Links *) msgPtr);
 	    free((Address) msgPtr);
-	    Sync_Broadcast(&consistPtr->consistDone);
+	    Sync_Broadcast(&consistPtr->repliesIn);
 	    break;
 	}
     }
