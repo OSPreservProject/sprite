@@ -389,6 +389,14 @@ typedef struct Fsutil_UseCounts {
     int		exec;		/* The number of executors of handle */
 } Fsutil_UseCounts;
 
+/*
+ * Exported type for async I/O requests.
+ *
+typedef struct Fsio_Request *Fsio_RequestToken;
+
+extern Fsio_RequestToken Fsio_DeviceBlockIOAsync();
+extern Fsio_DeviceBlockIOPoll();
+
 
 /*
  * Recovery testing switch table.
