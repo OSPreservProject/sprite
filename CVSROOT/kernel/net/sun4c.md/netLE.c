@@ -80,7 +80,6 @@ NetLEInit(name, number, ctrlAddr)
     List_Links	*itemPtr;
     Address	(*allocFunc)();
 
-    printf("Probing LE\n");
 #ifdef sun2
     allocFunc = Vm_RawAlloc;
 #endif
@@ -114,7 +113,6 @@ NetLEInit(name, number, ctrlAddr)
 	return(FALSE);
     }
     Mach_UnsetJump();
-    printf("Initializing LE\n");
 
     /*
      * Initialize the transmission list.  
