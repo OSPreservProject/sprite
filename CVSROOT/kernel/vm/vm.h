@@ -366,6 +366,6 @@ extern	void		Vm_StoreTraceTime();
  */
 extern	void		Vm_CleanupSharedFile();
 extern	void		Vm_CleanupSharedProc();
-extern	void		VmDeleteSharedSegment();
+extern	void		Vm_DeleteSharedSegment();
 
 #endif /* _VM */
