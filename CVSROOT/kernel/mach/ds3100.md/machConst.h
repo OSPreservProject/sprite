@@ -6,7 +6,7 @@
  *	Copyright (C) 1989 Digital Equipment Corporation.
  *	Permission to use, copy, modify, and distribute this software and
  *	its documentation for any purpose and without fee is hereby granted,
- *	provided that the above copyright notice appears in all copies.  
+ *	provided that the above copyright notice appears in all copies.
  *	Digital Equipment Corporation makes no representations about the
  *	suitability of this software for any purpose.  It is provided "as is"
  *	without express or implied warranty.
@@ -143,7 +143,7 @@
 #define MACH_CNTXT_PTE_BASE	0xFFE00000
 #define MACH_CNTXT_BAD_VPN	0x001FFFFC
 
-/* 
+/*
  * The fields in the processor revision identifier register.
  */
 #define MACH_PRID_IMP		0x0000FF00
@@ -262,7 +262,7 @@
  *				the debugger requires a couple of integers
  *				of padding on the top.
  * MAGIC		A magic number which is pushed onto the stack before
- *			a context switch.  Used to verify that the stack 
+ *			a context switch.  Used to verify that the stack
  *			doesn't get trashed.
  */
 #define	MACH_KERN_START		0x80000000
@@ -275,13 +275,13 @@
 
 /*
  * Constants for the user's address space.
- * 
+ *
  * MACH_FIRST_USER_ADDR		The lowest possible address in the user's VAS.
  * MACH_LAST_USER_ADDR		The highest possible address in the user's VAS.
  * MACH_LAST_USER_STACK_PAGE	The highest page in the user stack segment.
  * MACH_MAX_USER_STACK_ADDR	The highest value that the user stack pointer
- *				can have.  Note that the stack pointer must be 
- *				decremented before anything can be stored on 
+ *				can have.  Note that the stack pointer must be
+ *				decremented before anything can be stored on
  *				the stack.
  */
 #define	MACH_FIRST_USER_ADDR		VMMACH_PAGE_SIZE
@@ -305,7 +305,7 @@
  */
 #define ZERO	0
 #define AST	1
-#define V0	2	
+#define V0	2
 #define V1	3
 #define A0	4
 #define A1	5
@@ -334,7 +334,7 @@
 #define GP	28
 #define SP	29
 #define S8	30
-#define RA	31	
+#define RA	31
 
 /*
  * Magic number for system calls to differentiate between Sprite and UNIX
@@ -393,4 +393,4 @@
 #define MACH_UNIX_SIG_RETURN		103
 #define MACH_UNIX_LONG_JUMP_RETURN	139
 
-#endif _MACHCONST
+#endif /* _MACHCONST */

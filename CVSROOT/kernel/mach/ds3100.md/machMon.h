@@ -6,7 +6,7 @@
  *	Copyright (C) 1989 Digital Equipment Corporation.
  *	Permission to use, copy, modify, and distribute this software and
  *	its documentation for any purpose and without fee is hereby granted,
- *	provided that the above copyright notice appears in all copies.  
+ *	provided that the above copyright notice appears in all copies.
  *	Digital Equipment Corporation makes no representations about the
  *	suitability of this software for any purpose.  It is provided "as is"
  *	without express or implied warranty.
@@ -55,7 +55,7 @@ extern	Mach_MonFuncs	mach_MonFuncs;
 
 /*
  * The functions:
- *	
+ *
  *	MACH_MON_RESET		Run diags, check bootmode, reinit.
  *	MACH_MON_EXEC		Load new program image.
  *	MACH_MON_RESTART	Re-enter monitor command loop.
@@ -112,4 +112,4 @@ extern	void	Mach_MonReboot();
 #define Mach_MonGetNextChar (mach_MonFuncs.getchar)
 #define Mach_MonGetLine (mach_MonFuncs.gets)
 
-#endif _MACHPROM
+#endif /* _MACHPROM */

@@ -6,7 +6,7 @@
  *	Copyright (C) 1989 Digital Equipment Corporation.
  *	Permission to use, copy, modify, and distribute this software and
  *	its documentation for any purpose and without fee is hereby granted,
- *	provided that the above copyright notice appears in all copies.  
+ *	provided that the above copyright notice appears in all copies.
  *	Digital Equipment Corporation makes no representations about the
  *	suitability of this software for any purpose.  It is provided "as is"
  *	without express or implied warranty.
@@ -97,7 +97,7 @@ typedef struct {
 						 * registers. */
     unsigned		fpStatusReg;		/* The floating point status
 						 * register. */
-    unsigned		mflo, mfhi;		/* Multiply lo and hi 
+    unsigned		mflo, mfhi;		/* Multiply lo and hi
 						 * registers. */
 } Mach_RegState;
 
@@ -107,7 +107,7 @@ typedef struct {
 typedef struct {
     Mach_RegState	regState;		/* State of a process after
 						 * a trap. */
-    int			unixRetVal;		/* Return value from a 
+    int			unixRetVal;		/* Return value from a
 						 * UNIX system call. */
 } Mach_UserState;
 
@@ -191,7 +191,7 @@ extern	char	*mach_MachineType;
 extern	int	mach_ByteOrder;
 
 /*
- * Routine to initialize mach module.  Must be called first as part of boot 
+ * Routine to initialize mach module.  Must be called first as part of boot
  * sequence.
  */
 extern void	Mach_Init();
@@ -235,7 +235,7 @@ extern	int		Mach_GetMachineType();
 extern	int		Mach_GetMachineArch();
 extern	Address		Mach_GetStackPointer();
 extern 	void		Mach_CheckSpecialHandling();
-extern 	int		Mach_GetBootArgs();	
+extern 	int		Mach_GetBootArgs();
 extern  ReturnStatus	Mach_ProbeAddr();
 extern	void		Mach_FlushCode();
 
@@ -252,4 +252,4 @@ extern	Address	mach_LastUserAddr;
 extern	Address	mach_MaxUserStackAddr;
 extern	int	mach_LastUserStackPage;
 
-#endif _MACH
+#endif /* _MACH */
