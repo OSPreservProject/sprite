@@ -1,5 +1,5 @@
 /* 
- * fsAlloc.c --
+ * ofsAlloc.c --
  *
  *	Block and fragment allocation and truncation.  This code is specific
  *	to 4Kbyte blocks with 1Kbyte fragments.
@@ -19,28 +19,30 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsutil.h"
-#include "fscache.h"
-#include "fslcl.h"
-#include "fsNameOps.h"
-#include "fsio.h"
-#include "spriteTime.h"
-#include "devFsOpTable.h"
-#include "fsStat.h"
-#include "timer.h"
-#include "rpc.h"
-#include "proc.h"
-#include "string.h"
-#include "fsdm.h"
-#include "fsdmInt.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fscache.h>
+#include <fslcl.h>
+#include <fsNameOps.h>
+#include <fsio.h>
+#include <spriteTime.h>
+#include <devFsOpTable.h>
+#include <fsStat.h>
+#include <timer.h>
+#include <rpc.h>
+#include <proc.h>
+#include <string.h>
+#include <fsdm.h>
+#include <ofs.h>
+
+#include <stdio.h>
 
 /*
  * Each domain, which is a separate piece of disk, is locked
  * during allocation.
  */
-#define LOCKPTR (&domainPtr->dataBlockLock)
+#define LOCKPTR (&ofsPtr->dataBlockLock)
 
 /*
  * A table indexed by a 4 bit value is used by the allocation routine to 
@@ -49,7 +51,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * the byte then a -1 is used.
  */
 
-int fragTable[16][FSDM_NUM_FRAG_SIZES] = {
+static int fragTable[16][OFS_NUM_FRAG_SIZES] = {
 /* 0000 */ {-1, -1, -1},
 /* 0001 */ {-1, -1, 0},
 /* 0010 */ {3, 0, -1},
@@ -89,14 +91,14 @@ static unsigned char bitMasks[8] = {0x80, 0x40, 0x20, 0x10, 0x8, 0x4, 0x2, 0x1};
  * Macro to get a pointer into the bit map for a particular block.
  */
 
-#define	BlockToCylinder(domainPtr, blockNum) \
- (unsigned int) (blockNum) / (domainPtr)->headerPtr->geometry.blocksPerCylinder
-    
-#define	GetBitmapPtr(domainPtr, blockNum) \
-    &((domainPtr)->dataBlockBitmap[BlockToCylinder(domainPtr, blockNum) * \
-		  (domainPtr)->bytesPerCylinder + \
+#define	BlockToCylinder(ofsPtr, blockNum) \
+ (unsigned int) (blockNum) / (ofsPtr)->headerPtr->geometry.blocksPerCylinder
+
+#define	GetBitmapPtr(ofsPtr, blockNum) \
+    &((ofsPtr)->dataBlockBitmap[BlockToCylinder(ofsPtr, blockNum) * \
+		  (ofsPtr)->bytesPerCylinder + \
 		  ((unsigned int) ((blockNum) % \
-		  (domainPtr)->headerPtr->geometry.blocksPerCylinder) / 2)])
+		  (ofsPtr)->headerPtr->geometry.blocksPerCylinder) / 2)])
 
 #define	LAST_FRAG	 (FS_FRAGMENTS_PER_BLOCK - 1)
 #define	FRAG_OFFSET_MASK (FS_FRAGMENTS_PER_BLOCK - 1)
@@ -109,7 +111,7 @@ static unsigned char bitMasks[8] = {0x80, 0x40, 0x20, 0x10, 0x8, 0x4, 0x2, 0x1};
 /*
  * Percent of disk to keep free.
  */
-int	fsdmPercentFree = 10;
+int	ofsPercentFree = 10;
 
 /*
  * Block allocation style (settable with FS_SET_ALLOC_GAP Fs_Command)
@@ -123,45 +125,32 @@ int	fsdmPercentFree = 10;
 #define CONTIGUOUS	0
 #define SKIP_ONE	1
 
-int fsdm_AllocGap = CONTIGUOUS;
-
-/*
- * Flag to determine whether to keep track of file deletions and read/writes
- * by file type, and deletions by size/age/type.
- */
-Boolean	fsdmKeepTypeInfo = TRUE;
-
-/*
- * Information about each set of buckets, to be used to determine dynamically
- * what the upper limit is for each bucket.
- */
-static Fs_HistGroupInfo fsHistGroupInfo[] = {		/* cum. range: */
-    {1, FS_HIST_SECONDS},				/* < 10 secs */
-    {10, FS_HIST_TEN_SECONDS},				/* < 1 min */
-    {60, FS_HIST_MINUTES},				/* < 10 min */
-    {600, FS_HIST_TEN_MINUTES},				/* < 1 hr */
-    {3600, FS_HIST_HOURS},				/* < 10 hr */
-    {18000, FS_HIST_FIVE_HOURS},			/* < 20 hr */
-    {14400, FS_HIST_REST_HOURS},			/* < 1 day */
-    {86400, FS_HIST_DAYS},				/* < 10 days */
-    {864000, FS_HIST_TEN_DAYS },			/* < 60 days */
-    {2592000, FS_HIST_THIRTY_DAYS },			/* < 90 days */
-    {5184000, FS_HIST_SIXTY_DAYS }};			/* < 360 days */
+int ofs_AllocGap = CONTIGUOUS;
 
 /*
  * Forward references.
  */
-static ReturnStatus FragToBlock();
-static ReturnStatus AllocateBlock();
-void FsdmFragFree();
-void FsdmBlockFree();
-static int FindHistBucket();
+static void FindBlockInt _ARGS_((int hashSeed, Ofs_Domain *ofsPtr,
+		int nearBlock, Boolean allocate, int *blockNumPtr, 
+		unsigned char **bitmapPtrPtr));
+static ReturnStatus UpgradeFragment _ARGS_((Ofs_Domain *ofsPtr, 
+		Fsio_FileIOHandle *handlePtr, OfsBlockIndexInfo *indexInfoPtr,
+		int curLastBlock, int newLastFrag, Boolean dontWriteThru, 
+		int dontBlock, Boolean *dirtiedIndexPtr));
+static ReturnStatus AllocateBlock _ARGS_((Fsio_FileIOHandle *handlePtr, 
+		Fsdm_FileDescriptor *descPtr, OfsBlockIndexInfo *indexInfoPtr,
+		int newLastByte, int curLastBlock, int dontBlock,
+		Boolean *dirtiedIndexPtr));
+static ReturnStatus FragToBlock _ARGS_((Ofs_Domain *ofsPtr, 
+		Fsio_FileIOHandle *handlePtr, int blockNum, int dontBlock));
+static void PutInBadBlockFile _ARGS_((Fsio_FileIOHandle *handlePtr, 
+		Ofs_Domain *ofsPtr, int blockNum));
 
 
 /*
  *----------------------------------------------------------------------
  *
- * FsdmBlockAllocInit() --
+ * OfsBlockAllocInit() --
  *
  *	Initialize the data structure needed for block allocation for the
  *	given domain on a local disk.
@@ -177,85 +166,85 @@ static int FindHistBucket();
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsdmBlockAllocInit(domainPtr)
-    register	Fsdm_Domain	*domainPtr;	/* Domain to initialize block
+OfsBlockAllocInit(ofsPtr)
+    register	Ofs_Domain	*ofsPtr;	/* Domain to initialize block
 						 * allocation for. */
 {
     int				blocksPerCylinder;
     int				bitmapBytes;
     register	unsigned char 	*bitmapPtr;
-    register	Fsdm_Cylinder	*cylinderPtr;
-    register	FsdmFragment	*fragPtr;
+    register	OfsCylinder	*cylinderPtr;
+    register	OfsFragment	*fragPtr;
     register	int		i;
     register	int		j;
     register	int		k;
     int				*fragOffsetPtr;
     ReturnStatus		status;
 
-    Sync_LockInitDynamic(&(domainPtr->dataBlockLock), "Fs:dataBlockLock");
+    Sync_LockInitDynamic(&(ofsPtr->dataBlockLock), "Fs:ofsDataBlockLock");
     /*
      * Ensure some free disk space for disk block allocation.
      */
-    domainPtr->minKFree =
-	(domainPtr->headerPtr->dataBlocks * FS_FRAGMENTS_PER_BLOCK) /
-								fsdmPercentFree;
+    ofsPtr->minKFree =
+	(ofsPtr->headerPtr->dataBlocks * FS_FRAGMENTS_PER_BLOCK) /
+				ofsPercentFree;
 
-    blocksPerCylinder = domainPtr->headerPtr->geometry.blocksPerCylinder;
+    blocksPerCylinder = ofsPtr->headerPtr->geometry.blocksPerCylinder;
 
     /*
      * Allocate the bit map.
      */
     bitmapBytes = (unsigned int) (blocksPerCylinder + 1) / 2;
-    domainPtr->bytesPerCylinder = bitmapBytes;
-    domainPtr->dataBlockBitmap = (unsigned char *) 
-	malloc(domainPtr->headerPtr->bitmapBlocks * FS_BLOCK_SIZE);
+    ofsPtr->bytesPerCylinder = bitmapBytes;
+    ofsPtr->dataBlockBitmap = (unsigned char *) 
+	malloc(ofsPtr->headerPtr->bitmapBlocks * FS_BLOCK_SIZE);
 
     /* 
      * Read in the bit map.  The Block I/O interface is based on 1K blocks,
      * but the header information is in terms of 4K blocks.
      */
-    status = Fsio_DeviceBlockIO(FS_READ, &(domainPtr->headerPtr->device), 
-		domainPtr->headerPtr->bitmapOffset * 4, 
-		domainPtr->headerPtr->bitmapBlocks * 4,
-		(Address) domainPtr->dataBlockBitmap);
+    status = OfsDeviceBlockIO(ofsPtr, FS_READ, 
+		ofsPtr->headerPtr->bitmapOffset * 4, 
+		ofsPtr->headerPtr->bitmapBlocks * 4,
+		(Address) ofsPtr->dataBlockBitmap);
     if (status != SUCCESS) {
 	printf(
-	    "FsdmBlockAllocInit: Could not read data block bitmap.\n");
+	    "OfsBlockAllocInit: Could not read data block bitmap.\n");
 	return(status);
     }
 
     /*
      * Initialize the 3 fragment lists (1K, 2K and 3K).
      */
-    for (i = 0; i < FSDM_NUM_FRAG_SIZES; i++) {
-	domainPtr->fragLists[i] = (List_Links *) malloc(sizeof(List_Links));
-	List_Init(domainPtr->fragLists[i]);
+    for (i = 0; i < OFS_NUM_FRAG_SIZES; i++) {
+	ofsPtr->fragLists[i] = (List_Links *) malloc(sizeof(List_Links));
+	List_Init(ofsPtr->fragLists[i]);
     }
 
     /*
      * Allocate an array cylinder information.
      */
-    domainPtr->cylinders = (Fsdm_Cylinder *) 
-	malloc(sizeof(Fsdm_Cylinder) * domainPtr->headerPtr->dataCylinders);
+    ofsPtr->cylinders = (OfsCylinder *) 
+	malloc(sizeof(OfsCylinder) * ofsPtr->headerPtr->dataCylinders);
 
     /*
      * Now go through the bit map finding all of the fragments and putting
      * them onto the appropriate lists.  Also determine cylinder information.
      */
-    bitmapPtr = domainPtr->dataBlockBitmap;
-    cylinderPtr = domainPtr->cylinders;
-    for (i = 0; i < domainPtr->headerPtr->dataCylinders; i++, cylinderPtr++) {
+    bitmapPtr = ofsPtr->dataBlockBitmap;
+    cylinderPtr = ofsPtr->cylinders;
+    for (i = 0; i < ofsPtr->headerPtr->dataCylinders; i++, cylinderPtr++) {
 	cylinderPtr->blocksFree = 0;
 	for (j = 0; j < bitmapBytes; j++, bitmapPtr++) {
 	    if (UpperBlockFree(*bitmapPtr)) {
 		cylinderPtr->blocksFree++;
 	    } else {
 		fragOffsetPtr = fragTable[GetUpperFragMask(*bitmapPtr)];
-		for (k = 0; k < FSDM_NUM_FRAG_SIZES; k++, fragOffsetPtr++) {
+		for (k = 0; k < OFS_NUM_FRAG_SIZES; k++, fragOffsetPtr++) {
 		    if (*fragOffsetPtr != -1) {
-			fragPtr = (FsdmFragment *) malloc(sizeof(FsdmFragment));
+			fragPtr = (OfsFragment *) malloc(sizeof(OfsFragment));
 			List_Insert((List_Links *) fragPtr, 
-				    LIST_ATREAR(domainPtr->fragLists[k]));
+				    LIST_ATREAR(ofsPtr->fragLists[k]));
 			fragPtr->blockNum = i * blocksPerCylinder + j * 2;
 		    }
 		}
@@ -275,11 +264,11 @@ FsdmBlockAllocInit(domainPtr)
 		cylinderPtr->blocksFree++;
 	    } else {
 		fragOffsetPtr = fragTable[GetLowerFragMask(*bitmapPtr)];
-		for (k = 0; k < FSDM_NUM_FRAG_SIZES; k++, fragOffsetPtr++) {
+		for (k = 0; k < OFS_NUM_FRAG_SIZES; k++, fragOffsetPtr++) {
 		    if (*fragOffsetPtr != -1) {
-			fragPtr = (FsdmFragment *) malloc(sizeof(FsdmFragment));
+			fragPtr = (OfsFragment *) malloc(sizeof(OfsFragment));
 			List_Insert((List_Links *) fragPtr, 
-				    LIST_ATREAR(domainPtr->fragLists[k]));
+				    LIST_ATREAR(ofsPtr->fragLists[k]));
 			fragPtr->blockNum = i * blocksPerCylinder + j * 2 + 1;
 		    }
 		}
@@ -293,7 +282,7 @@ FsdmBlockAllocInit(domainPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Fsdm_BlockAllocate --
+ * Ofs_BlockAllocate --
  *
  *	Allocate disk space for the given file.  This routine only allocates
  *	one block beginning at offset and going for numBytes.   If 
@@ -309,8 +298,10 @@ FsdmBlockAllocInit(domainPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-Fsdm_BlockAllocate(hdrPtr, offset, numBytes, flags, blockAddrPtr, newBlockPtr)
-    Fs_HandleHeader	*hdrPtr;	/* Local file handle. */
+Ofs_BlockAllocate(domainPtr, handlePtr, offset, numBytes, flags, blockAddrPtr,
+		newBlockPtr)
+    Fsdm_Domain		*domainPtr;	/* Domain of file. */
+    register Fsio_FileIOHandle *handlePtr;	/* Local file handle. */
     int 		offset;		/* Offset to allocate at. */
     int 		numBytes;	/* Number of bytes to allocate. */
     int			flags;		/* FSCACHE_DONT_BLOCK */
@@ -318,11 +309,10 @@ Fsdm_BlockAllocate(hdrPtr, offset, numBytes, flags, blockAddrPtr, newBlockPtr)
     Boolean		*newBlockPtr;	/* TRUE if there was no block allocated
 					 * before. */
 {
-    register Fsio_FileIOHandle *handlePtr =
-	    (Fsio_FileIOHandle *)hdrPtr;
+    Ofs_Domain			*ofsPtr = OFS_PTR_FROM_DOMAIN(domainPtr);
     register Fsdm_FileDescriptor	*descPtr;
     register int		blockNum;
-    Fsdm_BlockIndexInfo		indexInfo;
+    OfsBlockIndexInfo		indexInfo;
     int				newLastByte;
     int				curLastBlock;
     int				curLastFrag;
@@ -336,7 +326,7 @@ Fsdm_BlockAllocate(hdrPtr, offset, numBytes, flags, blockAddrPtr, newBlockPtr)
     blockNum = (unsigned int) offset / FS_BLOCK_SIZE;
 
     if ((unsigned int) (newLastByte) / FS_BLOCK_SIZE != blockNum) {
-	panic("FsFileAllocate: Trying to allocate more than one block\n");
+	panic("OfsFileAllocate: Trying to allocate more than one block\n");
     }
 
     if (descPtr->lastByte != -1) {
@@ -357,7 +347,7 @@ Fsdm_BlockAllocate(hdrPtr, offset, numBytes, flags, blockAddrPtr, newBlockPtr)
 	    /*
 	     * Upgrade the fragment to a full block.
 	     */
-	    status = FragToBlock(handlePtr, curLastBlock, flags);
+	    status = FragToBlock(ofsPtr, handlePtr, curLastBlock, flags);
 	    if (status != SUCCESS) {
 		return(status);
 	    }
@@ -372,8 +362,8 @@ Fsdm_BlockAllocate(hdrPtr, offset, numBytes, flags, blockAddrPtr, newBlockPtr)
 	 * This is the first block of the file so there is no previous
 	 * block.
 	 */
-	status = Fsdm_GetFirstIndex(handlePtr, blockNum, &indexInfo,
-				 FSDM_ALLOC_INDIRECT_BLOCKS);
+	status = OfsGetFirstIndex(ofsPtr, handlePtr, blockNum, &indexInfo,
+				 OFS_ALLOC_INDIRECT_BLOCKS);
 	if (status != SUCCESS) {
 	    return(status);
 	}
@@ -382,14 +372,14 @@ Fsdm_BlockAllocate(hdrPtr, offset, numBytes, flags, blockAddrPtr, newBlockPtr)
 	 * This is not the first block in the file, so determine the
 	 * previous block and then go to the first block.
 	 */
-	status = Fsdm_GetFirstIndex(handlePtr, blockNum - 1, &indexInfo,
-				 FSDM_ALLOC_INDIRECT_BLOCKS);
+	status = OfsGetFirstIndex(ofsPtr, handlePtr, blockNum - 1, &indexInfo,
+				 OFS_ALLOC_INDIRECT_BLOCKS);
 	if (status != SUCCESS) {
 	    return(status);
 	}
-	status = Fsdm_GetNextIndex(handlePtr, &indexInfo, FALSE);
+	status = OfsGetNextIndex(handlePtr, &indexInfo, FALSE);
 	if (status != SUCCESS) {
-	    Fsdm_EndIndex(handlePtr, &indexInfo, FALSE);
+	    OfsEndIndex(handlePtr, &indexInfo, FALSE);
 	    return(status);
 	}
     }
@@ -407,7 +397,7 @@ Fsdm_BlockAllocate(hdrPtr, offset, numBytes, flags, blockAddrPtr, newBlockPtr)
 	*blockAddrPtr = *indexInfo.blockAddrPtr;
     }
 
-    Fsdm_EndIndex(handlePtr, &indexInfo, dirtiedIndex);
+    OfsEndIndex(handlePtr, &indexInfo, dirtiedIndex);
 
     if (status != SUCCESS) {
 	return(status);
@@ -430,8 +420,8 @@ Fsdm_BlockAllocate(hdrPtr, offset, numBytes, flags, blockAddrPtr, newBlockPtr)
 	 (descPtr->fileType == FS_XTRA_FILE))) {
 	descPtr->firstByte = 0;
     }
-    descPtr->descModifyTime = fsutil_TimeInSeconds;
-    descPtr->flags |= FSDM_FD_DIRTY;
+    descPtr->descModifyTime = Fsutil_TimeInSeconds();
+    descPtr->flags |= (FSDM_FD_INDEX_DIRTY|FSDM_FD_SIZE_DIRTY);
     return(SUCCESS);
 }
 
@@ -439,7 +429,7 @@ Fsdm_BlockAllocate(hdrPtr, offset, numBytes, flags, blockAddrPtr, newBlockPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Fsdm_FileDescTrunc --
+ * Ofs_FileTrunc --
  *
  *	Shorten a file to length bytes.  This updates the descriptor
  *	and may free blocks and indirect blocks from the end of the file.
@@ -452,44 +442,31 @@ Fsdm_BlockAllocate(hdrPtr, offset, numBytes, flags, blockAddrPtr, newBlockPtr)
  *
  *----------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 ReturnStatus
-Fsdm_FileDescTrunc(handlePtr, size)
+Ofs_FileTrunc(domainPtr, handlePtr, size, delete)
+    Fsdm_Domain		*domainPtr;
     Fsio_FileIOHandle	*handlePtr;	/* File to truncate. */
     int			size;		/* Size to truncate the file to. */
+    Boolean		delete;		/* TRUE if Truncate for delete. */
 {
-    register Fsdm_Domain	 	*domainPtr;
+    register Ofs_Domain	 *ofsPtr = OFS_PTR_FROM_DOMAIN(domainPtr);
     register Fsdm_FileDescriptor 	*descPtr;
     int				firstBlock;
-    int				firstFrag;
+    int				firstFrag = 0;
     int				lastBlock;
     int				lastFrag;
     ReturnStatus		status = SUCCESS;
-    Fsdm_BlockIndexInfo		indexInfo;
+    OfsBlockIndexInfo		indexInfo;
     int				newLastByte;
     int				savedLastByte;
     int				flags;
-    Boolean			dirty;
+    Boolean			dirty = FALSE;
     int				fragsToFree;
-    int				bytesToFree;
 
-    if (size < 0) {
-	return(GEN_INVALID_ARG);
-    }
-    domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, FALSE);
-    if (domainPtr == (Fsdm_Domain *)NIL) {
-	return(FS_DOMAIN_UNAVAILABLE);
-    }
     descPtr = handlePtr->descPtr;
 
-    bytesToFree = descPtr->lastByte - size + 1;
     savedLastByte = descPtr->lastByte;
-
-#ifndef CLEAN
-    if (bytesToFree > 0) {
-	Fsdm_RecordDeletionStats(&handlePtr->cacheInfo, bytesToFree);
-    }
-#endif CLEAN
 
     newLastByte = size - 1;
     if (descPtr->lastByte <= newLastByte) {
@@ -532,24 +509,24 @@ Fsdm_FileDescTrunc(handlePtr, size)
 	(lastFrag <= firstFrag || firstBlock >= FSDM_NUM_DIRECT_BLOCKS)) {
 	if (newLastByte < descPtr->lastByte) {
 	    descPtr->lastByte = newLastByte;
-	    descPtr->descModifyTime = fsutil_TimeInSeconds;
-	    descPtr->flags |= FSDM_FD_DIRTY;
+	    descPtr->descModifyTime = Fsutil_TimeInSeconds();
+	    descPtr->flags |= FSDM_FD_SIZE_DIRTY;
 	}
 	status = SUCCESS;
 	goto exit;
     }
 
-    flags = FSDM_DELETE_INDIRECT_BLOCKS;
+    flags = OFS_DELETE_INDIRECT_BLOCKS;
     if (newLastByte == -1) {
-	flags |= FSDM_DELETE_EVERYTHING;
+	flags |= OFS_DELETE_EVERYTHING;
     }
 
     /*
      * Loop through the blocks deleting them.
      */
-    status = Fsdm_GetFirstIndex(handlePtr, firstBlock, &indexInfo, flags);
+    status = OfsGetFirstIndex(ofsPtr, handlePtr, firstBlock, &indexInfo, flags);
     if (status != SUCCESS) {
-	printf( "Fsdm_FileDescTrunc: Status %x setting up index\n",
+	printf( "Ofs_FileTrunc: Status %x setting up index\n",
 		  status);
 	goto exit;
     }
@@ -566,12 +543,12 @@ Fsdm_FileDescTrunc(handlePtr, size)
 	     * The file is being made empty.
 	     */
 	    if (indexInfo.blockNum == lastBlock && lastFrag < LAST_FRAG) {
-		FsdmFragFree(domainPtr, lastFrag + 1, 
+		OfsFragFree(ofsPtr, lastFrag + 1, 
 		    (int) (*indexInfo.blockAddrPtr / FS_FRAGMENTS_PER_BLOCK),
 		    *indexInfo.blockAddrPtr & FRAG_OFFSET_MASK);
 		descPtr->numKbytes -= lastFrag + 1;
 	    } else {
-		FsdmBlockFree(domainPtr, 
+		OfsBlockFree(ofsPtr, 
 		    (int) (*indexInfo.blockAddrPtr / FS_FRAGMENTS_PER_BLOCK));
 		descPtr->numKbytes -= FS_FRAGMENTS_PER_BLOCK;
 	    }
@@ -591,10 +568,10 @@ Fsdm_FileDescTrunc(handlePtr, size)
 		fragsToFree = lastFrag - firstFrag;
 	    }
 	    if (fragsToFree > 0) {
-		FsdmFragFree(domainPtr, fragsToFree,
-		    (int) (*indexInfo.blockAddrPtr / FS_FRAGMENTS_PER_BLOCK),
-		    (*indexInfo.blockAddrPtr & FRAG_OFFSET_MASK)
-		     + firstFrag + 1);
+		OfsFragFree(ofsPtr, fragsToFree,
+		      (int) (*indexInfo.blockAddrPtr / FS_FRAGMENTS_PER_BLOCK),
+			    (*indexInfo.blockAddrPtr & FRAG_OFFSET_MASK)
+			     + firstFrag + 1);
 		descPtr->numKbytes -= fragsToFree;
 	    }
 	} else if (indexInfo.blockNum >= FSDM_NUM_DIRECT_BLOCKS || 
@@ -602,7 +579,7 @@ Fsdm_FileDescTrunc(handlePtr, size)
 	    /*
 	     * This is a full block so delete it.
 	     */
-	    FsdmBlockFree(domainPtr, 
+	    OfsBlockFree(ofsPtr, 
 		 (int) (*indexInfo.blockAddrPtr / FS_FRAGMENTS_PER_BLOCK));
 	    descPtr->numKbytes -= FS_FRAGMENTS_PER_BLOCK;
 	    *indexInfo.blockAddrPtr = FSDM_NIL_INDEX;
@@ -611,7 +588,7 @@ Fsdm_FileDescTrunc(handlePtr, size)
 	     * Delete a fragment.  Only get here if are on the last block in 
 	     * the file.
 	     */
-	    FsdmFragFree(domainPtr, lastFrag + 1, 
+	    OfsFragFree(ofsPtr, lastFrag + 1, 
 	      (int) (*indexInfo.blockAddrPtr / FS_FRAGMENTS_PER_BLOCK),
 	        *indexInfo.blockAddrPtr & FRAG_OFFSET_MASK);
 	    descPtr->numKbytes -= lastFrag + 1;
@@ -626,19 +603,19 @@ nextBlock:
 	    break;
 	}
 
-	status = Fsdm_GetNextIndex(handlePtr, &indexInfo, dirty);
+	status = OfsGetNextIndex(handlePtr, &indexInfo, dirty);
 	if (status != SUCCESS) {
-	    printf( "Fsdm_FileDescTrunc: Could not truncate file.\n");
-	    Fsdm_EndIndex(handlePtr, &indexInfo, FALSE);
+	    printf( "Ofs_FileTrunc: Could not truncate file.\n");
+	    OfsEndIndex(handlePtr, &indexInfo, FALSE);
 	    goto exit;
 	}
     }
 
-    Fsdm_EndIndex(handlePtr, &indexInfo, dirty);
+    OfsEndIndex(handlePtr, &indexInfo, dirty);
 
     descPtr->lastByte = newLastByte;
-    descPtr->descModifyTime = fsutil_TimeInSeconds;
-    descPtr->flags |= FSDM_FD_DIRTY;
+    descPtr->descModifyTime = Fsutil_TimeInSeconds();
+    descPtr->flags |= FSDM_FD_SIZE_DIRTY;
 
 exit:
     /*
@@ -649,7 +626,7 @@ exit:
 
 	for (index=0 ; index < FSDM_NUM_DIRECT_BLOCKS ; index++) {
 	    if (descPtr->direct[index] != FSDM_NIL_INDEX) {
-		printf("Fsdm_FileDescTrunc abandoning (direct) block %d in <%d,%d> \"%s\" savedLastByte %d\n",
+		printf("Ofs_FileTrunc abandoning (direct) block %d in <%d,%d> \"%s\" savedLastByte %d\n",
 		    descPtr->direct[index],
 		    handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
 		    Fsutil_HandleName((Fs_HandleHeader *)handlePtr),
@@ -659,7 +636,7 @@ exit:
 	}
 	for (index = 0 ; index <= 2 ; index++) {
 	    if (descPtr->indirect[index] != FSDM_NIL_INDEX) {
-		printf("Fsdm_FileDescTrunc abandoning (indirect) block %d in <%d,%d> \"%s\" savedLastByte %d\n",
+		printf("Ofs_FileTrunc abandoning (indirect) block %d in <%d,%d> \"%s\" savedLastByte %d\n",
 		    descPtr->indirect[index], 
 		    handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
 		    Fsutil_HandleName((Fs_HandleHeader *)handlePtr),
@@ -668,203 +645,16 @@ exit:
 	    }
 	}
     }
-    Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
     return(status);
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * Fsdm_RecordDeletionStats --
- *
- *	Record information about bytes deleted from a file.  This can
- *	be a result of truncation or overwriting.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The counts of bytes deleted, overall and by file type & age, are
- *	updated.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Fsdm_RecordDeletionStats(cacheInfoPtr, bytesToFree)
-    Fscache_FileInfo *cacheInfoPtr;
-    int bytesToFree;
-{
-    unsigned int fragsToFree;	/* number of fragment-sized chunks to free */
-    int timeIndex;  	/* counters into histogram */
-    int sizeIndex = 0;
-    int type;
-    int when;
-
-    /*
-     * Record information about the number of bytes deleted.  Take the
-     * information from the handle rather than the descriptor, since
-     * the handle is the most up-to-date record of the size and modified
-     * date of the file.  There's no easy way to check for holes in the
-     * file, but the number of Kbytes on disk (corresponding to blocks in the
-     * cache) is an upper bound on the actual amount of data to be deleted.
-     * Therefore, for swap files, use that figure to get around holes.
-     */
-
-    if (fsdmKeepTypeInfo) {
-
-	type = Fsdm_FindFileType(cacheInfoPtr);
-	
-	if (type == FSUTIL_FILE_TYPE_SWAP &&
-	    cacheInfoPtr->hdrPtr->fileID.type == FSIO_LCL_FILE_STREAM) {
-	    register Fsio_FileIOHandle *handlePtr;
-	    register Fsdm_FileDescriptor 	*descPtr;
-
-	    handlePtr = (Fsio_FileIOHandle *) cacheInfoPtr->hdrPtr;
-	    descPtr = handlePtr->descPtr;
-	    if (bytesToFree > descPtr->numKbytes * FRAG_SIZE) {
-		bytesToFree = descPtr->numKbytes * FRAG_SIZE;
-	    }
-	}
-	fs_TypeStats.bytesDeleted[type] += bytesToFree;
-        if (cacheInfoPtr->attr.modifyTime > cacheInfoPtr->attr.createTime) {
-	    when = cacheInfoPtr->attr.modifyTime;
-	} else {
-	    when = cacheInfoPtr->attr.createTime;
-	}
-	timeIndex = FindHistBucket(fsutil_TimeInSeconds - when);
-	fragsToFree = bytesToFree / FRAG_SIZE;
-	while (fragsToFree != 0) {
-	    sizeIndex ++;
-	    fragsToFree = fragsToFree >> 1;
-	}
-	fs_TypeStats.deleteHist[timeIndex][sizeIndex][type] ++;
-	/*
-	 * Store the actual number of bytes freed in the last column.
-	 * For this, save the number of 1K blocks actually affected,
-	 * so round *up*.  (We could save the real number of bytes, but
-	 * then we run a greater risk of overflowing the counter, and
-	 * it makes little difference whether we delete 200 bytes or
-	 * 400 in a shot.)
-	 */
-	fragsToFree = (bytesToFree + FRAG_SIZE - 1) / FRAG_SIZE;
-	fs_TypeStats.deleteHist
-		[timeIndex][FS_HIST_SIZE_BUCKETS -1][type] += fragsToFree;
-    }
-    Fs_StatAdd(bytesToFree, fs_Stats.gen.fileBytesDeleted,
-	       fs_Stats.gen.fileDeleteOverflow);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * FindHistBucket --
- *
- *	Given a number of seconds, return an index into the deletion
- *	histogram.  Performs a binary search into a static array that
- *	delimits the range of each bucket.
- *
- * Results:
- *	The index is returned.
- *
- * Side effects:
- *	The static array of bucket ranges is initialized if necessary.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-FindHistBucket(secs)
-    int secs;		/* number of seconds to be mapped into index */
-{
-    static int init = FALSE;
-    static int buckets[FS_HIST_TIME_BUCKETS];
-    int i;
-    int max;
-    int min;
-
-    if (!init) {
-	int current = 0;	/* current bucket */
-	int group = 0;		/* index into group array */
-	int total = 0;		/* current subtotal */
-	
-	for (group = 0;
-	     group < sizeof(fsHistGroupInfo) / sizeof(Fs_HistGroupInfo);
-	     group ++) {
-	    for (i = 0; i < fsHistGroupInfo[group].bucketsPerGroup; i++) {
-		total += fsHistGroupInfo[group].secondsPerBucket;
-		buckets[current] = total;
-		current ++;
-	    }
-	}
-	init = TRUE;
-    }
-    /*
-     * Anything out of the range of the binary search is in the final bucket.
-     */
-    if (secs > buckets[FS_HIST_TIME_BUCKETS - 2]) {
-	return(FS_HIST_TIME_BUCKETS - 1);
-    }
-    
-    min = 0;
-    max = FS_HIST_TIME_BUCKETS - 2;
-    while (max > min) {
-	i = min + (max - min) / 2;
-	if (secs >= buckets[i]) {
-	    min = i + 1;
-	} else if (i > 0 && secs < buckets[i-1]) {
-	    max = i - 1;
-	} else {
-	    return(i);
-	}
-    }
-    return(max);
-}
-	
-
-/*
- *----------------------------------------------------------------------
- *
- * Fsdm_FindFileType --
- *
- *	Map from flags in the handle to a constant corresponding to
- *	the file type for the kernel.  
- *
- * Results:
- *	The value corresponding to the file's type is returned.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Fsdm_FindFileType(cacheInfoPtr)
-    Fscache_FileInfo *cacheInfoPtr;	/* File to determine type of */
-{
-    switch (cacheInfoPtr->attr.userType) {
-	case FS_USER_TYPE_TMP:
-	    return(FSUTIL_FILE_TYPE_TMP);
-	case FS_USER_TYPE_SWAP:
-	    return(FSUTIL_FILE_TYPE_SWAP);
-	case FS_USER_TYPE_OBJECT:
-	    return(FSUTIL_FILE_TYPE_DERIVED);
-	case FS_USER_TYPE_BINARY:
-	    return(FSUTIL_FILE_TYPE_BINARY);
-	default:
-            return(FSUTIL_FILE_TYPE_OTHER);
-    }
-}
 
 
 
 /*
  *----------------------------------------------------------------------
  *
- * FsdmWriteBackDataBlockBitmap --
+ * OfsWriteBackDataBlockBitmap --
  *
  *	Write the data block bit map to disk.
  *
@@ -877,20 +667,20 @@ Fsdm_FindFileType(cacheInfoPtr)
  *----------------------------------------------------------------------
  */
 ENTRY ReturnStatus
-FsdmWriteBackDataBlockBitmap(domainPtr)
-    register	Fsdm_Domain	*domainPtr;	/* Domain for which to write 
+OfsWriteBackDataBlockBitmap(ofsPtr)
+    register	Ofs_Domain	*ofsPtr;	/* Domain for which to write 
 						 * back the bitmap. */
 {
     ReturnStatus	status;
 
     LOCK_MONITOR;
 
-    status = Fsio_DeviceBlockIO(FS_WRITE, &(domainPtr->headerPtr->device), 
-		    domainPtr->headerPtr->bitmapOffset * 4, 
-		    domainPtr->headerPtr->bitmapBlocks * 4,
-		    (Address) domainPtr->dataBlockBitmap);
+    status = OfsDeviceBlockIO(ofsPtr, FS_WRITE, 
+		    ofsPtr->headerPtr->bitmapOffset * 4, 
+		    ofsPtr->headerPtr->bitmapBlocks * 4,
+		    (Address) ofsPtr->dataBlockBitmap);
     if (status != SUCCESS) {
-	printf( "FsdmWriteBackDataBlockBitmap: Could not write out data block bitmap.\n");
+	printf( "OfsWriteBackDataBlockBitmap: Could not write out data block bitmap.\n");
     }
 
     UNLOCK_MONITOR;
@@ -901,7 +691,7 @@ FsdmWriteBackDataBlockBitmap(domainPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsdmWriteBackSummaryInfo --
+ * OfsWriteBackSummaryInfo --
  *
  *	Write summary info to disk.
  *
@@ -914,9 +704,9 @@ FsdmWriteBackDataBlockBitmap(domainPtr)
  *----------------------------------------------------------------------
  */
 ENTRY ReturnStatus
-FsdmWriteBackSummaryInfo(domainPtr)
-    register	Fsdm_Domain	*domainPtr;	/* Domain for which to write 
-			s			 * back the bitmap. */
+OfsWriteBackSummaryInfo(ofsPtr)
+    register	Ofs_Domain	*ofsPtr;	/* Domain for which to write 
+						 * back the bitmap. */
 {
     ReturnStatus	status;
     Fs_IOParam		io;
@@ -926,16 +716,16 @@ FsdmWriteBackSummaryInfo(domainPtr)
 
     bzero((Address)&io, sizeof(io));
     bzero((Address)&reply, sizeof(reply));
-    io.buffer = (Address)domainPtr->summaryInfoPtr;
+    io.buffer = (Address)ofsPtr->summaryInfoPtr;
     io.length = DEV_BYTES_PER_SECTOR;
-    io.offset = domainPtr->summarySector * DEV_BYTES_PER_SECTOR;
-    status = (*devFsOpTable[DEV_TYPE_INDEX(domainPtr->headerPtr->device.type)].write)
-		(&domainPtr->headerPtr->device, &io, &reply); 
+    io.offset = ofsPtr->summarySector * DEV_BYTES_PER_SECTOR;
+    status = (*devFsOpTable[DEV_TYPE_INDEX(ofsPtr->headerPtr->device.type)].write)
+		(&ofsPtr->headerPtr->device, &io, &reply); 
     if (status != SUCCESS) {
-	printf("FsdmWriteBackSummaryInfo: Could not write out summary info.\n");
+	printf("OfsWriteBackSummaryInfo: Could not write out summary info.\n");
     }
     if (status == GEN_NO_PERMISSION) {
-	printf("FsdmWriteBackSummaryInfo: Disk is write-protected.\n");
+	printf("OfsWriteBackSummaryInfo: Disk is write-protected.\n");
 	status = SUCCESS;
     }
     UNLOCK_MONITOR;
@@ -962,16 +752,16 @@ FsdmWriteBackSummaryInfo(domainPtr)
  */
 
 INTERNAL int
-SelectCylinderInt(hashSeed, domainPtr, cylinderNum)
+SelectCylinderInt(hashSeed, ofsPtr, cylinderNum)
     int				hashSeed;	/* Seed for the hash, usually
 						 * the file number. */
-    register	Fsdm_Domain	*domainPtr;	/* Domain to select cylinder 
+    register	Ofs_Domain	*ofsPtr;	/* Domain to select cylinder 
 						 * from. */
     int				cylinderNum;	/* Cylinder to try first, -1
 						 * if no preferred cylinder. */
 {
     register	int		i;
-    register	Fsdm_Cylinder	*cylinderPtr;
+    register	OfsCylinder	*cylinderPtr;
 
     if (cylinderNum == -1) {
 	/*
@@ -979,19 +769,19 @@ SelectCylinderInt(hashSeed, domainPtr, cylinderNum)
 	 */
 	fs_Stats.alloc.cylHashes++;
 	cylinderNum = ((hashSeed * 1103515245 + 12345) & 0x7fffffff) %
-			    domainPtr->headerPtr->dataCylinders;
+			    ofsPtr->headerPtr->dataCylinders;
     }
 
     /*
      * Search forward starting at the desired cylinder.
      */
 
-    for (i = cylinderNum, cylinderPtr = &(domainPtr->cylinders[cylinderNum]); 
-	 i < domainPtr->headerPtr->dataCylinders;
+    for (i = cylinderNum, cylinderPtr = &(ofsPtr->cylinders[cylinderNum]); 
+	 i < ofsPtr->headerPtr->dataCylinders;
 	 i++, cylinderPtr++) {
 	fs_Stats.alloc.cylsSearched++;
 	if (cylinderPtr->blocksFree > 0) {
-	    domainPtr->cylinders[i].blocksFree--;
+	    ofsPtr->cylinders[i].blocksFree--;
 	    return(i);
 	}
     }
@@ -1001,12 +791,12 @@ SelectCylinderInt(hashSeed, domainPtr, cylinderNum)
      */
 
     for (i = cylinderNum - 1, 
-		cylinderPtr = &(domainPtr->cylinders[cylinderNum - 1]);
+		cylinderPtr = &(ofsPtr->cylinders[cylinderNum - 1]);
 	 i >= 0;
 	 i--, cylinderPtr--) {
 	fs_Stats.alloc.cylsSearched++;
 	if (cylinderPtr->blocksFree > 0) {
-	    domainPtr->cylinders[i].blocksFree--;
+	    ofsPtr->cylinders[i].blocksFree--;
 	    return(i);
 	}
     }
@@ -1033,10 +823,10 @@ SelectCylinderInt(hashSeed, domainPtr, cylinderNum)
  */
 
 INTERNAL static void
-FindBlockInt(hashSeed, domainPtr, nearBlock, allocate, blockNumPtr, 
+FindBlockInt(hashSeed, ofsPtr, nearBlock, allocate, blockNumPtr, 
 	     bitmapPtrPtr)
     int			hashSeed;	/* Seed for cylinder hash. */
-    register Fsdm_Domain  *domainPtr; 	/* Domain to allocate blocks in. */
+    register Ofs_Domain  *ofsPtr; 	/* Domain to allocate blocks in. */
     int			nearBlock;  	/* Block number where this block should
 					 * be near. */
     Boolean		allocate;   	/* TRUE if allocating full block, FALSE
@@ -1053,7 +843,7 @@ FindBlockInt(hashSeed, domainPtr, nearBlock, allocate, blockNumPtr,
     int			   mask;
     int			   cylinderNum;
 
-    blocksPerCylinder = domainPtr->headerPtr->geometry.blocksPerCylinder;
+    blocksPerCylinder = ofsPtr->headerPtr->geometry.blocksPerCylinder;
     if (nearBlock != -1) {
 	cylinderNum = ((unsigned int) nearBlock) / blocksPerCylinder;
 	startingBlockOffset = ((unsigned int) nearBlock) % blocksPerCylinder;
@@ -1061,19 +851,19 @@ FindBlockInt(hashSeed, domainPtr, nearBlock, allocate, blockNumPtr,
 	cylinderNum = -1;
 	startingBlockOffset = -1;
     }
-    cylinderNum = SelectCylinderInt(hashSeed, domainPtr, cylinderNum);
+    cylinderNum = SelectCylinderInt(hashSeed, ofsPtr, cylinderNum);
     if (cylinderNum == -1) {
 	*blockNumPtr = -1;
 	return;
     }
-    if (fsdm_AllocGap == 0) {
+    if (ofs_AllocGap == 0) {
 	/*
 	 * CONTIGUOUS allocation.
 	 * This is the original code that simply starts at the beginning
 	 * of the cylinder and stops when it finds a free block.
 	 */
 	bitmapPtr = 
-	  &(domainPtr->dataBlockBitmap[cylinderNum * domainPtr->bytesPerCylinder]);
+	  &(ofsPtr->dataBlockBitmap[cylinderNum * ofsPtr->bytesPerCylinder]);
 	blockNum = cylinderNum * blocksPerCylinder;
 	while (TRUE) {
 	    fs_Stats.alloc.cylBitmapSearches++;
@@ -1098,13 +888,13 @@ FindBlockInt(hashSeed, domainPtr, nearBlock, allocate, blockNumPtr,
 	 */
 	if (startingBlockOffset >= 0) {
 	    startingBlockOffset += 1;
-	    block = startingBlockOffset + fsdm_AllocGap;
+	    block = startingBlockOffset + ofs_AllocGap;
 	} else {
 	    block = 0;
 	    startingBlockOffset = blocksPerCylinder;
 	}
-	bitmapPtr =
-	    &(domainPtr->dataBlockBitmap[cylinderNum * domainPtr->bytesPerCylinder
+	bitmapPtr = 
+		&(ofsPtr->dataBlockBitmap[cylinderNum * ofsPtr->bytesPerCylinder
 					 + block / 2]);
 	 /*
 	 * Walk through the bitmap.  We are guaranteed from SelectCylinder that
@@ -1120,7 +910,7 @@ FindBlockInt(hashSeed, domainPtr, nearBlock, allocate, blockNumPtr,
 		  * Wrap back to the beginning of the cylinder
 		  */
 		 block -= blocksPerCylinder;
-		 bitmapPtr -= domainPtr->bytesPerCylinder;
+		 bitmapPtr -= ofsPtr->bytesPerCylinder;
 	    }
 	    if ((block & 0x1) == 0 && UpperBlockFree(*bitmapPtr)) {
 		mask = 0xf0;
@@ -1137,7 +927,7 @@ FindBlockInt(hashSeed, domainPtr, nearBlock, allocate, blockNumPtr,
 	UNLOCK_MONITOR;
 	panic("FindBlockInt: no block\n");
 	*blockNumPtr = -1;
-	fsdm_AllocGap = CONTIGUOUS;
+	ofs_AllocGap = CONTIGUOUS;
 	LOCK_MONITOR;
 	return;
 
@@ -1164,7 +954,7 @@ haveFreeBlock:
 /*
  *----------------------------------------------------------------------
  *
- * FsdmBlockFind --
+ * OfsBlockFind --
  *
  *	Search the bit map starting at the given cylinder for a free block.
  *
@@ -1177,9 +967,9 @@ haveFreeBlock:
  *----------------------------------------------------------------------
  */
 ENTRY void
-FsdmBlockFind(hashSeed, domainPtr, nearBlock, allocate, blockNumPtr, bitmapPtrPtr)
+OfsBlockFind(hashSeed, ofsPtr, nearBlock, allocate, blockNumPtr, bitmapPtrPtr)
     int			hashSeed;	/* Seed for cylinder hash. */
-    Fsdm_Domain 		*domainPtr; 	/* Domain to allocate blocks in . */
+    Ofs_Domain 	*ofsPtr; 	/* Domain to allocate blocks in . */
     int			nearBlock;  	/* Block number where this block should
 					 * be near. */
     Boolean		allocate;   	/* TRUE if allocating full block, FALSE
@@ -1190,17 +980,17 @@ FsdmBlockFind(hashSeed, domainPtr, nearBlock, allocate, blockNumPtr, bitmapPtrPt
 {
     LOCK_MONITOR;
 
-    if (domainPtr->summaryInfoPtr->numFreeKbytes - FS_FRAGMENTS_PER_BLOCK <
-	    domainPtr->minKFree) {
+    if (ofsPtr->summaryInfoPtr->numFreeKbytes - FS_FRAGMENTS_PER_BLOCK <
+	    ofsPtr->minKFree) {
 	*blockNumPtr = -1;
 	UNLOCK_MONITOR;
 	return;
     }
 
-    FindBlockInt(hashSeed, domainPtr, nearBlock, allocate, blockNumPtr, 
+    FindBlockInt(hashSeed, ofsPtr, nearBlock, allocate, blockNumPtr, 
 		 bitmapPtrPtr);
     if (*blockNumPtr != -1) {
-	domainPtr->summaryInfoPtr->numFreeKbytes -= FS_FRAGMENTS_PER_BLOCK;
+	ofsPtr->summaryInfoPtr->numFreeKbytes -= FS_FRAGMENTS_PER_BLOCK;
     }
 
     UNLOCK_MONITOR;
@@ -1210,7 +1000,7 @@ FsdmBlockFind(hashSeed, domainPtr, nearBlock, allocate, blockNumPtr, bitmapPtrPt
 /*
  *----------------------------------------------------------------------
  *
- * FsdmBlockFree --
+ * OfsBlockFree --
  *
  *	Put the given block back into the bit map.
  *
@@ -1224,8 +1014,8 @@ FsdmBlockFind(hashSeed, domainPtr, nearBlock, allocate, blockNumPtr, bitmapPtrPt
  */
 
 ENTRY void
-FsdmBlockFree(domainPtr, blockNum)
-    register Fsdm_Domain *domainPtr; 	/* Handle for file to alloc blocks 
+OfsBlockFree(ofsPtr, blockNum)
+    register Ofs_Domain *ofsPtr; 	/* Handle for file to alloc blocks 
 					 * for. */
     int			  blockNum;   	/* Block number to free. */
 {
@@ -1236,13 +1026,13 @@ FsdmBlockFree(domainPtr, blockNum)
 
     LOCK_MONITOR;
 
-    domainPtr->summaryInfoPtr->numFreeKbytes += FS_FRAGMENTS_PER_BLOCK;
+    ofsPtr->summaryInfoPtr->numFreeKbytes += FS_FRAGMENTS_PER_BLOCK;
     fs_Stats.alloc.blocksFreed++;
-    bitmapPtr = GetBitmapPtr(domainPtr, blockNum);
+    bitmapPtr = GetBitmapPtr(ofsPtr, blockNum);
     cylinderNum = (unsigned int) blockNum / 
-			domainPtr->headerPtr->geometry.blocksPerCylinder;
-    domainPtr->cylinders[cylinderNum].blocksFree++;
-    if ((blockNum % domainPtr->headerPtr->geometry.blocksPerCylinder) & 0x1) {
+			ofsPtr->headerPtr->geometry.blocksPerCylinder;
+    ofsPtr->cylinders[cylinderNum].blocksFree++;
+    if ((blockNum % ofsPtr->headerPtr->geometry.blocksPerCylinder) & 0x1) {
 	mask = 0xf0;
     } else {
 	mask = 0x0f;
@@ -1252,7 +1042,7 @@ FsdmBlockFree(domainPtr, blockNum)
 	printf("bitmap = <%x>, checkMask = <%x>\n",
 			   *bitmapPtr & 0xff, checkMask & 0xff);
         UNLOCK_MONITOR;
-	printf("FsdmBlockFree free block %d\n", blockNum);
+	printf("OfsBlockFree free block %d\n", blockNum);
 	return;
     } else {
 	*bitmapPtr &= mask;
@@ -1265,7 +1055,7 @@ FsdmBlockFree(domainPtr, blockNum)
 /*
  *----------------------------------------------------------------------
  *
- * FsdmFragFind --
+ * OfsFragFind --
  *
  *	Allocate a fragment out of the bit map.  If possible the fragment
  *	is allocated where the last fragment was allocated.
@@ -1281,10 +1071,10 @@ FsdmBlockFree(domainPtr, blockNum)
  */
 
 ENTRY void
-FsdmFragFind(hashSeed, domainPtr, numFrags, lastFragBlock, lastFragOffset, 
+OfsFragFind(hashSeed, ofsPtr, numFrags, lastFragBlock, lastFragOffset, 
 	    lastFragSize, newFragBlockPtr, newFragOffsetPtr)
     int			hashSeed;		/* Seed for cylinder hash. */
-    register Fsdm_Domain 	*domainPtr;		/* Domain out of which to 
+    register Ofs_Domain *ofsPtr;		/* Domain out of which to 
 						 * allocate the fragment. */
     int		      	numFrags;   		/* Number of fragments to get: 
 						 * 1, 2, or 3 */
@@ -1300,17 +1090,17 @@ FsdmFragFind(hashSeed, domainPtr, numFrags, lastFragBlock, lastFragOffset,
     int		      	*newFragOffsetPtr;	/* Where to return new fragment
 						 * offset. */
 {
-    register FsdmFragment	  	*fragPtr;
-    register unsigned char 	*bitmapPtr;
+    register OfsFragment	  	*fragPtr;
+    register unsigned char 	*bitmapPtr = (unsigned char *) NIL;
     register int	   	*savedOffsets;
     unsigned char		savedBitmap;
     int			   	*fragOffsetPtr;
-    int			   	fragOffset;
+    int			   	fragOffset = 0;
     int			   	fragBlock;
     unsigned char 	   	*tBitmapPtr;
     List_Links	   	   	*fragList;
     int			   	byteOffset;
-    int			   	fragMask;
+    int			   	fragMask = 0;
     int			   	i;
     int			   	blockNum = -1;
     int				fragsToAllocate;
@@ -1322,8 +1112,8 @@ FsdmFragFind(hashSeed, domainPtr, numFrags, lastFragBlock, lastFragOffset,
     } else {
 	fragsToAllocate = numFrags - lastFragSize;
     }
-    if (domainPtr->summaryInfoPtr->numFreeKbytes - fragsToAllocate <
-	    domainPtr->minKFree) {
+    if (ofsPtr->summaryInfoPtr->numFreeKbytes - fragsToAllocate <
+	    ofsPtr->minKFree) {
 	*newFragBlockPtr = -1;
 	UNLOCK_MONITOR;
 	return;
@@ -1337,8 +1127,8 @@ FsdmFragFind(hashSeed, domainPtr, numFrags, lastFragBlock, lastFragOffset,
     if (lastFragBlock != -1 && 
 	lastFragOffset + numFrags <= FS_FRAGMENTS_PER_BLOCK ) {
 	fs_Stats.alloc.fragUpgrades++;
-	bitmapPtr = GetBitmapPtr(domainPtr, lastFragBlock);
-	if ((lastFragBlock % domainPtr->headerPtr->geometry.blocksPerCylinder)
+	bitmapPtr = GetBitmapPtr(ofsPtr, lastFragBlock);
+	if ((lastFragBlock % ofsPtr->headerPtr->geometry.blocksPerCylinder)
 		& 0x1) {
 	    byteOffset = lastFragOffset + 4;
 	} else {
@@ -1367,11 +1157,11 @@ FsdmFragFind(hashSeed, domainPtr, numFrags, lastFragBlock, lastFragOffset,
 	 */
 
 	for (i = numFrags - 1; 
-	     i < FSDM_NUM_FRAG_SIZES && blockNum == -1; 
+	     i < OFS_NUM_FRAG_SIZES && blockNum == -1; 
 	     i++) {
-	    fragList = domainPtr->fragLists[i];
+	    fragList = ofsPtr->fragLists[i];
 	    while (!List_IsEmpty(fragList)) {
-		fragPtr = (FsdmFragment *) List_First(fragList);
+		fragPtr = (OfsFragment *) List_First(fragList);
 		List_Remove((List_Links *) fragPtr);
 		fragBlock = fragPtr->blockNum;
 		free((Address) fragPtr);
@@ -1379,9 +1169,9 @@ FsdmFragFind(hashSeed, domainPtr, numFrags, lastFragBlock, lastFragOffset,
 		 * Check to make sure that there really is a fragment of the
 		 * needed size in the block.  These fragment lists are hints.
 		 */
-		bitmapPtr = GetBitmapPtr(domainPtr, fragBlock);
+		bitmapPtr = GetBitmapPtr(ofsPtr, fragBlock);
 		if ((fragBlock %
-		     domainPtr->headerPtr->geometry.blocksPerCylinder) & 0x1) {
+		     ofsPtr->headerPtr->geometry.blocksPerCylinder) & 0x1) {
 		    fragOffset = fragTable[GetLowerFragMask(*bitmapPtr)][i];
 		} else {
 		    fragOffset = fragTable[GetUpperFragMask(*bitmapPtr)][i];
@@ -1404,7 +1194,7 @@ FsdmFragFind(hashSeed, domainPtr, numFrags, lastFragBlock, lastFragOffset,
 	     * We couldn't find a fragmented block to use so have to 
 	     * fragment a full block.
 	     */
-	    FindBlockInt(hashSeed, domainPtr, -1, FALSE, &blockNum, 
+	    FindBlockInt(hashSeed, ofsPtr, -1, FALSE, &blockNum, 
 			 &tBitmapPtr);
 	    if (blockNum == -1) {
 		*newFragBlockPtr = -1;
@@ -1421,7 +1211,7 @@ FsdmFragFind(hashSeed, domainPtr, numFrags, lastFragBlock, lastFragOffset,
 	 * odd relative to the start of the cylinder, and relative to
 	 * the start of the bitmap for that cylinder.
 	 */
-	if ((blockNum % domainPtr->headerPtr->geometry.blocksPerCylinder)
+	if ((blockNum % ofsPtr->headerPtr->geometry.blocksPerCylinder)
 		& 0x1) {
 	    byteOffset = fragOffset + 4;
 	} else {
@@ -1431,9 +1221,9 @@ FsdmFragFind(hashSeed, domainPtr, numFrags, lastFragBlock, lastFragOffset,
 	for (i = byteOffset; i < byteOffset + numFrags; i++) {
 	    fragMask |= bitMasks[i];
 	}
-	domainPtr->summaryInfoPtr->numFreeKbytes -= numFrags;
+	ofsPtr->summaryInfoPtr->numFreeKbytes -= numFrags;
     } else {
-	domainPtr->summaryInfoPtr->numFreeKbytes -= numFrags - lastFragSize;
+	ofsPtr->summaryInfoPtr->numFreeKbytes -= numFrags - lastFragSize;
 	fs_Stats.alloc.fragsUpgraded++;
     }
 
@@ -1453,22 +1243,22 @@ FsdmFragFind(hashSeed, domainPtr, numFrags, lastFragBlock, lastFragOffset,
 	savedBitmap = *bitmapPtr;
 	*bitmapPtr |= fragMask;
     }
-    if ((blockNum % domainPtr->headerPtr->geometry.blocksPerCylinder) & 0x1) {
+    if ((blockNum % ofsPtr->headerPtr->geometry.blocksPerCylinder) & 0x1) {
 	savedOffsets = fragTable[GetLowerFragMask(savedBitmap)];
 	fragOffsetPtr = fragTable[GetLowerFragMask(*bitmapPtr)];
     } else {
 	savedOffsets = fragTable[GetUpperFragMask(savedBitmap)];
 	fragOffsetPtr = fragTable[GetUpperFragMask(*bitmapPtr)];
     }
-    for (i = 0; i < FSDM_NUM_FRAG_SIZES; i++, savedOffsets++, fragOffsetPtr++) {
+    for (i = 0; i < OFS_NUM_FRAG_SIZES; i++, savedOffsets++, fragOffsetPtr++) {
 	if (*savedOffsets == -1 && *fragOffsetPtr != -1) {
 	    /*
 	     * The block was not on the fragment list of this size before we
 	     * allocated a new fragment out of it, so put it there. 
 	     */
-	    fragPtr = (FsdmFragment *) malloc(sizeof(FsdmFragment));
+	    fragPtr = (OfsFragment *) malloc(sizeof(OfsFragment));
 	    List_Insert((List_Links *) fragPtr, 
-			LIST_ATREAR(domainPtr->fragLists[i]));
+			LIST_ATREAR(ofsPtr->fragLists[i]));
 	    fragPtr->blockNum = blockNum;
 	}
     }
@@ -1490,7 +1280,7 @@ FsdmFragFind(hashSeed, domainPtr, numFrags, lastFragBlock, lastFragOffset,
 /*
  *----------------------------------------------------------------------
  *
- * FsdmFragFree --
+ * OfsFragFree --
  *
  *	Free the given fragment.
  *
@@ -1504,8 +1294,8 @@ FsdmFragFind(hashSeed, domainPtr, numFrags, lastFragBlock, lastFragOffset,
  */
 
 ENTRY void
-FsdmFragFree(domainPtr, numFrags, fragBlock, fragOffset) 
-    register Fsdm_Domain *domainPtr;	/* Domain out of which to allocate the
+OfsFragFree(ofsPtr, numFrags, fragBlock, fragOffset) 
+    register Ofs_Domain *ofsPtr;	/* Domain out of which to allocate the
 					   fragment. */
     int			  numFrags; 	/* Number of fragments to free: 1, 2,
 					   or 3 */
@@ -1516,7 +1306,7 @@ FsdmFragFree(domainPtr, numFrags, fragBlock, fragOffset)
     register int	   *fragOffsets;
     register int 	   *savedOffsets;
     register unsigned char *bitmapPtr;
-    FsdmFragment		   *fragPtr;
+    OfsFragment		   *fragPtr;
     unsigned char 	    mask;
     int		            i;
     int		            byteOffset;
@@ -1526,15 +1316,15 @@ FsdmFragFree(domainPtr, numFrags, fragBlock, fragOffset)
 
     fs_Stats.alloc.fragsFreed++;
 
-    domainPtr->summaryInfoPtr->numFreeKbytes += numFrags;
+    ofsPtr->summaryInfoPtr->numFreeKbytes += numFrags;
 
-    bitmapPtr = GetBitmapPtr(domainPtr, fragBlock);
+    bitmapPtr = GetBitmapPtr(ofsPtr, fragBlock);
 
     /*
      * Determine whether should clear upper or lower 4 bits.
      */
 
-    if ((fragBlock % domainPtr->headerPtr->geometry.blocksPerCylinder) & 0x1) {
+    if ((fragBlock % ofsPtr->headerPtr->geometry.blocksPerCylinder) & 0x1) {
 	byteOffset = fragOffset + 4;
 	savedOffsets = fragTable[GetLowerFragMask(*bitmapPtr)];
     } else {
@@ -1551,10 +1341,10 @@ FsdmFragFree(domainPtr, numFrags, fragBlock, fragOffset)
 	mask |= bitMasks[i];
     }
     if ((*bitmapPtr & mask) != mask) {
-	printf("bitmap = <%x>, checkMask = <%x>\n",
+	printf("OfsFragFree: bitmap = <%x>, checkMask = <%x>\n",
 			   *bitmapPtr & 0xff, mask & 0xff);
 	UNLOCK_MONITOR;
-	printf("FsdmFragFree: block not free, block %d, numFrag %d, offset %d\n",
+	printf("OfsFragFree: block not free, block %d, numFrag %d, offset %d\n",
 		    fragBlock, numFrags, fragOffset);
 	return;
     } else {
@@ -1568,7 +1358,7 @@ FsdmFragFree(domainPtr, numFrags, fragBlock, fragOffset)
      * points to the frag offsets after we freed the fragment.
      */
 
-    if ((fragBlock % domainPtr->headerPtr->geometry.blocksPerCylinder) & 0x1) {
+    if ((fragBlock % ofsPtr->headerPtr->geometry.blocksPerCylinder) & 0x1) {
 	fragMask = GetLowerFragMask(*bitmapPtr);
     } else {
 	fragMask = GetUpperFragMask(*bitmapPtr);
@@ -1578,21 +1368,21 @@ FsdmFragFree(domainPtr, numFrags, fragBlock, fragOffset)
 	/*
 	 * The block has become totally free.
 	 */
-	domainPtr->cylinders[(unsigned int) fragBlock / 
-	     domainPtr->headerPtr->geometry.blocksPerCylinder].blocksFree++;
+	ofsPtr->cylinders[(unsigned int) fragBlock / 
+	     ofsPtr->headerPtr->geometry.blocksPerCylinder].blocksFree++;
 	UNLOCK_MONITOR;
 	return;
     }
     fragOffsets = fragTable[fragMask];
-    for (i = 0; i < FSDM_NUM_FRAG_SIZES; i++, fragOffsets++, savedOffsets++) {
+    for (i = 0; i < OFS_NUM_FRAG_SIZES; i++, fragOffsets++, savedOffsets++) {
 	if (*savedOffsets == -1 && *fragOffsets != -1) {
 	    /*
 	     * A fragment of this size did not exist before we freed the 
 	     * fragment but it does exist now.
 	     */
-	    fragPtr = (FsdmFragment *) malloc(sizeof(FsdmFragment));
+	    fragPtr = (OfsFragment *) malloc(sizeof(OfsFragment));
 	    List_Insert((List_Links *) fragPtr, 
-			LIST_ATREAR(domainPtr->fragLists[i]));
+				LIST_ATREAR(ofsPtr->fragLists[i]));
 	    fragPtr->blockNum = fragBlock;
 	}
     }
@@ -1619,8 +1409,8 @@ FsdmFragFree(domainPtr, numFrags, fragBlock, fragOffset)
  */
 
 ENTRY Boolean
-OnlyFrag(domainPtr, numFrags, fragBlock, fragOffset) 
-    register Fsdm_Domain *domainPtr;	/* Domain of fragment. */
+OnlyFrag(ofsPtr, numFrags, fragBlock, fragOffset) 
+    register Ofs_Domain *ofsPtr;	/* Domain of fragment. */
     int			  numFrags; 	/* Number of fragments to free: 1, 2,
 					   or 3 */
     int			  fragBlock;	/* Block number where the fragment
@@ -1635,12 +1425,12 @@ OnlyFrag(domainPtr, numFrags, fragBlock, fragOffset)
 
     LOCK_MONITOR;
 
-    bitmapPtr = GetBitmapPtr(domainPtr, fragBlock);
+    bitmapPtr = GetBitmapPtr(ofsPtr, fragBlock);
 
     /*
      * Determine whether should access upper or lower 4 bits.
      */
-    if ((fragBlock % domainPtr->headerPtr->geometry.blocksPerCylinder) & 0x1) {
+    if ((fragBlock % ofsPtr->headerPtr->geometry.blocksPerCylinder) & 0x1) {
 	byteOffset = fragOffset + 4;
 	blockMask = 0x0f;
     } else {
@@ -1677,7 +1467,7 @@ OnlyFrag(domainPtr, numFrags, fragBlock, fragOffset)
      * bad block file.
      */
     *bitmapPtr |= blockMask;
-    domainPtr->summaryInfoPtr->numFreeKbytes -= 
+    ofsPtr->summaryInfoPtr->numFreeKbytes -= 
 					FS_FRAGMENTS_PER_BLOCK - numFrags;
 
     UNLOCK_MONITOR;
@@ -1702,11 +1492,12 @@ OnlyFrag(domainPtr, numFrags, fragBlock, fragOffset)
  */
 
 static ReturnStatus
-UpgradeFragment(handlePtr, indexInfoPtr, curLastBlock, newLastFrag, 
+UpgradeFragment(ofsPtr, handlePtr, indexInfoPtr, curLastBlock, newLastFrag, 
 		dontWriteThru, dontBlock, dirtiedIndexPtr)
+    Ofs_Domain		*ofsPtr;		/* Domain of file. */
     Fsio_FileIOHandle		*handlePtr;	/* File to allocate blocks 
 						 * for. */
-    register Fsdm_BlockIndexInfo *indexInfoPtr;	/* Index info structure. */
+    register OfsBlockIndexInfo *indexInfoPtr;	/* Index info structure. */
     int			curLastBlock;		/* The current last block. */
     int			newLastFrag;		/* New last fragment for this
 						 * file.  Fragments are numbered
@@ -1720,7 +1511,6 @@ UpgradeFragment(handlePtr, indexInfoPtr, curLastBlock, newLastFrag,
 						 * pointer in the file index 
 						 * structure. */
 {
-    register	Fsdm_Domain	 *domainPtr;
     register	Fsdm_FileDescriptor *descPtr;
     register	int	 	 blockAddr;
     int				 curLastFrag;	/* Current last fragment for
@@ -1739,10 +1529,6 @@ UpgradeFragment(handlePtr, indexInfoPtr, curLastBlock, newLastFrag,
     ReturnStatus		 status = SUCCESS;
     int				 flags;
 
-    domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, FALSE);
-    if (domainPtr == (Fsdm_Domain *)NIL) {
-	return(FS_DOMAIN_UNAVAILABLE);
-    }
     descPtr = handlePtr->descPtr;
     blockAddr = *(indexInfoPtr->blockAddrPtr);
 
@@ -1765,7 +1551,7 @@ UpgradeFragment(handlePtr, indexInfoPtr, curLastBlock, newLastFrag,
 	 * numbered from zero so that the fragment number + 1 is equal to the
 	 * number of fragments in the block.
 	 */
-	FsdmFragFind(handlePtr->hdr.fileID.minor, domainPtr, newLastFrag + 1, 
+	OfsFragFind(handlePtr->hdr.fileID.minor, ofsPtr, newLastFrag + 1, 
 		    curFragBlock, curFragOffset, curLastFrag + 1,
 		    &newFragBlock, &newFragOffset);
 	if (newFragBlock == -1) {
@@ -1783,7 +1569,7 @@ UpgradeFragment(handlePtr, indexInfoPtr, curLastBlock, newLastFrag,
 	/*
 	 * Allocate a full block.
 	 */
-	FsdmBlockFind(handlePtr->hdr.fileID.minor, domainPtr,
+	OfsBlockFind(handlePtr->hdr.fileID.minor, ofsPtr,
 		    indexInfoPtr->lastDiskBlock,
 		    TRUE, &newFragBlock, &bitmapPtr);
 	if (newFragBlock == -1) {
@@ -1812,13 +1598,13 @@ UpgradeFragment(handlePtr, indexInfoPtr, curLastBlock, newLastFrag,
     }
     fs_Stats.blockCache.fragAccesses++;
     if (!found) {
-	status = Fsio_DeviceBlockIO(FS_READ, &domainPtr->headerPtr->device,
+	status = OfsDeviceBlockIO(ofsPtr, FS_READ, 
 		   blockAddr +
-		   domainPtr->headerPtr->dataOffset * FS_FRAGMENTS_PER_BLOCK,
+		   ofsPtr->headerPtr->dataOffset * FS_FRAGMENTS_PER_BLOCK,
 		   curLastFrag + 1, fragCacheBlockPtr->blockAddr);
 	if (status != SUCCESS) {
 	    Fscache_UnlockBlock(fragCacheBlockPtr, 0, -1, 0, 0);
-	    FsdmFragFree(domainPtr, newLastFrag + 1, 
+	    OfsFragFree(ofsPtr, newLastFrag + 1, 
 		       newFragBlock, newFragOffset);
 	    goto exit;
 	}
@@ -1855,19 +1641,18 @@ UpgradeFragment(handlePtr, indexInfoPtr, curLastBlock, newLastFrag,
 	flags = FSCACHE_CLEAR_READ_AHEAD;
     }
     blockAddr = newFragBlock * FS_FRAGMENTS_PER_BLOCK + newFragOffset;
-    Fscache_UnlockBlock(fragCacheBlockPtr, (unsigned) fsutil_TimeInSeconds, 
+    Fscache_UnlockBlock(fragCacheBlockPtr, (unsigned) Fsutil_TimeInSeconds(), 
 		       blockAddr, 
 		       (newLastFrag + 1) * FS_FRAGMENT_SIZE, flags);
 
     *(indexInfoPtr->blockAddrPtr) = blockAddr;
     descPtr->numKbytes += newLastFrag - curLastFrag;
-    descPtr->flags |= FSDM_FD_DIRTY;
+    descPtr->flags |= FSDM_FD_SIZE_DIRTY;
     *dirtiedIndexPtr = TRUE;
 
-    FsdmFragFree(domainPtr, curLastFrag + 1, curFragBlock, curFragOffset);
+    OfsFragFree(ofsPtr, curLastFrag + 1, curFragBlock, curFragOffset);
 
 exit:
-    Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
     return(status);
 }
 
@@ -1894,7 +1679,7 @@ AllocateBlock(handlePtr, descPtr, indexInfoPtr, newLastByte, curLastBlock,
 	      dontBlock, dirtiedIndexPtr)
     Fsio_FileIOHandle		*handlePtr;	/* File to allocate block for.*/
     register Fsdm_FileDescriptor 	*descPtr;	/* Pointer to the file desc. */
-    register Fsdm_BlockIndexInfo 	*indexInfoPtr; 	/* Index info structure. * /
+    register OfsBlockIndexInfo 	*indexInfoPtr; 	/* Index info structure. */
     int				newLastByte;	/* The new last byte in the 
 						 * file. */
     int				curLastBlock;	/* The last block in the file 
@@ -1903,8 +1688,8 @@ AllocateBlock(handlePtr, descPtr, indexInfoPtr, newLastByte, curLastBlock,
     Boolean			*dirtiedIndexPtr;/* TRUE if a new block was 
 						  * allocated. */
 {
-    register	Fsdm_Domain	 *domainPtr;
     register	int		 blockAddr;
+    register	Ofs_Domain	 *ofsPtr;
     unsigned char 		 *bitmapPtr;
     int				 newFragIndex;	/* {0, 1, 2, 3} */
     int				 blockNum;	/* Disk block that is 
@@ -1913,10 +1698,7 @@ AllocateBlock(handlePtr, descPtr, indexInfoPtr, newLastByte, curLastBlock,
 						 * fragment begins. */
     ReturnStatus		 status = SUCCESS;
 
-    domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, FALSE);
-    if (domainPtr == (Fsdm_Domain *)NIL) {
-	return(FS_DOMAIN_UNAVAILABLE);
-    }
+    ofsPtr = indexInfoPtr->ofsPtr;
     blockAddr = *(indexInfoPtr->blockAddrPtr);
     if (blockAddr == 0 && handlePtr->hdr.fileID.minor != 2) {
 	/*
@@ -1945,7 +1727,7 @@ AllocateBlock(handlePtr, descPtr, indexInfoPtr, newLastByte, curLastBlock,
 	    /*
 	     * Fragment the last block.
 	     */
-	    FsdmFragFind(handlePtr->hdr.fileID.minor, domainPtr,
+	    OfsFragFind(handlePtr->hdr.fileID.minor, ofsPtr,
 			newFragIndex + 1, -1, -1, -1,
 			&blockNum, &newFragOffset);
 	    if (blockNum != -1) {
@@ -1961,7 +1743,7 @@ AllocateBlock(handlePtr, descPtr, indexInfoPtr, newLastByte, curLastBlock,
 	     * Allocate a full block if one isn't there already.
 	     */
 	    if (blockAddr == FSDM_NIL_INDEX) {
-		FsdmBlockFind(handlePtr->hdr.fileID.minor, domainPtr,
+		OfsBlockFind(handlePtr->hdr.fileID.minor, ofsPtr,
 			    indexInfoPtr->lastDiskBlock, 
 			    TRUE, &blockNum, &bitmapPtr);
 		if (blockNum == -1) {
@@ -1988,11 +1770,10 @@ AllocateBlock(handlePtr, descPtr, indexInfoPtr, newLastByte, curLastBlock,
 	 * Are allocating on top of the last block so make sure that the 
 	 * last fragment is large enough.
 	 */   
-	status = UpgradeFragment(handlePtr, indexInfoPtr, 
+	status = UpgradeFragment(ofsPtr, handlePtr, indexInfoPtr, 
 				 curLastBlock, newFragIndex, TRUE,
 				 dontBlock, dirtiedIndexPtr);
     }
-    Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
     return(status);
 }
 
@@ -2014,13 +1795,14 @@ AllocateBlock(handlePtr, descPtr, indexInfoPtr, newLastByte, curLastBlock,
  *----------------------------------------------------------------------
  */
 static ReturnStatus
-FragToBlock(handlePtr, blockNum, dontBlock)
+FragToBlock(ofsPtr, handlePtr, blockNum, dontBlock)
+    Ofs_Domain			*ofsPtr;
     register Fsio_FileIOHandle	*handlePtr;
     int				blockNum;
     int				dontBlock;	/* FSCACHE_DONT_BLOCK */
 {
     register Fsdm_FileDescriptor	*descPtr;
-    Fsdm_BlockIndexInfo		indexInfo;
+    OfsBlockIndexInfo		indexInfo;
     ReturnStatus		status;
     Boolean			dirtiedIndex;
 
@@ -2033,8 +1815,8 @@ FragToBlock(handlePtr, blockNum, dontBlock)
 	 * This is the first block of the file so there is no previous
 	 * block.
 	 */
-	status = Fsdm_GetFirstIndex(handlePtr, blockNum, &indexInfo,
-				 FSDM_ALLOC_INDIRECT_BLOCKS);
+	status = OfsGetFirstIndex(ofsPtr, handlePtr, blockNum, &indexInfo,
+				 OFS_ALLOC_INDIRECT_BLOCKS);
 	if (status != SUCCESS) {
 	    return(status);
 	}
@@ -2043,14 +1825,14 @@ FragToBlock(handlePtr, blockNum, dontBlock)
 	 * This is not the first block in the file, so determine the
 	 * previous block and then go to the first block.
 	 */
-	status = Fsdm_GetFirstIndex(handlePtr, blockNum - 1, &indexInfo,
-				 FSDM_ALLOC_INDIRECT_BLOCKS);
+	status = OfsGetFirstIndex(ofsPtr, handlePtr, blockNum - 1, &indexInfo,
+				 OFS_ALLOC_INDIRECT_BLOCKS);
 	if (status != SUCCESS) {
 	    return(status);
 	}
-	status = Fsdm_GetNextIndex(handlePtr, &indexInfo, FALSE);
+	status = OfsGetNextIndex(handlePtr, &indexInfo, FALSE);
 	if (status != SUCCESS) {
-	    Fsdm_EndIndex(handlePtr, &indexInfo, FALSE);
+	    OfsEndIndex(handlePtr, &indexInfo, FALSE);
 	    return(status);
 	}
     }
@@ -2059,144 +1841,23 @@ FragToBlock(handlePtr, blockNum, dontBlock)
      * Now upgrade to a full block.
      */
 
-    status = UpgradeFragment(handlePtr, &indexInfo, blockNum, LAST_FRAG,
+    status = UpgradeFragment(ofsPtr, handlePtr, &indexInfo, blockNum, LAST_FRAG,
 			     FALSE, dontBlock, &dirtiedIndex);
     if (status == SUCCESS) {
 	descPtr->lastByte = blockNum * FS_BLOCK_SIZE + FS_BLOCK_SIZE - 1;
-	descPtr->descModifyTime = fsutil_TimeInSeconds;
-	descPtr->flags |= FSDM_FD_DIRTY;
+	descPtr->descModifyTime = Fsutil_TimeInSeconds();
+	descPtr->flags |= FSDM_FD_SIZE_DIRTY;
     }
-    Fsdm_EndIndex(handlePtr, &indexInfo, dirtiedIndex);
+    OfsEndIndex(handlePtr, &indexInfo, dirtiedIndex);
     return(status);
 }
+
 
 
 /*
  *----------------------------------------------------------------------
  *
- * Fsdm_NamedPipeTrunc --
- *
- *	Truncate a named pipe.  This is defined to leave the length most
- *	recently written bytes in the pipe.  Another way of saying this
- *	is that it consumes data from the from of the pipe so there
- *	is length bytes in it.  Called via the Truncate system calls,
- *	or from the cache after reading from the named pipe.
- *
- *	THIS ROUTINE SHOULDN'T HAVE TO FIX UP THE cacheInfo !
- *
- * Results:
- *	Error  if can't go through file indexing structure.
- *
- * Side effects:
- *	Any allocated blocks in the affected range of bytes are deleted.
- *
- *----------------------------------------------------------------------
- */
-
-ReturnStatus
-Fsdm_NamedPipeTrunc(handlePtr, length)
-    Fsio_FileIOHandle	*handlePtr;	/* Handle for the pipes backing store */
-    int		length;			/* Leave this many bytes at the end */
-{
-    register	Fsdm_Domain	 *domainPtr;
-    register	Fsdm_FileDescriptor *descPtr;
-    int				 firstByte;
-    int				 curFirstBlock;
-    int				 newFirstBlock;
-    int				 lastDeadBlock;
-    ReturnStatus		 status = SUCCESS;
-    Fsdm_BlockIndexInfo		 indexInfo;
-    Boolean			 dirty;
-
-    domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, FALSE);
-    if (domainPtr == (Fsdm_Domain *)NIL) {
-	return(FS_DOMAIN_UNAVAILABLE);
-    }
-    descPtr = handlePtr->descPtr;
-
-    if (descPtr->firstByte == -1) {
-	/*
-	 * There is no space allocated on disk for this pipe.  The handle
-	 * may have values for firstByte and lastByte because a client
-	 * gives us the size on close, but there doesn't have to be space
-	 * allocated on disk.
-	 */
-	if (descPtr->lastByte != -1) {
-	    panic("Fsdm_NamedPipeTrunc, first -1, last %d\n",
-		    descPtr->lastByte);
-	}
-	handlePtr->cacheInfo.attr.firstByte = -1;
-	handlePtr->cacheInfo.attr.lastByte = -1;
-	status = SUCCESS;
-	goto exit;
-    }
-
-    firstByte = descPtr->lastByte - length + 1;
-    handlePtr->cacheInfo.attr.firstByte = firstByte;
-
-    curFirstBlock = (unsigned int) descPtr->firstByte / FS_BLOCK_SIZE;
-    newFirstBlock = firstByte / FS_BLOCK_SIZE;
-    if (length == 0) {
-	lastDeadBlock = newFirstBlock;
-    } else {
-	lastDeadBlock = newFirstBlock - 1;
-    }
-
-    if (curFirstBlock <= lastDeadBlock) {
-	/*
-	 * Delete any blocks before the new last block, or all of
-	 * them if the pipe is being cleaned out.
-	 */
-	status = Fsdm_GetFirstIndex(handlePtr, curFirstBlock, &indexInfo, 
-				 FSDM_DELETE_INDIRECT_BLOCKS | 
-				 FSDM_DELETING_FROM_FRONT);
-	if (status != SUCCESS) {
-	    printf( "Fsdm_NamedPipeTrunc: Couldn't get index.\n");
-	    goto exit;
-	}
-    
-	while (TRUE) {
-	    dirty = FALSE;
-	    if (indexInfo.blockAddrPtr != (int *) NIL &&
-		*indexInfo.blockAddrPtr != FSDM_NIL_INDEX) {
-		FsdmBlockFree(domainPtr,
-		    (int) (*indexInfo.blockAddrPtr / FS_FRAGMENTS_PER_BLOCK));
-		*indexInfo.blockAddrPtr = FSDM_NIL_INDEX;
-		descPtr->numKbytes -= FS_FRAGMENTS_PER_BLOCK;
-		dirty = TRUE;
-	    }
-	    if (indexInfo.blockNum == lastDeadBlock) {
-		break;
-	    }
-	    status = Fsdm_GetNextIndex(handlePtr, &indexInfo, dirty);
-	    if (status != SUCCESS) {
-		panic("Fsdm_NamedPipeTrunc. Couldn't get next index.\n");
-		Fsdm_EndIndex(handlePtr, &indexInfo, FALSE);
-		goto exit;
-	    }
-	}
-	Fsdm_EndIndex(handlePtr, &indexInfo, dirty);
-    }
-
-    descPtr->firstByte = firstByte;
-    if (descPtr->firstByte > descPtr->lastByte) {
-	descPtr->firstByte = descPtr->lastByte = -1;
-	handlePtr->cacheInfo.attr.firstByte = -1;
-	handlePtr->cacheInfo.attr.lastByte = -1;
-    }
-    descPtr->descModifyTime = fsutil_TimeInSeconds;
-    descPtr->flags |= FSDM_FD_DIRTY;
-
-exit:
-    Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
-    return(status);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Fsdm_DomainInfo --
+ * Ofs_DomainInfo --
  *
  *	Return info about the given domain.
  *
@@ -2209,49 +1870,36 @@ exit:
  *----------------------------------------------------------------------
  */
 ReturnStatus
-Fsdm_DomainInfo(fileIDPtr, domainInfoPtr)
-    Fs_FileID		*fileIDPtr;
+Ofs_DomainInfo(domainPtr, domainInfoPtr)
+    Fsdm_Domain	*domainPtr;
     Fs_DomainInfo	*domainInfoPtr;
 {
-    int		domain = fileIDPtr->major;
-    Fsdm_Domain	*domainPtr;
-
-    if (domain >= FSDM_MAX_LOCAL_DOMAINS) {
-	return(FS_DOMAIN_UNAVAILABLE);
-    }
-
-    domainPtr = Fsdm_DomainFetch(domain, FALSE);
-    if (domainPtr == (Fsdm_Domain *) NIL) {
-	return(FS_DOMAIN_UNAVAILABLE);
-    }
+    Ofs_Domain	*ofsPtr = OFS_PTR_FROM_DOMAIN(domainPtr);
 
     domainInfoPtr->maxKbytes = 
-		    domainPtr->headerPtr->dataBlocks * FS_FRAGMENTS_PER_BLOCK;
-    domainInfoPtr->freeKbytes = domainPtr->summaryInfoPtr->numFreeKbytes;
-    domainInfoPtr->maxFileDesc = domainPtr->headerPtr->numFileDesc;
-    domainInfoPtr->freeFileDesc = domainPtr->summaryInfoPtr->numFreeFileDesc;
+		    ofsPtr->headerPtr->dataBlocks * FS_FRAGMENTS_PER_BLOCK;
+    domainInfoPtr->freeKbytes = ofsPtr->summaryInfoPtr->numFreeKbytes;
+    domainInfoPtr->maxFileDesc = ofsPtr->headerPtr->numFileDesc;
+    domainInfoPtr->freeFileDesc = ofsPtr->summaryInfoPtr->numFreeFileDesc;
     domainInfoPtr->blockSize = FS_BLOCK_SIZE;
     domainInfoPtr->optSize = FS_BLOCK_SIZE;
-
-    Fsdm_DomainRelease(domain);
 
     return(SUCCESS);
 }
 
-static	void	PutInBadBlockFile();
 
 
 /*
  *----------------------------------------------------------------------
  *
- * FsdmBlockRealloc --
+ * Ofs_ReallocBlock --
  *
  *	Allocate a new block on disk to replace the given block.  This is
  *	intended to be used by the cache when it can't write out a block
  *	because of a disk error.
  *
  * Results:
- *	The new disk block that is allocated.
+ * 	None
  *
  * Side effects:
  *	The descriptor or indirect blocks are modified to point to the newly
@@ -2259,14 +1907,17 @@ static	void	PutInBadBlockFile();
  *
  *----------------------------------------------------------------------
  */
-int
-FsdmBlockRealloc(hdrPtr, virtBlockNum, physBlockNum)
-    Fs_HandleHeader	*hdrPtr;
-    int			virtBlockNum;
-    int			physBlockNum;
+/*ARGSUSED*/
+void
+Ofs_ReallocBlock(data, callInfoPtr)
+    ClientData		data;			/* Block to move */
+    Proc_CallInfo	*callInfoPtr;		/* Not used. */
 {
-    register	Fsio_FileIOHandle	*handlePtr;
-    Fsdm_BlockIndexInfo	indexInfo;
+    Fscache_Block 	*blockPtr = (Fscache_Block *) data;
+    Fscache_FileInfo    *cacheInfoPtr = blockPtr->cacheInfoPtr;
+    Fsio_FileIOHandle	*handlePtr = (Fsio_FileIOHandle *) cacheInfoPtr->hdrPtr;
+    int			virtBlockNum, physBlockNum;
+    OfsBlockIndexInfo	indexInfo;
     Fsdm_Domain		*domainPtr;
     int			newBlockNum = -1;
     Boolean		dirtiedIndex = FALSE;
@@ -2274,28 +1925,26 @@ FsdmBlockRealloc(hdrPtr, virtBlockNum, physBlockNum)
     unsigned char	*bitmapPtr;
     ReturnStatus	status;
     Fsdm_FileDescriptor	*descPtr;
+    Ofs_Domain		*ofsPtr;
 
-    if (hdrPtr->fileID.type != FSIO_LCL_FILE_STREAM) {
-	panic("FsdmBlockRealloc, wrong handle type <%d>\n",
-	    hdrPtr->fileID.type);
-	return(-1);
-    }
-    handlePtr = (Fsio_FileIOHandle *)hdrPtr;
+    virtBlockNum = blockPtr->blockNum;
+    physBlockNum = blockPtr->diskBlock;
     if (handlePtr->hdr.fileID.minor == 0) {
 	/*
 	 * This is a descriptor block.
 	 */
 	printf(
-	    "FsdmBlockRealloc: Bad descriptor block.  Domain=%d block=%d\n",
+	    "OfsBlockRealloc: Bad descriptor block.  Domain=%d block=%d\n",
 		  handlePtr->hdr.fileID.major, physBlockNum);
-	return(-1);
+	goto error;
     }
 
     domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, FALSE);
     if (domainPtr == (Fsdm_Domain *)NIL) {
-	return(-1);
-    }
+	goto error;
 
+    }
+    ofsPtr = OFS_PTR_FROM_DOMAIN(domainPtr);
     Fsutil_HandleLock((Fs_HandleHeader *)handlePtr);
     descPtr = handlePtr->descPtr;
     if (virtBlockNum >= 0) {
@@ -2303,15 +1952,15 @@ FsdmBlockRealloc(hdrPtr, virtBlockNum, physBlockNum)
 	/*
 	 * A normal data block.
 	 */
-	status = Fsdm_GetFirstIndex(handlePtr, virtBlockNum, &indexInfo, 0);
+	status = OfsGetFirstIndex(ofsPtr, handlePtr, virtBlockNum, &indexInfo, 0);
 	if (status != SUCCESS) {
 	    printf( 
-	       "FsdmBlockRealloc: Setup index (1) failed status <%x>\n", status);
+	       "OfsBlockRealloc: Setup index (1) failed status <%x>\n", status);
 	    goto error;
 	}
 	setupIndex = TRUE;
 	if (*indexInfo.blockAddrPtr != physBlockNum) {
-	    panic("FsdmBlockRealloc: Bad physical block num.\n");
+	    panic("OfsBlockRealloc: Bad physical block num.\n");
 	}
 	bytesInBlock = descPtr->lastByte - virtBlockNum * FS_BLOCK_SIZE + 1;
 	if (bytesInBlock > FS_FRAGMENT_SIZE * (FS_FRAGMENTS_PER_BLOCK - 1) ||
@@ -2319,7 +1968,7 @@ FsdmBlockRealloc(hdrPtr, virtBlockNum, physBlockNum)
 	    /* 
 	     * Have a full block.
 	     */
-	    FsdmBlockFind(handlePtr->hdr.fileID.minor, domainPtr,
+	    OfsBlockFind(handlePtr->hdr.fileID.minor, ofsPtr,
 			physBlockNum / FS_FRAGMENTS_PER_BLOCK, TRUE,
 			&newBlockNum, &bitmapPtr);
 	    if (newBlockNum == -1) {
@@ -2329,8 +1978,8 @@ FsdmBlockRealloc(hdrPtr, virtBlockNum, physBlockNum)
 	    newBlockNum *= FS_FRAGMENTS_PER_BLOCK;
 	    *indexInfo.blockAddrPtr = newBlockNum;
 	    dirtiedIndex = TRUE;
-	    descPtr->flags |= FSDM_FD_DIRTY;
-	    PutInBadBlockFile(handlePtr, domainPtr, physBlockNum);
+	    descPtr->flags |= FSDM_FD_INDEX_DIRTY;
+	    PutInBadBlockFile(handlePtr, ofsPtr, physBlockNum);
 	} else {
 	    int	newFragOffset;
 	    int	numFrags;
@@ -2338,7 +1987,7 @@ FsdmBlockRealloc(hdrPtr, virtBlockNum, physBlockNum)
 	     * Have a fragment.
 	     */
 	    numFrags = (bytesInBlock - 1) / FS_FRAGMENT_SIZE + 1;
-	    FsdmFragFind(handlePtr->hdr.fileID.minor, domainPtr, numFrags,
+	    OfsFragFind(handlePtr->hdr.fileID.minor, ofsPtr, numFrags,
 			-1, -1, -1, &newBlockNum, &newFragOffset);
 	    if (newBlockNum == -1) {
 		printf( "FsdmBlockRealloc: No disk space (2)\n");
@@ -2347,11 +1996,11 @@ FsdmBlockRealloc(hdrPtr, virtBlockNum, physBlockNum)
 	    newBlockNum = newBlockNum * FS_FRAGMENTS_PER_BLOCK + newFragOffset;
 	    *indexInfo.blockAddrPtr = newBlockNum;
 	    dirtiedIndex = TRUE;
-	    descPtr->flags |= FSDM_FD_DIRTY;
-	    if (OnlyFrag(domainPtr, numFrags,
+	    descPtr->flags |= FSDM_FD_INDEX_DIRTY;
+	    if (OnlyFrag(ofsPtr, numFrags,
 			   physBlockNum / FS_FRAGMENTS_PER_BLOCK,
 			   physBlockNum & FRAG_OFFSET_MASK)) {
-		PutInBadBlockFile(handlePtr, domainPtr,
+		PutInBadBlockFile(handlePtr, ofsPtr,
 				  physBlockNum & ~FRAG_OFFSET_MASK);
 	    } else {
 		/*
@@ -2381,7 +2030,8 @@ FsdmBlockRealloc(hdrPtr, virtBlockNum, physBlockNum)
 	     */
 	    blockAddrPtr = &descPtr->indirect[1];
 	} else if (descPtr->indirect[1] == FSDM_NIL_INDEX) {
-	    panic("FsdmBlockRealloc: Can't find indirect block\n");
+	    panic("OfsBlockRealloc: Can't find indirect block\n");
+	    blockAddrPtr = (int *) NIL;
 	} else {
 	    Boolean	found;
 	    /*
@@ -2392,13 +2042,12 @@ FsdmBlockRealloc(hdrPtr, virtBlockNum, physBlockNum)
 	    Fscache_FetchBlock(&handlePtr->cacheInfo, -2,
 			FSCACHE_IND_BLOCK, &blockPtr, &found);
 	    if (!found) {
-		status = Fsio_DeviceBlockIO(FS_READ,
-			&(domainPtr->headerPtr->device), 
+		status = OfsDeviceBlockIO(ofsPtr, FS_READ,
 		       descPtr->indirect[1], FS_FRAGMENTS_PER_BLOCK, 
 		       blockPtr->blockAddr);
 		if (status != SUCCESS) {
 		    printf( 
-	"FsdmBlockRealloc: Could not read doubly indirect block, status <%x>\n", 
+	"OfsBlockRealloc: Could not read doubly indirect block, status <%x>\n", 
 			status);
 		    Fscache_UnlockBlock(blockPtr, 0, 0, 0, FSCACHE_DELETE_BLOCK);
 		    goto error;
@@ -2411,40 +2060,41 @@ FsdmBlockRealloc(hdrPtr, virtBlockNum, physBlockNum)
 	    blockAddrPtr = (int *)blockPtr->blockAddr + (-virtBlockNum - 3);
 	}
 	if (*blockAddrPtr != physBlockNum) {
-	    panic("FsdmBlockRealloc: Bad phys addr for indirect block (2)\n");
+	    panic("OfsBlockRealloc: Bad phys addr for indirect block (2)\n");
 	}
 	/*
 	 * Allocate a new indirect block.
 	 */
-	FsdmBlockFind(handlePtr->hdr.fileID.minor, domainPtr, -1, TRUE, 
+	OfsBlockFind(handlePtr->hdr.fileID.minor, ofsPtr, -1, TRUE, 
 		    &newBlockNum, &bitmapPtr);
 	if (newBlockNum == -1) {
 	    printf( "FsdmBlockRealloc: No disk space (3)\n");
 	    goto error;
 	}
-	newBlockNum = (newBlockNum + domainPtr->headerPtr->dataOffset) * 
+	newBlockNum = (newBlockNum + ofsPtr->headerPtr->dataOffset) * 
 			FS_FRAGMENTS_PER_BLOCK;
 	*blockAddrPtr = newBlockNum;
 	if (blockPtr == (Fscache_Block *)NIL) {
-	    descPtr->flags |= FSDM_FD_DIRTY;
+	    descPtr->flags |= FSDM_FD_INDEX_DIRTY;
 	} else {
-	    Fscache_UnlockBlock(blockPtr, (unsigned int)fsutil_TimeInSeconds, 
+	    Fscache_UnlockBlock(blockPtr, (unsigned int)Fsutil_TimeInSeconds(), 
 			       -(descPtr->indirect[1]), FS_BLOCK_SIZE, 0);
 	}
-	PutInBadBlockFile(handlePtr, domainPtr,
+	PutInBadBlockFile(handlePtr, ofsPtr,
 			  physBlockNum - FS_FRAGMENTS_PER_BLOCK * 
-				     domainPtr->headerPtr->dataOffset);
+				     ofsPtr->headerPtr->dataOffset);
 	newBlockNum = -newBlockNum;
     }
 
 error:
 
     if (setupIndex) {
-	Fsdm_EndIndex(handlePtr, &indexInfo, dirtiedIndex);
+	OfsEndIndex(handlePtr, &indexInfo, dirtiedIndex);
     }
     Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
     Fsutil_HandleUnlock((Fs_HandleHeader *)handlePtr);
-    return(newBlockNum);
+    FscacheFinishRealloc(blockPtr, newBlockNum);
+    return;
 }
 
 
@@ -2464,22 +2114,22 @@ error:
  *----------------------------------------------------------------------
  */
 static void
-PutInBadBlockFile(handlePtr, domainPtr, blockNum)
+PutInBadBlockFile(handlePtr, ofsPtr, blockNum)
     Fsio_FileIOHandle	*handlePtr;	/* File which owned bad block. */
-    Fsdm_Domain	*domainPtr;		/* Pointer to domain. */
+    Ofs_Domain	*ofsPtr;		/* Pointer to domain. */
     int		blockNum;	/* Block number to put in bad block file. */
 {
     Fs_FileID		fileID;
     Fsio_FileIOHandle	*badBlockHandlePtr;
     Fsdm_FileDescriptor	*descPtr;
-    Fsdm_BlockIndexInfo	indexInfo;
+    OfsBlockIndexInfo	indexInfo;
     ReturnStatus	status;
     int			lastBlock;
 
     fileID.serverID = rpc_SpriteID;
     fileID.type = FSIO_LCL_FILE_STREAM;
     fileID.major = handlePtr->hdr.fileID.major;
-    fileID.minor = FSDM_BAD_BLOCK_FILE_NUMBER;
+    fileID.minor = OFS_BAD_BLOCK_FILE_NUMBER;
     badBlockHandlePtr = (Fsio_FileIOHandle *)Fsutil_HandleFetch(&fileID);
     if (badBlockHandlePtr == (Fsio_FileIOHandle *)NIL) {
 	/*
@@ -2487,6 +2137,7 @@ PutInBadBlockFile(handlePtr, domainPtr, blockNum)
 	 * in memory.
 	 */
 	status = Fsio_LocalFileHandleInit(&fileID, "BadBlockFile",
+			(Fsdm_FileDescriptor *) NIL, FALSE, 
 			&badBlockHandlePtr);
 	if (status != SUCCESS) {
 	    printf("PutInBadBlockFile: error %x reading descriptor\n", status);
@@ -2499,16 +2150,16 @@ PutInBadBlockFile(handlePtr, domainPtr, blockNum)
     } else {
 	lastBlock = -1;
     }
-    status = Fsdm_GetFirstIndex(handlePtr, lastBlock + 1, &indexInfo,
-			     FSDM_ALLOC_INDIRECT_BLOCKS);
+    status = OfsGetFirstIndex(ofsPtr, handlePtr, lastBlock + 1, &indexInfo,
+			     OFS_ALLOC_INDIRECT_BLOCKS);
     if (status != SUCCESS) {
 	printf( "PutInBadBlockFile: Could not fetch index\n");
     } else {
 	*indexInfo.blockAddrPtr = blockNum;
 	descPtr->lastByte += FS_BLOCK_SIZE;
-	descPtr->flags |= FSDM_FD_DIRTY;
+	descPtr->flags |= (FSDM_FD_INDEX_DIRTY|FSDM_FD_SIZE_DIRTY);
 	descPtr->numKbytes += FS_FRAGMENTS_PER_BLOCK;
-	Fsdm_EndIndex(handlePtr, &indexInfo, TRUE);
+	OfsEndIndex(handlePtr, &indexInfo, TRUE);
     }
 
     Fsutil_HandleUnlock((Fs_HandleHeader *)badBlockHandlePtr);
