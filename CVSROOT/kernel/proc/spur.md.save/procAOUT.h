@@ -21,7 +21,12 @@
 #define _PROCAOUT
 
 #include "sprite.h"
+
+#ifdef KERNEL
 #include "vm.h"
+#else
+#include <kernel/vm.h>
+#endif
 
 #define	NEW_PAGE_SIZE		0x1000
 #define	NEW_SEG_SIZE		0x20000
