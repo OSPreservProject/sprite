@@ -34,7 +34,6 @@ extern ReturnStatus Prof_Dump _ARGS_((char *dumpName));
 extern ReturnStatus Prof_DumpStub _ARGS_((char *pathName));
 extern ReturnStatus Prof_Profil _ARGS_((short *buffer, int bufSize, int offset, int scale));
 extern void Prof_Enable _ARGS_((Proc_ControlBlock *procPtr, short *buffer, int bufSize, int offset, int scale));
-extern void Prof_Tick _ARGS_((Timer_Ticks time, ClientData clientData));
 extern void Prof_RecordPC _ARGS_((Proc_ControlBlock *procPtr));
 extern void Prof_Disable _ARGS_((Proc_ControlBlock *procPtr));
 
