@@ -251,6 +251,8 @@ typedef struct FsRemoteIOHandle {
     FsRecoveryInfo	recovery;	/* For I/O server recovery */
 } FsRemoteIOHandle;			/* 64 BYTES */
 
+extern void FsRemoteIOHandleInit();
+
 
 /*
  * The current time in seconds and the element used to schedule the update to
