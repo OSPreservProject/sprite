@@ -509,9 +509,20 @@ Fsrmt_RpcReopen(srvToken, clientID, command, storagePtr)
     register Fs_FileID *fileIDPtr;
     register ReturnStatus status;
 
+    extern int fsutil_NumRecovering; /* XXX put in fsutil.h */
+
     if ((Recov_GetClientState(clientID) & CLT_RECOV_IN_PROGRESS) == 0) {
 	Recov_SetClientState(clientID, CLT_RECOV_IN_PROGRESS);
-	Net_HostPrint(clientID, "starting recovery\n");
+	fsutil_NumRecovering++;
+	if (fsutil_NumRecovering == 1) {
+	    /*
+	     * The print statements are tweaked so that the first client
+	     * to recover triggers this message, and the last
+	     * client to end recovery triggers another message.
+	     * See fsRecovery.c for the complementary printf.
+	     */
+	    Net_HostPrint(clientID, "initiating recovery\n");
+	}
     }
 
     fileIDPtr = (Fs_FileID *)storagePtr->requestParamPtr;
