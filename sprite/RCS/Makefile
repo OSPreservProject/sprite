@@ -78,6 +78,7 @@ NET = ${TOP}/net/${ODIR}
 PROC = ${TOP}/proc/${ODIR}
 PROF = ${TOP}/prof/${ODIR}
 RAID = ${TOP}/raid.null/${ODIR}
+RAIDNULL = ${TOP}/raid/${ODIR}
 RECOV = ${TOP}/recov/${ODIR}
 RPC_O = ${TOP}/rpc/${ODIR}/rpc.o
 RPC = ${TOP}/rpc/${ODIR}
@@ -91,7 +92,9 @@ VM = ${TOP}/vm/${ODIR}
 MEM = ${TOP}/mem/${ODIR}
 
 
-OBJS = 	${LIB}/mach.o \
+# This is the list of objects excluding raid.
+
+OBJS1 =	${LIB}/mach.o \
 	${HOOK} \
 	${LIB}/dbg.o \
 	${LIB}/dev.o \
@@ -110,7 +113,6 @@ OBJS = 	${LIB}/mach.o \
 	${LIB}/net.o \
 	${LIB}/proc.o \
 	${LIB}/prof.o \
-	${LIB}/raid.null.o \
 	${LIB}/recov.o \
 	${LIB}/rpc.o \
 	${LIB}/sched.o \
@@ -120,6 +122,14 @@ OBJS = 	${LIB}/mach.o \
 	${LIB}/timer.o \
 	${LIB}/utils.o \
 	${LIB}/vm.o
+
+# sun4 should use the raid module.  Others should use raid.null.
+
+OBJS =	${OBJS1} \
+	${LIB}/raid.null.o
+
+OBJS_SUN4 =	${OBJS1} \
+	${LIB}/raid.o
 
 #
 # Profiled (perhaps) object files	####################################
@@ -167,24 +177,26 @@ sun3: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	@ls -l $@
 	@size $@
 	update -f -s $@ /sprite/boot/$@.md/new
-	cp /sprite/boot/$@.md/new /vmsprite.new
+#	cp /sprite/boot/$@.md/new /vmsprite.new
 	rcp /sprite/boot/$@.md/new ${GINGER}:/sprite3/$@.new
 	rcp $@ rosemary:/tmp/sprite/$@.sprite
 	rsh rosemary "(cd /tmp/sprite ; ./Save sun3.sprite)"
-	nm -n  > $@.nm
+	nm -n $@ > $@.nm
 	-Save $@
 
-sun4: ${OBJS} Makefile .PRECIOUS .NOEXPORT
+sun4: ${OBJS_SUN4} Makefile .PRECIOUS .NOEXPORT
 	sed 's/MACHINE/$@/g' version.h.template > version.h
 	cat version.h >> $@.versionLog
 	rm -f mainHook.o
 	cc -c ${CFLAGS} -Dsun4 mainHook.c
 	cc -c ${CFLAGS} -Dsun4 version.c
-	${LD} -X -msun4 -o $@ -e start -T f6004020 ${OBJS} version.o \
+	${LD} -X -msun4 -o $@ -e start -T f6004020 ${OBJS_SUN4} version.o \
 	    -L/sprite/lib/${TM}.md ${LIBC}
 	@ls -l $@
 	@size $@
 	update -f -s $@ /sprite/boot/$@.md/new
+	rcp $@ rosemary:/tmp/sprite/$@.sprite
+	rsh rosemary "(cd /tmp/sprite ; ./Save sun4.sprite)"
 	nm -n $@ > $@.nm
 	-Save $@
 
@@ -195,10 +207,12 @@ sun4c: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	cc -c ${CFLAGS} -Dsun4 -Dsun4c mainHook.c
 	cc -c ${CFLAGS} -Dsun4 -Dsun4c version.c
 	${LD} -X -msun4 -o $@ -e start -T f6004000 ${OBJS} version.o \
-	    -L/sprite/lib/${TM}.md ${LIBC}
+	    -L/sprite/lib/sun4.md ${LIBC}
 	@ls -l $@
 	@size $@
 	update -f -s $@ /sprite/boot/$@.md/new
+	rcp $@ rosemary:/tmp/sprite/$@.sprite
+	rsh rosemary "(cd /tmp/sprite ; ./Save sun4c.sprite)"
 	nm -n $@ > $@.nm
 	-Save $@
 
