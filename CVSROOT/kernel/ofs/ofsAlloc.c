@@ -469,7 +469,7 @@ FsDescTrunc(handlePtr, size)
 	FsRecordDeletionStats(&handlePtr->cacheInfo, bytesToFree);
     }
 #endif CLEAN
-	
+
     newLastByte = size - 1;
     if (descPtr->lastByte <= newLastByte) {
 	status = SUCCESS;
@@ -622,25 +622,24 @@ exit:
      */
     if (size == 0) {
 	register int index;
-	void (*warningProc)();
 
-	if (status == SUCCESS) {
-	    warningProc = panic;
-	} else {
-	    warningProc = printf;
-	}
 	for (index=0 ; index < FS_NUM_DIRECT_BLOCKS ; index++) {
 	    if (descPtr->direct[index] != FS_NIL_INDEX) {
-		(*warningProc)("FsDescTrunc, direct block %d left, lastByte was %d\n",
-			index, savedLastByte);
+		printf("FsDescTrunc abandoning (direct) block %d in <%d,%d> \"%s\"\n",
+		    descPtr->direct[index],
+		    handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
+		    FsHandleName((FsHandleHeader *)handlePtr));
+		descPtr->direct[index] = FS_NIL_INDEX;
 	    }
 	}
-	if ((descPtr->indirect[0] != FS_NIL_INDEX) ||
-	    (descPtr->indirect[1] != FS_NIL_INDEX) ||
-	    (descPtr->indirect[2] != FS_NIL_INDEX)) {
-		(*warningProc)("FsDescTrunc, left over indirect block(s) 1:%d 2:%d 3:%d, savedLastByte %d\n",
-		    descPtr->indirect[0], descPtr->indirect[1],
-		    descPtr->indirect[2], savedLastByte);
+	for (index = 0 ; index <= 2 ; index++) {
+	    if (descPtr->indirect[index] != FS_NIL_INDEX) {
+		printf("FsDescTrunc abandoning (indirect) block %d in <%d,%d> \"%s\"\n\n",
+		    descPtr->indirect[index], 
+		    handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
+		    FsHandleName((FsHandleHeader *)handlePtr));
+		descPtr->indirect[index] = FS_NIL_INDEX;
+	    }
 	}
     }
     FsDomainRelease(handlePtr->hdr.fileID.major);
@@ -1164,7 +1163,7 @@ FsFreeBlock(domainPtr, blockNum)
 	printf("bitmap = <%x>, checkMask = <%x>\n",
 			   *bitmapPtr & 0xff, checkMask & 0xff);
         UNLOCK_MONITOR;
-	panic("FsFreeBlock almost free'd free stuff\n");
+	printf("FsFreeBlock free block %d\n", blockNum);
 	return;
     } else {
 	*bitmapPtr &= mask;
@@ -1466,7 +1465,8 @@ FsFreeFrag(domainPtr, numFrags, fragBlock, fragOffset)
 	printf("bitmap = <%x>, checkMask = <%x>\n",
 			   *bitmapPtr & 0xff, mask & 0xff);
 	UNLOCK_MONITOR;
-	panic("FsFreeFrag, almost freed free block\n");
+	printf("FsFreeFrag: block not free, block %d, numFrag %d, offset %d\n",
+		    fragBlock, numFrags, fragOffset);
 	return;
     } else {
 	*bitmapPtr &= ~mask;
