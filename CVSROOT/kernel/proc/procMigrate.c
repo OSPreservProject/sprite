@@ -40,7 +40,7 @@ static	Sync_Lock	migrateLock = {0, 0};
 int proc_MigDebugLevel = 0;
 
 Trace_Header proc_TraceHeader;
-Trace_Header *proc_TraceHdrPtr = &proc_TraceHeader;
+Trace_Header *proc_TraceHdrPtr = (Trace_Header *)NIL;
 Boolean proc_DoTrace = FALSE;
 Boolean proc_DoCallTrace = FALSE;
 
@@ -1218,7 +1218,7 @@ Proc_MigrateStartTracing()
 	init = TRUE;
 	proc_TraceHdrPtr = &proc_TraceHeader;
 	Trace_Init(proc_TraceHdrPtr, PROC_NUM_TRACE_RECS,
-		   sizeof(Proc_TraceRecord));
+		   sizeof(Proc_TraceRecord), 0);
     }
     proc_DoTrace = TRUE;
 }
