@@ -26,7 +26,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sys.h"
 #include "list.h"
 #include "byte.h"
-#include "devTimer.h"
+#include "timer.h"
 #include "rpc.h"
 #include "fs.h"
 #include "fsNameHash.h"
@@ -64,6 +64,7 @@ extern	void	Fs_DumpCacheStats();
 extern	void	Fs_PdevPrintTrace();
 extern	void	Fs_HandleScavengeStub();
 extern	void	Mem_DumpStats();
+extern	void	Timer_TimerGetInfo();
 /*
  * Table of routines and their arguments to be called on dump events.
  * Only machine independent dump events should be added to this table.
@@ -94,11 +95,11 @@ static EventTableType eventTable[] = {
     {'y', Recov_PrintTrace, (ClientData) 50,"Dump RPC recovery trace"},
     {'z', Rpc_PrintTrace, (ClientData) 50,"Dump RPC packet trace"},
 
-    {'1', Dev_TimerGetInfo, (ClientData) 1,"Dump info for timer counter 1"},
-    {'2', Dev_TimerGetInfo, (ClientData) 2,"Dump info for timer counter 2"},
-    {'3', Dev_TimerGetInfo, (ClientData) 3,"Dump info for timer counter 3"},
-    {'4', Dev_TimerGetInfo, (ClientData) 4,"Dump info for timer counter 4"},
-    {'5', Dev_TimerGetInfo, (ClientData) 5,"Dump info for timer counter 5"},
+    {'1', Timer_TimerGetInfo, (ClientData) 1,"Dump info for timer counter 1"},
+    {'2', Timer_TimerGetInfo, (ClientData) 2,"Dump info for timer counter 2"},
+    {'3', Timer_TimerGetInfo, (ClientData) 3,"Dump info for timer counter 3"},
+    {'4', Timer_TimerGetInfo, (ClientData) 4,"Dump info for timer counter 4"},
+    {'5', Timer_TimerGetInfo, (ClientData) 5,"Dump info for timer counter 5"},
     {'6', PrintTOD, (ClientData) 0,"Print time of day counters"},
 	/* This MUST be the last entry */
     {'\000', LAST_EVENT, NULL_ARG, (char *) 0 }, 
