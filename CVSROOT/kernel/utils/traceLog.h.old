@@ -67,9 +67,9 @@ typedef struct TraceLog_Buffer {
     Address data;		/* Pointer to the data */
 } TraceLog_Buffer;
 
-#define INUSE 1
-#define DONE 2
-#define UNUSED 3
+#define TRACELOG_INUSE	1
+#define TRACELOG_DONE	2
+#define TRACELOG_UNUSED	3
 
 extern void		TraceLog_Init _ARGS_((TraceLog_Header *tracerPtr,
 					   int numBuffers, int size,
