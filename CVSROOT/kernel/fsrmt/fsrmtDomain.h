@@ -1,5 +1,5 @@
 /*
- * fsSpriteDomain.h --
+ * fsrmtDomain.h --
  *
  *	Definitions of the parameters required for Sprite Domain operations
  *
@@ -20,14 +20,15 @@
 #ifndef _FSSPRITEDOMAIN
 #define _FSSPRITEDOMAIN
 
-#include "fsNameOps.h"
-#include "proc.h"
-#include "fsrmt.h"
+#include <fsNameOps.h>
+#include <proc.h>
+#include <fsrmt.h>
 
 /*
  * These typedefs are replaced by stuff in fsrmtInt.h
  */
 #ifdef notdef
+
 
 /*
  * Parameters for the read and write RPCs.
@@ -66,7 +67,6 @@ typedef struct FsrmtRemoteIOCParam {
     Fs_FileID	streamID;	/* Stream to the file, needed for locking */
     Fs_IOCParam	ioc;		/* IOControl parameter block */
 } FsrmtRemoteIOCParam;
-
 
 /*
  * Parameters for the block copy RPC.
@@ -112,61 +112,8 @@ typedef struct FsrmtRemoteBlockCopyParams {
 #endif not CLEAN
 
 
- /*
- * Sprite Domain functions called via Fsprefix_LookupOperation.
- * These are called with a pathname.
- */
-extern	ReturnStatus	FsrmtSpriteImport();
-extern	ReturnStatus	FsrmtSpriteOpen();
-extern	ReturnStatus	FsrmtSpriteReopen();
-extern	ReturnStatus	FsrmtSpriteDevOpen();
-extern	ReturnStatus	FsrmtSpriteDevClose();
-extern	ReturnStatus	FsrmtRemoteGetAttrPath();
-extern	ReturnStatus	FsrmtRemoteSetAttrPath();
-extern	ReturnStatus	FsrmtSpriteMakeDevice();
-extern	ReturnStatus	FsrmtSpriteMakeDir();
-extern	ReturnStatus	FsrmtSpriteRemove();
-extern	ReturnStatus	FsrmtSpriteRemoveDir();
-extern	ReturnStatus	FsrmtSpriteRename();
-extern	ReturnStatus	FsrmtSpriteHardLink();
 
 
-/*
- * Sprite Domain functions called via the fsAttrOpsTable switch.
- * These are called with a fileID.
- */
-extern	ReturnStatus	FsrmtRemoteGetAttr();
-extern	ReturnStatus	FsrmtRemoteSetAttr();
-
-extern ReturnStatus FsrmtRmtDeviceCltOpen();
-extern Fs_HandleHeader *FsrmtRmtDeviceVerify();
-extern ReturnStatus FsrmtRmtDeviceMigrate();
-extern ReturnStatus FsrmtRmtDeviceReopen();
-
-extern Fs_HandleHeader *FsrmtRmtPipeVerify();
-extern ReturnStatus FsrmtRmtPipeMigrate();
-extern ReturnStatus FsrmtRmtPipeReopen();
-extern ReturnStatus FsrmtRmtPipeClose();
-
-
-extern ReturnStatus	FsrmtRmtFileCltOpen();
-extern Fs_HandleHeader	*FsrmtRmtFileVerify();
-extern ReturnStatus	FsrmtRmtFileRead();
-extern ReturnStatus	FsrmtRmtFileWrite();
-extern ReturnStatus	FsrmtRmtFileIOControl();
-extern ReturnStatus	FsrmtRmtFileSelect();
-extern ReturnStatus	FsrmtRmtFileGetIOAttr();
-extern ReturnStatus	FsrmtRmtFileSetIOAttr();
-extern ReturnStatus	FsrmtRmtFileRelease();
-extern ReturnStatus	FsrmtRmtFileMigEnd();
-extern ReturnStatus	FsrmtRmtFileMigrate();
-extern ReturnStatus	FsrmtRmtFileReopen();
-extern ReturnStatus     FsrmtRmtFileAllocate();
-extern ReturnStatus     FsrmtRmtFileBlockRead();
-extern ReturnStatus     FsrmtRmtFileBlockWrite();
-extern ReturnStatus     FsrmtRmtFileBlockCopy();
-extern Boolean		FsrmtRmtFileScavenge();
-extern ReturnStatus	FsrmtRmtFileClose();
 
 
 #endif _FSSPRITEDOMAIN
