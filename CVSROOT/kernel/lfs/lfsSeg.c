@@ -354,9 +354,14 @@ InitSegmentMem(lfsPtr)
 	segPtr->segElementPtr = (LfsSegElement *) malloc(maxSegElementSize);
     }
     handlePtr = (DevBlockDeviceHandle *) lfsPtr->devicePtr->data;
-    lfsPtr->writeBuffers[0] = malloc(handlePtr->maxTransferSize*2);
-    lfsPtr->writeBuffers[1] = lfsPtr->writeBuffers[0] + 
-				handlePtr->maxTransferSize;
+    if (handlePtr->maxTransferSize < LfsSegSize(lfsPtr)) { 
+	lfsPtr->writeBuffers[0] = malloc(handlePtr->maxTransferSize*2);
+	lfsPtr->writeBuffers[1] = lfsPtr->writeBuffers[0] + 
+				    handlePtr->maxTransferSize;
+    } else {
+	lfsPtr->writeBuffers[0] = malloc(LfsSegSize(lfsPtr));
+	lfsPtr->writeBuffers[1] = (char *) NIL;
+    }
 
 }
 
@@ -1193,7 +1198,7 @@ DoOutCallBacks(type, segPtr, flags, checkPointPtr, sizePtr, clientDataPtr)
        LfsSegUsageCheckpointUpdate(segPtr->lfsPtr, 
 			(char *) (segUsageCheckpointRegionPtr + 1),
 			segUsageCheckpointRegionPtr->size - 
-					sizeof(segUsageCheckpointRegionPtr));
+					sizeof(LfsCheckPointRegion));
     }
 
     return full;
