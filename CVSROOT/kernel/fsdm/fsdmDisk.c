@@ -825,9 +825,10 @@ static Boolean
 IsSpriteLabel(buffer)
     Address buffer;	/* Buffer containing zero'th sector */
 {
-    register FsDiskHeader *diskHeaderPtr;
-    register int index;
-    register int checkSum;
+    register FsDiskHeader	*diskHeaderPtr;
+    register int 		index;
+    register int 		checkSum;
+    int				*headerPtr;
 
     diskHeaderPtr = (FsDiskHeader *)buffer;
     if (diskHeaderPtr->magic == FS_DISK_MAGIC) {
@@ -836,8 +837,10 @@ IsSpriteLabel(buffer)
 	 * ints in the disk header comes out to FS_DISK_MAGIC also.
 	 */
 	checkSum = 0;
-	for (index = 0 ; index < DEV_BYTES_PER_SECTOR ; index += sizeof(int)) {
-	    checkSum ^= (int)buffer[index];
+	for (index = 0, headerPtr = (int *)buffer;
+	     index < DEV_BYTES_PER_SECTOR;
+	     index += sizeof(int), headerPtr++) {
+	    checkSum ^= *headerPtr;
 	}
 	if (checkSum == FS_DISK_MAGIC) {
 	    return(TRUE);
