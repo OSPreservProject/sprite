@@ -184,7 +184,7 @@ Fs_OpenStub(pathName, usageFlags, permissions, streamIDPtr)
     status = Fs_Open(newName, usageFlags, FS_FILE,
 		     permissions & 0777, &streamPtr);
     
-    FS_TRACE_NAME(FS_TRACE_10, pathName);
+    FS_TRACE_NAME(FS_TRACE_OPEN_DONE_2, pathName);
 
     if (status != SUCCESS) {
 	return(status);
@@ -203,7 +203,7 @@ Fs_OpenStub(pathName, usageFlags, permissions, streamIDPtr)
 
     if (Vm_CopyOut(sizeof(int), (Address) &streamID, 
 		   (Address) streamIDPtr) == SUCCESS) {
-	FS_TRACE(FS_TRACE_11);
+	FS_TRACE(FS_TRACE_OPEN_DONE_3);
 	return(SUCCESS);
     } 
     status = SYS_ARG_NOACCESS;

@@ -150,7 +150,7 @@ FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
 	     * Prefix match, fork out to the domain lookup operation.
 	     */
 	    if (operation == FS_DOMAIN_OPEN) {
-		FS_TRACE_NAME(FS_TRACE_1, lookupName);
+		FS_TRACE_NAME(FS_TRACE_LOOKUP_START, lookupName);
 	    }
 	    /*
 	     * It is assumed that the first part of the bundled arguments

@@ -16,24 +16,24 @@
 
 #include "trace.h"
 
-#define FS_TRACE_0	0
-#define FS_TRACE_1	1
-#define FS_TRACE_2	2
-#define FS_TRACE_3	3
-#define FS_TRACE_4	4
-#define FS_TRACE_5	5
-#define FS_TRACE_6	6
-#define FS_TRACE_7	7
-#define FS_TRACE_8	8
-#define FS_TRACE_9	9
-#define FS_TRACE_10	10
-#define FS_TRACE_11	11
-#define FS_TRACE_SRV_OPEN_1	12
-#define FS_TRACE_SRV_OPEN_2	13
-#define FS_TRACE_SRV_CLOSE_1	14
-#define FS_TRACE_SRV_CLOSE_2	15
-#define FS_TRACE_SRV_READ_1	16
-#define FS_TRACE_SRV_READ_2	17
+#define FS_TRACE_0		0
+#define FS_TRACE_OPEN_START	1
+#define FS_TRACE_LOOKUP_START	2
+#define FS_TRACE_LOOKUP_DONE	3
+#define FS_TRACE_4		4
+#define FS_TRACE_OPEN_DONE	5
+#define FS_TRACE_BLOCK_WAIT	6
+#define FS_TRACE_BLOCK_HIT	7
+#define FS_TRACE_DELETE		8
+#define FS_TRACE_NO_BLOCK	9
+#define FS_TRACE_OPEN_DONE_2	10
+#define FS_TRACE_OPEN_DONE_3	11
+#define FS_TRACE_INSTALL_NEW	12
+#define FS_TRACE_INSTALL_HIT	13
+#define FS_TRACE_RELEASE_FREE	14
+#define FS_TRACE_RELEASE_LEAVE	15
+#define FS_TRACE_REMOVE_FREE	16
+#define FS_TRACE_REMOVE_LEAVE	17
 #define FS_TRACE_SRV_WRITE_1	18
 #define FS_TRACE_SRV_WRITE_2	19
 #define FS_TRACE_SRV_GET_ATTR_1	20
@@ -57,7 +57,8 @@ extern int fsRATracing;
  * Each struct has to be smaller than a FsTraceRecord - see the call to
  * Trace_Init in fsInit.c - as the trace module pre-allocates storage.
  */
-typedef enum { FST_NIL, FST_IO, FST_NAME, FST_HANDLE, FST_RA } FsTraceRecType ;
+typedef enum { FST_NIL, FST_IO, FST_NAME,
+		FST_HANDLE, FST_RA, FST_BLOCK } FsTraceRecType ;
 
 typedef struct FsTraceIORec {
     FsFileID	fileID;
@@ -65,10 +66,24 @@ typedef struct FsTraceIORec {
     int		numBytes;
 } FsTraceIORec;
 
+typedef struct FsTraceHdrRec {
+    FsFileID	fileID;
+    int		refCount;
+    int		numBlocks;
+} FsTraceHdrRec;
+
+typedef struct FsTraceBlockRec {
+    FsFileID	fileID;
+    int		blockNum;
+    int		flags;
+} FsTraceBlockRec;
+
 typedef struct FsTraceRecord {
     union {
 	FsFileID	fileID;
+	FsTraceHdrRec	hdrRec;
 	FsTraceIORec	ioRec;
+	FsTraceBlockRec	blockRec;
 	char		name[40];
     } un;
 } FsTraceRecord;
@@ -89,15 +104,36 @@ typedef struct FsTraceRecord {
 	Trace_Insert(fsTraceHdrPtr, event, (ClientData)&ioRec);	\
     }
 
+#ifdef notdef
 #define FS_TRACE_NAME(event, pathName) \
     if (fsTracing) {							\
 	Trace_Insert(fsTraceHdrPtr, event, (ClientData)pathName);	\
     }
+#endif notdef
+#define FS_TRACE_NAME(event, pathName)
 
-#define FS_TRACE_HANDLE(event, handlePtr) \
+#define FS_TRACE_HANDLE(event, hdrPtr) \
     if (fsTracing) {							\
-	Trace_Insert(fsTraceHdrPtr, event, (ClientData)&handlePtr->rec.fileID);\
+	FsTraceHdrRec hdrRec;						\
+	hdrRec.fileID = hdrPtr->fileID;					\
+	hdrRec.refCount = hdrPtr->refCount;				\
+	if (hdrPtr->fileID.type == FS_LCL_FILE_STREAM) {		\
+	    hdrRec.numBlocks = ((FsLocalFileIOHandle *)hdrPtr)->cacheInfo.blocksInCache; \
+	} else {							\
+	    hdrRec.numBlocks = -1;					\
+	}								\
+	Trace_Insert(fsTraceHdrPtr, event, (ClientData)&hdrRec);\
     }
+
+#define FS_TRACE_BLOCK(event, blockPtr) \
+    if (fsTracing) {							\
+	FsTraceBlockRec blockRec;					\
+	blockRec.fileID = (blockPtr)->cacheInfoPtr->hdrPtr->fileID;	\
+	blockRec.blockNum = (blockPtr)->blockNum;			\
+	blockRec.flags	= (blockPtr)->flags;				\
+	Trace_Insert(fsTraceHdrPtr, event, (ClientData)&blockRec);\
+    }
+
 #define	FS_TRACE_READ_AHEAD(event, blockNum) \
     if (fsTracing || fsRATracing) { \
 	Trace_Insert(fsTraceHdrPtr, event, (ClientData)blockNum); \
@@ -113,7 +149,8 @@ typedef struct FsTraceRecord {
 #define FS_TRACE_IO(event, zfileID, zoffset, znumBytes)
 #define FS_TRACE_NAME(event, pathName)
 #define FS_TRACE_HANDLE(event, handlePtr)
-#define	fS_TRACE_READ_AHEAD(event, blockNum)
+#define	FS_TRACE_READ_AHEAD(event, blockNum)
+#define FS_TRACE_BLOCK(event, blockPtr)
 
 #endif not CLEAN
 
