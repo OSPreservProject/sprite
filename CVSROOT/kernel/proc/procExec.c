@@ -36,6 +36,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "status.h"
 #include "string.h"
 #include "byte.h"
+#include "rpc.h"
 #ifdef notdef
 #include "dbg.h"
 #endif
@@ -187,6 +188,7 @@ Proc_RemoteExec(fileName, argPtrArray, envPtrArray, host)
     /*
      * XXX need to check permission to migrate.
      */
+
     status = Proc_Exec(fileName, argPtrArray, envPtrArray, FALSE, host);
     /*
      * XXX on failure, need to clean up.
@@ -341,6 +343,15 @@ Proc_Exec(fileName, argPtrArray, envPtrArray, debugMe, host)
     userArgs.numArgs = newArgPtrArrayLength / sizeof(Address);
     userArgs.envPtrArray = newEnvPtrArray;
     userArgs.numEnvs = newEnvPtrArrayLength / sizeof(Address);
+
+    /*
+     * Check for explicit remote exec onto this host, in which case it's
+     * a local exec.
+     */
+    if (host == rpc_SpriteID) {
+	host = 0;
+    }
+
     if (host != 0) {
 	encapPtrPtr = &encapPtr;
     } else {
