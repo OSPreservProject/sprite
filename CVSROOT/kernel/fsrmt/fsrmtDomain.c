@@ -59,10 +59,7 @@ typedef	struct	FsOpenReplyParam {
  *	Get a handle for a prefix.  This conducts an RPC_FS_PREFIX
  *	to see if there is a server for the prefix.  If there is one this
  *	routine installs a handle for it.  The pointer to the handle
- *	is returned. The serverId is used to find the server of a prefix.
- *	A serverID of RPC_BROADCAST_SERVER_ID will broadcast for the
- *	server. Any other value will case an rpc to be done to that
- *	particular host.
+ *	is returned.
  *
  * Results:
  *	FAILURE or RPC_TIMEOUT if we couldn't find a server for the prefix.
@@ -80,7 +77,10 @@ typedef	struct	FsOpenReplyParam {
 ReturnStatus
 FsSpriteImport(prefix, serverID, idPtr, domainTypePtr, hdrPtrPtr)
     char	*prefix;		/* Prefix for which to find a server. */
-    int		serverID;		/* Server id of prefix
+    int		serverID;		/* Suggested server ID.  This is the
+					 * broadcast address for nearby domains,
+					 * or a specific hostID, or a remote
+					 * network for remote broadcasting */
     Fs_UserIDs	*idPtr;			/* IGNORED */
     int		*domainTypePtr;		/* Return - FS_REMOTE_SPRITE_DOMAIN or
 					 *          FS_REMOTE_PSEUDO_DOMAIN */
@@ -174,14 +174,13 @@ Fs_RpcPrefix(srvToken, clientID, command, storagePtr)
     FsHandleHeader			*hdrPtr;
     Fs_FileID				rootID;
     int					domainType;
+    int					serverID;
     ReturnStatus			status;
     FsOpenReplyParam			*openReplyPtr;
-    int					serverID;
 
     status = FsPrefixLookup((char *) storagePtr->requestDataPtr,
-			FS_EXPORTED_PREFIX | FS_EXACT_PREFIX, clientID,
-			&hdrPtr, &rootID, &lookupName, &serverID, &domainType, 
-			&prefixPtr);
+		FS_EXPORTED_PREFIX | FS_EXACT_PREFIX, clientID, &hdrPtr,
+		&rootID, &lookupName, &serverID, &domainType, &prefixPtr);
     if (status == SUCCESS) {
 	register Rpc_ReplyMem		*replyMemPtr;
 	ClientData			streamData;
@@ -380,6 +379,7 @@ Fs_RpcOpen(srvToken, clientID, command, storagePtr)
     openResultsParamPtr = mnew(FsOpenResultsParam);
     openResultsPtr = &(openResultsParamPtr->openResults);
 
+    fsStats.srvName.numReadOpens++;
     status = (*fsDomainLookup[domainType][FS_DOMAIN_OPEN])(prefixHandlePtr,
 		(char *)storagePtr->requestDataPtr, (Address)openArgsPtr,
 		(Address)openResultsPtr, &newNameInfoPtr);
@@ -519,6 +519,10 @@ Fs_RpcReopen(srvToken, clientID, command, storagePtr)
 	/*
 	 * Filesystem version mis-match.
 	 */
+	return(GEN_INVALID_ARG);
+    }
+    fileIDPtr->type = FsMapRmtToLclType(fileIDPtr->type);
+    if (fileIDPtr->type < 0) {
 	return(GEN_INVALID_ARG);
     }
     status = (*fsStreamOpTable[fileIDPtr->type].reopen)((FsHandleHeader *)NIL,
@@ -797,24 +801,21 @@ FsSpriteRemove(prefixHandle, relativeName, argsPtr, resultsPtr,
     ReturnStatus	status;
     Rpc_Storage		storage;
     FsRedirectInfo	redirectInfo;
-    int			prefixLength[3];	/* padded so that network
-						 * interface won't pad it
-						 * without our being aware
-						 * of it. */
+    int			prefixLength;
 
     storage.requestParamPtr = (Address) argsPtr;
     storage.requestParamSize = sizeof(FsLookupArgs);
     storage.requestDataPtr = (Address) relativeName;
     storage.requestDataSize = strlen(relativeName) + 1;
-    storage.replyParamPtr = (Address) prefixLength;
-    storage.replyParamSize = 3 * sizeof (int);
+    storage.replyParamPtr = (Address) &prefixLength;
+    storage.replyParamSize = sizeof (int);
     storage.replyDataPtr = (Address)&redirectInfo;
     storage.replyDataSize = sizeof(FsRedirectInfo);
 
     status = Rpc_Call(prefixHandle->fileID.serverID, RPC_FS_UNLINK, &storage);
     if (status == FS_LOOKUP_REDIRECT) {
 	*newNameInfoPtrPtr = mnew(FsRedirectInfo);
-	(*newNameInfoPtrPtr)->prefixLength = prefixLength[0];
+	(*newNameInfoPtrPtr)->prefixLength = prefixLength;
 	(void)strcpy((*newNameInfoPtrPtr)->fileName, redirectInfo.fileName);
     }
     return(status);
@@ -850,16 +851,13 @@ FsSpriteRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr,
     ReturnStatus	status;
     Rpc_Storage		storage;
     FsRedirectInfo	redirectInfo;
-    int			prefixLength[3];	/* padded so that network
-						 * interface won't pad it
-						 * without our being aware
-						 * of it. */
+    int			prefixLength;
 
     storage.requestParamPtr = (Address) argsPtr;
     storage.requestParamSize = sizeof(FsLookupArgs);
     storage.requestDataPtr = (Address) relativeName;
     storage.requestDataSize = strlen(relativeName) + 1;
-    storage.replyParamPtr = (Address) prefixLength;
+    storage.replyParamPtr = (Address) &prefixLength;
     storage.replyParamSize = sizeof (int);
     storage.replyDataPtr = (Address)&redirectInfo;
     storage.replyDataSize = sizeof(FsRedirectInfo);
@@ -867,7 +865,7 @@ FsSpriteRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr,
     status = Rpc_Call(prefixHandle->fileID.serverID, RPC_FS_RMDIR, &storage);
     if (status == FS_LOOKUP_REDIRECT) {
 	*newNameInfoPtrPtr = mnew(FsRedirectInfo);
-	(*newNameInfoPtrPtr)->prefixLength = prefixLength[0];
+	(*newNameInfoPtrPtr)->prefixLength = prefixLength;
 	(void)strcpy((*newNameInfoPtrPtr)->fileName, redirectInfo.fileName);
     }
     return(status);
@@ -923,9 +921,11 @@ Fs_RpcRemove(srvToken, clientID, command, storagePtr)
     newNameInfoPtr = (FsRedirectInfo *) NIL;
     switch (command) {
 	case RPC_FS_UNLINK:
+	    fsStats.srvName.removes++;
 	    command = FS_DOMAIN_REMOVE;
 	    break;
 	case RPC_FS_RMDIR:
+	    fsStats.srvName.removeDirs++;
 	    command = FS_DOMAIN_REMOVE_DIR;
 	    break;
 	default:
@@ -987,24 +987,21 @@ FsSpriteMakeDir(prefixHandle, relativeName, argsPtr, resultsPtr,
     ReturnStatus	status;
     Rpc_Storage		storage;
     FsRedirectInfo	redirectInfo;
-    int			prefixLength[3];	/* padded so that network
-						 * interface won't pad it
-						 * without our being aware
-						 * of it. */
+    int			prefixLength;
 
     storage.requestParamPtr = (Address) argsPtr;
     storage.requestParamSize = sizeof(FsOpenArgs);
     storage.requestDataPtr = (Address) relativeName;
     storage.requestDataSize = strlen(relativeName) + 1;
-    storage.replyParamPtr = (Address) prefixLength;
-    storage.replyParamSize = 3 * sizeof (int);
+    storage.replyParamPtr = (Address) &prefixLength;
+    storage.replyParamSize = sizeof (int);
     storage.replyDataPtr = (Address)&redirectInfo;
     storage.replyDataSize = sizeof(FsRedirectInfo);
 
     status = Rpc_Call(prefixHandle->fileID.serverID, RPC_FS_MKDIR, &storage);
     if (status == FS_LOOKUP_REDIRECT) {
 	*newNameInfoPtrPtr = mnew(FsRedirectInfo);
-	(*newNameInfoPtrPtr)->prefixLength = prefixLength[0];
+	(*newNameInfoPtrPtr)->prefixLength = prefixLength;
 	(void)strcpy((*newNameInfoPtrPtr)->fileName, redirectInfo.fileName);
     }
     return(status);
@@ -1062,6 +1059,7 @@ Fs_RpcMakeDir(srvToken, clientID, command, storagePtr)
     }
     FsHandleRelease(prefixHandlePtr, TRUE);
 
+    fsStats.srvName.makeDirs++;
     newNameInfoPtr = (FsRedirectInfo *) NIL;
     status = (*fsDomainLookup[domainType][FS_DOMAIN_MAKE_DIR])(prefixHandlePtr,
 	    (char *)storagePtr->requestDataPtr,
@@ -1071,12 +1069,8 @@ Fs_RpcMakeDir(srvToken, clientID, command, storagePtr)
 
 	storagePtr->replyDataPtr = (Address)newNameInfoPtr;
 	storagePtr->replyDataSize = sizeof(FsRedirectInfo);
-	/*
-	 * prefixLength must be returned in param area for byte-swapping.
-	 * We pad the buffer to 12 bytes here to avoid bug in NetIEXmit!
-	 */
-	storagePtr->replyParamPtr = (Address) malloc(3 * sizeof (int));
-	storagePtr->replyParamSize = 3 * sizeof (int);
+	storagePtr->replyParamPtr = (Address) malloc(sizeof (int));
+	storagePtr->replyParamSize = sizeof (int);
 	*((int *)(storagePtr->replyParamPtr)) = newNameInfoPtr->prefixLength;
 
         replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
@@ -1123,24 +1117,21 @@ FsSpriteMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
     ReturnStatus	status;
     Rpc_Storage		storage;
     FsRedirectInfo	redirectInfo;
-    int			prefixLength[3];	/* padded so that network
-						 * interface won't pad it
-						 * without our being aware
-						 * of it. */
+    int			prefixLength;
 
     storage.requestParamPtr = (Address) argsPtr;
     storage.requestParamSize = sizeof(FsMakeDeviceArgs);
     storage.requestDataPtr = (Address) relativeName;
     storage.requestDataSize = strlen(relativeName) + 1;
-    storage.replyParamPtr = (Address) prefixLength;
-    storage.replyParamSize = 3 * sizeof (int);
-    storage.replyDataPtr = (Address)malloc(sizeof(FsRedirectInfo));
+    storage.replyParamPtr = (Address) &prefixLength;
+    storage.replyParamSize = sizeof (int);
+    storage.replyDataPtr = (Address)&redirectInfo;
     storage.replyDataSize = sizeof(FsRedirectInfo);
 
     status = Rpc_Call(prefixHandle->fileID.serverID, RPC_FS_MKDEV, &storage);
     if (status == FS_LOOKUP_REDIRECT) {
-	*newNameInfoPtrPtr = (FsRedirectInfo *) mnew(FsRedirectInfo);
-	(*newNameInfoPtrPtr)->prefixLength = prefixLength[0];
+	*newNameInfoPtrPtr = mnew(FsRedirectInfo);
+	(*newNameInfoPtrPtr)->prefixLength = prefixLength;
 	(void)strcpy((*newNameInfoPtrPtr)->fileName, redirectInfo.fileName);
     }
     return(status);
@@ -1187,13 +1178,14 @@ Fs_RpcMakeDev(srvToken, clientID, command, storagePtr)
 
     makeDevArgsPtr = (FsMakeDeviceArgs *) storagePtr->requestParamPtr;
     prefixHandlePtr = 
-	(*fsStreamOpTable[makeDevArgsPtr->prefixID.type].clientVerify)
-	    (&makeDevArgsPtr->prefixID, clientID, &domainType);
+	(*fsStreamOpTable[makeDevArgsPtr->open.prefixID.type].clientVerify)
+	    (&makeDevArgsPtr->open.prefixID, clientID, &domainType);
     if (prefixHandlePtr == (FsHandleHeader *) NIL) {
 	return(FS_STALE_HANDLE);
     }
     FsHandleRelease(prefixHandlePtr, TRUE);
 
+    fsStats.srvName.makeDevices++;
     newNameInfoPtr = (FsRedirectInfo *) NIL;
     status = (*fsDomainLookup[domainType][FS_DOMAIN_MAKE_DEVICE])(prefixHandlePtr,
 	    (char *)storagePtr->requestDataPtr, (Address) makeDevArgsPtr,
@@ -1203,12 +1195,8 @@ Fs_RpcMakeDev(srvToken, clientID, command, storagePtr)
 
 	storagePtr->replyDataPtr = (Address)newNameInfoPtr;
 	storagePtr->replyDataSize = sizeof(FsRedirectInfo);
-	/*
-	 * Return prefix length in buffer padded to 12 bytes to avoid
-	 * a bug in NetIEXmit.
-	 */
-	storagePtr->replyParamPtr = (Address) malloc(3 * sizeof (int));
-	storagePtr->replyParamSize = 3 * sizeof (int);
+	storagePtr->replyParamPtr = (Address) malloc(sizeof (int));
+	storagePtr->replyParamSize = sizeof (int);
 	*((int *) (storagePtr->replyParamPtr)) = newNameInfoPtr->prefixLength;
 
         replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
@@ -1372,8 +1360,10 @@ Fs_Rpc2Path(srvToken, clientID, command, storagePtr)
 
     newNameInfoPtr = (FsRedirectInfo *) NIL;
     if (command == RPC_FS_RENAME) {
+	fsStats.srvName.renames++;
 	command = FS_DOMAIN_RENAME;
     } else if (command == RPC_FS_LINK) {
+	fsStats.srvName.hardLinks++;
 	command = FS_DOMAIN_HARD_LINK;
     } else {
 	printf( "Fs_Rpc2Path: Bad command %d\n", command);
