@@ -90,30 +90,84 @@ Boolean fsutil_Initialized = FALSE;
 Boolean fsDiskAttached = FALSE;
 
 
+void Fs_Init()
+{
+    Fs_InitData();
+    Fs_InitNameSpace();
+}
 /*
  *----------------------------------------------------------------------
  *
- * Fs_Init
+ * Fs_InitData
  *
- *	Initialize the filesystem.  As well as initialize various
- *	tables and lists, this does the first steps in boot-strapping
- *	the name space.  The prefix table is primed with "/", and
- *	a local disk is attached under "/local" if possible.  Later
- *	in Fs_ProcInit "/local" gets promoted to root if noone
- *	else is around to serve root.
+ *	Initialize most filesystem data structures.
  *
  * Results:
  *	None.
  *
  * Side effects:
  *	Data structures in the file system are initialized.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Fs_InitData()
+{
+    /*
+     * Initialized the known domains. Local, Remote, and Pfs.
+     */
+    Fslcl_NameInitializeOps();
+    Fsio_InitializeOps();
+    Fsrmt_InitializeOps();
+    Fspdev_InitializeOps();
+
+    bzero((Address) &fs_Stats, sizeof(Fs_Stats));
+    /*
+     * The handle cache and the block cache start out with a hash table of
+     * a given size which grows on demand.  Thus the numbers passed to
+     * the next two routines are not crucial.
+     */
+    Fsutil_HandleInit(64);
+    Fscache_Init(64);
+
+    Fsprefix_Init();
+
+    Fsconsist_ClientInit();
+
+    Fslcl_DomainInit();
+
+    Fsutil_TraceInit();
+    Fspdev_TraceInit();
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_InitNameSpace
+ *
+ *	Initialize the filesystem name space.
+ *	This does the first steps in boot-strapping
+ *	the name space.  The prefix table is primed with "/", and
+ *	a local disk is attached under "/local" if possible.  Later
+ *	in Fs_ProcInit "/local" gets promoted to root if noone
+ *	else is around to serve root.
+ *
+ *	This also initializes the file system's time (which could
+ *	perhaps be replaced someday).  This has to be done after
+ *	Rpc_Start.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
  *	"/" is stuck in the prefix table with no handle.
  *	Local disk is attached under "/local".
  *
  *----------------------------------------------------------------------
  */
 void
-Fs_Init()
+Fs_InitNameSpace()
 {
     ReturnStatus status;
     Time time;
