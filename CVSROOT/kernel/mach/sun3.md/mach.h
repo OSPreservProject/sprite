@@ -153,6 +153,12 @@ extern ReturnStatus (*(mach_MigratedHandlers[]))();
     })
 #endif
 
+/*
+ * Suns don't have a write buffer, but this macro makes it easier to
+ * write machine-independent device drivers for both the Decstations and Suns.
+ */
+#define Mach_EmptyWriteBuffer()
+
 #define Mach_SetErrno(err) Proc_GetActualProc()->unixErrno = (err)
 
 extern	Boolean	mach_KernelMode;
