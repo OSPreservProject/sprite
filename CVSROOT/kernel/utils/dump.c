@@ -27,6 +27,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "list.h"
 #include "rpc.h"
 #include "fs.h"
+#include "fsutil.h"
+#include "fscache.h"
+#include "fspdev.h"
 #include "net.h"
 #include "recov.h"
 #include "string.h"
@@ -51,6 +54,7 @@ void	DumpTimerStats();
 void 	PrintL1Menu();
 static void	PrintVersion();
 static void	PrintTOD();
+static void FslclNameHashStats();
 /*
  * Table of routines and their arguments to be called on dump events.
  * Only machine independent dump events should be added to this table.
@@ -61,21 +65,21 @@ static EventTableType eventTable[] = {
     {'a', RESERVED_EVENT, NULL_ARG, "Abort to PROM monitor" }, 
     {'b', RESERVED_EVENT, NULL_ARG, 
 				"Put machine into (old) serial line debugger"},
-    {'c', Fs_DumpCacheStats, (ClientData)0, "Dump cache stats"},
+    {'c', Fscache_DumpStats, (ClientData)0, "Dump cache stats"},
     {'d', RESERVED_EVENT, NULL_ARG, "Put machine into the kernel debugger"},
     {'e', Timer_DumpStats, (ClientData) 'e', "Dump timer stats"},
-    {'f', Fs_PrintTrace,   (ClientData) -1, "Dump filesystem trace"},
-    {'h', Fs_NameHashStats, (ClientData)NULL, "Dump name hash stats"},
+    {'f', Fsutil_PrintTrace,   (ClientData) -1, "Dump filesystem trace"},
+    {'h', FslclNameHashStats, (ClientData)NULL, "Dump name hash stats"},
     {'m', Mem_DumpStats, (ClientData) FALSE,"Dump memory stats"},
     {'n', Net_Reset, (ClientData)0,"Reset the network interface"},
     {'p', (void (*)()) Proc_Dump, (ClientData) 0,"Dump process table"},
     {'r', Sched_DumpReadyQueue,  (ClientData) 0,"Dump ready queue"},
-    {'q', Fs_PdevPrintTrace,  (ClientData) 200,"Dump pseudo-device trace"},
+    {'q', Fspdev_PrintTrace,  (ClientData) 200,"Dump pseudo-device trace"},
     {'s', Timer_DumpStats,   (ClientData) 's',"Reset timer stats"},
     {'t', Timer_DumpQueue,  (ClientData) 0,"Dump the timer queue"},
     {'v', PrintVersion, (ClientData) 0,"Print version string of the kernel"},
     {'w', Fs_SyncStub, (ClientData) FALSE, "WRITE BACK CACHE"},
-    {'x', Fs_HandleScavengeStub, (ClientData) 0,"Scavenge filesystem handles"},
+    {'x', Fsutil_HandleScavengeStub, (ClientData) 0,"Scavenge filesystem handles"},
     {'y', Recov_PrintTrace, (ClientData) 50,"Dump RPC recovery trace"},
     {'z', Rpc_PrintTrace, (ClientData) 50,"Dump RPC packet trace"},
     {'1', Timer_TimerGetInfo, (ClientData) 1,"Dump info for timer counter 1"},
