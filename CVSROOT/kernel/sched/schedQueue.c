@@ -110,6 +110,11 @@ Sched_MoveInQueue(procPtr)
      *      trap handler.
      */
 
+    if (procPtr->schedFlags & SCHED_CLEAR_USAGE) {
+	procPtr->recentUsage = 0;
+	procPtr->weightedUsage = 0;
+	procPtr->unweightedUsage = 0;
+    }
 
     curProcPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
     if ((curProcPtr != (Proc_ControlBlock *) NIL) &&
@@ -118,12 +123,6 @@ Sched_MoveInQueue(procPtr)
 	    sched_DoContextSwitch = TRUE;
 	} 
 	curProcPtr->schedFlags |= SCHED_CONTEXT_SWITCH_PENDING;
-    }
-
-    if (procPtr->schedFlags & SCHED_CLEAR_USAGE) {
-	procPtr->recentUsage = 0;
-	procPtr->weightedUsage = 0;
-	procPtr->unweightedUsage = 0;
     }
 
     /*
