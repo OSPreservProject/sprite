@@ -3,7 +3,7 @@
  *
  *	Routines to handle interrupts from the timer chip.
  *
- *      The timer interrupt service routine is called at every timer
+ *      The timer call back routine is called at every callback timer
  *      interrupt. The callback timer is used to enable various modules of
  *      the kernel to have routines called at a particular time in the
  *      future.  For example, to run the "clock" paging algorithm once a
@@ -33,10 +33,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vm.h"
 #include "dbg.h"
 #include "byte.h"
-
-/* For profiling */
-#include "mach.h"
-#include "prof.h"
 
 
 
@@ -160,10 +156,10 @@ UpdateTimeOfDay()
 /*
  *----------------------------------------------------------------------
  *
- *  Timer_ServiceInterrupt --
+ *  Timer_CallBack --
  *
- *      This routine is called at every timer interrupt. 
- *      It calls routines on the timer queue if the callback timer expired.
+ *      This routine is called at every call back timer interrupt. 
+ *      It calls routines on the timer queue. 
  *
  *  Results:
  *	None.
@@ -175,60 +171,8 @@ UpdateTimeOfDay()
  */
 
 void
-Timer_ServiceInterrupt(stack)
-    Mach_IntrStack stack;
+Timer_CallBack()
 {
-    /*
-     *  Determine if the callback and profile timers have expired.
-     *  Dev_TimerExamineStatus has the side effect of clearing the timer's
-     *  "cause interrupt" bit if it was set. 
-     *
-     *  The profile timer is checked first because routines on the callback
-     *  queue might cause a delay in collecting profiling information.
-     */
-
-    int profiled = FALSE;
-    unsigned short timerStatus =  Dev_TimerGetStatus();
-    Boolean spurious;
-
-    if (Dev_TimerExamineStatus(timerStatus, DEV_PROFILE_TIMER, &spurious)) {
-	Prof_CollectInfo(&stack);
-	profiled = TRUE;
-#	ifdef GATHER_STAT
-	timer_Statistics.profile++;
-#	endif
-    } 
-
-    if (!Dev_TimerExamineStatus(timerStatus, DEV_CALLBACK_TIMER, &spurious)) {
-
-	if (!profiled) {
-
-	    /*
-	     * An unwanted timer interrupt was received but it wasn't
-	     * spurious (this is o.k. -- see devTimerSun3.c).
-	     */
-	    if (!spurious) {
-		return;
-	    } 
-
-	    /* Spurious interrupt!!! */
-	    timer_Statistics.spurious++;
-
-	    Sys_Printf("%c", 7);	/* ring the bell */
-
-#ifdef DEBUG
-	    array[count]= timerStatus & 0xff;
-	    count++;
-	    if (count >= SIZE) {
-		DBG_CALL;	 /* Timer_ServiceInterrupt */
-		count = 0;
-	    }
-#endif DEBUG
-
-	}
-
-    } else {
-
 	register List_Links	*itemPtr;	/* Used to examine TQE's. */
 	register List_Links	*readyPtr;	/* Ptr to TQE that's ready
 						 * to be called. */
@@ -297,7 +241,7 @@ Timer_ServiceInterrupt(stack)
 
 	} 
 	MASTER_UNLOCK(timerMutex);
-    } 
+    
 }
 
 
