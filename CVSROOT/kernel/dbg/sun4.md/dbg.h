@@ -1,0 +1,259 @@
+/*
+ * dbg.h --
+ * 
+ *     Exported types and procedure headers for the debugger module.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ * $Header$ SPRITE (Berkeley)
+ */
+
+#ifndef _DBG
+#define _DBG
+
+#ifndef _SPRITE
+#include "sprite.h"
+#endif
+#include "kernel/sun4.md/mach.h"
+
+/*
+ * Variable to indicate that dbg wants a packet.
+ */
+extern	Boolean	dbg_UsingNetwork;
+
+/*
+ * Variable that indicates that we are under control of the debugger.
+ */
+extern	Boolean	dbg_BeingDebugged;
+
+/*
+ * Debugger using syslog to dump output of call command or not.
+ */
+extern	Boolean	dbg_UsingSyslog;
+
+/*
+ * The different opcodes that kdbx can send us.
+ */
+
+typedef enum {
+    DBG_READ_ALL_REGS,		/* Read all the  registers */
+    DBG_WRITE_REG,		/* Write one of the registers d0-d7 or a0-a7 */
+    DBG_CONTINUE, 		/* Continue execution */
+    DBG_SINGLESTEP,		/* Single step execution */
+    DBG_DETACH,			/* The debugger has finished with the kernel */
+    DBG_INST_READ,		/* Read an instruction */
+    DBG_INST_WRITE,		/* Write an instruction */
+    DBG_DATA_READ,		/* Read data */
+    DBG_DATA_WRITE,		/* Write data */
+    DBG_SET_PID,		/* Set the process for which the stack 
+				 * back trace is to be done. */
+    DBG_GET_STOP_INFO,		/* Get all info needed by dbx after it stops. */
+    DBG_GET_VERSION_STRING,	/* Return the version string. */
+    DBG_DIVERT_SYSLOG,		/* Divert syslog output to the console. */
+    DBG_REBOOT,			/* Call the reboot routine. */
+    DBG_BEGIN_CALL,		/* Start a call. */
+    DBG_END_CALL, 		/* Clean up after a call completes. */
+    DBG_CALL_FUNCTION,		/* Call a function. */
+    DBG_UNKNOWN			/* Used for error checking */
+} Dbg_Opcode;
+
+#define	DBG_OPCODE_NAMES {					\
+	"Read all regs",					\
+	"Write reg",						\
+	"Continue",						\
+	"Single Step",						\
+	"Detach",						\
+	"Inst Read",						\
+	"Inst Write",						\
+	"Data Read",						\
+	"Data Write",						\
+	"Process to walk stack for",				\
+	"Read information after stopped",			\
+	"Return version string",				\
+	"Divert syslog to the console",				\
+	"Reboot the machine",					\
+	"Set up things to start a call command",		\
+	"Clean up things after a call command has executed",	\
+	"Call a function",					\
+	"UNKNOWN OPCODE"					\
+}								\
+
+
+typedef struct {
+    int	regNum;
+    int	regVal;
+} Dbg_WriteReg;
+
+typedef struct {
+    int		address;
+    int		numBytes;
+    char	buffer[100];
+} Dbg_WriteMem;
+
+typedef Dbg_WriteMem Dbg_CallFunc;
+
+typedef struct {
+    int		address;
+    int		numBytes;
+} Dbg_ReadMem;
+
+typedef struct {
+    int		stringLength;
+    char	string[100];
+} Dbg_Reboot;
+
+typedef enum {
+    DBG_SYSLOG_TO_ORIG,
+    DBG_SYSLOG_TO_CONSOLE,
+} Dbg_SyslogCmd;
+
+/*
+ * Message format.
+ */
+typedef struct {
+    int		opcode;
+    union {
+	int		pid;
+	Dbg_WriteReg	writeReg;
+	Dbg_WriteMem	writeMem;
+	Dbg_CallFunc	callFunc;
+	Dbg_ReadMem	readMem;
+	int		pc;
+	Dbg_SyslogCmd	syslogCmd;
+	Dbg_Reboot	reboot;
+    } data;
+} Dbg_Msg;
+
+#define	DBG_MAX_REPLY_SIZE	1024
+#define	DBG_MAX_REQUEST_SIZE	1024
+
+/*
+ * The UDP port number that the kernel and kdbx use to identify a packet as
+ * a debugging packet.  (composed from "uc": 0x75 = u, 0x63 = c)
+ */
+
+#define DBG_UDP_PORT 	0x7563
+
+/*
+ * The different statuses that we send kgdb after we stop. 
+ */
+
+#define	DBG_RESET		0
+#define	DBG_INSTR_ACCESS	1
+#define	DBG_ILLEGAL_INSTR	2
+#define	DBG_PRIV_INSTR		3
+#define	DBG_FP_DISABLED		4
+#define	DBG_WINDOW_OVERFLOW	5
+#define	DBG_WINDOW_UNDERFLOW	6
+#define	DBG_MEM_ADDR_ALIGN	7
+#define	DBG_FP_EXCEP		8
+#define	DBG_DATA_ACCESS		9
+#define	DBG_TAG_OVERFLOW	10
+#define	DBG_UNKNOWN_TRAP11	11
+#define	DBG_UNKNOWN_TRAP12	12
+#define	DBG_UNKNOWN_TRAP13	13
+#define	DBG_UNKNOWN_TRAP14	14
+#define	DBG_UNKNOWN_TRAP15	15
+
+#define	DBG_INTERRUPT		16	
+#define	DBG_LEVEL1_INT		17
+#define	DBG_LEVEL2_INT		18
+#define	DBG_LEVEL3_INT		19
+#define	DBG_LEVEL4_INT		20
+#define	DBG_LEVEL5_INT		21
+#define	DBG_LEVEL6_INT		22
+#define	DBG_LEVEL7_INT		23
+#define	DBG_LEVEL8_INT		24
+#define	DBG_LEVEL9_INT		25
+#define	DBG_LEVEL10_INT		26
+#define	DBG_LEVEL11_INT		27
+#define	DBG_LEVEL12_INT		28
+#define	DBG_LEVEL13_INT		29
+#define	DBG_LEVEL14_INT		30
+#define	DBG_LEVEL15_INT		31
+
+#define	DBG_BREAKPOINT_TRAP	32		/* ta 1 */
+#define	DBG_UNKNOWN_TRAP	33		/* Anything other trap. */
+#define	DBG_UNKNOWN_EXCEPT	34		/* Anything execption. */
+
+/*
+ * Convert a sparc machine trap into a DBG trap.
+ */
+#define	DBG_CVT_MACH_TRAP(tn)	( ((tn) < 32) ? (tn) : \
+	(( (tn) == 129) ? DBG_BREAKPOINT_TRAP : \
+		(((tn) > 128 ) ? DBG_UNKNOWN_TRAP : DBG_UNKNOWN_EXCEPT )))
+
+
+
+
+#define	DBG_EXECPTION_NAMES {		\
+    "Reset",				\
+    "Instruction Fault",		\
+    "Illegal Instruction Fault",	\
+    "Privilege Instruction Fault",	\
+    "FPU Disabled Fault",		\
+    "Window Overflow Fault",		\
+    "Window Underflow Fault",		\
+    "Memory Address Fault",		\
+    "FPU Exception Fault",		\
+    "Data Fault",			\
+    "Tag Overflow Trap",		\
+    "Unknown Trap 11",			\
+    "Unknown Trap 12",			\
+    "Unknown Trap 13",			\
+    "Unknown Trap 14",			\
+    "Unknown Trap 15",			\
+    "Interrupt Trap",			\
+    "Level 1 Interrupt",		\
+    "Level 2 Interrupt",		\
+    "Level 3 Interrupt",		\
+    "Level 4 Interrupt",		\
+    "Level 5 Interrupt",		\
+    "Level 6 Interrupt",		\
+    "Level 7 Interrupt",		\
+    "Level 8 Interrupt",		\
+    "Level 9 Interrupt",		\
+    "Level 10 Interrupt",		\
+    "Level 11 Interrupt",		\
+    "Level 12 Interrupt",		\
+    "Level 13 Interrupt",		\
+    "Level 14 Interrupt",		\
+    "Level 15 Interrupt",		\
+    "Breakpoint Trap",			\
+    "Unknown Trap",			\
+    "UNKNOWN EXCEPTION"			\
+}					\
+
+/*
+ * Variable that is set to true when we are called through the DBG_CALL macro.
+ */
+extern	Boolean	dbgPanic;
+
+/* 
+ * Macro to call the debugger from kernel code.
+ */
+#define DBG_CALL	dbgPanic = TRUE; asm("ta 1");
+
+
+/*
+ * Info returned when GETSTOPINFO command is submitted.
+ */
+typedef struct {
+    int			codeStart;
+    int			trapType;
+    Mach_RegState	regs;
+} StopInfo;
+
+
+extern	void	Dbg_Init();
+extern	void	Dbg_InputPacket();
+
+#endif _DBG
