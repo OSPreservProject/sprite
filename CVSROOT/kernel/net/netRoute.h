@@ -42,6 +42,7 @@
  */
 #define NET_MAX_HEADER_SIZE (sizeof(Net_UltraHeader) + sizeof(Net_IPHeader) + 8)
 
+#ifdef KERNEL
 /*
  * A Route: A mapping between a physical address and a Sprite Host ID.
  * The supported address type is just ethernet. Net_Routes are manipulated
@@ -73,6 +74,7 @@ typedef struct Net_Route {
 						       * header(s). */
 } Net_Route;
 
+#endif
 /*
  * Flag values for Net_Route.
  */

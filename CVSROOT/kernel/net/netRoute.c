@@ -922,11 +922,13 @@ Net_IDToRoute(spriteID, index, doArp, mutexPtr, size)
 	    MASTER_LOCK(&netRouteMutex);
 	    if (index >= 0) {
 		LIST_FORALL(&netRouteArray[spriteID],(List_Links *) tmpPtr) {
-		    if ((i == index) && (tmpPtr->flags & NET_RFLAGS_VALID)) {
-			routePtr = tmpPtr;
-			break;
+		    if (tmpPtr->flags & NET_RFLAGS_VALID) {
+			if (i == index) {
+			    routePtr = tmpPtr;
+			    break;
+			}
+			i++;
 		    }
-		    i++;
 		}
 	    } else {
 		LIST_FORALL(&netRouteArray[spriteID],(List_Links *) tmpPtr) {
