@@ -302,12 +302,12 @@ DevSCSIDiskError(devPtr, sensePtr)
 		addr = (sensePtr->highAddr << 16) |
 			(sensePtr->midAddr << 8) |
 			sensePtr->lowAddr;
-		Sys_Printf("SCSI-%d: Sense error (%d-%d) at <%x> ",
+		printf("SCSI-%d: Sense error (%d-%d) at <%x> ",
 				 devPtr->scsiPtr->number, class, code, addr);
 		if (scsiNumErrors[class] > code) {
-		    Sys_Printf("%s", scsiErrors[class][code]);
+		    printf("%s", scsiErrors[class][code]);
 		}
-		Sys_Printf("\n");
+		printf("\n");
 		status = DEV_HARD_ERROR;
 	    }
 	    break;
@@ -337,8 +337,7 @@ DevSCSIDiskError(devPtr, sensePtr)
 	    switch (extSensePtr->key) {
 		case SCSI_NO_SENSE:
 		    if (devSBCDebug) {
-			Sys_Panic(SYS_WARNING,
-				  "SCSI-%d drive %d, no sense?\n",
+			printf("Warning: SCSI-%d drive %d, no sense?\n",
 				  devPtr->scsiPtr->number, devPtr->slaveID);
 		    }
 		    break;
@@ -347,11 +346,10 @@ DevSCSIDiskError(devPtr, sensePtr)
 		     * The drive recovered from an error.
 		     */
 		    if (devSBCDebug > 2) {
-			Sys_Panic(SYS_WARNING,
-				  "SCSI-%d drive %d, recoverable error, code %x\n",
+			printf("Warning: SCSI-%d drive %d, recoverable error, code %x\n",
 				  devPtr->scsiPtr->number, devPtr->slaveID,
 				  sbcSensePtr->code2);
-			Sys_Printf("\tInfo bytes 0x%x 0x%x 0x%x 0x%x\n",
+			printf("\tInfo bytes 0x%x 0x%x 0x%x 0x%x\n",
 				   extSensePtr->info1 & 0xff,
 				   extSensePtr->info2 & 0xff,
 				   extSensePtr->info3 & 0xff,
@@ -367,19 +365,23 @@ DevSCSIDiskError(devPtr, sensePtr)
 		    /*
 		     * Probably a programming error.
 		     */
-		    Sys_Panic(SYS_WARNING,
-				"SCSI-%d drive %d, illegal request %d\n",
+		    printf("Warning: SCSI-%d drive %d, illegal request %d\n",
 				devPtr->scsiPtr->number, devPtr->slaveID,
 				command);
 		    status = DEV_INVALID_ARG;
 		    break;
 		case SCSI_MEDIA_ERROR:
 		case SCSI_HARDWARE_ERROR:
-		    Sys_Panic((devSBCDebug > 2) ? SYS_FATAL : SYS_WARNING,
-			      "SCSI-%d drive %d, hard class7 error %x code %x\n",
+		    if (devSBCDebug > 2) {
+			panic("SCSI-%d drive %d, hard class7 error %x code %x\n",
 			      devPtr->scsiPtr->number, devPtr->slaveID,
 			      extSensePtr->key, sbcSensePtr->code2);
-		    Sys_Printf("\tInfo bytes 0x%x 0x%x 0x%x 0x%x\n",
+		    } else {
+			printf("Warning: SCSI-%d drive %d, hard class7 error %x code %x\n",
+			      devPtr->scsiPtr->number, devPtr->slaveID,
+			      extSensePtr->key, sbcSensePtr->code2);
+		    }
+		    printf("\tInfo bytes 0x%x 0x%x 0x%x 0x%x\n",
 			extSensePtr->info1 & 0xff,
 			extSensePtr->info2 & 0xff,
 			extSensePtr->info3 & 0xff,
@@ -392,8 +394,7 @@ DevSCSIDiskError(devPtr, sensePtr)
 		     * This is an error that occurs after the drive is reset.
 		     * It can probably be ignored.
 		     */
-		    Sys_Panic(SYS_WARNING,
-			    "SCSI-%d drive %d, unit attention\n",
+		    printf("Warning: SCSI-%d drive %d, unit attention\n",
 			    devPtr->scsiPtr->number, devPtr->slaveID);
 		    sbcPtr->stats.numUnitAttns++;
 		    break;
@@ -405,10 +406,9 @@ DevSCSIDiskError(devPtr, sensePtr)
 		    }
 		    break;
 		case SCSI_BLANK_CHECK:
-		    Sys_Panic(SYS_WARNING,
-			"SCSI-%d drive %d, \"blank check\"\n",
+		    printf("SCSI-%d drive %d, \"blank check\"\n",
 			devPtr->scsiPtr->number, devPtr->slaveID);
-		    Sys_Printf("\tInfo bytes 0x%x 0x%x 0x%x 0x%x\n",
+		    printf("\tInfo bytes 0x%x 0x%x 0x%x 0x%x\n",
 			extSensePtr->info1 & 0xff,
 			extSensePtr->info2 & 0xff,
 			extSensePtr->info3 & 0xff,
@@ -419,15 +419,13 @@ DevSCSIDiskError(devPtr, sensePtr)
 		case SCSI_ABORT:
 		case SCSI_EQUAL:
 		case SCSI_OVERFLOW:
-		    Sys_Panic(SYS_WARNING,
-			"SCSI-%d drive %d, unsupported class7 error %d\n",
+		    printf("Warning: SCSI-%d drive %d, unsupported class7 error %d\n",
 			devPtr->scsiPtr->number, devPtr->slaveID,
 			extSensePtr->key);
 		    status = DEV_HARD_ERROR;
 		    break;
 		default:
-		    Sys_Panic(SYS_WARNING,
-			"SCSI-%d drive %d, can't handle error %d\n",
+		    printf("Warning: SCSI-%d drive %d, can't handle error %d\n",
 			devPtr->scsiPtr->number, devPtr->slaveID,
 			extSensePtr->key);
 		    status = DEV_HARD_ERROR;
@@ -440,8 +438,7 @@ DevSCSIDiskError(devPtr, sensePtr)
 			status = DEV_OFFLINE;
 			break;
 		    case SCSI_INSUF_CAPACITY:
-			Sys_Panic(SYS_WARNING,
-				    "Emulex: Insufficient disk capacity");
+			printf("Warning: Emulex: Insufficient disk capacity");
 			/* fall thru */
 		    case SCSI_END_OF_MEDIA:
 			status = DEV_END_OF_TAPE;  /* ??? */
@@ -455,20 +452,17 @@ DevSCSIDiskError(devPtr, sensePtr)
 			}
 			break;
 		    case SCSI_CORRECTABLE_ERROR:
-			Sys_Panic(SYS_WARNING,
-				"SCSI-%d drive %d, correctable error",
+			printf("Warning: SCSI-%d drive %d, correctable error",
 				devPtr->scsiPtr->number, devPtr->slaveID);
 			break;
 		    case SCSI_INVALID_COMMAND:
-			Sys_Panic(SYS_WARNING,
-				"SCSI-%d drive %d, invalid command 0x%x",
+			printf("Warning: SCSI-%d drive %d, invalid command 0x%x",
 				devPtr->scsiPtr->number, devPtr->slaveID,
 				command);
 			break;
 
 		    default:
-			Sys_Panic(SYS_FATAL,
-				"SCSI-%d drive %d, unknown error %x\n",
+			panic("SCSI-%d drive %d, unknown error %x\n",
 				  devPtr->scsiPtr->number, devPtr->slaveID,
 				  emuluxSensePtr->error);
 			status = DEV_NO_MEDIA;
@@ -479,8 +473,7 @@ DevSCSIDiskError(devPtr, sensePtr)
 	       * The drive has been reset sinse the last command.
 	       * Looks like we get this at startup.
 	       */
-		Sys_Panic(SYS_WARNING,
-			"SCSI-%d drive %d, unit attention\n",
+		printf("Warning: SCSI-%d drive %d, unit attention\n",
 			devPtr->scsiPtr->number, devPtr->slaveID);
 	    }
 #endif notdef

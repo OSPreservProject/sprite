@@ -26,7 +26,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "proc.h"	/* for Mach_SetJump */
 #include "fs.h"
 #include "mem.h"
-#include "user/byte.h"
 #include "vmMach.h"
 #include "mem.h"
 #include "sched.h"
@@ -271,7 +270,7 @@ Dev_XylogicsInitDevice(devPtr)
      * Set up a slot in the disk list. See above about xyDiskIndex.
      */
     if (xyDiskIndex >= XYLOGICS_MAX_DISKS) {
-	Sys_Printf("Xylogics: To many disks configured\n");
+	printf("Xylogics: To many disks configured\n");
 	return(FALSE);
     }
     diskPtr = (DevXylogicsDisk *) Mem_Alloc(sizeof(DevXylogicsDisk));
@@ -353,14 +352,14 @@ DevXylogicsTest(xyPtr, diskPtr)
 		   (Dev_DiskAddr *)NIL, 0, (Address)0, WAIT);
 
 #ifdef notdef
-    Sys_Printf("DevXylogicsTest:\n");
-    Sys_Printf("Xylogics-%d disk %d\n", xyPtr->number, diskPtr->slaveID);
-    Sys_Printf("Drive Status Byte %x\n", xyPtr->IOPBPtr->numSectLow);
-    Sys_Printf("Drive Type %d: Cyls %d Heads %d Sectors %d\n",
+    printf("DevXylogicsTest:\n");
+    printf("Xylogics-%d disk %d\n", xyPtr->number, diskPtr->slaveID);
+    printf("Drive Status Byte %x\n", xyPtr->IOPBPtr->numSectLow);
+    printf("Drive Type %d: Cyls %d Heads %d Sectors %d\n",
 		     diskPtr->xyDriveType,
 		     xyPtr->IOPBPtr->cylHigh << 8 | xyPtr->IOPBPtr->cylLow,
 		     xyPtr->IOPBPtr->head, xyPtr->IOPBPtr->sector);
-    Sys_Printf("Bytes Per Sector %d, Num sectors %d\n",
+    printf("Bytes Per Sector %d, Num sectors %d\n",
 		    xyPtr->IOPBPtr->dataAddrHigh << 8 |
 		    xyPtr->IOPBPtr->dataAddrLow,
 		    xyPtr->IOPBPtr->relocLow);
@@ -372,7 +371,7 @@ DevXylogicsTest(xyPtr, diskPtr)
     if (xyPtr->IOPBPtr->numSectLow == 0) {
 	return(SUCCESS);
     } else if (xyPtr->IOPBPtr->numSectLow == 0x20) {
-	Sys_Panic(SYS_WARNING, "Xylogics-%d disk %d write protected\n",
+	printf("Warning: Xylogics-%d disk %d write protected\n",
 				xyPtr->number, diskPtr->slaveID);
 	return(SUCCESS);
     } else {
@@ -420,41 +419,41 @@ DevXylogicsDoLabel(xyPtr, diskPtr)
     error = DevXylogicsCommand(xyPtr, XY_RAW_READ, diskPtr,
 			   &diskAddr, 1, xyPtr->labelBuffer, WAIT);
     if (error != SUCCESS) {
-	Sys_Printf("Xylogics-%d: disk%d, couldn't read the label\n",
+	printf("Xylogics-%d: disk%d, couldn't read the label\n",
 			     xyPtr->number, diskPtr->slaveID);
 	return(error);
     }
     diskPtr->xyDriveType = (xyPtr->labelBuffer[3] & 0xC0) >> 6;
     diskLabelPtr = (Sun_DiskLabel *)(&xyPtr->labelBuffer[4]);
 #ifdef notdef
-    Sys_Printf("Header Bytes: ");
+    printf("Header Bytes: ");
     for (part=0 ; part<4 ; part++) {
-	Sys_Printf("%x ", xyPtr->labelBuffer[part] & 0xff);
+	printf("%x ", xyPtr->labelBuffer[part] & 0xff);
     } 
-    Sys_Printf("\n");
-    Sys_Printf("Label magic <%x>\n", diskLabelPtr->magic);
-    Sys_Printf("Drive type byte (%x) => type %x\n",
+    printf("\n");
+    printf("Label magic <%x>\n", diskLabelPtr->magic);
+    printf("Drive type byte (%x) => type %x\n",
 		      xyPtr->labelBuffer[3] & 0xff, diskPtr->xyDriveType);
     MACH_DELAY(1000000);
 #endif notdef
     if (diskLabelPtr->magic == SUN_DISK_MAGIC) {
-	Sys_Printf("Xylogics-%d disk%d: %s\n", xyPtr->number, diskPtr->slaveID,
+	printf("Xylogics-%d disk%d: %s\n", xyPtr->number, diskPtr->slaveID,
 				diskLabelPtr->asciiLabel);
 	diskPtr->numCylinders = diskLabelPtr->numCylinders;
 	diskPtr->numHeads = diskLabelPtr->numHeads;
 	diskPtr->numSectors = diskLabelPtr->numSectors;
 
-	Sys_Printf(" Partitions ");
+	printf(" Partitions ");
 	for (part = 0; part < DEV_NUM_DISK_PARTS; part++) {
 	    diskPtr->map[part].firstCylinder =
 		    diskLabelPtr->map[part].cylinder;
 	    diskPtr->map[part].numCylinders =
 		    diskLabelPtr->map[part].numBlocks /
 		    (diskLabelPtr->numHeads * diskLabelPtr->numSectors) ;
-	    Sys_Printf(" (%d,%d)", diskPtr->map[part].firstCylinder,
+	    printf(" (%d,%d)", diskPtr->map[part].firstCylinder,
 				       diskPtr->map[part].numCylinders);
 	}
-	Sys_Printf("\n");
+	printf("\n");
 	/*
 	 * Now that we know what the disk is like, we have to make sure
 	 * that the controller does also.  The set parameters command
@@ -469,14 +468,14 @@ DevXylogicsDoLabel(xyPtr, diskPtr)
 	error = DevXylogicsCommand(xyPtr, XY_SET_DRIVE_SIZE, diskPtr,
 			       &diskAddr, 0, (Address)0, WAIT);
 	if (error != SUCCESS) {
-	    Sys_Printf("Xylogics-%d: disk%d, couldn't set drive size\n",
+	    printf("Xylogics-%d: disk%d, couldn't set drive size\n",
 				 xyPtr->number, diskPtr->slaveID);
 	    return(error);
 	}
 
 	return(SUCCESS);
     } else {
-	Sys_Printf("Xylogics-%d Disk %d, Unsupported label, magic = <%x>\n",
+	printf("Xylogics-%d Disk %d, Unsupported label, magic = <%x>\n",
 			       xyPtr->number, diskPtr->slaveID,
 			       diskLabelPtr->magic);
 	return(FAILURE);
@@ -538,7 +537,7 @@ DevXylogicsDiskIO(command, deviceUnit, buffer, diskAddrPtr, numSectorsPtr)
     part = deviceUnit % DEV_NUM_DISK_PARTS;
     diskPtr = xyDisk[disk];
     if (diskPtr->magic != XY_DISK_STATE_MAGIC) {
-	Sys_Panic(SYS_WARNING, "DevXylogicsDiskIO: bad disk state info\n");
+	printf("Warning: DevXylogicsDiskIO: bad disk state info\n");
     }
 
     /*
@@ -560,7 +559,7 @@ DevXylogicsDiskIO(command, deviceUnit, buffer, diskAddrPtr, numSectorsPtr)
 	 * The offset is past the end of the partition.
 	 */
 	*numSectorsPtr = 0;
-	Sys_Panic(SYS_WARNING, "DevXylogicsDiskIO: Past end of partition %d\n",
+	printf("Warning: DevXylogicsDiskIO: Past end of partition %d\n",
 				part);
 	return(SUCCESS);
     } else if ((startSector + totalSectors - 1) > lastSector) {
@@ -569,7 +568,7 @@ DevXylogicsDiskIO(command, deviceUnit, buffer, diskAddrPtr, numSectorsPtr)
 	 * sector count so there is no overrun.
 	 */
 	totalSectors = lastSector - startSector + 1;
-	Sys_Panic(SYS_WARNING, "DevXylogicsDiskIO: Overrun partition %d\n",
+	printf("Warning: DevXylogicsDiskIO: Overrun partition %d\n",
 				part);
     }
     /*
@@ -577,7 +576,7 @@ DevXylogicsDiskIO(command, deviceUnit, buffer, diskAddrPtr, numSectorsPtr)
      */
     diskAddrPtr->cylinder += diskPtr->map[part].firstCylinder;
     if (diskAddrPtr->cylinder > diskPtr->numCylinders) {
-	Sys_Panic(SYS_FATAL, "Xylogics, bad cylinder # %d\n",
+	panic("Xylogics, bad cylinder # %d\n",
 	    diskAddrPtr->cylinder);
     }
 
@@ -591,8 +590,8 @@ DevXylogicsDiskIO(command, deviceUnit, buffer, diskAddrPtr, numSectorsPtr)
     do {
 	loopCount++;
 	if (loopCount > 1) {
-	    Sys_Printf("bufferOrig = %x, buffer = %x\n", bufferOrig, buffer);
-	    Sys_Panic(SYS_WARNING, "DevXylogicsDiskIO transferring >1 block");
+	    printf("bufferOrig = %x, buffer = %x\n", bufferOrig, buffer);
+	    printf("Warning: DevXylogicsDiskIO transferring >1 block");
 	}
 	if (totalSectors > SECTORS_PER_BLOCK) {
 	    numSectors = SECTORS_PER_BLOCK;
@@ -603,7 +602,7 @@ DevXylogicsDiskIO(command, deviceUnit, buffer, diskAddrPtr, numSectorsPtr)
 				&numSectors, buffer);
 	if (error == SUCCESS) {
 	    if (numSectors != totalSectors && numSectors != SECTORS_PER_BLOCK) {
-		Sys_Panic(SYS_FATAL, "SectorIO: numSectors corrupted");
+		panic("SectorIO: numSectors corrupted");
 	    }
 	    totalRead += numSectors;
 	    totalSectors -= numSectors;
@@ -706,15 +705,15 @@ retry:
 	retries++;
 	xyPtr->flags &= ~(XYLOGICS_RETRY|XYLOGICS_IO_COMPLETE);
 	if (command == XY_READ || command == XY_WRITE) {
-	    Sys_Printf("(%s)", (command == XY_READ) ? "Read" : "Write");
+	    printf("(%s)", (command == XY_READ) ? "Read" : "Write");
 	} else {
-	    Sys_Printf("(%d)", command);
+	    printf("(%d)", command);
 	}
 	if (retries < 3) {
-	    Sys_Printf("\n");
+	    printf("\n");
 	    goto retry;
 	} else {
-	    Sys_Panic(SYS_WARNING, "Xylogics retry at <%d,%d,%d> FAILED\n",
+	    printf("Warning: Xylogics retry at <%d,%d,%d> FAILED\n",
 		diskAddrPtr->cylinder, diskAddrPtr->head, diskAddrPtr->sector);
 	    error = DEV_RETRY_ERROR;
 	}
@@ -764,7 +763,7 @@ DevXylogicsSetupIOPB(command, diskPtr, diskAddrPtr, numSectors, address,
     Boolean interrupt;			/* If TRUE use interupts, else poll */
     register DevXylogicsIOPB *IOPBPtr;	/* I/O Parameter Block  */
 {
-    Byte_Zero(sizeof(DevXylogicsIOPB), (Address)IOPBPtr);
+    bzero((Address)IOPBPtr,sizeof(DevXylogicsIOPB));
 
     IOPBPtr->autoUpdate	 	= 1;
     IOPBPtr->relocation	 	= 1;
@@ -796,8 +795,8 @@ DevXylogicsSetupIOPB(command, diskPtr, diskAddrPtr, numSectors, address,
 
     if ((int)address != 0 && (int)address != NIL) {
 	if ((unsigned)address < VMMACH_DMA_START_ADDR) {
-	    Sys_Printf("%x: ", address);
-	    Sys_Panic(SYS_FATAL, "Xylogics data address not in DMA space\n");
+	    printf("%x: ", address);
+	    panic("Xylogics data address not in DMA space\n");
 	}
 	address = (Address)( (int)address - VMMACH_DMA_START_ADDR );
 	IOPBPtr->relocHigh	= ((int)address & 0xff000000) >> 24;
@@ -851,7 +850,7 @@ DevXylogicsCommand(xyPtr, command, diskPtr, diskAddrPtr, numSectors, address,
      */
     regsPtr = xyPtr->regsPtr;
     if (regsPtr->status & XY_GO_BUSY) {
-	Sys_Panic(SYS_WARNING, "Xylogics waiting for busy controller\n");
+	printf("Warning: Xylogics waiting for busy controller\n");
 	(void)DevXylogicsWait(regsPtr, XY_GO_BUSY);
     }
     /*
@@ -863,8 +862,8 @@ DevXylogicsCommand(xyPtr, command, diskPtr, diskAddrPtr, numSectors, address,
      * for an I/O buffer.)
      */
     if ((int)xyPtr->IOPBPtr < VMMACH_DMA_START_ADDR) {
-	Sys_Printf("%x: ", xyPtr->IOPBPtr);
-	Sys_Panic(SYS_WARNING, "Xylogics IOPB not in DMA space\n");
+	printf("%x: ", xyPtr->IOPBPtr);
+	printf("Warning: Xylogics IOPB not in DMA space\n");
 	return(FAILURE);
     }
     IOPBAddr = (int)xyPtr->IOPBPtr - VMMACH_DMA_START_ADDR;
@@ -878,12 +877,12 @@ retry:
 		     interrupt, xyPtr->IOPBPtr);
 #ifdef notdef
     if (xylogicsPrints) {
-	Sys_Printf("IOBP bytes\n");
+	printf("IOBP bytes\n");
 	address = (char *)xyPtr->IOPBPtr;
 	for (i=0 ; i<24 ; i++) {
-	    Sys_Printf("%x ", address[i] & 0xff);
+	    printf("%x ", address[i] & 0xff);
 	}
-	Sys_Printf("\n");
+	printf("\n");
     }
 #endif notdef
 
@@ -898,7 +897,7 @@ retry:
 	 */
 	error = DevXylogicsWait(regsPtr, XY_GO_BUSY);
 	if (error != SUCCESS) {
-	    Sys_Printf("Xylogics-%d: couldn't wait for command to complete\n",
+	    printf("Xylogics-%d: couldn't wait for command to complete\n",
 				 xyPtr->number);
 	} else {
 	    /*
@@ -908,7 +907,7 @@ retry:
 	    if (error == DEV_RETRY_ERROR && retries < 3) {
 		retries++;
 #ifdef notdef
-		Sys_Panic(SYS_WARNING, "Xylogics Retrying...\n");
+	    printf("Warning: Xylogics Retrying...\n");
 #endif
 		goto retry;
 	    }
@@ -948,7 +947,7 @@ DevXylogicsStatus(xyPtr)
     IOPBPtr = xyPtr->IOPBPtr;
     if ((regsPtr->status & XY_ERROR) || IOPBPtr->error) {
 	if (regsPtr->status & XY_DBL_ERROR) {
-	    Sys_Printf("Xylogics-%d double error %x\n", xyPtr->number,
+	    printf("Xylogics-%d double error %x\n", xyPtr->number,
 				    IOPBPtr->errorCode);
 	    error = DEV_HARD_ERROR;
 	} else {
@@ -957,20 +956,20 @@ DevXylogicsStatus(xyPtr)
 		    error = SUCCESS;
 		    break;
 		case XY_ERR_BAD_CYLINDER:
-		    Sys_Printf("Xylogics bad cylinder # %d\n",
+		    printf("Xylogics bad cylinder # %d\n",
 				 IOPBPtr->cylHigh << 8 | IOPBPtr->cylLow);
 		    error = DEV_HARD_ERROR;
 		    break;
 		case XY_ERR_BAD_SECTOR:
-		    Sys_Printf("Xylogics bad sector # %d\n", IOPBPtr->sector);
+		    printf("Xylogics bad sector # %d\n", IOPBPtr->sector);
 		    error = DEV_HARD_ERROR;
 		    break;
 		case XY_ERR_BAD_HEAD:
-		    Sys_Printf("Xylogics bad head # %d\n", IOPBPtr->head);
+		    printf("Xylogics bad head # %d\n", IOPBPtr->head);
 		    error = DEV_HARD_ERROR;
 		    break;
 		case XY_ERR_ZERO_COUNT:
-		    Sys_Printf("Xylogics zero count\n");
+		    printf("Xylogics zero count\n");
 		    error = DEV_HARD_ERROR;
 		    break;
 		case XY_ERR_INTR_PENDING:
@@ -985,7 +984,7 @@ DevXylogicsStatus(xyPtr)
 		case XY_FORMAT_ERR_RUNT:
 		case XY_FORMAT_ERR_BAD_SIZE:
 		case XY_SOFT_ECC:
-		    Sys_Panic(SYS_FATAL, "Stupid Xylogics error: 0x%x\n",
+		    panic("Stupid Xylogics error: 0x%x\n",
 					    IOPBPtr->errorCode);
 		    error = DEV_HARD_ERROR;
 		    break;
@@ -997,17 +996,17 @@ DevXylogicsStatus(xyPtr)
 		case  XY_SOFT_ERR_FAULT:
 		case  XY_SOFT_ERR_SEEK:
 		    error = DEV_RETRY_ERROR;
-		    Sys_Panic(SYS_WARNING, "Retryable Xylogics error: 0x%x\n",
+		    printf("Warning: Retryable Xylogics error: 0x%x\n",
 				IOPBPtr->errorCode);
 		    break;
 		case XY_WRITE_PROTECT_ON:
-		    Sys_Printf("Xylogics-%d: ", xyPtr->number);
-		    Sys_Panic(SYS_WARNING, "Write protected\n");
+		    printf("Xylogics-%d: ", xyPtr->number);
+		    printf("Warning: Write protected\n");
 		    error = DEV_HARD_ERROR;
 		    break;
 		case XY_SOFT_ECC_RECOVERED:
-		    Sys_Printf("Xylogics-%d: ", xyPtr->number);
-		    Sys_Panic(SYS_WARNING, "Soft ECC error recovered\n");
+		    printf("Xylogics-%d: ", xyPtr->number);
+		    printf("Warning: Soft ECC error recovered\n");
 		    error = SUCCESS;
 		    break;
 		default:
@@ -1061,7 +1060,7 @@ DevXylogicsWait(regsPtr, condition)
 	}
 	MACH_DELAY(10);
     }
-    Sys_Panic(SYS_WARNING, "Xylogics reset");
+    printf("Warning: Xylogics reset");
     DevXylogicsReset(regsPtr);
     return(status);
 }
@@ -1129,7 +1128,7 @@ Dev_XylogicsIntr()
 		Sync_MasterBroadcast(&xyPtr->IOComplete);
 		return(TRUE);
 	    } else {
-		Sys_Printf("Xylogics spurious interrupt\n");
+		printf("Xylogics spurious interrupt\n");
 		regsPtr->status = XY_INTR_PENDING;
 		return(TRUE);
 	    }

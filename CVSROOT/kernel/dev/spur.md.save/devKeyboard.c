@@ -36,7 +36,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sync.h"
 #include "timer.h"
 #include "varg.h"
-#include "user/byte.h"
 
 #include "dbg.h"
 
@@ -87,7 +86,7 @@ Dev_KbdInit()
 {
     DevKbdQueueInit();
 
-    Byte_Zero(sizeof(dev_KbdInstrument), (Address) &dev_KbdInstrument);
+    bzero((Address) &dev_KbdInstrument, sizeof(dev_KbdInstrument));
 
 #ifdef notdef
     mouseUartAddr = (Dev_UartDevice *) DEV_KBD_ADDR;
@@ -313,8 +312,7 @@ Dev_KbdServiceInterrupt()
 		    DevKbdQueueAddInput(&mouseEvent);
 		    break;
 		default:
-		    Sys_Panic(SYS_FATAL,
-			    "Dev_KbdServiceInterrupt: unknown state.\n");
+		    panic("Dev_KbdServiceInterrupt: unknown state.\n");
 		    break;
 	    }
 	    mouseState = (mouseState + 1) % MOUSE_NUM_STATES;
@@ -367,8 +365,7 @@ Dev_KbdServiceInterrupt()
 	 * chip got an unwanted "transmit buffer empty" interrupt.
 	 */
 	dev_KbdExtraIntrs++;
-	Sys_Panic(SYS_WARNING, 
-		"Dev_KbdServiceInterrupt: Extraneous uart interrupt\n");
+	printf("Warning: Dev_KbdServiceInterrupt: Extraneous uart interrupt\n");
 
 #ifdef notdef
 	Dev_UartWriteReg(kbdUartAddr, 0, WRITE0_CLEAR_INTR); 

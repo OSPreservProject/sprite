@@ -59,7 +59,7 @@ Dev_UartInit(uartAddr, channel, baudRate)
     } else if (channel == DEV_UART_CHANNEL_B) {
 	uartChanAddr = ADDR_OFFSET(uartAddr, CHANNEL_B_OFFSET);
     } else {
-	Sys_Panic(SYS_FATAL, "Dev_UartInit: illegal UART Channel");
+	panic("Dev_UartInit: illegal UART Channel");
 	return;
     }
     /*
@@ -103,7 +103,7 @@ Dev_UartInit(uartAddr, channel, baudRate)
 	    break;
 	}
 	default: {
-	    Sys_Panic(SYS_FATAL, "Dev_UartInit: illegal baud rate");
+	    panic("Dev_UartInit: illegal baud rate");
 	    return;
 	}
     }
@@ -166,7 +166,7 @@ Dev_UartStartTx(uartPtr, ch)
     } else if (channel == DEV_UART_CHANNEL_B) {
 	uartChanAddr = ADDR_OFFSET(uartAddr, CHANNEL_B_OFFSET);
     } else {
-	Sys_Panic(SYS_FATAL, "Dev_UartStartTx: illegal UART Channel");
+	panic("Dev_UartStartTx: illegal UART Channel");
 	return;
     }
     status = Dev_UartReadReg(uartChanAddr, XFER_STATUS);

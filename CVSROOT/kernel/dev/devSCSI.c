@@ -29,7 +29,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "proc.h"	/* for Mach_SetJump */
 #include "fs.h"
 #include "mem.h"
-#include "user/byte.h"
 #include "sched.h"
 
 /*
@@ -189,7 +188,7 @@ Dev_SCSIInitController(cntrlrPtr)
 	regsPtr->dmaCount = (short)0xBABE;
 	if (regsPtr->dmaCount != (short)0xBABE) {
 #ifdef notdef
-	    Sys_Printf("SCSI-%d: dmaCount register: wrote %x read back %x\n",
+	    printf("SCSI-%d: dmaCount register: wrote %x read back %x\n",
 				 scsiPtr->number, 0xBABE, regsPtr->dmaCount);
 #endif 
 	    Mach_UnsetJump();
@@ -360,7 +359,7 @@ Dev_SCSIInitDevice(devConfPtr)
 	 * Set up a slot in the disk list. See above about scsiDiskIndex.
 	 */
 	if (scsiDiskIndex >= SCSI_MAX_DISKS) {
-	    Sys_Printf("SCSI: Too many disks configured\n");
+	    printf("SCSI: Too many disks configured\n");
 	    Mem_Free((Address)devPtr);
 	    return(FALSE);
 	}
@@ -377,7 +376,7 @@ Dev_SCSIInitDevice(devConfPtr)
 	 * stuff after the SCSI bus reset like auto load.
 	 */
 	if (scsiTapeIndex >= SCSI_MAX_TAPES) {
-	    Sys_Printf("SCSI: Too many tape drives configured\n");
+	    printf("SCSI: Too many tape drives configured\n");
 	    Mem_Free((Address)devPtr);
 	    return(FALSE);
 	}
@@ -389,7 +388,7 @@ Dev_SCSIInitDevice(devConfPtr)
 	tapePtr->state = SCSI_TAPE_CLOSED;
 	tapePtr->type = SCSI_UNKNOWN;
 	scsiTape[scsiTapeIndex] = devPtr;
-	Sys_Printf("SCSI-%d tape %d at slave %d\n",
+	printf("SCSI-%d tape %d at slave %d\n",
 		    scsiPtr->number, scsiTapeIndex, devPtr->slaveID);
     } else if (devConfPtr->flags == DEV_SCSI_WORM) {
 	register DevSCSIWorm *wormPtr;
@@ -406,7 +405,7 @@ Dev_SCSIInitDevice(devConfPtr)
 	    return(FALSE);
 	}
 	if (scsiWormIndex >= SCSI_MAX_WORMS) {
-	    Sys_Printf("SCSI: Too many worm drives configured\n");
+	    printf("SCSI: Too many worm drives configured\n");
 	    Mem_Free((Address)devPtr);
 	    return(FALSE);
 	}
@@ -414,7 +413,7 @@ Dev_SCSIInitDevice(devConfPtr)
 	wormPtr->state = SCSI_WORM_CLOSED;
 	devPtr->data = (ClientData)wormPtr;
 	scsiWorm[scsiWormIndex] = devPtr;
-	Sys_Printf("SCSI-%d worm %d at slave %d\n",
+	printf("SCSI-%d worm %d at slave %d\n",
 		    scsiPtr->number, scsiWormIndex, devPtr->slaveID);
     }
     return(TRUE);
@@ -506,12 +505,12 @@ DevSCSIDoLabel(devPtr)
     status = DevSCSICommand(devPtr->slaveID, scsiPtr, DEV_BYTES_PER_SECTOR,
 			    scsiPtr->labelBuffer, WAIT);
     if (status != SUCCESS) {
-	Sys_Printf("SCSI-%d: couldn't read the disk%d label\n",
+	printf("SCSI-%d: couldn't read the disk%d label\n",
 			     scsiPtr->number, devPtr->slaveID);
 	return;
     }
     diskLabelPtr = (Sun_DiskLabel *)scsiPtr->labelBuffer;
-    Sys_Printf("SCSI-%d disk%d: %s\n", scsiPtr->number, devPtr->slaveID,
+    printf("SCSI-%d disk%d: %s\n", scsiPtr->number, devPtr->slaveID,
 			diskLabelPtr->asciiLabel);
 
     diskPtr = (DevSCSIDisk *)devPtr->data;
@@ -519,17 +518,17 @@ DevSCSIDoLabel(devPtr)
     diskPtr->numHeads = diskLabelPtr->numHeads;
     diskPtr->numSectors = diskLabelPtr->numSectors;
 
-    Sys_Printf(" Partitions ");
+    printf(" Partitions ");
     for (part = 0; part < DEV_NUM_DISK_PARTS; part++) {
 	diskPtr->map[part].firstCylinder =
 		diskLabelPtr->map[part].cylinder;
 	diskPtr->map[part].numCylinders =
 		diskLabelPtr->map[part].numBlocks /
 		(diskLabelPtr->numHeads * diskLabelPtr->numSectors) ;
-	Sys_Printf(" (%d,%d)", diskPtr->map[part].firstCylinder,
+	printf(" (%d,%d)", diskPtr->map[part].firstCylinder,
 				   diskPtr->map[part].numCylinders);
     }
-    Sys_Printf("\n");
+    printf("\n");
 }
 
 /*
@@ -659,7 +658,7 @@ DevSCSISetupCommand(command, devPtr, blockNumber, numSectors)
 
     devPtr->scsiPtr->devPtr = devPtr;
     controlBlockPtr = &devPtr->scsiPtr->controlBlock;
-    Byte_Zero(sizeof(DevSCSIControlBlock), (Address)controlBlockPtr);
+    bzero((Address)controlBlockPtr,sizeof(DevSCSIControlBlock));
     controlBlockPtr->command = command;
     controlBlockPtr->unitNumber = devPtr->subUnitID;
     controlBlockPtr->highAddr = (blockNumber & 0x1f0000) >> 16;
@@ -704,7 +703,7 @@ DevSCSISetupTapeCommand(command, devPtr, countPtr)
     devPtr->scsiPtr->devPtr = devPtr;
     tapeControlBlockPtr =
 	    (DevSCSITapeControlBlock *)&devPtr->scsiPtr->controlBlock;
-    Byte_Zero(sizeof(DevSCSITapeControlBlock), (Address)tapeControlBlockPtr);
+    bzero((Address)tapeControlBlockPtr,sizeof(DevSCSITapeControlBlock));
     /*
      * Need to mess with the code here for drive specific wierdness.
      * There is a more compact version of this code in the boot
@@ -919,8 +918,11 @@ DevSCSISectorIO(command, devPtr, firstSector, numSectorsPtr, buffer)
     } while ((status == DEV_HARD_ERROR || status == DEV_RETRY_ERROR ||
 	      status == DEV_DMA_FAULT) && i < SCSI_NUM_HARD_ERROR_RETRIES);
     if (i >= SCSI_NUM_HARD_ERROR_RETRIES) {
-	Sys_Panic((devSCSIDebug > 2) ? SYS_FATAL : SYS_WARNING,
-	    "SCSI: Too many retries after error.\n");
+	if (devSCSIDebug > 2) {
+	    panic("SCSI: Too many retries after error.\n");
+	} else {
+	    printf("Warning: SCSI: Too many retries after error.\n");
+	}
     }
     *numSectorsPtr -= (scsiPtr->residual / devPtr->sectorSize);
     scsiPtr->flags &= ~SCSI_CNTRLR_BUSY;
@@ -1012,7 +1014,7 @@ DevSCSITapeIO(command, devPtr, buffer, countPtr)
 	status = scsiPtr->status;
     }
     if (scsiPtr->residual) {
-	Sys_Panic(SYS_WARNING, "SCSI residual %d, cmd %x\n", scsiPtr->residual,
+	printf("Warning: SCSI residual %d, cmd %x\n", scsiPtr->residual,
 			    command);
     }
     *countPtr -= scsiPtr->residual;
@@ -1099,7 +1101,7 @@ DevSCSICommand(slaveID, scsiPtr, size, addr, interrupt)
     }
     if (i == SCSI_WAIT_LENGTH) {
 	DevSCSIReset(regsPtr);
-	Sys_Printf("SCSI bus stuck busy\n");
+	printf("SCSI bus stuck busy\n");
 	return(FAILURE);
     }
     /*
@@ -1119,7 +1121,7 @@ DevSCSICommand(slaveID, scsiPtr, size, addr, interrupt)
 	regsPtr->data = 0;
 	regsPtr->control = 0;
 	if (scsiPtr->controlBlock.command != SCSI_TEST_UNIT_READY) {
-	    Sys_Printf("SCSI-%d: can't select slave %d\n", 
+	    printf("SCSI-%d: can't select slave %d\n", 
 				 scsiPtr->number, slaveID);
 	}
 	return(status);
@@ -1168,7 +1170,7 @@ DevSCSICommand(slaveID, scsiPtr, size, addr, interrupt)
 	    return(SUCCESS);
 	}
 	if (status != SUCCESS) {
-	    Sys_Printf("SCSI-%d: couldn't send command block (i=%d)\n",
+	    printf("SCSI-%d: couldn't send command block (i=%d)\n",
 				 scsiPtr->number, i);
 #ifdef WORM_DEBUG
 	    devSCSIDebug = oldDebug;
@@ -1181,7 +1183,7 @@ DevSCSICommand(slaveID, scsiPtr, size, addr, interrupt)
 	 */
 	if ((regsPtr->control & SCSI_COMMAND) == 0) {
 	    DevSCSIReset(regsPtr);
-	    Sys_Printf("SCSI-%d: device dropped command line\n",
+	    printf("SCSI-%d: device dropped command line\n",
 				 scsiPtr->number);
 #ifdef WORM_DEBUG
 	    devSCSIDebug = oldDebug;
@@ -1203,7 +1205,7 @@ DevSCSICommand(slaveID, scsiPtr, size, addr, interrupt)
 	    scsiPtr->residual = -regsPtr->dmaCount -1;
 	    status = DevSCSIStatus(scsiPtr);
 	} else {
-	    Sys_Printf("SCSI-%d: couldn't wait for command to complete\n",
+	    printf("SCSI-%d: couldn't wait for command to complete\n",
 				 scsiPtr->number);
 	}
     } else {
@@ -1245,7 +1247,7 @@ DevSCSIStatus(scsiPtr)
 
     regsPtr = scsiPtr->regsPtr;
     statusBytePtr = (char *)&scsiPtr->statusBlock;
-    Byte_Zero(sizeof(DevSCSIStatusBlock), (Address)statusBytePtr);
+    bzero((Address)statusBytePtr, sizeof(DevSCSIStatusBlock));
     for ( ; ; ) {
 	/*
 	 * Could probably wait either on the INTERUPT_REQUEST bit or the
@@ -1257,14 +1259,14 @@ DevSCSIStatus(scsiPtr)
 	 */
 	status = DevSCSIWait(regsPtr, SCSI_REQUEST, RESET, FALSE);
 	if (status != SUCCESS) {
-	    Sys_Printf("SCSI-%d: wait error after %d status bytes\n",
+	    printf("SCSI-%d: wait error after %d status bytes\n",
 				 scsiPtr->number, numStatusBytes);
 	    break;
 	}
 	if (regsPtr->control & SCSI_MESSAGE) {
 	    message = regsPtr->commandStatus & 0xff;
 	    if (message != SCSI_COMMAND_COMPLETE) {
-		Sys_Printf("SCSI-%d: Unexpected message 0x%x\n",
+		printf("SCSI-%d: Unexpected message 0x%x\n",
 				     scsiPtr->number, message);
 	    }
 	    break;
@@ -1291,7 +1293,7 @@ DevSCSIStatus(scsiPtr)
 	    status = DevSCSIRequestSense(scsiPtr, scsiPtr->devPtr);
 	}
 	if (scsiPtr->statusBlock.error) {
-	    Sys_Printf("SCSI-%d: host adaptor error bit set\n",
+	    printf("SCSI-%d: host adaptor error bit set\n",
 				 scsiPtr->number);
 	}
     }
@@ -1328,7 +1330,7 @@ DevSCSIRequestSense(scsiPtr, devPtr)
     int command;
 
     if (scsiPtr->flags & SCSI_GETTING_STATUS) {
-	Sys_Panic(SYS_WARNING, "DevSCSIRequestSense recursed");
+	printf("Warning: DevSCSIRequestSense recursed");
     } else {
 	/*
 	 * The regular SetupCommand procedure is used, although the
@@ -1350,7 +1352,7 @@ DevSCSIRequestSense(scsiPtr, devPtr)
 	     * controller.  The emulux controller returns less.  We might
 	     * also be able to depend on the class7 sense class below...
 	     */
-	    Sys_Printf("RequestSense, residual is %d\n", scsiPtr->residual);
+	    printf("RequestSense, residual is %d\n", scsiPtr->residual);
 	    if (scsiPtr->residual == 0) {
 		((DevSCSITape *)devPtr->data)->type = SCSI_SYSGEN;
 	    } else {
@@ -1391,7 +1393,7 @@ DevSCSIWait(regsPtr, condition, reset, checkMsg)
     register int control;
 
     if (devSCSIDebug && checkMsg) {
-	Sys_Printf("DevSCSIWait: checking for message.\n");
+	printf("DevSCSIWait: checking for message.\n");
     }
     for (i=0 ; i<SCSI_WAIT_LENGTH ; i++) {
 	control = regsPtr->control;
@@ -1400,7 +1402,7 @@ DevSCSIWait(regsPtr, condition, reset, checkMsg)
 	 *  .. using printf because using kdbx causes different behavior.
 	 */
 	if (devSCSIDebug && i < 5) {
-	    Sys_Printf("%d/%x ", i, control);
+	    printf("%d/%x ", i, control);
 	}
 /* this is just a guess too. */
 	if (checkMsg) {
@@ -1409,7 +1411,7 @@ DevSCSIWait(regsPtr, condition, reset, checkMsg)
 		register int msg;
 	    
 		msg = regsPtr->commandStatus & 0xff;
-		Sys_Printf("DevSCSIWait: Unexpected message 0x%x\n", msg);
+		printf("DevSCSIWait: Unexpected message 0x%x\n", msg);
 		if (msg == SCSI_COMMAND_COMPLETE) {
 		    return(DEV_EARLY_CMD_COMPLETION);
 		} else {
@@ -1421,18 +1423,18 @@ DevSCSIWait(regsPtr, condition, reset, checkMsg)
 	    return(SUCCESS);
 	}
 	if (control & SCSI_BUS_ERROR) {
-	    Sys_Printf("SCSI: bus error\n");
+	    printf("SCSI: bus error\n");
 	    status = DEV_DMA_FAULT;
 	    break;
 	} else if (control & SCSI_PARITY_ERROR) {
-	    Sys_Printf("SCSI: parity error\n");
+	    printf("SCSI: parity error\n");
 	    status = DEV_DMA_FAULT;
 	    break;
 	}
 	MACH_DELAY(10);
     }
     if (devSCSIDebug) {
-	Sys_Printf("DevSCSIWait: timed out, control = %x.\n", control);
+	printf("DevSCSIWait: timed out, control = %x.\n", control);
     }
     if (reset) {
 	DevSCSIReset(regsPtr);

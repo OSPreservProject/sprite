@@ -68,7 +68,7 @@ Dev_SerialInitAddr(unit, devAddr)
 	    infoPtr->channel = DEV_UART_CHANNEL_A;
 	    break;
 	default: 
-	    Sys_Panic(SYS_FATAL, "Dev_SerialInitAddr: unknown unit %d",
+	    panic("Dev_SerialInitAddr: unknown unit %d",
 		      unit);
 	    break;
     }

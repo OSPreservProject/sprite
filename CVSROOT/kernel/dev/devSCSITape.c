@@ -528,14 +528,14 @@ DevSCSITapeModeSelect(devPtr, modeCommand)
     int count;
 
     if (modeCommand == SCSI_MODE_QIC_24) {
-	Sys_Panic(SYS_WARNING, "SCSI Mode select won't do QIC 24 format");
+	printf("Warning: SCSI Mode select won't do QIC 24 format");
 	return(DEV_INVALID_ARG);
     } else if (tapePtr->type != SCSI_EMULUX) {
-	Sys_Panic(SYS_WARNING, "SCSI Mode select won't do Sysgen drives");
+	printf("Warning: SCSI Mode select won't do Sysgen drives");
 	return(DEV_INVALID_ARG);
     }
     modeParamsPtr = (DevEmuluxModeSelParams *)scsiPtr->labelBuffer;
-    Byte_Zero(sizeof(DevEmuluxModeSelParams), (Address)modeParamsPtr);
+    bzero((Address)modeParamsPtr, sizeof(DevEmuluxModeSelParams));
     modeParamsPtr->header.bufMode = 1;
     modeParamsPtr->header.blockLength = sizeof(DevEmuluxModeSelBlock);
     modeParamsPtr->block.density = SCSI_EMULUX_QIC_02;
@@ -577,7 +577,7 @@ DevSCSITapeError(devPtr, sensePtr)
 
     switch (tapePtr->type) {
 	case SCSI_UNKNOWN: {
-	    Sys_Panic(SYS_WARNING, "Unknown tape drive type");
+	    printf("Warning: Unknown tape drive type");
 	    if (sensePtr->error != SCSI_NO_SENSE_DATA) {
 		register int class = (sensePtr->error & 0x70) >> 4;
 		register int code = sensePtr->error & 0xF;
@@ -585,12 +585,12 @@ DevSCSITapeError(devPtr, sensePtr)
 		addr = (sensePtr->highAddr << 16) |
 			(sensePtr->midAddr << 8) |
 			sensePtr->lowAddr;
-		Sys_Printf("SCSI-%d: Sense error (%d-%d) at <%x> ",
+		printf("SCSI-%d: Sense error (%d-%d) at <%x> ",
 				 devPtr->scsiPtr->number, class, code, addr);
 		if (scsiNumErrors[class] > code) {
-		    Sys_Printf("%s", scsiErrors[class][code]);
+		    printf("%s", scsiErrors[class][code]);
 		}
-		Sys_Printf("\n");
+		printf("\n");
 		status = DEV_INVALID_ARG;
 	    }
 	    break;
@@ -657,8 +657,7 @@ DevSCSITapeError(devPtr, sensePtr)
 		    /*
 		     * The drive recovered from an error.
 		     */
-		    Sys_Panic(SYS_WARNING,
-				"SCSI-%d drive %d, recoverable error\n",
+		    printf("Warning: SCSI-%d drive %d, recoverable error\n",
 				devPtr->scsiPtr->number, devPtr->slaveID);
 		    break;
 		case SCSI_NOT_READY:
@@ -668,16 +667,14 @@ DevSCSITapeError(devPtr, sensePtr)
 		    /*
 		     * Probably a programming error.
 		     */
-		    Sys_Panic(SYS_WARNING,
-				"SCSI-%d drive %d, illegal request %d\n",
+		    printf("Warning: SCSI-%d drive %d, illegal request %d\n",
 				devPtr->scsiPtr->number, devPtr->slaveID,
 				command);
 		    status = DEV_INVALID_ARG;
 		    break;
 		case SCSI_MEDIA_ERROR:
 		case SCSI_HARDWARE_ERROR:
-		    Sys_Panic(SYS_WARNING,
-				"SCSI-%d drive %d, hard class7 error %d\n",
+		    printf("Warning: SCSI-%d drive %d, hard class7 error %d\n",
 				devPtr->scsiPtr->number, devPtr->slaveID,
 				extSensePtr->key);
 		    status = DEV_HARD_ERROR;
@@ -690,10 +687,9 @@ DevSCSITapeError(devPtr, sensePtr)
 		    }
 		    break;
 		case SCSI_DIAGNOSTIC:
-		    Sys_Panic(SYS_WARNING,
-			"SCSI-%d drive %d, \"blank check\"\n",
+		    printf("Warning: SCSI-%d drive %d, \"blank check\"\n",
 			devPtr->scsiPtr->number, devPtr->slaveID);
-		    Sys_Printf("\tInfo bytes 0x%x 0x%x 0x%x 0x%x\n",
+		    printf("\tInfo bytes 0x%x 0x%x 0x%x 0x%x\n",
 			extSensePtr->info1 & 0xff,
 			extSensePtr->info2 & 0xff,
 			extSensePtr->info3 & 0xff,
@@ -705,8 +701,7 @@ DevSCSITapeError(devPtr, sensePtr)
 		case SCSI_ABORT:
 		case SCSI_EQUAL:
 		case SCSI_OVERFLOW:
-		    Sys_Panic(SYS_WARNING,
-			"SCSI-%d drive %d, unsupported class7 error %d\n",
+		    printf("Warning: SCSI-%d drive %d, unsupported class7 error %d\n",
 			devPtr->scsiPtr->number, devPtr->slaveID,
 			extSensePtr->key);
 		    status = DEV_HARD_ERROR;
@@ -721,8 +716,7 @@ DevSCSITapeError(devPtr, sensePtr)
 		    status = DEV_NO_MEDIA;
 		    break;
 		case SCSI_INSUF_CAPACITY:
-		    Sys_Panic(SYS_WARNING,
-				"Emulux: Insufficient tape capacity");
+		    printf("Warning: Emulux: Insufficient tape capacity");
 		    /* fall thru */
 		case SCSI_END_OF_MEDIA:
 		    status = DEV_END_OF_TAPE;
@@ -738,8 +732,7 @@ DevSCSITapeError(devPtr, sensePtr)
 		    }
 		    break;
 		case SCSI_CORRECTABLE_ERROR:
-		    Sys_Panic(SYS_WARNING,
-			    "SCSI-%d drive %d, correctable error",
+		    printf("Warning: SCSI-%d drive %d, correctable error",
 			    devPtr->scsiPtr->number, devPtr->slaveID);
 		    break;
 		case SCSI_FILE_MARK:
@@ -753,8 +746,7 @@ DevSCSITapeError(devPtr, sensePtr)
 		    }
 		    break;
 		case SCSI_INVALID_COMMAND:
-		    Sys_Panic(SYS_WARNING,
-			    "SCSI-%d drive %d, invalid command 0x%x",
+		    printf("Warning: SCSI-%d drive %d, invalid command 0x%x",
 			    devPtr->scsiPtr->number, devPtr->slaveID,
 			    command);
 		    break;
