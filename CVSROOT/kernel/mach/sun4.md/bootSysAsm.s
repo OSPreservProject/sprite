@@ -47,6 +47,7 @@ realStart:
 #endif FP_ENABLED
 	mov	%g1, %psr
 	mov	0x2, %wim	/* set wim to window right behind us */
+
 	/*
 	 * The kernel has been loaded into the wrong location.
 	 * We copy it to the right location by copying up 8 Meg worth of pmegs.
@@ -61,8 +62,9 @@ realStart:
 	clr	%g2				/* start with context 0 */
 	set	VMMACH_SEG_SIZE, %g5		/* for additions */
 contextLoop:
-						/* set context register */
+#ifndef sun4c
 	stba	%g2, [%g4] VMMACH_CONTROL_SPACE
+#endif
 	clr	%g3				/* start with 0th pmeg */
 	set	MACH_KERN_START, %g1		/* pick starting segment */
 loopStart:
@@ -87,7 +89,6 @@ loopStart:
 	set	begin, %g1
 	jmp	%g1				/* jump to "begin" */
 	nop
-
 begin:
 	/*
 	 * Zero out the bss segment.
@@ -207,6 +208,8 @@ copyingTable:
 							 * disabled.  */
 	call	_main
 	nop
+
+	
 .align 8
 .global	_PrintArg
 /*
@@ -214,6 +217,7 @@ copyingTable:
  *
  * Move integer argument to print into %o0.  This will print
  * desired integer in hex.  This routine uses o0, o1, VOL_TEMP1, and VOL_TEMP2.
+ * For the sun4c, it also uses o3.
  */
 _PrintArg:
 	.seg	"data1"
@@ -224,8 +228,13 @@ argString:
 	mov	%o0, %o1
 	set	argString, %o0
 	mov	%o7, %VOL_TEMP1
+#ifdef sun4c
+	sethi   %hi(0xffe80078),%VOL_TEMP2
+	ld      [%VOL_TEMP2+%lo(0xffe80078)],%VOL_TEMP2
+#else
 	sethi   %hi(-0x17ef7c),%VOL_TEMP2
 	ld      [%VOL_TEMP2+%lo(-0x17ef7c)],%VOL_TEMP2
+#endif
 	call    %VOL_TEMP2, 2
 	nop
 	mov	%VOL_TEMP1, %o7

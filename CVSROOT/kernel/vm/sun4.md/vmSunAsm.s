@@ -611,6 +611,12 @@ _VmMachSetKernelContext:
     retl			/* Return from leaf routine */
     nop
 
+#ifdef sun4c
+.globl	_VmMachInitSystemEnableReg
+_VmMachInitSystemEnableReg:
+    retl			/* Return from leaf routine */
+    nop
+#else
 /*
  * ----------------------------------------------------------------------------
  *
@@ -636,7 +642,14 @@ _VmMachInitSystemEnableReg:
     stba	%o0, [%OUT_TEMP1] VMMACH_CONTROL_SPACE
     retl			/* Return from leaf routine */
     nop
+#endif
 
+#ifdef sun4c
+.globl	_VmMachInitAddrErrorControlReg
+_VmMachInitAddrErrorControlReg:
+    retl
+    nop
+#else
 /*
  * ----------------------------------------------------------------------------
  *
@@ -663,9 +676,16 @@ _VmMachInitAddrErrorControlReg:
     st		%OUT_TEMP2, [%OUT_TEMP1]
     retl
     nop
+#endif
 
 
 
+#ifdef sun4c
+.globl	_VmMachClearCacheTags
+_VmMachClearCacheTags:
+    retl
+    nop
+#else
 /*
  * ----------------------------------------------------------------------------
  *
@@ -695,7 +715,14 @@ ClearTags:
 
     retl
     nop
+#endif
 
+#ifdef sun4c
+.globl	_VmMachFlushCurrentContext
+_VmMachFlushCurrentContext:
+    retl
+    nop
+#else
 /*
  * ----------------------------------------------------------------------------
  *
@@ -725,7 +752,14 @@ FlushingContext:
 
     retl
     nop
+#endif
 
+#ifdef sun4c
+.globl	_VmMachFlushSegment
+_VmMachFlushSegment:
+    retl
+    nop
+#else
 /*
  * ----------------------------------------------------------------------------
  *
@@ -758,7 +792,14 @@ FlushingSegment:
 
     retl
     nop
+#endif
 
+#ifdef sun4c
+.globl	_VmMachFlushPage
+_VmMachFlushPage:
+    retl
+    nop
+#else
 /*
  * ----------------------------------------------------------------------------
  *
@@ -791,6 +832,7 @@ FlushingPage:
 
     retl
     nop
+#endif
 
 
 /*
@@ -1097,7 +1139,7 @@ _Vm_TouchPages:
 				/* o0 = first page = starting addr */
 				/* o1 = numPages */
     set		VMMACH_PAGE_SHIFT, %OUT_TEMP1
-    sll		%o0, %OUT_TEMP1, %o0	/* o0 = o0 << VMMAACH_PAGE_SHIFT */
+    sll		%o0, %OUT_TEMP1, %o0	/* o0 = o0 << VMMACH_PAGE_SHIFT */
     /* Mike had arithmetic shift here, why??? */
 StartTouchingPages:
     tst		%o1		/* Quit when %o1 == 0 */

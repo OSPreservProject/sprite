@@ -327,61 +327,30 @@ NoDisableLabel:
 NoEnableLabel:
 
 /*
- * Enable interrupts if they are off and keep traps enabled.  To do this,
- * we must disable traps, change the interrupt level, and then re-enable
- * traps.  If interrupts are really off when we start, then this is safe.
- * If they aren't off, then this is safe only if interrupt handlers are
- * guarenteed to return to the same window they started in.  This is because
- * if interrupts are enabled when we start, and we read the psr into a temp
- * register and get an interrupt that changes the window value before we
- * write back the new psr value, we would be writing back an old and incorrect
- * current window pointer if the interrupt caused us to change widows.
- *
- * Uses registers %VOL_TEMP1 and %VOL_TEMP2.
+ * Enable interrupts and keep traps enabled.
+ * Uses given register.
  */
-#define	QUICK_ENABLE_INTR()				\
-	mov	%psr, %VOL_TEMP1;			\
-	set	MACH_ENABLE_INTR, %VOL_TEMP2;		\
-	and	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;	\
-	mov	%VOL_TEMP1, %psr;			\
+#define	QUICK_ENABLE_INTR(reg)				\
+	mov	%psr, reg;				\
+	andn	reg, MACH_DISABLE_INTR, reg;		\
+	mov	reg, %psr;				\
 	MACH_WAIT_FOR_STATE_REGISTER()
 
-#define	OLD_QUICK_ENABLE_INTR()				\
-	MACH_DISABLE_TRAPS(%VOL_TEMP1, %VOL_TEMP2);	\
-	mov	%psr, %VOL_TEMP1;			\
-	set	MACH_ENABLE_INTR, %VOL_TEMP2;		\
-	and	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;	\
-	mov	%VOL_TEMP1, %psr;			\
-	MACH_WAIT_FOR_STATE_REGISTER();			\
-	MACH_ENABLE_TRAPS(%VOL_TEMP1)
 /*
- * Disable interrupts and keep traps enabled.  To do this,
- * we must disable traps, change the interrupt level, and then re-enable
- * traps.  This is safe only if interrupts are guarenteed to return to the same
- * same window in which they occured.  This is because
- * if interrupts are enabled when we start, and we read the psr into a temp
- * register and get an interrupt that changes the window value before we
- * write back the new psr value, we would be writing back an old and incorrect
- * current window pointer if the interrupt caused us to change widows.
- *
- * Uses registers %VOL_TEMP1 and %VOL_TEMP2.
+ * Disable interrupts and keep traps enabled.
+ * Uses given register.
  */
-#define	QUICK_DISABLE_INTR()				\
-	mov	%psr, %VOL_TEMP1;			\
-	set	MACH_DISABLE_INTR, %VOL_TEMP2;		\
-	or	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;	\
-	mov	%VOL_TEMP1, %psr;			\
+#define	QUICK_DISABLE_INTR(reg)				\
+	mov	%psr, reg;				\
+	or	reg, MACH_DISABLE_INTR, reg;		\
+	mov	reg, %psr;				\
 	MACH_WAIT_FOR_STATE_REGISTER()
 
-#define	OLD_QUICK_DISABLE_INTR()				\
-	MACH_DISABLE_TRAPS(%VOL_TEMP1, %VOL_TEMP2);	\
-	mov	%psr, %VOL_TEMP1;			\
-	set	MACH_DISABLE_INTR, %VOL_TEMP2;		\
-	or	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;	\
-	mov	%VOL_TEMP1, %psr;			\
-	MACH_WAIT_FOR_STATE_REGISTER();			\
-	MACH_ENABLE_TRAPS(%VOL_TEMP1)
-
+/*
+ * Set interrupts to a particular value.  This is useful for a routine that
+ * just wants to save the value, change it, and then reset it without worrying
+ * about whether this turns interrupts on or off.
+ */
 #define	SET_INTRS_TO(regValue, useReg1, useReg2)		\
 	mov	%psr, useReg1;					\
 	set	MACH_ENABLE_INTR, useReg2;			\
@@ -391,18 +360,6 @@ NoEnableLabel:
 	or	useReg1, useReg2, useReg1;			\
 	mov	useReg1, %psr;					\
 	MACH_WAIT_FOR_STATE_REGISTER()
-
-#define	OLD_SET_INTRS_TO(regValue, useReg1, useReg2)		\
-	MACH_DISABLE_TRAPS(useReg1, useReg2);			\
-	mov	%psr, useReg1;					\
-	set	MACH_ENABLE_INTR, useReg2;			\
-	and	useReg1, useReg2, useReg1;			\
-	set	MACH_DISABLE_INTR, useReg2;			\
-	and	regValue, useReg2, useReg2;			\
-	or	useReg1, useReg2, useReg1;			\
-	mov	useReg1, %psr;					\
-	MACH_WAIT_FOR_STATE_REGISTER();				\
-	MACH_ENABLE_TRAPS(useReg1)
 
 /*
  * Run at high priority: supervisor mode, interrupts disabled, traps enabled.

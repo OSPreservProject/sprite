@@ -394,12 +394,12 @@ NormalReturn:
 	 * Call VM Stuff with the %fp which will be stack pointer in
 	 * the window we restore.
 	 */
-	QUICK_ENABLE_INTR()
+	QUICK_ENABLE_INTR(%VOL_TEMP1)
 	mov	%fp, %o0
 	clr	%o1		/* also check for protection????? */
 	call	_Vm_PageIn, 2
 	nop
-	QUICK_DISABLE_INTR()
+	QUICK_DISABLE_INTR(%VOL_TEMP1)
 	tst	%RETURN_VAL_REG
 	bne	KillUserProc
 	nop
@@ -409,11 +409,11 @@ CheckNextFault:
 	MACH_CHECK_FOR_FAULT(%o0, %VOL_TEMP1)
 	be	CallUnderflow
 	nop
-	QUICK_ENABLE_INTR()
+	QUICK_ENABLE_INTR(%VOL_TEMP1)
 	clr	%o1
 	call	_Vm_PageIn, 2
 	nop
-	QUICK_DISABLE_INTR()
+	QUICK_DISABLE_INTR(%VOL_TEMP1)
 	tst	%RETURN_VAL_REG
 	be	CallUnderflow
 	nop
@@ -840,13 +840,13 @@ MachReturnToUnderflowWithSavedState:
 	nop
 	mov	%fp, %o0			/* do the page in for first */
 	save					/* back to trap window */
-	QUICK_ENABLE_INTR()
+	QUICK_ENABLE_INTR(%VOL_TEMP1)
 		/* Address that would fault is in %i0 now. */
 	mov	%i0, %o0
 	clr	%o1			/* also check protection???? */
 	call	_Vm_PageIn, 2
 	nop
-	QUICK_DISABLE_INTR()
+	QUICK_DISABLE_INTR(%VOL_TEMP1)
 	tst	%RETURN_VAL_REG
 	be,a	CheckNextUnderflow		/* succeeded, try next */
 	restore		/* back to window to check in, only if branching!! */
@@ -866,13 +866,13 @@ CheckNextUnderflow:
 	save					/* back to trap window */
 	be	NormalUnderflow			/* we were okay here */
 	nop
-	QUICK_ENABLE_INTR()
+	QUICK_ENABLE_INTR(%VOL_TEMP1)
 	/* Address that would fault is in %i1 now. */
 	mov	%i1, %o0
 	clr	%o1			/* also check protection???? */
 	call	_Vm_PageIn, 2
 	nop
-	QUICK_DISABLE_INTR()
+	QUICK_DISABLE_INTR(%VOL_TEMP1)
 	tst	%RETURN_VAL_REG
 	bne	KillTheProc
 	nop
@@ -1262,15 +1262,14 @@ _MachFetchArgsEnd:
 	ld	[%VOL_TEMP1], %VOL_TEMP1		/* addr of array */
 	add	%g1, %VOL_TEMP1, %VOL_TEMP1		/* index to kcall */
 	ld	[%VOL_TEMP1], %VOL_TEMP1		/* got addr */
+	/* enable interrupts */
+	QUICK_ENABLE_INTR(%VOL_TEMP2)
 	/* go do it */
 	call	%VOL_TEMP1
 	nop
 ReturnFromSyscall:
-	/* Disable interrupts.  (Is this necessary?  Sun3 does it.) */
-	mov	%psr, %VOL_TEMP1
-	or	%VOL_TEMP1, MACH_DISABLE_INTR, %VOL_TEMP1
-	mov	%VOL_TEMP1, %psr
-	MACH_WAIT_FOR_STATE_REGISTER()
+	/* Disable interrupts. */
+	QUICK_DISABLE_INTR(%VOL_TEMP1)
 	/*
 	 * Move return value to caller's return val register.
 	 */
@@ -1308,18 +1307,41 @@ ReturnFromSyscall:
  */
 .global MachHandlePageFault
 MachHandlePageFault:
+#ifdef sun4c
+	/* synchronous error register value as first arg - clears it too. */
+	set	VMMACH_SYNC_ERROR_REG, %o0
+	lda	[%o0] VMMACH_CONTROL_SPACE, %o0
+
+	/* synch error address register value as second arg - clears it. */
+	set	VMMACH_SYNC_ERROR_ADDR_REG, %o1
+	lda	[%o1] VMMACH_CONTROL_SPACE, %o1
+
+	/* clear async regs as well since they latch on sync errors as well. */
+	set	VMMACH_ASYNC_ERROR_REG, %VOL_TEMP1
+	lda	[%VOL_TEMP1] VMMACH_CONTROL_SPACE, %g0
+
+	/* async error addr reg as well, so clear it.  Very silly. */
+	set	VMMACH_ASYNC_ERROR_ADDR_REG, %VOL_TEMP1
+	lda	[%VOL_TEMP1] VMMACH_CONTROL_SPACE, %g0
+#else
 	/* bus error register value as first arg. */
 	set	VMMACH_BUS_ERROR_REG, %o0
 	lduba	[%o0] VMMACH_CONTROL_SPACE, %o0
+
 	/* memory address causing the error as second arg */
-	set	VMMACH_ADDR_ERROR_REG, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %o1
+	set	VMMACH_ADDR_ERROR_REG, %o1
+	ld	[%o1], %o1
+
 	/* Write the address register to clear it */
+	set	VMMACH_ADDR_ERROR_REG, %VOL_TEMP1
 	st	%o1, [%VOL_TEMP1]
+#endif
 	/* trap value of the psr as third arg */
 	mov	%CUR_PSR_REG, %o2	
+
 	/* trap value of pc as fourth argument */
 	mov	%CUR_PC_REG, %o3
+#ifndef sun4c
 	/*
 	 * If the trap was on a pc access rather than a data access, the
 	 * memoory address register won't have frozen the correct address.
@@ -1330,9 +1352,15 @@ MachHandlePageFault:
 	bne	AddressValueOkay
 	nop
 	mov	%CUR_PC_REG, %o1
+#endif
 AddressValueOkay:
+	/* enable interrupts */
+	QUICK_ENABLE_INTR(%VOL_TEMP1)
 	call	_MachPageFault, 4
 	nop
+	/* Disable interrupts. */
+	QUICK_DISABLE_INTR(%VOL_TEMP1)
+
 	set	_MachReturnFromTrap, %VOL_TEMP1
 	jmp	%VOL_TEMP1
 	nop

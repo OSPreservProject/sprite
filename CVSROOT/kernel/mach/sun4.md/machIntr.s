@@ -21,6 +21,7 @@
 #include "machConst.h"
 #include "machAsmDefs.h"
 #include "vmSunConst.h"
+#include "devAddrs.h"
 
 .align	8
 .seg	"text"
@@ -148,13 +149,45 @@ _MachVectoredInterrupt:
  */
 .globl	MachHandleLevel15Intr
 MachHandleLevel15Intr:
-	set	VMMACH_ADDR_CONTROL_REG, %VOL_TEMP1
+	/*
+	 * Put the register values into global registers so we can see
+	 * what they were easily when entering the debugger, since we'll
+	 * mess up the locals before we get there.  We won't survive this
+	 * error anyway, so we won't be needing the globals again.
+	 */
+#ifdef sun4c
+	set	VMMACH_ASYNC_ERROR_REG, %VOL_TEMP1
+	lda	[%VOL_TEMP1] VMMACH_CONTROL_SPACE, %g5
+
+	set	VMMACH_ASYNC_ERROR_ADDR_REG, %VOL_TEMP1
+	lda	[%VOL_TEMP1] VMMACH_CONTROL_SPACE, %g6
+
+	/* I must clear these too to clear async error.  Very silly. */
+	set	VMMACH_SYNC_ERROR_REG, %VOL_TEMP1
+	lda	[%VOL_TEMP1] VMMACH_CONTROL_SPACE, %g0
+
+	set	VMMACH_SYNC_ERROR_ADDR_REG, %VOL_TEMP1
+	lda	[%VOL_TEMP1] VMMACH_CONTROL_SPACE, %g0
+
+	/*
+	 * To clear the interrupt condition, first write a 0 to the enable
+	 * all interrupts bit, and then write a one again.
+	 */
+	set	DEV_INTERRUPT_REG_ADDR, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %VOL_TEMP2
-	mov	%VOL_TEMP2, %g5
+	andn	%VOL_TEMP2, MACH_ENABLE_ALL_INTERRUPTS, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+	or	%VOL_TEMP2, MACH_ENABLE_ALL_INTERRUPTS, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+#else
+	set	VMMACH_ADDR_CONTROL_REG, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %g5
+
 	and	%VOL_TEMP2, ~VMMACH_ENABLE_MEM_ERROR_BIT, %VOL_TEMP2
 	st	%VOL_TEMP2, [%VOL_TEMP1]
 	set	VMMACH_ADDR_ERROR_REG, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %g6
+#endif
 	set	_MachTrap, %VOL_TEMP1
 	jmp	%VOL_TEMP1
 	nop

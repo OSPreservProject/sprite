@@ -97,7 +97,11 @@ ReturnZero:
 .globl	_Mach_GetMachineType
 _Mach_GetMachineType:
 	set	VMMACH_MACH_TYPE_ADDR, %o0
+#ifdef sun4c
+	ldub	[%o0], %o0
+#else
 	lduba	[%o0] VMMACH_CONTROL_SPACE, %o0
+#endif
 	retl
 	nop
 
@@ -124,37 +128,61 @@ _Mach_GetMachineType:
 _Mach_GetEtherAddress:
 	set	VMMACH_ETHER_ADDR, %OUT_TEMP1
 	/* first byte */
+#ifdef sun4c
+	ldub	[%OUT_TEMP1], %OUT_TEMP2
+#else
 	lduba	[%OUT_TEMP1] VMMACH_CONTROL_SPACE, %OUT_TEMP2
+#endif
 	stb	%OUT_TEMP2, [%o0]
 	add	%OUT_TEMP1, VMMACH_IDPROM_INC, %OUT_TEMP1
 	add	%o0, 1, %o0
 
 	/* second byte */
+#ifdef sun4c
+	ldub	[%OUT_TEMP1], %OUT_TEMP2
+#else
 	lduba	[%OUT_TEMP1] VMMACH_CONTROL_SPACE, %OUT_TEMP2
+#endif
 	stb	%OUT_TEMP2, [%o0]
 	add	%OUT_TEMP1, VMMACH_IDPROM_INC, %OUT_TEMP1
 	add	%o0, 1, %o0
 
 	/* third byte */
+#ifdef sun4c
+	ldub	[%OUT_TEMP1], %OUT_TEMP2
+#else
 	lduba	[%OUT_TEMP1] VMMACH_CONTROL_SPACE, %OUT_TEMP2
+#endif
 	stb	%OUT_TEMP2, [%o0]
 	add	%OUT_TEMP1, VMMACH_IDPROM_INC, %OUT_TEMP1
 	add	%o0, 1, %o0
 
 	/* fourth byte */
+#ifdef sun4c
+	ldub	[%OUT_TEMP1], %OUT_TEMP2
+#else
 	lduba	[%OUT_TEMP1] VMMACH_CONTROL_SPACE, %OUT_TEMP2
+#endif
 	stb	%OUT_TEMP2, [%o0]
 	add	%OUT_TEMP1, VMMACH_IDPROM_INC, %OUT_TEMP1
 	add	%o0, 1, %o0
 
 	/* fifth byte */
+#ifdef sun4c
+	ldub	[%OUT_TEMP1], %OUT_TEMP2
+#else
 	lduba	[%OUT_TEMP1] VMMACH_CONTROL_SPACE, %OUT_TEMP2
+#endif
 	stb	%OUT_TEMP2, [%o0]
 	add	%OUT_TEMP1, VMMACH_IDPROM_INC, %OUT_TEMP1
 	add	%o0, 1, %o0
 
 	/* sixth byte */
+#ifdef sun4c
+	ldub	[%OUT_TEMP1], %OUT_TEMP2
+#else
 	lduba	[%OUT_TEMP1] VMMACH_CONTROL_SPACE, %OUT_TEMP2
+#endif
 	stb	%OUT_TEMP2, [%o0]
 	sub	%o0, 5, %o0		/* restore pointer parameter */
 
@@ -234,7 +262,6 @@ _Mach_ContextSwitch:
 					 * MAY BE EXTRANEOUS - interrupts should
 					 * already be off!
 					 */
-
 	/*
 	 * Switch contexts to that of toProcPtr.  It's the second arg, so
 	 * move it to be first arg of routine we call.
@@ -331,7 +358,6 @@ ContextRestoreSomeMore:
 	 * us change windows.
 	 */
 	MACH_RESTORE_PSR()
-
 	ret
 	restore
 
@@ -510,10 +536,10 @@ _MachHandleSignal:
 	set	_machSigStackOffsetInMach, %VOL_TEMP2
 	ld	[%VOL_TEMP2], %VOL_TEMP2
 	add	%VOL_TEMP1, %VOL_TEMP2, %o1	/* src addr of sig stack */
-	QUICK_ENABLE_INTR()
+	QUICK_ENABLE_INTR(%VOL_TEMP1)
 	call	_Vm_CopyOut, 3				/* copy Sig_Stack */
 	nop
-	QUICK_DISABLE_INTR()
+	QUICK_DISABLE_INTR(%VOL_TEMP1)
 	be	CopiedOutSigStack
 	nop
 CopyOutForSigFailed:
@@ -542,10 +568,10 @@ CopiedOutSigStack:
 	set	_machSigContextOffsetInMach, %VOL_TEMP2
 	ld	[%VOL_TEMP2], %VOL_TEMP2		/* offset Sig_Context */
 	add	%VOL_TEMP1, %VOL_TEMP2, %o1	/* src addr of sig context */
-	QUICK_ENABLE_INTR()
+	QUICK_ENABLE_INTR(%VOL_TEMP1)
 	call	_Vm_CopyOut, 3				/* copy Sig_Context */
 	nop
-	QUICK_DISABLE_INTR()
+	QUICK_DISABLE_INTR(%VOL_TEMP1)
 	bne	CopyOutForSigFailed
 	nop
 
@@ -558,10 +584,10 @@ CopiedOutSigStack:
 	set	MACH_SAVED_STATE_FRAME, %o0	/* size of copy */
 	add	%VOL_TEMP1, MACH_TRAP_REGS_OFFSET, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %o1		/* address of trap regs */
-	QUICK_ENABLE_INTR()
+	QUICK_ENABLE_INTR(%VOL_TEMP1)
 	call	_Vm_CopyOut, 3
 	nop
-	QUICK_DISABLE_INTR()
+	QUICK_DISABLE_INTR(%VOL_TEMP1)
 	bne	CopyOutForSigFailed
 	nop
 
@@ -682,7 +708,6 @@ CopiedOutSigStack:
  */
 .globl	_MachReturnFromSignal
 _MachReturnFromSignal:
-
 	/*
 	 * We've trapped into this window so our %fp is the user's sp that
 	 * we set up before handling the signal.  We must copy stuff back off
@@ -719,10 +744,10 @@ _MachReturnFromSignal:
 	set	_machSigStackOffsetInMach, %VOL_TEMP2
 	ld	[%VOL_TEMP2], %VOL_TEMP2
 	add	%VOL_TEMP1, %VOL_TEMP2, %o2	/* dest addr of sig stack */
-	QUICK_ENABLE_INTR()
+	QUICK_ENABLE_INTR(%VOL_TEMP1)
 	call	_Vm_CopyIn, 3			/* copy Sig_Stack */
 	nop
-	QUICK_DISABLE_INTR()
+	QUICK_DISABLE_INTR(%VOL_TEMP1)
 	be	CopiedInSigStack
 	nop
 CopyInForSigFailed:
@@ -748,10 +773,10 @@ CopiedInSigStack:
 	set	_machSigContextOffsetInMach, %VOL_TEMP2
 	ld	[%VOL_TEMP2], %VOL_TEMP2	/* offset of Sig_Context */
 	add	%VOL_TEMP1, %VOL_TEMP2, %o2	/* dest addr of sig context */
-	QUICK_ENABLE_INTR()
+	QUICK_ENABLE_INTR(%VOL_TEMP1)
 	call	_Vm_CopyIn, 3			/* copy Sig_Context */
 	nop
-	QUICK_DISABLE_INTR()
+	QUICK_DISABLE_INTR(%VOL_TEMP1)
 	bne	CopyInForSigFailed
 	nop
 
@@ -771,10 +796,10 @@ CopiedInSigStack:
 	/* destination of copy is trapRegs, but our sp points to that already */
 	/* SHOULD I VERIFY THIS? */
 	mov	%sp, %o2				/* dest addr of copy */
-	QUICK_ENABLE_INTR()
+	QUICK_ENABLE_INTR(%VOL_TEMP1)
 	call	_Vm_CopyIn, 3
 	nop
-	QUICK_DISABLE_INTR()
+	QUICK_DISABLE_INTR(%VOL_TEMP1)
 	bne	CopyInForSigFailed
 	nop
 
@@ -863,6 +888,42 @@ _Mach_ReadPsr:
 	retl
 	nop
 
+#ifdef sun4c
+.globl	_MachGetSyncErrorReg
+_MachGetSyncErrorReg:
+	set	VMMACH_SYNC_ERROR_REG, %o0
+	lda	[%o0] VMMACH_CONTROL_SPACE, %o0
+	retl
+	nop
+
+.globl	_MachGetASyncErrorReg
+_MachGetASyncErrorReg:
+	set	VMMACH_ASYNC_ERROR_REG, %o0
+	lda	[%o0] VMMACH_CONTROL_SPACE, %o0
+	retl
+	nop
+
+.globl	_MachGetSyncErrorAddrReg
+_MachGetSyncErrorAddrReg:
+	set	VMMACH_SYNC_ERROR_ADDR_REG, %o0
+	lda	[%o0] VMMACH_CONTROL_SPACE, %o0
+	retl
+	nop
+
+.globl	_MachGetASyncErrorAddrReg
+_MachGetASyncErrorAddrReg:
+	set	VMMACH_ASYNC_ERROR_ADDR_REG, %o0
+	lda	[%o0] VMMACH_CONTROL_SPACE, %o0
+	retl
+	nop
+
+.globl	_MachGetSystemEnableReg
+_MachGetSystemEnableReg:
+	set	VMMACH_SYSTEM_ENABLE_REG, %o0
+	lduba	[%o0] VMMACH_CONTROL_SPACE, %o0
+	retl
+	nop
+#endif
 
 /*
  *---------------------------------------------------------------------
@@ -1027,5 +1088,3 @@ _MachHandleBadProbe:
 	SET_INTRS_TO(%o1, %OUT_TEMP1, %OUT_TEMP2)
 	retl		/* return from leaf routine */
 	nop
-
-

@@ -196,16 +196,29 @@
 /*
  * Bit to enable in interrupt register for timer.
  */
+#ifdef sun4c
+#define	MACH_ENABLE_COUNTER0_INTR_LEVEL	MACH_ENABLE_LEVEL10_INTR
+#define	MACH_ENABLE_COUNTER1_INTR_LEVEL	MACH_ENABLE_LEVEL14_INTR
+#else
 #define	MACH_ENABLE_TIMER_INTR_LEVEL	MACH_ENABLE_LEVEL10_INTR
+#endif
 
 /*
  * Bits to access bus error register.
  */
+#ifdef sun4c
+#define	MACH_SIZE_ERROR		0x02
+#define	MACH_SB_ERROR		0x10
+#define	MACH_TIMEOUT_ERROR	0x20
+#define	MACH_PROT_ERROR		0x40
+#define	MACH_INVALID_ERROR	0x80
+#else
 #define	MACH_SIZE_ERROR		0x02
 #define	MACH_VME_ERROR		0x10
 #define	MACH_TIMEOUT_ERROR	0x20
 #define	MACH_PROT_ERROR		0x40
 #define	MACH_INVALID_ERROR	0x80
+#endif
 
 /*
  * MACH_KERN_START	The address where the kernel image is loaded at.
