@@ -25,4 +25,3 @@ NetInterface netInterface[] = {
     {"IE", 0, NET_IE_CONTROL_REG_ADDR, NetIEInit},
 };
 int numNetInterfaces = sizeof(netInterface) / sizeof(NetInterface);
-

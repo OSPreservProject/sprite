@@ -301,7 +301,7 @@ void
 Dbg_Init()
 {
     dbgMonPC = 0;
-    dbgTraceLevel = 4;
+    dbgTraceLevel = 20;
     dbgInDebugger = 0;
     dbgIntPending = 0;
     dbgPanic = FALSE;
@@ -358,6 +358,8 @@ Dbg_InputPacket(packetPtr, packetLength)
 	      bcopy (packetPtr + sizeof(Net_EtherHdr), alignedBuffer,
 			    packetLength - sizeof(Net_EtherHdr));
 	      packetPtr = alignedBuffer;
+	} else {
+	      packetPtr = packetPtr + sizeof(Net_EtherHdr);
 	}
 
 	if (Dbg_ValidatePacket(packetLength - sizeof(Net_EtherHdr),
@@ -626,7 +628,13 @@ Dbg_Main(trapType, trapStatePtr)
         do {
             if (ReadRequest(TRUE)) {
                 GetRequestBytes(4, (Address)&opcode);
-		break;
+		if (opcode != DBG_CONTINUE) {
+		    break;
+		} else {
+		    PutReplyBytes(4, (Address) &opcode);
+		    SendReply();
+		    continue;
+		}
             }
             /*
              * We can only timeout if we are using network debugging.
