@@ -360,7 +360,7 @@ FsFileReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
     /*
      * See if the client can still cache its dirty blocks.
      */
-    if (reopenParamsPtr->haveDirtyBlocks) {
+    if (reopenParamsPtr->flags & FS_HAVE_BLOCKS) {
 	status = FsCacheCheckVersion(&handlePtr->cacheInfo,
 				     reopenParamsPtr->version, clientID);
 	if (status != SUCCESS) {
@@ -372,7 +372,7 @@ FsFileReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
      * Update global use counts and version number.
      */
     FsReopenClient(handlePtr, clientID, reopenParamsPtr->use,
-			    reopenParamsPtr->haveDirtyBlocks);
+			reopenParamsPtr->flags & FS_HAVE_BLOCKS);
     if (reopenParamsPtr->use.write > 0) {
 	IncVersionNumber(handlePtr);
     }
@@ -380,9 +380,10 @@ FsFileReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
      * Now unlock the handle and do cache consistency call-backs.
      */
     fileStatePtr = Mem_New(FsFileState);
-    fileStatePtr->cacheable = reopenParamsPtr->haveDirtyBlocks;
+    fileStatePtr->cacheable = reopenParamsPtr->flags & FS_HAVE_BLOCKS;
     FsHandleUnlock(handlePtr);
     status = FsReopenConsistency(handlePtr, clientID, reopenParamsPtr->use,
+		reopenParamsPtr->flags & FS_SWAP,
 		&fileStatePtr->cacheable, &fileStatePtr->openTimeStamp);
     if (status != SUCCESS) {
 	/*
@@ -516,7 +517,7 @@ FsFileClose(streamPtr, clientID, procID, flags, dataSize, closeData)
 	/*
 	 * Update the server's attributes from ones cached on the client.
 	 */
-	FsUpdateAttrFromClient(&handlePtr->cacheInfo,
+	FsUpdateAttrFromClient(clientID, &handlePtr->cacheInfo,
 				(FsCachedAttributes *)closeData);
     }
 
