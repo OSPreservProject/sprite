@@ -109,6 +109,31 @@ int	machSpecialHandlingOffset;	/* Byte offset of the specialHandling
 char	mach_DebugStack[0x2000];	/* The debugger stack. */
 unsigned int	machDebugStackStart;	/* Contains address of base of debugger
 					 * stack. */
+int	machSignalStackSizeOnStack;	/* size of mach module sig stack */
+int	machSigStackSize;		/* size of Sig_Stack structure */
+int	machSigStackOffsetOnStack;	/* offset of sigStack field in
+					 * MachSignalStack structure on the
+					 * the user stack. */
+int	machSigStackOffsetInMach;	/* offset to sigStack field in mach
+					 * state structure. */
+int	machSigContextSize;		/* size of Sig_Context structure */
+int	machSigContextOffsetOnStack;	/* offset of sigContext field in
+					 * MachSignalStack structure on the
+					 * user stack. */
+int	machSigContextOffsetInMach;	/* offset to sigContext field in mach
+					 * state structure. */
+int	machSigUserStateOffsetOnStack;	/* offset of machine-dependent field
+					 * on the stack, called machContext,
+					 * in the Sig_Context part of the
+					 * MachSignalStack structure. */
+int	machSigTrapInstOffsetOnStack;	/* offset of trapInst field in
+					 * MachSignalStack on user stack. */
+int	machSigNumOffsetInSig;		/* offset of sigNum field in
+					 * Sig_Stack structure. */
+int	machSigCodeOffsetInSig;		/* offset of sigCode field in
+					 * Sig_Stack structure. */
+int	machSigPCOffsetOnStack;		/* offset of pcValue field in
+					 * MachSignalStack on user stack. */
 
 /*
  * Pointer to the state structure for the current process.
@@ -121,12 +146,15 @@ Mach_State	*machCurStatePtr = (Mach_State *)NIL;
 Mach_RegState		testMachRegState;
 Mach_State		testMachState;
 Proc_ControlBlock	testPCB;
-int		debugCounter = 0;		/* for debugging */
-int		debugSpace[500];
-Address		theAddrOfVmPtr = 0; 
-Address		theAddrOfMachPtr = 0;
-Address		oldAddrOfVmPtr = 0; 
-Address		oldAddrOfMachPtr = 0;
+MachSignalStack		testSignalStack;
+Sig_Context		testContext;
+Sig_Stack		testStack;
+int			debugCounter = 0;		/* for debugging */
+int			debugSpace[500];
+Address			theAddrOfVmPtr = 0; 
+Address			theAddrOfMachPtr = 0;
+Address			oldAddrOfVmPtr = 0; 
+Address			oldAddrOfMachPtr = 0;
 
 /*
  * For debugging stuff, put values into a circular buffer.  After each value,
@@ -221,7 +249,48 @@ Mach_Init()
 	    (unsigned int)(&testPCB);
     machMaxSysCall = -1;
 
-    /* base of the debugger stack */
+    /*
+     * Initialize all the horrid offsets for dealing with getting stuff from
+     * signal things in the mach state structure to signal things on the user
+     * stack.
+     */
+    machSignalStackSizeOnStack = sizeof (MachSignalStack);
+    if ((machSignalStackSizeOnStack & 0x7) != 0) {
+	panic("MachSignalStack struct must be a multiple of double-words!\n");
+    }
+
+    machSigStackSize = sizeof (Sig_Stack);
+    machSigStackOffsetOnStack = (unsigned int)(&(testSignalStack.sigStack)) -
+	    (unsigned int)(&testSignalStack);
+    machSigStackOffsetInMach = (unsigned int)(&(testMachState.sigStack)) -
+	    (unsigned int)(&testMachState);
+  
+    machSigContextSize = sizeof (Sig_Context);
+    machSigContextOffsetOnStack = (unsigned int)(&(testSignalStack.sigContext))-
+	    (unsigned int)(&testSignalStack);
+    machSigContextOffsetInMach = (unsigned int)(&(testMachState.sigContext)) -
+	    (unsigned int)(&testMachState);
+
+    machSigUserStateOffsetOnStack =
+	    (unsigned int) (&(testSignalStack.sigContext.machContext.userState))
+	    - (unsigned int)(&testSignalStack);
+    
+    machSigTrapInstOffsetOnStack =
+	    (unsigned int) (&(testSignalStack.sigContext.machContext.trapInst))
+	    - (unsigned int)(&testSignalStack);
+
+    machSigNumOffsetInSig = (unsigned int) (&(testStack.sigNum)) -
+	    (unsigned int)(&testStack);
+    machSigCodeOffsetInSig = (unsigned int) (&(testStack.sigCode)) -
+	    (unsigned int)(&testStack);
+ 
+    machSigPCOffsetOnStack =
+	    (unsigned int)(&(testSignalStack.sigContext.machContext.pcValue)) -
+	    (unsigned int)(&testSignalStack);
+
+    /*
+     * base of the debugger stack
+     */
     machDebugStackStart = (unsigned int) mach_DebugStack +
 						sizeof (mach_DebugStack);
 
@@ -825,87 +894,6 @@ Mach_SetHandler(vectorNumber, handler)
 #endif NOTDEF
 }
 
-#ifdef NOTDEF
-
-/*
- * ----------------------------------------------------------------------------
- *
- * MachUserReturn --
- *
- *      Take the proper action to return from a user exception.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      Interrupts disabled.
- *
- * ----------------------------------------------------------------------------
- */
-void
-MachUserReturn(procPtr)
-    register	Proc_ControlBlock	*procPtr;
-{
-    SignalStack			sigStack;
-    Address			pc;
-
-
-    if (procPtr->Prof_Scale != 0 && procPtr->Prof_PC != 0) {
-	Prof_RecordPC(procPtr);
-    }
-
-    /* 
-     * Take a context switch if one is pending for this process.
-     */
-    if (procPtr->schedFlags & SCHED_CONTEXT_SWITCH_PENDING) {
-	Sched_LockAndSwitch();
-    }
-
-    /*
-     * Check for signals.  Interrupts are disabled because we have to 
-     * make sure that we don't miss a signal.  Interrupts will be reenabled
-     * automatically upon the rte.  
-     */
-    while (TRUE) {
-	/*
-	 * Disable interrupts.  Note that we don't use the DISABLE_INTR macro
-	 * because it increments the nesting depth of interrupts which we don't
-	 * want because there is an implicit enable interrupts on rte.
-	 */
-	Mach_DisableIntr();
-	if (!Sig_Pending(procPtr)) {
-	    break;
-	}
-	Mach_EnableIntr();
-	sigStack.sigStack.contextPtr = &sigStack.sigContext;
-	if (Sig_Handle(procPtr, &sigStack.sigStack, &pc)) {
-	    SetupSigHandler(procPtr, &sigStack, pc);
-	    Mach_DisableIntr();
-	    break;
-	}
-    }
-    
-    if ((procPtr->genFlags & PROC_SINGLE_STEP_FLAG) ||
-	(procPtr->schedFlags & SCHED_CONTEXT_SWITCH_PENDING)) {
-	/*
-	 * Set the trace trap bit if we are supposed to single-step this
-	 * process or a context switch is pending.  We check for a context
-	 * switch pending here even though we just checked above just in
-	 * case we got preempted while dealing with signals.
-	 */
-	procPtr->machStatePtr->userState.excStackPtr->statusReg |= 
-							MACH_SR_TRACEMODE;
-    }
-
-    /*
-     * It is possible for Sig_Handle to mask the migration signal
-     * if a process is not in a state where it can be migrated.
-     * As soon as we return to user mode, though, we will allow migration.
-     */
-    Sig_AllowMigration(procPtr);
-
-}
-
 
 /*
  * ----------------------------------------------------------------------------
@@ -940,158 +928,37 @@ MachUserReturn(procPtr)
 /*
  * ----------------------------------------------------------------------------
  *
- * SetupSigHandler --
+ * MachCallSigReturn --
  *
- *      Save machine state on the users stack and set up the exception stack
- *	so that the user will call the signal handler on return. In order to
- * Results:
- *      None.
- *
- * Side effects:
- *      Signal stack set up and saved.
- *
- * ----------------------------------------------------------------------------
- */
-void
-SetupSigHandler(procPtr, sigStackPtr, pc)
-    register	Proc_ControlBlock	*procPtr;
-    register	SignalStack		*sigStackPtr;
-    Address				pc;
-{
-    register	Mach_State	*statePtr;
-    Address			usp;
-    int				excStackSize;
-    Mach_ExcStack		*excStackPtr;
-
-    statePtr = procPtr->machStatePtr;
-    usp = statePtr->userState.userStackPtr - sizeof(SignalStack);
-    sigStackPtr->sigStack.contextPtr =
-	(Sig_Context *)(usp + (unsigned int)(&sigStackPtr->sigContext) -
-			      (unsigned int)sigStackPtr);
-    sigStackPtr->sigContext.machContext.trapInst = 0x4e424e42;
-    sigStackPtr->retAddr =
-	usp + (unsigned int)(&sigStackPtr->sigContext.machContext.trapInst) -
-	      (unsigned int)sigStackPtr;
-    /*
-     * Copy the exception stack onto the signal stack.
-     */
-    excStackSize = Mach_GetExcStackSize(statePtr->userState.excStackPtr);
-    bcopy((Address)statePtr->userState.excStackPtr,
-	      (Address)&(sigStackPtr->sigContext.machContext.excStack),
-	      excStackSize);
-    /*
-     * Copy the user state onto the signal stack.
-     */
-    bcopy((Address)&statePtr->userState,
-	      (Address)&(sigStackPtr->sigContext.machContext.userState),
-	      sizeof(Mach_UserState));
-    /*
-     * Copy the stack out to user space.
-     */
-    if (Vm_CopyOut(sizeof(SignalStack), (Address)sigStackPtr, 
-			(Address)usp) != SUCCESS) {
-        printf("Warning: HandleSig: No room on stack for signal, PID=%x.\n",
-                  procPtr->processID);
-        Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
-    }
-    /*
-     * We need to make a short stack to allow the process to start executing.
-     * The current exception stack is at least as big, maybe bigger than we
-     * need.  Since we saved the true exception stack above, we can just
-     * overwrite the current stack with a short stack and point the stack
-     * pointer at it.
-     */
-    if (statePtr->userState.excStackPtr !=
-			(Mach_ExcStack *)statePtr->userState.trapRegs[SP]) {
-	panic("Mach_HandleSig: SP != excStackPtr\n");
-    }
-    statePtr->userState.userStackPtr = usp;
-    excStackPtr = (Mach_ExcStack *) ((Address)statePtr->userState.excStackPtr + 
-				     excStackSize - MACH_SHORT_SIZE);
-    statePtr->userState.trapRegs[SP] = (int)excStackPtr;
-    excStackPtr->statusReg = 0;
-    excStackPtr->vor.stackFormat = MACH_SHORT;
-    excStackPtr->pc = (int)pc;
-}
-
-
-/*
- * ----------------------------------------------------------------------------
- *
- * ReturnFromSigHandler --
- *
- *      Process a return from a signal handler.
+ *      Process a return from a signal handler.  Call the Sig_Return
+ *	routine with appropriate args.
  *	
  * Results:
  *      None.
  *
  * Side effects:
- *      Signal stack struct and size filled in the machine struct for the
- *	given process.
+ *	Whatever Sig_Return does.
  *
  * ----------------------------------------------------------------------------
  */
 void
-ReturnFromSigHandler(procPtr)
-    register	Proc_ControlBlock	*procPtr;
+MachCallSigReturn()
 {
-    register	Mach_State	*statePtr;
-    int				curSize;
-    int				oldSize;
-    SignalStack			sigStack;
+    Proc_ControlBlock	*procPtr;
+    Mach_State		*statePtr;
+    Sig_Stack		*sigStackPtr;
 
+    procPtr = Proc_GetCurrentProc();
     statePtr = procPtr->machStatePtr;
-    /*
-     * Copy the signal stack in.
-     */
-    if (Vm_CopyIn(sizeof(Sig_Stack) + sizeof(Sig_Context),
-		  (Address) (statePtr->userState.userStackPtr), 
-		  (Address) &sigStack.sigStack) != SUCCESS) {
-	printf("%s Mach_Code: Stack too small to extract trap info, PID=%x.\n",
-		"Warning:", procPtr->processID);
-	Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
-    }
-    sigStack.sigStack.contextPtr = &sigStack.sigContext;
+
+    sigStackPtr = &(statePtr->sigStack);
+    sigStackPtr->contextPtr = &(statePtr->sigContext);
+
     /*
      * Take the proper action on return from a signal.
      */
-    Sig_Return(procPtr, &sigStack.sigStack);
-    /*
-     * Restore user state.  Be careful not to clobber the stack
-     * pointer.
-     */
-    statePtr->userState.userStackPtr = 
-		    sigStack.sigContext.machContext.userState.userStackPtr;
-    bcopy((Address)sigStack.sigContext.machContext.userState.trapRegs,
-	      (Address)statePtr->userState.trapRegs,
-	      sizeof(int) * (MACH_NUM_GPRS - 1));
-
-    /*
-     * Verify that the exception stack is OK.
-     */
-    curSize = Mach_GetExcStackSize(statePtr->userState.excStackPtr);
-    oldSize = Mach_GetExcStackSize(&sigStack.sigContext.machContext.excStack);
-    if (oldSize == -1) {
-	printf("Mach_Code: Bad signal stack type.\n");
-	Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
-    }
-    if (sigStack.sigContext.machContext.excStack.statusReg & MACH_SR_SUPSTATE) {
-	printf("Mach_Code: User set kernel bit on signal stack\n");
-	Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
-    }
-    /*
-     * Copy the exception stack in.
-     */
-    bcopy((Address)&sigStack.sigContext.machContext.excStack,
-	      (Address)&statePtr->sigExcStack, oldSize);
-    statePtr->sigExcStackSize = oldSize;
-    /*
-     * Set the restored stack pointer to point to where the
-     * old exception stack is to be restored to.
-     */
-    statePtr->userState.trapRegs[SP] += curSize - oldSize;
+    Sig_Return(procPtr, sigStackPtr);
 }
-#endif NOTDEF
 
 
 /*
@@ -1288,11 +1155,12 @@ MachIntrNotHandledYet()
  *	None
  *
  * Side effects:
- *	A page causing a memory access error is made valid.
+ *	A page causing a memory access error is made valid.  If it's an
+ *	illegal page fault in the kernel, we will call panic.
  *
  *----------------------------------------------------------------------
  */
-int
+void
 MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
     unsigned	char	busErrorReg;
     Address		addrErrorReg;
@@ -1344,7 +1212,11 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
 	 */
 	if (addrErrorReg == (Address) NIL) {
 	    if (copyInProgress) {
-		return MACH_USER_ERROR;
+		/* sun3 just returns MACH_USER_ERROR here */
+#ifndef NOTDEF
+		Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
+#endif NOTDEF
+
 	    } else {
 		panic("MachPageFault: kernel tried to fault NIL address at pc 0x%x.\n", pcValue);
 	    }
@@ -1352,8 +1224,10 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
 	status = Vm_PageIn(addrErrorReg, protError);
 	if (status != SUCCESS) {
 	    if (copyInProgress) {
-		/* user error */
-		return MACH_USER_ERROR;
+		/* sun3 just returns MACH_USER_ERROR here */
+#ifndef NOTDEF
+		Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
+#endif NOTDEF
 	    } else {
 		/* kernel error */
 		panic(
@@ -1361,7 +1235,7 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
 			addrErrorReg, pcValue);
 	    }
 	}
-	return MACH_OK;
+	return;
     }
     /* user page fault */
     printf("Page fault in user process, pc 0x%x, addr 0x%x, busError 0x%x\n",
@@ -1384,12 +1258,7 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
     "MachPageFault: Bus error in user proc %x, PC = %x, addr = %x BR Reg %x\n",
 		procPtr->processID, pcValue, addrErrorReg, (short) busErrorReg);
 	/* Kill user process */
-#ifdef NOTDEF
 	Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL, procPtr->processID, FALSE);
-#else
-	/* Can I do this here temporarily this way? */
-	Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
-#endif NOTDEF
     }
     {
 	unsigned	int	pte;
@@ -1403,7 +1272,7 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
 	the_seg = VmMachGetSegMap(addrErrorReg);
 	printf("the_seg is now 0x%x\n", the_seg);
     }
-    return(MACH_OK);
+    return;
 }
 
 
@@ -1435,8 +1304,7 @@ MachUserAction()
 {
     Proc_ControlBlock	*procPtr;
     Mach_State		*machStatePtr;
-    Sig_Stack		sigStack;
-    Sig_Context		sigContext;
+    Sig_Stack		*sigStackPtr;
     Address		pc;
 
     procPtr = Proc_GetCurrentProc();
@@ -1483,11 +1351,114 @@ MachUserAction()
 	}
     }
     /*
-     * Now check for signal stuff.
+     * Now check for signal stuff.  We disable interrupts because we don't
+     * want the signal stuff in our process state to be overwritten by another
+     * signal until we have a chance to copy it out to the user stack and to
+     * jump to the signal pc without its being overwritten.  Note that we do
+     * not user the DISABLE_INTR macro, because it increments the nesting
+     * depth of interrupts and we don't want this since there is an implicit
+     * enable interrupts on rett.
      */
-    sigStack.contextPtr = &sigContext;
-    if (Sig_Handle(procPtr, &sigStack, &pc)) {
-	panic("MachUserAction: can't do signal stuff yet!\n");
+    sigStackPtr = &(machStatePtr->sigStack);
+    sigStackPtr->contextPtr = &(machStatePtr->sigContext);
+    Mach_DisableIntr();
+    if (Sig_Handle(procPtr, sigStackPtr, &pc)) {
+	machStatePtr->sigContext.machContext.pcValue = pc;
+	machStatePtr->sigContext.machContext.trapInst = MACH_SIG_TRAP_INSTR;
+	/* leave interrupts disabled */
+	return TRUE;
     }
+    Mach_EnableIntr();
     return FALSE;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MachHandleWeirdoInstruction --
+ *
+ *	Handle an instruction trap, such as an illegal instruction trap,
+ *	an unaligned address on an instruction 
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	If it occured in the kernel, we panic.  If it occured in a user
+ *	program, we take appropriate signal action.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+MachHandleWeirdoInstruction(trapType, pcValue, trapPsr)
+    int			trapType;
+    Address		pcValue;
+    unsigned	int	trapPsr;
+{
+    Proc_ControlBlock	*procPtr;
+
+    procPtr = Proc_GetCurrentProc();
+    if (procPtr == (Proc_ControlBlock *) NIL) {
+	panic("MachHandleWeirdoInstruction: current process was NIL!\n");
+    }
+    /*
+     * Handle kernel-mode traps.
+     */
+    if (trapPsr & MACH_PS_BIT) {
+	switch (trapType) {
+	case MACH_ILLEGAL_INSTR:
+	    printf("%s %s\n", "MachHandleWeirdoInstruction: illegal",
+		    "instruction trap in the kernel!");
+	    break;
+	case MACH_PRIV_INSTR:
+	    printf("%s %s\n", "MachHandleWeirdoInstruction: privileged",
+		    "instruction trap in the kernel!");
+	    break;
+	case MACH_MEM_ADDR_ALIGN:
+	    printf("%s %s\n", "MachHandleWeirdoInstruction: unaligned",
+		    "address trap in the kernel!");
+	    break;
+	case MACH_TAG_OVERFLOW:
+	    printf("%s %s\n", "MachHandleWeirdoInstruction: tag",
+		    "overflow trap in the kernel!");
+	    break;
+	default:
+	    printf("%s %s\n", "MachHandleWeirdoInstruction: hit default",
+		    "in case statement - bad trap instruction called us!");
+	    break;
+
+	}
+	panic("%s %s %s %x %s %x\n",
+		"MachHandleWeirdoInstruction: the error occured in a",
+		procPtr->genFlags & PROC_USER ? "user" : "kernel",
+		"process, with procPtr =", (unsigned int) procPtr,
+		"and pc =", pcValue);
+    }
+    /*
+     * The trap occured in user-mode.
+     */
+    switch (trapType) {
+    case MACH_ILLEGAL_INSTR:
+	(void) Sig_Send(SIG_ILL_INST, SIG_ILL_INST_CODE, procPtr->processID,
+		FALSE);
+	break;
+    case MACH_PRIV_INSTR:
+	(void) Sig_Send(SIG_ILL_INST, SIG_PRIV_INST, procPtr->processID, FALSE);
+	break;
+    case MACH_MEM_ADDR_ALIGN:
+	(void) Sig_Send(SIG_ADDR_FAULT, SIG_ADDR_ERROR, procPtr->processID,
+		FALSE);
+	break;
+    case MACH_TAG_OVERFLOW:
+	panic("%s %s\n", "MachHandleWeirdoInstruction: tag",
+		"overflow trap in user process, but I don't deal with it yet.");
+	break;
+    default:
+	panic("%s %s\n", "MachHandleWeirdoInstruction: hit default",
+		"in case statement - bad trap instruction from user mode.");
+	break;
+
+    }
+    return;
 }

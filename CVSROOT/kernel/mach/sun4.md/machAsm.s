@@ -478,3 +478,313 @@ _MachGetCurrentSp:
 	mov	%sp, %o0
 	retl
 	nop
+
+
+/*
+ *---------------------------------------------------------------------
+ *
+ * MachHandleSignal -
+ *
+ *	void MachHandleSignal()
+ *
+ *	Setup the necessary stack to handle a signal.  Interrupts are off when
+ *	we enter.  They must be off so we don't overwrite the signal stuff
+ *	in the process state with more signal stuff.
+ *
+ * Results:
+ *	We return via a rett to user mode to the pc of the signal handler.
+ *
+ * Side effects:
+ *	Depends on signal handler, etc.
+ *
+ *---------------------------------------------------------------------
+ */
+.globl	_MachHandleSignal
+_MachHandleSignal:
+	/*
+	 * Save window to stack so that user trap values will be saved
+	 * to kernel stack so that when we copy them to the user stack, we'll
+	 * get the correct values.
+	 */
+	MACH_SAVE_WINDOW_TO_STACK()
+
+	/* Get new user stack pointer value into %SAFE_TEMP */
+	set	_machSignalStackSizeOnStack, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1	/* size MachSignalStack */
+	sub	%fp, %VOL_TEMP1, %SAFE_TEMP		/* new sp in safetemp */
+
+	/* Copy out sig stack from state structure to user stack */
+	set	_machSigStackOffsetOnStack, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* offset Sig_Stack */
+	add	%SAFE_TEMP, %VOL_TEMP1, %o2	/* dest addr of Sig_Stack */
+	set	_machSigStackSize, %o0
+	ld	[%o0], %o0				/* size of Sig_Stack */
+	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
+	set	_machSigStackOffsetInMach, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2
+	add	%VOL_TEMP1, %VOL_TEMP2, %o1	/* src addr of sig stack */
+	call	_Vm_CopyOut, 3				/* copy Sig_Stack */
+	nop
+	be	CopiedOutSigStack
+	nop
+CopyOutForSigFailed:
+	/*
+	 * Copying to user stack failed.  We have no choice but to kill the
+	 * thing.  This causes us to exit this routine and process.
+	 */
+	set	PROC_TERM_DESTROYED, %o0
+	set	PROC_BAD_STACK, %o1
+	clr	%o2
+	call	_Proc_ExitInt, 3
+	nop
+
+CopiedOutSigStack:
+	/* Copy out sig context from state structure to user stack */
+	set	_machSigContextOffsetOnStack, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2		/* offset Sig_Context */
+	add	%SAFE_TEMP, %VOL_TEMP2, %o2	/* dest addr of Sig_Context */
+	set	_machSigContextSize, %o0
+	ld	[%o0], %o0			/* size of Sig_Context */
+	set	_machSigContextOffsetInMach, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2		/* offset Sig_Context */
+	/* addr of mach state structure is still in %VOL_TEMP1 */
+	add	%VOL_TEMP1, %VOL_TEMP2, %o1	/* src addr of sig context */
+	call	_Vm_CopyOut, 3				/* copy Sig_Context */
+	nop
+	bne	CopyOutForSigFailed
+	nop
+
+	/* Copy out user trap state from state structure to user stack */
+	set	_machSigUserStateOffsetOnStack, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2
+	add	%SAFE_TEMP, %VOL_TEMP2, %o2	/* dest addr of user state */
+	set	MACH_SAVED_STATE_FRAME, %o0	/* size of copy */
+	/* addr of mach state structure is still in %VOL_TEMP1 */
+	add	%VOL_TEMP1, MACH_TRAP_REGS_OFFSET, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %o1		/* address of trap regs */
+	call	_Vm_CopyOut, 3
+	nop
+	bne	CopyOutForSigFailed
+	nop
+
+	/*
+	 * Get address of trapInst field in machContext field of sig context
+	 * and put it in ret addr of next window so when we return from handler
+	 * in next window, we'll return to the trap instruction.
+	 */
+	set	_machSigTrapInstOffsetOnStack, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2	/* offset to trap instr */
+	add	%SAFE_TEMP, %VOL_TEMP2, %RETURN_ADDR_REG	/* addr */
+
+	/*
+	 * Set return from trap pc and next pc in the next window to the
+	 * address of the handler so that when we do a rett back to this
+	 * window from the next window, we'll start executing at the signal
+	 * handler.  This requires a global register to get
+	 * it across the window boundary, so we must do this before restoring
+	 * our global registers.  This should be done after the Vm_CopyOut's
+	 * so that there's no overwriting our confusion with the registers
+	 * in the next window.
+	 */
+	set	_machSigPCOffsetOnStack, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* offset to pc field */
+	add	%SAFE_TEMP, %VOL_TEMP1, %VOL_TEMP1	/* addr of sig pc */
+	ld	[%VOL_TEMP1], %g3
+	
+	save
+	mov	%g3, %CUR_PC_REG		/* trap pc addr into rett pc */
+	add	%g3, 0x4, %NEXT_PC_REG
+	restore
+
+	/*
+	 * restore global regs for user after calling Vm_CopyOut and after
+	 * using %g3 (above) and before messing up our kernel stack pointer.
+	 */
+	MACH_RESTORE_GLOBAL_STATE()
+
+	/*
+	 * Set up our out registers to be correct arguments to sig handler,
+	 * since this is the window it will start off in, but the C code will
+	 * do a save into the next window so our out's will be the handler's
+	 * in regs.
+	 *
+	 *	Handler(sigNum, sigCode, contextPtr)
+	 */
+	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
+	set	_machSigStackOffsetInMach, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2	/* offset to sig stack */
+	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP2	/* addr of sig stack */
+	set	_machSigNumOffsetInSig, %o0
+	ld	[%o0], %o0			/* offset to sigNum */
+	add	%o0, %VOL_TEMP2, %o0		/* addr of sig num */
+	ld	[%o0], %o0			/* sig num == arg 1 */
+	set	_machSigCodeOffsetInSig, %o1
+	ld	[%o1], %o1			/* offset to sigCode */
+	add	%o1, %VOL_TEMP2, %o1		/* addr of sig code */
+	ld	[%o1], %o1			/* sig code == arg2 */
+	/* Stack address of Sig_Context is third arg */
+	set	_machSigContextOffsetOnStack, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2		/* offset Sig_Context */
+	add	%SAFE_TEMP, %VOL_TEMP2, %o2	/* stack addr context = arg3  */
+
+	/*
+	 * NOTE: the sigStack.sigContextPtr field has not been filled in.
+	 * Will that matter?
+	 */
+
+	/* set stack pointer in this window to new user stack pointer */
+	mov	%SAFE_TEMP, %sp
+
+	/*
+	 * Move the user psr to restore to next window, since we'll have
+	 * to restore it from there since it disables traps and we must still
+	 * have traps enabled when executing the save instruction, in case
+	 * of window overflow.
+	 */
+	mov	%CUR_PSR_REG, %o4
+
+	/*
+	 * Move to window to do rett from.  We must do this while traps are
+	 * still enabled, in case we get overflow.
+	 */
+	save
+
+	/*
+	 * Set up psr for return to user mode.  It must be the user mode
+	 * psr with traps disabled.
+	 */
+	mov	%i4, %CUR_PSR_REG		/* so restore psr will work */
+	MACH_RESTORE_PSR()
+
+	jmp	%CUR_PC_REG
+	rett	%NEXT_PC_REG
+
+/*
+ *---------------------------------------------------------------------
+ *
+ * MachReturnFromSignal -
+ *
+ *	void MachReturnFromSignal()
+ *
+ *	The routine executed after a return from signal trap.  This must
+ *	restore state from the user stack so we can return to user mode
+ *	via the regular return from trap method.
+ *
+ *	Interrupts must be off when we're called.
+ *
+ * Results:
+ *	We execute the return-from-trap code, so it depends what happens there.
+ *
+ * Side effects:
+ *	Depends.
+ *
+ *---------------------------------------------------------------------
+ */
+.globl	_MachReturnFromSignal
+_MachReturnFromSignal:
+
+	/*
+	 * We've trapped into this window so our %fp is the user's sp that
+	 * we set up before handling the signal.  We must copy stuff back off
+	 * the user's stack to the trap regs to restore state.  But we're one
+	 * window away from where we want to be, so we have to back up also.
+	 */
+	/* get our kernel stack pointer into global regs (which get restored
+	 * in MachReturnFromTrap) so we can keep it across windows.
+	 */
+	mov	%sp, %g3
+	restore		/* no underflow since we just came from here */
+	/*
+	 * I could at this point just move %sp to %SAFE_TEMP if I really
+	 * trusted that %fp - sizeof (MachSignalStack) really equals %sp which
+	 * was user sp we set up before calling signal handler, but I
+	 * check this for now.
+	 */
+	set	_machSignalStackSizeOnStack, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1	/* size MachSignalStack */
+	sub	%fp, %VOL_TEMP1, %SAFE_TEMP	/* sig user sp in safetemp */
+	cmp	%SAFE_TEMP, %sp
+	bne	CopyInForSigFailed
+	nop
+
+	mov	%g3, %sp			/* kernel sp now here too */
+
+	/* Copy in sig stack from user stack to mach state structure */
+	set	_machSigStackOffsetOnStack, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1	/* offset of Sig_Stack */
+	add	%SAFE_TEMP, %VOL_TEMP1, %o1	/* src addr of Sig_Stack */
+	set	_machSigStackSize, %o0
+	ld	[%o0], %o0			/* size of Sig_Stack */
+	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
+	set	_machSigStackOffsetInMach, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2
+	add	%VOL_TEMP1, %VOL_TEMP2, %o2	/* dest addr of sig stack */
+	call	_Vm_CopyIn, 3			/* copy Sig_Stack */
+	nop
+	be	CopiedInSigStack
+	nop
+CopyInForSigFailed:
+ 	/* Copy failed from user space - kill the process */ 
+	set	PROC_TERM_DESTROYED, %o0
+	set	PROC_BAD_STACK, %o1
+	clr	%o2
+	call	_Proc_ExitInt, 3
+	nop
+
+CopiedInSigStack:
+	/* Copy in sig context from user stack to state structure */
+	set	_machSigContextOffsetOnStack, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2		/* offset Sig_Context */
+	add	%SAFE_TEMP, %VOL_TEMP2, %o1	/* src addr of Sig_Context */
+	set	_machSigContextSize, %o0
+	ld	[%o0], %o0			/* size of Sig_Context */
+	set	_machSigContextOffsetInMach, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2	/* offset of Sig_Context */
+	/* addr of mach state structure is still in %VOL_TEMP1 */
+	add	%VOL_TEMP1, %VOL_TEMP2, %o2	/* dest addr of sig context */
+	call	_Vm_CopyIn, 3			/* copy Sig_Context */
+	nop
+	bne	CopyInForSigFailed
+	nop
+
+	/*
+	 * Call a routine that calls Sig_Return with appropriate stuff.
+	 * This occurs after copying in the Sig stuff, above, because Sig_Return
+	 * needs the Sig stuff.
+	 */
+	call	_MachCallSigReturn
+	nop
+
+	/* Copy in user trap state from user stack to kernel trap regs */
+	set	_machSigUserStateOffsetOnStack, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2
+	add	%SAFE_TEMP, %VOL_TEMP2, %o1		/* src addr of copy */
+	set	MACH_SAVED_STATE_FRAME, %o0		/* size of copy */
+	/* destination of copy is trapRegs, but our sp points to that already */
+	/* SHOULD I VERIFY THIS? */
+	mov	%sp, %o2				/* dest addr of copy */
+	call	_Vm_CopyIn, 3
+	nop
+	bne	CopyInForSigFailed
+	nop
+
+	/* Restore user trap state */
+	mov	%sp, %g3			/* save stack pointer */
+	MACH_RESTORE_WINDOW_FROM_STACK()
+	/* test if stack pointer is the same */
+	cmp	%g3, %sp
+	mov	%g3, %sp		/* restore, in case it was bad */
+	bne	CopyInForSigFailed
+	nop
+
+	/* Make sure the psr is okay since we got it from the user */
+	set	~(MACH_PS_BIT), %VOL_TEMP1
+	and	%CUR_PSR_REG, %VOL_TEMP1, %CUR_PSR_REG	/* clear ps bit */
+	set	MACH_DISABLE_TRAP_BIT, %VOL_TEMP1
+	and	%CUR_PSR_REG, %VOL_TEMP1, %CUR_PSR_REG	/* clear trap en. bit */
+
+	/*
+	 * Now go through the regular return from trap code.
+	 */
+	call	_MachReturnFromTrap
+	nop

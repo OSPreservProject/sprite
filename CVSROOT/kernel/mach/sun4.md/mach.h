@@ -100,67 +100,33 @@ extern ReturnStatus (*(mach_NormalHandlers[]))();
 extern ReturnStatus (*(mach_MigratedHandlers[]))();
 
 /*
- * State for each process.
+ * Do to a circularity in include files now, the definitions of
+ * Mach_SigContext and Mach_RegState had to be moved to a new header file:
+ * machSig.h.  This is because sig.h includes mach.h because it needs
+ * the definitions of Mach_SigContext (and thus Mach_RegState) in order
+ * to define the Sig_Context structure's machContext field.  But if I
+ * included all of mach.h, I'd get the Sig_Stack stuff in Mach_State as
+ * undefined since sig.h wouldn't yet have defined that.  Ugh.
  *
- * IMPORTANT NOTE: 1) If the order or size of fields in these structures change
- *		   then the constants which give the offsets must be
- *		   changed in "machConst.h".
+ *	So - SEE machSig.h for definitions of Mach_RegState and Mach_SigContext.
  *
- *		   2) Mach_DebugState and Mach_RegState are the same thing.
- *		   If what the debugger needs changes, they may no longer be
- *		   the same thing.  Mach_RegState is used as a template for
- *		   saving registers to the stack for nesting interrupts, traps,
- *		   etc.  Therefore, the first sets of registers, locals and ins,
- *		   are in the same order as they are saved off of the sp for
- *		   a regular save window operation.  If this changes, changes
- *		   must be made in machAsmDefs.h and machConst.h.  Note that
- *		   this means the pointer to Mach_RegState for trapRegs in the
- *		   Mach_State structure is actually a pointer to registers saved
- *		   on the stack.
- *
- *		   3) Mach_State defines the use of local registers.   Should
- *		   more local registers be necessary, then some of the special
- *		   registers (tbr, etc) will need to be saved after the globals.
- *
- *		   4) Note that we must be careful about the alignment of
- *		   this structure, since it's saved and restored with load
- *		   and store double operations.  Without an aligner, this is
- *		   hard.  I'm not sure what to do about that.  Usually, this
- *		   just be space on the stack, so it will be double-word
- *		   aligned anyway.
  */
+#ifdef KERNEL
+#include "machSig.h"
+#else
+#include <kernel/machSig.h>
+#endif
 
 /*
- * The register state of a process: locals, then ins, then globals.
- * The psr, tbr, etc, are saved in locals.  The in registers are the in
- * registers of the window we've trapped into.  The calleeInputs is the
- * area that we must save for the C routine we call to save its 6 input
- * register arguments into if its compiled for debuggin.  The extraParams
- * area is the place that parameters beyond the sixth go, since only 6 can
- * be passed via input registers.  We limit this area to the number of extra
- * arguments in a system call, since only sys-call entries to the kernel
- * have this many args!  How do we keep it this way?  This is MESSY, since
- * actually one of the calleeInputs is for a "hidden parameter" for an agregate
- * return value, and one of them is really the beginning of the extra
- * params, but I'll fix this up later.
+ * Ugh, I have to include this here, since it needs Mach_RegState, and
+ * Mach_SigContext, defined above.   But I need the include file before
+ * the Sig_Stack stuff below.
  */
-typedef struct Mach_RegState {
-    int		curPsr;				/* locals */
-    int		pc;
-    int		nextPc;
-    int		tbr;
-    int		y;
-    int		safeTemp;
-    int		volTemp1;
-    int		volTemp2;
-    int		ins[MACH_NUM_INS];		/* ins */
-    int		calleeInputs[MACH_NUM_INS];	/* callee saves inputs here */
-    int		extraParams[MACH_NUM_EXTRA_ARGS];	/* args beyond 6 */
-    int		globals[MACH_NUM_GLOBALS];	/* globals */
-} Mach_RegState;
-
-typedef	Mach_RegState	Mach_DebugState;
-
+#ifdef KERNEL
+#include "sig.h"
+#else
+#include <kernel/sig.h>
+#endif /* KERNEL */
 
 /*
  * The state for a process - saved on context switch, etc.
@@ -188,18 +154,24 @@ typedef struct Mach_State {
 						 * stored here to make it easy
 						 * to copy the stuff back out
 						 * to the user stack in the
-						 * correct place.
-						 */
+						 * correct place.  */
     Address		kernStackStart;		/* top of kernel stack
 						 * for this process. */
+    Sig_Stack		sigStack;		/* sig stack holder for setting
+						 * up signal handling */
+    Sig_Context		sigContext;		/* sig context holder for
+						 * setting up signal handling */
 } Mach_State;
 
 /*
- * The machine dependent signal structure.
-  */
-typedef struct Mach_SigContext {
-    int	junk;	/* TBA */
-} Mach_SigContext;
+ * Structure on top of user stack when Sig_Handler is called.  This must
+ * a multiple of double-words!!!!
+ */
+typedef	struct {
+    Mach_RegState	extraSpace;	/* saved-window, etc, space */
+    Sig_Stack		sigStack;	/* signal stack for Sig_Handler */
+    Sig_Context		sigContext;	/* the signal context */
+} MachSignalStack;
 
 /*
  * Macro to get processor number

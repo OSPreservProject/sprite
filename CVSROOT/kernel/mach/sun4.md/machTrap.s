@@ -255,6 +255,46 @@ DoneWithUserStuff:
 	be	MachHandlePageFault
 	nop
 
+	cmp	%VOL_TEMP1, MACH_TRAP_SIG_RETURN	/* ret from handler */
+	be	_MachReturnFromSignal
+	nop
+
+	/*
+	 * These next few are handled by C routines, and we want them to
+	 * return to MachReturnFromTrap, so set that address as the return pc.
+	 */
+	cmp	%VOL_TEMP1, MACH_ILLEGAL_INSTR		/* illegal instr */
+	set	_MachReturnFromTrap, %RETURN_ADDR_REG	/* set return pc */
+	mov	%VOL_TEMP1, %o0
+	mov	%CUR_PC_REG, %o1
+	mov	%CUR_PSR_REG, %o2
+	be	_MachHandleWeirdoInstruction		/* C routine */
+	nop
+
+	cmp	%VOL_TEMP1, MACH_PRIV_INSTR		/* privileged instr */
+	set	_MachReturnFromTrap, %RETURN_ADDR_REG	/* set return pc */
+	mov	%VOL_TEMP1, %o0
+	mov	%CUR_PC_REG, %o1
+	mov	%CUR_PSR_REG, %o2
+	be	_MachHandleWeirdoInstruction		/* C routine */
+	nop
+
+	cmp	%VOL_TEMP1, MACH_MEM_ADDR_ALIGN		/* addr not aligned */
+	set	_MachReturnFromTrap, %RETURN_ADDR_REG	/* set return pc */
+	mov	%VOL_TEMP1, %o0
+	mov	%CUR_PC_REG, %o1
+	mov	%CUR_PSR_REG, %o2
+	be	_MachHandleWeirdoInstruction		/* C routine */
+	nop
+
+	cmp	%VOL_TEMP1, MACH_TAG_OVERFLOW		/* tagged instr ovfl */
+	set	_MachReturnFromTrap, %RETURN_ADDR_REG	/* set return pc */
+	mov	%VOL_TEMP1, %o0
+	mov	%CUR_PC_REG, %o1
+	mov	%CUR_PSR_REG, %o2
+	be	_MachHandleWeirdoInstruction		/* C routine */
+	nop
+
 	/*
 	 * We never get here directly from the window overflow trap.
 	 * Instead, what this means is that after handling a window
@@ -338,11 +378,17 @@ _MachReturnFromTrap:
 	nop
 	call	_MachUserAction
 	nop
-	/* Must we handle a signal? */
+	/* Check if we must handle a signal */
 	tst	%RETURN_VAL_REG
-	bne	NormalReturn
+	be	NormalReturn
 	nop
-
+	/*
+	 * We must handle a signal.  Call the leaf routine MachSetupSignal.
+	 * It does its own return from trap, so we don't come back here when
+	 * it's done!
+	 */
+	call	_MachHandleSignal
+	nop
 NormalReturn:
 	MACH_UNDERFLOW_TEST(testModuloLabel)
 	be	UnderflowOkay
@@ -1346,6 +1392,13 @@ MachHandlePageFault:
 AddressValueOkay:
 	call	_MachPageFault, 4
 	nop
+/* FOR DEBUGGING */
+	set	0x01010101, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RetFromPgFault0, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RetFromPgFault1, %CUR_PSR_REG)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RetFromPgFault2, %CUR_PC_REG)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RetFromPgFault3, %NEXT_PC_REG)
+/* END FOR DEBUGGING */
 	set	_MachReturnFromTrap, %VOL_TEMP1
 	jmp	%VOL_TEMP1
 	nop

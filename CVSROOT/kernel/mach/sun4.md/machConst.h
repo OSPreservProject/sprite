@@ -58,6 +58,8 @@
 #define	MACH_TRAP_INSTR_1	0x810		/* 129 */
 #define	MACH_TRAP_INSTR_2	0x820		/* 130 */
 #define	MACH_TRAP_INSTR_3	0x830		/* 131 */
+#define	MACH_TRAP_INSTR_4	0x840		/* 132 */
+#define	MACH_TRAP_INSTR_5	0x850		/* 133 */
 #define	MACH_TRAP_INSTR_LAST	0xff0
 
 #define	MACH_LEVEL1_INT		0x110		/* 17 */
@@ -78,6 +80,9 @@
 
 #define	MACH_TRAP_DEBUGGER	MACH_TRAP_INSTR_1
 #define	MACH_TRAP_SYSCALL	MACH_TRAP_INSTR_3
+#define	MACH_TRAP_SIG_RETURN	MACH_TRAP_INSTR_4
+#define	MACH_TRAP_FLUSH_WINDOWS	MACH_TRAP_INSTR_5
+
 /*
  * Our trap type is the 2 second to the last hex digits of the tbr register.
  * So "trap type 3" shows up in the last 3 digits of the tbr as 0x030, and
@@ -92,6 +97,8 @@
 #define	MACH_CALL_DBG_TRAP	(MACH_TRAP_DEBUGGER - 0x800)
 #define	MACH_BRKPT_TRAP		(MACH_TRAP_INSTR_2 - 0x800)
 #define	MACH_SYSCALL_TRAP	((MACH_TRAP_SYSCALL - 0x800) >> 4)
+#define	MACH_RET_FROM_SIG_TRAP	((MACH_TRAP_SIG_RETURN - 0x800) >> 4)
+#define	MACH_FLUSH_WINDOWS_TRAP	((MACH_TRAP_FLUSH_WINDOWS - 0x800) >> 4)
 
 /*
  * Mask for extracting the trap type from the psr.
@@ -150,7 +157,7 @@
 #define	MACH_FIRST_USER_PSR		0x080	/* traps off, interrupts on,
 						 * previous mode not supervisor,
 						 * current mode supervisor. */
-#define	MACH_NO_INTR_USER_PSER		0xF80
+#define	MACH_NO_INTR_USER_PSR		0xF80
 
 /*
  * psr value for interrupts disabled, traps enabled and window 0.
@@ -242,6 +249,11 @@
 #define	MACH_MAX_USER_STACK_ADDR	0x20000000
 #endif /* NOTDEF */
 
+/*
+ * Instruction executed from stack to cause a return trap to the kernel from
+ * a signal handler.  This is "ta MACH_RET_FROM_SIG_TRAP" instruction.
+ */
+#define	MACH_SIG_TRAP_INSTR	0x91d02004
 /*
  * Constants for getting to offsets in structures:  To make sure these
  * constants are correct, there is code in machCode.c that will cause
