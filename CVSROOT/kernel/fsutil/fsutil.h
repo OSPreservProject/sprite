@@ -65,6 +65,26 @@ typedef struct Fsutil_RecoveryInfo {
     Fsutil_UseCounts		use;		/* Client's copy of use state */
 } Fsutil_RecoveryInfo;
 
+/*
+ * Statistics for testing recovery.
+ */
+typedef	struct	FsutilTypeStats {
+    int		num;
+    int		refCount;
+} FsutilTypeStats;
+
+typedef	struct	Fsutil_FsRecovStats {
+    int			recovWanted;
+    int			existingHandles;
+    int			numHandles;
+    int			numHandleRefCounts;
+    int			numRead;
+    int			numWrite;
+    int			numExecute;
+    int			numAppend;
+    FsutilTypeStats	typeInfo[FSIO_NUM_STREAM_TYPES];
+} Fsutil_FsRecovStats;
+
 
 
 /*
