@@ -18,24 +18,24 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsutil.h"
-#include "fsio.h"
-#include "fsrmtInt.h"
-#include "fsNameOps.h"
-#include "fsprefix.h"
-#include "fscache.h"
-#include "fsconsist.h"
-#include "fsutilTrace.h"
-#include "fsioFile.h"
-#include "fsStat.h"
-#include "proc.h"
-#include "rpc.h"
-#include "vm.h"
-#include "dbg.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsio.h>
+#include <fsrmtInt.h>
+#include <fsNameOps.h>
+#include <fsprefix.h>
+#include <fscache.h>
+#include <fsconsist.h>
+#include <fsutilTrace.h>
+#include <fsioFile.h>
+#include <fsStat.h>
+#include <proc.h>
+#include <rpc.h>
+#include <vm.h>
+#include <dbg.h>
 
-void FsrmtRpcCacheUnlockBlock();
+int FsrmtRpcCacheUnlockBlock();
 
 Boolean fsrmt_RpcDebug = FALSE;
 
@@ -77,8 +77,9 @@ Fsrmt_Read(streamPtr, readPtr, waitPtr, replyPtr)
     FsrmtIOParam	readParams;
     register Boolean	userSpace;
     int			amountRead;
-    register Address	readBufferPtr;
+    register Address	readBufferPtr = (Address)NIL;
 
+    status = SUCCESS;
     /*
      * Set up parameters that won't change in each loop iteration.
      */
@@ -213,8 +214,12 @@ Fsrmt_RpcRead(srvToken, clientID, command, storagePtr)
     register Fs_Stream		*streamPtr;
     ReturnStatus	status;
     Rpc_ReplyMem	*replyMemPtr;	/* For call-back to free buffer */
-    int			(*callBack)();	/* Call back to clean up after RPC */
+    int			(*callBack) _ARGS_((ClientData));
+				/* Call back to clean up after RPC */
     ClientData		clientData;	/* Client data for callBack */
+
+    callBack = (int(*)()) NIL;
+    clientData = (ClientData) NIL;
 
     paramsPtr = (FsrmtIOParam *)storagePtr->requestParamPtr;
 
@@ -356,11 +361,13 @@ Fsrmt_RpcRead(srvToken, clientID, command, storagePtr)
  *
  *----------------------------------------------------------------------
  */
-void
-FsrmtRpcCacheUnlockBlock(cacheBlockPtr)
-    Fscache_Block *cacheBlockPtr;
+int
+FsrmtRpcCacheUnlockBlock(clientData)
+    ClientData clientData;
 {
+    Fscache_Block *cacheBlockPtr = (Fscache_Block *) clientData;
     Fscache_UnlockBlock(cacheBlockPtr, 0, -1, 0, FSCACHE_CLEAR_READ_AHEAD);
+    return 0;
 }
 
 
@@ -390,13 +397,13 @@ Fsrmt_Write(streamPtr, writePtr, waitPtr, replyPtr)
 {
     register Fsrmt_IOHandle *rmtHandlePtr =
 	    (Fsrmt_IOHandle *)streamPtr->ioHandlePtr;
-    ReturnStatus 	status;
+    ReturnStatus 	status = SUCCESS;
     Rpc_Storage 	storage;
     FsrmtIOParam	writeParams;
     int			amountWritten;	/* Total amount written */
     register int	writeLen;	/* Amount to write each RPC */
     register Boolean	userSpace = writePtr->flags & FS_USER;
-    register Address	writeBufferPtr;
+    register Address	writeBufferPtr = (Address) NIL;
 
     /*
      * If we are in write-back-on-last-dirty-block mode then mark this
@@ -605,6 +612,7 @@ Fsrmt_RpcWrite(srvToken, clientID, command, storagePtr)
 			handlePtr->hdr.fileID.minor,
 			Fsutil_HandleName(handlePtr), status);
 		}
+#ifdef notdef
 		status = Fsdm_FileDescWriteBack(handlePtr, TRUE);
 		if (status != SUCCESS) {
 		    printf("Fsrmt_RpcWrite: desc write <%d,%d> \"%s\" err <%x>\n",
@@ -612,6 +620,7 @@ Fsrmt_RpcWrite(srvToken, clientID, command, storagePtr)
 			handlePtr->hdr.fileID.minor,
 			Fsutil_HandleName(handlePtr), status);
 		}
+#endif
 	    }
 	}
     }
@@ -945,7 +954,7 @@ Fsrmt_RpcIOControl(srvToken, clientID, command, storagePtr)
      */
     if (ioctl.command == IOC_REPOSITION) {
 	int newOffset = -1;
-	register Ioc_RepositionArgs	*iocArgsPtr;
+	register Ioc_RepositionArgs *iocArgsPtr = (Ioc_RepositionArgs *) NIL;
 	Ioc_RepositionArgs	iocArgs;
 	int size;
 	int inSize;
@@ -1088,6 +1097,9 @@ Fsrmt_BlockCopy(srcHdrPtr, dstHdrPtr, blockNum)
     if (srcHdrPtr->fileID.type != FSIO_RMT_FILE_STREAM) {
 	panic( "Fsrmt_BlockCopy, bad stream type <%d>\n",
 	    srcHdrPtr->fileID.type);
+	srcHandlePtr = (Fsrmt_FileIOHandle *) NIL;
+	dstHandlePtr = (Fsrmt_FileIOHandle *) NIL;
+	return(FAILURE);
     } else {
 	srcHandlePtr = (Fsrmt_FileIOHandle *)srcHdrPtr;
 	dstHandlePtr = (Fsrmt_FileIOHandle *)dstHdrPtr;
@@ -1150,7 +1162,6 @@ Fsrmt_RpcBlockCopy(srvToken, clientID, command, storagePtr)
     register	Fs_HandleHeader		*srcHdrPtr;
     register	Fs_HandleHeader		*dstHdrPtr;
     ReturnStatus			status;
-    Fscache_IOProcs	        *ioProcsPtr;
 
     FSRMT_RPC_DEBUG_PRINT("RPC block copy request\n");
 
@@ -1172,12 +1183,9 @@ Fsrmt_RpcBlockCopy(srvToken, clientID, command, storagePtr)
     if (srcHdrPtr == (Fs_HandleHeader *)NIL) {
 	return(FS_STALE_HANDLE);
     }
-    ioProcsPtr = (dstHdrPtr->fileID.type == FSIO_LCL_FILE_STREAM) ? 
-		(((Fsio_FileIOHandle *) dstHdrPtr)->cacheInfo.ioProcsPtr) :
-		(((Fsrmt_FileIOHandle *) dstHdrPtr)->cacheInfo.ioProcsPtr);
 
-
-    status = (ioProcsPtr->blockCopy)(srcHdrPtr, dstHdrPtr, paramsPtr->blockNum);
+    status = (*fsio_StreamOpTable[paramsPtr->srcFileID.type].blockCopy)
+				(srcHdrPtr, dstHdrPtr, paramsPtr->blockNum);
     Fsutil_HandleRelease(srcHdrPtr, TRUE);
 
     Rpc_Reply(srvToken, status, storagePtr, (int (*)())NIL, (ClientData)NIL);
