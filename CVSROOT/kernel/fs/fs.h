@@ -360,7 +360,8 @@ typedef struct Fs_IOCParam {
 typedef enum {
     FS_CODE_PAGE,
     FS_HEAP_PAGE,
-    FS_SWAP_PAGE
+    FS_SWAP_PAGE,
+    FS_SHARED_PAGE
 } Fs_PageType;
 
 
