@@ -5,6 +5,6 @@
 # that must be included to set up various compilation stuff.
 #
 
-PUBHDRS		+= byte.h
+PUBHDRS		+= bf.h byte.h hash.h trace.h 
 
 #include	<$(SYSMAKEFILE)>
