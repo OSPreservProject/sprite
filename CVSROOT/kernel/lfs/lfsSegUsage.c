@@ -36,6 +36,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include <fsdm.h>
 
+int lfsMinCleanThreshold = 5;
 
 /*
  *----------------------------------------------------------------------
@@ -479,16 +480,29 @@ Lfs_DomainInfo(domainPtr, domainInfoPtr)
     Fsdm_Domain	*domainPtr;
     Fs_DomainInfo	*domainInfoPtr;
 {
-    Lfs		*lfsPtr;
+    Lfs		*lfsPtr = LfsFromDomainPtr(domainPtr);
+    LfsSegUsage *usagePtr = &(lfsPtr->usageArray);
+    LfsSegUsageCheckPoint *cp = &(usagePtr->checkPoint);
+    int		numSegAvail, numBlocksAvail;
 
-    lfsPtr = LfsFromDomainPtr(domainPtr);
+    /*
+     * Compute the number of segments available for blocks.
+     */
+    numSegAvail = usagePtr->params.numberSegments - 
+				usagePtr->params.minNumClean;
 
-    domainInfoPtr->maxKbytes = (LfsSegSize(lfsPtr) * 
-			lfsPtr->usageArray.params.numberSegments)/1024;
+    domainInfoPtr->maxKbytes = (LfsSegSize(lfsPtr)/1024) * numSegAvail;
 
-    domainInfoPtr->freeKbytes = 
-	(LfsBlocksToBytes(lfsPtr, lfsPtr->usageArray.checkPoint.freeBlocks) - 
-	  - lfsPtr->usageArray.params.minNumClean) / 1024;
+    /*
+     * Compute the number of block available.
+     */
+    numBlocksAvail = cp->freeBlocks - usagePtr->params.minFreeBlocks;
+    if (numBlocksAvail < 0) {
+	numBlocksAvail = 0;
+    }
+
+    domainInfoPtr->freeKbytes = LfsBlocksToBytes(lfsPtr, numBlocksAvail) / 1024;
+
     domainInfoPtr->maxFileDesc = lfsPtr->descMap.params.maxDesc;
     domainInfoPtr->freeFileDesc = lfsPtr->descMap.params.maxDesc -
 				  lfsPtr->descMap.checkPoint.numAllocDesc;
@@ -533,9 +547,13 @@ LfsGetLogTail(lfsPtr, cantWait, logRangePtr, startBlockPtr)
     LfsStableMemEntry smemEntry;
 
 
-    if (!cantWait && (cp->numClean <= lfsPtr->usageArray.params.minNumClean)) {
+    if (!cantWait && 
+	(cp->numClean <= 
+	    lfsPtr->usageArray.params.minNumClean + lfsMinCleanThreshold)) {
 	LfsSegCleanStart(lfsPtr);
-	return FS_WOULD_BLOCK;
+	if (cp->numClean <= lfsPtr->usageArray.params.minNumClean) {
+	    return FS_WOULD_BLOCK;
+	}
     }
     if (cp->currentBlockOffset != -1) {
 	/*
@@ -660,15 +678,15 @@ LfsSegUsageEnoughClean(lfsPtr, dirtyBytes)
 {
     LfsSegUsage *usagePtr = &(lfsPtr->usageArray);
     LfsSegUsageCheckPoint *cp = &(usagePtr->checkPoint);
-    int	segsAvailable;
+    int	segsAvailable, cleaningThreshold;
 
 
     segsAvailable = cp->numClean - usagePtr->params.minNumClean;
-    if (segsAvailable * LfsSegSize(lfsPtr) < dirtyBytes) {
+    cleaningThreshold = segsAvailable - lfsMinCleanThreshold;
+    if (cleaningThreshold * LfsSegSize(lfsPtr) < dirtyBytes) {
 	LfsSegCleanStart(lfsPtr);
-	return FALSE;
     }
-    return TRUE;
+    return ((segsAvailable * LfsSegSize(lfsPtr)) > dirtyBytes);
 }
 
 /*
@@ -782,26 +800,34 @@ LfsGetSegsToClean(lfsPtr, maxSegArrayLen, segArrayPtr, minNeededToCleanPtr,
 		/*
 		 * Give zero size segments highest priority.
 		 */
-		priority = 0x7ffffff;
+		priority = 0x7fffffff;
 	    }
+	    /*
+	     * Find the last element in the list with a priority
+	     * greater the the current segments.
+	     */
 	    for (i = numberSegs-1; i >= 0; i--) {
 		if (segArrayPtr[i].priority >= priority) {
 		    break;
 		} 
 	    }
 	    /*
-	     * Insert it at that position by moving all others down. 
 	     * Extend the array if it is not full already.
+	     * Insert new seg at specified position by moving all others down.
+	     * Don't do insert if position is after the end of the array.
 	     */
 	    if (numberSegs < maxSegArrayLen) {
 		numberSegs++;
 	    }
-	    for (j = numberSegs-2; j > i; j--) {
-		segArrayPtr[j+1] = segArrayPtr[j];
+
+	    if (i < numberSegs-1) { 
+		for (j = numberSegs-2; j > i; j--) {
+		    segArrayPtr[j+1] = segArrayPtr[j];
+		}
+		segArrayPtr[i+1].segNumber = segNum;
+		segArrayPtr[i+1].activeBytes = s->activeBytes;
+		segArrayPtr[i+1].priority = priority;
 	    }
-	    segArrayPtr[i+1].segNumber = segNum;
-	    segArrayPtr[i+1].activeBytes = s->activeBytes;
-	    segArrayPtr[i+1].priority = priority;
 	}
    }
    LfsStableMemRelease(&(usagePtr->stableMem), &smemEntry, FALSE);
@@ -877,10 +903,11 @@ extern Boolean LfsSegUsageClean _ARGS_((LfsSeg *segPtr, int *sizePtr,
 extern Boolean LfsSegUsageLayout _ARGS_((LfsSeg *segPtr, int flags, 
 			ClientData *clientDataPtr));
 
+extern ReturnStatus LfsSegUsageDetach _ARGS_((Lfs *lfsPtr));
 
 static LfsSegIoInterface segUsageIoInterface = 
 	{ LfsSegUsageAttach, LfsSegUsageLayout, LfsSegUsageClean,
-	  LfsSegUsageCheckpoint, LfsSegUsageWriteDone,  0};
+	  LfsSegUsageCheckpoint, LfsSegUsageWriteDone, LfsSegUsageDetach, 0};
 
 
 /*
@@ -910,7 +937,7 @@ LfsSegUsageInit()
  *
  * SegUsageAttach --
  *
- *	Attach routine for the descriptor map. Creates and initializes the
+ *	Attach routine for the seg usage map. Creates and initializes the
  *	map for this file system.
  *
  * Results:
@@ -954,6 +981,32 @@ LfsSegUsageAttach(lfsPtr, checkPointSize, checkPointPtr)
 		cp->numClean, cp->numDirty,
 		usagePtr->params.numberSegments - cp->numClean - cp->numDirty);
     return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SegUsageDetach --
+ *
+ *	Detach routine for the seg usage array. Destory the
+ *	array for this file system.
+ *
+ * Results:
+ *	SUCCESS if dettach is going ok.
+ *
+ * Side effects:
+ *	Many
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+LfsSegUsageDetach(lfsPtr)
+    Lfs   *lfsPtr;	     /* File system for attach. */
+{
+    LfsSegUsage	      *usagePtr = &(lfsPtr->usageArray);
+
+    return LfsStableMemDestory(lfsPtr, 	&(usagePtr->stableMem));
 }
 
 /*
