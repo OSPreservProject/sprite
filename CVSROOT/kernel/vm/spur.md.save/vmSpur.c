@@ -17,6 +17,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vmInt.h"
 #include "user/vm.h"
 #include "user/spur.md/vmMach.h"
+#include "machConfig.h"
 #include "mach.h"
 #include "list.h"
 #include "mem.h"
@@ -26,12 +27,53 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sys.h"
 #include "byte.h"
 #include "dbg.h"
+/*
+ * Number of page frames in system.
+ */
+static int	NumPageFrames;
 
+/*
+ * Structure for mapping virtual page frame numbers to physical page frame
+ * numbers and back for each memory board.
+ */
+typedef struct {
+    unsigned int	endVirPfNum;	/* Ending virtual page frame number
+					 * on board. */
+    unsigned int	physStartAddr;	/* Physical address of page frame. */
+    unsigned int	physEndAddr;	/* End Physical address of page frame.*/
+} Memory_Board;
+
+/*
+ * Pointer to last configured Mboard structure.
+ */
+static Memory_Board   *LastMboard;
+/*
+ * Memory_Board structures for each board in system. This array is sorted
+ * by endVirPfNum.
+ */
+static Memory_Board Mboards[16];
 /*
  * Macros to translate from a virtual page to a physical page and back.
  */
-#define	VirtToPhysPage(pfNum) (MACH_PAGE_SLOT_MASK | ((pfNum) + MACH_FIRST_PHYS_PAGE))
-#define	PhysToVirtPage(pfNum) (((pfNum)-MACH_FIRST_PHYS_PAGE) & ~MACH_PAGE_SLOT_MASK)
+
+#define	VirtToPhysPage(pfNum) ({\
+	register Memory_Board 	*mb; \
+	for (mb = Mboards; mb < LastMboard; mb++) { \
+	    if (pfNum < mb->endVirPfNum) { \
+		break; \
+	    } \
+	} \
+	(mb->physStartAddr + pfNum); })
+
+#define	PhysToVirtPage(pfNum) ({\
+	register Memory_Board 	*mb; \
+	for (mb = Mboards; mb < LastMboard; mb++) { \
+	    if (pfNum >= mb->physStartAddr && \
+		pfNum < mb->physEndAddr) { \
+		break; \
+	    } \
+	} \
+	(pfNum - mb->physStartAddr); })
 
 /*
  * Macro to go from a virtual page number within a segment to the page
@@ -141,6 +183,33 @@ VmMach_BootInit(pageSizePtr, pageShiftPtr, pageTableIncPtr, kernMemSizePtr,
     int	*numKernPagesPtr;
     int	*maxSegsPtr;
 {
+    ReturnStatus	status;
+    int			boardNum;
+    Mach_Board		board;
+    int			nextVframeNum, numFrames;
+    /*
+     * Initailize the memory boards.
+     */
+    LastMboard = Mboards;
+    nextVframeNum = 0;
+    for (boardNum = 0; boardNum < 16; boardNum++) {
+	status = Mach_FindBoardDescription(MACH_CONFIG_MEMORY_MASK, boardNum,
+					   TRUE, &board);
+	if (status != SUCCESS) {
+		break;
+	} 
+	numFrames = Mach_ConfigMemSize(board) / VMMACH_PAGE_SIZE;
+	LastMboard->endVirPfNum = nextVframeNum + numFrames;
+	nextVframeNum += numFrames;
+	LastMboard->physStartAddr = (Mach_ConfigInitMem(board) >> 
+						VMMACH_PAGE_SHIFT);
+	LastMboard->physEndAddr = LastMboard->physStartAddr + numFrames;
+	LastMboard++;
+    }
+    if (LastMboard == Mboards) {
+	panic("No memory boards in system configuration.");
+    }
+    NumPageFrames = nextVframeNum;
     basePTPtr = (VmMachPTE *)VMMACH_KERN_PT_BASE;
     kernPTPtr = basePTPtr;
     kernPT2Ptr = (VmMachPTE *)VMMACH_KERN_PT2_BASE;
@@ -180,7 +249,7 @@ VmMach_BootInit(pageSizePtr, pageShiftPtr, pageTableIncPtr, kernMemSizePtr,
 int
 GetNumPages()
 {
-    return(MACH_NUM_PHYS_PAGES);
+    return(NumPageFrames);
 }
 
 
