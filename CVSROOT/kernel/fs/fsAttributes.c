@@ -558,6 +558,12 @@ Fs_RpcGetAttrPath(srvToken, clientID, command, storagePtr)
 
     openArgsPtr = (FsOpenArgs *) storagePtr->requestParamPtr;
 
+    if (openArgsPtr->prefixID.serverID != rpc_SpriteID) {
+	/*
+	 * Filesystem mis-match.
+	 */
+	return(GEN_INVALID_ARG);
+    }
     prefixHandle = (*fsStreamOpTable[openArgsPtr->prefixID.type].clientVerify)
 	    (&openArgsPtr->prefixID, clientID);
     if (prefixHandle == (FsHandleHeader *)NIL) {
@@ -701,6 +707,12 @@ Fs_RpcSetAttrPath(srvToken, clientID, command, storagePtr)
 
     setAttrArgsPtr = (FsSetAttrArgs *) storagePtr->requestParamPtr;
 
+    if (setAttrArgsPtr->openArgs.prefixID.serverID != rpc_SpriteID) {
+	/*
+	 * Filesystem mis-match.
+	 */
+	return(GEN_INVALID_ARG);
+    }
     prefixHandle =
 	(*fsStreamOpTable[setAttrArgsPtr->openArgs.prefixID.type].clientVerify)
 	    (&setAttrArgsPtr->openArgs.prefixID, clientID);
