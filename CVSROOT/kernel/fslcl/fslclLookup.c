@@ -598,9 +598,8 @@ FindFileType(parentHandlePtr, relativeName)
 {
     int parentType;
 
-    parentType  = parentHandlePtr->cacheInfo.attr.userType;
-
     if (parentHandlePtr != (FsLocalFileIOHandle *)NIL) {
+	parentType  = parentHandlePtr->cacheInfo.attr.userType;
 	if (parentHandlePtr->hdr.fileID.minor == fsTmpDirNum ||
 	    parentType == FS_USER_TYPE_TMP) {
 	    return(FS_USER_TYPE_TMP);
