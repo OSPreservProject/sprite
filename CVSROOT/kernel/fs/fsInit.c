@@ -216,6 +216,7 @@ Fs_Bin()
 #ifdef INET
     FsSocketBin();
 #endif
+    Mem_Bin(FS_BLOCK_SIZE);
 }
 
 
