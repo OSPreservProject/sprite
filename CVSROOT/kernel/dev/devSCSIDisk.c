@@ -101,6 +101,11 @@ FillInLabel(devPtr,diskPtr)
     char			senseBuffer[SCSI_MAX_SENSE_LEN];
     int				byteCount;
     int				part;
+    Boolean			printLabel = FALSE;
+
+#ifdef DEBUG
+    printLabel = TRUE;
+#endif
 
     /*
      * The label of a SCSI command resides in the first sector. Format
@@ -127,22 +132,27 @@ FillInLabel(devPtr,diskPtr)
 	/*
 	 * XXX - Should really check if label is valid.
 	 */
-	printf("%s: %s\n", devPtr->locationName, diskLabelPtr->asciiLabel);
-    
+	if (printLabel) {
+	    printf("%s: %s\n", devPtr->locationName, diskLabelPtr->asciiLabel);
+	}
+
 	diskPtr->sizeInSectors = diskLabelPtr->numSectors * 
 			    diskLabelPtr->numHeads * diskLabelPtr->numCylinders;
     
-	printf(" Partitions ");
+	if (printLabel) printf(" Partitions ");
 	for (part = 0; part < DEV_NUM_DISK_PARTS; part++) {
 	    diskPtr->map[part].firstSector = diskLabelPtr->map[part].cylinder *
 					     diskLabelPtr->numHeads * 
 					     diskLabelPtr->numSectors;
 	    diskPtr->map[part].sizeInSectors =
 					diskLabelPtr->map[part].numBlocks;
-	    printf(" (%d,%d)", diskPtr->map[part].firstSector,
+	    if (printLabel) {
+		printf(" (%d,%d)", diskPtr->map[part].firstSector,
 				       diskPtr->map[part].sizeInSectors);
+	    }
 	}
-	printf("\n");
+	if (printLabel)	printf("\n");
+
 	return(SUCCESS);
     }
     /*
@@ -153,13 +163,15 @@ FillInLabel(devPtr,diskPtr)
 	/*
 	 * XXX - Should really check if label is valid.
 	 */
-	printf("%s: %s\n", devPtr->locationName, diskHdrPtr->asciiLabel);
+	if (printLabel) {
+	    printf("%s: %s\n", devPtr->locationName, diskHdrPtr->asciiLabel);
+	}
 
 	diskPtr->sizeInSectors = diskHdrPtr->numSectors * 
 				 diskHdrPtr->numHeads *
 			         diskHdrPtr->numCylinders;
 
-	printf(" Partitions ");
+	if (printLabel) printf(" Partitions ");
 	for (part = 0; part < DEV_NUM_DISK_PARTS; part++) {
 	    diskPtr->map[part].firstSector = 
 				diskHdrPtr->map[part].firstCylinder *
@@ -167,10 +179,12 @@ FillInLabel(devPtr,diskPtr)
 	    diskPtr->map[part].sizeInSectors =
 				diskHdrPtr->map[part].numCylinders *
 				diskHdrPtr->numHeads * diskHdrPtr->numSectors;
-	    printf(" (%d,%d)", diskPtr->map[part].firstSector,
+	    if (printLabel) {
+		printf(" (%d,%d)", diskPtr->map[part].firstSector,
 				   diskPtr->map[part].sizeInSectors);
+	    }
 	}
-	printf("\n");
+	if (printLabel) printf("\n");
 	return(SUCCESS);
     }
     return(FAILURE);
