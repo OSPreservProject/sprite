@@ -1,10 +1,11 @@
 /* 
  * devConfig.c --
  *
- *	Configuration table for the devices in the system.  Devices fall
- *	into two classes: those that are slaves of a controller,
- *	and those that aren't.  As such there is a configuration table for
- *	controllers and one for devices.
+ *	Configuration table for the devices in the system.  There is
+ *	a table for the possible controllers in the system, and
+ *	then a table for devices.  Devices are implicitly associated
+ *	with a controller.  This file should be automatically generated
+ *	by a config program, but it isn't.
  *
  * Copyright 1986 Regents of the University of California
  * All rights reserved.
@@ -57,17 +58,17 @@ int devNumConfigCntrlrs = sizeof(devCntrlr) / sizeof(DevConfigController);
  * Several entries for the same kind of device result in a correspondence 
  * between those devices and ranges of unit numbers.
  *
- * SCSI: The cntrlrID corresponds to the Host Bus Adaptor.
- *	The slaveId corresponds to the SCSI target ID.
+ * SCSI: The cntrlrID corresponds to the Host Bus Adaptor index (0 or 1).
+ *	The slaveId corresponds to the SCSI target ID [0-7]
  *	The flags field embeds a type and the LUN (Logical Unit) of the
- *		device within the SCSI target. 
+ *		device within the SCSI target [0-7]
  */
 DevConfigDevice devDevice[] = {
 /* cntrlrID, slaveID, flags, initproc */		/* Device unit # */
     { 0, 0, 0 | SCSI_DISK, Dev_SCSIInitDevice},	/* rsd units 8-15 */
     { 0, 0, 1 | SCSI_DISK, Dev_SCSIInitDevice},	/* rsd units 0-7 */
 
-/*  { 0, 1, 0 | SCSI_DISK, Dev_SCSIInitDevice},	/* rsd units 16-23 */
+    { 0, 1, 0 | SCSI_DISK, Dev_SCSIInitDevice},	/* rsd units 16-23 */
 /*  { 0, 1, 1 | SCSI_DISK, Dev_SCSIInitDevice},	/* rsd units 24-31 */
     { 0, 3, 0 | SCSI_WORM, Dev_SCSIInitDevice},	/* scsiWorm 0-7 */
     { 0, 4, 0 | SCSI_TAPE, Dev_SCSIInitDevice},	/* tape0 (shoebox) */
