@@ -566,12 +566,9 @@ FsSpriteGetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
 		     getAttrResultsParam.attrResults.attrs;
 	} else if (status == FS_LOOKUP_REDIRECT) {
 	/*
-	 * Allocate enough space to fit the prefix length and the file name and
-	 * copy over the structure that we have on our stack.
+	 * Copy the info from our stack to a buffer for our caller
 	 */
-	register int	redirectSize;
-	redirectSize = sizeof(int) + String_Length(replyName) + 1;
-	*newNameInfoPtrPtr = (FsRedirectInfo *) Mem_Alloc(redirectSize);
+	*newNameInfoPtrPtr = Mem_New(FsRedirectInfo);
 	(*newNameInfoPtrPtr)->prefixLength = getAttrResultsParam.prefixLength;
 	(void)String_Copy(replyName, (*newNameInfoPtrPtr)->fileName);
 	return(FS_LOOKUP_REDIRECT);
@@ -742,12 +739,9 @@ FsSpriteSetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
 	(* fileIDPtr) = getAttrResultsParam.attrResults.fileID;
     } else if (status == FS_LOOKUP_REDIRECT) {
 	/*
-	 * Allocate enough space to fit the prefix length and the file name and
-	 * copy over the info.
+	 * Copy the info from our stack to a buffer for our caller.
 	 */
-	register int redirectSize;
-	redirectSize = sizeof(int) + String_Length(replyName) + 1;
-	*newNameInfoPtrPtr = (FsRedirectInfo *) Mem_Alloc(redirectSize);
+	*newNameInfoPtrPtr = Mem_New(FsRedirectInfo);
 	(*newNameInfoPtrPtr)->prefixLength = getAttrResultsParam.prefixLength;
 	(void)String_Copy(replyName, (*newNameInfoPtrPtr)->fileName);
     }
