@@ -250,6 +250,7 @@ InitiateStripeIOFailure(stripeIOControlPtr)
  *----------------------------------------------------------------------
  */
 
+static void InitiateSplitStripeWrite();
 static void InitiateReadModifyWrite();
 static void InitiateReconstructWrite();
 static void oldInfoReadDoneProc();
@@ -286,20 +287,115 @@ InitiateStripeWrite(stripeIOControlPtr)
 	} else {
 	    InitiateStripeIOFailure(stripeIOControlPtr);
 	}
-    } else if (raidPtr->dataSectorsPerStripe/(nthSector-firstSector) >= 2) {
+    } else if (raidPtr->dataSectorsPerStripe/(nthSector-firstSector) > 2) {
 	/*
-	 * If half or more of the stripe is being written, do a
-	 * reconstruct write.
+	 * If less than half of the stripe is being written, do a
+	 * read modify write.
 	 */
 	stripeIOControlPtr->recoverProc = InitiateReconstructWrite;
 	InitiateReadModifyWrite(stripeIOControlPtr);
     } else {
 	/*
-	 * If less than half of the stripe is being written, do a
-	 * read modity write.
+	 * If half or more of the stripe is being written, do a
+	 * reconstruct write.
 	 */
 	stripeIOControlPtr->recoverProc = InitiateReadModifyWrite;
 	InitiateReconstructWrite(stripeIOControlPtr);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * InitiateSplitStripeWrite --
+ *
+ *	If a write request which covers multiple stripe units fails durring
+ *	the read phase and the failed component is not a full stripe unit,
+ *	It is necessary to do both a read-modify-write and a reconstruct write
+ *	in order to complete the entire request.
+ *	Note: StripeIOControlPtr->failedReqPtr is assumed to point to the data
+ *	part of the failed request.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The IO operation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+InitiateSplitStripeWrite(stripeIOControlPtr)
+    RaidStripeIOControl	*stripeIOControlPtr;
+{
+    Raid		*raidPtr       = stripeIOControlPtr->raidPtr;
+    unsigned		 firstSector   = stripeIOControlPtr->firstSector;
+    unsigned		 nthSector     = stripeIOControlPtr->nthSector;
+/*    Address		 buffer        = stripeIOControlPtr->buffer; */
+    int			 ctrlData      = stripeIOControlPtr->ctrlData;
+    RaidRequestControl	*reqControlPtr = stripeIOControlPtr->reqControlPtr;
+    char		*parityBuf     = stripeIOControlPtr->parityBuf;
+    char		*readBuf       = stripeIOControlPtr->readBuf;
+    int			 failedAddr    = (int)
+    	   stripeIOControlPtr->reqControlPtr->failedReqPtr->devReq.startAddress;
+    int			 failedLen     =
+    	   stripeIOControlPtr->reqControlPtr->failedReqPtr->devReq.bufferLen;
+    int			 rangeOff;
+    int			 rangeLen;
+
+    /*
+     * 'Deduce' data part of failed request.
+     */
+    if (stripeIOControlPtr->recoverProc == (void(*)())InitiateReadModifyWrite) {
+	if (StripeUnitOffset(raidPtr, failedAddr) == 0) {
+	    failedAddr = failedAddr + failedLen;
+	    failedLen = raidPtr->bytesPerStripeUnit - failedLen;
+	} else {
+	    failedAddr = failedAddr - StripeUnitOffset(raidPtr, failedAddr);
+	    failedLen = raidPtr->bytesPerStripeUnit - failedLen;
+	}
+    }
+    if (StripeUnitOffset(raidPtr, failedAddr) == 0) {
+	rangeOff = failedLen;
+	rangeLen = raidPtr->bytesPerStripeUnit -
+		StripeUnitOffset(raidPtr, rangeOff);
+    } else {
+	rangeOff = 0;
+	rangeLen = StripeUnitOffset(raidPtr, failedAddr);
+    }
+    stripeIOControlPtr->recoverProc = InitiateStripeIOFailure;
+    stripeIOControlPtr->rangeOff = 0;
+    stripeIOControlPtr->rangeLen = raidPtr->bytesPerStripeUnit;
+    reqControlPtr->numReq = reqControlPtr->numFailed = 0;
+    /*
+     * reconstructWrite strip
+     */
+    AddRaidDataRangeRequests(reqControlPtr, raidPtr, FS_READ,
+	    FirstSectorOfStripe(raidPtr, firstSector), firstSector,
+	    readBuf, ctrlData,
+	    failedAddr, failedLen);
+    AddRaidDataRangeRequests(reqControlPtr, raidPtr, FS_READ,
+	    nthSector, NthSectorOfStripe(raidPtr, firstSector),
+	    readBuf + SectorToByte(raidPtr,
+	    	    firstSector - FirstSectorOfStripe(raidPtr, firstSector)),
+	    ctrlData, failedAddr, failedLen);
+    /*
+     * RMW strip
+     */
+    AddRaidDataRangeRequests(reqControlPtr, raidPtr, FS_READ,
+	    firstSector, nthSector, readBuf + SectorToByte(raidPtr,
+		    raidPtr->dataSectorsPerStripe - (nthSector-firstSector)),
+	    ctrlData, rangeOff, rangeLen);
+    AddRaidParityRangeRequest(reqControlPtr, raidPtr, FS_READ,
+	    firstSector, parityBuf, ctrlData,
+	    rangeOff, rangeLen);
+    if (reqControlPtr->numFailed == 0) {
+	InitiateIORequests(reqControlPtr,
+		oldInfoReadDoneProc, (ClientData) stripeIOControlPtr);
+    } else {
+	stripeIOControlPtr->recoverProc(stripeIOControlPtr);
     }
 }
 
@@ -337,7 +433,7 @@ InitiateReadModifyWrite(stripeIOControlPtr)
     RaidRequestControl	*reqControlPtr = stripeIOControlPtr->reqControlPtr;
     char		*parityBuf     = stripeIOControlPtr->parityBuf;
     char		*readBuf       = stripeIOControlPtr->readBuf;
-    void	       (*initiateRecoveryProc)();
+    void	       (*recoverProc)()= stripeIOControlPtr->recoverProc;
 
     reqControlPtr->numReq = reqControlPtr->numFailed = 0;
     AddRaidDataRequests(reqControlPtr, raidPtr, FS_READ,
@@ -355,12 +451,25 @@ InitiateReadModifyWrite(stripeIOControlPtr)
 	    firstSector, parityBuf, ctrlData,
 	    stripeIOControlPtr->rangeOff, stripeIOControlPtr->rangeLen);
     if (reqControlPtr->numFailed == 0) {
-	InitiateIORequests(stripeIOControlPtr->reqControlPtr,
+	InitiateIORequests(reqControlPtr,
 		oldInfoReadDoneProc, (ClientData) stripeIOControlPtr);
     } else {
-	initiateRecoveryProc = stripeIOControlPtr->recoverProc;
-	stripeIOControlPtr->recoverProc = InitiateStripeIOFailure;
-	initiateRecoveryProc(stripeIOControlPtr);
+	/*
+	 * If the request covers multiple stripe units and is not stripe unit
+	 * aligned, check to see if the failed request is a partial
+	 * stripe unit.  If it is, then both a read-modify-write and
+	 * a reconstruct write is necessary to complete the request.
+	 */
+	DevBlockDeviceRequest *devReqPtr = &reqControlPtr->failedReqPtr->devReq;
+	if (stripeIOControlPtr->rangeLen == raidPtr->bytesPerStripeUnit &&
+		devReqPtr->bufferLen != raidPtr->bytesPerStripeUnit &&
+		recoverProc != (void (*)()) InitiateStripeIOFailure) {
+	    stripeIOControlPtr->recoverProc = InitiateStripeIOFailure;
+	    InitiateSplitStripeWrite(stripeIOControlPtr);
+	} else {
+	    stripeIOControlPtr->recoverProc = InitiateStripeIOFailure;
+	    recoverProc(stripeIOControlPtr);
+	}
     }
 }
 
@@ -398,7 +507,7 @@ InitiateReconstructWrite(stripeIOControlPtr)
     RaidRequestControl	*reqControlPtr = stripeIOControlPtr->reqControlPtr;
 /*    char		*parityBuf     = stripeIOControlPtr->parityBuf; */
     char		*readBuf       = stripeIOControlPtr->readBuf;
-    void	       (*initiateRecoveryProc)();
+    void	       (*recoverProc)()= stripeIOControlPtr->recoverProc;
 
     /*
      * If writing only one stripe unit, range restrict the write.
@@ -426,9 +535,21 @@ InitiateReconstructWrite(stripeIOControlPtr)
 	InitiateIORequests(stripeIOControlPtr->reqControlPtr,
 		oldInfoReadDoneProc, (ClientData) stripeIOControlPtr);
     } else {
-	initiateRecoveryProc = stripeIOControlPtr->recoverProc;
-	stripeIOControlPtr->recoverProc = InitiateStripeIOFailure;
-	initiateRecoveryProc(stripeIOControlPtr);
+	/*
+	 * If the request covers multiple stripe units and is not stripe unit
+	 * aligned, check to see if the failed request is a partial
+	 * stripe unit.  If it is, then both a read-modify-write and
+	 * a reconstruct write is necessary to complete the request.
+	 */
+	DevBlockDeviceRequest *devReqPtr = &reqControlPtr->failedReqPtr->devReq;
+	if (stripeIOControlPtr->rangeLen == raidPtr->bytesPerStripeUnit &&
+		devReqPtr->bufferLen != raidPtr->bytesPerStripeUnit &&
+		recoverProc != (void(*)()) InitiateStripeIOFailure) {
+	    InitiateSplitStripeWrite(stripeIOControlPtr);
+	} else {
+	    stripeIOControlPtr->recoverProc = InitiateStripeIOFailure;
+	    recoverProc(stripeIOControlPtr);
+	}
     }
 }
 
@@ -454,34 +575,36 @@ InitiateReconstructWrite(stripeIOControlPtr)
  */
 
 static void
-oldInfoReadDoneProc(stripeIOControlPtr, numFailed)
+oldInfoReadDoneProc(stripeIOControlPtr, numFailed, failedReqPtr)
     RaidStripeIOControl	*stripeIOControlPtr;
     int		 	 numFailed;
+    RaidBlockRequest	*failedReqPtr;
 {
+    Raid	*raidPtr = stripeIOControlPtr->raidPtr;
+
     if (numFailed == 0) {
 	char			*parityBuf;
 
-        parityBuf = Malloc((unsigned)
-			stripeIOControlPtr->raidPtr->bytesPerStripeUnit);
-	bzero(parityBuf, stripeIOControlPtr->raidPtr->bytesPerStripeUnit);
+        parityBuf = Malloc((unsigned) raidPtr->bytesPerStripeUnit);
+	bzero(parityBuf, raidPtr->bytesPerStripeUnit);
 
 	XorRaidRangeRequests(stripeIOControlPtr->reqControlPtr,
-		stripeIOControlPtr->raidPtr, parityBuf,
+		raidPtr, parityBuf,
 		stripeIOControlPtr->rangeOff, stripeIOControlPtr->rangeLen);
         stripeIOControlPtr->reqControlPtr->numReq = 0;
         stripeIOControlPtr->reqControlPtr->numFailed = 0;
         AddRaidDataRangeRequests(stripeIOControlPtr->reqControlPtr,
-		stripeIOControlPtr->raidPtr, FS_WRITE,
+		raidPtr, FS_WRITE,
 		stripeIOControlPtr->firstSector, stripeIOControlPtr->nthSector,
                 stripeIOControlPtr->buffer, stripeIOControlPtr->ctrlData,
 		stripeIOControlPtr->rangeOff, stripeIOControlPtr->rangeLen);
 	XorRaidRangeRequests(stripeIOControlPtr->reqControlPtr,
-		stripeIOControlPtr->raidPtr, parityBuf,
+		raidPtr, parityBuf,
 		stripeIOControlPtr->rangeOff, stripeIOControlPtr->rangeLen);
 	Free(stripeIOControlPtr->parityBuf);
 	stripeIOControlPtr->parityBuf = parityBuf;
         AddRaidParityRangeRequest(stripeIOControlPtr->reqControlPtr,
-		stripeIOControlPtr->raidPtr, FS_WRITE,
+		raidPtr, FS_WRITE,
 	        stripeIOControlPtr->firstSector, stripeIOControlPtr->parityBuf,
 		stripeIOControlPtr->ctrlData,
 		stripeIOControlPtr->rangeOff, stripeIOControlPtr->rangeLen);
@@ -499,10 +622,22 @@ oldInfoReadDoneProc(stripeIOControlPtr, numFailed)
 	    break;
 	}
     } else {
-        void       (*initiateRecoveryProc)();
-	initiateRecoveryProc = stripeIOControlPtr->recoverProc;
-	stripeIOControlPtr->recoverProc = InitiateStripeIOFailure;
-	initiateRecoveryProc(stripeIOControlPtr);
+        void       (*recoverProc)() = stripeIOControlPtr->recoverProc;
+	stripeIOControlPtr->reqControlPtr->failedReqPtr = failedReqPtr;
+	/*
+	 * If the request covers multiple stripe units and is not stripe unit
+	 * aligned, check to see if the failed request is a partial
+	 * stripe unit.  If it is, then both a read-modify-write and
+	 * a reconstruct write is necessary to complete the request.
+	 */
+	if (stripeIOControlPtr->rangeLen == raidPtr->bytesPerStripeUnit &&
+		failedReqPtr->devReq.bufferLen != raidPtr->bytesPerStripeUnit &&
+		recoverProc != (void (*)()) InitiateStripeIOFailure) {
+	    InitiateSplitStripeWrite(stripeIOControlPtr);
+	} else {
+	    stripeIOControlPtr->recoverProc = InitiateStripeIOFailure;
+	    recoverProc(stripeIOControlPtr);
+	}
     }
 }
 
