@@ -96,13 +96,27 @@ ProcGetObjInfo(filePtr, execPtr, objInfoPtr)
 		(data[2]==0x52807204 || data[2]==0x5280223c) &&
 		((data[3]&0xffff0000)==0x4eb90000 || data[3]==4)) {
 #else
-	if (data[0]==0xac10000e && data[1]==0xac05a060 &&
-		data[2]==0xd0058000 && data[3]==0x9205a004) {
+	/* Normal sun4 startup code */
+	if ((data[0]==0xac10000e && data[1]==0xac05a060 &&
+		data[2]==0xd0058000 && data[3]==0x9205a004) ||
+	/* Profiled sun4 startup code */
+		(data[0]==0xbc100000 && data[1]==0x11000008 &&
+		    data[2]==0x13000208 && data[3]==0x400038df)) {
 #endif
+	    goto spriteMagic;
 	} else {
+#ifdef sun3
+	    /*
+	     * Special check for emacs, which has weird startup code.
+	     */
+	    if (data[0]==0x4e560000 && data[1]==0x61064e5e &&
+		    data[2]==0x4e750000) goto spriteMagic;
+#endif
+
 	    printf("Executing UNIX file in compatibility mode.\n");
 	    goto unixMagic;
 	}
+spriteMagic:
 	objInfoPtr->codeLoadAddr = (Address)PROC_CODE_LOAD_ADDR(*execPtr);
 	objInfoPtr->codeFileOffset = PROC_CODE_FILE_OFFSET(*execPtr);
 	objInfoPtr->codeSize = execPtr->code;
