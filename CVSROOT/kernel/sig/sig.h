@@ -16,7 +16,11 @@
 
 #ifdef KERNEL
 #include "user/sig.h"
+#ifdef sun4
+#include "machSig.h"
+#else
 #include "mach.h"
+#endif /* sun4 */
 #else
 #include <sig.h>
 #include <kernel/mach.h>
