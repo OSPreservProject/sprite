@@ -14,6 +14,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "sys.h"
 #include "machine.h"
+#include "machineConst.h"
 #include "dbg.h"
 #include "proc.h"
 #include "sunSR.h"
@@ -25,11 +26,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 typedef struct {
     int		magicNumber;		/* Magic number used to determine if
 					   the stack has been corrupted. */
-    int		destFuncCode;		/* The value of the destination 
-					   function code register. */
-    int		srcFuncCode;		/* The value of the source 
-					   function code register. */
-    int		userStackPtr;		/* The user's stack pointer. */
+    Address	userStackPtr;		/* The user's stack pointer. */
     short	statusReg;		/* The status register. */
     int		framePtr;		/* The value of a6, the framePtr. */
     void	(*startFunc)();		/* Function to call when process
@@ -47,6 +44,64 @@ typedef struct {
     int		fill2;			/* Filler for the debugger. */
 } KernelStack;
 
+
+/*
+ * Machine dependent variables.
+ */
+int	mach_SP;
+int	mach_FP;
+Address	mach_KernStart;
+Address	mach_CodeStart;
+Address	mach_StackBottom;
+int	mach_KernStackSize;
+Address	mach_KernEnd;
+int	mach_DummySPOffset;
+int	mach_DummyFPOffset;
+int	mach_ExecStackOffset;
+Address	mach_FirstUserAddr;
+Address	mach_LastUserAddr;
+Address	mach_MaxUserStackAddr;
+int	mach_LastUserStackPage;
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_Init --
+ *
+ *     Machine dependent boot time initialization.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     The stack is initialized.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+Mach_Init()
+{
+    KernelStack	stack;
+
+    mach_SP = MACH_STACK_PTR;
+    mach_FP = MACH_FRAME_PTR;
+    mach_KernStart = (Address)MACH_KERN_START;
+    mach_KernEnd = (Address)MACH_KERN_END;
+    mach_CodeStart = (Address)MACH_CODE_START;
+    mach_StackBottom = (Address)MACH_STACK_BOTTOM;
+    mach_KernStackSize = MACH_KERN_STACK_SIZE;
+    mach_DummySPOffset = MACH_KERN_STACK_SIZE - sizeof(KernelStack);
+    mach_DummyFPOffset = MACH_KERN_STACK_SIZE - sizeof(KernelStack) +
+		(unsigned int)&stack.framePtr - (unsigned int)&stack;
+    mach_ExecStackOffset = MACH_EXEC_STACK_OFFSET;
+    mach_FirstUserAddr = (Address)MACH_FIRST_USER_ADDR;
+    mach_LastUserAddr = (Address)MACH_LAST_USER_ADDR;
+    mach_MaxUserStackAddr = (Address)MACH_MAX_USER_STACK_ADDR;
+    mach_LastUserStackPage = (MACH_MAX_USER_STACK_ADDR - 1) / VMMACH_PAGE_SIZE;
+    Exc_Init();
+}
+
 
 /*
  * ----------------------------------------------------------------------------
@@ -63,7 +118,6 @@ typedef struct {
  *
  * ----------------------------------------------------------------------------
  */
-
 void
 Mach_InitStack(stackStart, startFunc, progCounter)
     int		stackStart;
@@ -77,13 +131,11 @@ Mach_InitStack(stackStart, startFunc, progCounter)
      * Sun_ContextSwitch.  The old frame pointer is set to the highest 
      * possible stack address to make kdbx happy.
      */
-    stackPtr = (KernelStack *) (stackStart + MACH_DUMMY_SP_OFFSET);
+    stackPtr = (KernelStack *) (stackStart + mach_DummySPOffset);
     stackPtr->magicNumber = MAGIC;
-    stackPtr->destFuncCode = VM_USER_DATA_SPACE;
-    stackPtr->srcFuncCode = VM_USER_DATA_SPACE;
-    stackPtr->userStackPtr = MACH_MAX_USER_STACK_ADDR;
+    stackPtr->userStackPtr = mach_MaxUserStackAddr;
     stackPtr->statusReg = SUN_SR_HIGHPRIO;
-    stackPtr->framePtr = stackStart + MACH_NUM_STACK_PAGES * VM_PAGE_SIZE;
+    stackPtr->framePtr = stackStart + mach_KernStackSize;
     stackPtr->startFunc =  startFunc;
     stackPtr->progCounter = progCounter;
     stackPtr->exitProc = Proc_Exit;

@@ -88,10 +88,10 @@ Exc_Init()
      * a Sun-3 they can stay where they are.  The vectors on the Sun-2 can
      * be moved this easily because virtual address 0 which is where the
      * vector table is at, points to the same physical page as virtual address 
-     * MACH_KERNEL_START.
+     * mach_KernStart.
      */
-    ExcSetVBR(MACH_KERNEL_START);
-    exc_VectorTablePtr = (Exc_VectorTable *) MACH_KERNEL_START;
+    ExcSetVBR(mach_KernStart);
+    exc_VectorTablePtr = (Exc_VectorTable *) mach_KernStart;
 #endif
 
 }
@@ -222,29 +222,25 @@ Exc_Trap(trapStack)
 		}
 
 		if (procPtr->genFlags & PROC_USER) {
+		    Boolean	protError;
 		    /*
 		     * Is a page fault on a user process while executing in
 		     * the kernel.  This can happen on calls to 
 		     * Vm_Copy{In,Out} or after a pointer is made accessible
 		     * by Vm_MakeAccessible.
 		     */
+		    protError = 
 #ifdef SUN3
-		    if (!trapStack.busErrorReg.pageInvalid)
+				!trapStack.busErrorReg.pageInvalid;
 #else
-		    if (trapStack.busErrorReg.resident)
+				trapStack.busErrorReg.resident;
 #endif
-			    {
-			/*
-			 * Page is resident, must be a protection error.
-			 */
-			status = FAILURE;
-		    } else {
 			/*
 			 * Try to fault in the page.
 			 */
-			status = 
-			Vm_PageIn(trapStack.excStack.tail.addrBusErr.faultAddr);
-		    }
+		    status = Vm_PageIn(
+		      (Address)trapStack.excStack.tail.addrBusErr.faultAddr,
+				  protError);
 		    if (status != SUCCESS) {
 			if (procPtr->vmPtr->vmFlags & VM_COPY_IN_PROGRESS) {
 			    /*
@@ -328,7 +324,8 @@ Exc_Trap(trapStack)
     trapStack.excStack.statusReg &= ~SUN_SR_TRACEMODE;
 
     switch (trapStack.trapType) {
-	case EXC_BUS_ERROR:
+	case EXC_BUS_ERROR: {
+	    Boolean	protError;
 	    if (trapStack.busErrorReg.timeOut) {
 		/*
 		 * Allow for refresh memory time just like Unix.
@@ -354,14 +351,14 @@ Exc_Trap(trapStack)
 	     * is set in the bus error register then this is a protection
 	     * error.
 	     */
-
+	protError =
 #ifdef SUN3
-	    if (!trapStack.busErrorReg.pageInvalid ||
+		    !trapStack.busErrorReg.pageInvalid;
 #else
-	    if (trapStack.busErrorReg.resident ||
+		    trapStack.busErrorReg.resident;
 #endif
-	        Vm_PageIn(trapStack.excStack.tail.addrBusErr.faultAddr) != 
-								SUCCESS) {
+	if (Vm_PageIn((Address)trapStack.excStack.tail.addrBusErr.faultAddr, 
+		      protError) != SUCCESS) {
 		Sys_Printf(
 		    "Exc_Trap: Bus error in user proc %X, PC = %x, addr = %x BR Reg %x\n",
 			    procPtr->processID, 
@@ -372,7 +369,7 @@ Exc_Trap(trapStack)
 				procPtr->processID, FALSE);
 	    }
 	    break;
-
+	}
 	case EXC_SYSCALL_TRAP:
 	    /*
 	     * Perform a system call.
