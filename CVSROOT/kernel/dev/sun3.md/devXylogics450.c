@@ -13,18 +13,17 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 
 #include "sprite.h"
+#include "mach.h"
 #include "dev.h"
 #include "devInt.h"
 #include "devXylogics.h"
-
-#include "multibus.h"
-#include "sunMon.h"
-#include "sunDiskLabel.h"
+#include "devMultibus.h"
+#include "devDiskLabel.h"
 #include "dbg.h"
 #include "vm.h"
 #include "sys.h"
 #include "sync.h"
-#include "proc.h"	/* for Sys_SetJump */
+#include "proc.h"	/* for Mach_SetJump */
 #include "fs.h"
 #include "mem.h"
 #include "user/byte.h"
@@ -48,7 +47,7 @@ static Boolean xyDiskInit = FALSE;
 /*
  * SetJump stuff needed when probing for the existence of a device.
  */
-static Sys_SetJumpState setJumpState;
+static Mach_SetJumpState setJumpState;
 
 /*
  * DevXyCommand() takes a Boolean that indicates whether it should cause
@@ -135,17 +134,17 @@ Dev_XylogicsInitController(cntrlrPtr)
      * or we get a bus error.
      */
     regsPtr = xyPtr->regsPtr;
-    if (Sys_SetJump(&setJumpState) == SUCCESS) {
+    if (Mach_SetJump(&setJumpState) == SUCCESS) {
 	x = regsPtr->resetUpdate;
 	regsPtr->addrLow = 'x';
 	if (regsPtr->addrLow != 'x') {
-	    Sys_UnsetJump();
+	    Mach_UnsetJump();
 	    Mem_Free((Address) xyPtr);
 	    xylogics[cntrlrPtr->controllerID] = (DevXylogicsController *)NIL;
 	    return(FALSE);
 	}
     } else {
-	Sys_UnsetJump();
+	Mach_UnsetJump();
 	/*
 	 * Got a bus error. Zap the info about the non-existent controller.
 	 */
@@ -153,7 +152,7 @@ Dev_XylogicsInitController(cntrlrPtr)
 	xylogics[cntrlrPtr->controllerID] = (DevXylogicsController *)NIL;
 	return(FALSE);
     }
-    Sys_UnsetJump();
+    Mach_UnsetJump();
 
     DevXylogicsReset(regsPtr);
 

@@ -1,5 +1,5 @@
 /*
- * sunDiskLabel.h --
+ * devDiskLabel.h --
  *
  *      This defines the disk label that Sun writes on the 0'th sector of
  *      the 0'th cylinder of its SMD disks.  The disk label contains some
@@ -14,8 +14,8 @@
  * $Header$ SPRITE (Berkeley)
  */
 
-#ifndef _SUNDISKLABEL
-#define _SUNDISKLABEL
+#ifndef _DEVDISKLABEL
+#define _DEVDISKLABEL
 
 /*
  * SUN_NUM_DISK_PARTS is the number of partitions that are recorded in
@@ -74,4 +74,4 @@ typedef struct Sun_DiskLabel {
 #define SUN_SUMMARY_SECTOR	17
 #define SUN_DOMAIN_SECTOR	18
 
-#endif _SUNDISKLABEL
+#endif _DEVDISKLABEL

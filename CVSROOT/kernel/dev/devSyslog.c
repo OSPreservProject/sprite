@@ -16,7 +16,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "dev.h"
 #include "fs.h"
 #include "sys.h"
-#include "sunMon.h"
+#include "machMon.h"
 #include "sig.h"
 #include "mem.h"
 #include "sync.h"
@@ -165,8 +165,8 @@ Dev_SyslogRead(devicePtr, offset, bufSize, bufPtr, lenPtr)
  * Dev_SyslogWrite --
  *
  *	Write characters to the system log.  If the device isn't open
- *	then Mon_PutChar is used to output directly to the screen.  Otherwise
- *	data is output to a buffer.
+ *	then Mach_MonPutChar is used to output directly to the screen.  
+ *	Otherwise data is output to a buffer.
  *
  * Results:
  *	SUCCESS.
@@ -193,7 +193,7 @@ Dev_SyslogWrite(devicePtr, offset, bufSize, bufPtr, bytesWrittenPtr)
     if (!dbg_UsingSyslog) {
 	if (!openForReading) {
 	    for (i = 0; i < bufSize; i++, bufPtr++) {
-		Mon_PutChar(*bufPtr);
+		Mach_MonPutChar(*bufPtr);
 	    }
 	    *bytesWrittenPtr = bufSize;
 	    return(SUCCESS);
@@ -228,11 +228,11 @@ Dev_SyslogWrite(devicePtr, offset, bufSize, bufPtr, bytesWrittenPtr)
 	     * Buffer overflow
 	     */
 	    if (!overflow) {
-		Mon_Printf("Dev_SyslogWrite: Buffer overflow, dumping overflow ...\n");
+		Mach_MonPrintf("Dev_SyslogWrite: Buffer overflow, dumping overflow ...\n");
 		overflow = TRUE;
 	    }
 	    for (i = 0; i < bufSize; i++, bufPtr++) {
-		Mon_PutChar(*bufPtr);
+		Mach_MonPutChar(*bufPtr);
 	    }
 	} else {
 	    if (firstIndex == -1) {
@@ -316,14 +316,14 @@ Dev_SyslogClose(devicePtr, useFlags, openCount, writerCount)
 	if (firstIndex != -1) {
 	    if (firstIndex <= lastIndex) {
 		for (i = firstIndex; i <= lastIndex; i++) {
-		    Mon_PutChar(syslogBuffer[i]);
+		    Mach_MonPutChar(syslogBuffer[i]);
 		}
 	    } else {
 		for (i = firstIndex; i < SYSLOG_BUF_SIZE; i++) {
-		    Mon_PutChar(syslogBuffer[i]);
+		    Mach_MonPutChar(syslogBuffer[i]);
 		}
 		for (i = 0; i <= lastIndex; i++)  {
-		    Mon_PutChar(syslogBuffer[i]);
+		    Mach_MonPutChar(syslogBuffer[i]);
 		}
 	    }
 	    firstIndex = -1;

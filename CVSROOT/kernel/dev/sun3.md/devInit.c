@@ -21,10 +21,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "devInt.h"
-#include "sunMon.h"
 #include "devTimer.h"
 #include "devKeyboard.h"
-#include "multibus.h"
+#include "devMultibus.h"
 #include "vm.h"
 #include "vmMach.h"
 #include "dbg.h"
@@ -148,7 +147,7 @@ Dev_Config()
 		    continue;
 		}
 		mapItIn = FALSE;
-		cntrlrPtr->address += MULTIBUS_BASE;
+		cntrlrPtr->address += DEV_MULTIBUS_BASE;
 		break;
 	    /*
 	     * We have to relocate the controller address to the

@@ -54,7 +54,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sys.h"
 #include "mach.h"
 #include "machConst.h"
-#include "sunMon.h"
 #include "devAddrs.h"
 #include "devTimer.h"
 #include "devTimerSun3Int.h"

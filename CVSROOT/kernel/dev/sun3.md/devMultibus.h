@@ -10,14 +10,14 @@
  * $Header$ SPRITE (Berkeley)
  */
 
-#ifndef _MULTIBUS
-#define _MULTIBUS
+#ifndef _DEVMULTIBUS
+#define _DEVMULTIBUS
 
 /*
- * The sun monitor maps the multibus memory space starting at MULTIBUS_BASE.
+ * The sun monitor maps the multibus memory space starting at DEV_MULTIBUS_BASE.
  * It is appropriate to add the multibus address to this base to get
  * the mapped kernel address for the multibus device.
  */
-#define MULTIBUS_BASE	0xF00000
+#define DEV_MULTIBUS_BASE	0xF00000
 
-#endif _MULTIBUS
+#endif _DEVMULTIBUS
