@@ -1,14 +1,15 @@
-|* loMem.s --
-|*
-|*	The first thing that is loaded into the kernel.  Handles traps,
-|*	faults, errors and interrupts.
-|*
-|* Copyright (C) 1985 Regents of the University of California
-|* All rights reserved.
-|*
-|* rcs = $Header$ SPRITE (Berkeley)
-|*
+/* loMem.s --
+ *
+ *	The first thing that is loaded into the kernel.  Handles traps,
+ *	faults, errors and interrupts.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ * rcs = $Header$ SPRITE (Berkeley)
+ */
 
+#include "reg.h"
 #include "machConst.h"
 #include "machAsmDefs.h"
 
@@ -16,21 +17,22 @@
  * REGISTER CONVENTIONS
  *
  * The routines in this file use the following conventions for using
- * registers:
+ * registers (see reg.h for symbolic names):
  *
  *	1) r1-r8:	Globals used by the Lisp system and are left untouched.
  *	2) r9:		Global that we can use as a temporary.
  *	3) r10:		Where the PC to return to when a trap occurs is stored
- *	4) r11-r15:	Used as special temporaries to save things when
- *			taking traps to switch to kernel mode for user
- *			errors and for allocating pages for window overflow
- *			and underflow.  These cannot be touched by the 
- *			interrupt routines.  See the window overflow handler
- *			for details.
+ *	4) r11-r15:	Off limits because these are the previous windows
+ *			output registers and it might be in the middle
+ *			of using them.  If one of these registers is used
+ *			then it must be saved and restored.
  *	5) r16:		Where the 2nd PC is stored when a trap occurs.
- *	6) r17-r25:	Temporaries.  r22-r25 can be changed by the macros
- *			in machAsmDefs.h.
- *	7) r26-r31:	Output registers.  Generally unused in here except
+ *	6) r17-r25:	Temporaries.  r17-r19 can be changed by the macros
+ *			in machAsmDefs.h and r23-r25 are off limits to the
+ *			interrupt handler for reasons described under
+ *			"SWITCHING TO KERNEL MODE" below.
+ *	7) r26:		Callers return PC.
+ *	8) r27-r31:	Output registers.  Generally unused in here except
  *			by the instruction parsing routines and to pass args
  *			to C routines.
  *
@@ -46,16 +48,16 @@
  * machine state info.  An SWP is valid if it satisfies the following
  * constraints:
  *
- *	    swp - 128 >= min_swp_offset and
+ *	    swp - MACH_UNDERFLOW_EXTRA >= min_swp_offset and
  *	    swp + page_size <= max_swp_offset
  *
- * The 128 bytes of extra space is required on the bottom in order
- * to handle the case when we are trying to allocate more memory after a
+ * The MACH_UNDERFLOW_EXTRA bytes of extra space is required on the bottom in 
+ * order to handle the case when we are trying to allocate more memory after a
  * window underflow and we need space to save a window in case of a
  * window overflow fault.  The page_size worth of data at the top is
  * there in case we need to save windows when we are executing in the kernel
  * on behalf of a user process.  Having a whole page guarantees us that we
- * can make 32 calls before we run out saved window space.
+ * can make 32 calls before we run out of saved window space.
  *
  * If a user's SWP is found to be bogus then the kernel switches over to
  * the kernel's saved window stack and the user process is killed.  If
@@ -77,30 +79,22 @@
  * some reason kernel mode needs to be entered (an error or need to allocate
  * more window memory) then a gross sequence has to be undertaken.  We
  * want to switch to kernel mode but we can't modify the kpsw because we
- * are user mode.  The only way to get to kernel mode is to do a return from
- * trap and then immediately do a compare trap to get back in.  Unfortunately
- * the cmp-tra
-	 * Need to allocate more memory.  This has to be done in a really
-	 * gross way.  I want to switch to kernel mode in order to allocate
-	 * memory but I can't switch to kernel mode because I am in user
-	 * mode.  Thus the only way to get to kernel mode is to do a return
-	 * from trap and then make the instruction that I return to do a
-	 * cmp_trap to get back into the kernel.   Of course the cmp_trap
-	 * will trash r10 and r16 in the current window so I need to save
-	 * these registers at other locations in the current window so they
-	 * don't get trashed.   Now the act of returning from the trap 
-	 * means that interrupts are enabled which means that an interrupt
-	 * can come in.  Therefore I need to save r10 and r16 in a place
-	 * where they won't get trashed if an interrupt comes in.  The
-	 * place to put them is in r14 and r15 which are registers that
-	 * aren't used for anything in here except for parsing 
-	 * instructions which won't happen.
-	 */
+ * are in user mode.  The only way to get to kernel mode is to do a return from
+ * trap and then immediately do a compare trap to get back in.  After these
+ * two instructions we are back in the window that we were in when we wanted
+ * to switch to kernel mode.  Unfortunately the compare trap will trash
+ * FIRST_PC_REG and SECOND_PC_REG which tell us where to continue when we
+ * truly return to the user process.  Thus FIRST_PC_REG and SECOND_PC_REG 
+ * have to be saved in the window before the return_trap-cmp_trap sequence.  
+ * Now the act of returning from the trap means that interrupts are enabled.   
+ * Therefore I need to save FIRST_PC_REG and SECOND_PC_REG in a place where 
+ * they won't get trashed if an interrupt comes in.  The place to put them 
+ * is in NON_INTR_TEMP1 through NON_INTR_TEMP3 because these are left 
+ * untouched by the interrupt handling code.
  */
 
 /*
- * Temporary local registers.  Note that the macros in machAsmDefs.h are allowed
- * to use registers rt6 through rt9.
+ * Temporary local registers. 
  */
 	.set rt1, 17
 	.set rt2, 18
@@ -114,7 +108,7 @@
 
 /*
  * Temporary global registers.  Note that the only one that we can use is r9
- * because r1 through r8 are required by the Lisp system.  If these need to
+ * because r1 through r8 are redquired by the Lisp system.  If these need to
  * be used then they have to be saved first.
  */
 #define	GLOB_TMP1	r9
@@ -208,12 +202,6 @@ SigReturnAddr:
 	Nop
 
 /*
- * Address of a Nop to execute.  Here for same reason as SigReturnAddr.
- */
-ExecNop:
-	Nop
-
-/*
  * Jump table to return the operand from an instruction.  Also here
  * because is jumped to through an immediate constant.
  */
@@ -260,23 +248,27 @@ OpRecov:
  */
 
 /*
+ *---------------------------------------------------------------------------
+ *
  * WinOvFlow --
  *
  *	Window overflow fault handler.  If in user mode then the swp is
- *	validated
- * first.  If it is invalid then the trapping process is killed.  Also if
- * in user mode more memory is wired down if the trapping process doesn't
- * have at least one page worth of window overflow stack wired down.
+ *	validated first.  If it is invalid then the trapping process is 
+ *	killed.  Also if in user mode more memory will be wired down if not
+ * 	enough is wired already.
  */
 WinOvFlow:
-	rd_kpsw		rt1
-	and		rt1, rt1, $MACH_KPSW_CUR_MODE
-	cmp_br_delayed	eq, rt1, r0, winOvFlow_SaveWindow
+	rd_kpsw		SAFE_TEMP1			
+	and		SAFE_TEMP1, SAFE_TEMP1, $MACH_KPSW_CUR_MODE
+	cmp_br_delayed	eq, SAFE_TEMP1, r0, winOvFlow_SaveWindow
 	Nop
-	VERIFY_SWP(0)
+	VERIFY_SWP(0)				# Verify that the SWP is OK.
 winOvFlow_SaveWindow:
-	rd_special	rt2, cwp
-	wr_special	cwp, rt2, $4		# Move forward one window.
+	/*
+	 * Actually save the window.
+	 */
+	rd_special	VOL_TEMP1, cwp
+	wr_special	cwp, VOL_TEMP1, $4	# Move forward one window.
 	rd_special	GLOB_TMP1, swp
 	st_40           r26, GLOB_TMP1, $0
 	st_40           r11, GLOB_TMP1, $8
@@ -299,68 +291,64 @@ winOvFlow_SaveWindow:
 	rd_special	GLOB_TMP1, swp
 	wr_special	swp, GLOB_TMP1, $128		# swp = swp + 128
 
-/*
- * rt1 == MACH_KPSW_CUR_MODE if we are in user mode and 0 otherwise.  If
- * we are in kernel mode then we can just return.  However, if we are in
- * user mode then we have to make sure that we have at least one page
- * of overflow stack available.
- */
+    /*
+     * SAFE_TEMP1 == MACH_KPSW_CUR_MODE if we are in user mode and 0 otherwise.
+     * If we are in kernel mode then we can just return.  However, if we are in
+     * user mode then we have to make sure that we have at least one page
+     * of overflow stack available.
+     */
 
-	cmp_br_delayed	eq, rt1, $0, winOvFlow_Return
+	cmp_br_delayed	eq, SAFE_TEMP1, $0, winOvFlow_Return
 	Nop
-	ld_32		rt1, r0, $curStatePtr
+	ld_32		VOL_TEMP1, r0, $curStatePtr
 	Nop
-	ld_32		rt1, rt1, $0
+	ld_32		VOL_TEMP1, VOL_TEMP1, $0
 	Nop
-	ld_32		rt2, rt1, $MACH_MAX_SWP_OFFSET
-	add_nt		rt3, GLOB_TMP1, $MACH_PAGE_SIZE
-	cmp_br_delayed	le, rt2, rt3, winOvFlow_Return
+	ld_32		VOL_TEMP1, VOL_TEMP1, $MACH_MAX_SWP_OFFSET
+	rd_special	VOL_TEMP2, swp
+	add_nt		VOL_TEMP2, VOL_TEMP2, $MACH_PAGE_SIZE
+	cmp_br_delayed	le, VOL_TEMP1, VOL_TEMP2, winOvFlow_Return
 	Nop
 	/*
-	 * Need to allocate more memory.  This has to be done in a really
-	 * gross way.  I want to switch to kernel mode in order to allocate
-	 * memory but I can't switch to kernel mode because I am in user
-	 * mode.  Thus the only way to get to kernel mode is to do a return
-	 * from trap and then make the instruction that I return to do a
-	 * cmp_trap to get back into the kernel.   Of course the cmp_trap
-	 * will trash r10 and r16 in the current window so I need to save
-	 * these registers at other locations in the current window so they
-	 * don't get trashed.   Now the act of returning from the trap 
-	 * means that interrupts are enabled which means that an interrupt
-	 * can come in.  Therefore I need to save r10 and r16 in a place
-	 * where they won't get trashed if an interrupt comes in.  The
-	 * place to put them is in r14 and r15 which are registers that
-	 * aren't used for anything in here except for parsing 
-	 * instructions which won't happen.
+	 * Need to allocate more memory.
 	 */
-	add_nt		r14, r10, $0	# Save the first and 2nd PCs
-	add_nt		r15, r16, $0
-	add_nt		r10, r0, $ExecNop
-	return_trap	r10, $0
+	add_nt		NON_INTR_TEMP1, FIRST_PC_REG, $0
+	add_nt		NON_INTR_TEMP2, SECOND_PC_REG, $0
+	rd_special	VOL_TEMP1, pc	# Return from traps and then
+	return_trap	VOL_TEMP1, $12	#   take the compare trap to
+	Nop				#   get into kernel mode.
 	cmp_trap	always, r0, r0, $MACH_GET_WIN_MEM_TRAP
 	Nop
 
 winOvFlow_Return:
-	add_nt		GLOB_TMP1, r16, r0
-	return_trap	r10, $0
+	add_nt		GLOB_TMP1, SECOND_PC_REG, r0
+	return_trap	FIRST_PC_REG, $0
 	jump_reg	GLOB_TMP1, $0
 
 /*
- * Window underflow fault handler.  If in user mode then the swp is validated
- * first.  If it is invalid then the trapping process is killed.  Also if
- * in user mode more memory is wired down if the trapping process doesn't
- * have the memory behind the new swp wired down.
+ *----------------------------------------------------------------------------
+ *
+ * WinUnFlow --
+ *
+ *	Window underflow fault handler.  If in user mode then the swp is 
+ *	validated first.  If it is invalid then the trapping process is 
+ *	killed.  Also if in user mode more memory is wired down if 
+ *	the trapping process doesn't have the memory behind the new swp wired
+ *	down.
+ *
+ *----------------------------------------------------------------------------
  */
 WinUnFlow:
-	rd_kpsw		rt1
-	and		rt1, rt1, $MACH_KPSW_CUR_MODE
-	cmp_br_delayed	eq, rt1, r0, winUnFlow_RestoreWindow
+	rd_kpsw		SAFE_TEMP1
+	and		SAFE_TEMP1, SAFE_TEMP1, $MACH_KPSW_CUR_MODE
+	cmp_br_delayed	eq, SAFE_TEMP1, r0, winUnFlow_RestoreWindow
 	Nop
-	VERIFY_SWP(128)
+	VERIFY_SWP(128)				# Make sure at least one 
+						#   windows worth on stack.
 winUnFlow_RestoreWindow:
         rd_special	GLOB_TMP1, swp
-        rd_special      rt1, cwp
-	wr_special      cwp, rt1,  $-8          # move back two windows
+        rd_special      VOL_TEMP1, cwp
+	wr_special      cwp, VOL_TEMP1,  $-8	# move back two windows
         wr_special      swp, GLOB_TMP1, $-128
         ld_40           r10, GLOB_TMP1,   $0
         ld_40           r11, GLOB_TMP1,   $8
@@ -382,183 +370,248 @@ winUnFlow_RestoreWindow:
         wr_special      cwp,  GLOB_TMP1, $8	# move back ahead two windows
         Nop
 
-/*
- * rt1 == MACH_KPSW_CUR_MODE if we are in user mode and 0 otherwise.  If
- * we are in kernel mode then we can just return.  However, if we are in
- * user mode then we have to see if we should free up a window overflow
- * stack page.
- */
-	cmp_br_delayed	eq, rt1, $0, winUnFlow_Return
+    /*
+     * SAFE_TEMP1 == MACH_KPSW_CUR_MODE if we are in user mode and 0 otherwise.
+     * If we are in kernel mode then we can just return.  However, if we are in
+     * user mode then we have to see if we need more wired down.
+     */
+	cmp_br_delayed	eq, SAFE_TEMP1, $0, winUnFlow_Return
 	Nop
-	ld_32		rt1, r0, $curStatePtr
+	ld_32		VOL_TEMP1, r0, $curStatePtr
 	Nop
-	ld_32		rt1, rt1, $0
-	rd_special	GLOB_TMP1, swp
-	ld_32		rt2, rt1, $MACH_MIN_SWP_OFFSET
-	cmp_br_delayed	gt, GLOB_TMP1, rt2, winUnFlow_Return
+	ld_32		VOL_TEMP1, VOL_TEMP1, $0
+	rd_special	VOL_TEMP2, swp
+	ld_32		VOL_TEMP1, VOL_TEMP1, $MACH_MIN_SWP_OFFSET
+	Nop
+	add_nt		VOL_TEMP1, VOL_TEMP1, $MACH_UNDERFLOW_EXTRA
+	cmp_br_delayed	gt, VOL_TEMP2, VOL_TEMP1, winUnFlow_Return
 	Nop
 	/*
-	 * Need to get more memory for the window overflow.  See the
-	 * window overflow code for a comment on how this works.
+	 * Need to get more memory for window underflow.
 	 */
-	add_nt		r14, r10, $0	# Save the first and 2nd PCs
-	add_nt		r15, r16, $0
-	add_nt		r10, r0, $ExecNop
-	return_trap	r10, $0
+	add_nt		NON_INTR_TEMP1, FIRST_PC_REG, $0
+	add_nt		NON_INTR_TEMP2, SECOND_PC_REG, $0
+	rd_special	VOL_TEMP1, pc	# Return from traps and then
+	return_trap	VOL_TEMP1, $12	#   take the compare trap to
+	Nop				#   get back in in kernel mode.
 	cmp_trap	always, r0, r0, $MACH_GET_WIN_MEM_TRAP
+	Nop
 
 winUnFlow_Return:
-	add_nt		GLOB_TMP1, r16, r0
-	return_trap	r10, $0
+	add_nt		GLOB_TMP1, SECOND_PC_REG, r0
+	return_trap	FIRST_PC_REG, $0
 	jump_reg	GLOB_TMP1, $0
 
 /*
- * FPU Exception handler.  Currently we take either a user or kernel error
- * whichever is appropriate.
+ *---------------------------------------------------------------------------
+ *
+ * FPUExcept --
+ *
+ *	FPU Exception handler.  Currently we take either a user or kernel error
+ *	whichever is appropriate.
+ *
+ *---------------------------------------------------------------------------
  */
 FPUExcept:
-	rd_kpsw		rt1
-	and		rt1, rt1, $MACH_KPSW_CUR_MODE
-	cmp_br_delayed	eq, rt1, $0, fpuExcept_KernError
+	rd_kpsw		VOL_TEMP1
+	and		VOL_TEMP1, VOL_TEMP1, $MACH_KPSW_CUR_MODE
+	cmp_br_delayed	eq, VOL_TEMP1, $0, fpuExcept_KernError
 	Nop
 	USER_ERROR(MACH_USER_FPU_EXCEPT)
 fpuExcept_KernError:
 	CALL_DEBUGGER(MACH_KERN_FPU_EXCEPT)
 
 /*
- * Illegal instruction handler.  Currently we take either a user or kernel error
- * whichever is appropriate.
+ *---------------------------------------------------------------------------
+ *
+ * Illegal --
+ *
+ *	Illegal instruction handler.  Currently we take either a user or 
+ * 	kernel error whichever is appropriate.
+ *
+ *---------------------------------------------------------------------------
  */
 Illegal:
-	rd_kpsw		rt1
-	and		rt1, rt1, $MACH_KPSW_CUR_MODE
-	cmp_br_delayed	eq, rt1, $0, illegal_KernError
+	rd_kpsw		VOL_TEMP1
+	and		VOL_TEMP1, VOL_TEMP1, $MACH_KPSW_CUR_MODE
+	cmp_br_delayed	eq, VOL_TEMP1, $0, illegal_KernError
 	Nop
 	USER_ERROR(MACH_USER_ILLEGAL)
 illegal_KernError:
 	CALL_DEBUGGER(MACH_KERN_ILLEGAL)
 
 /*
- * Fixnum Exception handler.  Currently we take either a user or kernel error
- * whichever is appropriate.
+ *---------------------------------------------------------------------------
+ *
+ * Fixnum --
+ *
+ *	Fixnum Exception handler.  Currently we take either a user or kernel
+ *	error whichever is appropriate.
+ *
+ *---------------------------------------------------------------------------
  */
 Fixnum:
-	rd_kpsw		rt1
-	and		rt1, rt1, $MACH_KPSW_CUR_MODE
-	cmp_br_delayed	eq, rt1, $0, fixnum_KernError
+	rd_kpsw		VOL_TEMP1
+	and		VOL_TEMP1, VOL_TEMP1, $MACH_KPSW_CUR_MODE
+	cmp_br_delayed	eq, VOL_TEMP1, $0, fixnum_KernError
 	Nop
 	USER_ERROR(MACH_USER_FIXNUM)
 fixnum_KernError:
 	CALL_DEBUGGER(MACH_KERN_FIXNUM)
 
 /*
- * Overflow fault handler.  Currently we take either a user or kernel error
- * whichever is appropriate.
+ *---------------------------------------------------------------------------
+ *
+ * Overflow --
+ *
+ *	Overflow fault handler.  Currently we take either a user or kernel
+ *	error whichever is appropriate.
+ *
+ *---------------------------------------------------------------------------
  */
 Overflow:
-	rd_kpsw		rt1
-	and		rt1, rt1, $MACH_KPSW_CUR_MODE
-	cmp_br_delayed	eq, rt1, $0, overflow_KernError
+	rd_kpsw		VOL_TEMP1
+	and		VOL_TEMP1, VOL_TEMP1, $MACH_KPSW_CUR_MODE
+	cmp_br_delayed	eq, VOL_TEMP1, $0, overflow_KernError
 	Nop
 	USER_ERROR(MACH_USER_OVERFLOW)
 overflow_KernError:
 	CALL_DEBUGGER(MACH_KERN_OVERFLOW)
 
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * PowerUp --
+ *
+ *	Jump to power up sequencer.
+ *
+ *---------------------------------------------------------------------------
+ */
 PowerUp: 			# Jump to power up sequencer
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * Error --
+ *
+ *	Error handler.  Just call the debugger.
+ *
+ *---------------------------------------------------------------------------
+ */
 Error:	
 	CallDebugger(MACH_ERROR)
 
+/*
+ *---------------------------------------------------------------------------
+ *
+ * FaultIntr --
+ *
+ *	Handle a fault or an interrupt.
+ *
+ *---------------------------------------------------------------------------
+ */
 FaultIntr:
 	/*
 	 * Read the fault/error status register.
 	 */
-	ld_external	rt1, r0, $MACH_FE_STATUS_0|MACH_RD_REG
-	ld_external	rt2, r0, $MACH_FE_STATUS_1|MACH_RD_REG
+	ld_external	VOL_TEMP1, r0, $MACH_FE_STATUS_0|MACH_RD_REG
+	ld_external	VOL_TEMP2, r0, $MACH_FE_STATUS_1|MACH_RD_REG
 	wr_insert	$1
-	insert		rt1, rt1, rt2
-	ld_external	rt2, r0, $MACH_FE_STATUS_2|MACH_RD_REG
+	insert		VOL_TEMP1, VOL_TEMP1, VOL_TEMP2
+	ld_external	VOL_TEMP2, r0, $MACH_FE_STATUS_2|MACH_RD_REG
 	wr_insert	$2
-	insert		rt1, rt1, rt2
-	ld_external	rt2, r0, $MACH_FE_STATUS_3|MACH_RD_REG
+	insert		VOL_TEMP1, VOL_TEMP1, VOL_TEMP2
+	ld_external	VOL_TEMP2, r0, $MACH_FE_STATUS_3|MACH_RD_REG
 	wr_insert	$3
-	insert		rt1, rt1, rt2
+	insert		VOL_TEMP1, VOL_TEMP1, VOL_TEMP2
 
 	/*
 	 * If no bits are set then it must be an interrupt.
 	 */
-	cmp_br_delayed	eq, rt1, r0, Interrupt
+	cmp_br_delayed	eq, VOL_TEMP1, r0, Interrupt
 	Nop
 	/*
 	 * If any of the bits FEStatus<19:16> are set then is one of the
-	 * four VM faults.
+	 * four VM faults.  Store the fault type in a safe temporary and
+	 * call the VMFault handler.
 	 */
-	extract		rt2, rt1, $2
-	and		rt2, rt2, $0xf
-	cmp_br_delayed	ne, rt2, 0, VMFault
+	extract		SAFE_TEMP1, VOL_TEMP1, $2
+	and		SAFE_TEMP1, SAFE_TEMP1, $0xf
+	cmp_br_delayed	ne, SAFE_TEMP1, 0, VMFault
 	Nop
 	/*
 	 * We can't handle any of the rest of the faults.
 	 */
-	rd_kpsw		rt1
-	and		rt1, rt1, $MACH_KPSW_PREV_MODE
-	cmp_br_delayed	eq, rt1, $0, faultIntr_KernError
+	rd_kpsw		VOL_TEMP1
+	and		VOL_TEMP1, VOL_TEMP1, $MACH_KPSW_PREV_MODE
+	cmp_br_delayed	eq, VOL_TEMP1, $0, faultIntr_KernError
 	Nop
-	VERIFY_SWP(0)
-	SWITCH_TO_KERNEL_SPILL_STACK()
+	USER_ERROR(MACH_BAD_FAULT)
 faultIntr_KernError:
 	CALL_DEBUGGER(MACH_BAD_FAULT)
 
+/*
+ *---------------------------------------------------------------------------
+ *
+ * Interrupt --
+ *
+ *	Handle an interrupt.
+ *
+ *---------------------------------------------------------------------------
+ */
 Interrupt:
 	/*
-	 * Save the insert register in temp reg 4.
+	 * Save the insert register in a safe temporary.
 	 */
-	rd_insert	rt4
+	rd_insert	SAFE_TEMP1
 	/*
 	 * Get the interrupt status register as the first parameter to
 	 * the interrupt handling routine.
 	 */
-	ld_external	r27, r0, $MACH_INTR_STATUS_0|MACH_RD_REG
-	ld_external	rt2, r0, $MACH_INTR_STATUS_1|MACH_RD_REG
+	ld_external	OUTPUT_REG1, r0, $MACH_INTR_STATUS_0|MACH_RD_REG
+	ld_external	VOL_TEMP1, r0, $MACH_INTR_STATUS_1|MACH_RD_REG
 	wr_insert	$1
-	insert		r27, r27, rt2
-	ld_external	rt2, r0, $MACH_INTR_STATUS_2|MACH_RD_REG
+	insert		OUTPUT_REG1, OUTPUT_REG1, VOL_TEMP1
+	ld_external	VOL_TEMP1, r0, $MACH_INTR_STATUS_2|MACH_RD_REG
 	wr_insert	$2
-	insert		r27, r27, rt2
-	ld_external	rt2, r0, $MACH_INTR_STATUS_3|MACH_RD_REG
+	insert		OUTPUT_REG1, OUTPUT_REG1, VOL_TEMP1
+	ld_external	VOL_TEMP1, r0, $MACH_INTR_STATUS_3|MACH_RD_REG
 	wr_insert	$3
-	insert		r27, r27, rt2
+	insert		OUTPUT_REG1, OUTPUT_REG1, VOL_TEMP1
 
 	/*
-	 * Disable interrupts but enable all other traps.
+	 * Disable interrupts but enable all other traps.  Save the kpsw
+	 * in a safe temporary.
 	 */
-	read_kpsw	rt5
-	and		rt2, rt5, $((~MACH_INTR_TRAP_ENA)&0x3fff)
-	or		rt2, rt2, $MACH_ALL_TRAPS_ENA
-	wr_kpsw		rt2
-	and		rt2, rt5, $MACH_KPSW_PREV_MODE
-	cmp_br_delayed	eq, rt2, $0, interrupt_KernMode
+	read_kpsw	SAFE_TEMP2
+	and		VOL_TEMP2, SAFE_TEMP2, $((~MACH_INTR_TRAP_ENA)&0x3fff)
+	or		VOL_TEMP2, VOL_TEMP2, $MACH_ALL_TRAPS_ENA
+	wr_kpsw		VOL_TEMP2
+	and		VOL_TEMP2, SAFE_TEMP2, $MACH_KPSW_PREV_MODE
+	cmp_br_delayed	eq, VOL_TEMP2, $0, interrupt_KernMode
 	Nop
 	/*
 	 * We took the interrupt from user mode.  Verify that the swp
 	 * is OK which means:
 	 *
 	 *	swp >= min_swp_offset and
-	 *	swp + page_size - 128 <= max_swp_offset
+	 *	swp + page_size - MACH_UNDERFLOW_EXTRA <= max_swp_offset
 	 *
-	 * This is 128 bytes different then the standard check (VERIFY_SWP)
-	 * because we may interrupt a process after it has taken a window
-	 * overflow or underflow fault but before it has had a chance to
-	 * allocate more memory for the window stack.
+	 * This is MACH_UNDERFLOW_EXTRA bytes different then the standard 
+	 * check (VERIFY_SWP) because we may interrupt a process after it 
+	 * has taken a window overflow or underflow fault but before it has
+	 * had a chance to allocate more memory for the window stack.
 	 */
-	ld_32		rt1, r0, $curStatePtr
-	rd_special	rt2, swp
-	ld_32		rt3, rt1, $MACH_MIN_SWP_OFFSET
+	ld_32		VOL_TEMP1, r0, $curStatePtr
+	rd_special	VOL_TEMP2, swp
+	ld_32		VOL_TEMP3, VOL_TEMP1, $MACH_MIN_SWP_OFFSET
 	Nop
-	cmp_br_delayed	gt, rt3, rt2, interrupt_BadSWP
+	cmp_br_delayed	gt, VOL_TEMP3, VOL_TEMP2, interrupt_BadSWP
 	Nop
-	ld_32		rt3, rt1, $MACH_MAX_SWP_OFFSET
-	add_nt		rt2, rt2, $(MACH_PAGE_SIZE - 128)
-	cmp_br_delayed	ge, rt3, rt2, interrupt_GoodSWP
+	ld_32		VOL_TEMP3, VOL_TEMP1, $MACH_MAX_SWP_OFFSET
+	add_nt		VOL_TEMP2, VOL_TEMP2, $(MACH_PAGE_SIZE - MACH_UNDERFLOW_EXTRA)
+	cmp_br_delayed	ge, VOL_TEMP3, VOL_TEMP2, interrupt_GoodSWP
 	Nop
 interrupt_BadSWP:
 	/*
@@ -569,9 +622,9 @@ interrupt_BadSWP:
 	SWITCH_TO_KERNEL_STACKS()
 	call		_MachInterrupt$w
 	Nop
-	read_kpsw	rt1
-	or		rt1, rt1, $MACH_KPSW_INTR_TRAP_ENA
-	write_kpsw	rt1
+	read_kpsw	VOL_TEMP1
+	or		VOL_TEMP1, VOL_TEMP1, $MACH_KPSW_INTR_TRAP_ENA
+	write_kpsw	VOL_TEMP1
 	add_nt		r11, r0, $MACH_USER_BAD_SWP
 	call		_MachUserError$w
 	Nop
@@ -581,12 +634,12 @@ interrupt_GoodSWP:
 	 * We have a good user swp.  Switch to the kernel's spill stack, call
 	 * the interrupt handler and then go back to the user's stack.
 	 */
-	ld_32		r4, rt1, $MACH_KERN_STACK_END
-	add_nt		rt1, r4, $0
+	ld_32		SPILL_SP, VOL_TEMP1, $MACH_KERN_STACK_END
+	add_nt		VOL_TEMP1, SPILL_SP, $0
 	call		_MachInterrupt$w
 	Nop
 	cmp_br_delayed	always, interrupt_Return
-	add_nt		r4, rt1, $0
+	add_nt		SPILL_SP, VOL_TEMP1, $0
 interrupt_KernMode:
 	/*
 	 * We took the interrupt in kernel mode so all that we have to
@@ -598,73 +651,79 @@ interrupt_Return:
 	/*
 	 * Restore saved KPSW and insert register and return from trap.
 	 */
-	wr_insert	rt4
-	wr_kpsw		rt5
-	add_nt		GLOB_TMP1, r16, $0
-	return_trap	r10, $0
+	wr_insert	SAFE_TEMP1
+	wr_kpsw		SAFE_TEMP2
+	add_nt		GLOB_TMP1, SECOND_PC_REG, $0
+	return_trap	FIRST_PC_REG, $0
 	jump_reg	GLOB_TMP1, $0
 
+
 /*
+ *---------------------------------------------------------------------------
+ *
  * VMFault --
  *
- *	Handle virtual memory faults.
+ *	Handle virtual memory faults.  The current fault type was stored
+ *	in SAFE_TEMP1 before we were called.
+ *
+ *---------------------------------------------------------------------------
  */
 VMFault:
 	/*
-	 * Handle a VM fault.  Note that the type of fault was stored in
-	 * rt2 right before we were called so we save it right away in rt1
-	 * because rt1 won't get corrupted by the parsing of the instruction.
+	 * Enable all traps.  Save the kpsw in a safe temporary before 
+	 * modifying it so that we can restore it later.
 	 */
-	add_nt		rt1, rt2, $0
-	/*
-	 * Enable all other traps.
-	 */
-	read_kpsw	rt5
-	add_nt		r31, rt5, $0		# 5th arg to MachVMFault is the
-						#     kpsw
-	or		rt2, rt2, $MACH_ALL_TRAPS_ENA
-	wr_kpsw		rt2
-	and		rt2, rt5, $MACH_KPSW_PREV_MODE
-	cmp_br_delayed	eq, rt2, $0, vmFault_GetDataAddr
+	read_kpsw	SAFE_TEMP2
+	add_nt		OUTPUT_REG5, SAFE_TEMP2, $0	# 5th arg to 
+							#   MachVMFault is the
+							#   kpsw
+	or		VOL_TEMP2, VOL_TEMP2, $MACH_ALL_TRAPS_ENA
+	wr_kpsw		VOL_TEMP2
+	and		VOL_TEMP2, SAFE_TEMP2, $MACH_KPSW_PREV_MODE
+	cmp_br_delayed	eq, VOL_TEMP2, $0, vmFault_GetDataAddr
 	Nop
 	VERIFY_SWP(0)
 vmFault_GetDataAddr:
-	FETCH_CUR_INSTRUCTION(rt2)
-	extract		rt2, rt2, $3		# Opcode <31:25> -> <07:01>
-	srl		rt2, rt2, $1		# Opcode <07:01> -> <06:00>
-	and		rt2, rt2, $0xf0		# Get upper 4 bits.
+	FETCH_CUR_INSTRUCTION(VOL_TEMP1)
+	extract		VOL_TEMP1, VOL_TEMP1, $3  	# Opcode <31:25> -> 
+							#	 <07:01>
+	srl		VOL_TEMP1, VOL_TEMP1, $1	# Opcode <07:01> ->
+							#	 <06:00>
+	and		VOL_TEMP1, VOL_TEMP1, $0xf0	# Get upper 4 bits.
 	/*
 	 * All instructions besides loads, stores and test-and-set instructions
 	 * have opcodes greater than 0x20.
 	 * 
-	cmp_br_delayed	gt, rt2, $0x20, vmFault_NoData
+	cmp_br_delayed	gt, VOL_TEMP1, $0x20, vmFault_NoData
 	Nop
 	/*
-	 * Get the data address.
+	 * Get the data address by calling ParseInstruction.  We pass the
+	 * address to return to in VOL_TEMP1 and the PC of the faulting 
+	 * instruction is already in FIRST_PC_REG.
 	 */
-	ld_32		r11, r0, $vmFault_GotDataAddrPtr
+	ld_32		VOL_TEMP1, r0, $vmFault_GotDataAddrPtr
 	Nop
 	jump		ParseInstruction$w
 	Nop
 vmFault_GotDataAddr:
 	/*
-	 * We now have the data address in r14.
+	 * We now have the data address in VOL_TEMP1
 	 */
-	add_nt		r29, r0, $1		# 3rd arg is TRUE to indicate
+	add_nt		OUTPUT_REG3, r0, $1	# 3rd arg is TRUE to indicate
 						#   that there is a data addr
-	add_nt		r30, r14, $0		# 4th arg is the data addr.
+	add_nt		OUTPUT_REG4, VOL_TEMP1, $0	# 4th arg is the data
+							#    addr.
 	cmp_br_delayed	always, vmFault_CallHandler
 	Nop
 vmFault_NoData:
-	add_nt		r29, r0, $0		# 3rd arg is FALSE
-						#   (no data addr)
-	cmp_br_delayed	always, vmFault_CallHandler
-	Nop
+	add_nt		OUTPUT_REG3, r0, $0		# 3rd arg is FALSE
+							#   (no data addr)
 vmFault_CallHandler:
-	add_nt		r27, rt1, $0		# 1st arg is fault type.
-	add_nt		r28, r10, $0		# 2nd arg is the faulting PC.
-	and		rt2, rt5, $MACH_KPSW_PREV_MODE
-	cmp_br_delayed	eq, rt2, $0, 1f
+	add_nt		OUTPUT_REG1, SAFE_TEMP1, $0	# 1st arg is fault type.
+	add_nt		OUTPUT_REG2, FIRST_PC_REG, $0	# 2nd arg is the 
+							#   faulting PC.
+	and		VOL_TEMP2, SAFE_TEMP1, $MACH_KPSW_PREV_MODE
+	cmp_br_delayed	eq, VOL_TEMP2, $0, vmFault_KernMode
 	Nop
 	SAVE_STATE_AND_SWITCH_STACK()
 	call		_MachVMFault$w
@@ -682,25 +741,31 @@ vmFault_ReturnFromTrap:
 	/* 
 	 * Clear fault bit and restore the kpsw.
 	 */
-	st_external	rt1, r0, $MACH_FE_STATUS_2|MACH_WR_REG	
-	wr_kpsw		rt5
+	st_external	SAFE_TEMP1, r0, $MACH_FE_STATUS_2|MACH_WR_REG	
+	wr_kpsw		SAFE_TEMP2
 	jump		ReturnTrap$w
+	Nop
 
 /*
- * Compare trap handler -
+ *--------------------------------------------------------------------------
+ *
+ * CmpTrap --
  *
  *	Handle a cmp_trap trap.  This involves determining the trap type
  *	and vectoring to the right spot to handle trap.
+ *
+ *--------------------------------------------------------------------------
  */
 CmpTrap:
 	FETCH_CUR_INSTRUCTION(r17)
-        and             rt1, r17, $0x1ff        # Get trap number
-	cmp_br_delayed	gt, rt1, $MACH_MAX_TRAP_TYPE, cmpTrap_BadTrapType
+        and             VOL_TEMP1, r17, $0x1ff        # Get trap number
+	cmp_br_delayed	gt, VOL_TEMP1, $MACH_MAX_TRAP_TYPE, cmpTrap_BadTrapType
 	Nop
-	sll		rt1, rt1, $3		# Multiple by 8 to get offset
-	rd_special	rt2, pc
-	add_nt		rt2, rt1, $16
-	jump_reg	rt2, $0
+	sll		VOL_TEMP1, VOL_TEMP1, $3	# Multiple by 8 to
+							#   get offset
+	rd_special	VOL_TEMP2, pc
+	add_nt		VOL_TEMP2, VOL_TEMP1, $16
+	jump_reg	VOL_TEMP2, $0
 	Nop
 	jump		SysCallTrap$w	
         Nop
@@ -714,44 +779,43 @@ cmpTrap_BadTrapType:
 	 * in kernel mode call the debugger.  Otherwise call
 	 * the user error routine.
 	 */
-	rd_kpsw		rt1
-	and		rt2, rt1, $MACH_KPSW_PREV_MODE
-	cmp_br_delayed	eq, rt2, $0, cmpTrap_KernError
+	rd_kpsw		VOL_TEMP1
+	and		VOL_TEMP2, VOL_TEMP1, $MACH_KPSW_PREV_MODE
+	cmp_br_delayed	eq, VOL_TEMP2, $0, cmpTrap_KernError
 	Nop
-	VERIFY_SWP(0)
-	SAVE_STATE_AND_SWITCH_STACK()
-	or		rt2, rt1, $MACH_KPSW_ALL_TRAP_ENA
-	write_kpsw	rt2
-	add_nt		r11, r0, $MACH_BAD_TRAP_TYPE
-	call		_MachUserError$w
-	Nop
-	RESTORE_STATE()
-	jump		ReturnTrap$w
-	Nop
+	USER_ERROR(MACH_BAD_TRAP_TYPE)
 
 cmpTrap_KernError:
 	CALL_DEBUGGER(MACH_BAD_TRAP_TYPE)
 
 /*
+ *----------------------------------------------------------------------------
+ *
  * SysCallTrap -
  *
  *	Handle a system call trap.
+ *
+ *----------------------------------------------------------------------------
  */
 SysCallTrap:
 
 /*
+ *----------------------------------------------------------------------------
+ *
  * UserErrorTrap -
  *
- *	Handle a user error trap.  Before we were called the old r10 (firstPC
- *	at fault time) and r16 (secondPC) were saved in r14 and r15 
- *	respectively and the error type was stored in r13.
+ *	Handle a user error trap.  Before we were called the old FIRST_PC_REG 
+ *	and SECOND_PC_REG were saved in NON_INTR_TEMP2 and NON_INTR_TEMP3 
+ *	respectively and the error type was stored in NON_INTR_TEMP1.
+ *
+ *----------------------------------------------------------------------------
  */
 UserErrorTrap:
 	VERIFY_SWP(0)
 	SAVE_STATE_AND_SWITCH_STACK()
-	add_nt		r10, r14, $0
-	add_nt		r16, r15, $0
-	add_nt		r11, r13, $0
+	add_nt		OUTPUT_REG1, NON_INTR_TEMP1, $0
+	add_nt		FIRST_PC_REG, NON_INTR_TEMP2, $0
+	add_nt		SECOND_PC_REG, NON_INTR_TEMP3, $0
 	jump		_MachUserError$w
 	Nop
 	RESTORE_STATE()
@@ -759,29 +823,39 @@ UserErrorTrap:
 	Nop
 
 /*
+ *----------------------------------------------------------------------------
+ *
  * SigReturnTrap -
  *
  *	Return from signal trap.  The previous window contains
  *	the saved info when we called the signal handler.
+ *
+ *----------------------------------------------------------------------------
  */
 SigReturnTrap:
 	VERIFY_SWP(0)
 	/*
+	 * Enable traps.
+	 */
+	rd_kpsw		VOL_TEMP1
+	or		VOL_TEMP1, VOL_TEMP1, $MACH_KPSW_ALL_TRAPS_ENA
+	wr_kpsw		VOL_TEMP1
+	/*
 	 * Get back to the previous window.
 	 */
-	rd_special	rt1, pc
-	return		rt1, $12
+	rd_special	VOL_TEMP1, pc
+	return		VOL_TEMP1, $12
 	Nop
 	/*
 	 * We are now in the previous window.  The user stack pointer was saved
 	 * in rt1 and the old hold mask in rt2.  Also the first and second
-	 * PCs were saved in r10 and r16.  Restore the stack pointer and
-	 * then call the signal return handler with the old hold mask as
-	 * an argument.  The signal return handler will check for other signals
-	 * pending and return one of the normal ReturnTrap codes.
+	 * PCs were saved in FIRST_PC_REG and SECOND_PC_REG.  Restore the 
+	 * stack pointer and then call the signal return handler with the old
+	 * hold mask as an argument.  The signal return handler will check for
+	 * other signals pending and return one of the normal ReturnTrap codes.
 	 */
-	add_nt		r4, rt1, $0
-	add_nt		r27, rt2, $0
+	add_nt		SPILL_SP, rt1, $0
+	add_nt		OUTPUT_REG1, rt2, $0
 	SAVE_STATE_AND_SWITCH_STACK()
 	jump		_MachSigReturn()
 	Nop
@@ -790,54 +864,57 @@ SigReturnTrap:
 	Nop
 
 /*
+ *----------------------------------------------------------------------------
+ *
  * ReturnTrap -
  *
  *	Return from a trap handler.  Assume that the type of return to
- *	do has been stored in r11.
+ *	do has been stored in RETURN_VAL_REG.  If it is not one of
+ *	MACH_NORM_RETURN, MACH_FAILED_COPY or MACH_CALL_SIG_HANDLER
+ *	then it is a kernel error value.
+ *
+ *----------------------------------------------------------------------------
  */
 ReturnTrap:
 	/*
 	 * Check the return code from the fault handler.
 	 */
-	cmp_br_delayed	eq, r11, $MACH_NORM_RETURN, returnTrap_NormReturn
+	cmp_br_delayed	eq, RETURN_VAL_REG, $MACH_NORM_RETURN, returnTrap_NormReturn
 	Nop
-	cmp_br_delayed	eq, r11, $MACH_FAILED_COPY, returnTrap_FailedCopy
+	cmp_br_delayed	eq, RETURN_VAL_REG, $MACH_FAILED_COPY, returnTrap_FailedCopy
 	Nop
-	cmp_br_delayed	eq, r11, $MACH_CALL_SIG_HANDLER, returnTrap_CallSigHandler
+	cmp_br_delayed	eq, RETURN_VAL_REG, $MACH_CALL_SIG_HANDLER, returnTrap_CallSigHandler
 	Nop
-	CALL_DEBUGGER_REG(r11)
+	CALL_DEBUGGER_REG(RETURN_VAL_REG)
 returnTrap_FailedCopy:
 	/*
 	 * A copy to/from user space failed.  Go back to the previous window
 	 * and then return an error to the caller.
 	 */
-	rd_special	rt1, pc
-	return		rt1, $12
+	rd_special	VOL_TEMP1, pc
+	return		VOL_TEMP1, $12
 	Nop
 	/*
 	 * The error to return is 0x20000 for SYS_ARG_NOACCESS.  Since we only
 	 * have 14 bits of immediate we have to insert a 2 into the 3rd byte.
 	 */
-	add_nt		r27, r0, $0
+	add_nt		RETURN_VAL_REG, r0, $0
 	wr_insert	$2
-	insert		r27, r0, $2
-	or		rt5, rt5, $MACH_ALL_TRAPS_ENA
-	and		rt5, rt5 $
-	wr_kpsw		rt5
-	return		r10, $0
+	insert		RETURN_VAL_REG, r0, $2
+	return		RETURN_ADDR_REG, $0
 	Nop
 returnTrap_CallSigHandler:
 	/*
 	 * Need to call a users signal handler.  First save the current
 	 * stack pointer in the current window.  The PCs are already saved
-	 * in r10 and r16.
+	 * in FIRST_PC_REG and SECOND_PC_REG.
 	 */
 	ld_32		r31, r0, $curStatePtr
 	Nop
 	ld_32		r31, r31, $0
 	Nop
 	ld_32		rt2, r31, $MACH_OLD_HOLD_MASK_OFFSET
-	add_nt		rt1, r4, $0
+	add_nt		rt1, SPILL_SP, $0
 	/*
 	 * Go to the next window which is where the signal handler will
 	 * execute in.
@@ -849,31 +926,31 @@ returnTrap_CallSigHandler:
 	 * Load in the PC, stack pointer and the arguments to the signal
 	 * handler.
 	 */
-	ld_32		rt1, r15, $MACH_NEW_FIRST_PC_OFFSET
-	ld_32		r4, r15, $MACH_NEW_USER_SP_OFFSET
-	add_nt		r10, r0, $SigReturnAddr
-	ld_32		r11, r15, $MACH_SIG_NUM_OFFSET
-	ld_32		r12, r15, $MACH_SIG_CODE_OFFSET
-	ld_32		r13, r15, $MACH_OLD_HOLD_MASK_OFFSET
+	ld_32		VOL_TEMP1, r15, $MACH_NEW_FIRST_PC_OFFSET
+	ld_32		SPILL_SP, r15, $MACH_NEW_USER_SP_OFFSET
+	add_nt		RETURN_ADDR_REG, r0, $SigReturnAddr
+	ld_32		INPUT_REG1, r15, $MACH_SIG_NUM_OFFSET
+	ld_32		INPUT_REG2, r15, $MACH_SIG_CODE_OFFSET
+	ld_32		INPUT_REG3, r15, $MACH_OLD_HOLD_MASK_OFFSET
 	/*
 	 * Call the signal handler and switch to user mode.
 	 */
 	rd_kpsw		GLOB_TMP1
 	or		GLOB_TMP1, GLOB_TMP1, $MACH_ALL_TRAPS_ENA|MACH_KPSW_CUR_MODE
-	jump_reg	rt2, $0
+	jump_reg	VOL_TEMP1, $0
 	wr_kpsw		GLOB_TMP1
 
 returnTrap_NormReturn:
 	/*
-	 * Do a return from trap.  If the 2nd PC in r16 is zero then we
-	 * don't do the jump to the 2nd PC because there is none.
+	 * Do a return from trap.  If the 2nd PC in SECOND_PC_REG is zero then 
+	 * we don't do the jump to the 2nd PC because there is none.
 	 */
-	cmp_br_delayed	eq, r16, $0, returnTrap_No2ndPC
-	add_nt		GLOB_TMP1, r16, $0
-	return_trap	r10, $0
+	cmp_br_delayed	eq, SECOND_PC_REG, $0, returnTrap_No2ndPC
+	add_nt		GLOB_TMP1, SECOND_PC_REG, $0
+	return_trap	FIRST_PC_REG, $0
 	jump_reg	GLOB_TMP1, $0
 returnTrap_No2ndPC:
-	return_trap	r10, $0
+	return_trap	FIRST_PC_REG, $0
 	Nop
 
 /*
@@ -882,38 +959,43 @@ returnTrap_No2ndPC:
  *	Relevant instructions: LD_40*, LD_32*, ST_40, ST_32, TEST_AND_SET.
  *	We want to get the address of the operand that accesses memory.
  *	The address of the instruction is passed in r10 and the address to 
- *	jump to when done is passed in r11.
+ *	jump to when done is passed in rt1.  Note that since the act of
+ *	doing calls to switch windows trashes r10 we have to save r10.  Also
+ *	since we use r14 and r15 we have to save and restore them at the end.
  *
- *	RET_ADDR:	r11 -- Address to return to when done.
  *	SRC1_REG:	r14 -- src1 register
  *	SRC1_VAL:	r14 -- Value of src1 register.
  *	PREV_SRC1_REG:	r30 -- src1 register in previous window.
  *	SRC2_REG:	r15 -- src2 register or immediate.
  *	SRC2_VAL:	r15 -- Value of src2 register or immediate.
  *	PREV_SRC2_REG:	r31 -- src2 register in previous window.
- *	TRAP_INST:	r17 -- Trapping instruction.
- *	OPCODE:		r18 -- Opcode.
- *	PARSE_TEMP1:	r19 -- One temporary to use.
- *	PARSE_TEMP2:	r20 -- 2nd temporary to use.
- *	SAVED_R10:	r21 -- Place to save r10.
- *	SAVED_R14:	r22 -- Place to save r14.
- *	SAVED_R15:	r23 -- Place to save r15.
+ *	RET_ADDR:	r17 (VOL_TEMP1)  -- Address to return to when done.
+ *	TRAP_INST:	r18 (VOL_TEMP2) -- Trapping instruction.
+ *	OPCODE:		r19 (VOL_TEMP3) -- Opcode.
+ *	CALLER_TEMP1	r20 (SAFE_TEMP1) -- Temporary reserved for caller.
+ *	CALLER_TEMP2	r21 (SAFE_TEMP2) -- Temporary reserved for caller.
+ *	CALLER_TEMP3	r22 (SAFE_TEMP3) -- Temporary reserved for caller.
+ *	PARSE_TEMP1:	r23 -- One temporary to use.
+ *	PARSE_TEMP2:	r24 -- 2nd temporary to use.
+ *	SAVED_R10:	r25 -- Place to save r10.
+ *	SAVED_R14:	r27 -- Place to save r14.
+ *	SAVED_R15:	r28 -- Place to save r15.
  */
 
-#define	RET_ADDR		r11
 #define	SRC1_REG		r14
 #define	SRC1_VAL		r14
 #define	PREV_SRC1_REG		r30
 #define	SRC2_REG		r15
 #define	SRC2_VAL		r15
 #define	PREV_SRC2_REG		r31
-#define	TRAP_INST		rt2
-#define	OPCODE			rt3
-#define	PARSE_TEMP1		rt4
-#define	PARSE_TEMP2		rt5
-#define	SAVED_R10		rt6
-#define	SAVED_R14		rt7
-#define	SAVED_R15		rt8
+#define	RET_ADDR		VOL_TEMP1
+#define	TRAP_INST		VOL_TEMP2
+#define	OPCODE			VOL_TEMP3
+#define	PARSE_TEMP1		rt7
+#define	PARSE_TEMP2		rt8
+#define	SAVED_R10		rt9
+#define	SAVED_R14		r27
+#define	SAVED_R15		r28
 
 ParseInstruction:
 	FETCH_CUR_INSTRUCTION(TRAP_INST)
@@ -1088,6 +1170,8 @@ parse_end:
 	and		SRC1_VAL, SRC1_VAL, PARSE_TEMP1   #   to make 8-bit
 							  #   aligned if 40-bit
 	add_nt		r10, SAVED_R10, $0		# Restore pre-parse r10
-	jump_reg	r21, r0			# Go back to caller
+	add_nt		r14, SAVED_R14, $0		# Restore pre-parse r14
+	add_nt		r15, SAVED_R15, $0		# Restore pre-parse r15
+	jump_reg	RET_ADDR, r0			# Go back to caller
 	Nop
 
