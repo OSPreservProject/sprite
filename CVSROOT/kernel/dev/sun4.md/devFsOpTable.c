@@ -34,6 +34,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devNull.h"
 #include "devSCSIDisk.h"
 #include "devSCSITape.h"
+#include "devSCSIRobot.h"
 #include "xylogics450.h"
 #include "devNet.h"
 #include "devBlockDevice.h"
@@ -154,13 +155,39 @@ DevFsTypeOps devFsOpTable[] = {
     {DEV_GRAPHICS, DevFBOpen, NullProc, NullProc,
                    DevFBIOControl, DevFBClose, NullProc,
                    DEV_NO_ATTACH_PROC, NoDevice, DevFBMMap},
-
     /*
      * VME link device.
      */
     {DEV_VMELINK, DevVMElinkOpen, DevVMElinkRead, DevVMElinkWrite,
 	 	  DevVMElinkIOControl, NullProc, NullProc,
 	 	  DEV_NO_ATTACH_PROC, NoDevice},
+    /*
+     * These devices don't exist on a sun4.
+     */
+    {15, NullProc, NullProc, NullProc, NullProc, NullProc, NullProc, 
+		   DEV_NO_ATTACH_PROC, NullProc, NullProc},
+    {16, NullProc, NullProc, NullProc, NullProc, NullProc, NullProc, 
+		   DEV_NO_ATTACH_PROC, NullProc, NullProc},
+    {17, NullProc, NullProc, NullProc, NullProc, NullProc, NullProc, 
+		   DEV_NO_ATTACH_PROC, NullProc, NullProc},
+    /*
+     * The following device number is unused.
+     */
+    {DEV_PLACEHOLDER_4, NoDevice, NullProc, NullProc,
+		    NullProc, NullProc, NullProc, 
+		    DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+    /*
+     * The following device number is unused.
+     */
+    {DEV_PLACEHOLDER_5, NoDevice, NullProc, NullProc,
+		    NullProc, NullProc, NullProc, 
+		    DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+    /*
+     * The "jukebox", or tape/disk robot device.
+     */
+    {DEV_SCSI_ROBOT, DevSCSIExbRobotOpen, NullProc, NullProc,
+	            DevSCSIExbRobotIOControl, DevSCSIExbRobotClose,
+	            NullProc, DEV_NO_ATTACH_PROC, NoDevice, NullProc},
 };
 
 int devNumDevices = sizeof(devFsOpTable) / sizeof(DevFsTypeOps);
