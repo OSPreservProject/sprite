@@ -880,17 +880,6 @@ FsCacheWrite(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	}
 
 	/*
-	 * If the block is write-thru then check the block back in as clean.
-	 * Our caller already has written the data through to the server
-	 * for us.
-	 */
-	if (flags & FS_SERVER_WRITE_THRU) {
-	    modTime = 0;
-	} else {
-	    modTime = fsTimeInSeconds;
-	}
-
-	/*
 	 * Copy the bytes into the block.
 	 */
 	if (flags & FS_USER) {
@@ -903,6 +892,32 @@ FsCacheWrite(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	} else {
 	    Byte_Copy(toWrite, buffer,
 		      blockPtr->blockAddr + (offset & FS_BLOCK_OFFSET_MASK));
+	}
+
+	/*
+	 * If the block is write-thru then write the data through to the 
+	 * server and then check the block back in as clean.
+	 */
+	if (flags & FS_SERVER_WRITE_THRU) {
+	    int		tLen;
+	    int		tOffset;
+	    Fs_Stream	dummyStream;
+
+	    tLen = toWrite;
+	    tOffset = offset;
+	    dummyStream.ioHandlePtr = cacheInfoPtr->hdrPtr;
+	    status = FsSpriteWrite(&dummyStream, 
+			(flags | FS_CLIENT_CACHE_WRITE) & 
+					~(FS_USER | FS_SERVER_WRITE_THRU),
+			blockPtr->blockAddr + (offset & FS_BLOCK_OFFSET_MASK),
+			&tOffset, &tLen, (Sync_RemoteWaiter *)NIL);
+	    if (status != SUCCESS) {
+		FsCacheUnlockBlock(blockPtr, 0, -1, 0, FS_DELETE_BLOCK);
+		break;
+	    }
+	    modTime = 0;
+	} else {
+	    modTime = fsTimeInSeconds;
 	}
 
 	/*

@@ -1003,7 +1003,7 @@ FsFileWrite(streamPtr, flags, buffer, offsetPtr,  lenPtr, remoteWaitPtr)
 	 * When in write-through or asap mode we have to force the descriptor
 	 * to disk on every write.
 	 */
-	FsWriteBackDesc(handlePtr, TRUE);
+	FsWriteBackDesc(handlePtr, FALSE);
     }
 
     *offsetPtr += *lenPtr;
