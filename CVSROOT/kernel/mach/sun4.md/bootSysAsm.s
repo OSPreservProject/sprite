@@ -80,39 +80,70 @@ begin:
 	mov	%psr, %g1			/* turn interrupts back on */
 	andn	%g1, MACH_ENABLE_LEVEL15_INTR, %g1
 	mov	%g1, %psr
-#ifdef NOTDEF
-	mov	%tbr, %g4	/* save prom tbr */
-	call	_main
-#endif NOTDEF
-	mov	_machProtoVectorTable, %o1
+	/*
+	 * Zero out the bss segment.
+	 */
+	sethi	%hi(_edata), %g2
+	or	%g2, %lo(_edata), %g2
+	sethi	%hi(_end), %g3
+	or	%g3, %lo(_end), %g3
+	cmp	%g2, %g3	/* if _edata == _end, don't zero stuff. */
+	be	doneZeroing
+	nop
+	clr	%g1
+zeroing:
+	/*
+	 * Use store doubles for speed.  Both %g0 and %g1 are zeroes.
+	 */
+	std	%g0, [%g2]
+	add	%g2, 0x8, %g2
+	cmp	%g2, %g3
+	mov	0x7, %g6
+	bne	zeroing
+	nop
+doneZeroing:
+
+	/*
+	 * Set the stack pointer for the initial process.
+	 * start == MACH_CODE_START == where we asked loader to start loading
+	 * kernel text.
+	 */
+	mov	start, %o0
 	call	printArg
+	nop
+
+#ifdef NOTDEF
+	mov	start, %sp
+	mov	%tbr, %g4	/* save prom tbr */
+#endif NOTDEF
+	call	_main
 	nop
 
 .align 8
 /*
  * printArg:
  *
- * Move integer argument to print into %o1.  This will infinite loop printing
- * desired integer.
+ * Move integer argument to print into %o0.  This will print
+ * desired integer in hex.
  */
 printArg:
 	.seg	"data1"
-printArg2:
-	.ascii  "Hello World! arg is %x\012\0"
-	.seg    "text"
+argString:
+	.ascii	"printArg: %x\012\0"
+	.seg	"text"
 
+	mov	%o0, %o1
+	set	argString, %o0
+	mov	%o7, %g6
 	sethi   %hi(-0x17ef7c),%g1
 	ld      [%g1+%lo(-0x17ef7c)],%g1
-	set     printArg2,%o0
 	call    %g1,2
 	nop
-endloop:
-	b	printArg
-	nop
-	ret
+	mov	%g6, %o7
+	retl
 	nop
 .align 8
-_machProtoVectorTable:			/* 0x48 */
+_machProtoVectorTable:
 	rd	%tbr, %g1
 	and	%g1, 0xff0, %g1
 	add	%g1, %g4, %g1
