@@ -17,28 +17,29 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "dev.h"
-#include "devInt.h"
-#include "fs.h"
-#include "rawBlockDev.h"
-#include "devFsOpTable.h"
-#include "devTypes.h"
+#include <sprite.h>
+#include <dev.h>
+#include <devInt.h>
+#include <fs.h>
+#include <rawBlockDev.h>
+#include <devFsOpTable.h>
+#include <devTypes.h>
 
 /*
  * Device specific include files.
  */
 
-#include "devSyslog.h"
-#include "devNull.h"
-#include "devSCSIDisk.h"
-#include "devSCSITape.h"
-#include "devNet.h"
-#include "devBlockDevice.h"
-#include "scsiHBADevice.h"
-#include "raidExt.h"
-#include "tty.h"
-#include "graphics.h"
+#include <devSyslog.h>
+#include <devNull.h>
+#include <devSCSIDisk.h>
+#include <devSCSITape.h>
+#include <devNet.h>
+#include <devBlockDevice.h>
+#include <scsiHBADevice.h>
+#include <raidExt.h>
+#include <tty.h>
+#include <graphics.h>
+#include <devStdFBInt.h>
 
 static ReturnStatus NoDevice();
 static ReturnStatus NullProc();
@@ -149,11 +150,22 @@ DevFsTypeOps devFsOpTable[] = {
 		   DevGraphicsIOControl, DevGraphicsClose, DevGraphicsSelect,
 		   DEV_NO_ATTACH_PROC, NoDevice, NullProc}, 
     /*
-     * The following device number is unused.
+     * These devices don't exist on a ds5000.
      */
-    {DEV_PLACEHOLDER_3, NoDevice, NullProc, NullProc,
-		    NullProc, NullProc, NullProc, 
-		    DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+    {13, NullProc, NullProc, NullProc, NullProc, NullProc, NullProc, 
+		   DEV_NO_ATTACH_PROC, NullProc, NullProc},
+    {14, NullProc, NullProc, NullProc, NullProc, NullProc, NullProc, 
+		   DEV_NO_ATTACH_PROC, NullProc, NullProc},
+    {15, NullProc, NullProc, NullProc, NullProc, NullProc, NullProc, 
+		   DEV_NO_ATTACH_PROC, NullProc, NullProc},
+    {16, NullProc, NullProc, NullProc, NullProc, NullProc, NullProc, 
+		   DEV_NO_ATTACH_PROC, NullProc, NullProc},
+    /*
+     * The standard frame buffer device.
+     */
+    {DEV_STDFB, DevStdFBOpen, NullProc, NullProc,
+		    DevStdFBIOControl, DevStdFBClose, NullProc, 
+		    DEV_NO_ATTACH_PROC, NoDevice, DevStdFBMMap},
 };
 
 int devNumDevices = sizeof(devFsOpTable) / sizeof(DevFsTypeOps);
