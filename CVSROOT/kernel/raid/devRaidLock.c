@@ -27,8 +27,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sync.h"
 #include "hash.h"
 #include "devRaid.h"
-#include "debugMem.h"
 #include "devRaidLock.h"
+#include "devRaidProto.h"
 
 extern char *malloc();
 
@@ -127,36 +127,45 @@ SLockStripe(raidPtr, stripe)
 CheckPointRaid(raidPtr)
     Raid	*raidPtr;
 {
+    MASTER_LOCK(&raidPtr->log.mutex);
+    if (!raidPtr->log.enabled) {
+	MASTER_UNLOCK(&raidPtr->log.mutex);
+	return;
+    }
+    MASTER_UNLOCK(&raidPtr->log.mutex);
     printf("RAID:MSG:Checkpointing RAID\n");
     LockRaid(raidPtr);
-    SaveRaidState(raidPtr);
+#ifndef TESTING
+    ClearBitVec(raidPtr->log.diskLockVec, raidPtr->log.diskLockVecNum);
+#endif TESTING
+    SaveRaidLog(raidPtr);
     UnlockRaid(raidPtr);
     printf("RAID:MSG:Checkpoint Complete\n");
 }
+
+#ifdef TESTING
+#define NUM_LOG_STRIPE 2
+#else
+#define NUM_LOG_STRIPE 100
+#endif
 
 void
 XLockStripe(raidPtr, stripe)
     Raid *raidPtr;
     int stripe;
 {
-    char buf[120];
-
     SLockStripe(raidPtr, stripe);
-/* LOGOFF
-    if (!IsSet(raidPtr->lockedVec, stripe)) {
+    if (!IsSet(raidPtr->log.diskLockVec, stripe)) {
 	MASTER_LOCK(&raidPtr->mutex);
 	raidPtr->numStripeLocked++;
-	if (raidPtr->numStripeLocked % 100 == 0) {
+	if (raidPtr->numStripeLocked % NUM_LOG_STRIPE == 0) {
 	    MASTER_UNLOCK(&raidPtr->mutex);
 	    Proc_CallFunc(CheckPointRaid, raidPtr, 0);
 	} else {
 	    MASTER_UNLOCK(&raidPtr->mutex);
 	}
-	sprintf(buf, "L %d\n", stripe);
-	LogEntry(raidPtr, buf);
-	SetBit(raidPtr->lockedVec, stripe);
+	LogStripe(raidPtr, stripe);
     }
-*/
 }
 
 
@@ -218,12 +227,6 @@ XUnlockStripe(raidPtr, stripe)
     Raid *raidPtr;
     int stripe;
 {
-/*
-    char buf[120];
-
-    sprintf(buf, "U %d\n", stripe);
-    LogEntry(raidPtr, buf);
-*/
     SUnlockStripe(raidPtr, stripe);
 }
 
@@ -246,9 +249,11 @@ LockRaid (raidPtr)
     Raid *raidPtr;
 {
     MASTER_LOCK(&raidPtr->mutex);
+    raidPtr->numWaitExclusive++;
     while (raidPtr->numReqInSys != 0) {
 	Sync_MasterWait(&raidPtr->waitExclusive, &raidPtr->mutex, FALSE);
     }
+    raidPtr->numWaitExclusive--;
     raidPtr->numReqInSys = -1;
     MASTER_UNLOCK(&raidPtr->mutex);
 }
@@ -274,8 +279,11 @@ UnlockRaid (raidPtr)
 {
     MASTER_LOCK(&raidPtr->mutex);
     raidPtr->numReqInSys = 0;
-    Sync_MasterBroadcast(&raidPtr->waitExclusive);
-    Sync_MasterBroadcast(&raidPtr->waitNonExclusive);
+    if (raidPtr->numWaitExclusive > 0) {
+	Sync_MasterBroadcast(&raidPtr->waitExclusive);
+    } else {
+	Sync_MasterBroadcast(&raidPtr->waitNonExclusive);
+    }
     MASTER_UNLOCK(&raidPtr->mutex);
 }
 
@@ -298,7 +306,7 @@ BeginRaidUse (raidPtr)
     Raid *raidPtr;
 {
     MASTER_LOCK(&raidPtr->mutex);
-    while (raidPtr->numReqInSys == -1) {
+    while (raidPtr->numReqInSys == -1 || raidPtr->numWaitExclusive > 0) {
 	Sync_MasterWait(&raidPtr->waitNonExclusive, &raidPtr->mutex, FALSE);
     }
     raidPtr->numReqInSys++;
@@ -329,4 +337,79 @@ EndRaidUse (raidPtr)
 	Sync_MasterBroadcast(&raidPtr->waitExclusive);
     }
     MASTER_UNLOCK(&raidPtr->mutex);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * InitSema
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+InitSema(semaPtr, name, val)
+    Sema	*semaPtr;
+    char	*name;
+    int		val;
+{
+    Sync_SemInitDynamic(&semaPtr->mutex, name);
+    semaPtr->val = val;
+#ifdef TESTING
+    Sync_CondInit(&semaPtr->wait);
+#endif
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DownSema
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+void
+DownSema(semaPtr)
+    Sema	*semaPtr;
+{
+    MASTER_LOCK(&semaPtr->mutex);
+    while (semaPtr->val <= 0) {
+	Sync_MasterWait(&semaPtr->wait, &semaPtr->mutex, FALSE);
+    }
+    semaPtr->val--;
+    MASTER_UNLOCK(&semaPtr->mutex);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UpSema
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+void
+UpSema(semaPtr)
+    Sema	*semaPtr;
+{
+    MASTER_LOCK(&semaPtr->mutex);
+    semaPtr->val++;
+    Sync_MasterBroadcast(&semaPtr->wait);
+    MASTER_UNLOCK(&semaPtr->mutex);
 }
