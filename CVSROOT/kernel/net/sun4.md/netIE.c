@@ -41,6 +41,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <mach.h>
 #include <machMon.h>
 #include <assert.h>
+
+static Net_EtherAddress BROADCAST_ADDR = {0xab,0x00,0x00,0x01,0x00,0x00};
 
 /*
  *----------------------------------------------------------------------
@@ -302,6 +304,7 @@ NetIEReset(interPtr)
     Net_Interface	*interPtr; 	/* Interface to reset. */
 {
     NetIEIASetupCB	        *addressCommandPtr;
+    NetIEMASetupCB	        *addressMACommandPtr;
     volatile NetIECommandBlock	*diagCmdPtr;
     NetIEState			*statePtr;
 
@@ -451,6 +454,17 @@ NetIEReset(interPtr)
     NetBfShortSet(addressCommandPtr->cmdBlock.bits, CmdNumber, NET_IE_IA_SETUP);
     addressCommandPtr->etherAddress = statePtr->etherAddress;
     NetIEExecCommand((NetIECommandBlock *) addressCommandPtr, statePtr);
+
+    /*
+     * Set the boot multicast address.
+     */
+
+    addressMACommandPtr = (NetIEMASetupCB *) statePtr->cmdBlockPtr;
+    bzero((Address) addressCommandPtr, sizeof(NetIEMASetupCB));
+    NetBfShortSet(addressCommandPtr->cmdBlock.bits, CmdNumber, NET_IE_MC_SETUP);
+    addressMACommandPtr->count = 1;
+    addressMACommandPtr->etherAddress = BROADCAST_ADDR;
+    NetIEExecCommand((NetIECommandBlock *) addressMACommandPtr, statePtr);
 
     /*
      * Set up the default configuration values.
