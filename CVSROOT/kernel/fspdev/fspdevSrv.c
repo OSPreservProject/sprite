@@ -2065,6 +2065,7 @@ FsPseudoStreamWrite(streamPtr, writePtr, waitPtr, replyPtr)
     int			amountWritten;
     int			numBytes;
     int			maxRequestSize;
+    int			totalToWrite;
 
     LOCK_MONITOR;
     /*
@@ -2137,6 +2138,7 @@ FsPseudoStreamWrite(streamPtr, writePtr, waitPtr, replyPtr)
     request.param.write.buffer		= 0;
 
     amountWritten = 0;
+    totalToWrite = writePtr->length;
     while ((writePtr->length > 0) && (status == SUCCESS)) {
 	/*
 	 * Loop to put the maximum amount of data into the request
@@ -2161,6 +2163,11 @@ FsPseudoStreamWrite(streamPtr, writePtr, waitPtr, replyPtr)
 	}
 	amountWritten += numBytes;
 	writePtr->length -= numBytes;
+    }
+    if (amountWritten > totalToWrite) {
+	printf("FsPseudoStreamWrite: \"%s\" amount written (%d) > requested (%d)\n",
+	    FsHandleName(streamPtr->ioHandlePtr), amountWritten, totalToWrite);
+	amountWritten = totalToWrite;
     }
     replyPtr->length = amountWritten;
     if (amountWritten > 0) {
