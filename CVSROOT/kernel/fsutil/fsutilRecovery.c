@@ -982,3 +982,27 @@ Fsutil_RpcRecovery(srvToken, clientID, command, storagePtr)
     Rpc_Reply(srvToken, SUCCESS, storagePtr, (int(*)())NIL, (ClientData)NIL);
     return(SUCCESS);
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_FsRecovInfo --
+ *
+ *	Info about recovery and file status for testing.
+ *
+ * Results:
+ *	SUCCESS or not.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fsutil_FsRecovInfo(length, resultPtr)
+    int		length;
+    char	*resultPtr;
+{
+    return SUCCESS;
+}

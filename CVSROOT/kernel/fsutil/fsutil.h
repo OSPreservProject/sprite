@@ -195,4 +195,6 @@ extern	void		Fsutil_HandleScavenge();
 
 extern  char		*Fsutil_GetFileName();
 
+extern	ReturnStatus	Fsutil_FsRecovInfo();
+
 #endif /* _FSUTIL */

@@ -805,6 +805,25 @@ Sys_StatsStub(command, option, argPtr)
 	    status = Recov_GetStats(option, argPtr);
 	    break;
 	}
+	case SYS_FS_RECOV_INFO: {
+	    int 	length;
+	    char	results[1000];
+	   
+	    length = sizeof (results);
+	    if (option <= 0) {
+		status = GEN_INVALID_ARG;
+		break;
+	    }
+	    if (option < length) {
+		length = option;
+	    }
+	    status = Fsutil_FsRecovInfo(length, results);
+	    if (status != SUCCESS) {
+		break;
+	    }
+	    status = Vm_CopyOut(length, results, argPtr);
+	    break;
+	}
 	default:
 	    status = GEN_INVALID_ARG;
 	    break;
