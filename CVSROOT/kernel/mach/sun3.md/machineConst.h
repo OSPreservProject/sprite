@@ -84,6 +84,11 @@
 #define	SUN_ENABLE_LEVEL7_INTR		0x80
 #define	SUN_ENABLE_LEVEL5_INTR		0x20
 
+/*
+ * Constants to access bits in the system enable register.
+ */
+#define SUN_ENABLE_FPP			0x40
+
 #endif SUN3
 
 #endif _MACHINECONST
