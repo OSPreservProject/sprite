@@ -135,6 +135,8 @@
  *	RPC_FS_FINISH_MIGATION 	Finish the migration of a file handle.
  *	RPC_FS_IO_CONTROL	Perform an iocontrol.
  *	RPC_FS_MKDEV		Make a special device file
+ *	RPC_FS_REOPEN		Reopen a file.
+ *	RPC_FS_DOMAIN_INFO	Return information about the given domain.
  *
  * These procedure numbers and the service switch should be generated
  * from another file...
@@ -186,7 +188,9 @@
 #define RPC_FS_MKDEV		44
 #define RPC_FS_GET_ATTR_PATH	45
 #define	RPC_SIG_SEND		46
-#define	RPC_LAST_COMMAND RPC_SIG_SEND
+#define	RPC_FS_REOPEN		47
+#define	RPC_FS_DOMAIN_INFO	48
+#define	RPC_LAST_COMMAND RPC_FS_DOMAIN_INFO
 
 /*
  * The above constant RPC_LAST_COMMAND is used to declare arrays that
@@ -229,6 +233,8 @@ extern ReturnStatus Fs_RpcBlockCopy();		/* 43 - FS_COPY_BLOCK */
 extern ReturnStatus Fs_RpcMakeDev();		/* 44 - FS_MKDEV */
 extern ReturnStatus Fs_RpcGetAttrPath();	/* 45 - FS_GET_ATTR_PATH */
 extern ReturnStatus Sig_RpcSend();		/* 46 - SIG_SEND */
+extern ReturnStatus Fs_RpcReopen();		/* 47 - FS_RPC_REOPEN */
+extern ReturnStatus Fs_RpcDomainInfo();		/* 48 - FS_RPC_DOMAIN_INFO. */
 
 #endif	_RPCCALL
 
