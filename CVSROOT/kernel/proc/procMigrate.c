@@ -771,7 +771,9 @@ Proc_MigrateTrap(procPtr)
     
     if (foreign) {
 	PROC_MIG_DEC_STAT(foreign);
-	if (evicting) {
+	if (evicting ||
+	    (proc_MigStats.foreign == 0 &&
+	     proc_MigStats.evictionsInProgress > 0)) {
 	    ProcMigEvictionComplete();
 	}
 #ifndef CLEAN
@@ -2389,7 +2391,8 @@ Proc_EvictProc(pid)
 	return (PROC_INVALID_PID);
     }
     if ((procPtr->genFlags & PROC_FOREIGN) &&
-	!(procPtr->genFlags & (PROC_DONT_MIGRATE | PROC_EVICTING))) {
+	!(procPtr->genFlags &
+	  (PROC_DONT_MIGRATE | PROC_EVICTING | PROC_DYING))) {
 	procPtr->genFlags |= PROC_EVICTING;
 	PROC_MIG_INC_STAT(evictionsInProgress);
 	status = Sig_SendProc(procPtr, SIG_MIGRATE_HOME, 0);
@@ -2492,7 +2495,10 @@ WaitForEviction()
  *	Monitored procedure to signal the process that is recording eviction
  *	statistics.  This is done any time an eviction completes. When
  *	the count of evictions hits zero, we wake up the process waiting for
- * 	eviction.
+ * 	eviction.  If the count of foreign processes ever hits 0 we also
+ * 	know all evictions are complete -- this is a double-check against
+ *	losing track of a process during eviction if something unexpected
+ *	happens (such as if it gets "destroyed").
  *
  * Results:
  *	None.
@@ -2508,11 +2514,13 @@ ProcMigEvictionComplete()
 
     LOCK_MONITOR;
 
-    if (proc_MigStats.evictionsInProgress > 0) {
+    if (proc_MigStats.foreign == 0) {
+	proc_MigStats.evictionsInProgress = 0;
+    } else if (proc_MigStats.evictionsInProgress > 0) {
 	proc_MigStats.evictionsInProgress--;
-	if (proc_MigStats.evictionsInProgress == 0) {
-	    Sync_Broadcast(&evictCondition);
-	}
+    }
+    if (proc_MigStats.evictionsInProgress == 0) {
+	Sync_Broadcast(&evictCondition);
     }
 
     UNLOCK_MONITOR;
