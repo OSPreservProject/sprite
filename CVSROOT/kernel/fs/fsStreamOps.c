@@ -200,9 +200,15 @@ Fs_Write(streamPtr, buffer, offset, lenPtr)
 
     FS_TRACE_IO(FS_TRACE_WRITE, streamPtr->ioHandlePtr->fileID, offset, *lenPtr);
     /*
-     * Outer loop to attempt the write and block if not ready.  The
-     * extra size and toWrite variables are needed because of devices
-     * and pipes that may only write some of the data before blocking.
+     * Main write loop.  This handles partial writes, non-blocking streams,
+     * and crash recovery.  This loop expects the stream write procedure to
+     * return FS_WOULD_BLOCK if it transfers no data, and lets it return
+     * either SUCCESS or FS_WOULD_BLOCK on partial writes.  SUCCESS with a
+     * partial write makes this loop attempt another write immediately.
+     * If a stream write procedure returns FS_WOULD_BLOCK is is required to
+     * have put the remoteWaiter information on an appropriate wait list.
+     * This loop ensures that a non-blocking stream returns SUCCESS if some
+     * data is transferred, and FS_WOULD_BLOCK if none can be transferred now.
      */
     bufPtr = buffer;
     while (TRUE) {
@@ -214,17 +220,22 @@ Fs_Write(streamPtr, buffer, offset, lenPtr)
 
 	bufPtr += toWrite;
 	size -= toWrite;
-
 	if (status == SUCCESS) {
-	    break;
-	} else if (status == FS_WOULD_BLOCK &&
-		(streamPtr->flags & FS_NON_BLOCKING) == 0) {
-	    /*
-	     * Regular streams wait and retry if the write would block.  The
-	     * stream write routine has put us on the handle's write wait list.
-	     */
-	    if (Sync_ProcWait((Sync_Lock *) NIL, TRUE)) {
-		status = GEN_ABORTED_BY_SIGNAL;
+	    if ((size > 0) && ((streamPtr->flags & FS_NON_BLOCKING) == 0)) {
+		continue;		/* partial write */
+	    } else {
+		break;
+	    }
+	} else if (status == FS_WOULD_BLOCK) {
+	    if ((streamPtr->flags & FS_NON_BLOCKING) == 0) {
+		if (Sync_ProcWait((Sync_Lock *) NIL, TRUE)) {
+		    status = GEN_ABORTED_BY_SIGNAL;
+		    break;
+		}
+	    } else {
+		if (size < *lenPtr) {
+		    status = SUCCESS;	/* non-blocking partial write */
+		}
 		break;
 	    }
 	} else if (status == RPC_TIMEOUT || status == FS_STALE_HANDLE ||
@@ -234,13 +245,7 @@ Fs_Write(streamPtr, buffer, offset, lenPtr)
 		break;
 	    }
 	} else {
-	    if (status == FS_WOULD_BLOCK && size < *lenPtr) {
-		/*
-		 * Cannot return FS_WOULD_BLOCK if some data was written.
-		 */
-		status = SUCCESS;
-	    }
-	    break;
+	    break;			/* stream error */
 	}
     }
     *lenPtr -= size;
