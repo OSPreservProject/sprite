@@ -39,6 +39,37 @@ Boolean rpc_NoTimeouts = FALSE;
 Rpc_Histogram *rpcCallTime[RPC_LAST_COMMAND+1];
 Boolean rpcCallTiming = FALSE;
 
+#ifdef DEBUG
+#define DEBUGSIZE 1000
+#define INC(ctr) { (ctr) = ((ctr) == DEBUGSIZE-1) ? 0 : (ctr)+1; }
+typedef struct {
+    RpcClientChannel	*chanPtr;
+    char		*action;
+    int			pNum;
+    int			serverID;
+    int			chanNum;
+    int			state;
+} dbgElem;
+
+static dbgElem	dbgArray[DEBUGSIZE];
+static int 		dbgCtr;
+
+#define CHAN_TRACE(zchanPtr, serverID, string) \
+{ \
+	dbgElem *ptr = &dbgArray[dbgCtr]; \
+	INC(dbgCtr); \
+	ptr->chanPtr = zchanPtr; \
+	ptr->action = string; \
+	ptr->chanNum = zchanPtr->index; \
+	ptr->serverID = serverID; \
+	ptr->pNum = Mach_GetProcessorNumber(); \
+	ptr->state = zchanPtr->state; \
+}
+
+#else
+#define CHAN_TRACE(zchanPtr, serverID, string)
+#endif
+
 
 /*
  *----------------------------------------------------------------------
@@ -132,15 +163,16 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 
 	/*
 	 * Wait until we get a poke from the timeout routine or there
-	 * is input available.  We know there is none available yet
-	 * because the MASTER_LOCK is shutting out the dispatcher.
-	 * (Well, maybe not.  Check beforehand.)
+	 * is input available.  Input may have arrived before we get
+	 * here because the channel mutex is released while Rpc_Output
+	 * waits for the packet to be sent by the network interface.
 	 */
 	if (! (chanPtr->state & CHAN_INPUT)) {
 	    chanPtr->timeoutItem.routine = Rpc_Timeout;
 	    chanPtr->timeoutItem.interval = wait;
 	    chanPtr->timeoutItem.clientData = (ClientData)chanPtr;
 	    chanPtr->state |= CHAN_TIMEOUT | CHAN_WAITING;
+	    CHAN_TRACE(chanPtr, serverID, "about to schedule");
 	    Timer_ScheduleRoutine(&chanPtr->timeoutItem, TRUE);
 	    do {
 		/*
@@ -150,10 +182,7 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 				&chanPtr->mutex, FALSE);
 	    } while (((chanPtr->state & CHAN_INPUT) == 0) &&
 		     (chanPtr->state & CHAN_TIMEOUT));
-	} else {
-#ifdef DEBUG_CHAN_MUTEX
-	    printf("RPC Channel already had input.\n");
-#endif 
+	    CHAN_TRACE(chanPtr, serverID, "woken up");
 	}
 	if (chanPtr->state & CHAN_INPUT) {
 	    /*
@@ -418,34 +447,7 @@ RpcClientDispatch(chanPtr, rpcHdrPtr)
      * to use the same buffers as us.
      */
     if (rpcHdrPtr->flags & RPC_CLOSE) {
-	if ((chanPtr->state & CHAN_BUSY) == 0) {
-	    register RpcHdr *requestRpcHdrPtr;
-
-	    chanPtr->state |= CHAN_BUSY;
-	    rpcCltStat.close++;
-	    requestRpcHdrPtr = &chanPtr->requestRpcHdr;
-	    requestRpcHdrPtr->flags = RPC_ACK | RPC_CLOSE | RPC_SERVER;
-	    requestRpcHdrPtr->delay = rpcMyDelay;
-	    requestRpcHdrPtr->clientID = rpc_SpriteID;
-	    requestRpcHdrPtr->serverID = rpcHdrPtr->serverID;
-	    requestRpcHdrPtr->channel = rpcHdrPtr->channel;
-	    requestRpcHdrPtr->serverHint = rpcHdrPtr->serverHint;
-	    requestRpcHdrPtr->ID = rpcHdrPtr->ID;
-	    requestRpcHdrPtr->numFrags = 0;
-	    requestRpcHdrPtr->fragMask = 0;
-	    requestRpcHdrPtr->paramSize = 0;
-	    requestRpcHdrPtr->dataSize = 0;
-	    chanPtr->request.paramBuffer.bufAddr = (Address)NIL;
-	    chanPtr->request.paramBuffer.length = 0;
-	    chanPtr->request.dataBuffer.bufAddr = (Address)NIL;
-	    chanPtr->request.dataBuffer.length = 0;
-	    (void)RpcOutput(rpcHdrPtr->serverID, &chanPtr->requestRpcHdr,
-						 &chanPtr->request,
-						 (RpcBufferSet *)NIL, 0,
-						 (Sync_Semaphore *)NIL);
-
-	    chanPtr->state &= ~CHAN_BUSY;
-	}
+	RpcChanClose(chanPtr, rpcHdrPtr);
 	goto unlock;
     }
 
@@ -551,6 +553,7 @@ RpcClientDispatch(chanPtr, rpcHdrPtr)
 
     if (chanPtr->state & CHAN_TIMEOUT) {
 	chanPtr->state &= ~CHAN_TIMEOUT;
+	CHAN_TRACE(chanPtr, chanPtr->serverID, "about to deschedule");
 	(void)Timer_DescheduleRoutine(&chanPtr->timeoutItem);
     }
     Sync_MasterBroadcast(&chanPtr->waitCondition);
@@ -598,6 +601,7 @@ Rpc_Timeout(time, data)
      */
     MASTER_LOCK(&chanPtr->mutex);
     chanPtr->state &= ~CHAN_TIMEOUT;
+    CHAN_TRACE(chanPtr, chanPtr->serverID, "Timeout");
     Sync_MasterBroadcast(&chanPtr->waitCondition);
     MASTER_UNLOCK(&chanPtr->mutex);
 }
