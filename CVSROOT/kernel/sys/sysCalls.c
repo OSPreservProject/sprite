@@ -218,6 +218,15 @@ Sys_Shutdown(flags, rebootString)
 	 */
 	procPtr = Proc_GetCurrentProc();
 	Proc_Lock(procPtr);
+#ifdef sun4
+	/*
+	 * Flush the virt addresses cache on the sun4 before turning ourselves
+	 * into a kernel process. If we don't do this we will get cache
+	 * write-back errors from dirty cache blocks of the shutdown program.
+	 */
+	MachFlushWindowsToStack();
+	VmMachFlushCurrentContext();
+#endif
 	procPtr->genFlags &= ~PROC_USER;
 	procPtr->genFlags |= PROC_KERNEL;
 	Proc_Unlock(procPtr);
