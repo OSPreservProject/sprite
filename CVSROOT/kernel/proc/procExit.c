@@ -637,10 +637,12 @@ Proc_InformParent(procPtr, childStatus, backGroundSig)
  *
  *----------------------------------------------------------------------
  */
+
+/* ARGSUSED */
 void
 SendSigChild(data, callInfoPtr)
     ClientData		data;
-    Proc_CallInfo	*callInfoPtr;
+    Proc_CallInfo	*callInfoPtr;	/* passed in by callback routine */
 {
     (void)Sig_Send(SIG_CHILD, SIG_NO_CODE, (Proc_PID)data, FALSE);
 }
