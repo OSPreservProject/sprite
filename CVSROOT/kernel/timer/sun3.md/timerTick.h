@@ -51,8 +51,8 @@ typedef Time Timer_Ticks;
  * use the Time_ modules routines to Add and Subtract
  */
 
-#define Timer_AddTicks(a,b,c)		Time_Add(a,b,c)
-#define Timer_SubtractTicks(a,b,c)	Time_Subtract(a,b,c)
+#define Timer_AddTicks(a,b,c)      Time_Add((Time) a,(Time) b, (Time *) c)
+#define Timer_SubtractTicks(a,b,c) Time_Subtract((Time) a,(Time) b, (Time *) c)
 
 /*
  * Conversion to Ticks to Time and Time to Ticks is fast too.
@@ -87,9 +87,9 @@ extern void Timer_GetCurrentTicks();
  *----------------------------------------------------------------------
  */
 
-#define Timer_TickLT(a,b)	Time_LT(a,b)
-#define Timer_TickLE(a,b)	Time_LE(a,b)
-#define Timer_TickEQ(a,b)	Time_EQ(a,b)
-#define Timer_TickGE(a,b)	Time_GE(a,b)
-#define Timer_TickGT(a,b)	Time_GT(a,b)
+#define Timer_TickLT(a,b)	Time_LT((Time) a, (Time) b)
+#define Timer_TickLE(a,b)	Time_LE((Time) a, (Time) b)
+#define Timer_TickEQ(a,b)	Time_EQ((Time) a, (Time) b)
+#define Timer_TickGE(a,b)	Time_GE((Time) a, (Time) b)
+#define Timer_TickGT(a,b)	Time_GT((Time) a, (Time) b)
 #endif _TIMERTICK
