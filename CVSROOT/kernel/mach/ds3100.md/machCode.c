@@ -1866,6 +1866,8 @@ Mach_SigreturnStub(sigContextPtr)
     regsPtr->mfhi = sigContext.sc_mdhi;
     bcopy(sigContext.sc_fpregs, regsPtr->fpRegs, sizeof(sigContext.sc_fpregs));
     regsPtr->fpStatusReg = sigContext.sc_fpc_csr;
+#if 0
     (void) sysUnixSigBlock(&dummy, sigContext.sc_mask);
+#endif
     return(SUCCESS);
 }
