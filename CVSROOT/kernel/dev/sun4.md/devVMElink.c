@@ -695,7 +695,15 @@ register VMELinkInfo *linkInfo;
 	    goto accessExit;
 	}
 	for (nbytes = 0; nbytes < memAccess.size; nbytes += sizeof (int)) {
-	    *(remote++) = *(local++);
+	    if (linkInfo->state & DEV_VMELINK_STATE_SAFE_COPY) {
+		status = Mach_Probe (sizeof (int), (Address)(local++),
+				     (Address)(remote++));
+		if (status != SUCCESS) {
+		    goto accessExit;
+		}
+	    } else {
+		*(remote++) = *(local++);
+	    }
 	    remoteOffsetInPage += sizeof (int);
 	    if ((remoteOffsetInPage & 0xffff) == 0) {
 		remote = (unsigned int *)linkInfo->smallMap;
@@ -705,7 +713,15 @@ register VMELinkInfo *linkInfo;
 	}
     } else if (memAccess.direction == DEV_VMELINK_TO_LOCAL) {
 	for (nbytes = 0; nbytes < memAccess.size; nbytes += sizeof (int)) {
-	    *(local++) = *(remote++);
+	    if (linkInfo->state & DEV_VMELINK_STATE_SAFE_COPY) {
+		status = Mach_Probe (sizeof (int), (Address)(remote++),
+				     (Address)(local++));
+		if (status != SUCCESS) {
+		    goto accessExit;
+		}
+	    } else {
+		*(local++) = *(remote++);
+	    }
 	    remoteOffsetInPage += sizeof (int);
 	    if ((remoteOffsetInPage & 0xffff) == 0) {
 		remote = (unsigned int *)linkInfo->smallMap;
@@ -817,6 +833,12 @@ register Fs_IOReply *replyPtr;
 	break;
       case IOC_VMELINK_RESET:
 	status = DevVMElinkReset (linkData);
+	break;
+      case IOC_VMELINK_SAFE_COPY_ON:
+	linkData->state |= DEV_VMELINK_STATE_SAFE_COPY;
+	break;
+      case IOC_VMELINK_SAFE_COPY_OFF:
+	linkData->state &= ~DEV_VMELINK_STATE_SAFE_COPY;
 	break;
       case IOC_VMELINK_READ_BOARD_STATUS:
 	{
