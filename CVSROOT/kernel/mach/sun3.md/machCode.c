@@ -1211,7 +1211,7 @@ MachUserReturn(procPtr)
 {
     SignalStack			sigStack;
     Address			pc;
-    int				restarted;
+    int				restarted=0;
 
     if (procPtr->unixProgress != PROC_PROGRESS_NOT_UNIX &&
 	    procPtr->unixProgress != PROC_PROGRESS_UNIX && debugProcStubs) {
@@ -1263,7 +1263,6 @@ MachUserReturn(procPtr)
 			procPtr->unixProgress);
 	    }
 	    procPtr->unixProgress = PROC_PROGRESS_UNIX;
-			procPtr->machStatePtr->userState.excStackPtr->pc);
 	}
 	if (Sig_Handle(procPtr, &sigStack.sigStack, &pc)) {
 	    SetupSigHandler(procPtr, &sigStack, pc);
