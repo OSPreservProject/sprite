@@ -37,17 +37,16 @@
  * Scatter/gather vector element.  The network output routines take
  * an array of these elements as a specifier for the packet.  This
  * format lets clients of the network module save extra copies because
- * they can leave data objects where they lie.  The done and conditionPtr
- * parts are used by clients that don't otherwise know when it is safe
- * to release the buffers referenced by the scatter/gather element.  If
- * conditionPtr is non-NIL then it is notified and done is set to TRUE
- * after the packet has been transmitted (it may be queued for a bit).
+ * they can leave data objects where they lie.  The done and mutexPtr
+ * parts are used to wait for the packet to be truely output.  The
+ * mutex is released while the packet is output.
  */
 
 typedef struct {
     Address		bufAddr;	/* In - Buffer address */
     int			length;		/* In - Size of the buffer */
-    Sync_Condition	*conditionPtr;	/* In - Condition to wait on. */
+    Sync_Semaphore	*mutexPtr;	/* Private to net module.
+					 * Used to wait for output. */
     Boolean		done;		/* Out - set when I/O completes */
 } Net_ScatterGather;
 
