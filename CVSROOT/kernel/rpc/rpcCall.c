@@ -26,6 +26,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <sys.h>
 #include <timerTick.h>
 #include <timer.h>
+#include <user/limits.h>
 /* Not needed if recov tracing is removed. */
 #include <recov.h>
 
@@ -555,37 +556,13 @@ RpcChanAlloc(serverID)
     Timer_Ticks	time;			/* When server channel state set. */
     Timer_Ticks	currentTime;		/* Current ticks. */
     Boolean	srvCongested;		/* Server is marked as congested. */
-    Boolean	haddaWait = FALSE; /* DEBUG: had to wait for free channel */
-    static int numWaits = 0;	/* DEBUG: number of calls that had to wait */
-    static int freeChanThreshold = 4; /* DEBUG: this many channels free 
-				       * means it's okay to complain again */
+    unsigned int smallestID = UINT_MAX;
 
     MASTER_LOCK(&rpcMutex);
-
-    /* 
-     * Quick debugging hack: if RPCs were delayed because there were no 
-     * channels, see if the load has slacked back enough that it's okay to 
-     * complain about it.  It should be okay to do this here (rather than 
-     * in the code that frees channels) because there should at least be 
-     * some sort of regular heartbeat RPC.
-     */
-    if (numWaits > 0 && numFreeChannels >= freeChanThreshold) {
-	printf("RpcChanAlloc: %d RPCs were delayed due to lack of channels.\n",
-	       numWaits);
-	numWaits = 0;
-    }
 
     while (numFreeChannels < 1) {
 	rpcCltStat.chanWaits++;
 waitForBusyChannel:
-	if (!haddaWait) {
-	    haddaWait = TRUE;
-	    ++numWaits;
-	    if (numWaits == 1) {
-		printf("%s: RPC to host %d delayed: no channels available.\n", 
-		       "RpcChanAlloc", serverID);
-	    }
-	}
 	Sync_MasterWait(&freeChannels, &rpcMutex, FALSE);
     }
     firstUnused = -1;
@@ -684,12 +661,15 @@ waitForBusyChannel:
 		    rpcCltStat.chanHits++;
 		    CHAN_TRACE(chanPtr, "alloc channel w/ same server");
 		    goto found;
-		} else if (firstFree < 0) {
+		} else if (chanPtr->requestRpcHdr.ID < smallestID) {
 		    /*
-		     * The first free channel (with some server) is less of
-		     * a good candidate for allocation.
+		     * Keep track of the channel with the smallest rpcID
+		     * (it's the least recently used). We'll use this one
+		     * if we can't reuse a channel with the same server or
+		     * find an unused channel.
 		     */
 		    firstFree = i;
+		    smallestID = chanPtr->requestRpcHdr.ID;
 		}
 	    }
 	}
