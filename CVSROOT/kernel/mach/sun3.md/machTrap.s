@@ -158,21 +158,32 @@ MachUnixSyscallTrap:
 	movl	a3, sp@-
 	movl	sp, a3
 
-	|*
-	|* Always save the user stack pointer because it can be needed
-	|* while processing the system call.
-	|*
 	movl	_machCurStatePtr, a0
-	movl	a1, a0@(MACH_USER_SP_OFFSET)
 
 	|* Save d0, because the Sigreturn system call needs it.
 	|* (Boneheaded SunOS convention for that system call!)
 	movl	d0, a0@(MACH_TRAP_REGS_OFFSET + 0)
 
+
+	|* Save the exc stack pointer since we need that too.
+	|* We should probably use special handling for some of this.
+	lea	sp@(16), a1
+	movl	a1, a0@(MACH_EXC_STACK_PTR_OFFSET)
+	|* Clear the carry bit to indicate no error.
+	movw	a1@, d0
+	andw	#~0x1, d0
+	movw	d0, a1@
+
 	|* Pop the call number into d0
 	movc	usp, a1
 	movl    a1@+, d0
 	movc    a1, usp
+
+	|*
+	|* Always save the user stack pointer because it can be needed
+	|* while processing the system call.
+	|*
+	movl	a1, a0@(MACH_USER_SP_OFFSET)
 
 	|*
 	|* Store this kernel call in the last kernel call variable.
@@ -187,14 +198,23 @@ MachUnixSyscallTrap:
 	|*
 
 	cmpl    #2, d0
+	beqs	0f
+	cmpl	#66, d0
 	bnes	1f
+0:
 	moveml	#0xffff, a0@(MACH_TRAP_REGS_OFFSET)
-	lea	sp@(16), sp
-	movl	sp, a0@(MACH_EXC_STACK_PTR_OFFSET)
-	lea	sp@(-16), sp
+	movl	sp@(0), a1	| a3
+	movl	a1, a0@(MACH_TRAP_REGS_OFFSET+48)
+	movl	sp@(4), a1	| a2
+	movl	a1, a0@(MACH_TRAP_REGS_OFFSET+44)
+	movl	sp@(8), a1	| a1
+	movl	a1, a0@(MACH_TRAP_REGS_OFFSET+40)
+	movl	sp@(12), a1	| a0
+	movl	a1, a0@(MACH_TRAP_REGS_OFFSET+32)
 
 	SaveUserFpuState();
 
+1:
 	|*
 	|* Check number of kernel call for validity.
 	|*
@@ -217,9 +237,16 @@ MachUnixSyscallTrap:
 	lsll    #2, d1
 	addl    d1, a1
 	lsrl    #2, d1
+
+	|* Allow page faults in the copy-in.
+
+	.globl _MachFetchArgs2
+_MachFetchArgs2:
 3:	
 	movl	a1@-, sp@-
 	dbra    d1, 3b
+	.globl _MachFetchArgsEnd2
+_MachFetchArgsEnd2:
 4:
 	movl    a2@, a1
 	jsr     a1@
@@ -232,13 +259,18 @@ MachUnixSyscallTrap:
 	|* kcallTable field.
 	|*
 
+
+	movl	_machCurStatePtr, a0
+	movl	a0@(MACH_USER_SP_OFFSET), a2 | restore the (new) SP
+	movc	a2, usp
+
 	movl	_proc_RunningProcesses, a0
 	movl	a0@, a2			| d1 now has PCB address.
 	addl	_machKcallTableOffset, a2
 					| a2 now has address of kcallTable
 					| field in PCB.
 	movw	#0x2700, sr		| Disable interrupts.
-	tstl	a2@(4)
+	tstl	a2@(4)			| Check specialHandling
 	bnes    6f
 5:
 	movl    a3, sp
@@ -250,22 +282,24 @@ MachUnixSyscallTrap:
 	beqs    7f
 	rte
 7:
-	movel _proc_RunningProcesses,a0
-	movel a0@,a0
-	movel a0@(MACH_UNIX_ERRNO_OFFSET),d0
-	negl    d0
-	negl    d0
+	movw	sp@, d0		| Set the carry bit to indicate error
+	orw	#0x1, d0
+	movw	d0, sp@
+	movel	_proc_RunningProcesses,a0	| Move errno into d0
+	movel	a0@,a0
+	movel	a0@(MACH_UNIX_ERRNO_OFFSET),d0
 	rte
 
 2:
-	movel   #22, d0
 	movl    a3, sp
 	movl    sp@+, a3
 	movl    sp@+, a2
 	movl    sp@+, a1
 	movl    sp@+, a0
-	negl    d0
-	negl    d0
+	movw	sp@, d0		| Set the carry bit to indicate error
+	orw	#0x1, d0
+	movw	d0, sp@
+	movel   #22, d0		| Return EINVAL
 	rte
 
 6:
