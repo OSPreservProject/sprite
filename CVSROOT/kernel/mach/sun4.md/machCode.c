@@ -107,6 +107,8 @@ int	machStatePtrOffset;		/* Byte offset of the machStatePtr
 int	machSpecialHandlingOffset;	/* Byte offset of the specialHandling
 					 * field in a Proc_ControlBlock. */
 char	mach_DebugStack[0x2000];	/* The debugger stack. */
+unsigned int	machDebugStackStart;	/* Contains address of base of debugger
+					 * stack. */
 
 /*
  * Pointer to the state structure for the current process.
@@ -218,6 +220,10 @@ Mach_Init()
     machSpecialHandlingOffset = (unsigned int)(&(testPCB.specialHandling)) -
 	    (unsigned int)(&testPCB);
     machMaxSysCall = -1;
+
+    /* base of the debugger stack */
+    machDebugStackStart = (unsigned int) mach_DebugStack +
+						sizeof (mach_DebugStack);
 
     /* Temporary: for debugging net module and debugger: */
     mach_NumDisableInterrupts[0] = 1;

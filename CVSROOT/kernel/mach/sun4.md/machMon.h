@@ -21,6 +21,16 @@
 #include "devZilog.h"
 
 /*
+ * The memory addresses for the PROM, and the EEPROM.
+ * On the sun2 these addresses are actually 0x00EF??00
+ * but only the bottom 24 bits are looked at so these still
+ * work ok.
+ */
+
+#define EEPROM_BASE     0xffd04000
+#define PROM_BASE       0xffe81000
+
+/*
  * The table entry that describes a device.  It exists in the PROM; a
  * pointer to it is passed in MachMonBootParam.  It can be used to locate
  * PROM subroutines for opening, reading, and writing the device.
@@ -282,7 +292,7 @@ typedef struct {
  * 0xef0000.  This is ok because only the low order 24-bits will be looked at.
  */
 
-#define	romVectorPtr	((MachMonRomVector *)0xFFE81000)
+#define	romVectorPtr	((MachMonRomVector *) PROM_BASE)
 
 /*
  * Functions and defines to access the monitor.

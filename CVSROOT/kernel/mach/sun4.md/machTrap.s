@@ -973,7 +973,10 @@ MachWindowUnderflow:
 	 * NOTE: The test below must agree with the amount we bump up the stack
 	 * by in MachTrap.
 	 */
-	set	_mach_DebugStack - MACH_FULL_STACK_FRAME, %VOL_TEMP1
+	set	_machDebugStackStart, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* base of stack */
+	set	MACH_FULL_STACK_FRAME, %VOL_TEMP2
+	sub	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1	/* offset from base */
 	cmp	%VOL_TEMP1, %fp
 	bne	RegularStack
 	nop
@@ -1066,7 +1069,10 @@ RestoreSomeMore:
 	bne	RestoreSomeMore
 	nop
 	/* Set stack base for debugger */
-	set	_mach_DebugStack - MACH_FULL_STACK_FRAME, %sp
+	set	_machDebugStackStart, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* stack base */
+	set	MACH_FULL_STACK_FRAME, %VOL_TEMP2
+	sub	%VOL_TEMP1, %VOL_TEMP2, %sp		/* offset from base */
 	/* get trap type into o0 from local saved value */
 	and	%CUR_TBR_REG, MACH_TRAP_TYPE_MASK, %o0
 	srl	%o0, 4, %o0
@@ -1128,6 +1134,7 @@ MachSyscallTrap:
 /* FOR DEBUGGING */
 	set	0xeeeeeeee, %OUT_TEMP1
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, GotASysCall, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, TheSysArg, %g1)
 /* END FOR DEBUGGING */
 	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
 #ifdef NOTDEF
@@ -1268,6 +1275,7 @@ ReturnFromSyscall:
 /* FOR DEBUGGING */
 	set	0xffffffff, %OUT_TEMP1
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RetFromASysCall, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, TheValue, %RETURN_VAL_REG)
 /* END FOR DEBUGGING */
 	/*
 	 * So that we don't re-execute the trap instruction when we
