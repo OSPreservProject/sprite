@@ -1615,7 +1615,7 @@ ProcessConsist(data, callInfoPtr)
     /*
      * Process the request under the per file cache lock.
      */
-    status = FsCacheConsist(&handlePtr->cacheInfo, consistPtr->args.flags,
+    reply.status = FsCacheConsist(&handlePtr->cacheInfo, consistPtr->args.flags,
 			    &reply.cachedAttr);
 
     FS_CACHE_DEBUG_PRINT2("Returning: mod (%d), acc (%d),",
