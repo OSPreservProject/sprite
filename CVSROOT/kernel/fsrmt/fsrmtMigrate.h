@@ -19,6 +19,7 @@
 #ifndef _FSMIGRATE
 #define _FSMIGRATE
 
+#include "fsNameOpsInt.h"
 /*
  * Structure that is transfered when a process is migrated.
  */
