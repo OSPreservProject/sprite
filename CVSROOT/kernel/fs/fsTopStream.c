@@ -561,7 +561,7 @@ FsStreamClientVerify(streamIDPtr, clientID)
 	}
 	if (!found) {
 	    register FsHandleHeader *tHdrPtr = streamPtr->ioHandlePtr;
-	    panic("FsStreamClientVerify, client %d not known for stream <%d>\n",
+	    printf("FsStreamClientVerify, unknown client %d for stream <%d>\n",
 		clientID, tHdrPtr->fileID.minor);
 	    FsHandleRelease(streamPtr, TRUE);
 	    streamPtr = (Fs_Stream *)NIL;
@@ -915,7 +915,7 @@ GrowStreamList(fsPtr, newLength)
     
 	for (index=0 ; index < fsPtr->numStreams ; index++) {
 	    if ((int)streamList[index] != NIL &&
-		(int)streamList[index] < 1024) {
+		(unsigned int)streamList[index] < 1024) {
 		panic( "GrowStreamList copied bad streamPtr, %x\n",
 				       streamList[index]);
 	    }
