@@ -53,6 +53,7 @@
 _Sync_GetLock:
     rd_kpsw		r17
     and			r18, r17, $~MACH_KPSW_INTR_TRAP_ENA
+    jump		2f
     wr_kpsw		r18, $0
 
 #ifdef notdef
@@ -65,8 +66,14 @@ _Sync_GetLock:
 
 1:
 #endif
-
+    .align		5	/* 32 bute align test_and_set so it starts a
+			         * ib block. */
+2:	
     test_and_set	r16, r11, $0
+    nop
+    nop
+    nop
+    nop
     nop
 
     wr_kpsw		r17, $0
