@@ -253,15 +253,15 @@ LfsStableMemCheckpoint(segPtr, checkPointPtr, flags, checkPointSizePtr,
 		sizeof(LfsDiskAddr) * smemPtr->checkPoint.numBlocks);
 	*checkPointSizePtr = sizeof(int) * smemPtr->checkPoint.numBlocks + 
 				sizeof(LfsStableMemCheckPoint);
-	LFS_STATS_INC(lfsPtr->stats.samples);
+	LFS_STATS_INC(segPtr->lfsPtr->stats.checkpoint.samples);
 	switch (smemPtr->params.memType) {
 	    case LFS_DESC_MAP_MOD: {
-		LFS_STATS_ADD(lfsPtr->stats.desc.residentCount,
+		LFS_STATS_ADD(segPtr->lfsPtr->stats.desc.residentCount,
 			smemPtr->dataHandle.cacheInfo.blocksInCache);
 		break;
 	    }
 	    case LFS_SEG_USAGE_MOD: {
-		LFS_STATS_ADD(lfsPtr->stats.segusage.residentCount,
+		LFS_STATS_ADD(segPtr->lfsPtr->stats.segusage.residentCount,
 			smemPtr->dataHandle.cacheInfo.blocksInCache);
 		break;
 	    }
@@ -443,11 +443,11 @@ LfsStableMemFetch(smemPtr, entryNumber, flags, entryPtr)
 	}
 	switch (smemPtr->params.memType) {
 	    case LFS_DESC_MAP_MOD: {
-		LFS_STATS_INC(lfsPtr->stats.desc.descMapBlockAccess);
+		LFS_STATS_INC(smemPtr->lfsPtr->stats.desc.descMapBlockAccess);
 		break;
 	    }
 	    case LFS_SEG_USAGE_MOD: {
-		LFS_STATS_INC(lfsPtr->stats.segusage.segUsageBlockAccess);
+		LFS_STATS_INC(smemPtr->lfsPtr->stats.segusage.segUsageBlockAccess);
 		break;
 	    }
 	}
@@ -465,11 +465,11 @@ LfsStableMemFetch(smemPtr, entryNumber, flags, entryPtr)
 	     } else {
 		switch (smemPtr->params.memType) {
 		    case LFS_DESC_MAP_MOD: {
-			LFS_STATS_INC(lfsPtr->stats.desc.descMapBlockMiss);
+			LFS_STATS_INC(smemPtr->lfsPtr->stats.desc.descMapBlockMiss);
 			break;
 		    }
 		    case LFS_SEG_USAGE_MOD: {
-			LFS_STATS_INC(lfsPtr->stats.segusage.segUsageBlockMiss);
+			LFS_STATS_INC(smemPtr->lfsPtr->stats.segusage.segUsageBlockMiss);
 			break;
 		    }
 		}
