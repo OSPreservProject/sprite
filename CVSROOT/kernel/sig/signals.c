@@ -1139,8 +1139,13 @@ Sig_Handle(procPtr, sigStackPtr, pcPtr)
 	    return(FALSE);
 
 	case SIG_KILL_ACTION:
-	    Proc_ExitInt(PROC_TERM_SIGNALED, sigNum, procPtr->sigCodes[sigNum]);
-	    panic("Sig_Handle: Proc_Exit returned!\n");
+	    if (sigNum == SIG_KILL || !(procPtr->genFlags & PROC_DEBUGGED)) {
+		Proc_ExitInt(PROC_TERM_SIGNALED, sigNum,
+			procPtr->sigCodes[sigNum]);
+		panic("Sig_Handle: Proc_Exit returned!\n");
+	    } else {
+		/* Fall through */
+	    }
 
 	case SIG_SUSPEND_ACTION:
 	case SIG_DEBUG_ACTION:
