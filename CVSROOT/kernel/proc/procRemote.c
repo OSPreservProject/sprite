@@ -168,13 +168,13 @@ ProcMigAcceptMigration(cmdPtr, procPtr, inBufPtr, outBufPtr)
 	    return(PROC_MIGRATION_REFUSED);
 	}
 	/*
-	 * Allocate a new process table entry for the migrating process,
-	 * or find its existing one if we're migrating back home.
+	 * Allocate a new process table entry for the migrating process.
 	 */
 	procPtr = ProcGetUnusedPCB();
 	procPtr->peerProcessID = initPtr->processID;
 	procPtr->peerHostID = clientID;
 	procPtr->state = PROC_NEW;
+	procPtr->genFlags |= PROC_FOREIGN;
 
 	pidPtr = (Proc_PID *) malloc(sizeof(Proc_PID));
 	*pidPtr = procPtr->processID;
