@@ -861,9 +861,6 @@ unsigned int	sequenceReg;
 	printf("%s: selection failed: %s\n",
 	       ctrlPtr->devPtr->handle.locationName,
 	       errMsg[msgNum]);
-	if (devPtr->targetID == 1) {
-	    panic("selection failed\n");
-	}
     }
 	
     return status;
