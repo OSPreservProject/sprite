@@ -133,7 +133,7 @@ sun3: ${OBJS} Makefile .PRECIOUS
 	@ls -l $@
 	@size $@
 	update -f -s $@ /sprite/kernels/$@.sprite
-	rcp /sprite/kernels/$@.sprite ${GINGER}:/sprite/tmp/$@
+	rcp /sprite/kernels/$@.sprite ${GINGER}:/sprite3/tmp/$@
 	rcp $@ rosemary:/tmp/sprite/$@.sprite
 	nm $@ | sort > $@.nm
 
@@ -158,7 +158,7 @@ profile3: ${PROFOBJS} Makefile .PRECIOUS
 	@ls -l $@
 	@size $@
 	update -f -s $@ /sprite/kernels/$@.sprite
-	rcp /sprite/kernels/$@.sprite ${GINGER}:/sprite/tmp/$@
+	rcp /sprite/kernels/$@.sprite ${GINGER}:/sprite3/tmp/$@
 	nm $@ | sort > $@.nm
 
 
