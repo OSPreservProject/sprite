@@ -3183,6 +3183,8 @@ VmMach_MapKernelIntoUser(kernelVirtAddr, numBytes, userVirtAddr,
     Proc_ControlBlock		*procPtr;
     register	Vm_Segment	*segPtr;
     int				hardSegNum;
+    int				i;
+    unsigned int		pte;
 
     procPtr = Proc_GetCurrentProc();
     segPtr = procPtr->vmPtr->segPtrArray[VM_HEAP];
@@ -3226,6 +3228,14 @@ VmMach_MapKernelIntoUser(kernelVirtAddr, numBytes, userVirtAddr,
     bcopy((Address)GetHardSegPtr(vm_SysSegPtr->machPtr, hardSegNum),
 	(Address)GetHardSegPtr(segPtr->machPtr,
 		(unsigned int)userVirtAddr >> VMMACH_SEG_SHIFT), numSegs);
+    for (i = 0; i < numSegs * VMMACH_NUM_PAGES_PER_SEG_INT; i++) {
+	pte = VmMachGetPageMap((Address)(kernelVirtAddr +
+		(i * VMMACH_PAGE_SIZE_INT)));
+	pte &= ~VMMACH_KR_PROT;
+	pte |= VMMACH_URW_PROT;
+	VmMachSetPageMap((Address)(kernelVirtAddr + (i*VMMACH_PAGE_SIZE_INT)),
+		pte);
+    }
 
     /*
      * Make sure this process never migrates.
