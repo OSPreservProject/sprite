@@ -1,5 +1,5 @@
 /* 
- * fsSync.c --
+ * fsutilSync.c --
  *
  * Routines controlling the syncing of cached data to disk or the server.
  *
@@ -18,28 +18,28 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
+#include <sprite.h>
 
-#include "fs.h"
-#include "vm.h"
-#include "rpc.h"
-#include "fsutil.h"
-#include "fsdm.h"
-#include "fslcl.h"
-#include "fsNameOps.h"
-#include "fsprefix.h"
-#include "fsStat.h"
-#include "sync.h"
-#include "timer.h"
-#include "proc.h"
-#include "trace.h"
-#include "hash.h"
-#include "fsrmt.h"
+#include <fs.h>
+#include <vm.h>
+#include <rpc.h>
+#include <fsutil.h>
+#include <fsdm.h>
+#include <fslcl.h>
+#include <fsNameOps.h>
+#include <fsprefix.h>
+#include <fsStat.h>
+#include <sync.h>
+#include <timer.h>
+#include <proc.h>
+#include <trace.h>
+#include <hash.h>
+#include <fsrmt.h>
 
+#include <stdio.h>
 
 #define	MAX_WAIT_INTERVALS	5
 
-int	fsutil_TimeInSeconds;
 Boolean fsutil_ShouldSyncDisks;
 
 int		fsWriteBackInterval = 30;	/* How long blocks have to be
@@ -76,13 +76,13 @@ Fsutil_SyncProc(data, callInfoPtr)
 {
     int	blocksLeft;
 
-    if (fsutil_TimeInSeconds - lastHandleWBTime >= fsWriteBackInterval) {
+    if (Fsutil_TimeInSeconds() - lastHandleWBTime >= fsWriteBackInterval) {
 	(void) Fsutil_HandleDescWriteBack(FALSE, -1);
-	lastHandleWBTime = fsutil_TimeInSeconds;
+	lastHandleWBTime = Fsutil_TimeInSeconds();
     }
 
     if (fsutil_ShouldSyncDisks && !fsutil_WriteThrough && !fsutil_WriteBackASAP) {
-	Fscache_WriteBack((unsigned) (fsutil_TimeInSeconds - fsWriteBackInterval), 
+	Fscache_WriteBack((unsigned) (Fsutil_TimeInSeconds() - fsWriteBackInterval), 
 			  &blocksLeft, FALSE);
     }
     if (fsWriteBackCheckInterval < fsWriteBackInterval) {
@@ -118,7 +118,6 @@ Fsutil_Sync(writeBackTime, shutdown)
     Boolean	shutdown;	/* TRUE if the kernel is being shutdown. */
 {
     int		blocksLeft = 0;
-
     /*
      * Force all file descriptors into the cache.
      */
@@ -131,7 +130,9 @@ Fsutil_Sync(writeBackTime, shutdown)
 	if (blocksLeft) {
 	    printf("Fsutil_Sync: %d blocks still locked\n", blocksLeft);
 	}
+#ifdef notdef
 	Fscache_CleanBlocks((ClientData) FALSE, (Proc_CallInfo *) NIL);
+#endif
     }
     /*
      * Finally write all domain information to disk.  This will mark each
