@@ -461,8 +461,15 @@ typedef struct VmCOWInfo {
 /*
  * Macro to get a pointer to a page table entry.
  */
+#ifdef CLEAN
 #define	VmGetPTEPtr(segPtr, page) \
     (&((segPtr)->ptPtr[(page) - (segPtr)->offset]))
+#else /* CLEAN */
+#define	VmGetPTEPtr(segPtr, page) \
+    ((((page) - (segPtr)->offset) > (segPtr)->ptSize) ? \
+	panic("Page number outside bounds of page table"), (Vm_PTE *) NIL : \
+	(&((segPtr)->ptPtr[(page) - (segPtr)->offset])))
+#endif /* CLEAN */
 
 /*
  * Macro to increment a page table pointer.
