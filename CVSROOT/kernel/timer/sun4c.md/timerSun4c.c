@@ -242,7 +242,7 @@ Timer_TimerServiceInterrupt(clientData, pc)
 	 * Clear interrupt by reading limit register. 
 	 */
 	junk = counterPtr->profileLimit;
-        TIMER_PROFILE_ROUTINE(pc);
+	TIMER_PROFILE_ROUTINE(pc);
 #       ifdef GATHER_STAT
         timer_Statistics.profile++;
 #       endif
@@ -262,6 +262,9 @@ Timer_TimerServiceInterrupt(clientData, pc)
 	     todCounter.microseconds -= ONE_SECOND;
 	 }
 #endif
+	if (mach_KernelMode == 0) {
+	    Proc_GetCurrentProc()->Prof_PC = pc;
+	}
         TIMER_CALLBACK_ROUTINE(TIMER_CALLBACK_INTERVAL_APPROX, time);
     } else {
 	panic("Timer_TimerServiceInterrupt: Unknown timer %d\n", 
