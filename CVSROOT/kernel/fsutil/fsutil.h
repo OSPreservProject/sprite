@@ -119,7 +119,7 @@ typedef struct FsUseCounts {
     int		ref;		/* The number of referneces to handle */
     int		write;		/* The number of writers on handle */
     int		exec;		/* The number of executors of handle */
-} FsUseCounts;			/* 12 BYTES */
+} FsUseCounts;
 
 /*
  * There is a system call to lock a file.  The lock state is kept in
@@ -132,7 +132,7 @@ typedef struct FsLockState {
 				 * file gets unlocked */
     int		numShared;	/* Number of shared lock holders */
     List_Links	ownerList;	/* List of processes responsible for locks */
-} FsLockState;			/* 24 BYTES */
+} FsLockState;
 
 /*
  * (The following lock bits are defined in user/fs.h)
@@ -154,7 +154,7 @@ typedef struct FsRecoveryInfo {
     int			flags;		/* defined in fsRecovery.c */
     ReturnStatus	status;		/* Recovery status */
     FsUseCounts		use;		/* Client's copy of use state */
-} FsRecoveryInfo;			/* 32 BYTES (48 with traced locks) */
+} FsRecoveryInfo;
 
 
 /*
@@ -177,7 +177,7 @@ typedef struct FsCachedAttributes {
     int		permissions;	/* File permissions */
     int		uid;		/* User ID of owner */
     int		gid;		/* Group Owner ID */
-} FsCachedAttributes;		/* 36 BYTES */
+} FsCachedAttributes;
 
 typedef struct FsCacheFileInfo {
     List_Links	   links;	   /* Links for the list of dirty files.
@@ -202,7 +202,7 @@ typedef struct FsCacheFileInfo {
     int		   lastTimeTried;  /* Time that last tried to see if disk was
 				    * available for this block. */
     FsCachedAttributes attr;	   /* Local version of descriptor attributes. */
-} FsCacheFileInfo;		   /* 108 BYTES  (124 with traced locks)*/
+} FsCacheFileInfo;
 
 
 /*
@@ -237,7 +237,7 @@ typedef struct FsConsistInfo {
     Sync_Condition repliesIn;	/* This condition is notified after
 				 * all the clients told to take
 				 * consistency actions have replied. */
-} FsConsistInfo;		/* 48 BYTES (64 with traced locks) */
+} FsConsistInfo;
 
 /* 
  * The I/O descriptor for remote streams.  This is all that is needed for
@@ -255,7 +255,7 @@ typedef struct FsRemoteIOHandle {
 					 * ID field in the hdr is used to
 					 * forward the I/O operation. */
     FsRecoveryInfo	recovery;	/* For I/O server recovery */
-} FsRemoteIOHandle;			/* 72 BYTES (88 with traced locks) */
+} FsRemoteIOHandle;
 
 extern void FsRemoteIOHandleInit();
 
