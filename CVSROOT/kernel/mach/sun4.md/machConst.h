@@ -514,7 +514,6 @@
 #define	VOL_TEMP2		r23		/* l7 */
 #define	RETURN_VAL_REG		r8		/* o0 */
 #define	RETURN_VAL_REG_CHILD	r24		/* i0 */
-#define	TBR_REG			r6		/* g6 */
 #define	OUT_TEMP1		r12		/* o4 */
 #define	OUT_TEMP2		r13		/* o5 */
 
