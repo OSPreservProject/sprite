@@ -30,6 +30,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devSerial.h"
 #include "devAddrs.h"
 #include "dev.h"
+#include "uartConst.h"
 #include "fs.h"
 #include "sys.h"
 #include "sync.h"
@@ -44,7 +45,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * and mouse are ever added, this will need to be extended.
  */
 
-static Address *uartAddr;		/* Struct to access the uart (both
+static Address uartAddr;		/* Struct to access the uart (both
 					   channels A and B). */
 
 /* 
@@ -92,7 +93,7 @@ Dev_KbdInit()
     mouseUartAddr = (Dev_UartDevice *) DEV_KBD_ADDR;
     kbdUartAddr	= (Dev_UartDevice *) (DEV_KBD_ADDR | 4);
 #endif notdef
-    uartAddr = (Dev_UartDevice *) (DEV_UART_SERIAL_ADDR);
+    uartAddr = (Address) DEV_UART_SERIAL_ADDR;
 
 
     Dev_SerialInitAddr(DEV_SERIAL_A_UNIT, uartAddr);
@@ -122,11 +123,12 @@ Dev_KbdInit()
      *
      * Note: the set of interrupts to enable is unclear.
      */
-    uartAddr->channelA.write.command =
-	    TX_ON|RX_ON|RESET_RX|RESET_TX;
-    uartAddr->channelB.write.command =
-	    TX_ON|RX_ON|RESET_RX|RESET_TX;
-    uartAddr->misc.write.intrMask = B_FIFO_INTR|B_TX_RDY|A_FIFO_INTR|A_TX_RDY;
+    Dev_UartWriteReg(ADDR_OFFSET(uartAddr, CHANNEL_A_OFFSET), COMMAND,
+		     TX_ON|RX_ON|RESET_RX|RESET_TX);
+    Dev_UartWriteReg(ADDR_OFFSET(uartAddr, CHANNEL_B_OFFSET), COMMAND,
+		     TX_ON|RX_ON|RESET_RX|RESET_TX);
+    Dev_UartWriteReg(uartAddr, INTR_MASK,
+		     B_FIFO_INTR|B_TX_RDY|A_FIFO_INTR|A_TX_RDY);
 }    
 
 
@@ -188,7 +190,7 @@ Dev_KbdServiceInterrupt()
     /*
      * Check the serial port Uart chip for interrupts.
      */
-    intrStatus = uartAddr->misc.read.intrStatus;
+    intrStatus = Dev_UartReadReg(uartAddr, INTR_STATUS);
 
     if (intrStatus & A_FIFO_INTR) {
 	Dev_KbdEvent	event;
@@ -198,8 +200,9 @@ Dev_KbdServiceInterrupt()
 	 * character implicitly clears the interrupt.
 	 */
 
-	event.device	= DEV_KBD_SERIAL_A;
-	event.key	= uartAddr->channelA.read.receiveFifo;
+	event.device = DEV_KBD_SERIAL_A;
+	event.key = Dev_UartReadReg(ADDR_OFFSET(uartAddr, CHANNEL_A_OFFSET),
+				    XFER_REG);
 	DevKbdQueueAddInput(&event);
 
 	gotValidIntr = TRUE;
@@ -221,9 +224,11 @@ Dev_KbdServiceInterrupt()
 	 * We may have to play tricks to disable the interrupt.
 	 */
 	if (Dev_SerialGetOutChar(DEV_SERIAL_A_UNIT, &c) == SUCCESS) {
-	    uartAddr->channelA.write.transmit = c;
+	    Dev_UartWriteReg(ADDR_OFFSET(uartAddr, CHANNEL_A_OFFSET),
+			     XFER_REG, c);
 	} else {
-	    uartAddr->channelA.write.command = TX_OFF;
+	    Dev_UartWriteReg(ADDR_OFFSET(uartAddr, CHANNEL_A_OFFSET),
+			     COMMAND, TX_OFF);
 	}
 
 	gotValidIntr = TRUE;
@@ -239,7 +244,9 @@ Dev_KbdServiceInterrupt()
 	 */
 
 	event.device	= DEV_KBD_SERIAL_B;
-	event.key	= uartAddr->channelB.read.receiveFifo;
+	event.key	= Dev_UartReadReg(ADDR_OFFSET(uartAddr,
+						      CHANNEL_B_OFFSET),
+					  XFER_REG);
 	DevKbdQueueAddInput(&event);
 
 	gotValidIntr = TRUE;
@@ -261,9 +268,11 @@ Dev_KbdServiceInterrupt()
 	 * We may have to play tricks to disable the interrupt.
 	 */
 	if (Dev_SerialGetOutChar(DEV_SERIAL_B_UNIT, &c) == SUCCESS) {
-	    uartAddr->channelB.write.transmit = c;
+	    Dev_UartWriteReg(ADDR_OFFSET(uartAddr, CHANNEL_B_OFFSET),
+			     XFER_REG, c);
 	} else {
-	    uartAddr->channelB.write.command = TX_OFF;
+	    Dev_UartWriteReg(ADDR_OFFSET(uartAddr, CHANNEL_B_OFFSET),
+			     COMMAND, TX_OFF);
 	}
 
 	gotValidIntr = TRUE;
@@ -365,14 +374,16 @@ Dev_KbdServiceInterrupt()
 	Dev_UartWriteReg(kbdUartAddr, 0, WRITE0_CLEAR_INTR); 
 	Dev_UartWriteReg(mouseUartAddr, 0, WRITE0_CLEAR_INTR); 
 #endif notdef
-    uartAddr->channelA.write.command = RESET_RX|RESET_TX;
-    uartAddr->channelB.write.command = RESET_RX|RESET_TX;
+    
+    Dev_UartWriteReg(ADDR_OFFSET(uartAddr, CHANNEL_A_OFFSET),
+		     COMMAND, RESET_RX|RESET_TX);
+    Dev_UartWriteReg(ADDR_OFFSET(uartAddr, CHANNEL_B_OFFSET),
+		     COMMAND, RESET_RX|RESET_TX);
 
     } else if (gotInput) {
 	Timer_GetTimeOfDay(kbdMostRecentIntrPtr, (int *) NIL,
 			   (Boolean *) NIL);
     }
     MASTER_UNLOCK(devKbdMutex);
-
 
 }
