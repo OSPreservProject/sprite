@@ -158,6 +158,15 @@ DoneWithUserStuff:
 
 	/* traps on, maskable interrupts off */
 	MACH_SR_HIGHPRIO()
+/* FOR_DEBUGGING */
+	set	0x66666666, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, GotTrap0, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, GotTrap1, %CUR_TBR_REG)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, GotTrap2, %CUR_PSR_REG)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, GotTrap3, %CUR_PC_REG)
+	set	0x77777777, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, GotTrap4, %OUT_TEMP1)
+/* END FOR_DEBUGGING */
 
 	/*
 	 * It is tedious to do all these serial comparisons against the
@@ -421,10 +430,12 @@ NormalReturn:
 	 * Call VM Stuff with the %fp which will be stack pointer in
 	 * the window we restore..
 	 */
+/* TURN ON INTERRUPTS */
 	mov	%fp, %o0
-	set	0x1, %o1		/* also check for protection????? */
+	clr	%o1		/* also check for protection????? */
 	call	_Vm_PageIn, 2
 	nop
+/* TURN OFF INTERRUPTS */
 	tst	%RETURN_VAL_REG
 	bne	KillUserProc
 	nop
@@ -434,7 +445,7 @@ CheckNextFault:
 	MACH_CHECK_FOR_FAULT(%o0, %VOL_TEMP1)
 	be	CallUnderflow
 	nop
-	set	0x1, %o1
+	clr	%o1
 	call	_Vm_PageIn, 2
 	nop
 	tst	%RETURN_VAL_REG
@@ -458,6 +469,23 @@ UnderflowOkay:
 	MACH_RESTORE_GLOBAL_STATE()
 	/* restore y reg */
 	mov	%CUR_Y_REG, %y
+
+/* FOR_DEBUGGING */
+	set	0x88888888, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToReturn0, %OUT_TEMP1)
+	mov	%tbr, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToReturn1, %OUT_TEMP1)
+	mov	%psr, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToReturn2, %OUT_TEMP1)
+	mov	%wim, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToReturn3, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToReturn4, %CUR_TBR_REG)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToReturn5, %CUR_PSR_REG)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToReturn6, %CUR_PC_REG)
+	set	0x999999999, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToReturn7, %OUT_TEMP1)
+/*END  FOR_DEBUGGING */
+
 	/* restore tbr reg */
 	mov	%CUR_TBR_REG, %tbr
 	/* restore psr */
@@ -977,6 +1005,24 @@ MachWindowUnderflow:
 	 * NOTE: The test below must agree with the amount we bump up the stack
 	 * by in MachTrap.
 	 */
+/* FOR_DEBUGGING */
+	mov	%psr, %VOL_TEMP1
+	set	MACH_DISABLE_INTR, %VOL_TEMP2
+	and	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
+	cmp	%VOL_TEMP1, %VOL_TEMP2		/* interrupts totally off? */
+	be	ThingsAreOkay
+	nop
+#ifdef NOTDEF
+	ta	MACH_CALL_DBG_TRAP
+	nop
+#endif NOTDEF
+	mov	%psr, %VOL_TEMP1
+	set	MACH_DISABLE_INTR, %VOL_TEMP2
+	or	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
+	mov	%VOL_TEMP1, %psr
+	MACH_WAIT_FOR_STATE_REGISTER()
+ThingsAreOkay:
+/* END FOR_DEBUGGING */
 	set	_machDebugStackStart, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %VOL_TEMP1		/* base of stack */
 	set	MACH_FULL_STACK_FRAME, %VOL_TEMP2

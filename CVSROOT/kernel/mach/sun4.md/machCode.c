@@ -560,8 +560,7 @@ Mach_StartUserProc(procPtr, entryPoint)
     (Address) statePtr->trapRegs->pc = (Address)entryPoint;
     (Address) statePtr->trapRegs->nextPc = (Address)entryPoint + 4;
 
-    Mach_MonPrintf("Mach_StartUserProc: calling MachRunUserProc - procPtr 0x%x, entryPoint = 0x%x\n", procPtr, entryPoint);
- 
+    Mach_MonPrintf("Mach_StartUserProc: calling MachRunUserProc with procPtr 0x%x and entryPoint 0x%x\n", procPtr, entryPoint);
     MachRunUserProc();
     /* THIS DOES NOT RETURN */
 }
@@ -638,7 +637,6 @@ Mach_ExecUserProc(procPtr, userStackPtr, entryPoint)
      * matter since a good exec won't return.
      */
     (Address) procPtr->machStatePtr->trapRegs->ins[0] = 0;
-    Mach_MonPrintf("Mach_ExecUserProc: calling Mach_StartUserProc - userStackPointer 0x%x\n", userStackPtr);
     Mach_StartUserProc(procPtr, entryPoint);
     /* THIS DOES NOT RETURN */
 }
