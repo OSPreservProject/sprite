@@ -800,6 +800,6 @@ Signal(sigNum, id, family)
 	printf("Warning: %s %d to Sprite.\n",
 		"devTty.Signal couldn't translate sigNum", sigNum);
     } else {
-	(void) Sig_Send(spriteSignal, SIG_NO_CODE, id, family);
+	(void) Sig_Send(spriteSignal, SIG_NO_CODE, id, family, (Address)0);
     }
 }

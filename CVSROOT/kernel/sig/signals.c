@@ -341,7 +341,7 @@ Sig_UserSend(sigNum, pid, familyID)
     Boolean	familyID;	/* Whether the id is a process id or a process
 				   group id. */
 {
-    return(Sig_Send(sigNum, SIG_NO_CODE, pid, familyID));
+    return(Sig_Send(sigNum, SIG_NO_CODE, pid, familyID, (Address)0));
 }
 
 
@@ -363,10 +363,11 @@ Sig_UserSend(sigNum, pid, familyID)
  */
 
 ENTRY static void
-LocalSend(procPtr, sigNum, code)
+LocalSend(procPtr, sigNum, code, addr)
     register	Proc_ControlBlock	*procPtr;
     int					sigNum;
     int					code;
+    Address				addr;
 {
     int	sigBitMask;
 
@@ -392,8 +393,10 @@ LocalSend(procPtr, sigNum, code)
 	 */
 	sigNum = SIG_KILL;
 	if (proc_MigDebugLevel > 1) {
-	    printf("Warning: killing a migrated process that would have gone into the debugger, pid %x.\n",
-		   procPtr->processID);
+	    printf("Warning: killing a migrated process that would have gone into the debugger, pid %x rpid %x uid %d.\n",
+	        procPtr->processID, (int) procPtr->peerProcessID, 
+		procPtr->userID);
+
 	}
     }
 
@@ -435,6 +438,7 @@ LocalSend(procPtr, sigNum, code)
 	    sigBitMask = sigBitMasks[sigNum];
 	    procPtr->sigPendingMask |= sigBitMask;
 	    procPtr->sigCodes[sigNum] = code;
+	    procPtr->sigAddr = (int)addr;
 	    if (procPtr->sigHoldMask & sigBitMask & ~sigCanHoldMask) {
 		/*
 		 * We received a signal that was blocked but can't be blocked
@@ -503,10 +507,11 @@ LocalSend(procPtr, sigNum, code)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-Sig_SendProc(procPtr, sigNum, code)
+Sig_SendProc(procPtr, sigNum, code, addr)
     register	Proc_ControlBlock *procPtr;
     int				  sigNum;
     int				  code;
+    Address			  addr;
 {
     ReturnStatus status;
 
@@ -535,7 +540,7 @@ Sig_SendProc(procPtr, sigNum, code)
         (procPtr->genFlags & PROC_MIGRATING)) {
 	Proc_PID processID;
 	processID = procPtr->processID;
-	status = SigMigSend(procPtr, sigNum, code);
+	status = SigMigSend(procPtr, sigNum, code, addr);
 	if (processID != procPtr->processID) {
 	    return(status);
 	}
@@ -553,7 +558,7 @@ Sig_SendProc(procPtr, sigNum, code)
 	}
 	return(PROC_INVALID_PID);
     } else {
-	LocalSend(procPtr, sigNum, code);
+	LocalSend(procPtr, sigNum, code, addr);
 	return(SUCCESS);
     }
 }
@@ -580,13 +585,14 @@ Sig_SendProc(procPtr, sigNum, code)
  */
 
 ReturnStatus	
-Sig_Send(sigNum, code, id, familyID)
+Sig_Send(sigNum, code, id, familyID, addr)
     int		sigNum;		/* The signal to send. */
     int		code;		/* The code that goes with the signal. */
     Proc_PID	id;		/* The id number of the process or process
 				   family. */
     Boolean	familyID;	/* Whether the id is a process id or a process
 				   group id. */
+    Address	addr;		/* The address of the fault */
 {
     register	Proc_ControlBlock	*procPtr;
     Proc_PCBLink			*procLinkPtr;
@@ -606,7 +612,7 @@ Sig_Send(sigNum, code, id, familyID)
 		return(PROC_INVALID_PID);
 	    } else {
 		return(SigSendRemoteSignal(hostID, sigNum, code, id,
-					   familyID));
+					   familyID, addr));
 	    }
 	}
     }
@@ -630,7 +636,7 @@ Sig_Send(sigNum, code, id, familyID)
 		return(PROC_UID_MISMATCH);
 	    }
 	}
-	status = Sig_SendProc(procPtr, sigNum, code);
+	status = Sig_SendProc(procPtr, sigNum, code, addr);
 	Proc_Unlock(procPtr);
     } else {
 	Proc_PID *pidArray;
@@ -680,7 +686,7 @@ Sig_Send(sigNum, code, id, familyID)
 		 */
 		continue;
 	    }
-	    status = Sig_SendProc(procPtr, sigNum, code);
+	    status = Sig_SendProc(procPtr, sigNum, code, addr);
 	    Proc_Unlock(procPtr); 
 	    if (status != SUCCESS) {
 		break;
@@ -698,6 +704,7 @@ typedef struct {
 	Proc_PID	id;
 	Boolean		familyID;
 	int		effUid;
+	Address		addr;
 } SigParms;
 
 
@@ -717,12 +724,13 @@ typedef struct {
  *----------------------------------------------------------------------
  */
 ReturnStatus	
-SigSendRemoteSignal(hostID, sigNum, code, id, familyID)
+SigSendRemoteSignal(hostID, sigNum, code, id, familyID, addr)
     int		hostID;		/* Host to send message to. */
     int		sigNum;		/* Signal to send. */
     int		code;		/* Code to send. */
     Proc_PID	id;		/* ID to send it to. */
     Boolean	familyID;	/* TRUE if are sending to a process family. */
+    Address	addr;		/* Address of signal. */
 {
     SigParms		sigParms;
     Rpc_Storage		storage;
@@ -734,6 +742,7 @@ SigSendRemoteSignal(hostID, sigNum, code, id, familyID)
     sigParms.familyID = familyID;
     procPtr = Proc_GetEffectiveProc();
     sigParms.effUid = procPtr->effectiveUserID;
+    sigParms.addr = addr;
 
     storage.requestParamPtr = (Address)&sigParms;
     storage.requestParamSize = sizeof(sigParms);
@@ -789,7 +798,7 @@ Sig_RpcSend(srvToken, clientID, command, storagePtr)
     effUid = procPtr->effectiveUserID;
     procPtr->effectiveUserID = sigParmsPtr->effUid;
     status = Sig_Send(sigParmsPtr->sigNum, sigParmsPtr->code, sigParmsPtr->id,
-		      sigParmsPtr->familyID);
+		      sigParmsPtr->familyID, sigParmsPtr->addr);
     procPtr->effectiveUserID = effUid;
     Rpc_Reply(srvToken, status, storagePtr, (int(*)())NIL, (ClientData)NIL);
     return(SUCCESS);
@@ -1180,7 +1189,8 @@ Sig_Handle(procPtr, sigStackPtr, pcPtr)
 	     * the kernel.
 	     */
 	    if (!Mach_CanMigrate(procPtr)) {
-		LocalSend(procPtr, sigNum, procPtr->sigCodes[sigNum]);
+		LocalSend(procPtr, sigNum, procPtr->sigCodes[sigNum],
+		    (Address)procPtr->sigAddr);
 		procPtr->sigHoldMask |= SigGetBitMask(SIG_MIGRATE_TRAP);
 		return(FALSE);
 	    }
@@ -1215,6 +1225,7 @@ Sig_Handle(procPtr, sigStackPtr, pcPtr)
      */
     sigStackPtr->sigNum = sigNum;
     sigStackPtr->sigCode = procPtr->sigCodes[sigNum];
+    sigStackPtr->sigAddr = procPtr->sigAddr;
     /*
      * If this signal handler is being called after a call to Sig_Pause then
      * the real signal hold mask has to be restored after the handler returns.
