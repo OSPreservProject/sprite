@@ -52,7 +52,7 @@ Compat_UnixSignalToSprite(signal, spriteSigPtr)
     int signal;
     int *spriteSigPtr;
 {
-    if (signal >= 0 && signal <= numSignals) {
+    if (signal >= 0 && signal <= NSIG) {
 	*spriteSigPtr = compat_UnixSigToSprite[signal];
 	return(SUCCESS);
     } else {
@@ -83,7 +83,7 @@ Compat_SpriteSignalToUnix(signal, unixSigPtr)
     int signal;
     int *unixSigPtr;
 {
-    if (signal >= 0 && signal <= numSignals) {
+    if (signal >= 0 && signal <= SIG_NUM_SIGNALS) {
 	*unixSigPtr = spriteToUnix[signal];
 	return(SUCCESS);
     } else {
