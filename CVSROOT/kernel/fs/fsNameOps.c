@@ -332,6 +332,12 @@ Fs_MakeDevice(name, devicePtr, permissions)
     FsMakeDeviceArgs makeDevArgs;/* Packaged up parameters */
     Proc_ControlBlock *procPtr;	/* Used to get process IDs */
 
+    if (((devicePtr->serverID != FS_LOCALHOST_ID) &&
+	(devicePtr->serverID <= 0)) ||
+	(devicePtr->type < 0) ||
+	(devicePtr->unit < 0)) {
+	return(FS_INVALID_ARG);
+    }
     procPtr = Proc_GetEffectiveProc();
     makeDevArgs.device 		= *devicePtr;
     makeDevArgs.permissions	= permissions & procPtr->fsPtr->filePermissions;
