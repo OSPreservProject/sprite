@@ -72,6 +72,22 @@ void RpcDaemonWait();
 void RpcResetNoServers();
 void RpcCrashCallBack();
 
+/*
+ * The debugging info is here to track down a bug in which queueEntry
+ * is inserted into the timer queue twice.  Once the bug is found feel
+ * free to get rid of this. JHH 12/5/90
+ */
+
+#define INFO_SIZE 500
+#define DEBUG(value) { 					\
+    if (curDebugPtr >= &debugInfo[INFO_SIZE]) {		\
+	curDebugPtr = debugInfo;			\
+    }							\
+    *curDebugPtr++ = (value);				\
+}
+
+static int debugInfo[INFO_SIZE];
+static int *curDebugPtr = debugInfo;
 
 /*
  *----------------------------------------------------------------------
@@ -108,6 +124,7 @@ Rpc_Daemon()
     Recov_CrashRegister(RpcCrashCallBack, (ClientData)NIL);
 
     while (TRUE) {
+	DEBUG(1);
 	RpcDaemonWait(&queueEntry);
 	if (rpcNoServers > 0) {
 	    /*
@@ -285,10 +302,13 @@ RpcServerAlloc(rpcHdrPtr)
 	     */
 	    rpcNoServers++;
 	    if (daemonState & DAEMON_TIMEOUT) {
+		DEBUG(2);
 		(void)Timer_DescheduleRoutine(&queueEntry);
 		daemonState &= ~DAEMON_TIMEOUT;
+		DEBUG(3);
 	    }
 	    daemonState |= DAEMON_POKED;
+	    DEBUG(4);
 	    Sync_MasterBroadcast(&rpcDaemon);
 	}
     }
@@ -439,12 +459,22 @@ RpcDaemonWait(queueEntryPtr)
     Timer_QueueElement *queueEntryPtr;	/* Initialized timer queue item */
 {
     MASTER_LOCK(&serverMutex);
+    DEBUG(6);
     if (daemonState & DAEMON_DEAD) {
 	daemonState &= ~DAEMON_DEAD;
     }
+    if (daemonState & DAEMON_TIMEOUT) {
+	/*
+	 * If you're debugging this then look in the debugInfo array to
+	 * see what sequence of events lead us here. JHH 12/5/90
+	 */
+	panic("RpcDaemonWait: timeout element already on timer queue.\n");
+    }
+    DEBUG(7);
     daemonState |= DAEMON_TIMEOUT;
     Timer_ScheduleRoutine(queueEntryPtr, TRUE);
     do {
+	DEBUG(8);
 	Sync_MasterWait(&rpcDaemon, &serverMutex, FALSE);
 	if (sys_ShuttingDown) {
 	    printf("Rpc_Daemon exiting.\n");
@@ -453,6 +483,7 @@ RpcDaemonWait(queueEntryPtr)
 	}
     } while ((daemonState & DAEMON_POKED) == 0);
     daemonState &= ~DAEMON_POKED;
+    DEBUG(9);
     MASTER_UNLOCK(&serverMutex);
 }
 
@@ -480,8 +511,10 @@ RpcDaemonWakeup(time, data)
     ClientData data;		/* NIL */
 {
     MASTER_LOCK(&serverMutex);
+    DEBUG(10);
     daemonState &= ~DAEMON_TIMEOUT;
     daemonState |= DAEMON_POKED;
     Sync_MasterBroadcast(&rpcDaemon);
+    DEBUG(11);
     MASTER_UNLOCK(&serverMutex);
 }
