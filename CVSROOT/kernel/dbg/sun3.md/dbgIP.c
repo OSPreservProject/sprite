@@ -105,7 +105,7 @@ Dbg_ValidatePacket(size, ipPtr, lenPtr, dataPtrPtr,
 	return(FALSE);
     } else if (Net_InetChecksum(headerLenInBytes, (Address) ipPtr) != 0) {
 	if (dbgTraceLevel >= 5) {
-	    Sys_Printf("Failed case 3\n");
+	    Sys_Printf("Failed case 3 (IP checksum: %x)\n", ipPtr->checksum);
 	}
 	return(FALSE);
     } else if (ipPtr->protocol != NET_IP_PROTOCOL_UDP) {
@@ -152,10 +152,12 @@ Dbg_ValidatePacket(size, ipPtr, lenPtr, dataPtrPtr,
 	pseudoHdr.zero		= 0;
 	pseudoHdr.protocol	= ipPtr->protocol;
 	pseudoHdr.len		= udpPtr->len;
-	if (~(Net_InetChecksum(sizeof(pseudoHdr), (Address) &pseudoHdr) +
-		Net_InetChecksum((int) udpPtr->len, (Address) udpPtr)) != 0) {
+	if (Net_InetChecksum2((int) udpPtr->len, (Address) udpPtr, 
+		&pseudoHdr) != 0) {
+
 	    if (dbgTraceLevel >= 4) {
-		Sys_Printf("Dbg_ValidatePacket: Bad checksum\n");
+		Sys_Printf("Dbg_ValidatePacket: Bad UDP checksum: %x\n", 
+				udpPtr->checksum);
 	    }
 	    return(FALSE);
 	}
@@ -336,3 +338,4 @@ ProtNumToName(num)
     }
 }
 #endif DEBUG
+ 
