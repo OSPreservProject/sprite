@@ -1020,7 +1020,7 @@ MachTrap(trapStack)
 			    procPtr->processID, 
 			    trapStack.excStack.pc,
 			    trapStack.excStack.tail.addrBusErr.faultAddr,
-			    *(short *)&trapStack.busErrorReg);
+			    *(int *)&trapStack.busErrorReg);
 		(void) Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL, 
 				procPtr->processID, FALSE);
 	    }
