@@ -164,7 +164,6 @@ Mach_Init()
     int	*vecTablePtr;
     int	*protoVecTablePtr;
     int	i;
-    KernelStack	stack;
 
     /*
      * Set exported machine dependent variables.
@@ -529,7 +528,6 @@ Mach_GetDebugState(procPtr, debugStatePtr)
     Proc_ControlBlock	*procPtr;
     Proc_DebugState	*debugStatePtr;
 {
-    int				i;
     register	Mach_State	*machStatePtr;
 
     machStatePtr = procPtr->machStatePtr;
@@ -563,7 +561,6 @@ Mach_SetDebugState(procPtr, debugStatePtr)
     Proc_ControlBlock	*procPtr;
     Proc_DebugState	*debugStatePtr;
 {
-    int				i;
     register	Mach_State	*machStatePtr;
 
     machStatePtr = procPtr->machStatePtr;
@@ -615,7 +612,8 @@ Mach_InitSyscall(callNum, numArgs, normalHandler, migratedHandler)
 	Sys_Panic(SYS_FATAL, "too many arguments to kernel call");
     }
     machArgOffsets[machMaxSysCall] = 8 + numArgs*4;
-    machArgDispatch[machMaxSysCall] = (16-numArgs)*2 + (Address) MachFetchArgs;
+    machArgDispatch[machMaxSysCall] = 
+		(16-numArgs)*2 + (Address) ((unsigned int)MachFetchArgs);
     mach_NormalHandlers[machMaxSysCall] = normalHandler;
     mach_MigratedHandlers[machMaxSysCall] = migratedHandler;
 }
