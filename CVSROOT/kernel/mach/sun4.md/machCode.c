@@ -116,6 +116,10 @@ int	machStatePtrOffset;		/* Byte offset of the machStatePtr
 					 * field in a Proc_ControlBlock. */
 int	machSpecialHandlingOffset;	/* Byte offset of the specialHandling
 					 * field in a Proc_ControlBlock. */
+int	machGenFlagsOffset;		/* offset of genFlags field in a
+					 * Proc_ControlBlock. */
+int	machForeignFlag;		/* Value of PROC_FOREIGN available
+					 * in assembler. */
 int	MachPIDOffset;			/* Byte offset of pid in PCB */
 char	mach_DebugStack[0x2000];	/* The debugger stack. */
 unsigned int	machDebugStackStart;	/* Contains address of base of debugger
@@ -287,6 +291,8 @@ Mach_Init()
     machSpecialHandlingOffset = offsetof(Proc_ControlBlock, specialHandling);
     machMaxSysCall = -1;
     MachPIDOffset = offsetof(Proc_ControlBlock, processID);
+    machGenFlagsOffset = offsetof(Proc_ControlBlock, genFlags);
+    machForeignFlag = PROC_FOREIGN;
 
     /*
      * Initialize all the horrid offsets for dealing with getting stuff from
