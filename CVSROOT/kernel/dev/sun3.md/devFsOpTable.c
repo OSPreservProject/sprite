@@ -20,6 +20,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "dev.h"
+#include "devInt.h"
 #include "fs.h"
 #include "devFsOpTable.h"
 #include "devTypesInt.h"
@@ -31,7 +32,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devConsole.h"
 #include "devSyslog.h"
 #include "devNull.h"
-#include "devSBCDisk.h"
+#include "devSCSI.h"
 #include "devSCSIDisk.h"
 #include "devSCSITape.h"
 #include "devSCSIWorm.h"
@@ -103,11 +104,6 @@ DevFsTypeOps devFsOpTable[] = {
      */
     {DEV_NET,      DevNet_FsOpen, DevNet_FsRead, DevNet_FsWrite, 
 		   DevNet_FsIOControl, DevNet_FsClose, DevNet_FsSelect},
-    /*
-     * SCSI-3 Disk interface.  Sun's newer SCSI host adaptor.
-     */
-    {DEV_SBC_DISK, Dev_SBCDiskOpen, Dev_SBCDiskRead, Dev_SBCDiskWrite,
-		     Dev_SBCDiskIOControl, Dev_SBCDiskClose, NullProc},
 };
 
 int devNumDevices = sizeof(devFsOpTable) / sizeof(DevFsTypeOps);
@@ -129,13 +125,12 @@ DevFsBlockOps devFsBlockOpTable[] = {
     { DEV_MEMORY, 0 },
     { DEV_XYLOGICS, Dev_XylogicsDiskBlockIO },
     { DEV_NET, 0 },
-    { DEV_SBC_DISK, Dev_SBCDiskBlockIO },
 };
 
 /*
  * A list of disk device types that is used when probing for a disk.
  */
-int devFsDefaultDiskTypes[] = { DEV_SCSI_DISK, DEV_XYLOGICS, DEV_SBC_DISK };
+int devFsDefaultDiskTypes[] = { DEV_SCSI_DISK, DEV_XYLOGICS };
 int devNumDiskTypes = sizeof(devFsDefaultDiskTypes) / sizeof(int);
 
 static ReturnStatus
