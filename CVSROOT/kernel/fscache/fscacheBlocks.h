@@ -18,6 +18,14 @@
 #include "fs.h"
 
 /*
+ * Minimum number of cache blocks required.  The theoretical limit
+ * is about 3, enough for indirect blocks and data blocks, but
+ * that is a bit extreme.  The maximum number of cache blocks is
+ * a function of the physical memory size and is computed at boot time.
+ */
+#define FS_MIN_CACHE_BLOCKS	32
+
+/*
  * Values for flags field in the FsCacheFileInfo struct defined in fsInt.h
  *
  *   FS_CLOSE_IN_PROGRESS	There is a close being done on this file so
