@@ -1850,12 +1850,14 @@ Fsconsist_RpcConsist(srvToken, clientID, command, storagePtr)
     if (rmtHandlePtr == (Fsrmt_FileIOHandle *)NIL) {
 	if (Fsprefix_OpenInProgress(&consistArgPtr->fileID) == 0) {
 	    status = FS_STALE_HANDLE;
+#ifdef CONSIST_DEBUG
 	    printf("Fsconsist_RpcConsist: <%d,%d> %s msg from %d dropped: %s\n",
 		    consistArgPtr->fileID.major,
 		    consistArgPtr->fileID.minor,
 		    ConsistType(consistArgPtr->flags),
 		    consistArgPtr->fileID.serverID,
 		    "no handle");
+#endif /* CONSIST_DEBUG */
 	} else {
 	    /*
 	     * A consistency message has arrived from an open from which
