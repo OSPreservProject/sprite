@@ -199,6 +199,9 @@ Timer_CallBack()
 	MASTER_LOCK(timerMutex);
 
 	Time_Add(timerTimeOfDay, todUpdate, &timerTimeOfDay);
+	if (vm_Tracing) {
+	    Vm_StoreTraceTime(timerTimeOfDay);
+	}
 	Sched_GatherProcessInfo();
 
 	if (!List_IsEmpty(timerQueueList)) {
