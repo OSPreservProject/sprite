@@ -281,6 +281,10 @@ FsLocalLookup(prefixHdrPtr, relativeName, useFlags, type, idPtr, permissions,
 		}
 		status = ExpandLink(curHandlePtr, curCharPtr, offset,
 						    newNameBuffer);
+		if (status == FS_FILE_NOT_FOUND) {
+		    Sys_Panic(SYS_WARNING, "FsLocalLookup, empty link \"%s\"\n",
+				relativeName);
+		}
 		curCharPtr = newNameBuffer;
 	    }
 	    if (status == SUCCESS) {
@@ -899,6 +903,9 @@ ExpandLink(curHandlePtr, curCharPtr, offset, nameBuffer)
     register char 	*dstPtr;
 
     linkNameLength = curHandlePtr->descPtr->lastByte;
+    if (linkNameLength < 0) {
+	return(FS_FILE_NOT_FOUND);
+    }
     if (*curCharPtr == '\0') {
 	/*
 	 * There is no pathname, just make sure the new name is Null terminated
