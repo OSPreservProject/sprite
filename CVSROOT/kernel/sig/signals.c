@@ -521,6 +521,12 @@ Sig_SendProc(procPtr, sigNum, code)
 	return(SigMigSend(procPtr, sigNum, code));
     } else if (procPtr->state == PROC_EXITING) {
 	return(PROC_INVALID_PID);
+    } else if (procPtr->state == PROC_NEW) {
+	if (procPtr->genFlags & PROC_FOREIGN && proc_MigDebugLevel > 0) {
+	    printf("Warning: got signal for process %x before migration complete.\n",
+		   procPtr->processID);
+	}
+	return(PROC_INVALID_PID);
     } else {
 	LocalSend(procPtr, sigNum, code);
 	return(SUCCESS);
