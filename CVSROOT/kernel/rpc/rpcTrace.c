@@ -33,12 +33,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * The circular buffer of trace records.
  */
 #ifdef CLEAN
-
-Boolean		rpc_Tracing = FLASE;	/* No tracing in clean version  */
-
+Boolean		rpc_Tracing = FALSE;	/* No tracing in clean version  */
 #else
-
 Boolean		rpc_Tracing = TRUE;	/* flag to turn on tracing */
+#endif not CLEAN
+
 Trace_Header	rpcTraceHdr;		/* Trace header info */
 Trace_Header	*rpcTraceHdrPtr = &rpcTraceHdr;
 /*
@@ -50,7 +49,6 @@ Time rpcEmptyStampTime;		/* The time to take a trace record without
 				 * copying the packet header */
 Time rpcFullStampTime;		/* The time to take a trace record that
 				 * includes copying the packet header */
-#endif not CLEAN
 
 /*
  *----------------------------------------------------------------------
