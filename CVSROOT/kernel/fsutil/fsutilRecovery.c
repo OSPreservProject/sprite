@@ -429,6 +429,11 @@ FsWaitForRecovery(hdrPtr, rpcStatus)
 	Sys_Panic(SYS_FATAL, "FsWaitForRecovery, wrong handle type: %s\n",
 	    FsFileTypeToString(hdrPtr->fileID.type));
 	return(FS_STALE_HANDLE);
+    } else if (!FsHandleValid(hdrPtr)) {
+	/*
+	 * Handle has already failed recovery.
+	 */
+	return(FAILURE);
     }
     /*
      * If our caller got a stale handle then the server is probably up
@@ -472,10 +477,9 @@ RecoveryWait(recovPtr)
 	    status = GEN_ABORTED_BY_SIGNAL;
 	    break;
 	}
-	if (recovPtr->flags & RECOVERY_FAILED) {
-	    status = recovPtr->status;
-	    break;
-	}
+    }
+    if (recovPtr->flags & RECOVERY_FAILED) {
+	status = recovPtr->status;
     }
     UNLOCK_MONITOR;
     return(status);
