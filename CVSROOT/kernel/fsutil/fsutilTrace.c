@@ -22,6 +22,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsLocalDomain.h"
 #include "fsOpTable.h"
 #include "fsPrefix.h"
+#include "fsNameOps.h"
 #include "fsTrace.h"
 #include "fsStat.h"
 #include "devDiskLabel.h"
@@ -516,6 +517,12 @@ Fs_CheckSetID(streamPtr, uidPtr, gidPtr)
  * FsDomainInfo --
  *
  *	Return info about the given domain.
+ *	FIX ME FIX ME FIX ME
+ *	This should be fixed so there is a standard interface,
+ *	perhaps fileIDPtr, and domainInoPtr, to the various kinds
+ *	of domains.  This should be called though the domain operation
+ *	switch table.  The worst problem is that the RPC interface is
+ *	wrong, only the domain number is passed.
  *
  * Results:
  *	A return status.
@@ -526,21 +533,75 @@ Fs_CheckSetID(streamPtr, uidPtr, gidPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus 
-FsDomainInfo(hdrPtr, domainInfoPtr)
-    FsHandleHeader	*hdrPtr;	/* Handle from the prefix table */
-    Fs_DomainInfo	*domainInfoPtr;
+FsDomainInfo(fileIDPtr, domainInfoPtr)
+    Fs_FileID		*fileIDPtr;	/* FileID from the prefix table,
+					 * This can be changed to make
+					 * it match with what a user sees
+					 * when it stats the file.  This
+					 * is important when computing
+					 * the current directory in getwd(). */
+    Fs_DomainInfo	*domainInfoPtr;	/* Fill in with # free blocks, etc */
 {
     ReturnStatus	status;
 
-    switch (hdrPtr->fileID.type) {
+    switch (fileIDPtr->type) {
 	case FS_LCL_FILE_STREAM:
-	    status = FsLocalDomainInfo(hdrPtr->fileID.major,
-					domainInfoPtr);
+	    status = FsLocalDomainInfo(fileIDPtr->major, domainInfoPtr);
 	    break;
 	case FS_RMT_FILE_STREAM:
-	    status = FsRemoteDomainInfo(&hdrPtr->fileID, domainInfoPtr);
+	    status = FsRemoteDomainInfo(fileIDPtr, domainInfoPtr);
 	    break;
+	case FS_PFS_NAMING_STREAM:	/* This should be remote case */
+	case FS_LCL_PSEUDO_STREAM: {
+	    Fs_Attributes attr;
+	    /*
+	     * This is a sort-of-in-lined Fs_GetAttributes that bypasses
+	     * the prefix table.
+	     * Should call FsPseudoDomainInfo(fileIDPtr, domainInfoPtr);
+	     */
+	    FsOpenArgs openArgs;
+	    FsGetAttrResults getAttrResults;
+	    Fs_FileID ioFileID;
+	    FsRedirectInfo *redirectPtr;
+	    register FsHandleHeader *hdrPtr;
+
+	    openArgs.useFlags = FS_FOLLOW;
+	    openArgs.permissions = 0;
+	    openArgs.type = FS_FILE;
+	    openArgs.clientID = rpc_SpriteID;
+	    FsSetIDs((Proc_ControlBlock *)NIL, &openArgs.id);
+
+	    openArgs.rootID = *fileIDPtr;
+	
+	    getAttrResults.attrPtr = &attr;
+	    getAttrResults.fileIDPtr = fileIDPtr;
+
+	    hdrPtr = FsHandleFetch(fileIDPtr);
+	    if (hdrPtr == (FsHandleHeader *)NIL) {
+		break;
+	    } else {
+		FsHandleRelease(hdrPtr, TRUE);
+	    }
+	    if (fileIDPtr->type == FS_LCL_PSEUDO_STREAM) {
+		status = FsPfsGetAttrPath(hdrPtr, ".", &openArgs,
+			    &getAttrResults, &redirectPtr);
+	    } else {
+		status = FsRemoteGetAttrPath(hdrPtr, ".", &openArgs,
+			    &getAttrResults, &redirectPtr);
+	    }
+	    if (status == SUCCESS) {
+		fileIDPtr->major = attr.domain;
+		fileIDPtr->minor = attr.fileNumber;
+	    } else if (status == FS_LOOKUP_REDIRECT) {
+		free(redirectPtr);
+	    }
+	    break;
+	}
 	default:
+	    domainInfoPtr->maxKbytes = -1;
+	    domainInfoPtr->freeKbytes = -1;
+	    domainInfoPtr->maxFileDesc = -1;
+	    domainInfoPtr->freeFileDesc = -1;
 	    status = FS_DOMAIN_UNAVAILABLE;
     }
     return(status);
