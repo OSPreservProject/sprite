@@ -40,7 +40,8 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
  *		retval		- return value of this macro
  */
 #define	SII_WAIT_WHILE(expr,spincount,retval) {				\
-		for (retval = 0; ((retval < 100) && (expr)); retval++);	\
+		for (retval = 0; ((retval < 100) && (expr)); retval++) {\
+		}							\
 		while ((expr) && ( retval < spincount)) {		\
 			MACH_DELAY(100);				\
 			retval++;					\
@@ -330,14 +331,10 @@ SendCommand(devPtr, scsiCmdPtr)
     ScsiCmd	*scsiCmdPtr;		/* Command to send. */
 {
     ReturnStatus		status;
-    volatile register SIIRegs	*regsPtr;
     register char		*charPtr;
     Controller			*ctrlPtr;
     int				size;
     Address 			addr;	
-    unsigned short		tmpPhase;
-    unsigned short		tmpState;
-    unsigned			retval;
 
     /*
      * Set current active device and command for this controller.
@@ -366,7 +363,6 @@ SendCommand(devPtr, scsiCmdPtr)
 						      "receive"));
     }
 
-    regsPtr = (SIIRegs *)ctrlPtr->regsPtr;
     status = SelectTarget(devPtr);
     if (status != SUCCESS) { 
 	return(status);
@@ -1212,10 +1208,6 @@ DevSIIAttachDevice(devicePtr, insertProc)
     int	   		length;
     int	   		ctrlNum;
     int	   		targetID, lun;
-    ScsiInquiryData	inqData;
-    ScsiCmd		scsiCmd;
-    ReturnStatus	status;
-    unsigned char	statusByte;
     extern char		*strcpy();
 
     /*
@@ -1283,13 +1275,8 @@ DevSIIAttachDevice(devicePtr, insertProc)
 
     MASTER_UNLOCK(&(ctrlPtr->mutex));
     return (ScsiDevice *) devPtr;
-
-error:
-    ctrlPtr->scsiCmdPtr = (ScsiCmd *) NIL;
-    MASTER_UNLOCK(&(ctrlPtr->mutex));
-    free((char *)devPtr);
-    return((ScsiDevice *) NIL);
 }
+
 
 
 /*
