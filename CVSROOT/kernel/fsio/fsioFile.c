@@ -744,6 +744,13 @@ Fsio_FileCloseInt(handlePtr, ref, write, exec, clientID, callback)
 	    if (callback) {
 		Fsconsist_ClientRemoveCallback(&handlePtr->consist, clientID);
 	    }
+#ifdef SOSP91
+	    SOSP_ADD_DELETE_DESC_TRACE(handlePtr->hdr.fileID,
+		    handlePtr->cacheInfo.attr.modifyTime,
+		    handlePtr->cacheInfo.attr.createTime,
+		    handlePtr->cacheInfo.attr.lastByte + 1);
+#endif
+
 	    (void)Fslcl_DeleteFileDesc(handlePtr);
 	    Fsio_FileSyncLockCleanup(handlePtr);
 	    if (callback) {
