@@ -147,7 +147,7 @@ Timer_TimerStart(timer)
      */
      if (timer == TIMER_CALLBACK_TIMER) {
 	 counterPtr->callBackLimit =
-		     ((TIMER_CALLBACK_INTERVAL_APPROX*1000) << COUNTER_SHIFT);
+		     ((TIMER_CALLBACK_INTERVAL_APPROX) << COUNTER_SHIFT);
 	 junk = counterPtr->callBackLimit;
 	  DISABLE_INTR();
 	 *Mach_InterruptReg |= MACH_ENABLE_COUNTER0_INTR_LEVEL;
@@ -155,7 +155,7 @@ Timer_TimerStart(timer)
 
      } else if (timer == TIMER_PROFILE_TIMER) {
 	 counterPtr->profileLimit =
-		     ((TIMER_PROFILE_INTERVAL_APPROX*1000) << COUNTER_SHIFT);
+		     ((TIMER_PROFILE_INTERVAL_APPROX) << COUNTER_SHIFT);
 	 junk = counterPtr->profileLimit;
          DISABLE_INTR();
 	 *Mach_InterruptReg |= MACH_ENABLE_COUNTER1_INTR_LEVEL;
@@ -254,7 +254,7 @@ Timer_TimerServiceInterrupt(clientData, pc)
 	 * Until we get the TOD chip working. Use the callback counter
 	 * to keep track on time of day.
 	 */
-	 todCounter.microseconds += TIMER_CALLBACK_INTERVAL_APPROX*1000;
+	 todCounter.microseconds += TIMER_CALLBACK_INTERVAL_APPROX;
 	 if (todCounter.microseconds > ONE_SECOND) {
 	     todCounter.seconds++;
 	     todCounter.microseconds -= ONE_SECOND;
