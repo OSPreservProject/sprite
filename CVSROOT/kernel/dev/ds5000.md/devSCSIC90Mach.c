@@ -115,8 +115,10 @@ DevStartDMA(ctrlPtr)
     volatile CtrlRegs	*regsPtr;
     int			size;
     Device              *devPtr = ctrlPtr->devPtr;
+    Address             buffer;
 
-    size = devPtr->scsiCmdPtr->bufferLen;
+    size = devPtr->activeBufLen;
+    buffer = devPtr->activeBufPtr;
 
     if (devSCSIC90Debug > 4) {
 	printf("StartDMA called for %s, dma %s, size = %d.\n", ctrlPtr->name,
@@ -129,13 +131,13 @@ DevStartDMA(ctrlPtr)
 	return;
     }
     regsPtr = ctrlPtr->regsPtr;
-    if (devPtr->scsiCmdPtr->buffer == (Address) NIL) {
+    if (buffer == (Address) NIL) {
 	panic("DMA buffer was NIL before dma.\n");
     }
     if (devPtr->dmaState == DMA_RECEIVE) {
 	*ctrlPtr->dmaRegPtr = 0;
     } else {
-	bcopy((char *) devPtr->scsiCmdPtr->buffer, ctrlPtr->buffer, size);
+	bcopy((char *) buffer, ctrlPtr->buffer, size);
 	*ctrlPtr->dmaRegPtr = (unsigned int) DMA_WRITE;
     }
     /*

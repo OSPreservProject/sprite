@@ -72,21 +72,6 @@ Controller *Controllers[MAX_SCSIC90_CTRLS];
 
 char        circBuf[CIRCBUFLEN] = {""};
 int         circHead = 0;
-static int         lastDiscon[8] = {
-    -1,-1,-1,-1,-1,-1,-1,-1
-    };
-static int         lastNegot[8] = {
-    -1,-1,-1,-1,-1,-1,-1,-1
-    };
-static int         lastReject[8] = {
-    -1,-1,-1,-1,-1,-1,-1,-1
-    };
-static int         lastConflict[8] = {
-    -1,-1,-1,-1,-1,-1,-1,-1
-    };
-static int         lastSense[8] = {
-    -1,-1,-1,-1,-1,-1,-1,-1
-    };
 char numTab[16] = {
     '0', '1', '2', '3', '4', '5', '6', '7',
     '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
@@ -122,7 +107,6 @@ SendCommand(devPtr, scsiCmdPtr)
     Controller	*ctrlPtr;
     int i;
     int size;				/* Number of bytes to transfer */
-    char tempChar;
 
     /*
      * Set current active device and command for this controller.
@@ -137,8 +121,6 @@ SendCommand(devPtr, scsiCmdPtr)
     SET_CTRL_BUSY(ctrlPtr,devPtr);
     SET_DEV_BUSY(devPtr, scsiCmdPtr);
 
-    devPtr->savedDataPtr = scsiCmdPtr->buffer;
-    devPtr->savedDataLen = scsiCmdPtr->bufferLen;
     devPtr->scsiCmdPtr   = scsiCmdPtr;
     size = scsiCmdPtr->bufferLen;
     if (size == 0) {
@@ -169,8 +151,9 @@ SendCommand(devPtr, scsiCmdPtr)
      * in the next phase.
      */
     devPtr->lastPhase = PHASE_SELECTION;	/* Selection & command phase.*/
-    devPtr->residual = size;			/* No bytes transfered yet. */
     devPtr->commandStatus = 0;			/* No status yet. */
+    devPtr->activeBufPtr = scsiCmdPtr->buffer;
+    devPtr->activeBufLen = scsiCmdPtr->bufferLen;
     /* Load select/reselect bus ID register with target ID. */
     regsPtr->scsi_ctrl.write.destID = devPtr->targetID;
     /* Load select/reselect timeout period. */
@@ -214,7 +197,6 @@ SendCommand(devPtr, scsiCmdPtr)
     if ((devPtr->synchPeriod < MIN_SYNCH_PERIOD) &&
 	(devPtr->msgFlag & ENABLEEXTENDEDMSG)) {
 	devPtr->msgFlag |= REQEXTENDEDMSG;
-	lastNegot[devPtr->targetID] = circHead;
 	EMPTY_BUFFER();
 	regsPtr->scsi_ctrl.write.command = CR_SLCT_ATNS;
 	PUTCIRCBUF(CSTR,"send ATNS; per ");
@@ -335,7 +317,6 @@ RequestDone(devPtr,scsiCmdPtr,status,scsiStatusByte,amountTransferred)
     devPtr->synchPeriod = 0;
     PUTCIRCBUF(CSTR,"done: issue sense");
     PUTCIRCNULL;
-    lastSense[devPtr->targetID] = circHead;
     devPtr->synchOffset = 0;
     devPtr->frozen.scsiCmdPtr = scsiCmdPtr;
     devPtr->frozen.statusByte = scsiStatusByte;
@@ -526,10 +507,6 @@ DevSCSIC90Intr(clientDataArg)
 /*    printf("interruptReg 0x%02x, statusReg 0x%02x, sequenceReg 0x%02x\n",
 		interruptReg, statusReg, sequenceReg);
 */
-    if ((IS_CTRL_FREE(ctrlPtr)) && !(interruptReg & IR_RESLCT)) {
-	panic("SCSIC90: Got int. but ctrl is free\n");
-    }
-
     if (statusReg & SR_GE) {
 	panic("gross error 1\n");
 	printf("%s: some gross error happened.\n",
@@ -560,11 +537,6 @@ DevSCSIC90Intr(clientDataArg)
 	}
     }
     if (interruptReg & IR_SLCT_ATN) {
-    if (interruptReg & IR_RESLCT) {
-	PerformReselect(ctrlPtr, interruptReg);
-	MASTER_UNLOCK(&(ctrlPtr->mutex));
-	return TRUE;
-    }
 	printf("%s: scsi controller selected with ATN which we don't allow.\n",
 		devPtr->handle.locationName);
 	status = FAILURE;
@@ -575,6 +547,18 @@ DevSCSIC90Intr(clientDataArg)
 	status = FAILURE;
     }
     if (interruptReg & IR_RESLCT) {
+	PerformReselect(ctrlPtr, interruptReg);
+	MASTER_UNLOCK(&(ctrlPtr->mutex));
+	return TRUE;
+    }
+    if (IS_CTRL_FREE(ctrlPtr)) {
+	if (status == SUCCESS)
+	    panic("SCSIC90: Got interrupt but ctrl is free.\n");
+	MASTER_UNLOCK(&(ctrlPtr->mutex));
+	return TRUE;
+    }
+
+
     /* Where did we come from? */
     switch (devPtr->lastPhase) {
     case PHASE_COMMAND:
@@ -616,7 +600,6 @@ DevSCSIC90Intr(clientDataArg)
     case PHASE_RDY_DISCON:
 	if (interruptReg & IR_DISCNCT) {
 	    devPtr->lastPhase = PHASE_BUS_FREE;
-	    lastDiscon[devPtr->targetID] = circHead;
 	    PUTCIRCBUF(CSTR,"intr: targ ");
 	    PUTCIRCBUF(CBYTE, (char *)devPtr->targetID);
 	    PUTCIRCBUF(CSTR," discon.");
@@ -646,7 +629,7 @@ DevSCSIC90Intr(clientDataArg)
 		    status,
 		    devPtr->commandStatus,
 		    devPtr->scsiCmdPtr->bufferLen - devPtr->activeBufLen);
-		    devPtr->scsiCmdPtr->bufferLen - devPtr->residual);
+	PerformCmdDone(ctrlPtr,status);
 	MASTER_UNLOCK(&(ctrlPtr->mutex));
 	return TRUE;
     }
@@ -666,6 +649,11 @@ DevSCSIC90Intr(clientDataArg)
 	dmaControllerActive++;	/* Resetting controller not allowed. */
 #endif
 	DevStartDMA(ctrlPtr);
+	PUTCIRCBUF(CSTR,"start dma ptr: ");
+	PUTCIRCBUF(CINT,(char *)devPtr->activeBufPtr);
+	PUTCIRCBUF(CSTR,"; len: ");
+	PUTCIRCBUF(CINT,(char *)devPtr->activeBufLen);
+	PUTCIRCNULL;
 	break;
     case SR_COMMAND:
 	charPtr = devPtr->scsiCmdPtr->commandBlock;
@@ -890,7 +878,10 @@ unsigned int	statusReg;
 {
     ReturnStatus status = SUCCESS;
     volatile CtrlRegs	*regsPtr = ctrlPtr->regsPtr;
-    Device   *devPtr = ctrlPtr->devPtr;
+    Device         *devPtr = ctrlPtr->devPtr;
+    unsigned char  fifoCnt;
+    int            residual;
+    int		   amountXfered;
 
     if (interruptReg & IR_DISCNCT) {
 	printf("%s disconnected or timed out during data xfer.\n",
@@ -902,37 +893,38 @@ unsigned int	statusReg;
     dmaControllerActive--;
     MACH_DELAY(100);
 #endif
-    devPtr->residual = regsPtr->scsi_ctrl.read.xCntLo;
+    residual = regsPtr->scsi_ctrl.read.xCntLo;
 #ifdef sun4c
     MACH_DELAY(100);
 #endif
-    devPtr->residual += (regsPtr->scsi_ctrl.read.xCntHi << 8);
+    residual += (regsPtr->scsi_ctrl.read.xCntHi << 8);
+    fifoCnt = regsPtr->scsi_ctrl.read.FIFOFlags & FIFO_BYTES_MASK;
+    residual += fifoCnt;
     /*
-     * If the transfer was the maximum, 16K bytes, a 0 in the counter
+     * If the transfer was the maximum, 64K bytes, a 0 in the counter
      * may mean that nothing was transfered...  What should I do? XXX
      */
-    if (devPtr->residual != 0) {
-	PUTCIRCBUF(CSTR,"DMA xfer didn't finish: bytes left: ");
-	PUTCIRCBUF(CINT,(char *)(devPtr->residual));
-	PUTCIRCNULL;
-    }
+
+    PUTCIRCBUF(CSTR,"residual: ");
+    PUTCIRCBUF(CINT,(char *)(residual));
+    PUTCIRCBUF(CSTR,"; fifoCnt ");
+    PUTCIRCBUF(CINT,(char *)(fifoCnt));
+    PUTCIRCNULL;
+    regsPtr->scsi_ctrl.write.command = CR_FLSH_FIFO;
+
     /*
      * Flush the cache on data in, since the dma put it into memory
      * but didn't go through the cache.  We don't have to worry about this
      * on writes, since the sparcstation has a write-through cache.
      */
+    amountXfered = devPtr->activeBufLen - residual;
     if (devPtr->lastPhase == PHASE_DATA_IN) {
-	int		amountXfered;
-	
-	amountXfered = devPtr->scsiCmdPtr->bufferLen - devPtr->residual;
-	FLUSH_BYTES((char *) ctrlPtr->buffer, devPtr->scsiCmdPtr->buffer, 
+	FLUSH_BYTES((char *) ctrlPtr->buffer, devPtr->activeBufPtr, 
 		    amountXfered);
     }
-    if (! (statusReg & SR_TC)) {
-	/* Transfer count didn't go to zero, or this bit would be set. */
-	PUTCIRCBUF(CSTR,"DMA: xfer cnt bit is 0");
-	PUTCIRCNULL;
-    }
+    devPtr->activeBufPtr += amountXfered;
+    devPtr->activeBufLen = residual;
+
     if (! (interruptReg & IR_BUS_SERV)) {
 	/* Target didn't request information transfer phase. */
 	printf("Didn't receive bus service signal after DMA xfer.\n");
@@ -1017,7 +1009,6 @@ Controller *ctrlPtr;
     ReturnStatus status = SUCCESS;
     Device *devPtr = ctrlPtr->devPtr;
     volatile CtrlRegs *regsPtr = ctrlPtr->regsPtr;
-    int residual;
     unsigned char message;
 
     message = regsPtr->scsi_ctrl.read.FIFO;
@@ -1041,21 +1032,24 @@ Controller *ctrlPtr;
 	devPtr->lastPhase = PHASE_RDY_DISCON;
 	break;
     case SCSI_SAVE_DATA_POINTER:
+	/* No need to save anything since we keep the current
+	 * data ptr in activeBufPtr anyway. */
 	devPtr->lastPhase = PHASE_BUS_FREE;
-	residual = regsPtr->scsi_ctrl.read.xCntLo;
-	residual += (regsPtr->scsi_ctrl.read.xCntHi << 8);
-	if (residual) {
-	    devPtr->savedDataPtr = devPtr->scsiCmdPtr->buffer +
-		                   devPtr->scsiCmdPtr->bufferLen -
-				   residual;
-	    devPtr->savedDataLen = residual;
-	}
+	PUTCIRCBUF(CSTR,"save: ptr ");
+	PUTCIRCBUF(CINT, (char *)devPtr->activeBufPtr);
+	PUTCIRCBUF(CSTR,"; len ");
+	PUTCIRCBUF(CINT, (char *)devPtr->activeBufLen);
+	PUTCIRCNULL;
 	break;
     case SCSI_RESTORE_POINTERS:
-	/* an implicit restore_ptrs is done by reselect proc too */
+	/* No need to restore anything, since we keep the
+	 * current data ptr in activeBufPtr anyway. */
 	devPtr->lastPhase = PHASE_BUS_FREE;
-	devPtr->scsiCmdPtr->buffer = devPtr->savedDataPtr;
-	devPtr->scsiCmdPtr->bufferLen = devPtr->savedDataLen;
+	PUTCIRCBUF(CSTR,"restore: ptr ");
+	PUTCIRCBUF(CINT, (char *)devPtr->activeBufPtr);
+	PUTCIRCBUF(CSTR,"; len ");
+	PUTCIRCBUF(CINT, (char *)devPtr->activeBufLen);
+	PUTCIRCNULL;
 	break;
     case SCSI_IDENTIFY:
 	devPtr->lastPhase = PHASE_BUS_FREE;
@@ -1066,7 +1060,7 @@ Controller *ctrlPtr;
 	return status;
 	break;
     case SCSI_MESSAGE_REJECT:
-	lastReject[devPtr->targetID] = circHead;
+	/* kill any synchronous agreement in effect */
 	devPtr->synchPeriod = MIN_SYNCH_PERIOD;
 	devPtr->synchOffset = 0;
 	devPtr->lastPhase = PHASE_BUS_FREE;
@@ -1334,15 +1328,13 @@ unsigned int	interruptReg;
      */
 
 
-    /* do an implied restore data pointer */
-    devPtr->scsiCmdPtr->buffer = devPtr->savedDataPtr;
-    devPtr->scsiCmdPtr->bufferLen = devPtr->savedDataLen;
+    /* An restore_data_ pointer cmd is implied by a reselect
+     * but we don't need to do anything */
     regsPtr->scsi_ctrl.write.command = CR_MSG_ACCPT;
 
     if (!(IS_CTRL_FREE(ctrlPtr)) ||
 	(interruptReg & IR_BUS_SERV) ||
 	(fifoCnt > 0)) {
-	lastConflict[ctrlPtr->devPtr->targetID] = circHead;
 	PUTCIRCBUF(CSTR,"resel: save dev ");
 	PUTCIRCBUF(CINT, (char *)ctrlPtr->devPtr);
 	PUTCIRCBUF(CSTR," cmd ");

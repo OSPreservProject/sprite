@@ -385,9 +385,8 @@ typedef struct Device {
     char senseBuffer[DEV_MAX_SENSE_BYTES]; /* Data buffer for request sense */
     ScsiCmd		SenseCmd;  	   /* Request sense command buffer. */
     ScsiCmd		*scsiCmdPtr;  	/* The active command */ 
-    Address             savedDataPtr;   /* for SCSI_SAVE_DATA_POINTER and */
-    int                 savedDataLen;   /* ...SCSI_RESTORE_POINTERS cmds    */
-    int		residual;		/* Residual bytes in xfer counter. */
+    Address             activeBufPtr;   /* working copies of scsiCmd.buffer */
+    int                 activeBufLen;   /* scsiCmd.bufferLen */
     unsigned char	commandStatus;	/* Status received from device. */
     int		lastPhase;		/* The scsi phase we were last in. */
     int		dmaState;		/* DMA state for this device
