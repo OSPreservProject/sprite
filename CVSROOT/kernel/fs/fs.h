@@ -254,6 +254,14 @@ typedef struct Fs_Device {
 #endif comment
 
 /*
+ * Values for  page type for Fs_PageRead.
+ */
+typedef enum {
+    FS_CODE_PAGE,
+    FS_HEAP_PAGE,
+    FS_SWAP_PAGE,
+} Fs_PageType;
+/*
  * Filesystem initialization calls.
  */
 extern	void	Fs_Init();
