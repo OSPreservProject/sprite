@@ -232,13 +232,14 @@ FsPipeClose(streamPtr, clientID, flags, dataSize, closeData)
 		      handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
 		      handlePtr->use.ref, handlePtr->use.write);
 	}
-	if (flags & FS_WRITE && handlePtr->use.write == 0) {
+	if ((flags & FS_WRITE) && handlePtr->use.write == 0) {
 	    /*
 	     * Notify reader that the writer has closed.
 	     */
 	    handlePtr->flags |= PIPE_WRITER_GONE;
 	    FsFastWaitListNotify(&handlePtr->readWaitList);
-	} else if (handlePtr->use.ref == 0) {
+	} else if ((flags & FS_READ) &&
+		    handlePtr->use.ref == handlePtr->use.write) {
 	    /*
 	     * Update state and notify any blocked writers.  Their write
 	     * will fail with no remaining readers.
