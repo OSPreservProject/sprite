@@ -34,13 +34,12 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * This is set by a reverse arp transaction at boot time (see Rpc_Start),
  * or if that fails, by the rpc dispatcher who monitors the clientID field of
  * rpc reply messages (see RpcClientDispatch).  Finally, if neither of
- * those hooks work, a diskfull node will set its address when installing
- * addresses and spriteIDs from a file (see Net_InstallRoute).
+ * those hooks work, a diskfull node will set its address by looking at
+ * the disk header (see FsAttachDisk).
  *
  * Important: servers won't respond to requests until their rpc_SpriteID is set.
  */
 int rpc_SpriteID = 0;
-static int lastIgnoredClient = 0;
 
 /*
  * The packet as it looks sitting in the ethernet buffers.
@@ -52,6 +51,12 @@ typedef struct RpcRawPacket {
      * data follows
      */
 } RpcRawPacket;
+
+/*
+ * Occasionally the Intel ethernet interface wacks out and passes us garbage.
+ * We count garbage packets and reset the interface after a series of junk.
+ */
+int badErrors = 0;
 
 /*
  * An array of bitmasks is kept for faster comparisions by the dispatcher. 
@@ -110,6 +115,12 @@ Rpc_Dispatch(packetPtr, packetLength)
 				  packetLength, expectedLength);
 	Sys_Printf("srv %d clt %d rpc %d\n", rpcHdrPtr->serverID,
 		    rpcHdrPtr->clientID, rpcHdrPtr->command);
+	badErrors++;
+	if (badErrors > 4) {
+	    Sys_Printf("Resetting network interface\n");
+	    badErrors = 0;
+	    Net_Reset();
+	}
 	return;
     } else if (packetLength > expectedLength &&
 	       packetLength > (NET_ETHER_MIN_BYTES)) {
@@ -131,6 +142,21 @@ Rpc_Dispatch(packetPtr, packetLength)
 	if (rpc_SpriteID == 0) {
 	    return;
 	}
+	if (rpcHdrPtr->serverID != RPC_BROADCAST_SERVER_ID &&
+	    rpcHdrPtr->serverID != rpc_SpriteID) {
+	    /*
+	     * Perhaps the Intel chip is wack-o
+	     */
+	    Sys_Printf("Rpc_Dispatch: junk serverID %d\n", rpcHdrPtr->serverID);
+	    badErrors++;
+	    if (badErrors > 4) {
+		Sys_Printf("Resetting network interface\n");
+		badErrors = 0;
+		Net_Reset();
+	    }
+	    return;
+	}
+
 	rpcSrvStat.toServer++;
 	/*
 	 * Verify or initialize the sprite host id for the client 
@@ -167,6 +193,12 @@ Rpc_Dispatch(packetPtr, packetLength)
 	    rpcCltStat.badChannel++;
 	    Sys_Printf("Rpc_Dispatch: bad channel %d from clt %d rpc %d",
 	       rpcHdrPtr->channel, rpcHdrPtr->clientID, rpcHdrPtr->command);
+	    badErrors++;
+	    if (badErrors > 4) {
+		Sys_Printf("Resetting network interface\n");
+		badErrors = 0;
+		Net_Reset();
+	    }
 	} else {
 	    /*
 	     * Save sender's requested interfragment delay,
