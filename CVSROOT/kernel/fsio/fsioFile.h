@@ -109,12 +109,9 @@ typedef struct FsRmtFileIOHandle {
 					 * and used to catch races with cache
 					 * consistency msgs due to other opens*/
     int			flags;		/* FS_SWAP */
-    Fs_FileID		prefixFileID;	/* Passed to the server so it can
-					 * properly trap out lookups that
-					 * ascend past the prefix. */
     struct Vm_Segment	*segPtr;	/* Reference to code segment needed
 					 * to flush VM cache. */
-} FsRmtFileIOHandle;			/* 232 BYTES  (280 with traced locks)*/
+} FsRmtFileIOHandle;			/* 216 BYTES  (264 with traced locks)*/
 
 
 /*
