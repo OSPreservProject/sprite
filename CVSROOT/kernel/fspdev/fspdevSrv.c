@@ -49,7 +49,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsStat.h"
 #include "proc.h"
 #include "rpc.h"
-#include "swapBuffer.h"
 
 /*
  * Prevent tracing by defining CLEAN here before this next include
@@ -673,8 +672,8 @@ FsServerStreamIOControl(streamPtr, ioctlPtr, replyPtr)
 
     LOCK_MONITOR;
 
-    if (ioctlPtr->byteOrder != mach_ByteOrder) {
-	panic("FsServerStreamIOControl: wrong byte order\n");
+    if (ioctlPtr->format != mach_Format) {
+	panic("FsServerStreamIOControl: wrong format\n");
     }
     switch (ioctlPtr->command) {
 	case IOC_PDEV_SET_BUF: {
@@ -2266,11 +2265,17 @@ FsPseudoStreamIOControl(streamPtr, ioctlPtr, replyPtr)
 	}
 	if (ioctlPtr->outBufSize != sizeof(int)) {
 	    status = GEN_INVALID_ARG;
-	} else if (ioctlPtr->byteOrder != mach_ByteOrder) {
+	} else if (ioctlPtr->format != mach_Format) {
 	    int size = sizeof(int);
-	    Swap_Buffer((Address)&bytesAvail, sizeof(int),
-		mach_ByteOrder, ioctlPtr->byteOrder, "w", ioctlPtr->outBuffer,
-		&size);
+	    int inSize = sizeof(int);
+	    int fmtStatus;
+	    fmtStatus = Fmt_Convert("w", mach_Format, &inSize, 
+			    (Address) &bytesAvail,
+			    ioctlPtr->format, &size, ioctlPtr->outBuffer);
+	    if (fmtStatus != 0) {
+		printf("Format of ioctl failed <0x%x>\n", fmtStatus);
+		status = GEN_INVALID_ARG;
+	    }
 	    if (size != sizeof(int)) {
 		status = GEN_INVALID_ARG;
 	    }

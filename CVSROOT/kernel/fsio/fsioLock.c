@@ -17,7 +17,6 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-
 #include "sprite.h"
 #include "fs.h"
 #include "fsInt.h"
@@ -26,7 +25,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "proc.h"
 #include "rpc.h"
 #include "net.h"
-#include "swapBuffer.h"
 
 Boolean fsLockDebug = FALSE;
 
@@ -104,11 +102,17 @@ FsIocLock(lockPtr, ioctlPtr, streamIDPtr)
     register ReturnStatus status = SUCCESS;
     Ioc_LockArgs lockArgs;
 
-    if (ioctlPtr->byteOrder != mach_ByteOrder) {
+    if (ioctlPtr->format != mach_Format) {
 	int size = sizeof(Ioc_LockArgs);
-	Swap_Buffer(ioctlPtr->inBuffer, ioctlPtr->inBufSize,
-		    ioctlPtr->byteOrder, mach_ByteOrder,
-		    "wwww", (Address)&lockArgs, &size);
+	int inSize = ioctlPtr->inBufSize;
+	int fmtStatus;
+	fmtStatus = Fmt_Convert("w4", ioctlPtr->format, &inSize, 
+			ioctlPtr->inBuffer, mach_Format, &size, 
+			(Address) &lockArgs);
+	if (fmtStatus != 0) {
+	    printf("Format of ioctl failed <0x%x>\n", fmtStatus);
+	    status = GEN_INVALID_ARG;
+	}
 	if (size != sizeof(Ioc_LockArgs)) {
 	    status = GEN_INVALID_ARG;
 	} else {

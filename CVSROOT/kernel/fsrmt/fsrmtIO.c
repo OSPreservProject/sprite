@@ -826,7 +826,7 @@ FsRemoteIOControl(streamPtr, ioctlPtr, replyPtr)
     params.command = ioctlPtr->command;
     params.inBufSize = ioctlPtr->inBufSize;
     params.outBufSize = ioctlPtr->outBufSize;
-    params.byteOrder = ioctlPtr->byteOrder;
+    params.format = ioctlPtr->format;
     params.uid = ioctlPtr->uid;
 
     storage.requestParamPtr = (Address)&params;
@@ -926,7 +926,7 @@ Fs_RpcIOControl(srvToken, clientID, command, storagePtr)
     ioctl.outBuffer = outBufPtr;
     ioctl.outBufSize = paramsPtr->outBufSize;
     ioctl.flags = 0;	/* All buffers in kernel space */
-    ioctl.byteOrder = paramsPtr->byteOrder;
+    ioctl.format = paramsPtr->format;
     ioctl.procID = paramsPtr->procID;
     ioctl.familyID = paramsPtr->familyID;
     ioctl.uid = paramsPtr->uid;

@@ -258,8 +258,8 @@ FsControlIOControl(streamPtr, ioctlPtr, replyPtr)
 	    (PdevControlIOHandle *)streamPtr->ioHandlePtr;
     register ReturnStatus status;
 
-    if (ioctlPtr->byteOrder != mach_ByteOrder) {
-	panic("FsControlIOControl: wrong byte order\n");
+    if (ioctlPtr->format != mach_Format) {
+	panic("FsControlIOControl: wrong format\n");
     }
     switch(ioctlPtr->command) {
 	case IOC_PDEV_SIGNAL_OWNER:

@@ -15,7 +15,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 
 #include "sprite.h"
-
 #include "fs.h"
 #include "fsInt.h"
 #include "fsPipe.h"
@@ -29,7 +28,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vm.h"
 #include "proc.h"
 #include "rpc.h"
-#include "swapBuffer.h"
 
 /*
  * Monitor to synchronize access to the openInstance in GetFileID.
@@ -628,14 +626,21 @@ FsPipeIOControl(streamPtr, ioctlPtr, replyPtr)
 	     */
 	    int flags;
 	    int size;
+	    int inSize;
 
 	    if (ioctlPtr->inBufSize != sizeof(int)) {
 		status = GEN_INVALID_ARG;
-	    } else if (ioctlPtr->byteOrder != mach_ByteOrder) {
+	    } else if (ioctlPtr->format != mach_Format) {
+		int fmtStatus;
 		size = sizeof(int);
-		Swap_Buffer(ioctlPtr->inBuffer, ioctlPtr->inBufSize,
-			    ioctlPtr->byteOrder,
-			    mach_ByteOrder, "w", (Address)&flags, &size);
+		inSize = ioctlPtr->inBufSize;
+		fmtStatus = Fmt_Convert("w", ioctlPtr->format, &inSize,
+				ioctlPtr->inBuffer, mach_Format, &size,
+				(Address) &flags);
+		if (fmtStatus != 0) {
+		    printf("Format of ioctl failed <0x%x>\n", fmtStatus);
+		    status = GEN_INVALID_ARG;
+		}
 		if (size != sizeof(int)) {
 		    status = GEN_INVALID_ARG;
 		}
@@ -660,11 +665,17 @@ FsPipeIOControl(streamPtr, ioctlPtr, replyPtr)
 
 	    if (ioctlPtr->outBufSize != sizeof(int)) {
 		status = GEN_INVALID_ARG;
-	    } else if (ioctlPtr->byteOrder != mach_ByteOrder) {
+	    } else if (ioctlPtr->format != mach_Format) {
 		int size = sizeof(int);
-		Swap_Buffer((Address)&bytesAvailable, sizeof(int),
-		    mach_ByteOrder, ioctlPtr->byteOrder, "w",
-		    ioctlPtr->outBuffer, &size);
+		int inSize = sizeof(int);
+		int fmtStatus;
+		fmtStatus = Fmt_Convert("w", mach_Format, &inSize,
+				(Address) &bytesAvailable, ioctlPtr->format, 
+				&size, (Address) ioctlPtr->outBuffer);
+		if (fmtStatus != 0) {
+		    printf("Format of ioctl failed <0x%x>\n", fmtStatus);
+		    status = GEN_INVALID_ARG;
+		}
 		if (size != sizeof(int)) {
 		    status = GEN_INVALID_ARG;
 		}

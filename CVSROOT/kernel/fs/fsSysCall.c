@@ -1705,7 +1705,7 @@ Fs_IOControlStub(streamID, command, inBufSize, inBuffer,
     }
 
     ioctl.command = command;
-    ioctl.byteOrder = mach_ByteOrder;
+    ioctl.format = mach_Format;
     ioctl.procID = procPtr->processID;
     ioctl.familyID = procPtr->familyID;
     ioctl.uid = procPtr->effectiveUserID;

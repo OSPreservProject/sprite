@@ -521,7 +521,7 @@ Fs_TruncStream(streamPtr, length)
     ioctl.inBufSize = sizeof(int);
     ioctl.outBuffer = (Address) NIL;
     ioctl.outBufSize = 0;
-    ioctl.byteOrder = mach_ByteOrder;
+    ioctl.format = mach_Format;
     ioctl.procID = procPtr->processID;
     ioctl.familyID = procPtr->familyID;
     ioctl.uid = procPtr->effectiveUserID;

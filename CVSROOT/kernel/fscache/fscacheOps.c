@@ -678,7 +678,7 @@ FsCacheRead(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	int length;
 	length = cacheInfoPtr->attr.lastByte - (int) offset + 1;
 	(void)(*fsStreamOpTable[streamType].ioControl)
-		(cacheInfoPtr->hdrPtr, IOC_TRUNCATE, mach_ByteOrder,
+		(cacheInfoPtr->hdrPtr, IOC_TRUNCATE, mach_Format,
 			sizeof(length), (Address) &length, 0, (Address) NIL); 
     }
 exit:

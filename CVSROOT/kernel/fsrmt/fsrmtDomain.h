@@ -46,7 +46,8 @@ typedef struct FsSpriteIOCParams {
     int		command;	/* I/O Control to perform. */
     int		inBufSize;	/* Size of input params to ioc. */
     int		outBufSize;	/* Size of results from ioc. */
-    int		byteOrder;	/* Defines client's byte ordering */
+    Fmt_Format	format;		/* Defines client's byte order/alignment 
+				 * format. */
     int		uid;		/* Effective User ID */
 } FsSpriteIOCParams;
 
@@ -108,4 +109,4 @@ extern	ReturnStatus	FsRemoteSetIOAttr();
 extern	ReturnStatus	FsRemoteBlockCopy();
 extern	ReturnStatus	FsRemoteDomainInfo();
 
-#endif _FSSPRITEDOMAIN
+#endif /* _FSSPRITEDOMAIN */

@@ -34,11 +34,13 @@
 #include "sync.h"
 #include "proc.h"
 #include "user/fs.h"
+#include "user/fmt.h"
 #else
 #include <kernel/sys.h>
 #include <kernel/sync.h>
 #include <kernel/proc.h>
 #include <fs.h>
+#include <fmt.h>
 #endif
 
 
@@ -323,7 +325,8 @@ typedef struct Fs_IOCParam {
     int		inBufSize;	/* Size of input params to iocontrol. */
     Address	outBuffer;	/* Output buffer */
     int		outBufSize;	/* Size of results from iocontrol. */
-    int		byteOrder;	/* Defines client's byte ordering */
+    Fmt_Format	format;		/* Defines client's byte order/alignment 
+				 * format. */
     Proc_PID	procID;		/* ID of invoking process */
     Proc_PID	familyID;	/* Family of invoking process */
     int		uid;		/* Effective user ID */
