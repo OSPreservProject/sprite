@@ -5293,3 +5293,126 @@ int pmeg;
 {
     panic("VmMachTracePMEG called.\n");
 }
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmMach_LockCachePage --
+ *
+ *      Perform machine dependent locking of a kernel resident file cache
+ *	page.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+VmMach_LockCachePage(kernelAddress)
+    Address	kernelAddress;	/* Address on page to lock. */
+{
+    register  Vm_VirtAddr	virtAddr;
+    register  VMMACH_SEG_NUM	*segTablePtr, pmeg;
+    register  int		hardSeg;
+    Vm_PTE    *ptePtr;
+    VmMachPTE		hardPTE;
+    /*
+     * Ignore pages not in cache pmeg range.
+     */
+    if (!IN_FILE_CACHE_SEG(kernelAddress)) {
+	return;
+    }
+
+    MASTER_LOCK(vmMachMutexPtr);
+
+    pmeg = VmMachGetSegMap(kernelAddress);
+    if (pmeg == VMMACH_INV_PMEG) {
+	int	oldContext, i;
+	unsigned int a;
+	/*
+	 *  If not a valid PMEG install a new pmeg and load its mapping. 
+	 */
+	virtAddr.segPtr = vm_SysSegPtr;
+	virtAddr.page = ((unsigned int) kernelAddress) >> VMMACH_PAGE_SHIFT;
+	virtAddr.offset = 0;
+	virtAddr.flags = 0;
+	virtAddr.sharedPtr = (Vm_SegProcList *) NIL;
+    
+	hardSeg = PageToOffSeg(virtAddr.page, (&virtAddr));
+	segTablePtr = (VMMACH_SEG_NUM *) 
+			    GetHardSegPtr(vm_SysSegPtr->machPtr, hardSeg);
+	if (*segTablePtr != VMMACH_INV_PMEG) {
+	    panic("VmMach_LockCachePage: Bad segTable entry.\n");
+	}
+	*segTablePtr = pmeg = PMEGGet(vm_SysSegPtr, hardSeg, 0);
+	/*
+	 * Have to propagate the PMEG to all contexts.
+	 */
+	oldContext = VmMachGetContextReg();
+	for (i = 0; i < VMMACH_NUM_CONTEXTS; i++) {
+	    VmMachSetContextReg(i);
+	    VmMachSetSegMap(kernelAddress, pmeg);
+	}
+	VmMachSetContextReg(oldContext);
+	/*
+	 * Reload the entire PMEG.
+	 */
+	a = (hardSeg << VMMACH_SEG_SHIFT);
+	for (i = 0; i < VMMACH_NUM_PAGES_PER_SEG_INT; i++ ) { 
+	    ptePtr = VmGetPTEPtr(vm_SysSegPtr, (a >> VMMACH_PAGE_SHIFT));
+	    if ((*ptePtr & VM_PHYS_RES_BIT)) {
+		hardPTE = VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT | 
+				VirtToPhysPage(Vm_GetPageFrame(*ptePtr));
+		SET_ALL_PAGE_MAP(a, hardPTE);
+		pmegArray[pmeg].pageCount++;
+	     }
+	     a += VMMACH_PAGE_SIZE_INT;
+	}
+    }
+    pmegArray[pmeg].lockCount++;
+
+    MASTER_UNLOCK(vmMachMutexPtr);
+    return;
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmMach_UnlockCachePage --
+ *
+ *      Perform machine dependent unlocking of a kernel resident page.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+VmMach_UnlockCachePage(kernelAddress)
+    Address	kernelAddress;	/* Address on page to unlock. */
+{
+    register  VMMACH_SEG_NUM	pmeg;
+
+    if (!IN_FILE_CACHE_SEG(kernelAddress)) {
+	return;
+    }
+
+    MASTER_LOCK(vmMachMutexPtr);
+
+    pmeg = VmMachGetSegMap(kernelAddress);
+
+    pmegArray[pmeg].lockCount--;
+    if (pmegArray[pmeg].lockCount < 0) {
+	panic("VmMach_UnlockCachePage lockCount < 0\n");
+    }
+
+    MASTER_UNLOCK(vmMachMutexPtr);
+    return;
+}
+
+
+
