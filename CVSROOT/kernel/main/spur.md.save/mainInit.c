@@ -246,6 +246,10 @@ main()
     bootProgress = 15;
     led_display(bootProgress,0,0);
     Net_Init();
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Net_RouteInit\n");
+    }
+    Net_RouteInit();
 
     /*
      * Initialize the recovery module.  Do before Rpc and after Vm_Init.
