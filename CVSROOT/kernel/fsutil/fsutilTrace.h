@@ -47,9 +47,9 @@
 #define	FS_TRACE_RA_END		28
 #define FS_TRACE_DEL_BLOCK	29
 #define FS_TRACE_BLOCK_WRITE	30
-#define FS_TRACE_31
-#define FS_TRACE_32
-#define FS_TRACE_33
+#define FS_TRACE_GET_NEXT_FREE	31
+#define FS_TRACE_LRU_FREE	32
+#define FS_TRACE_LRU_DONE_FREE	33
 #define FS_TRACE_34
 #define FS_TRACE_35
 
