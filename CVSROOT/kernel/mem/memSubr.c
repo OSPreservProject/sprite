@@ -99,7 +99,7 @@ MemChunkAlloc(size, addressPtr)
  *	None.
  *
  * Side effects:
- *	None.
+ *	Stuff is printed on the console.
  *
  *----------------------------------------------------------------------
  */
@@ -110,7 +110,7 @@ static	int	largeMaxSize = 10000;
 void
 Mem_DumpStats()
 {
-    Mem_PrintStats(PrintProc, 0, smallMinNum, largeMinNum, largeMaxSize);
+    Mem_PrintStatsSubr(PrintProc, 0, smallMinNum, largeMinNum, largeMaxSize);
 }
 
 
