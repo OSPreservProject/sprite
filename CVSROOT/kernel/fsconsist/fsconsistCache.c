@@ -1823,6 +1823,7 @@ Fs_RpcConsistReply(srvToken, clientID, command, storagePtr)
     FsHandleRelease(handlePtr, TRUE);
     Rpc_Reply(srvToken, SUCCESS, storagePtr, 
 	      (int (*)())NIL, (ClientData)NIL);
+    return(SUCCESS);
 }
 
 
