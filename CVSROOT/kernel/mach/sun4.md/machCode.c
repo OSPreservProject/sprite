@@ -342,10 +342,6 @@ Mach_InitFirstProc(procPtr)
     procPtr->machStatePtr->kernStackStart = mach_StackBottom;
     procPtr->machStatePtr->trapRegs = (Mach_RegState *) NIL;
     procPtr->machStatePtr->switchRegs = (Mach_RegState *) NIL;
-#ifdef NOTDEF
-    procPtr->machStatePtr->setJumpStatePtr = (Mach_SetJumpState *)NIL;
-    /* also set stack end? */
-#endif NOTDEF
     machCurStatePtr = procPtr->machStatePtr;
 }
 
@@ -397,9 +393,6 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
     }
     if (procPtr->machStatePtr == (Mach_State *)NIL) {
 	procPtr->machStatePtr = (Mach_State *)Vm_RawAlloc(sizeof(Mach_State));
-#ifdef NOTDEF
-	procPtr->machStatePtr->setJumpStatePtr = (Mach_SetJumpState *)NIL;
-#endif NOTDEF
     }
     bzero((char *) procPtr->machStatePtr, sizeof (Mach_State));
     statePtr = procPtr->machStatePtr;
@@ -580,9 +573,6 @@ Mach_StartUserProc(procPtr, entryPoint)
     (Address) statePtr->trapRegs->pc = (Address)entryPoint;
     (Address) statePtr->trapRegs->nextPc = (Address)entryPoint + 4;
 
-#ifdef NOTDEF
-    Mach_MonPrintf("Mach_StartUserProc: calling MachRunUserProc with procPtr 0x%x and entryPoint 0x%x\n", procPtr, entryPoint);
-#endif NOTDEF
     MachRunUserProc();
     /* THIS DOES NOT RETURN */
 }
@@ -689,54 +679,6 @@ Mach_FreeState(procPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Mach_CopyState --
- *
- *	Copy the state from the given state structure to the machine
- *	state structure for the destination process control block.  Intended
- *	to be used by the debugger to modify the state.The only fields
- *	that can be modified are the following:
- *
- *	    1) user stack pointer
- *	    2) all trap registers except for the stack pointer because the
- *	       stack pointer in the trap registers is the kernel stack pointer.
- *	    3) the PC, VOR and status register in the exception stack.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Machine state in the destination process control block is overwritten.
- *
- *----------------------------------------------------------------------
- */ 
-void
-Mach_CopyState(statePtr, destProcPtr)
-    Mach_State		*statePtr;	/* Pointer to state to copy from. */
-    Proc_ControlBlock	*destProcPtr;	/* Process control block to copy
-					 * state to. */
-{
-#ifdef NOTDEF
-    register	Mach_State	*destStatePtr;
-
-    destStatePtr = destProcPtr->machStatePtr;
-    destStatePtr->userState.userStackPtr =
-				statePtr->userState.userStackPtr;
-    bcopy((Address)statePtr->userState.trapRegs,
-	      (Address)destStatePtr->userState.trapRegs,
-	      sizeof(int) * (MACH_NUM_GPRS - 1));
-    destStatePtr->userState.excStackPtr->pc = 
-				    statePtr->userState.excStackPtr->pc;
-    destStatePtr->userState.excStackPtr->statusReg = 
-				statePtr->userState.excStackPtr->statusReg;
-#else
-    panic("Mach_CopyState called.\n");
-#endif NOTDEF
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * Mach_GetDebugState --
  *
  *	Extract the appropriate fields from the machine state struct
@@ -798,35 +740,6 @@ Mach_SetDebugState(procPtr, debugStatePtr)
 	    (Address)machStatePtr->trapRegs->globals,
 	    MACH_NUM_GLOBALS * sizeof (int));
     return;
-}
-
-
-
-/*
- * ----------------------------------------------------------------------------
- *
- * Mach_GetUserStackPtr --
- *
- *	Return the user stack pointer from the machine state struct for the
- *	given process.
- *
- * Results:
- *	The value of the user stack pointer when the process trapped.
- *
- * Side effects:
- *	None.
- *
- * ----------------------------------------------------------------------------
- */
-Address
-Mach_GetUserStackPtr(procPtr)
-    Proc_ControlBlock	*procPtr;
-{
-#ifdef NOTDEF
-    return(procPtr->machStatePtr->userState.userStackPtr);
-#else
-    panic("Mach_GetUserStackPtr called.\n");
-#endif NOTDEF
 }
 
 
@@ -1034,33 +947,6 @@ Mach_ProcessorState(processor)
 	return(MACH_USER);
     }
 }
-
-#ifdef NOTDEF
-
-/*
- * ----------------------------------------------------------------------------
- *
- * Mach_UnsetJump --
- *
- *	Clear out the pointer to the saved state from a set jump.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	setJumpStatePtr field of proc table for current process is nil'd out.
- *
- * ----------------------------------------------------------------------------
- */
-void
-Mach_UnsetJump()
-{
-    Proc_ControlBlock	*procPtr;
-
-    procPtr = Proc_GetCurrentProc();
-    procPtr->machStatePtr->setJumpStatePtr = (Mach_SetJumpState *) NIL;
-}
-#endif NOTDEF
 
 
 /*
@@ -1333,23 +1219,23 @@ HandleItAgain:
      * Take a context switch if one is pending for this process.
      * If other stuff, such as flushing the windows to the stack needs to
      * be done, it will happen when the process is switched back in again.
+     * We came from MachReturnFromTrap, where interrupts were off, so we
+     * must turn them on.
      */
     Mach_EnableIntr();
     if (procPtr->schedFlags & SCHED_CONTEXT_SWITCH_PENDING) {
 	Sched_LockAndSwitch();
     }
-    /*
-     * Should I flush windows to the stack before or after dealing with
-     * a signal?  I'm not sure I understand the choices.  I'll do it first.
-     */
+
     machStatePtr = procPtr->machStatePtr;
+
     /*
-     * This is a while, since the Vm code may make it necessary to save
-     * further windows that weren't set when we got here.  At least I think
-     * that might happen.  I should test it to see if Vm ever calls that
-     * deeply, but this is safer in case someone changes that code.
+     * Save the windows that were stored in internal buffers to the user stack.
+     * The windows were saved to internal buffers due to the user stack not
+     * being resident.  The overflow handler can't take page faults, but
+     * we can.
      */
-    while (machStatePtr->savedMask != 0) {
+    if (machStatePtr->savedMask != 0) {
 	int	i;
 
 	DEBUG_ADD(0x88888888);
@@ -1358,12 +1244,19 @@ HandleItAgain:
 	    if ((1 << i) & machStatePtr->savedMask) {
 		DEBUG_ADD(i);
 		DEBUG_ADD(machStatePtr->savedSps[i]);
-		/* clear the mask for this window */
-		machStatePtr->savedMask &= ~(1 << i);
 		/*
-		 * Push the window to the stack.  Should I re-verify the stack
-		 * pointer?  I don't think I need to, since it's stored in
-		 * kernel space and I verified it before storing it.
+		 * Clear the mask for this window.  We must turn off interrupts
+		 * to do this, since changing the savedMask must be an
+		 * atomic operation.  If it weren't, and an interrupt came
+		 * in that caused us to save some other window to the stack
+		 * after we have read the savedMask, we would overwrite the
+		 * fact when storing the saved Mask...
+		 */
+		Mach_DisableIntr();
+		machStatePtr->savedMask &= ~(1 << i);
+		Mach_EnableIntr();
+		/*
+		 * Push the window to the stack.
 		 */
 		if (Vm_CopyOut(MACH_SAVED_WINDOW_SIZE,
 			(Address)&(machStatePtr->savedRegs[i]),
@@ -1376,6 +1269,22 @@ HandleItAgain:
 	    }
 	}
     }
+    /*
+     * We must check again here to see if the specialHandling flag has been
+     * set again.  We've been taking interrupts this whole time, and the
+     * Vm code above may have called deeply, so we may have saved further
+     * user windows to internal buffers.  If we have, go back up to the
+     * beginning of the routine, and do this all again.
+     */
+
+    /*
+     * For now, we also flush all the windows to make sure the signal-handling
+     * stuff below won't cause us to save windows to internal buffers.  This
+     * is a slow thing to do, but it is currenlty unclear what to do if
+     * the signal handler causes a window to get saved to an internal buffer.
+     * It will have to call some sort of MachUserAction-type routine itself
+     * in that case.
+     */
     Mach_DisableIntr();
     MachFlushWindowsToStack();
     if (procPtr->specialHandling != 0) {
@@ -1384,14 +1293,9 @@ HandleItAgain:
 	goto HandleItAgain;
     }
     Mach_EnableIntr();
+
     /*
-     * Now check for signal stuff.  We disable interrupts because we don't
-     * want the signal stuff in our process state to be overwritten by another
-     * signal until we have a chance to copy it out to the user stack and to
-     * jump to the signal pc without its being overwritten.  Note that we do
-     * not use the DISABLE_INTR macro, because it increments the nesting
-     * depth of interrupts and we don't want this since there is an implicit
-     * enable interrupts on rett.
+     * Now check for signal stuff.
      */
     sigStackPtr = &(machStatePtr->sigStack);
     sigStackPtr->contextPtr = &(machStatePtr->sigContext);
@@ -1402,6 +1306,10 @@ HandleItAgain:
 	Mach_DisableIntr();
 	return TRUE;
     }
+    /*
+     * Go back to MachReturnFromTrap.  We are expected to have interrupts
+     * off there.
+     */
     Mach_DisableIntr();
 	
     return FALSE;
