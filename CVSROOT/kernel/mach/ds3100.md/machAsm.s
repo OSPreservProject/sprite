@@ -908,6 +908,7 @@ NON_LEAF(Mach_ContextSwitch,STAND_FRAME_SIZE + 8,ra)
     lw		t0, machCurStatePtr
     nop
     add		t0, t0, MACH_SWITCH_REGS_OFFSET
+    sw		a0, A0 * 4(t0)
     sw		s0, S0 * 4(t0)
     sw		s1, S1 * 4(t0)
     sw		s2, S2 * 4(t0)
@@ -1416,6 +1417,12 @@ MachSysCall:
     sw		s8, MACH_TRAP_REGS_OFFSET + (S8 * 4)(t1)
     sw		ra, MACH_TRAP_REGS_OFFSET + (RA * 4)(t1)
     sw		t0, MACH_TRAP_REGS_OFFSET + (T0 * 4)(t1)
+    sw		a0, MACH_TRAP_REGS_OFFSET + (A0 * 4)(t1)
+    sw		a1, MACH_TRAP_REGS_OFFSET + (A1 * 4)(t1)
+    sw		a2, MACH_TRAP_REGS_OFFSET + (A2 * 4)(t1)
+    sw		a3, MACH_TRAP_REGS_OFFSET + (A3 * 4)(t1)
+    sw		v0, MACH_TRAP_REGS_OFFSET + (V0 * 4)(t1)
+    sw		v1, MACH_TRAP_REGS_OFFSET + (V1 * 4)(t1)
     sw		t3, MACH_USER_PC_OFFSET(t1)
 /*
  * Change to the kernel's stack, enable interrupts and turn off the
