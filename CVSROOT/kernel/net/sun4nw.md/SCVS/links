@@ -1,0 +1,11 @@
+# This file is used by scvs and contains symbolic link
+# information.  Each line is of the form "link target"
+# $Header
+netConfig.c              ../sun4.md/netConfig.c
+netIE.c                  ../sun4.md/netIE.c
+netIECmd.c               ../sun4.md/netIECmd.c
+netIEInt.h.old           ../sun4.md/netIEInt.h
+netIEMem.c               ../sun4.md/netIEMem.c
+netIERecv.c              ../sun4.md/netIERecv.c
+netIESubr.c              ../sun4.md/netIESubr.c
+netIEXmit.c              ../sun4.md/netIEXmit.c

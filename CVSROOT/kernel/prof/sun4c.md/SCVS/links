@@ -1,0 +1,10 @@
+# This file is used by scvs and contains symbolic link
+# information.  Each line is of the form "link target"
+# $Header
+_mcount.c                ../sun4.md/_mcount.c
+_mcount.c.save           ../sun4.md/_mcount.c
+mcount.s                 ../sun4.md/mcount.s
+mcount.s.save            ../sun4.md/mcount.s
+profInt.h                ../sun4.md/profInt.h
+profStack.s              ../sun4.md/profStack.s
+profSubr.c               ../sun4.md/profSubr.c

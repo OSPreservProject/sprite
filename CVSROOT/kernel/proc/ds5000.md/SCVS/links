@@ -1,0 +1,6 @@
+# This file is used by scvs and contains symbolic link
+# information.  Each line is of the form "link target"
+# $Header
+migVersion.h             ../ds3100.md/migVersion.h
+procMach.c               ../ds3100.md/procMach.c
+procMach.h               ../ds3100.md/procMach.h

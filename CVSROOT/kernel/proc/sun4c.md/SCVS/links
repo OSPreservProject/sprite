@@ -1,0 +1,5 @@
+# This file is used by scvs and contains symbolic link
+# information.  Each line is of the form "link target"
+# $Header
+procMach.c               ../sun4.md/procMach.c
+procMach.h               ../sun4.md/procMach.h

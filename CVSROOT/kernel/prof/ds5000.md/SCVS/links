@@ -1,0 +1,7 @@
+# This file is used by scvs and contains symbolic link
+# information.  Each line is of the form "link target"
+# $Header
+_mcount.c                ../ds3100.md/_mcount.c
+profInt.h                ../ds3100.md/profInt.h
+profStack.s              ../ds3100.md/profStack.s
+profSubr.c               ../ds3100.md/profSubr.c

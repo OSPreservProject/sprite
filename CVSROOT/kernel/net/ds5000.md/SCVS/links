@@ -1,0 +1,7 @@
+# This file is used by scvs and contains symbolic link
+# information.  Each line is of the form "link target"
+# $Header
+netLE.c                  ../sun3.md/netLE.c
+netLEInt.h               ../sun3.md/netLEInt.h
+netLERecv.c              ../sun3.md/netLERecv.c
+netLEXmit.c              ../sun3.md/netLEXmit.c

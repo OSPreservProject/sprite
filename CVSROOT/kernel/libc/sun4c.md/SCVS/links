@@ -1,0 +1,19 @@
+# This file is used by scvs and contains symbolic link
+# information.  Each line is of the form "link target"
+# $Header
+_dtou.s                  /sprite/src/lib/c/gnulib/sun4.md/_dtou.s
+_fixunsdfsi.s            /sprite/src/lib/c/gnulib/sun4.md/_fixunsdfsi.s
+alloca.s                 /sprite/src/lib/c/gnulib/sun4.md/alloca.s
+compatMapCode.c          /sprite/src/lib/c/unixSyscall/compatMapCode.c
+compatSig.c              /sprite/src/lib/c/unixSyscall/compatSig.c
+compatSig.h              /sprite/src/lib/c/unixSyscall/compatSig.h
+divide.s                 /sprite/src/lib/c/gnulib/sun4.md/divide.s
+modf.s                   /sprite/src/lib/c/gnulib/sun4.md/modf.s
+multiply.s               /sprite/src/lib/c/gnulib/sun4.md/multiply.s
+ptr_call.s               /sprite/src/lib/c/gnulib/sun4.md/ptr_call.s
+rem.s                    /sprite/src/lib/c/gnulib/sun4.md/rem.s
+stret1.s                 /sprite/src/lib/c/gnulib/sun4.md/stret1.s
+stret2.s                 /sprite/src/lib/c/gnulib/sun4.md/stret2.s
+stret4.s                 /sprite/src/lib/c/gnulib/sun4.md/stret4.s
+umultiply.s              /sprite/src/lib/c/gnulib/sun4.md/umultiply.s
+varargs.s                /sprite/src/lib/c/gnulib/sun4.md/varargs.s
