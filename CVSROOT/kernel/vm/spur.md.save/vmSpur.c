@@ -58,6 +58,11 @@ static int	rootPTPageNum;	/* The first physical page behind the root
 				 * page table. */
 
 /*
+ * The kernel segments machine dependent data.
+ */
+VmMach_SegData	kernSegData;
+
+/*
  * Machine dependent flags for the flags field in the Vm_VirtAddr struct.
  * We are only allowed to use the second byte of the flags.
  *
@@ -180,7 +185,21 @@ VmMach_Init(firstFreePage)
     int			pfNum;
     VmMach_SegData	*machPtr;
 
-    machPtr = (VmMach_SegData *)Mem_Alloc(sizeof(VmMach_SegData));
+    /*
+     * Unmap pages in low memory that aren't supposed to be accessible:
+     *
+     *	1) Page 0.
+     *	2) The top of the main programs saved window stack.
+     *	3) The top of the debuggers saved window stack.
+     */
+    ptePtr = basePTPtr;
+    *ptePtr = 0;
+    ptePtr = basePTPtr + ((unsigned)mach_StackBottom >> VMMACH_PAGE_SHIFT) + 1;
+    *ptePtr = 0;
+    ptePtr = basePTPtr + (MACH_DEBUG_STACK_BOTTOM >> VMMACH_PAGE_SHIFT) + 1;
+    *ptePtr = 0;
+
+    machPtr = &kernSegData;
     vm_SysSegPtr->machPtr = machPtr;
     machPtr->ptBasePtr = kernPTPtr;
     machPtr->pt2BasePtr = kernPT2Ptr;
@@ -200,11 +219,6 @@ VmMach_Init(firstFreePage)
 	    rootPTPageNum = pfNum;
 	    machPtr->RPTPM = rootPTPageNum;
 	}
-#ifdef remap_pte
-	pte = VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | 
-	      VMMACH_KRW_URO_PROT | SetPageFrame(pfNum);
-	*ptePtr = pte;
-#endif
 	Vm_ReservePage(PhysToVirtPage(pfNum));
     }
 
@@ -216,11 +230,6 @@ VmMach_Init(firstFreePage)
 	 i <= machPtr->lastPTPage;
 	 ptePtr++, i++) {
 	pfNum = GetPageFrame(*ptePtr);
-#ifdef remap_pte
-	pte = VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | 
-	      VMMACH_KRW_URO_PROT | SetPageFrame(pfNum);
-	*ptePtr = pte;
-#endif
 	Vm_ReservePage(PhysToVirtPage(pfNum));
      }
 
@@ -242,30 +251,11 @@ VmMach_Init(firstFreePage)
 	      ((Address)kernPT2Ptr) + VMMACH_SEG_PT2_SIZE);
 
     /*
-     * Map enough memory to cover the current amount of kernel memory that
-     * is in use.
+     * Clear out the rest of kernel page tables starting with the first
+     * free page.
      */
-    for (ptePtr = basePTPtr, i = 0; i < firstFreePage; ptePtr++, i++) {
-	if (i == (((unsigned int)mach_StackBottom + VMMACH_PAGE_SIZE) >> 
-							VMMACH_PAGE_SHIFT)) {
-	    *ptePtr = 0;
-	} else if (i == (((unsigned int)MACH_DEBUG_STACK_BOTTOM + 
-			VMMACH_PAGE_SIZE) >> VMMACH_PAGE_SHIFT)) {
-	    *ptePtr = 0;
-	} else {
-#ifdef remap_pte
-	    pfNum = GetPageFrame(*ptePtr);
-	    pte = VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | 
-		  VMMACH_KRW_URO_PROT | SetPageFrame(pfNum);
-	    *ptePtr = pte;
-#endif
-	}
-    }
-
-    /*
-     * Clear out the rest of kernel page tables.
-     */
-    for (; i < (machPtr->lastPTPage + 1) * VMMACH_PTES_IN_PAGE; 
+    for (ptePtr = basePTPtr + firstFreePage, i = firstFreePage;
+         i < (machPtr->lastPTPage + 1) * VMMACH_PTES_IN_PAGE; 
          ptePtr++, i++) {
 	*ptePtr = (VmMachPTE) 0;
     }
@@ -302,15 +292,17 @@ VmMach_Init(firstFreePage)
  * ----------------------------------------------------------------------------
  */
 AllocPageTable(segPtr, offset, numPages)
-    register	Vm_Segment	*segPtr;
-    unsigned int		offset;
-    int				numPages;
+    register	Vm_Segment	*segPtr;	/* Segment to alloc PT for. */
+    unsigned int		offset;		/* Page offset within hardware
+						 * segment. */
+    int				numPages;	/* Number of pages in segment
+						 * from offset. */
 {
     register	VmMach_SegData	*segDataPtr;
     register	VmMachPTE	*ptePtr;
     register	int		firstPTPage;
     int				lastPTPage;
-    Address	ptAddr;
+    Address			ptAddr;
 
     segDataPtr = segPtr->machPtr;
     /*
@@ -318,7 +310,7 @@ AllocPageTable(segPtr, offset, numPages)
      */
     firstPTPage = offset >> VMMACH_SEG_PT2_SHIFT;
     lastPTPage = (offset + numPages - 1) >> VMMACH_SEG_PT2_SHIFT;
-    if (offset < segDataPtr->firstPTPage) {
+    if (firstPTPage < segDataPtr->firstPTPage) {
 	segDataPtr->firstPTPage = firstPTPage;
     }
     if (lastPTPage > segDataPtr->lastPTPage) {
@@ -334,7 +326,8 @@ AllocPageTable(segPtr, offset, numPages)
 	 firstPTPage++, ptePtr++, ptAddr += VMMACH_PAGE_SIZE) {
 	if (!(*ptePtr & VMMACH_RESIDENT_BIT)) {
 	    *ptePtr = VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | 
-	              VMMACH_KRW_UNA_PROT | 
+	              VMMACH_KRW_UNA_PROT | VMMACH_REFERENCED_BIT |
+		      VMMACH_MODIFIED_BIT |
 		      SetPageFrame(VirtToPhysPage(Vm_KernPageAllocate()));
 	    Byte_Zero(VMMACH_PAGE_SIZE, ptAddr);
 	}
@@ -362,7 +355,7 @@ VmMach_SegInit(segPtr)
     register	Vm_Segment	*segPtr;
 {
     register	VmMach_SegData	*segDataPtr;
-    unsigned	int		segOffset;
+    int			        segOffset;
     int				numPages;
 
     segPtr->minAddr = (Address)(segPtr->type * VMMACH_SEG_SIZE);
@@ -382,6 +375,15 @@ VmMach_SegInit(segPtr)
     segDataPtr->lastPTPage = -1;
 
     segOffset = segPtr->offset - segPtr->type * VMMACH_PAGES_PER_SEG;
+
+    if (segOffset < 0) {
+	/*
+	 * HACK to allow us to work on SPUR when Proc_KernExec allocates
+	 * dummy segments with ridiculous offsets.  The real patch
+	 * is in Proc_KernExec not here.
+	 */
+	segOffset = 0;
+    }
     if (segPtr->type == VM_STACK) {
 	numPages = mach_LastUserStackPage - segPtr->offset + 1;
     } else {
@@ -456,7 +458,9 @@ VmMach_SegDelete(segPtr)
 	}
      }
     VmMachFlushSegment(segPtr);
-    VmMachFlushBytes(segPtr, segDataPtr->pt2BasePtr, VMMACH_SEG_PT2_SIZE);
+/*
+    VmMachFlushBytes(vm_SysSegPtr, segDataPtr->pt2BasePtr, VMMACH_SEG_PT2_SIZE);
+*/
     segPtr->machPtr = (VmMach_SegData *)NIL;
 }
 
@@ -577,19 +581,22 @@ SetupContext(procPtr)
 	 * The segment number array has not been initialized yet.
 	 */
 	if (segPtrArray[VM_CODE] == (Vm_Segment *)NIL) {
+	    int	invRPTPM;
+
+	    invRPTPM = VMMACH_INVALID_SEGMENT / 4 + rootPTPageNum;
 	    segNums[VM_CODE] = VMMACH_INVALID_SEGMENT;
-	    RPTPMs[VM_CODE] = VMMACH_INVALID_SEGMENT / 4 + rootPTPageNum;
+	    RPTPMs[VM_CODE] = invRPTPM;
 	    segNums[VM_HEAP] = VMMACH_INVALID_SEGMENT;
-	    RPTPMs[VM_HEAP] =  VMMACH_INVALID_SEGMENT / 4 + rootPTPageNum;
+	    RPTPMs[VM_HEAP] =  invRPTPM;
 	    segNums[VM_STACK] = VMMACH_INVALID_SEGMENT;
-	    RPTPMs[VM_STACK] = VMMACH_INVALID_SEGMENT / 4 + rootPTPageNum;
+	    RPTPMs[VM_STACK] = invRPTPM;
 	} else {
 	    segNums[VM_CODE] = segPtrArray[VM_CODE]->segNum;
-	    RPTPMs[VM_CODE] = segNums[VM_CODE] / 4 + rootPTPageNum;
+	    RPTPMs[VM_CODE] = segPtrArray[VM_CODE]->machPtr->RPTPM;
 	    segNums[VM_HEAP] = segPtrArray[VM_HEAP]->segNum;
-	    RPTPMs[VM_HEAP] = segNums[VM_HEAP] / 4 + rootPTPageNum;
+	    RPTPMs[VM_HEAP] = segPtrArray[VM_HEAP]->machPtr->RPTPM;
 	    segNums[VM_STACK] = segPtrArray[VM_STACK]->segNum;
-	    RPTPMs[VM_STACK] = segNums[VM_STACK] / 4 + rootPTPageNum;
+	    RPTPMs[VM_STACK] = segPtrArray[VM_STACK]->machPtr->RPTPM;
 	}
     }
     VmMachSetSegRegisters(segNums, RPTPMs);
@@ -1158,10 +1165,10 @@ VmMach_PageValidate(virtAddrPtr, pte)
     page = virtAddrPtr->page & ~(VMMACH_SEG_REG_MASK >> VMMACH_PAGE_SHIFT);
     ptePtr = GetPageTablePtr(segDataPtr, page);
     *ptePtr = VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT |
-	     VMMACH_REFERENCED_BIT | VMMACH_MODIFIED_BIT | 
               SetPageFrame(VirtToPhysPage(Vm_GetPageFrame(pte)));
     if (virtAddrPtr->segPtr == vm_SysSegPtr) {
-	*ptePtr |= VMMACH_KRW_UNA_PROT;
+	*ptePtr |= VMMACH_KRW_UNA_PROT | VMMACH_REFERENCED_BIT | 
+		   VMMACH_MODIFIED_BIT;
     } else {
 	if (pte & (VM_COW_BIT | VM_READ_ONLY_PROT)) {
 	    *ptePtr |= VMMACH_KRW_URO_PROT;
@@ -1204,12 +1211,70 @@ VmMach_PageInvalidate(virtAddrPtr, virtPage, segDeletion)
     segDataPtr = virtAddrPtr->segPtr->machPtr;
     page = virtAddrPtr->page & ~(VMMACH_SEG_REG_MASK >> VMMACH_PAGE_SHIFT);
     ptePtr = GetPageTablePtr(segDataPtr, page);
-    *ptePtr = 0;
     if (!segDeletion) {
 	VmMachFlushPage(virtAddrPtr->segPtr, page);
     }
+    *ptePtr = 0;
 
     UNLOCK_MONITOR;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmMach_PinUserPage --
+ *
+ *	Force a user page to be resident in memory and have its reference
+ *	and modify bits set.  Our caller  has already assured that
+ *	the page is locked in memory such that its reference and modify
+ *	bits won't get cleared once we set them.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+VmMach_PinUserPage(virtAddrPtr)
+    Vm_VirtAddr	*virtAddrPtr;
+{
+    int	*intPtr;
+    int	i;
+
+    /*
+     * Read out the value and write it back to ensure that the reference
+     * and modify bits are set and we don't accidently change the value.
+     */
+    intPtr = (int *) (virtAddrPtr->page << VMMACH_PAGE_SHIFT);
+    i = *intPtr;
+    *intPtr = i;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmMach_UnpinUserPage --
+ *
+ *	Allow a page that was pinned to be unpinned.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/* ARGSUSED */
+void
+VmMach_UnpinUserPage(virtAddrPtr)
+    Vm_VirtAddr	*virtAddrPtr;
+{
 }
 
 static	int	nextDevPage = VMMACH_KERN_DEVICE_SPACE / VMMACH_PAGE_SIZE;
@@ -1261,7 +1326,8 @@ VmMach_MapInDevice(devPhysAddr, numBytes)
 	 firstPTPage++, ptePtr++, ptAddr += VMMACH_PTES_IN_PAGE) {
 	if (!(*ptePtr & VMMACH_RESIDENT_BIT)) {
 	    *ptePtr = VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | 
-		      VMMACH_KRW_URO_PROT | 
+		      VMMACH_KRW_URO_PROT | VMMACH_REFERENCED_BIT |
+		      VMMACH_MODIFIED_BIT |
 		      SetPageFrame(VirtToPhysPage(Vm_KernPageAllocate()));
 	    Byte_Zero(VMMACH_PAGE_SIZE, (Address)ptAddr);
 	}
