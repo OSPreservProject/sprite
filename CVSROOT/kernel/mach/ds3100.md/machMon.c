@@ -42,6 +42,30 @@ Mach_MonFuncs mach_MonFuncs = {
     (int (*)()) MACH_MON_GETS,
     (int (*)()) MACH_MON_PUTS,
     (int (*)()) MACH_MON_PRINTF,
+    (int (*)()) MACH_MON_MEM1,
+    (int (*)()) MACH_MON_MEM2,
+    (int (*)()) MACH_MON_SAVEREGS,
+    (int (*)()) MACH_MON_LOADREGS,
+    (int (*)()) MACH_MON_JUMPS8,
+    (int (*)()) MACH_MON_GETENV2,
+    (int (*)()) MACH_MON_SETENV2,
+    (int (*)()) MACH_MON_ATONUM,
+    (int (*)()) MACH_MON_STRCMP,
+    (int (*)()) MACH_MON_STRLEN,
+    (int (*)()) MACH_MON_STRCPY,
+    (int (*)()) MACH_MON_STRCAT,
+    (int (*)()) MACH_MON_GETCMD,
+    (int (*)()) MACH_MON_GETNUMS,
+    (int (*)()) MACH_MON_ARGPARSE,
+    (int (*)()) MACH_MON_HELP,
+    (int (*)()) MACH_MON_DUMP,
+    (int (*)()) MACH_MON_SETENV,
+    (int (*)()) MACH_MON_UNSETENV,
+    (int (*)()) MACH_MON_PRINTENV,
+    (int (*)()) MACH_MON_JUMP2S8,
+    (int (*)()) MACH_MON_ENABLE,
+    (int (*)()) MACH_MON_DISABLE,
+    (int (*)()) MACH_MON_ZEROB,
 };
 
 
@@ -108,7 +132,8 @@ void
 Mach_MonReboot(rebootString)
     char	*rebootString;
 {
-    mach_MonFuncs.reboot(rebootString);
+    mach_MonFuncs.setenv2("bootpath",rebootString);
+    *MACH_USE_NON_VOLATILE |= MACH_NON_VOLATILE_FLAG;
+    mach_MonFuncs.autoboot();
     panic("Mach_MonReboot: Reboot failed (I'm still alive aren't I?)\n");
 }
-
