@@ -144,10 +144,11 @@ typedef struct Net_Interface {
     ReturnStatus	(*init) _ARGS_((struct Net_Interface *interPtr));
 
 			/* Output a packet. */
-    void 		(*output) _ARGS_((struct Net_Interface *interPtr,
+    ReturnStatus	(*output) _ARGS_((struct Net_Interface *interPtr,
 				Address packetHeader, 
 				Net_ScatterGather *scatterGatherPtr,
-				int scatterGatherLength));
+				int scatterGatherLength, Boolean rpc,
+				ReturnStatus *statusPtr));
 
 			/* Handle an interrupt. */
     void 		(*intr) _ARGS_((struct Net_Interface *interPtr, 

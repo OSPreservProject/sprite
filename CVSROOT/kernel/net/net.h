@@ -49,10 +49,11 @@ extern void Net_Input _ARGS_((Net_Interface *interPtr, Address packetPtr,
 extern ReturnStatus Net_Output _ARGS_((int spriteID, 
 			Net_ScatterGather *gatherPtr, int gatherLength, 
 			Sync_Semaphore *mutexPtr, Net_Route *routePtr));
-extern void Net_RawOutput _ARGS_((Net_Interface *interPtr, Address headerPtr, 
+extern ReturnStatus Net_RawOutput _ARGS_((Net_Interface *interPtr, 
+			Address headerPtr, 
 			Net_ScatterGather *gatherPtr, int gatherLength));
 extern void Net_RecvPoll _ARGS_((Net_Interface *interPtr));
-extern void Net_RawOutputSync _ARGS_((Net_Interface *interPtr, 
+extern ReturnStatus Net_RawOutputSync _ARGS_((Net_Interface *interPtr, 
 			Address headerPtr, Net_ScatterGather *gatherPtr, 
 			int gatherLength));
 extern int Net_Intr _ARGS_((Net_Interface *interPtr));

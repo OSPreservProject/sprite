@@ -237,7 +237,6 @@ static void
 AllocateXmitMem(statePtr)
     NetLEState		*statePtr; 	/* State of the interface. */
 {
-    printf("In AllocateXmitMem\n");
     /*
      * Allocate a transmission buffer descriptor.  
      * The descriptor must start on an 8-byte boundary.  
@@ -250,7 +249,6 @@ AllocateXmitMem(statePtr)
     statePtr->xmitBufPtr = NetLEMemAlloc(NET_ETHER_MAX_BYTES, TRUE);
 
     statePtr->xmitMemAllocated = TRUE;
-    printf("Leaving AllocateXmitMem\n");
 }
 
 
@@ -276,7 +274,6 @@ NetLEXmitInit(statePtr)
 {
     Address	descPtr;
 
-    printf("In NetLEXmitInit\n");
     if (!statePtr->xmitMemAllocated) {
 	AllocateXmitMem(statePtr);
     }
@@ -442,14 +439,17 @@ NetLEXmitDone(statePtr)
  *----------------------------------------------------------------------
  */
 
-void
-NetLEOutput(interPtr, etherHdrPtr, scatterGatherPtr, scatterGatherLength)
+ReturnStatus
+NetLEOutput(interPtr, etherHdrPtr, scatterGatherPtr, scatterGatherLength, rpc,
+	statusPtr)
     Net_Interface	*interPtr;	/* The network interface. */
     Net_EtherHdr	*etherHdrPtr;	/* Ethernet header for the packet. */
     register	Net_ScatterGather	*scatterGatherPtr; /* Data portion of 
 							    * the packet. */
     int			scatterGatherLength;	/* Length of data portion gather
 						 * array. */
+    Boolean		rpc;		/* Is this an rpc packet? */
+    ReturnStatus	*statusPtr;	/* Status from sending packet. */
 {
     register	NetXmitElement		*xmitPtr;
     ReturnStatus			status;
@@ -487,9 +487,12 @@ NetLEOutput(interPtr, etherHdrPtr, scatterGatherPtr, scatterGatherLength)
         }
 
         scatterGatherPtr->done = TRUE;
+	if (statusPtr != (ReturnStatus *) NIL) {
+	    *statusPtr = SUCCESS;
+	}
 
 	ENABLE_INTR();
-	return;
+	return SUCCESS;
     }
 
     /*
@@ -503,8 +506,11 @@ NetLEOutput(interPtr, etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 	if (status != SUCCESS) {
 		NetLERestart(statePtr);
 	}
+	if (statusPtr != (ReturnStatus *) NIL) {
+	    *statusPtr = status;
+	}
 	ENABLE_INTR();
-	return;
+	return status;
     }
 
     /*
@@ -516,7 +522,7 @@ NetLEOutput(interPtr, etherHdrPtr, scatterGatherPtr, scatterGatherLength)
     if (List_IsEmpty(statePtr->xmitFreeList)) {
         scatterGatherPtr->done = TRUE;
 	ENABLE_INTR();
-	return;
+	return FAILURE;
     }
 
     xmitPtr = 
@@ -536,7 +542,11 @@ NetLEOutput(interPtr, etherHdrPtr, scatterGatherPtr, scatterGatherLength)
      */
     List_Insert((List_Links *) xmitPtr, LIST_ATREAR(statePtr->xmitList)); 
 
+    if (statusPtr != (ReturnStatus *) NIL) {
+	*statusPtr = SUCCESS;
+    }
     ENABLE_INTR();
+    return SUCCESS;
 }
 
 

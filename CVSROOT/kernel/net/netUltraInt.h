@@ -654,9 +654,10 @@ extern ReturnStatus NetUltraInit _ARGS_((Net_Interface *interPtr));
 extern void NetUltraIntr _ARGS_((Net_Interface *interPtr, Boolean polling));
 extern ReturnStatus NetUltraSendCmd _ARGS_((NetUltraState *statePtr, int ok, 
 			int size, Address cmdPtr));
-extern void NetUltraOutput _ARGS_((Net_Interface *interPtr, 
+extern ReturnStatus NetUltraOutput _ARGS_((Net_Interface *interPtr, 
 			Address hdrPr, Net_ScatterGather *scatterGatherPtr, 
-			int scatterGatherLength));
+			int scatterGatherLength, Boolean rpc, 
+			ReturnStatus *statusPtr));
 extern ReturnStatus NetUltraIOControl _ARGS_((Net_Interface *interPtr, 
 			Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
 extern void Net_UltraReset _ARGS_((Net_Interface *interPtr));

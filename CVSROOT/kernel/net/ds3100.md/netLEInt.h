@@ -319,10 +319,11 @@ extern	ReturnStatus	NetLEGetStats _ARGS_((Net_Interface *interPtr,
 
 extern	void		NetLEXmitInit _ARGS_((NetLEState *statePtr));
 extern	ReturnStatus	NetLEXmitDone _ARGS_((NetLEState *statePtr));
-extern	void		NetLEOutput _ARGS_((Net_Interface *interPtr,
+extern	ReturnStatus	NetLEOutput _ARGS_((Net_Interface *interPtr,
 				Net_EtherHdr *etherHdrPtr, 
 				Net_ScatterGather *scatterGatherPtr,
-				int scatterGatherLength));
+				int scatterGatherLength, Boolean rpc,
+				ReturnStatus *statusPtr));
 extern	void		NetLEXmitDrop _ARGS_((NetLEState *statePtr));
 extern	void	NetLEXmitRestart _ARGS_((NetLEState *statePtr));
 

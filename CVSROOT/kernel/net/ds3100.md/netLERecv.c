@@ -51,7 +51,6 @@ AllocateRecvMem(statePtr)
 {
     int			i;
 
-    printf("In AllocateRecvMem\n");
     /*
      * Allocate the ring of receive buffer descriptors.  The ring must start
      * on 8-byte boundary.  
@@ -77,7 +76,6 @@ AllocateRecvMem(statePtr)
      * after the ethernet header.
      */
     statePtr->recvBufPtr += 2;
-    printf("Leaving AllocateRecvMem\n");
 }
 
 
