@@ -1528,6 +1528,9 @@ UpgradeFragment(ofsPtr, handlePtr, indexInfoPtr, curLastBlock, newLastFrag,
     Boolean			 found;
     ReturnStatus		 status = SUCCESS;
     int				 flags;
+#ifdef SOSP91
+    Boolean		isForeign = FALSE;	/* Due to migration? */
+#endif SOSP91
 
     descPtr = handlePtr->descPtr;
     blockAddr = *(indexInfoPtr->blockAddrPtr);
@@ -1542,6 +1545,15 @@ UpgradeFragment(ofsPtr, handlePtr, indexInfoPtr, curLastBlock, newLastFrag,
 	 */
 	goto exit;
     }
+#ifdef SOSP91
+    if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
+	if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
+		(proc_RunningProcesses[0]->genFlags &
+		(PROC_FOREIGN | PROC_MIGRATING))) {
+	    isForeign = TRUE;
+	}
+    }
+#endif SOSP91
 
     curFragBlock = (unsigned int) blockAddr / FS_FRAGMENTS_PER_BLOCK;
     curFragOffset = blockAddr & FRAG_OFFSET_MASK;
@@ -1597,6 +1609,11 @@ UpgradeFragment(ofsPtr, handlePtr, indexInfoPtr, curLastBlock, newLastFrag,
 	goto exit;
     }
     fs_Stats.blockCache.fragAccesses++;
+#ifdef SOSP91
+    if (isForeign) {
+	fs_SospMigStats.blockCache.fragAccesses++;
+    }
+#endif SOSP91
     if (!found) {
 	status = OfsDeviceBlockIO(ofsPtr, FS_READ, 
 		   blockAddr +
@@ -1617,8 +1634,18 @@ UpgradeFragment(ofsPtr, handlePtr, indexInfoPtr, curLastBlock, newLastFrag,
 	    FS_BLOCK_SIZE - (curLastFrag + 1) * FS_FRAGMENT_SIZE);
     } else {
 	fs_Stats.blockCache.fragHits++;
+#ifdef SOSP91
+	if (isForeign) {
+	    fs_SospMigStats.blockCache.fragHits++;
+	}
+#endif SOSP91
 	if (fragCacheBlockPtr->flags & FSCACHE_READ_AHEAD_BLOCK) {
 	    fs_Stats.blockCache.readAheadHits++;
+#ifdef SOSP91
+	if (isForeign) {
+	    fs_SospMigStats.blockCache.readAheadHits++;
+	}
+#endif SOSP91
 	}
     }
     /*
@@ -2039,6 +2066,11 @@ Ofs_ReallocBlock(data, callInfoPtr)
 	     * indirect block that we want.
 	     */
 	    fs_Stats.blockCache.indBlockAccesses++;
+#ifdef SOSP91
+	    if (isForeign) {
+		fs_SospMigStats.blockCache.indBlockAccesses++;
+	    }
+#endif SOSP91
 	    Fscache_FetchBlock(&handlePtr->cacheInfo, -2,
 			FSCACHE_IND_BLOCK, &blockPtr, &found);
 	    if (!found) {
@@ -2056,6 +2088,11 @@ Ofs_ReallocBlock(data, callInfoPtr)
 		}
 	    } else {
 		fs_Stats.blockCache.indBlockHits++;
+#ifdef SOSP91
+	    if (isForeign) {
+		fs_SospMigStats.blockCache.indBlockHits++;
+	    }
+#endif SOSP91
 	    }
 	    blockAddrPtr = (int *)blockPtr->blockAddr + (-virtBlockNum - 3);
 	}

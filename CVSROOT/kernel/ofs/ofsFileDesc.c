@@ -377,13 +377,30 @@ Ofs_FileDescFetch(domainPtr, fileNumber, fileDescPtr)
     int 		    offset;
     Fscache_Block	    *blockPtr;
     Boolean		    found;
+#ifdef SOSP91
+    Boolean		isForeign = FALSE;	/* Due to migration? */
+#endif SOSP91
 
     headerPtr = ofsPtr->headerPtr;
     blockNum = headerPtr->fileDescOffset + fileNumber / FSDM_FILE_DESC_PER_BLOCK;
     offset = (fileNumber & (FSDM_FILE_DESC_PER_BLOCK - 1)) *
 		FSDM_MAX_FILE_DESC_SIZE;
 
+#ifdef SOSP91
+    if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
+	if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
+		(proc_RunningProcesses[0]->genFlags &
+		(PROC_FOREIGN | PROC_MIGRATING))) {
+	    isForeign = TRUE;
+	}
+    }
+#endif SOSP91
     fs_Stats.blockCache.fileDescReads++;
+#ifdef SOSP91
+    if (isForeign) {
+	fs_SospMigStats.blockCache.fileDescReads++;
+    }
+#endif SOSP91
     Fscache_FetchBlock(&ofsPtr->physHandle.cacheInfo, blockNum, 
 		      FSCACHE_DESC_BLOCK, &blockPtr, &found);
     if (!found) {
@@ -399,6 +416,11 @@ Ofs_FileDescFetch(domainPtr, fileNumber, fileDescPtr)
 	}
     } else {
 	fs_Stats.blockCache.fileDescReadHits++;
+#ifdef SOSP91
+	if (isForeign) {
+	    fs_SospMigStats.blockCache.fileDescReadHits++;
+	}
+#endif SOSP91
     }
     bcopy(blockPtr->blockAddr + offset, (Address) fileDescPtr,
 	sizeof(Fsdm_FileDescriptor));
@@ -456,6 +478,11 @@ Ofs_FileDescStore(domainPtr, handlePtr, fileNumber, fileDescPtr, forceOut)
 		FSDM_MAX_FILE_DESC_SIZE;
 
     fs_Stats.blockCache.fileDescWrites++;
+#ifdef SOSP91
+    if (isForeign) {
+	fs_SospMigStats.blockCache.fileDescWrites++;
+    }
+#endif SOSP91
     Fscache_FetchBlock(&ofsPtr->physHandle.cacheInfo, blockNum, 
 		      (int)(FSCACHE_IO_IN_PROGRESS | FSCACHE_DESC_BLOCK),
 		      &blockPtr, &found);
@@ -473,6 +500,11 @@ Ofs_FileDescStore(domainPtr, handlePtr, fileNumber, fileDescPtr, forceOut)
 	}
     } else {
 	fs_Stats.blockCache.fileDescWriteHits++;
+#ifdef SOSP91
+	if (isForeign) {
+	    fs_SospMigStats.blockCache.fileDescWriteHits++;
+	}
+#endif SOSP91
     }
     fileDescPtr->flags &= ~FSDM_FD_DIRTY;
     bcopy((Address) fileDescPtr, blockPtr->blockAddr + offset, sizeof(Fsdm_FileDescriptor));
