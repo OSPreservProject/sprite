@@ -329,7 +329,8 @@ ReturnStatus
 FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	dataSizePtr, clientDataPtr)
      register FsLocalFileIOHandle *handlePtr;	/* A handle from FsLocalLookup.
-					 * Should be LOCKED upon entry. */
+					 * Should be LOCKED upon entry,
+					 * unlocked upon exit. */
      int		clientID;	/* Host ID of client doing the open */
      register int	useFlags;	/* FS_MASTER, plus
 					 * FS_READ | FS_WRITE | FS_EXECUTE*/
@@ -440,6 +441,7 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	}
     }
     FsHandleRelease(ctrlHandlePtr, TRUE);
+    FsHandleUnlock(handlePtr);
     return(status);
 }
 

@@ -193,19 +193,14 @@ Fs_RpcPrefix(srvToken, clientID, command, storagePtr)
 	    return(RPC_NO_REPLY);
 	}
 	/*
-	 * Use the server-open routine to set up the streamData.
+	 * Use the server-open routine to set up & allocate streamData.
 	 */
 	handlePtr = (FsLocalFileIOHandle *)hdrPtr;
 	FsHandleLock(handlePtr);
-	/*
-	 * streamData is allocated in open routine, so I can't just pass a
-	 * pointer to the area of the reply param.
-	 */
 	openReplyParamPtr = Mem_New(FsOpenReplyParam);
 	status = (*fsOpenOpTable[handlePtr->descPtr->fileType].srvOpen)
 		    (handlePtr, clientID, 0, &(openReplyParamPtr->fileID),
 		    (FsFileID *)NIL, &dataSize, &streamData);
-	FsHandleUnlock(handlePtr);
 
 	if (status == SUCCESS) {
 	    /* copy open data */

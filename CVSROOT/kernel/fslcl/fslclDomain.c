@@ -171,7 +171,7 @@ FsLocalOpen(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
 	if (openArgsPtr->clientID != rpc_SpriteID) {
 	    openResultsPtr->nameID.type = FS_RMT_FILE_STREAM;
 	}
-	FsHandleRelease(handlePtr, TRUE);
+	FsHandleRelease(handlePtr, FALSE);
 	FsDomainRelease(handlePtr->hdr.fileID.major);
     }
     return(status);
@@ -241,7 +241,7 @@ FsLocalGetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
 	    relativeName, handlePtr->hdr.fileID.minor,
 	    handlePtr->hdr.fileID.major, status);
     }
-    FsHandleRelease(handlePtr, TRUE);
+    FsHandleRelease(handlePtr, FALSE);
     FsDomainRelease(handlePtr->hdr.fileID.major);
     return(status);
 }
@@ -298,11 +298,11 @@ FsLocalSetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
     FsHandleUnlock(handlePtr);
     status = FsLocalSetAttr(&handlePtr->hdr.fileID, &setAttrArgsPtr->attr,
 			    &openArgsPtr->id, setAttrArgsPtr->flags);
-    FsHandleLock(handlePtr);
     /*
      * Get the I/O handle so our client can contact the I/O server.
      */
     if (status == SUCCESS) {
+	FsHandleLock(handlePtr);
 	status = (*fsOpenOpTable[handlePtr->descPtr->fileType].srvOpen)
 		(handlePtr, openArgsPtr->clientID, 0, fileIDPtr,
 		 (FsFileID *)NIL, (int *)NIL, (ClientData *)NIL);
@@ -313,7 +313,7 @@ FsLocalSetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
 		handlePtr->hdr.fileID.major, status);
 	}
     }
-    FsHandleRelease(handlePtr, TRUE);
+    FsHandleRelease(handlePtr, FALSE);
     FsDomainRelease(handlePtr->hdr.fileID.major);
     return(status);
 }
