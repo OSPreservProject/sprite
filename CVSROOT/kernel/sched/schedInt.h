@@ -35,6 +35,8 @@ typedef enum {
 	SCHED_PROCESSOR_IDLE 
 } Sched_ProcessorStatus;
 
+extern	Sched_ProcessorStatus sched_ProcessorStatus[MACH_MAX_NUM_PROCESSORS];
+
 /*
  * The desired quantum length, in microseconds.  The real quantum length
  * might be different since it has to be a multiple of the timer interrupt

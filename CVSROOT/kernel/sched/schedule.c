@@ -22,6 +22,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "dbg.h"
 #include "mach.h"
 
+static int	foundOnDeck[MACH_MAX_NUM_PROCESSORS];
+static int	foundInQueue[MACH_MAX_NUM_PROCESSORS];
+static int	missedStack[MACH_MAX_NUM_PROCESSORS];
+
 /*
  *  The basic philosophy is that processes that have not executed
  *  as much as other processes deserve to be run first.  Thus we
@@ -104,6 +108,9 @@ Sched_ProcessorStatus	sched_ProcessorStatus[MACH_MAX_NUM_PROCESSORS];
 
 int	sched_Quantum = SCHED_DESIRED_QUANTUM / TIMER_CALLBACK_INTERVAL_APPROX;
 
+
+Sched_OnDeck	sched_OnDeck[MACH_MAX_NUM_PROCESSORS];
+
 /*
  * Forward Declarations.
  */
@@ -135,8 +142,9 @@ Sched_Init()
     int	cpu;
 
     sched_ProcessorStatus[0] = SCHED_PROCESSOR_ACTIVE;
-    for(cpu = 1; cpu < MACH_MAX_NUM_PROCESSORS; cpu++) {
+    for(cpu = 0; cpu < MACH_MAX_NUM_PROCESSORS; cpu++) {
 	sched_ProcessorStatus[cpu] = SCHED_PROCESSOR_NOT_STARTED;
+	sched_OnDeck[cpu].procPtr = (Proc_ControlBlock *) NIL;
     }
     bzero((Address) &(sched_Instrument),sizeof(sched_Instrument));
 
@@ -333,6 +341,7 @@ Sched_ContextSwitchInt(state)
     register Proc_ControlBlock	*curProcPtr;  	/* PCB for currently runnning 
 						 * process. */
     register Proc_ControlBlock	*newProcPtr;  	/* PCB for new process. */
+    Proc_ControlBlock		*tnewProcPtr;
     register int cpu;
 
     cpu = Mach_GetProcessorNumber();
@@ -359,19 +368,23 @@ Sched_ContextSwitchInt(state)
 	    return;
 	}
 
-	newProcPtr = Sched_InsertInQueue(curProcPtr, TRUE);
-	if (newProcPtr == curProcPtr) {
+	curProcPtr->state = PROC_READY;
+	Sched_InsertInQueue(curProcPtr, &tnewProcPtr);
+	newProcPtr = tnewProcPtr;
+	if (newProcPtr == (Proc_ControlBlock *) NIL) {
+	    newProcPtr = IdleLoop();
+	} else if (newProcPtr == curProcPtr) {
 	    curProcPtr->schedQuantumTicks = sched_Quantum;
+	    curProcPtr->state = PROC_RUNNING;
 	    return;
 	} 
-	curProcPtr->state = PROC_READY;
 	/*
  	 * Don't run this process if another processor is already using
 	 * its stack.
 	 */
 	if (newProcPtr->schedFlags & SCHED_STACK_IN_USE) {
-		(void) Sched_InsertInQueue(newProcPtr, FALSE);
-		newProcPtr = IdleLoop();
+	    Sched_InsertInQueue(newProcPtr, (Proc_ControlBlock **) NIL);
+	    newProcPtr = IdleLoop();
 	} 
     } else {
 	if (state == PROC_WAITING) {
@@ -517,14 +530,38 @@ IdleLoop()
     register List_Links		*queuePtr;
     register Boolean		foundOne;
     Proc_ControlBlock		*lastProcPtr = Proc_GetCurrentProc();
+    Boolean			onReadyQueue;
 #ifdef spur 
 	/* Turn off perf counters. */
      int	modeReg = Dev_CCIdleCounters(FALSE,0);
 #endif
 
-    Sync_SemRegister(sched_MutexPtr);
     cpu = Mach_GetProcessorNumber();
     queuePtr = schedReadyQueueHdrPtr;
+    foundOne = FALSE;
+    procPtr = (Proc_ControlBlock *) List_First(queuePtr);
+    while (!List_IsAtEnd(queuePtr,(List_Links *) procPtr)) {
+	if (!(procPtr->schedFlags & SCHED_STACK_IN_USE) ||
+	     (procPtr->processor == cpu)) {
+	    foundOne = TRUE;
+	    break; 
+	}
+	if (procPtr->schedFlags & SCHED_STACK_IN_USE) {
+	    missedStack[cpu]++;
+	}
+	procPtr = (Proc_ControlBlock *)List_Next((List_Links *)procPtr);
+    }
+    if (foundOne) {
+	/*
+	 * We found a READY processor for us, break out of the
+	 * idle loop.
+	 */
+	onReadyQueue = TRUE;
+	foundInQueue[cpu]++;
+	Mach_InstCountOff(0);
+	goto exit;
+    }
+    Proc_SetCurrentProc((Proc_ControlBlock *) NIL);
 #ifdef spur
     Mach_InstCountEnd(0);
 #endif
@@ -540,11 +577,11 @@ IdleLoop()
 	panic("Interrupt level at %d going into idle loop.\n", i);
     }
     while (1) {
-	Proc_SetCurrentProc((Proc_ControlBlock *) NIL);
 	/*
 	 * Wait for a process to become runnable.  
 	 */
-	if ((List_IsEmpty(queuePtr) == FALSE) &&
+	if (((List_IsEmpty(queuePtr) == FALSE) ||
+	     (sched_OnDeck[cpu].procPtr != (Proc_ControlBlock *) NIL)) &&
 	    ((sched_ProcessorStatus[cpu] != SCHED_PROCESSOR_IDLE) ||
 	     (lastProcPtr->state == PROC_READY))) {
 	    /*
@@ -555,6 +592,24 @@ IdleLoop()
 #ifdef spur
 	    Mach_InstCountStart(2);
 #endif
+	    /*
+	     * Look and see if there is anything for us in the staging
+	     * area.
+	     */
+	    procPtr = sched_OnDeck[cpu].procPtr;
+	    if (procPtr != (Proc_ControlBlock *) NIL) {
+		if ((procPtr->schedFlags & SCHED_STACK_IN_USE) &&
+		    (procPtr->processor != cpu)) {
+		    panic("Process with stack in use in the staging area.");
+		}
+		sched_OnDeck[cpu].procPtr = (Proc_ControlBlock *) NIL;
+		onReadyQueue = FALSE;
+		foundOnDeck[cpu]++;
+#ifdef spur
+		Mach_InstCountOff(2);
+#endif
+		break;
+	    }
 	    /*
 	     * Make sure queue is not empty. If there is a ready process
 	     * take a peek at it to insure that we can execute it. The
@@ -569,6 +624,9 @@ IdleLoop()
 		    foundOne = TRUE;
 		    break; 
 		}
+		if (procPtr->schedFlags & SCHED_STACK_IN_USE) {
+		    missedStack[cpu]++;
+		}
 	        procPtr = (Proc_ControlBlock *)List_Next((List_Links *)procPtr);
 	    }
 	    if (foundOne) {
@@ -576,6 +634,8 @@ IdleLoop()
  		 * We found a READY processor for us, break out of the
 		 * idle loop.
 		 */
+		 onReadyQueue = TRUE;
+		 foundInQueue[cpu]++;
 #ifdef spur
 		Mach_InstCountOff(2);
 #endif
@@ -598,6 +658,7 @@ IdleLoop()
 	    sched_Instrument.processor[cpu].idleTicksLow++;
 	}
     }
+exit:
 #ifdef spur
     Mach_InstCountStart(1);
 #endif
@@ -616,14 +677,16 @@ IdleLoop()
 	DBG_CALL;
 	MASTER_LOCK(sched_MutexPtr);
     }
-    ((List_Links *)procPtr)->prevPtr->nextPtr =
+    if (onReadyQueue == TRUE) {
+	((List_Links *)procPtr)->prevPtr->nextPtr =
 					    ((List_Links *)procPtr)->nextPtr;
-    ((List_Links *)procPtr)->nextPtr->prevPtr =
+	((List_Links *)procPtr)->nextPtr->prevPtr =
 					    ((List_Links *)procPtr)->prevPtr;
-/*
-    List_Remove((List_Links *)procPtr);
-*/
-    sched_Instrument.numReadyProcesses -= 1;
+    /*
+	List_Remove((List_Links *)procPtr);
+    */
+	sched_Instrument.numReadyProcesses -= 1;
+    }
     return(procPtr);
 }
 
@@ -867,7 +930,7 @@ Sched_MakeReady(procPtr)
 {
     MASTER_LOCK(sched_MutexPtr);
     procPtr->state = PROC_READY;
-    Sched_MoveInQueue(procPtr);
+    Sched_InsertInQueue(procPtr, (Proc_ControlBlock **) NIL);
     MASTER_UNLOCK(sched_MutexPtr);
 }
 

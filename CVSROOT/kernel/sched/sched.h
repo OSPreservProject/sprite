@@ -62,7 +62,7 @@ typedef struct Sched_Instrument {
 	 * Number of switches that cause a different process to run.
 	 */
 	int numFullCS;			
-    
+
 	/* 
 	 * Amount of time w/o running process.  
 	 */
@@ -102,6 +102,16 @@ typedef struct Sched_Instrument {
     Time noUserInput;			/* Time since last level-6 interrupt */
 } Sched_Instrument;
 
+
+typedef struct {
+    Proc_ControlBlock		*procPtr;
+#if 	(MACH_MAX_NUM_PROCESSORS != 1) 
+   Mach_CacheBlockSizeType	pad;
+#endif
+} Sched_OnDeck;
+
+extern Sched_OnDeck	sched_OnDeck[MACH_MAX_NUM_PROCESSORS];
+
 /*
  * External declarations:
  */
@@ -111,6 +121,7 @@ extern Sync_Semaphore sched_Mutex;	/* Mutual exclusion in scheduler */
 extern Sync_Semaphore *sched_MutexPtr;
 extern Sched_Instrument sched_Instrument;   /* Counters for instrumentation. */
 extern int sched_Quantum;		/* Timer interrupts per quantum. */
+extern Sched_OnDeck	sched_OnDeck[MACH_MAX_NUM_PROCESSORS];
 
 extern void			Sched_MakeReady();
 extern void			Sched_StartUserProc();
@@ -123,8 +134,7 @@ extern void 			Sched_Init();
 extern void 			Sched_TimeTicks();
 extern void 			Sched_LockAndSwitch();
 extern void 			Sched_MakeReady();
-extern void 			Sched_MoveInQueue();
-extern Proc_ControlBlock	*Sched_InsertInQueue();
+extern void 			Sched_InsertInQueue();
 extern void 			Sched_PrintStat();
 extern void 			Sched_StartProcess();
 extern void			Sched_SetClearUsageFlag();
