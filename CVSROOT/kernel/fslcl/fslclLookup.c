@@ -207,8 +207,7 @@ FsLocalLookup(prefixHdrPtr, relativeName, useFlags, type, clientID, idPtr,
 		     * when opening "/initSprite", which is a link to 
 		     * "/initSprite.$MACHINE", when running on the root server.
 		     */
-		    extern char *etc_MachineType;	/* XXX */
-		    machType = etc_MachineType;
+		    machType = mach_MachineType;
 		} else {
 		    machType = (char *)Net_SpriteIDToMachType(clientID);
 		    if (machType == (char *)NIL) {
@@ -220,12 +219,20 @@ FsLocalLookup(prefixHdrPtr, relativeName, useFlags, type, clientID, idPtr,
 		}
 		while (*machType != '\0') {
 		    *compPtr++ = *machType++;
+		    if (compPtr - component >= FS_MAX_NAME_LENGTH) {
+			status = FS_FILE_NOT_FOUND;
+			goto endScan;
+		    }
 		}
 		curCharPtr += SPECIAL_LEN;
 #undef SPECIAL
 #undef SPECIAL_LEN
 	    } else {
 		*compPtr++ = *curCharPtr++;
+	    }
+	    if (compPtr - component >= FS_MAX_NAME_LENGTH) {
+		status = FS_FILE_NOT_FOUND;
+		goto endScan;
 	    }
 	}
 	*compPtr = '\0';
@@ -377,6 +384,7 @@ FsLocalLookup(prefixHdrPtr, relativeName, useFlags, type, clientID, idPtr,
 	    }
 	}
     }
+endScan:
     if (useFlags & FS_TRACE_FLAG) {
 	FS_TRACE_NAME(FS_TRACE_LOOKUP_DONE, relativeName);
     }
