@@ -255,42 +255,10 @@ SigReturnAddr:
 	Nop
 
 /*
- * Jump tables to return the operands from an instruction.  Also here
+ * Jump table to return the operands from an instruction.  Also here
  * because is jumped to through an immediate constant.
  */
-OpRecov1:
-	add_nt		r30,  r0, $0
-	add_nt		r30,  r1, $0
-	add_nt		r30,  r2, $0
-	add_nt		r30,  r3, $0
-	add_nt		r30,  r4, $0
-	add_nt		r30,  r5, $0
-	add_nt		r30,  r6, $0
-	add_nt		r30,  r7, $0
-	add_nt		r30,  r8, $0
-	add_nt		r30,  r9, $0
-	add_nt		r30, r10, $0
-	add_nt		r30, r11, $0
-	add_nt		r30, r12, $0
-	add_nt		r30, r13, $0
-	add_nt		r30, r14, $0
-	add_nt		r30, r15, $0
-	add_nt		r30, r16, $0
-	add_nt		r30, r17, $0
-	add_nt		r30, r18, $0
-	add_nt		r30, r19, $0
-	add_nt		r30, r20, $0
-	add_nt		r30, r21, $0
-	add_nt		r30, r22, $0
-	add_nt		r30, r23, $0
-	add_nt		r30, r24, $0
-	add_nt		r30, r25, $0
-	add_nt		r30, r26, $0
-	add_nt		r30, r27, $0
-	add_nt		r30, r28, $0
-	add_nt		r30, r29, $0
-
-OpRecov2:
+OpRecov:
 	add_nt		r31,  r0, $0
 	add_nt		r31,  r1, $0
 	add_nt		r31,  r2, $0
@@ -321,6 +289,7 @@ OpRecov2:
 	add_nt		r31, r27, $0
 	add_nt		r31, r28, $0
 	add_nt		r31, r29, $0
+	add_nt		r31, r30, $0
 
 /*
  * Jump table to set a register.  r9 contains the value to set.
@@ -564,10 +533,9 @@ refreshWell:
 #ifdef WITH_PREFETCH
 	add_nt		r1, r0, $(MACH_KPSW_PREFETCH_ENA | MACH_KPSW_IBUFFER_ENA | MACH_KPSW_VIRT_DFETCH_ENA | MACH_KPSW_VIRT_IFETCH_ENA | MACH_KPSW_FAULT_TRAP_ENA | MACH_KPSW_ERROR_TRAP_ENA | MACH_KPSW_ALL_TRAPS_ENA)
 #else
-	add_nt		r1, r0, $(MACH_KPSW_IBUFFER_ENA | MACH_KPSW_VIRT_DFETCH_ENA | MACH_KPSW_VIRT_IFETCH_ENA | MACH_KPSW_FAULT_TRAP_ENA | MACH_KPSW_ERROR_TRAP_ENA | MACH_KPSW_ALL_TRAPS_ENA)
-#endif
+add_nt		r1, r0, $(MACH_KPSW_IBUFFER_ENA | MACH_KPSW_VIRT_DFETCH_ENA | MACH_KPSW_VIRT_IFETCH_ENA | MACH_KPSW_FAULT_TRAP_ENA | MACH_KPSW_ERROR_TRAP_ENA | MACH_KPSW_ALL_TRAPS_ENA)
 #else
-	add_nt		r1, r0, $(MACH_KPSW_VIRT_DFETCH_ENA | MACH_KPSW_VIRT_IFETCH_ENA | MACH_KPSW_FAULT_TRAP_ENA | MACH_KPSW_ERROR_TRAP_ENA | MACH_KPSW_ALL_TRAPS_ENA)
+add_nt		r1, r0, $(MACH_KPSW_VIRT_DFETCH_ENA | MACH_KPSW_VIRT_IFETCH_ENA | MACH_KPSW_FAULT_TRAP_ENA | MACH_KPSW_ERROR_TRAP_ENA | MACH_KPSW_ALL_TRAPS_ENA)
 #endif
 	LD_PC_RELATIVE(r2, mainAddr)
 	jump_reg	r2, $0
@@ -666,22 +634,22 @@ winOvFlow_SaveWindow:
 	st_32		r2, r0, $traceStartAddr
 #endif
 
-	st_32		r10, r1, $0
-	st_32		r11, r1, $8
-	st_32		r12, r1, $16
-	st_32		r13, r1, $24
-	st_32		r14, r1, $32
-	st_32		r15, r1, $40
-	st_32		r16, r1, $48
-	st_32		r17, r1, $56
-	st_32		r18, r1, $64
-	st_32		r19, r1, $72
-	st_32		r20, r1, $80
-	st_32		r21, r1, $88
-	st_32		r22, r1, $96
-	st_32		r23, r1, $104
-	st_32		r24, r1, $112
-	st_32		r25, r1, $120
+	st_40		r10, r1, $0
+	st_40		r11, r1, $8
+	st_40		r12, r1, $16
+	st_40		r13, r1, $24
+	st_40		r14, r1, $32
+	st_40		r15, r1, $40
+	st_40		r16, r1, $48
+	st_40		r17, r1, $56
+	st_40		r18, r1, $64
+	st_40		r19, r1, $72
+	st_40		r20, r1, $80
+	st_40		r21, r1, $88
+	st_40		r22, r1, $96
+	st_40		r23, r1, $104
+	st_40		r24, r1, $112
+	st_40		r25, r1, $120
 	rd_special	r1, cwp
 	wr_special	cwp, r1, $-4		/* Move back one window. */
 	Nop
@@ -780,22 +748,22 @@ winUnFlow_RestoreWindow:
 	st_32		r2, r0, $traceStartAddr
 #endif
 
-	ld_32		r10, r1,   $0
-	ld_32		r11, r1,   $8
-	ld_32		r12, r1,  $16
-	ld_32		r13, r1,  $24
-	ld_32		r14, r1,  $32
-	ld_32		r15, r1,  $40
-	ld_32		r16, r1,  $48
-	ld_32		r17, r1,  $56
-	ld_32		r18, r1,  $64
-	ld_32		r19, r1,  $72
-	ld_32		r20, r1,  $80
-	ld_32		r21, r1,  $88
-	ld_32		r22, r1,  $96
-	ld_32		r23, r1, $104
-	ld_32		r24, r1, $112
-	ld_32		r25, r1, $120
+	ld_40		r10, r1,   $0
+	ld_40		r11, r1,   $8
+	ld_40		r12, r1,  $16
+	ld_40		r13, r1,  $24
+	ld_40		r14, r1,  $32
+	ld_40		r15, r1,  $40
+	ld_40		r16, r1,  $48
+	ld_40		r17, r1,  $56
+	ld_40		r18, r1,  $64
+	ld_40		r19, r1,  $72
+	ld_40		r20, r1,  $80
+	ld_40		r21, r1,  $88
+	ld_40		r22, r1,  $96
+	ld_40		r23, r1, $104
+	ld_40		r24, r1, $112
+	ld_40		r25, r1, $120
 	wr_special	swp, r1, $-MACH_SAVED_WINDOW_SIZE
 	rd_special	r1, cwp
 	wr_special	cwp,  r1, $8	/* move back ahead two windows */
@@ -1127,15 +1095,15 @@ interrupt_KernMode:
 	 * Save all globals on the spill stack in case they get
 	 * trashed.
 	 */
-	sub		SPILL_SP, SPILL_SP, $32
-	st_32		r1, SPILL_SP, $0
-	st_32		r2, SPILL_SP, $4
-	st_32		r3, SPILL_SP, $8
-	st_32		r5, SPILL_SP, $12
-	st_32		r6, SPILL_SP, $16
-	st_32		r7, SPILL_SP, $20
-	st_32		r8, SPILL_SP, $24
-	st_32		r9, SPILL_SP, $28
+	sub		SPILL_SP, SPILL_SP, $64
+	st_40		r1, SPILL_SP, $0
+	st_40		r2, SPILL_SP, $8
+	st_40		r3, SPILL_SP, $16
+	st_40		r5, SPILL_SP, $24
+	st_40		r6, SPILL_SP, $32
+	st_40		r7, SPILL_SP, $40
+	st_40		r8, SPILL_SP, $48
+	st_40		r9, SPILL_SP, $56
 	/*
 	 * Enable all traps and take the interrupt.
 	 */
@@ -1145,16 +1113,16 @@ interrupt_KernMode:
 	/*
 	 * Restore the globals and the spill sp.
 	 */
-	ld_32		r1, SPILL_SP, $0
-	ld_32		r2, SPILL_SP, $4
-	ld_32		r3, SPILL_SP, $8
-	ld_32		r5, SPILL_SP, $12
-	ld_32		r6, SPILL_SP, $16
-	ld_32		r7, SPILL_SP, $20
-	ld_32		r8, SPILL_SP, $24
-	ld_32		r9, SPILL_SP, $28
+	ld_40		r1, SPILL_SP, $0
+	ld_40		r2, SPILL_SP, $8
+	ld_40		r3, SPILL_SP, $16
+	ld_40		r5, SPILL_SP, $24
+	ld_40		r6, SPILL_SP, $32
+	ld_40		r7, SPILL_SP, $40
+	ld_40		r8, SPILL_SP, $48
+	ld_40		r9, SPILL_SP, $56
 	nop
-	add_nt		SPILL_SP, SPILL_SP, $32
+	add_nt		SPILL_SP, SPILL_SP, $64
 
 	/*
 	 * Restore insert register and kpsw, enable interrupts and return.
@@ -1204,15 +1172,15 @@ vmFault_KernMode:
 	 * Save all globals on the spill stack in case they get
 	 * trashed.
 	 */
-	sub		SPILL_SP, SPILL_SP, $32
-	st_32		r1, SPILL_SP, $0
-	st_32		r2, SPILL_SP, $4
-	st_32		r3, SPILL_SP, $8
-	st_32		r5, SPILL_SP, $12
-	st_32		r6, SPILL_SP, $16
-	st_32		r7, SPILL_SP, $20
-	st_32		r8, SPILL_SP, $24
-	st_32		r9, SPILL_SP, $28
+	add_nt		SPILL_SP, SPILL_SP, $-64  /* Make sure of alignment */
+	st_40		r1, SPILL_SP, $0
+	st_40		r2, SPILL_SP, $8
+	st_40		r3, SPILL_SP, $16
+	st_40		r5, SPILL_SP, $24
+	st_40		r6, SPILL_SP, $32
+	st_40		r7, SPILL_SP, $40
+	st_40		r8, SPILL_SP, $48
+	st_40		r9, SPILL_SP, $56
 
 vmFault_PC:
 	/*
@@ -1284,15 +1252,15 @@ vmFault_IsData:
 	nop
 	ld_32		VOL_TEMP1, r0, $_machCurStatePtr
 	Nop
-	ld_32		r1, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + 8)
-	ld_32		r2, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + 16)
-	ld_32		r3, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + 24)
-	ld_32		r4, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + 32)
-	ld_32		r5, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + 40)
-	ld_32		r6, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + 48)
-	ld_32		r7, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + 56)
-	ld_32		r8, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + 64)
-	ld_32		r9, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + 72)
+	ld_40		r1, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + 8)
+	ld_40		r2, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + 16)
+	ld_40		r3, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + 24)
+	ld_40		r4, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + 32)
+	ld_40		r5, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + 40)
+	ld_40		r6, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + 48)
+	ld_40		r7, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + 56)
+	ld_40		r8, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + 64)
+	ld_40		r9, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + 72)
 	nop
 
 	rd_special	VOL_TEMP1, pc
@@ -1301,7 +1269,8 @@ vmFault_IsData:
 	Nop
 
 	ld_32		VOL_TEMP1, r0, $_machCurStatePtr
-	Nop
+	add_nt		VOL_TEMP2,OUTPUT_REG3,OUTPUT_REG4
+
 	ld_32		SPILL_SP, VOL_TEMP1, $MACH_KERN_STACK_END_OFFSET
 
 	jump		vmFault_CallDataFault
@@ -1312,19 +1281,20 @@ vmFault_KernParse:
 	 * Restore globals since they could have gotten trashed while we
 	 * called the C routines.
 	 */
-	ld_32		r1, SPILL_SP, $0
-	ld_32		r2, SPILL_SP, $4
-	ld_32		r3, SPILL_SP, $8
-	ld_32		r5, SPILL_SP, $12
-	ld_32		r6, SPILL_SP, $16
-	ld_32		r7, SPILL_SP, $20
-	ld_32		r8, SPILL_SP, $24
-	ld_32		r9, SPILL_SP, $28
+	ld_40		r1, SPILL_SP, $0
+	ld_40		r2, SPILL_SP, $8
+	ld_40		r3, SPILL_SP, $16
+	ld_40		r5, SPILL_SP, $24
+	ld_40		r6, SPILL_SP, $32
+	ld_40		r7, SPILL_SP, $40
+	ld_40		r8, SPILL_SP, $48
+	ld_40		r9, SPILL_SP, $56
 
 	rd_special	VOL_TEMP1, pc
 	add_nt		VOL_TEMP1, VOL_TEMP1, $16
 	jump		ParseInstruction
 	Nop
+	add_nt		VOL_TEMP2,OUTPUT_REG3,OUTPUT_REG4
 
 vmFault_CallDataFault:
 	wr_insert	SAFE_TEMP2
@@ -1350,16 +1320,16 @@ vmFault_Return:
 	/*
 	 * Restore the globals and the spill sp.
 	 */
-	ld_32		r1, SPILL_SP, $0
-	ld_32		r2, SPILL_SP, $4
-	ld_32		r3, SPILL_SP, $8
-	ld_32		r5, SPILL_SP, $12
-	ld_32		r6, SPILL_SP, $16
-	ld_32		r7, SPILL_SP, $20
-	ld_32		r8, SPILL_SP, $24
-	ld_32		r9, SPILL_SP, $28
+	ld_40		r1, SPILL_SP, $0
+	ld_40		r2, SPILL_SP, $8
+	ld_40		r3, SPILL_SP, $16
+	ld_40		r5, SPILL_SP, $24
+	ld_40		r6, SPILL_SP, $32
+	ld_40		r7, SPILL_SP, $40
+	ld_40		r8, SPILL_SP, $48
+	ld_40		r9, SPILL_SP, $56
 	nop
-	add_nt		SPILL_SP, SPILL_SP, $32
+	add_nt		SPILL_SP, SPILL_SP, $64
 1:
 	jump		ReturnTrap
 	Nop
@@ -1377,12 +1347,6 @@ vmFault_Return:
 cmpTrap_Const1:
 	.long	~MACH_KPSW_USE_CUR_PC
 CmpTrap:
-	/*
-   	 * Clear any pending faults caused by the fetch of the instruction
-	 * following the compare trap.
-	 */
-	add_nt		SAFE_TEMP1,r0,$-1
-	WRITE_STATUS_REGS(MACH_FE_STATUS_0, SAFE_TEMP1)
 	/*
 	 * On this type of trap we are supposed to return to next PC instead
 	 * of cur PC.
@@ -2069,6 +2033,10 @@ SpecialUserTraps:
 	add_nt		CUR_PC_REG, NON_INTR_TEMP1, $0
 	add_nt		NEXT_PC_REG, NON_INTR_TEMP2, $0
 1:
+/*
+ * Recover the operands of the trapping instruction 
+ */
+
 	/*
 	 * Enable traps and fetch the current instruction.  We have to
 	 * enable all traps because fetching the instruction could cause
@@ -2076,23 +2044,17 @@ SpecialUserTraps:
 	 */
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
 	wr_kpsw		VOL_TEMP1, $0
-	ld_32		OUTPUT_REG2, CUR_PC_REG, $0
+	ld_32		VOL_TEMP2, CUR_PC_REG, $0
 	/*
 	 * Leave all traps enabled but disable interrupts because are going
-	 * to be mucking register windows in UserOperandRecov.
+	 * to be mucking register windows in ParseInstruction
 	 */
 	and		VOL_TEMP1, VOL_TEMP1, $~MACH_KPSW_INTR_TRAP_ENA
 	wr_kpsw		VOL_TEMP1, $0
-	/*
-	 * Recover the operands.  We pass the pc to return to in OUTPUT_REG1
-	 * and the instruction to recover from in OUTPUT_REG2.  We get back 
-	 * the opcode in OUTPUT_REG3, the dest register
-	 * in OUTPUT_REG4, the first operand in OUTPUT_REG2, and 
-	 * the second operand in OUTPUT_REG5.
-	 */
-	rd_special	OUTPUT_REG1, pc
-	add_nt		OUTPUT_REG1, OUTPUT_REG1, $16
-	jump		UserOperandRecov
+	
+	rd_special	VOL_TEMP1, pc
+	add_nt		VOL_TEMP1, VOL_TEMP1, $16
+	jump		ParseInstruction
 	nop
 	/*
 	 * We now have the operands.  Switch back to user mode.
@@ -2159,16 +2121,25 @@ SpecialUserTraps:
 	 *	Handler(curPC, nextPC, opcode, destReg, operands)
 	 *	
 	 * where operands is a pointer to the stack and the two 
-	 * source operands.  OUTPUT_REG3 and OUTPUT_REG4 have already been
-	 * set correctly by the operand recovery routine.
+	 * source operands.  
 	 */
-	sub		SPILL_SP, SPILL_SP, $16
-	st_40		OUTPUT_REG2, SPILL_SP, $0
-	st_40		OUTPUT_REG5, SPILL_SP, $8
+	add_nt		r25,SPILL_SP,$0              /* Follow C protocol */
+	add_nt		OUTPUT_REG5,SAFE_TEMP1,$0    /* Put the handle
+							pointer where we 
+	                                                can get at it.  */
+	call		1f                          /* Bump the windows */
+	add_nt		SPILL_SP, SPILL_SP, $-16      /* Make room on stack */
+
+						/* Our operands are now
+						   in the input registers */
+1:	st_40		INPUT_REG3, SPILL_SP, $0    /* First operand */
+	st_40		INPUT_REG4, SPILL_SP, $8    /* Second operand */
+	add_nt		OUTPUT_REG3, INPUT_REG1,$0  /* opcode */
+	add_nt		OUTPUT_REG4, INPUT_REG2,$0  /* destReg */
 	add_nt		OUTPUT_REG1, CUR_PC_REG, $0
 	add_nt		OUTPUT_REG2, NEXT_PC_REG, $0
 	add_nt		OUTPUT_REG5, SPILL_SP, $0
-	jump_reg	SAFE_TEMP1, $0
+	jump_reg	INPUT_REG5, $0
 	nop
 
 specialUserTraps_Error:
@@ -2181,8 +2152,8 @@ specialUserTraps_Error:
 	 * non-intr-temp registers so they don't get trashed in case
 	 * an interrupt sneaks in.
 	 */
-	sub		SPILL_SP, SPILL_SP, $8
-	st_32		SAFE_TEMP2, SPILL_SP, $0
+	add_nt		SPILL_SP, SPILL_SP, $-16
+	st_32		SAFE_TEMP2, SPILL_SP, $0   /* Save the trap type */
 	add_nt		NON_INTR_TEMP1, CUR_PC_REG, $0
 	add_nt		NON_INTR_TEMP2, NEXT_PC_REG, $0
 	rd_special	VOL_TEMP1, pc
@@ -2192,38 +2163,38 @@ specialUserTraps_Error:
 	 * We use r1 as the trap type.  Since we are in the window that 
 	 * caused the error we can't use a local.
 	 */
-	st_32		r1, SPILL_SP, $4
-	ld_32		r1, SPILL_SP, $0
+	st_40		r1, SPILL_SP, $8
+	ld_32		r1, SPILL_SP, $0  /* Get the trap type back */
 	/* 
 	 * Set our first output register to the type of error and trap.
 	 */
 	nop
 	cmp_br_delayed	ne, r1, $MACH_USER_FPU_EXCEPT_TRAP, 1f
 	nop
-	ld_32		r1, SPILL_SP, $4
-	add_nt		SPILL_SP, SPILL_SP, $8
+	ld_40		r1, SPILL_SP, $8
+	add_nt		SPILL_SP, SPILL_SP, $16
 	cmp_trap	always, r0, r0, $MACH_FPU_ERROR_TRAP
 1:
 	cmp_br_delayed	ne, r1, $MACH_USER_ILLEGAL_TRAP, 1f
 	nop
-	ld_32		r1, SPILL_SP, $4
-	add_nt		SPILL_SP, SPILL_SP, $8
+	ld_40		r1, SPILL_SP, $8
+	add_nt		SPILL_SP, SPILL_SP, $16
 	cmp_trap	always, r0, r0, $MACH_ILLEGAL_ERROR_TRAP
 1:
 	cmp_br_delayed	ne, r1, $MACH_USER_FIXNUM_TRAP, 1f
 	nop
-	ld_32		r1, SPILL_SP, $4
-	add_nt		SPILL_SP, SPILL_SP, $8
+	ld_40		r1, SPILL_SP, $8
+	add_nt		SPILL_SP, SPILL_SP, $16
 	cmp_trap	always, r0, r0, $MACH_FIXNUM_ERROR_TRAP
 1:
 	cmp_br_delayed	ne, r1, $MACH_USER_OVERFLOW_TRAP, 1f
 	nop
-	ld_32		r1, SPILL_SP, $4
-	add_nt		SPILL_SP, SPILL_SP, $8
+	ld_40		r1, SPILL_SP, $8
+	add_nt		SPILL_SP, SPILL_SP, $16
 	cmp_trap	always, r0, r0, $MACH_OVERFLOW_ERROR_TRAP
 1:
-	ld_32		r1, SPILL_SP, $4
-	add_nt		SPILL_SP, SPILL_SP, $8
+	ld_40		r1, SPILL_SP, $8
+	add_nt		SPILL_SP, SPILL_SP, $16
 	cmp_trap	always, r0, r0, $MACH_CMP_TRAP_ERROR_TRAP
 
 /*
@@ -2584,16 +2555,17 @@ SaveState:
 	/*
 	 * Save all of the globals.
 	 */
-	st_32		r0, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+0
-	st_32		r1, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+8
-	st_32		r2, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+16
-	st_32		r3, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+24
-	st_32		r4, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+32
-	st_32		r5, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+40
-	st_32		r6, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+48
-	st_32		r7, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+56
-	st_32		r8, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+64
-	st_32		r9, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+72
+
+ 	st_40		r0, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+0
+ 	st_40		r1, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+8
+ 	st_40		r2, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+16
+ 	st_40		r3, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+24
+ 	st_40		r4, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+32
+ 	st_40		r5, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+40
+ 	st_40		r6, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+48
+ 	st_40		r7, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+56
+ 	st_40		r8, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+64
+ 	st_40		r9, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+72
 
 	/*
 	 * Move where to save to into a global.
@@ -2618,28 +2590,28 @@ SaveState:
 	 * Now we are in the previous window.  Save all of its registers
 	 * into the state structure.
 	 */
-	st_32		r10, r1, $MACH_REG_STATE_REGS_OFFSET+80
-	st_32		r11, r1, $MACH_REG_STATE_REGS_OFFSET+88
-	st_32		r12, r1, $MACH_REG_STATE_REGS_OFFSET+96
-	st_32		r13, r1, $MACH_REG_STATE_REGS_OFFSET+104
-	st_32		r14, r1, $MACH_REG_STATE_REGS_OFFSET+112
-	st_32		r15, r1, $MACH_REG_STATE_REGS_OFFSET+120
-	st_32		r16, r1, $MACH_REG_STATE_REGS_OFFSET+128
-	st_32		r17, r1, $MACH_REG_STATE_REGS_OFFSET+136
-	st_32		r18, r1, $MACH_REG_STATE_REGS_OFFSET+144
-	st_32		r19, r1, $MACH_REG_STATE_REGS_OFFSET+152
-	st_32		r20, r1, $MACH_REG_STATE_REGS_OFFSET+160
-	st_32		r21, r1, $MACH_REG_STATE_REGS_OFFSET+168
-	st_32		r22, r1, $MACH_REG_STATE_REGS_OFFSET+176
-	st_32		r23, r1, $MACH_REG_STATE_REGS_OFFSET+184
-	st_32		r24, r1, $MACH_REG_STATE_REGS_OFFSET+192
-	st_32		r25, r1, $MACH_REG_STATE_REGS_OFFSET+200
-	st_32		r26, r1, $MACH_REG_STATE_REGS_OFFSET+208
-	st_32		r27, r1, $MACH_REG_STATE_REGS_OFFSET+216
-	st_32		r28, r1, $MACH_REG_STATE_REGS_OFFSET+224
-	st_32		r29, r1, $MACH_REG_STATE_REGS_OFFSET+232
-	st_32		r30, r1, $MACH_REG_STATE_REGS_OFFSET+240
-	st_32		r31, r1, $MACH_REG_STATE_REGS_OFFSET+248
+ 	st_40		r10, r1, $MACH_REG_STATE_REGS_OFFSET+80
+ 	st_40		r11, r1, $MACH_REG_STATE_REGS_OFFSET+88
+ 	st_40		r12, r1, $MACH_REG_STATE_REGS_OFFSET+96
+ 	st_40		r13, r1, $MACH_REG_STATE_REGS_OFFSET+104
+	st_40		r14, r1, $MACH_REG_STATE_REGS_OFFSET+112
+ 	st_40		r15, r1, $MACH_REG_STATE_REGS_OFFSET+120
+ 	st_40		r16, r1, $MACH_REG_STATE_REGS_OFFSET+128
+ 	st_40		r17, r1, $MACH_REG_STATE_REGS_OFFSET+136
+ 	st_40		r18, r1, $MACH_REG_STATE_REGS_OFFSET+144
+ 	st_40		r19, r1, $MACH_REG_STATE_REGS_OFFSET+152
+ 	st_40		r20, r1, $MACH_REG_STATE_REGS_OFFSET+160
+ 	st_40		r21, r1, $MACH_REG_STATE_REGS_OFFSET+168
+ 	st_40		r22, r1, $MACH_REG_STATE_REGS_OFFSET+176
+ 	st_40		r23, r1, $MACH_REG_STATE_REGS_OFFSET+184
+ 	st_40		r24, r1, $MACH_REG_STATE_REGS_OFFSET+192
+ 	st_40		r25, r1, $MACH_REG_STATE_REGS_OFFSET+200
+ 	st_40		r26, r1, $MACH_REG_STATE_REGS_OFFSET+208
+	st_40		r27, r1, $MACH_REG_STATE_REGS_OFFSET+216
+ 	st_40		r28, r1, $MACH_REG_STATE_REGS_OFFSET+224
+ 	st_40		r29, r1, $MACH_REG_STATE_REGS_OFFSET+232
+ 	st_40		r30, r1, $MACH_REG_STATE_REGS_OFFSET+240
+ 	st_40		r31, r1, $MACH_REG_STATE_REGS_OFFSET+248
 
 	/*
 	 * Now push all of the windows before the current one onto the saved
@@ -2672,22 +2644,22 @@ saveState_SaveRegs:
 	Nop
 					/* Increment the swp by one window. */
 	add_nt		r1, r1, $MACH_SAVED_WINDOW_SIZE
-	st_32		r10, r1, $0
-	st_32		r11, r1, $8
-	st_32		r12, r1, $16
-	st_32		r13, r1, $24
-	st_32		r14, r1, $32
-	st_32		r15, r1, $40
-	st_32		r16, r1, $48
-	st_32		r17, r1, $56
-	st_32		r18, r1, $64
-	st_32		r19, r1, $72
-	st_32		r20, r1, $80
-	st_32		r21, r1, $88
-	st_32		r22, r1, $96
-	st_32		r23, r1, $104
-	st_32		r24, r1, $112
-	st_32		r25, r1, $120
+	st_40		r10, r1, $0
+	st_40		r11, r1, $8
+	st_40		r12, r1, $16
+	st_40		r13, r1, $24
+	st_40		r14, r1, $32
+	st_40		r15, r1, $40
+	st_40		r16, r1, $48
+	st_40		r17, r1, $56
+	st_40		r18, r1, $64
+	st_40		r19, r1, $72
+	st_40		r20, r1, $80
+	st_40		r21, r1, $88
+	st_40		r22, r1, $96
+	st_40		r23, r1, $104
+	st_40		r24, r1, $112
+	st_40		r25, r1, $120
 	jump		saveState_SaveRegs
 	Nop
 
@@ -2744,28 +2716,28 @@ RestoreState:
 	 * saved cwp points to the window that we saved in the reg state 
 	 * struct.
 	 */
-	ld_32		r10, r1, $MACH_REG_STATE_REGS_OFFSET+80
-	ld_32		r11, r1, $MACH_REG_STATE_REGS_OFFSET+88
-	ld_32		r12, r1, $MACH_REG_STATE_REGS_OFFSET+96
-	ld_32		r13, r1, $MACH_REG_STATE_REGS_OFFSET+104
-	ld_32		r14, r1, $MACH_REG_STATE_REGS_OFFSET+112
-	ld_32		r15, r1, $MACH_REG_STATE_REGS_OFFSET+120
-	ld_32		r16, r1, $MACH_REG_STATE_REGS_OFFSET+128
-	ld_32		r17, r1, $MACH_REG_STATE_REGS_OFFSET+136
-	ld_32		r18, r1, $MACH_REG_STATE_REGS_OFFSET+144
-	ld_32		r19, r1, $MACH_REG_STATE_REGS_OFFSET+152
-	ld_32		r20, r1, $MACH_REG_STATE_REGS_OFFSET+160
-	ld_32		r21, r1, $MACH_REG_STATE_REGS_OFFSET+168
-	ld_32		r22, r1, $MACH_REG_STATE_REGS_OFFSET+176
-	ld_32		r23, r1, $MACH_REG_STATE_REGS_OFFSET+184
-	ld_32		r24, r1, $MACH_REG_STATE_REGS_OFFSET+192
-	ld_32		r25, r1, $MACH_REG_STATE_REGS_OFFSET+200
-	ld_32		r26, r1, $MACH_REG_STATE_REGS_OFFSET+208
-	ld_32		r27, r1, $MACH_REG_STATE_REGS_OFFSET+216
-	ld_32		r28, r1, $MACH_REG_STATE_REGS_OFFSET+224
-	ld_32		r29, r1, $MACH_REG_STATE_REGS_OFFSET+232
-	ld_32		r30, r1, $MACH_REG_STATE_REGS_OFFSET+240
-	ld_32		r31, r1, $MACH_REG_STATE_REGS_OFFSET+248
+  	ld_40		r10, r1, $MACH_REG_STATE_REGS_OFFSET+80
+  	ld_40		r11, r1, $MACH_REG_STATE_REGS_OFFSET+88
+  	ld_40		r12, r1, $MACH_REG_STATE_REGS_OFFSET+96
+  	ld_40		r13, r1, $MACH_REG_STATE_REGS_OFFSET+104
+  	ld_40		r14, r1, $MACH_REG_STATE_REGS_OFFSET+112
+  	ld_40		r15, r1, $MACH_REG_STATE_REGS_OFFSET+120
+  	ld_40		r16, r1, $MACH_REG_STATE_REGS_OFFSET+128
+  	ld_40		r17, r1, $MACH_REG_STATE_REGS_OFFSET+136
+  	ld_40		r18, r1, $MACH_REG_STATE_REGS_OFFSET+144
+  	ld_40		r19, r1, $MACH_REG_STATE_REGS_OFFSET+152
+  	ld_40		r20, r1, $MACH_REG_STATE_REGS_OFFSET+160
+  	ld_40		r21, r1, $MACH_REG_STATE_REGS_OFFSET+168
+  	ld_40		r22, r1, $MACH_REG_STATE_REGS_OFFSET+176
+  	ld_40		r23, r1, $MACH_REG_STATE_REGS_OFFSET+184
+  	ld_40		r24, r1, $MACH_REG_STATE_REGS_OFFSET+192
+  	ld_40		r25, r1, $MACH_REG_STATE_REGS_OFFSET+200
+  	ld_40		r26, r1, $MACH_REG_STATE_REGS_OFFSET+208
+  	ld_40		r27, r1, $MACH_REG_STATE_REGS_OFFSET+216
+  	ld_40		r28, r1, $MACH_REG_STATE_REGS_OFFSET+224
+  	ld_40		r29, r1, $MACH_REG_STATE_REGS_OFFSET+232
+  	ld_40		r30, r1, $MACH_REG_STATE_REGS_OFFSET+240
+  	ld_40		r31, r1, $MACH_REG_STATE_REGS_OFFSET+248
 	/*
 	 * Go forward to the window that we are to execute in.
 	 */
@@ -2790,15 +2762,15 @@ RestoreState:
 	/*
 	 * Restore the globals.
 	 */
-	ld_32		r1, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+8
-	ld_32		r2, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+16
-	ld_32		r3, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+24
-	ld_32		r4, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+32
-	ld_32		r5, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+40
-	ld_32		r6, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+48
-	ld_32		r7, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+56
-	ld_32		r8, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+64
-	ld_32		r9, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+72
+	ld_40		r1, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+8
+	ld_40		r2, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+16
+	ld_40		r3, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+24
+	ld_40		r4, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+32
+	ld_40		r5, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+40
+	ld_40		r6, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+48
+	ld_40		r7, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+56
+	ld_40		r8, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+64
+	ld_40		r9, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+72
 	/*
 	 * Return to our caller.
 	 */
@@ -2903,9 +2875,6 @@ _Mach_ContextSwitch:
 	add_nt		OUTPUT_REG1, INPUT_REG2, $0
 	call		_VmMach_SetupContext
 	Nop
-	/*
-	 * Clear any possible bogus entries from the instruction buffer.
-	 */
 	invalidate_ib
 	/*
 	 * Grab a pointer to the state structure to save to.  Note that
@@ -3127,234 +3096,268 @@ _Mach_SaveCCAndHalt:
 	SAVE_CC_STATE_VIRT()
 	CALL_DEBUGGER(r0, MACH_BREAKPOINT)
 
+
 /*
  * ParseInstruction --
  *
- *	Relevant instructions: LD_40*, LD_32*, ST_40, ST_32, TEST_AND_SET.
- *	We want to get the address of the operand that accesses memory.
+ *      Decode the trapping instruction and return it's opcode and operations.
  *	The address of the instruction is passed in r10 and the address to 
- *	jump to when done is passed in VOL_TEMP1.  Note that since the act of
- *	doing calls to switch windows trashes r10 we have to save r10.  Also
- *	since we use r14 and r15 we have to save and restore them at the end.
- *	We return the data address from the instruction in VOL_TEMP2.
+ *	jump to when done is passed in VOL_TEMP1, and the trapping instruction
+ *      is passed in VOL_TEMP2.  The return values are:
+ *      OUTPUT1 -- opcode
+ *      OUTPUT2 -- destination register or condition code
+ *      OUTPUT3 -- operand 1
+ *      OUTPUT4 -- operand 2
  *
- *	SRC1_REG:	r14 -- src1 register
- *	SRC1_VAL:	r14 -- Value of src1 register.
- *	PREV_SRC1_REG:	r30 -- src1 register in previous window.
- *	SRC2_REG:	r15 -- src2 register or immediate.
- *	SRC2_VAL:	r15 -- Value of src2 register or immediate.
- *	PREV_SRC2_REG:	r31 -- src2 register in previous window.
- *	RET_ADDR:	r18 (VOL_TEMP1) -- Input: Address to return to.
+ *	SRC_REG:	r15 -- src register
+ *	PREV_SRC_REG:	r31 -- src register in previous window.
  *	TRAP_INST:	r19 (VOL_TEMP2) -- Input: Trapping instruction.
- *	DATA_VAL_REG:	r19 (VOL_TEMP2) -- Output: Data address
- *	OPCODE:		r20 (VOL_TEMP3) -- Opcode.
  *	CALLER_TEMP1	r21 (SAFE_TEMP1) -- Temporary reserved for caller.
  *	CALLER_TEMP2	r22 (SAFE_TEMP2) -- Temporary reserved for caller.
  *	CALLER_TEMP3	r23 (SAFE_TEMP3) -- Temporary reserved for caller.
  *	PARSE_TEMP1:	r24 -- One temporary to use.
- *	PARSE_TEMP2:	r25 -- 2nd temporary to use.
- *	SAVED_R10:	r27 -- Place to save r10.
- *	SAVED_R14:	r28 -- Place to save r14.
- *	SAVED_R15:	r29 -- Place to save r15.
+ *	SAVED_R15:	r25 -- Place to save r15.
+	SAVED_CUR_PC    r31 -- Place to save CUR_PC
  */
 
-#define	SRC1_REG		r14
-#define	SRC1_VAL		r14
-#define	PREV_SRC1_REG		r30
-#define	SRC2_REG		r15
-#define	SRC2_VAL		r15
-#define	PREV_SRC2_REG		r31
+#define	SRC_REG	         	r15
+#define	PREV_SRC_REG		r31   /* These must be r15 and r31 to work with the tables */
+
 #define	RET_ADDR		r18
-#define	DATA_VAL_REG		r19
 #define	TRAP_INST		r19
-#define	OPCODE			r20
 #define	PARSE_TEMP1		r24
-#define	PARSE_TEMP2		r25
-#define	SAVED_R10		r27
-#define	SAVED_R14		r28
-#define	SAVED_R15		r29
+#define	SAVED_R15		r25
+#define	SAVED_CUR_PC		r31
+
 
 ParseInstruction:
-	add_nt		SAVED_R10, r10, $0	/* Save "return" address */
-	add_nt		SAVED_R14, r14, $0	/* Save r14 and r15 because */
-	add_nt		SAVED_R15, r15, $0	/*  these will be used to  */
-						/*  recover operands. */
-	extract		OPCODE, TRAP_INST, $3	/* Opcode <31:25> -> <07:01> */
-	srl		OPCODE, OPCODE, $1	/* Opcode <07:01> -> <06:00> */
-	sll		SRC1_REG, TRAP_INST, $1	/* s1 <19:15> to <20:16> */
-	extract		SRC1_REG, SRC1_REG, $2	/* s1 <20:16> to <04:00> */
-	and		SRC1_REG, SRC1_REG, $0x1f
-	srl		SRC2_REG, TRAP_INST, $1	/* s2 <13:09> to <12:08> */
-	extract		SRC2_REG, SRC2_REG, $1	/* s2 <12:08> to <04:00> */
-	and		SRC2_REG, SRC2_REG, $0x1f
-
-	/*
-	 * Go back one window.
+	add_nt		SAVED_R15, r15, $0	/* Save r15 for recovering register values */
+	add_nt		SAVED_CUR_PC,CUR_PC_REG,$0  /* Save CUR_PC across call */
+	/*                 	
+       	 * fetch the opcode
 	 */
-	rd_special	PARSE_TEMP1, pc
+	extract		OUTPUT_REG1, TRAP_INST, $3	/* Opcode <31:25> -> <07:01> */
+	srl		OUTPUT_REG1, OUTPUT_REG1, $1	/* Opcode <07:01> -> <06:00> */
+	
+	/*
+	 * fetch the destination register or cc
+	 */
+	sll		OUTPUT_REG2, TRAP_INST, $3	/* Rdes <24:20> to <27:23> */
+	sll		OUTPUT_REG2, OUTPUT_REG2, $1	/* <27:23> to <28:24> */
+	extract		OUTPUT_REG2, OUTPUT_REG2, $3    /* <28:24> to <04:00> */
+	and		OUTPUT_REG2, OUTPUT_REG2, $0x1f /* Pitch the extra bits  */
+	/*
+	* fetch the first operand 
+	*/
+	sll		SRC_REG, TRAP_INST, $1	/* s1 <19:15> to <20:16> */
+	extract		SRC_REG, SRC_REG, $2	/* s1 <20:16> to <04:00> */
+	and		SRC_REG, SRC_REG, $0x1f /* Pitch the extra bits */
+
+	cmp_br_delayed	ult, SRC_REG,  $31, @getf  
+	nop
+	jump		@endf
+	add_nt		SRC_REG, SAVED_R15, $0   /* get r31 directly */
+
+
+/* Here, we get the value of the register (0-30) from the previous window.  
+ * It's real tricky.  Basically, we go back to the previous window, execute
+ * a single instruction out of a table (moving the proper register into r31),
+ * then returning to this window.  It relies on a couple of architecture 
+ * features.
+ * First, SRC_REG (r15) in this window will be PREV_SRC_REG (r31) in the 
+ * previous window.  Second, the jump_reg below will take us to the move table
+ * while the jump in the delay slot will bring us back.  The instruction in the
+ * move table is executed in the delay slot of the jump.  Got it?
+ */
+@get:
+	rd_special	PARSE_TEMP1, pc         /* Back up one window */
 	return		PARSE_TEMP1, $12
 	Nop
+	sll		PREV_SRC_REG, PREV_SRC_REG, $2	/* s1 = s1 * 4 */
+	jump_reg	PREV_SRC_REG, $OpRecov /*Retrieve value of first op. */
+	jump	        @nextf  /* The instruction in table will be
+				 * executed in the delay slot of this jump. */
+@next:
+	call 	       	@endf			/* Get back to trap window.  */
+	Nop
+
+@end:
+	add_nt		OUTPUT_REG3,SRC_REG,$0
+
+
+	/*  Now, we need to do a little decoding on the opcode to get the rest of 
+         *  the operands.  We take different action depending on whether the opcode
+         *  is a store, compare, or other operation.
+         */
 
 	/*
-	 * Now we're in the previous window (where the trap occurred)
-	 * If s1 < 30 then go through the jump table to recover the value.
-	 * Otherwise do it by hand since we trashed r14 and r15 which are r30
-	 * and r31 respectively in the previous window.
+	 * It's a store if the op code is > 0x20 and < 0x30
 	 */
-	cmp_br_delayed	 lt, PREV_SRC1_REG, $30, parse4
-	Nop
-	call		parse1up		/* Back to trap handler window. */
-	Nop
-parse1up:
-	cmp_br_delayed	eq, SRC1_REG,  $30, parse1a
-	Nop
-	cmp_br_delayed	eq, SRC1_REG,  $31, parse1b
-	Nop
-	CALL_DEBUGGER(r0, MACH_BAD_SRC_REG)
-
-parse1a:
-	add_nt		SRC1_VAL, SAVED_R14, $0
-	jump		parse5
-	Nop
-
-parse1b: 
-	add_nt		SRC1_VAL, SAVED_R15, $0
-	jump 		parse5
-	Nop
-	
-parse4:	sll		PREV_SRC1_REG, PREV_SRC1_REG, $2	/* s1 = s1 * 4 */
-	jump_reg	PREV_SRC1_REG, $OpRecov1  /* Retrieve value of first op. */
-	jump	        parse41		 	/* Value is returned in r30 */
-
-parse41:
-	call 	       	parse5			/* Get back to trap window.  */
-	Nop
-
-parse5:	
-	/*
-	 * SRC1_VAL now contains src1.  Additional offset will depend on
-	 * type of operation.  Load can take either register or immediate
-	 * value.  Store takes immediate value only, and from two places.
-	 * We have a store if opcode<7> = 2.
-	 * Currently back in trap handler register window.
-	 */
-	and		PARSE_TEMP1, OPCODE, $0x20
-	cmp_br_delayed  ne, PARSE_TEMP1, $0, parse_store
-	Nop
+#define ST_BASE       0x20
+	add_nt		PARSE_TEMP1,OUTPUT_REG1,$-ST_BASE
+	cmp_br_delayed  lt, PARSE_TEMP1, $0x20-ST_BASE, @not_storef
+	nop
+	cmp_br_delayed  lt, PARSE_TEMP1, $0x30-ST_BASE, parse_store
+	nop
 
 	/*
-	 * Parsing load or test&set.  Check for register or immediate value.
+	 * See if it's a compare
 	 */
+@not_store:
+#define CMP_BASE        0x50
+#define CMP_BR_DELAYED  0x50
+#define CMP_TRAP        0x51
+
+	add_nt		PARSE_TEMP1,OUTPUT_REG1,$-CMP_BASE
+	cmp_br_delayed  eq,PARSE_TEMP1,$CMP_BR_DELAYED-CMP_BASE,parse_cmp
+	cmp_br_delayed  eq,PARSE_TEMP1,$CMP_TRAP-CMP_BASE,parse_cmp
+	nop
+
+
+	/*
+	 * Assume load or op.  Check for register or immediate value.
+	 */
+parse_op:
 	extract		PARSE_TEMP1, TRAP_INST, $1
 	and		PARSE_TEMP1, PARSE_TEMP1, $0x40
-	cmp_br_delayed  ne, PARSE_TEMP1, $0, parse5a
+	cmp_br_delayed  ne, PARSE_TEMP1, $0, @immedf
 	Nop
-	cmp_br_delayed	always, r0, r0, parse5b
+	jump		@regf
 	Nop
 
-parse5a:
+@immed:
 	/*
 	 * 2nd operand is an immediate.
 	 */
-	and		SRC2_VAL, TRAP_INST, $0x1fff	/* Extract immediate val. */
+	and		OUTPUT_REG4, TRAP_INST, $0x1fff	/* Extract immediate val. */
 	add_nt		PARSE_TEMP1, TRAP_INST, $0	/* Check for a  */
 	srl		PARSE_TEMP1, PARSE_TEMP1, $1	/*   negative number */
 	and		PARSE_TEMP1, PARSE_TEMP1, $0x1000 
 	cmp_br_delayed	eq, PARSE_TEMP1, $0, parse_end
 	Nop
-	add_nt		SRC2_VAL, SRC2_VAL, $~0x1fff	/* Sign extend SRC2_VAL */
-	cmp_br_delayed	always, r0, r0, parse_end
-	Nop
-
-parse5b:
-	/*
-	 * Go back one window.
-	 */
-	rd_special	PARSE_TEMP2, pc
-	return 		PARSE_TEMP2, $12
-	Nop
+	jump		parse_end
+	add_nt		OUTPUT_REG4, OUTPUT_REG4, $~0x1fff	/* Sign extend */
 
 	/*
-	 * Now we're in the previous window (where the trap occurred)
-	 * If s2 < 30 then go through the jump table to recover the value.
-	 * Otherwise do it by hand since we trashed r14 and r15 which are
-	 * r30 and r31 respectively in the previous window.
+	 * Second operand is a register.  Get it like we did the one above.
 	 */
-	cmp_br_delayed	 lt, PREV_SRC2_REG, $30, parse6
-	Nop
-	call		pars2up
-	Nop
-pars2up:
-	cmp_br_delayed	 eq, SRC2_REG,  $30, parse2a
-	Nop
-	cmp_br_delayed	 eq, SRC2_REG,  $31, parse2b
-	Nop
-	CALL_DEBUGGER(r0, MACH_BAD_SRC_REG)
+@reg:	srl		SRC_REG,TRAP_INST,$1	/* Extract register number  */
+	extract		SRC_REG,SRC_REG,$1
+	and		SRC_REG,SRC_REG,$0x1f
+	
+	cmp_br_delayed	ult, SRC_REG,  $31, @regf
+	nop
+	jump		@endf
+	add_nt		SRC_REG, SAVED_R15, $0   /* get r31 directly */
 
-parse2a:
-	add_nt		SRC2_VAL, SAVED_R14, $0
+@get:	rd_special	PARSE_TEMP1, pc         /* Back up one window */
+	return		PARSE_TEMP1, $12
+	Nop
+	sll		PREV_SRC_REG, PREV_SRC_REG, $2	/* s1 = s1 * 4 */
+	jump_reg	PREV_SRC_REG, $OpRecov  /* Retrieve value of 2nd op. */
+	jump	        @nextf  /* The instruction in table will be
+			      /* executed in the delay slot of this jump. */
+@next:
+	call 	       	@endf			/* Get back to trap window.  */
+	Nop
+
+@end:
 	jump		parse_end
-	Nop
-
-parse2b:
-	add_nt		SRC2_VAL, SAVED_R15, $0
-	jump		parse_end
-	Nop
-
-parse6:	sll		PREV_SRC2_REG, PREV_SRC2_REG, $2  /* Multiply src2 reg */
-							  /*   by 4 to represent */
-							  /*   offset in jump  */
-							  /*   table. */
-	jump_reg	PREV_SRC2_REG, $OpRecov2  /* Recover 2nd operand register */
-	jump 		parse7			 /*   and put value in r31 */
-parse7:	
-	call		parse_end
-	Nop
+	add_nt		OUTPUT_REG4,SRC_REG,$0
 
 /*
- * Handle store here by getting immediate part and putting in SRC2_VAL.  Then
- * join up with the load/store logic and calculate address.  For stores,
- * we are in the trap handler register window all along.
+ *   Compares have either a short (5 bit immediate) or a register as the second op
+ *   and a word offset for a destination address.  
+ */
+parse_cmp:
+	extract		SRC_REG, TRAP_INST, $1		/* Extract register or immediate val. */
+	srl		SRC_REG, SRC_REG,$1
+	and		OUTPUT_REG4, SRC_REG,$0x1f
+
+	extract		PARSE_TEMP1, TRAP_INST, $1    /* Check for value type */
+	and		PARSE_TEMP1, PARSE_TEMP1, $0x40 /* (immediate or register) */
+	cmp_br_delayed  eq, PARSE_TEMP1, $0, @regf
+	Nop
+
+@immed:
+	/*
+	 * 2nd operand is an immediate.
+	 */
+	cmp_br_delayed	gt, PARSE_TEMP1, $0x0f, @offsetf  /* If negative, sign extend */
+	Nop
+	jump		@offsetf
+	or		OUTPUT_REG4, OUTPUT_REG4, $~0x1f	
+
+@reg:
+	/*
+	 * Second operand is a register.  Get it like we did the one above.
+	 */
+	cmp_br_delayed	lt, SRC_REG,  $31, @getf  
+	nop
+	jump		@endf
+	add_nt		SRC_REG, SAVED_R15, $0   /* get r31 directly */
+@get:
+
+	rd_special	PARSE_TEMP1, pc         /* Back up one window */
+	return		PARSE_TEMP1, $12
+	Nop
+	sll		PREV_SRC_REG, PREV_SRC_REG, $2	/* s1 = s1 * 4 */
+	jump_reg	PREV_SRC_REG, $OpRecov  /* Retrieve value of 2nd op. */
+	jump	        @nextf   /* The instruction in table will be
+         		          * executed in the delay slot of this jump. */
+@next:
+	call 	       	@endf			/* Get back to trap window.  */
+	Nop
+
+@end:
+	add_nt		OUTPUT_REG4,SRC_REG,$0
+
+	/*
+	 *		Get the destination address as the last operand.
+	 */
+@offset:
+#ifdef 0          /* Not needed for now.  -- daj */
+	and		PARSE_TEMP1,TRAP_INST,$0x100	/* Sign extend if negative */
+	cmp_br_delayed	eq,PARSE_TEMP1,r0,@posf
+	and		OUTPUT_REG5,TRAP_INST,$0x1ff
+	or		OUTPUT_REG5,OUTPUT_REG5,$~0x1ff
+	sll		OUTPUT_REG5,OUTPUT_REG5,$2	/* Change to byte displacement */
+	jump		parse_end
+	add_nt		OUTPUT_REG5,OUTPUT_REG5,r10	/* Add instruction address  */
+#else
+	jump		parse_end
+	nop
+#endif
+
+/*
+ * Stores have a two part immediate value as the second operand.
  */
 
 parse_store:
 	sll		PARSE_TEMP1, TRAP_INST, $3	/* Dest<24:20> move to <27:23> */
 	sll		PARSE_TEMP1, PARSE_TEMP1, $2	/* Move to <29:25> */
 	extract		PARSE_TEMP1, PARSE_TEMP1, $3	/* Move to <5:1>   */
+	rd_insert	OUTPUT_REG4
 	wr_insert	$1
 	insert		PARSE_TEMP1, r0, PARSE_TEMP1	/* Move to <13:09> */
-	srl		PARSE_TEMP2, PARSE_TEMP1, $1	/* Sign-bit <13> to <12> */
-	and		PARSE_TEMP2, PARSE_TEMP2, $0x1000 /* Check for negative */
-	cmp_br_delayed	eq, PARSE_TEMP2, $0, parse_pos    /*    number */
+	wr_insert	OUTPUT_REG4
+	srl		OUTPUT_REG4, PARSE_TEMP1, $1	/* Sign-bit <13> to <12> */
+	and		OUTPUT_REG4, OUTPUT_REG4, $0x1000 /* Check for negative */
+	cmp_br_delayed	eq, OUTPUT_REG4, $0, @posf    /*    number */
 	and 		PARSE_TEMP1, PARSE_TEMP1,$0x1e00  /* Mask out valid bits. */
 	add_nt		PARSE_TEMP1, PARSE_TEMP1,$~0x1fff  /* Sign extend  */
-							  /*    PARSE_TEMP2. */
-parse_pos:
-	and		PARSE_TEMP2, TRAP_INST, $0x01ff	     /* Put together into */
-	or		SRC2_VAL, PARSE_TEMP1,  PARSE_TEMP2  /*    14-bit value. */
 
-/*
- *  In the trap window.  SRC1_VAL contains first part of address.
- *  SRC2_VAL contains second part.  Now add them and mask.
- */
+@pos:
+	and		OUTPUT_REG4, TRAP_INST, $0x01ff	     /* Put together into */
+	or		OUTPUT_REG4, PARSE_TEMP1,  OUTPUT_REG4  /*    14-bit value. */
+
+	/*
+	 * All done.  Restore the registers and go back to the caller.
+ 	 */		
 parse_end:
-	add_nt		DATA_VAL_REG, SRC1_VAL, SRC2_VAL	
-	add_nt		r10, SAVED_R10, $0		/* Restore pre-parse r10 */
-	add_nt		r14, SAVED_R14, $0		/* Restore pre-parse r14 */
-	add_nt		r15, SAVED_R15, $0		/* Restore pre-parse r15 */
+	add_nt		CUR_PC_REG,SAVED_CUR_PC,$0
 	jump_reg	RET_ADDR, r0			/* Go back to caller */
-	Nop
-
-/*
- * Do operand recovery for a user trap.  For now this is a dummy routine.
- */
-UserOperandRecov:
-	add_nt		OUTPUT_REG3, r0, $0x12
-	add_nt		OUTPUT_REG4, r0, $17
-	add_nt		OUTPUT_REG2, r0, $0x321
-	add_nt		OUTPUT_REG5, r0, $0x654
-	jump_reg	OUTPUT_REG1, $0
-	nop
+	add_nt		r15, SAVED_R15, $0		/* Restore pre-parse r15 */
 
 /*
  * Leave room for the stacks.
