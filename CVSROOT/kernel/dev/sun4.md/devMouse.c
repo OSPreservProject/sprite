@@ -82,7 +82,7 @@ static DevZ8530 mouse = {		/* Information used by device driver. */
 
 static ClientData token;		/* Used for Fs call-backs to wake up
 					 * waiting processes. */
-static int mouseInUse;			/* Non-zero means mouse is active. */
+static int mouseOpenCount;		/* # active opens for mouse. */
 static volatile int outputBuffer = -1;	/* One-character output buffer shared
 					 * without explicit synchronization
 					 * between background and interrupt-
@@ -161,7 +161,7 @@ DevMouseOpen(devicePtr, useFlags, notifyToken)
 
     LOCK_MONITOR;
 
-    mouseInUse = 1;
+    mouseOpenCount += 1;
     token = notifyToken;
     keyboardPtr = DevGrabKeyboard(KbdInputProc, (ClientData) 0,
 	    MouseOutputProc, (ClientData) 0);
@@ -394,7 +394,7 @@ DevMouseClose(devicePtr, useFlags, openCount, writerCount)
 	return SUCCESS;
     }
     LOCK_MONITOR;
-    mouseInUse = 0;
+    mouseOpenCount -= 1;
     while (!List_IsEmpty(&eventList)) {
 	List_Links *eventPtr;
 
@@ -440,7 +440,7 @@ static void
 MouseDelayedClose()
 {
     LOCK_MONITOR;
-    if (!mouseInUse) {
+    if (mouseOpenCount == 0) {
 	DevReleaseKeyboard();
 	(void) (*mouseTty.rawProc)(mouseTty.rawData, TD_RAW_SHUTDOWN, 0,
 		(char *) NULL, 0, (char *) NULL);
@@ -658,7 +658,7 @@ MouseOutputProc()
     result = outputBuffer;
     if (result != -1) {
 	outputBuffer = -1;
-	if (mouseInUse) {
+	if (mouseOpenCount > 0) {
 	    Fs_DevNotifyWriter(token);
 	} else {
 	    Proc_CallFunc(MouseDelayedClose, (ClientData) NIL, 0);
