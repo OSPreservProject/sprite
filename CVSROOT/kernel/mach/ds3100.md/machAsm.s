@@ -1026,12 +1026,10 @@ END(Mach_ContextSwitch)
  *
  * Mach_GetPC --
  *
- *	Mach_GetPC()
- *
- *	Return the caller's caller's PC.
+ *	Return the caller's PC.
  *
  * Results:
- *     	0 for now.
+ *     	The PC of the caller.
  *
  * Side effects:
  *	None.
@@ -1040,6 +1038,25 @@ END(Mach_ContextSwitch)
  */
     .globl Mach_GetPC
 Mach_GetPC:
+    add		v0, ra, zero
+    j		ra
+
+/*----------------------------------------------------------------------------
+ *
+ * Mach_GetCallerPC --
+ *
+ *	Return the caller's caller's PC.
+ *
+ * Results:
+ *     	I have no idea how to do this, so return 0 for now.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------------
+ */
+    .globl Mach_GetCallerPC
+Mach_GetCallerPC:
     add		v0, zero, zero
     j		ra
 
