@@ -236,12 +236,10 @@ typedef struct FsStreamTypeOps {
     /*
      *************** Migration calls. **************************************
      *
-     *  The 'migStart' is called from Fs_EncapStream to save additional state
-     *		and to do additional book-keeping.  Important:  references on
-     *		the I/O handle should only be released if the FS_RMT_SHARED
-     *		flag is not present.  Otherwise there is still an instance
-     *		of the stream on the local host which references the I/O handle,
-     *		and eventually it will be closed to release the references.
+     *  The 'release' is called on the source client of migration via an RPC
+     *		from the I/O server.  Its job is to release any referneces
+     *		on the I/O handle that were due to a stream which has
+     *		now migrated away from the source client.
      *  The 'migrate' is called from Fs_DeencapStream to update client
      *		book-keeping to reflect the migration.  The version on
      *		remote clients just does an RPC to the I/O server to
@@ -257,13 +255,11 @@ typedef struct FsStreamTypeOps {
      *		is migrated to the host.  (After that it suffices to
      *		add references to the existing stream.)
      *
-     *	FooMigStart(hdrPtr, flags, clientID, data)
+     *	FooRelease(hdrPtr, flags)
      *		FsHandleHeader	*hdrPtr;		(File handle)
      *		int		flags;			(From the stream)
-     *		int		clientID;		(Who is migrating)
-     *		ClientData	data;			(Buf. for mig. data)
      *	FooMigEnd(migInfoPtr, size, data, hdrPtrPtr)
-     *		FsMigINfo	migInfoPtr;		(Migration state)
+     *		FsMigInfo	migInfoPtr;		(Migration state)
      *		int		size;			(size of data)
      *		ClientData	data;			(data from migrate)
      *		FsHandleHeader	**hdrPtrPtr;		(Returned handle)
@@ -275,7 +271,7 @@ typedef struct FsStreamTypeOps {
      *		int		*sizePtr;		(Return - size of data)
      *		Address		*dataPtr;		(Return data)
      */
-    ReturnStatus (*migStart)();
+    ReturnStatus (*release)();
     ReturnStatus (*migEnd)();
     ReturnStatus (*migrate)();
     /*
