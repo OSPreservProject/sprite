@@ -58,15 +58,9 @@ int devConfigDebug = FALSE;
 void
 Dev_Init()
 {
-
     Dev_KbdInit();
-
-    /*
-     * Initialize a simple allocator for Device DMA Space.
-     */
-    VmMach_DevBufferInit(&devIOBuffer, (Address)VMMACH_DMA_START_ADDR, 
-			 (int)VMMACH_DMA_SIZE);
 }
+
 
 /*
  *----------------------------------------------------------------------
