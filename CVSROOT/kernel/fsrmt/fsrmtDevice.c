@@ -142,7 +142,8 @@ ReturnStatus
 FsDeviceSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	    dataSizePtr, clientDataPtr)
     FsLocalFileIOHandle	*handlePtr;	/* A handle obtained by FsLocalLookup.
-					 * Should be locked upon entry. */
+					 * Should be locked upon entry,
+					 * is unlocked upon exit. */
     int		clientID;		/* ID of client doing the open.
 					 * SHOULD REFLECT MIGRATION SOMEHOW */
     int		useFlags;		/* Use flags from the stream */
@@ -194,6 +195,7 @@ FsDeviceSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	*clientDataPtr = (ClientData)deviceDataPtr;
 	*dataSizePtr = sizeof(FsDeviceState);
     }
+    FsHandleUnlock(handlePtr);
     return(SUCCESS);
 }
 
