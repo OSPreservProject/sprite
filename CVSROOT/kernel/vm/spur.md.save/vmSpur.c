@@ -71,6 +71,16 @@ VmMach_SegData	kernSegData;
  */
 #define	USING_MAPPED_SEG	0x100
 
+static void FlushSegment();
+static void SetCreateTime();
+static void FlushAllCaches();
+
+/*
+ * Variable to control cache flushing on segment creation.
+ */
+static unsigned createTime = 0;
+static unsigned flushTime = 0;
+
 
 /*
  * ----------------------------------------------------------------------------
@@ -378,7 +388,11 @@ VmMach_SegInit(segPtr)
 	segDataPtr->RPTPM = rootPTPageNum + segPtr->segNum / 4;
     } else {
 	segDataPtr = segPtr->machPtr;
+	segDataPtr->createTime = 0;
     }
+
+    SetCreateTime(segDataPtr);
+
     segDataPtr->firstPTPage = 0x7fffffff;
     segDataPtr->lastPTPage = -1;
 
@@ -398,6 +412,42 @@ VmMach_SegInit(segPtr)
 	numPages = segPtr->numPages;
     }
     AllocPageTable(segPtr, segOffset, numPages);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetCreateTime --
+ *
+ *	Set the creation time of the segment and flush all of the caches
+ *	if necessary.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	createTime incremented and the createTime field is set in the
+ *	segment data struct.  Also the cache may be flushed and flushTime
+ *	incremented.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+SetCreateTime(segDataPtr)
+    register	VmMach_SegData	*segDataPtr;
+{
+    LOCK_MONITOR;
+
+    if (segDataPtr->createTime > flushTime) {
+	createTime++;
+	flushTime = createTime;
+	FlushAllCaches();
+    }
+    createTime++;
+    segDataPtr->createTime = createTime;
+
+    UNLOCK_MONITOR;
 }
 
 
@@ -465,8 +515,6 @@ VmMach_SegDelete(segPtr)
 	    VmMachFlushPage(vm_SysSegPtr, ptPage);
 	}
      }
-    VmMachFlushSegment(segPtr);
-    segPtr->machPtr = (VmMach_SegData *)NIL;
 }
 
 
@@ -495,7 +543,11 @@ VmMach_VirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
     Address			origVirtAddr;
 
     procDataPtr = procPtr->vmPtr->machPtr;
-    if (((unsigned)virtAddr & VMMACH_SEG_REG_MASK) == procDataPtr->segRegMask) {
+    if (procDataPtr->segRegMask == -1) {
+	return(FALSE);
+    }
+    if (((unsigned)virtAddr & VMMACH_SEG_REG_MASK) == 
+					procDataPtr->mappedSegMask) {
 	origVirtAddr = (Address) (((unsigned)virtAddr & ~VMMACH_SEG_REG_MASK) |
 				  procDataPtr->segRegMask);
 	transVirtAddrPtr->segPtr = procDataPtr->mapSegPtr;
@@ -731,10 +783,15 @@ VmMach_CopyInProc(numBytes, fromProcPtr, fromAddr, virtAddrPtr,
     /*
      * Determine where to map in the source segment.
      */
-    if (((unsigned)toAddr >> VMMACH_SEG_REG_SHIFT) == VM_STACK) {
+    fromAddr = (Address) ((unsigned int)fromAddr & ~VMMACH_SEG_REG_MASK);
+    if (((unsigned)toAddr & VMMACH_SEG_REG_MASK) == VMMACH_STACK_SEG_START) {
+	fromAddr = (Address) ((unsigned int)fromAddr | VMMACH_HEAP_SEG_START);
+	machPtr->mappedSegMask = VMMACH_HEAP_SEG_START;
 	segToUse = VM_HEAP;
     } else {
+	fromAddr = (Address) ((unsigned int)fromAddr | VMMACH_STACK_SEG_START);
 	segToUse = VM_STACK;
+	machPtr->mappedSegMask = VMMACH_STACK_SEG_START;
     }
 
     /*
@@ -744,11 +801,9 @@ VmMach_CopyInProc(numBytes, fromProcPtr, fromAddr, virtAddrPtr,
     RPTPMs = machPtr->RPTPMs;
     savedSegReg = segNums[segToUse];
     savedRPTPM = RPTPMs[segToUse];
-    segNums[segToUse] = (unsigned)fromAddr >> VMMACH_SEG_REG_SHIFT;
+    segNums[segToUse] = virtAddrPtr->segPtr->segNum;
     RPTPMs[segToUse] = segNums[segToUse] / 4 + rootPTPageNum;
     VmMachSetSegRegisters(segNums, RPTPMs);
-    fromAddr = (Address) ((unsigned int)fromAddr & ~VMMACH_SEG_REG_MASK);
-    fromAddr = (Address) ((unsigned int)fromAddr | (segToUse << VMMACH_SEG_REG_SHIFT));
     /*
      * Copy the data in.
      */
@@ -815,9 +870,14 @@ VmMach_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr,
     /*
      * Determine where to map in the source segment.
      */
-    if (((unsigned)fromAddr >> VMMACH_SEG_REG_SHIFT) == VM_STACK) {
+    toAddr = (Address) ((unsigned)toAddr & ~VMMACH_SEG_REG_MASK);
+    if (((unsigned)fromAddr & VMMACH_SEG_REG_MASK) == VMMACH_STACK_SEG_START) {
+        toAddr = (Address) ((unsigned)toAddr | VMMACH_HEAP_SEG_START);
+	machPtr->mappedSegMask = VMMACH_HEAP_SEG_START;
 	segToUse = VM_HEAP;
     } else {
+        toAddr = (Address) ((unsigned)toAddr | VMMACH_STACK_SEG_START);
+	machPtr->mappedSegMask = VMMACH_STACK_SEG_START;
 	segToUse = VM_STACK;
     }
 
@@ -828,11 +888,9 @@ VmMach_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr,
     RPTPMs = machPtr->RPTPMs;
     savedSegReg = segNums[segToUse];
     savedRPTPM = RPTPMs[segToUse];
-    segNums[segToUse] = (unsigned)toAddr >> VMMACH_SEG_REG_SHIFT;
+    segNums[segToUse] = virtAddrPtr->segPtr->segNum;
     RPTPMs[segToUse] = segNums[segToUse] / 4 + rootPTPageNum;
     VmMachSetSegRegisters(segNums, RPTPMs);
-    toAddr = (Address) ((unsigned)toAddr & ~VMMACH_SEG_REG_MASK);
-    toAddr = (Address) ((unsigned)toAddr | (segToUse << VMMACH_SEG_REG_SHIFT));
     /*
      * Copy the data in.
      */
@@ -909,7 +967,7 @@ VmMach_SetSegProt(segPtr, firstPage, lastPage, makeWriteable)
 		makeWriteable ? VMMACH_KRW_URW_PROT : VMMACH_KRW_URO_PROT;
 	}
     }
-    VmMachFlushSegment(segPtr);
+    FlushSegment(segPtr);
 
     UNLOCK_MONITOR;
 }
@@ -1057,11 +1115,19 @@ VmMach_SetRefBit(addr)
     Vm_Segment			*segPtr;
     VmMachPTE			*ptePtr;
     Proc_ControlBlock		*procPtr;
+    register	VmMach_ProcData	*procDataPtr;
 
     LOCK_MONITOR;
 
     procPtr = Proc_GetCurrentProc();
-    segPtr = procPtr->vmPtr->segPtrArray[(unsigned int)addr >> VMMACH_SEG_REG_SHIFT];
+    procDataPtr = procPtr->vmPtr->machPtr;
+    if (procDataPtr->segRegMask != -1 &&
+	((unsigned)addr & VMMACH_SEG_REG_MASK) == procDataPtr->mappedSegMask) {
+	segPtr = procDataPtr->mapSegPtr;
+    } else {
+	segPtr = procPtr->vmPtr->segPtrArray[(unsigned int)addr >> 
+						VMMACH_SEG_REG_SHIFT];
+    }
     segDataPtr = segPtr->machPtr;
     page = ((unsigned int)(addr) & ~VMMACH_SEG_REG_MASK) >> VMMACH_PAGE_SHIFT;
     ptePtr = GetPageTablePtr(segDataPtr, page);
@@ -1131,11 +1197,19 @@ VmMach_SetModBit(addr)
     int				page;
     Vm_Segment			*segPtr;
     Proc_ControlBlock		*procPtr;
+    register	VmMach_ProcData	*procDataPtr;
 
     LOCK_MONITOR;
 
     procPtr = Proc_GetCurrentProc();
-    segPtr = procPtr->vmPtr->segPtrArray[(unsigned int)addr >> VMMACH_SEG_REG_SHIFT];
+    procDataPtr = procPtr->vmPtr->machPtr;
+    if (procDataPtr->segRegMask != -1 &&
+	((unsigned)addr & VMMACH_SEG_REG_MASK) == procDataPtr->mappedSegMask) {
+	segPtr = procDataPtr->mapSegPtr;
+    } else {
+	segPtr = procPtr->vmPtr->segPtrArray[(unsigned int)addr >> 
+						VMMACH_SEG_REG_SHIFT];
+    }
     segDataPtr = segPtr->machPtr;
     page = ((unsigned int)(addr) & ~VMMACH_SEG_REG_MASK) >> VMMACH_PAGE_SHIFT;
     ptePtr = GetPageTablePtr(segDataPtr, page);
@@ -1174,11 +1248,11 @@ VmMach_PageValidate(virtAddrPtr, pte)
     segDataPtr = virtAddrPtr->segPtr->machPtr;
     page = virtAddrPtr->page & ~(VMMACH_SEG_REG_MASK >> VMMACH_PAGE_SHIFT);
     ptePtr = GetPageTablePtr(segDataPtr, page);
-    *ptePtr = VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT |
+    *ptePtr = VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | 
+	      VMMACH_REFERENCED_BIT |
               SetPageFrame(VirtToPhysPage(Vm_GetPageFrame(pte)));
     if (virtAddrPtr->segPtr == vm_SysSegPtr) {
-	*ptePtr |= VMMACH_KRW_URO_PROT | VMMACH_REFERENCED_BIT | 
-		   VMMACH_MODIFIED_BIT;
+	*ptePtr |= VMMACH_KRW_URO_PROT | VMMACH_MODIFIED_BIT;
     } else {
 	if (pte & (VM_COW_BIT | VM_READ_ONLY_PROT)) {
 	    *ptePtr |= VMMACH_KRW_URO_PROT;
@@ -1421,120 +1495,119 @@ VmMachDoCopy(numBytes, sourcePtr, destPtr)
     Address	sourcePtr;	/* Where to copy from */
     Address	destPtr;	/* Where to copy to. */
 {
-    register int *sPtr;
-    register int *dPtr;
-    int	    	  extra;
-    
+    register int *sPtr = (int *) sourcePtr;
+    register int *dPtr = (int *) destPtr;
+
     /*
-     * If the destination is below the source or doesn't overlap
-     * the source, then it is safe to copy in the forward direction.
-     * Otherwise, we must start at the top and work down, again optimizing
-     * for large transfers.
+     * If the destination is below the source then it is safe to copy
+     * in the forward direction.  Otherwise, we must start at the top
+     * and work down, again optimizing for large transfers.
      */
 
-    if (destPtr < sourcePtr || (destPtr > sourcePtr + numBytes)) {
+    if (dPtr < sPtr) {
 	/*
-	 * If both the sourcePtr and the destPtr point to aligned
+	 * If both the source and the destination point to aligned
 	 * addresses then copy as much as we can in large transfers.  Once
-	 * we have less than 4 bytes to copy then it must be done by
+	 * we have less than a whole int to copy then it must be done by
 	 * byte transfers.  Furthermore, use an expanded loop to avoid
 	 * the overhead of continually testing loop variables.
 	 */
 	
-	/*
-	 * If the pointers aren't aligned, but they're both misaligned by the
-	 * same amount, we can copy a few bytes to align them.
-	 */
-	extra = (int) sourcePtr & WORDMASK;
-	if (extra && extra == ((int)destPtr&WORDMASK)) {
-	    extra = 4 - extra;
-	    if (extra < numBytes) {
-		while (extra > 0) {
-		    *destPtr++ = *sourcePtr++;
-		    extra--;
-		    numBytes--;
-		}
+	if (!((((int) sPtr) | (int) dPtr) & WORDMASK)) {
+	    while (numBytes >= 16*sizeof(int)) {
+		dPtr[0] = sPtr[0];
+		dPtr[1] = sPtr[1];
+		dPtr[2] = sPtr[2];
+		dPtr[3] = sPtr[3];
+		dPtr[4] = sPtr[4];
+		dPtr[5] = sPtr[5];
+		dPtr[6] = sPtr[6];
+		dPtr[7] = sPtr[7];
+		dPtr[8] = sPtr[8];
+		dPtr[9] = sPtr[9];
+		dPtr[10] = sPtr[10];
+		dPtr[11] = sPtr[11];
+		dPtr[12] = sPtr[12];
+		dPtr[13] = sPtr[13];
+		dPtr[14] = sPtr[14];
+		dPtr[15] = sPtr[15];
+		sPtr += 16;
+		dPtr += 16;
+		numBytes -= 16*sizeof(int);
 	    }
-	}
-
-	sPtr = (int *)sourcePtr;
-	dPtr = (int *)destPtr;
-	    
-	if (!((int) sPtr & WORDMASK) && !((int) dPtr & WORDMASK)) {
-	    while (numBytes >= 32) {
+	    while (numBytes >= sizeof(int)) {
 		*dPtr++ = *sPtr++;
-		*dPtr++ = *sPtr++;
-		*dPtr++ = *sPtr++;
-		*dPtr++ = *sPtr++;
-		*dPtr++ = *sPtr++;
-		*dPtr++ = *sPtr++;
-		*dPtr++ = *sPtr++;
-		*dPtr++ = *sPtr++;
-		numBytes -= 32;
+		numBytes -= sizeof(int);
 	    }
-	    while (numBytes >= 4) {
-		*dPtr++ = *sPtr++;
-		numBytes -= 4;
+	    if (numBytes == 0) {
+		return;
 	    }
-	    sourcePtr = (char *) sPtr;
-	    destPtr = (char *) dPtr;
 	}
 	
 	/*
 	 * Copy the remaining bytes.
 	 */
 	
+	sourcePtr = (char *) sPtr;
+	destPtr = (char *) dPtr;
 	while (numBytes > 0) {
 	    *destPtr++ = *sourcePtr++;
 	    numBytes--;
 	}
     } else {
-	destPtr += numBytes;
-	sourcePtr += numBytes;
-	extra = (int)sourcePtr & WORDMASK;
-
-	if (extra && extra == ((int)destPtr & WORDMASK) && (extra < numBytes)){
-	    while (extra > 0) {
-		*--destPtr = *--sourcePtr;
-		extra--;
-		numBytes--;
-	    }
+	/*
+	 * Handle extra bytes at the top that are due to the transfer
+	 * length rather than pointer misalignment.
+	 */
+	while (numBytes & WORDMASK) {
+	    numBytes --;
+	    destPtr[numBytes] = sourcePtr[numBytes];
 	}
+	sPtr = (int *) (sourcePtr + numBytes);
+	dPtr = (int *) (destPtr + numBytes);
 
-	sPtr = (int *)sourcePtr;
-	dPtr = (int *)destPtr;
-	
-	if (!((int) sPtr & WORDMASK) && !((int) dPtr & WORDMASK)) {
-	    while (numBytes >= 32) {
-		*--dPtr = *--sPtr;
-		*--dPtr = *--sPtr;
-		*--dPtr = *--sPtr;
-		*--dPtr = *--sPtr;
-		*--dPtr = *--sPtr;
-		*--dPtr = *--sPtr;
-		*--dPtr = *--sPtr;
-		*--dPtr = *--sPtr;
-		numBytes -= 32;
+	if (!((((int) sPtr) | (int) dPtr) & WORDMASK)) {
+	    while (numBytes >= 16*sizeof(int)) {
+		sPtr -= 16;
+		dPtr -= 16;
+		dPtr[15] = sPtr[15];
+		dPtr[14] = sPtr[14];
+		dPtr[13] = sPtr[13];
+		dPtr[12] = sPtr[12];
+		dPtr[11] = sPtr[11];
+		dPtr[10] = sPtr[10];
+		dPtr[9] = sPtr[9];
+		dPtr[8] = sPtr[8];
+		dPtr[7] = sPtr[7];
+		dPtr[6] = sPtr[6];
+		dPtr[5] = sPtr[5];
+		dPtr[4] = sPtr[4];
+		dPtr[3] = sPtr[3];
+		dPtr[2] = sPtr[2];
+		dPtr[1] = sPtr[1];
+		dPtr[0] = sPtr[0];
+		numBytes -= 16*sizeof(int);
 	    }
-	    while (numBytes >= 4) {
+	    while (numBytes >= sizeof(int)) {
 		*--dPtr = *--sPtr;
-		numBytes -= 4;
+		numBytes -= sizeof(int);
 	    }
-	    sourcePtr = (char *) sPtr;
-	    destPtr = (char *) dPtr;
+	    if (numBytes == 0) {
+		return;
+	    }
 	}
 	
 	/*
 	 * Copy the remaining bytes.
 	 */
 	
+	destPtr = (char *) dPtr;
+	sourcePtr = (char *) sPtr;
 	while (numBytes > 0) {
 	    *--destPtr = *--sourcePtr;
 	    numBytes--;
 	}
     }
-
-    return(SUCCESS);
 }
 
 
@@ -1740,7 +1813,8 @@ VmMachFlushPage(segPtr, pageNum)
     if (segPtr->segNum > 0) {
 	origSegNum = VmMachSetSegReg1(segPtr->segNum, 
 				      segPtr->segNum / 4 + rootPTPageNum);
-	pageAddr = (Address) (0x40000000 | (pageNum << VMMACH_PAGE_SHIFT));
+	pageAddr = (Address) (VMMACH_CODE_SEG_START |
+			      (pageNum << VMMACH_PAGE_SHIFT));
     } else {
 	pageAddr = (Address) (pageNum << VMMACH_PAGE_SHIFT);
     }
@@ -1817,9 +1891,35 @@ void
 VmMachFlushSegment(segPtr)
     Vm_Segment	*segPtr;
 {
-    int		i;
-
     LOCK_MONITOR;
+
+    FlushSegment(segPtr);
+
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FlushSegment --
+ *
+ *	Flush the given page from all caches.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The given page is flushed from the caches.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+INTERNAL static void
+FlushSegment(segPtr)
+    Vm_Segment	*segPtr;
+{
+    int		i;
 
     /*
      * Uni-processor solution.  Flush the entire cache on this machine.
@@ -1827,8 +1927,36 @@ VmMachFlushSegment(segPtr)
     for (i = 0; i < VMMACH_CACHE_SIZE; i += VMMACH_CACHE_BLOCK_SIZE) {
 	VmMachFlushBlock(i);
     }
+}
 
-    UNLOCK_MONITOR;
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FlushAllCaches --
+ *
+ *	Flush the caches on all processors.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The caches on all processors are flushed.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+INTERNAL static void
+FlushAllCaches()
+{
+    int		i;
+
+    /*
+     * Uni-processor solution.  Flush the entire cache on this machine.
+     */
+    for (i = 0; i < VMMACH_CACHE_SIZE; i += VMMACH_CACHE_BLOCK_SIZE) {
+	VmMachFlushBlock(i);
+    }
 }
 
 
