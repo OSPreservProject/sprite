@@ -394,7 +394,8 @@ extern TraceLog_Header *SOSP91TracePtr;
 #define SOSP_REMEMBERED_CLIENT  (Proc_GetCurrentProc()->extraField[2])
 #define SOSP_REMEMBERED_MIG  (Proc_GetCurrentProc()->extraField[3])
 #define SOSP_REMEMBERED_OP  (Proc_GetCurrentProc()->extraField[4])
-#define SOSP_REMEMBERED_OP2  (Proc_GetCurrentProc()->extraField[5])
+#define SOSP_IN_NAME_LOOKUP  extraField[6]
+#define SOSP_IN_NAME_LOOKUP_FIELD  (Proc_GetCurrentProc()->SOSP_IN_NAME_LOOKUP)
 
 /*
  * Trace a lookup operation.  Note: this traces the name in
