@@ -86,12 +86,44 @@ typedef struct Mach_RegState {
 							/* args beyond 6 */
     unsigned int	extraParams[MACH_NUM_EXTRA_ARGS];
     unsigned int	globals[MACH_NUM_GLOBALS];	/* globals */
-#ifdef FP_ENABLE
-    unsigned int	floatPoints[MACH_NUM_FPS];
-#endif /* FP_ENABLED */
+    unsigned int 	fsr;  /* FPU state register. Bit definition 
+			       * in machConst. */
+    int   numQueueEntries;    /* Number of floating point queue entries
+			       * active. */
+    unsigned int	fregs[MACH_NUM_FPS];	/* Floating point registers.
+						 * This can be treated as
+						 * MACH_NUM_FPS floats or
+						 * MACH_NUM_FPS/2 doubles. */
+    struct {
+	char          *address;	  /* Address of FP instruction. */
+	unsigned int instruction; /* FP instruction value. */
+    }  fqueue[MACH_FPU_MAX_QUEUE_DEPTH];  /* Queue of unfinished floating 
+					   * point instructions. */
 } Mach_RegState;
 
+/*
+ * Temporary hack so we can add fpu stuff without recompiling debuggers.
+ */
+#ifdef NOTDEF
 typedef	Mach_RegState	Mach_DebugState;
+#else
+typedef	struct	Mach_DebugState {
+    unsigned int	curPsr;				/* locals */
+    unsigned int	pc;
+    unsigned int	nextPc;
+    unsigned int	tbr;
+    unsigned int	y;
+    unsigned int	safeTemp;
+    unsigned int	volTemp1;
+    unsigned int	volTemp2;
+    unsigned int	ins[MACH_NUM_INS];		/* ins */
+						/* callee saves inputs here */
+    unsigned int	calleeInputs[MACH_NUM_INS];
+							/* args beyond 6 */
+    unsigned int	extraParams[MACH_NUM_EXTRA_ARGS];
+    unsigned int	globals[MACH_NUM_GLOBALS];	/* globals */
+} Mach_DebugState;
+#endif /* NOTDEF */
 
 /*
  * The machine-dependent signal structure.
