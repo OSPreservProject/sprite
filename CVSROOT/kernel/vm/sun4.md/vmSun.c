@@ -1353,7 +1353,8 @@ SegDelete(segPtr)
  *	Return the context for a process, given its pcb.
  *
  * Results:
- *	Context number for process.
+ *	Context number for process. -1 if the process doesn't
+ *	have a context allocated.
  *
  * Side effects:
  *	None.
@@ -1364,7 +1365,9 @@ int
 VmMach_GetContext(procPtr)
     Proc_ControlBlock	*procPtr;
 {
-    return procPtr->vmPtr->machPtr->contextPtr->context;
+    VmMach_Context	*contextPtr;
+    contextPtr = procPtr->vmPtr->machPtr->contextPtr;
+    return ((contextPtr == (VmMach_Context *)NIL) ? -1 : contextPtr->context);
 }
 
 
