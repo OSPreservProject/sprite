@@ -18,20 +18,22 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsio.h"
-#include "fsNameOps.h"
-#include "fspdev.h"
-#include "fspdevInt.h"
-#include "fsrmt.h"
-
+#include <sprite.h>
+#include <fs.h>
+#include <fsconsist.h>
+#include <fsio.h>
+#include <fsNameOps.h>
+#include <fspdev.h>
+#include <fspdevInt.h>
+#include <fsrmt.h>
+#include <fsioFile.h>
 /*
  * fs_DomainLookup for FS_REMOTE_SPRITE_DOMAIN type.
  */
 
-static ReturnStatus (*pdevDomainLookup[FS_NUM_NAME_OPS])() = {
-     Fsio_NoProc, FspdevPfsExport, FspdevPfsOpen, FspdevPfsGetAttrPath, FspdevPfsSetAttrPath,
+static Fs_DomainLookupOps pdevDomainLookup =  {
+     Fsio_NoProc, FspdevPfsExport, FspdevPfsOpen, FspdevPfsGetAttrPath, 
+     FspdevPfsSetAttrPath,
      FspdevPfsMakeDevice, FspdevPfsMakeDir, FspdevPfsRemove, FspdevPfsRemoveDir,
      FspdevPfsRename, FspdevPfsHardLink
 };
@@ -68,7 +70,7 @@ static Fsio_StreamTypeOps pdevFileStreamOps[] = {
      */
     { FSIO_CONTROL_STREAM, FspdevControlIoOpen,
 		FspdevControlRead, Fsio_NoProc,
-		Fsio_NoProc, Fsio_NoProc,		/* Paging routines */
+		Fsio_NoProc, Fsio_NoProc, Fsio_NoProc, 	/* Paging routines */
 		FspdevControlIOControl, FspdevControlSelect,
 		FspdevControlGetIOAttr, FspdevControlSetIOAttr,
 		FspdevControlVerify,
@@ -84,7 +86,7 @@ static Fsio_StreamTypeOps pdevFileStreamOps[] = {
      */
     { FSIO_SERVER_STREAM, Fsio_NoProc,
 		FspdevServerStreamRead, Fsio_NoProc,
-		Fsio_NoProc, Fsio_NoProc,		/* Paging I/O */
+		Fsio_NoProc, Fsio_NoProc, Fsio_NoProc, 	/* Paging routines */
 		FspdevServerStreamIOControl, FspdevServerStreamSelect,
 		Fsio_NullProc, Fsio_NullProc,		/* Get/Set IO Attr */
 		Fsio_NoHandle,				/* verify */
@@ -98,6 +100,7 @@ static Fsio_StreamTypeOps pdevFileStreamOps[] = {
     { FSIO_LCL_PSEUDO_STREAM, FspdevPseudoStreamIoOpen,
 		FspdevPseudoStreamRead,	FspdevPseudoStreamWrite,
 		FspdevPseudoStreamRead,	FspdevPseudoStreamWrite, /* Paging */
+		Fsio_NoProc, 	/* Paging routines */
 		FspdevPseudoStreamIOControl,
 		FspdevPseudoStreamSelect,
 		FspdevPseudoStreamGetIOAttr, FspdevPseudoStreamSetIOAttr,
@@ -113,6 +116,7 @@ static Fsio_StreamTypeOps pdevFileStreamOps[] = {
     { FSIO_RMT_PSEUDO_STREAM, FspdevRmtPseudoStreamIoOpen,
 		Fsrmt_Read, Fsrmt_Write,
 		Fsrmt_Read, Fsrmt_Write,		/* Paging I/O */
+		Fsio_NoProc, 	/* Paging routines */
 		Fsrmt_IOControl, Fsrmt_Select,
 		Fsrmt_GetIOAttr, Fsrmt_SetIOAttr,
 		FspdevRmtPseudoStreamVerify,
@@ -128,7 +132,7 @@ static Fsio_StreamTypeOps pdevFileStreamOps[] = {
      */
     { FSIO_PFS_CONTROL_STREAM, FspdevPfsIoOpen,
 		Fsio_NoProc, Fsio_NoProc,		/* read, write */
-		Fsio_NoProc, Fsio_NoProc,		/* Paging I/O */
+		Fsio_NoProc, Fsio_NoProc, Fsio_NoProc, 	/* Paging I/O */
 		Fsio_NoProc, Fsio_NoProc,		/* IOControl, select */
 		Fsio_NullProc, Fsio_NullProc,		/* Get/Set IO Attr */
 		FspdevControlVerify,
@@ -148,7 +152,7 @@ static Fsio_StreamTypeOps pdevFileStreamOps[] = {
      */
     { FSIO_PFS_NAMING_STREAM, FspdevPfsNamingIoOpen,
 		Fsio_NoProc, Fsio_NoProc,		/* read, write */
-		Fsio_NoProc, Fsio_NoProc,		/* Paging I/O */
+		Fsio_NoProc, Fsio_NoProc, Fsio_NoProc, 	/* Paging I/O */
 		Fsio_NoProc, Fsio_NoProc,		/* IOControl, select */
 		Fsio_NullProc, Fsio_NullProc,		/* Get/Set IO Attr */
 		FspdevRmtPseudoStreamVerify,
@@ -164,6 +168,7 @@ static Fsio_StreamTypeOps pdevFileStreamOps[] = {
     { FSIO_LCL_PFS_STREAM, FspdevPfsStreamIoOpen,
 		FspdevPseudoStreamRead,	FspdevPseudoStreamWrite,
 		FspdevPseudoStreamRead,	FspdevPseudoStreamWrite, /* Paging */
+		Fsio_NoProc, 	/* Paging I/O */
 		FspdevPseudoStreamIOControl,
 		FspdevPseudoStreamSelect,
 		FspdevPseudoStreamGetIOAttr, FspdevPseudoStreamSetIOAttr,
@@ -182,6 +187,7 @@ static Fsio_StreamTypeOps pdevFileStreamOps[] = {
     { FSIO_RMT_PFS_STREAM, FspdevRmtPfsStreamIoOpen,
 		Fsrmt_Read, Fsrmt_Write,
 		Fsrmt_Read, Fsrmt_Write,			/* Paging */
+		Fsio_NoProc, 	
 		Fsrmt_IOControl, Fsrmt_Select,
 		Fsrmt_GetIOAttr, Fsrmt_SetIOAttr,
 		FspdevRmtPseudoStreamVerify,
@@ -197,7 +203,7 @@ static Fsio_StreamTypeOps pdevFileStreamOps[] = {
      */
     { FSIO_RMT_CONTROL_STREAM, Fsio_NoProc,		/* ioOpen */
 		Fsio_NoProc, Fsio_NoProc,		/* read, write */
-		Fsio_NoProc, Fsio_NoProc,		/* Paging */
+		Fsio_NoProc, Fsio_NoProc, Fsio_NoProc, 	/* Paging */
 		Fsio_NoProc, Fsio_NoProc,		/* ioctl, select */
 		Fsrmt_GetIOAttr, Fsrmt_SetIOAttr,
 		(Fs_HandleHeader *(*)())Fsio_NoProc,	/* verify */
@@ -211,7 +217,7 @@ static Fsio_StreamTypeOps pdevFileStreamOps[] = {
      */
     { FSIO_PASSING_STREAM, FspdevPassStream,
 		Fsio_NoProc, Fsio_NoProc,		/* read, write */
-		Fsio_NoProc, Fsio_NoProc,		/* Paging */
+		Fsio_NoProc, Fsio_NoProc, Fsio_NoProc, 	/* Paging */
 		Fsio_NoProc, Fsio_NoProc,		/* ioctl, select */
 		Fsio_NoProc, Fsio_NoProc,		/* get/set attr */
 		(Fs_HandleHeader *(*)())Fsio_NoProc,	/* verify */
@@ -248,7 +254,7 @@ Fspdev_InitializeOps()
 {
     int	i;
 
-    Fs_InstallDomainLookupOps(FS_PSEUDO_DOMAIN, pdevDomainLookup, 
+    Fs_InstallDomainLookupOps(FS_PSEUDO_DOMAIN, &pdevDomainLookup, 
 			&pdevAttrOpTable);
     for (i = 0; i < numPdevFileStreamOps; i++)  { 
 	Fsio_InstallStreamOps(pdevFileStreamOps[i].type, &(pdevFileStreamOps[i]));
