@@ -547,6 +547,7 @@ PrepareSegment(segPtr)
     LOCK_MONITOR;
 
     virtAddr.segPtr = segPtr;
+    virtAddr.sharedPtr = (Vm_SegProcList *) NIL;
 
     if (segPtr->type == VM_STACK) {
 	virtAddr.page = mach_LastUserStackPage - segPtr->numPages + 1;
@@ -632,6 +633,7 @@ FlushSegment(segPtr)
     VmSwapFileUnlock(segPtr);
 
     virtAddr.segPtr = segPtr;
+    virtAddr.sharedPtr = (Vm_SegProcList *) NIL;
 
     if (segPtr->type == VM_STACK) {
 	virtAddr.page = mach_LastUserStackPage - segPtr->numPages + 1;
@@ -704,6 +706,7 @@ FreePages(segPtr)
     int    		i;
 
     virtAddr.segPtr = segPtr;
+    virtAddr.sharedPtr = (Vm_SegProcList *) NIL;
 
     if (segPtr->type == VM_STACK) {
 	virtAddr.page = mach_LastUserStackPage - segPtr->numPages + 1;
