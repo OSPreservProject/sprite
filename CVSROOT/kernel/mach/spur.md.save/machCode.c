@@ -181,6 +181,11 @@ Mach_Init()
      * Turn off all timers.
      */
     Mach_Write8bitCCReg(MACH_MODE_REG,0);
+    /*
+     * Clear the interrupt mask register and any pending interrupts.
+     */
+    Mach_Write32bitCCReg(MACH_INTR_MASK_0,0);
+    Mach_Write32bitCCReg(MACH_INTR_STATUS_0,-1);
 }
 
 
@@ -200,12 +205,11 @@ Mach_Init()
  *----------------------------------------------------------------------
  */
 void
-InterruptError(statusRegPtr, kpsw)
+InterruptError(statusRegPtr)
     unsigned 	int	*statusRegPtr;
-    unsigned	int	kpsw;
 {
-    Sys_Panic(SYS_FATAL, "InterruptError: Bogus interrupt, ISR=%x KPSW=%x\n",
-			 *statusRegPtr, kpsw);
+    Sys_Panic(SYS_FATAL, "InterruptError: Bogus interrupt, ISR=0x%x\n",
+			 *statusRegPtr);
 }
 
 
@@ -304,7 +308,11 @@ Mach_SetupNewState(procPtr, parStatePtr, startFunc, startPC)
 				     MACH_KPSW_FAULT_TRAP_ENA |
 				     MACH_KPSW_ERROR_TRAP_ENA |
 				     MACH_KPSW_INTR_TRAP_ENA);
-    statePtr->switchRegState.curPC = (Address)startFunc;
+    /*
+     * MachContextSwitch does a "return curPC,$8" so the starting address
+     * should be startFunc - 8.
+     */
+    statePtr->switchRegState.curPC = ((Address)startFunc) - 8;
     /*
      * Start the cwp such that when MachContextSwitch returns it won't
      * cause an overflow.  Note that we want the second window so we set
@@ -769,13 +777,37 @@ MachInterrupt(intrStatusReg, kpsw)
     unsigned	int	intrStatusReg;	/* The interrupt status register. */
     unsigned	int	kpsw;		/* The kernel's psw. */
 {
-    unsigned	int	intrMask;
-    int			intrType;
+    register unsigned	int	intrMask;
+    register int		intrType;
     unsigned	int	statusReg;
 
     globStatusReg = intrStatusReg;
-
     mach_KernelMode = !(kpsw & MACH_KPSW_PREV_MODE);
+
+    /*
+     * Do any nonmaskable interrupts first being careful to restore 
+     * mach_AtInterruptLevel to original value when done.
+    */ 
+    if (intrStatusReg & machNonmaskableIntrMask) { 
+         int 	old_AtInterruptLevel = mach_AtInterruptLevel;
+         mach_AtInterruptLevel = TRUE;
+         intrType = 0;
+         intrMask = 1;
+         statusReg = intrStatusReg & machNonmaskableIntrMask;
+         while (statusReg != 0) {
+	     if (statusReg & intrMask) {
+	         (interruptHandlers[intrType])(&statusReg);
+	         statusReg &= ~intrMask;
+	      }
+	      intrMask = intrMask << 1;
+	      intrType++;
+          }
+          mach_AtInterruptLevel = old_AtInterruptLevel;
+          intrStatusReg &= ~machNonmaskableIntrMask;
+    }
+    if (intrStatusReg == 0) {
+	return;
+    }	
     mach_AtInterruptLevel = TRUE;
     intrType = 0;
     intrMask = 1;
