@@ -14,11 +14,14 @@
 #define _DEV
 
 #include "status.h"
-#include "devZilog.h"
 #include "devTimer.h"
-#include "devKeyboard.h"
-#include "devConsole.h"
 #include "devSyslog.h"
+/* 
+ * Machine dependent exported definitions.
+ */
+ 
+#include "devDependent.h"
+"
 
 /*
  * The filesystem and the device module cooperate to translate from
