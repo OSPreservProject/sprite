@@ -20,20 +20,22 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsio.h"
-#include "fsutil.h"
-#include "fsNameOps.h"
-#include "fscache.h"
-#include "fsutilTrace.h"
-#include "fsStat.h"
-#include "fsdm.h"
-#include "fsprefix.h"
-#include "rpc.h"
-#include "vm.h"
-#include "fsrmt.h"
-#include "fslcl.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsio.h>
+#include <fsutil.h>
+#include <fsNameOps.h>
+#include <fscache.h>
+#include <fsutilTrace.h>
+#include <fsStat.h>
+#include <fsdm.h>
+#include <fsprefix.h>
+#include <rpc.h>
+#include <vm.h>
+#include <fsrmt.h>
+#include <fslcl.h>
+
+#include <stdio.h>
 
 
 /*
@@ -113,7 +115,7 @@ Fs_PageRead(streamPtr, pageAddr, offset, numBytes, pageType)
 	     */
 	    retry = TRUE;
 	    printf("Fs_PageRead: blocked, waiting 1 min\n");
-	    Sync_WaitTime(time_OneMinute);
+	    (void)Sync_WaitTime(time_OneMinute);
 	} else if (status != SUCCESS) {
 	    printf("Fs_PageRead: Read failed <%x>\n", status);
 	}
@@ -201,17 +203,13 @@ Fs_PageCopy(srcStreamPtr, destStreamPtr, offset, numBytes)
     int				lastBlock;
     register	Fs_HandleHeader	*srcHdrPtr;
     register	Fs_HandleHeader	*destHdrPtr;
-    ReturnStatus		status;
+    ReturnStatus		status = SUCCESS;
     int				i;
     Boolean			retry;
-    Fscache_IOProcs	        *ioProcsPtr;
 
     srcHdrPtr = srcStreamPtr->ioHandlePtr;
     destHdrPtr = destStreamPtr->ioHandlePtr;
     lastBlock = (unsigned int) (offset + numBytes - 1) / FS_BLOCK_SIZE;
-    ioProcsPtr = (srcHdrPtr->fileID.type == FSIO_LCL_FILE_STREAM) ? 
-		((Fsio_FileIOHandle *) srcHdrPtr)->cacheInfo.ioProcsPtr :
-		((Fsrmt_FileIOHandle *) srcHdrPtr)->cacheInfo.ioProcsPtr;
 
     /*
      * Copy all blocks in the page.
@@ -219,7 +217,8 @@ Fs_PageCopy(srcStreamPtr, destStreamPtr, offset, numBytes)
     for (i = (unsigned int) offset / FS_BLOCK_SIZE; i <= lastBlock; i++) {
 	do {
 	    retry = FALSE;
-	    status = (ioProcsPtr->blockCopy) (srcHdrPtr, destHdrPtr, i);
+	    status = (fsio_StreamOpTable[srcHdrPtr->fileID.type].blockCopy)
+	    				(srcHdrPtr, destHdrPtr, i);
 #ifdef lint
 	    status = Fsio_FileBlockCopy(srcHdrPtr, destHdrPtr, i);
 	    status = Fsrmt_BlockCopy(srcHdrPtr, destHdrPtr, i);
