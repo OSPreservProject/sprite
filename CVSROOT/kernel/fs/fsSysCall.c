@@ -244,7 +244,7 @@ Fs_UserClose(streamID)
 	 * doesn't make sense here.  Sprite system calls are going
 	 * away soon anyway.
 	 */
-	if (status != GEN_ENOENT) {
+	if (status != GEN_EINTR) {
 	    return(FS_NEW_ID_TOO_BIG);
 	}
 	return(status);
