@@ -515,13 +515,14 @@ Dbg_InputPacket(packetPtr, packetLength)
 	Sys_Printf("Validating packet\n");
     }
     if (Dbg_ValidatePacket(packetLength - sizeof(Net_EtherHdr),
-			   packetPtr + sizeof(Net_EtherHdr),
+			   (Net_IPHeader *)(packetPtr + sizeof(Net_EtherHdr)),
 			   &dataLength, &dataPtr,
 			   &dbgMyIPAddr, &dbgSrcIPAddr, &dbgSrcPort)) {
 	if (dbgTraceLevel >= 4) {
 	    Sys_Printf("Got a packet: length=%d\n", dataLength);
 	}
-	Byte_Copy(sizeof(Net_EtherHdr), etherHdrPtr, &dbgEtherHdr);
+	Byte_Copy(sizeof(Net_EtherHdr), (Address)etherHdrPtr,
+		 (Address)&dbgEtherHdr);
 	gotPacket = TRUE;
 	Byte_Copy(dataLength, dataPtr, requestBuffer);
     }
@@ -724,6 +725,7 @@ typedef struct {
  *
  * ----------------------------------------------------------------------------
  */
+/*ARGSUSED*/
 void
 Dbg_Main(stackHole, dbgStack)
     StackHole		stackHole;	/* The hole put in the stack so that
@@ -865,7 +867,7 @@ Dbg_Main(stackHole, dbgStack)
 	SendReply();
 	do {
 	    if (ReadRequest(TRUE)) {
-		GetRequestBytes(2, &tOpcode);
+		GetRequestBytes(2, (Address)&tOpcode);
 		opcode = (Dbg_Opcode) tOpcode;
 		if (opcode == DBG_GET_STOP_INFO) {
 		    break;
@@ -874,7 +876,7 @@ Dbg_Main(stackHole, dbgStack)
 	    /*
 	     * We can only timeout if we are using network debugging.
 	     */
-	    Net_OutputRawEther(replyBuffer, &dbgGather, 1);
+	    Net_OutputRawEther((Net_EtherHdr *)replyBuffer, &dbgGather, 1);
 	    if (dbgTraceLevel >= 5) {
 		Sys_Printf("DBG: Timeout\n");
 	    }
@@ -901,7 +903,7 @@ Dbg_Main(stackHole, dbgStack)
 	    }
 	}
 	(void) ReadRequest(FALSE);
-	GetRequestBytes(2, &tOpcode);
+	GetRequestBytes(2, (Address)&tOpcode);
 	opcode = (Dbg_Opcode) tOpcode;
     }
 
@@ -1039,7 +1041,7 @@ Dbg_Main(stackHole, dbgStack)
 		 * For a reboot command first read the size of the string and
 		 * then the string itself.
 		 */
-		GetRequestBytes(sizeof(int), &stringLength);
+		GetRequestBytes(sizeof(int), (Address)&stringLength);
 		if (stringLength != 0) {
 		    GetRequestBytes(stringLength, (Address)rebootString);
 		}
@@ -1074,13 +1076,13 @@ Dbg_Main(stackHole, dbgStack)
 			    writeMem.numBytes, opcode == DBG_DATA_WRITE)) {
 		    if (opcode == DBG_INST_WRITE) {
 			VmMach_SetProtForDbg(TRUE, writeMem.numBytes, 
-					     writeMem.address);
+					     (Address)writeMem.address);
 		    }
 		    GetRequestBytes(writeMem.numBytes,
 				    (Address) writeMem.address);
 		    if (opcode == DBG_INST_WRITE) {
 			VmMach_SetProtForDbg(FALSE, writeMem.numBytes, 
-					     writeMem.address);
+					     (Address)writeMem.address);
 		    }
 		    ch = 1;
 		} else {
@@ -1140,7 +1142,8 @@ Dbg_Main(stackHole, dbgStack)
 		 */
 		savedDbgStackLength = dbgStackLength;
 		savedExcStackLength = excStackLength;
-		Byte_Copy(dbgStackLength, &dbgGlobalStack, &savedDbgStack);
+		Byte_Copy(dbgStackLength, (Address)&dbgGlobalStack,
+			  (Address)&savedDbgStack);
 
 		dbgGlobalStack.trapStack.excStack.vor.stackFormat = MACH_SHORT;
 		excStackLength =
@@ -1176,8 +1179,8 @@ Dbg_Main(stackHole, dbgStack)
 		     */
 		    dbgStackLength = savedDbgStackLength;
 		    excStackLength = savedExcStackLength;
-		    Byte_Copy(sizeof(dbgGlobalStack), &savedDbgStack,
-			      &dbgGlobalStack);
+		    Byte_Copy(sizeof(dbgGlobalStack), (Address)&savedDbgStack,
+			      (Address)&dbgGlobalStack);
 		    callInProgress = FALSE;
 		}
 		/*
@@ -1292,8 +1295,8 @@ Dbg_Main(stackHole, dbgStack)
 	    Sys_Printf("\r\n");
 	}
 	if (!done) {
-	    ReadRequest(FALSE);
-	    GetRequestBytes(2, &tOpcode);
+	    (void)ReadRequest(FALSE);
+	    GetRequestBytes(2, (Address)&tOpcode);
 	    opcode = (Dbg_Opcode) tOpcode;
 	}
     }
