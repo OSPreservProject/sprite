@@ -638,7 +638,8 @@ VmSegmentDeleteInt(segPtr, procPtr, procLinkPtrPtr, objStreamPtrPtr, migFlag)
 	 */
 	(void)Sync_Wait(&segPtr->condition, FALSE);
     }
-    if (!vm_NoStickySegments && segPtr->type == VM_CODE) {
+    if (!vm_NoStickySegments && segPtr->type == VM_CODE &&
+        !(segPtr->flags & VM_DEBUGGED_SEG)) {
 	/* 
 	 * Put onto the inactive list and tell our caller to close the
 	 * object file.
