@@ -3205,7 +3205,9 @@ _Mach_SetProcessorNumber:
  *	jump to when done is passed in VOL_TEMP1, and the trapping instruction
  *      is passed in VOL_TEMP2.  The return values are:
  *      OUTPUT1 -- opcode
- *      OUTPUT2 -- destination register or condition code
+ *      OUTPUT2 -- destination register (for loads and operations)
+ *		   condition code (for compares)
+ *                 value to store (for stores)
  *      OUTPUT3 -- operand 1
  *      OUTPUT4 -- operand 2
  *
@@ -3345,7 +3347,7 @@ parse_op:
 	extract		SRC_REG,SRC_REG,$1
 	and		SRC_REG,SRC_REG,$0x1f
 	
-	cmp_br_delayed	ult, SRC_REG,  $31, @regf
+	cmp_br_delayed	ult, SRC_REG,  $31, @getf
 	nop
 	jump		@endf
 	add_nt		SRC_REG, SAVED_R15, $0   /* get r31 directly */
@@ -3450,6 +3452,31 @@ parse_store:
 @pos:
 	and		OUTPUT_REG4, TRAP_INST, $0x01ff	     /* Put together into */
 	or		OUTPUT_REG4, PARSE_TEMP1,  OUTPUT_REG4  /*    14-bit value. */
+
+	/*
+	 * Get value being stored
+	 */
+
+	add_nt		SRC_REG,OUTPUT_REG2,r0   /* Register number */
+	cmp_br_delayed	ult, SRC_REG,  $31, @getf
+	nop
+	jump		@endf
+	add_nt		SRC_REG, SAVED_R15, $0   /* get r31 directly */
+
+@get:	rd_special	PARSE_TEMP1, pc         /* Back up one window */
+	return		PARSE_TEMP1, $12
+	Nop
+	sll		PREV_SRC_REG, PREV_SRC_REG, $2	/* s1 = s1 * 4 */
+	jump_reg	PREV_SRC_REG, $OpRecov  /* Retrieve value of 2nd op. */
+	jump	        @nextf  /* The instruction in table will be
+			      /* executed in the delay slot of this jump. */
+@next:
+	call 	       	@endf			/* Get back to trap window.  */
+	Nop
+
+@end:
+	add_nt		OUTPUT_REG2,SRC_REG,$0
+
 
 	/*
 	 * All done.  Restore the registers and go back to the caller.
