@@ -54,10 +54,10 @@ extern void Dev_Config _ARGS_((void));
 
 extern void Dev_GatherDiskStats _ARGS_((void));
 extern int Dev_GetDiskStats _ARGS_((Sys_DiskStats *diskStatArr,int numEntries));
-extern void Dev_RegisterConsoleCmd _ARGS_((char commandChar, void (*proc)(void),
-    ClientData clientData));
+extern void Dev_RegisterConsoleCmd _ARGS_((int commandChar,
+    void (*proc)(ClientData clientData), ClientData clientData));
 extern void Dev_InvokeConsoleCmd _ARGS_((int commandChar));
-extern int Dev_KbdQueueAttachProc _ARGS_((char character, void (*proc)(void),
-    ClientData clientData));
+extern int Dev_KbdQueueAttachProc _ARGS_((int character, 
+    void (*proc)(ClientData clientData), ClientData clientData));
 
 #endif /* _DEV */
