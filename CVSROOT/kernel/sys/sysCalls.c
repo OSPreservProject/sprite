@@ -226,8 +226,8 @@ Sys_Shutdown(flags, rebootString)
 	 * into a kernel process. If we don't do this we will get cache
 	 * write-back errors from dirty cache blocks of the shutdown program.
 	 */
-	MachFlushWindowsToStack();
-	VmMachFlushCurrentContext();
+	Mach_FlushWindowsToStack();
+	VmMach_FlushCurrentContext();
 #endif
 	procPtr->genFlags &= ~PROC_USER;
 	procPtr->genFlags |= PROC_KERNEL;
