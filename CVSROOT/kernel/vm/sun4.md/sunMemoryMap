@@ -1,0 +1,77 @@
+
+I modified the vm module for the sun3 so the kernel code and data area can 
+grow to 8 megabytes (on machines with at least 8 meg of memory). I've
+tested the change and it appears to work.  I'll run it for a while to make
+sure everything works before I installed it.
+
+Rather than moving the kernel down in the virtual address space and having
+to change everyone's Makefile I stole the additional 4 meg from the file 
+system block cache.  With this change the maximum size block cache is
+20096 Kbytes which is still more than the amount for physical memory on
+any of our sun3's.  Just for reference I made a map of the virtual address
+space of the sun3 and sun4.  
+
+	Mendel
+
+Virtual address space on the sun3:
+
+	Address	
+	0xFFFFFFFF
+	   -	  Not valid in the sun3 MMU. 	3840 Meg
+	0x0FFFFFFF
+	   - 	  Used for weird IE, LE device mapping.    256 Kbytes 
+	0x0FFC0000
+	   - 	  VDMA mapping addresses. 768 Kbytes
+	0x0FF00000	
+	   -	  Device mapping area.	 1024 Kbytes
+	0x0FE00000
+	   - 	  File system block cache. 20096 Kbytes (19.63 Meg)
+	0x0EA60000
+	   -	  Hardware segments used to access PMEGs. 256 Kbytes
+	0x0EA20000
+	   -	  Area used to map user pages into kernel.   128 KBytes
+	0x0EA00000
+	   -	  Kernel Stacks (128 processes).   2048 Kbytes.
+	0x0E800000
+	   - 	  Kernel Code and Data.  8192 Kbytes.
+	0x0E000000
+	   -	  Area for mapping between user's segment. 128 KBytes
+	0x0DFE0000
+	   - 	  User's virtual address space. 229240 Kbytes (223.9 Meg)
+	0x00002000 
+	   -	  Invalid page	- 8 Kbytes.
+	0x00000000
+
+Virtual address space on the sun4:
+
+	Address
+	0xFFFFFFFF
+	   -	  Used for IE device mapping and such. 256 Kbytes
+	0xFFFC0000
+	   - 	  VDMA mapping addresses. 768 Kbytes
+	0xFFF00000	
+	   -	  Device mapping area.	 2048 Kbytes
+	0xFFD00000
+	   - 	  File system block cache. 6400 Kbytes (6.25 Meg)
+	0xFF6c0000
+	   -	  Hardware segments used to access PMEGs. 512 Kbytes
+	0xFF640000
+	   -	  Lost due to rounding. 128 Kbytes
+	0xFF620000
+	   -	  Area used to map user pages into kernel.   128 KBytes
+	0xFF600000
+	   -	  Kernel Stacks (128 processes).   2048 Kbytes.
+	0xFF400000
+	   - 	  Kernel Code and Data.  4096 Kbytes.
+	0xFF000000
+	   -	  Area for mapping between user's segment. 256 KBytes
+	0xFEFC0000
+	   -	  Not currently in use. 507648 Kbytes (495.75 Meg)
+	0xE0000000
+	   -	  The Hole!! (3072 Meg)
+	0x20000000
+	   - 	  User's virtual address space. 524280 Kbytes (511.99 Meg)
+	0x00002000 
+	   -	  Invalid page	- 8 Kbytes.
+	0x00000000
+
