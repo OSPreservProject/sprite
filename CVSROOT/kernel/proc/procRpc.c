@@ -93,7 +93,7 @@ static CallBack callBackVector[] = {
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_CHANGE_DIR	  14 */
     { RSNIL /* Proc_Wait */,		RSNIL }, /* SYS_PROC_WAIT	  15 */
     { Proc_Detach,			RSNIL }, /* SYS_PROC_DETACH	  16 */
-    { Proc_GetIDs,			RSNIL }, /* SYS_PROC_GETIDS	  17 */
+    { RSNIL /* Not migrated */		RSNIL }, /* SYS_PROC_GETIDS	  17 */
     { Proc_SetIDs,			RSNIL }, /* SYS_PROC_SETIDS	  18 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_PROC_GETGROUPIDS  19 */
     { RSNIL /* Proc_SetGroupIDs */,	RSNIL }, /* SYS_PROC_SETGROUPIDS  20 */
@@ -103,23 +103,23 @@ static CallBack callBackVector[] = {
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_TEST_STATS	  24 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_VM_CREATEVA	  25 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_VM_DESTROYVA      26 */
-    { Sig_UserSend,			RSNIL }, /* SYS_SIG_SEND	  27 */
+    { RSNIL /* Not migrated */		RSNIL }, /* SYS_SIG_SEND	  27 */
     { RSNIL /* Sig_Pause */,		RSNIL }, /* SYS_SIG_PAUSE	  28 */
     { RSNIL /* Sig_SetHoldMask */,	RSNIL }, /* SYS_SIG_SETHOLDMASK   29 */
     { RSNIL /* Sig_SetAction */,	RSNIL }, /* SYS_SIG_SETACTION     30 */
-    { Prof_Start,			RSNIL }, /* SYS_PROF_START	  31 */
-    { Prof_End,				RSNIL }, /* SYS_PROF_END	  32 */
-    { Prof_DumpStub,			RSNIL }, /* SYS_PROF_DUMP	  33 */
-    { Vm_Cmd,				RSNIL }, /* SYS_VM_CMD	          34 */
+    { RSNIL /* Not migrated */		RSNIL }, /* SYS_PROF_START	  31 */
+    { RSNIL /* Not migrated */		RSNIL }, /* SYS_PROF_END	  32 */
+    { RSNIL /* Not migrated */		RSNIL }, /* SYS_PROF_DUMP	  33 */
+    { RSNIL /* Not migrated */		RSNIL }, /* SYS_VM_CMD	          34 */
     { Sys_GetTimeOfDay,			RSNIL }, /* SYS_SYS_GETTIMEOFDAY  35 */
     { Sys_SetTimeOfDay,			RSNIL }, /* SYS_SYS_SETTIMEOFDAY  36 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_SYS_DONOTHING     37 */
-    { Proc_GetPCBInfo,			RSNIL }, /* SYS_PROC_GETPCBINFO   38 */
+    { RSNIL /* Not migrated */		RSNIL }, /* SYS_PROC_GETPCBINFO   38 */
     { RSNIL /* Vm_GetSegInfo */,	RSNIL }, /* SYS_VM_GETSEGINFO     39 */
     { Proc_GetResUsage,			RSNIL }, /* SYS_PROC_GETRESUSAGE  40 */
-    { Proc_GetPriority,			RSNIL }, /* SYS_PROC_GETPRIORITY  41 */
-    { Proc_SetPriority,			RSNIL }, /* SYS_PROC_SETPRIORITY  42 */
-    { Proc_Debug,			RSNIL }, /* SYS_PROC_DEBUG	  43 */
+    { RSNIL /* Not migrated */		RSNIL }, /* SYS_PROC_GETPRIORITY  41 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_PROC_SETPRIORITY  42 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_PROC_DEBUG	  43 */
     { RSNIL /* Not implemented */,	RSNIL }, /* SYS_PROC_PROFILE      44 */
     { RSNIL /* obsolete */,		RSNIL }, /* SYS_FS_TRUNC	  45 */
     { RSNIL /* obsolete */,		RSNIL }, /* SYS_FS_TRUNC_ID	  46 */
@@ -147,14 +147,14 @@ static CallBack callBackVector[] = {
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_READLINK 	  68 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_CREATEPIPE     69 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_VM_MAPKERNELINTOUSER 70 */
-    { Fs_AttachDiskStub ,		RSNIL }, /* SYS_FS_ATTACH_DISK    71 */
+    { Fs_AttachDiskStub,		RSNIL }, /* SYS_FS_ATTACH_DISK    71 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_SELECT         72 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_SYS_SHUTDOWN	  73 */
     { Proc_Migrate,			RSNIL }, /* SYS_PROC_MIGRATE	  74 */
     { Fs_MakeDeviceStub,		RSNIL }, /* SYS_FS_MAKE_DEVICE    75 */
-    { Fs_CommandStub,			RSNIL }, /* SYS_FS_COMMAND        76 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_COMMAND        76 */
     { RSNIL /* obsolete */,		RSNIL }, /* SYS_FS_LOCK		  77 */
-    { Sys_GetMachineInfo,		RSNIL }, /* SYS_GETMACHINEINFO    78 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_GETMACHINEINFO    78 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_NET_INSTALL_ROUTE 79 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_READVECTOR	  80 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_WRITEVECTOR	  81 */
@@ -169,7 +169,7 @@ static CallBack callBackVector[] = {
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_SCHED_IDLE_PROCESSOR 90 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_SCHED_START_PROCESSOR 91 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_MACH_NUM_PROCESSORS 92 */
-    { Prof_Profil,                      RSNIL }, /* SYS_PROF_PROFIL 93 */
+    { RSNIL /* Not migrated */,         RSNIL }, /* SYS_PROF_PROFIL 93 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_PROC_REMOTE_EXEC     94 */
     { RSNIL /* Not migrated */,		RSNIL},  /* SYS_SYS_GETMACHINEINFO_NEW 95 */
 };
