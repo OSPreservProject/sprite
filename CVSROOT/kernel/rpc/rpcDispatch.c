@@ -25,7 +25,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "rpcClient.h"
 #include "rpcServer.h"
 #include "rpcTrace.h"
-
+#include "net.h"
 
 /*
  * Our sprite ID.  It is exported for general use by other modules.
@@ -95,14 +95,16 @@ int  RpcValidateClient();
  *----------------------------------------------------------------------
  */
 
-Rpc_Dispatch(headerType, headerPtr, rpcHdrPtr, packetLength)
+Rpc_Dispatch(headerType, headerPtr, rpcHdrAddr, packetLength)
     int		headerType;	/* Type of transport header. */
     Address	headerPtr;	/* Pointer to transport header. */
-    register RpcHdr	*rpcHdrPtr; /* RPC header of packet. */
+    Address 	rpcHdrAddr;    /* RPC header of packet. */
     int		packetLength;	    /* Size of RPC packet. */
 {
+    register RpcHdr	*rpcHdrPtr; /* RPC header of packet. */
     register int expectedLength;
 
+    rpcHdrPtr = (RpcHdr *) rpcHdrAddr;
     if (rpcHdrPtr->version == rpc_SwappedVersion) {
 	/*
 	 * Byte swap the packet header and the parameter block.
