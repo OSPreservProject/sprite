@@ -36,7 +36,7 @@ int recovPingSeconds = 30;
  * ping finished.  This is used for testing the affects of the synchronization
  * of client pinging on the servers.
  */
-Boolean			recov_AbsoluteIntervals = FALSE;
+Boolean			recov_AbsoluteIntervals = TRUE;
 Timer_QueueElement	recovIntervalElement;
 unsigned int		recovPingEvent;
 /*

@@ -112,6 +112,13 @@ extern int recov_PrintLevel;
 #define SRV_RECOV_FAILED	0x4
 
 /*
+ * Whether or not to use absolute intervals for pinging servers.  The default
+ * is to use them in order to avoid synchronizing clients due to server
+ * reboots.
+ */
+extern	Boolean	recov_AbsoluteIntervals;
+
+/*
  * Trace types for use with Recov_HostTrace.  Compatible with recov.h bits.
  *	RECOV_TRACE_FS_STALE	A stale handle was returned from a file server
  */
