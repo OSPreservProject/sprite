@@ -59,6 +59,7 @@ void
 Sys_Init()
 {
     SysInitSysCall();
+    strcpy(sys_HostName, "unknown");
 }
 
 /*

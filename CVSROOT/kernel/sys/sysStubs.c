@@ -88,8 +88,6 @@ Sys_RebootStub(howto)
 
 #define MAX_HOST_NAME_LEN 255
 
-char sysHostName[MAX_HOST_NAME_LEN + 1];
-static int sysHostNameLen = 0;
 static char sysDomainName[MAX_HOST_NAME_LEN + 1];
 static int sysDomainNameLen = 0;
 int sysHostID;
@@ -122,18 +120,25 @@ Sys_GethostnameStub(name, namelen)
     if (debugSysStubs) {
 	printf("Sys_GethostnameStub\n");
     }
-    if (namelen < sysHostNameLen + 1) {
+    copyLen = strlen(sys_HostName) + 1;
+    if (namelen < copyLen) {
 	copyLen = namelen;
-    } else {
-	copyLen = sysHostNameLen + 1;
     }
-    status = Vm_CopyOut(copyLen, sysHostName, name);
+    status = Vm_CopyOut(copyLen, sys_HostName, name);
     if (status != SUCCESS) {
 	Mach_SetErrno(Compat_MapCode(status));
 	return -1;
     }
     return 0;
 }
+
+/*
+ * MAXHOSTNAMELEN is defined here because including the correct 
+ * header file (sys/param.h) causes lots of problems because it
+ * includes signal.h whose definitions conflict with ultrixSignal.h
+ */
+
+#define MAXHOSTNAMELEN		64
 
 
 /*
@@ -159,6 +164,7 @@ Sys_SethostnameStub(name, namelen)
 {
     Proc_ControlBlock	*procPtr = Proc_GetEffectiveProc();
     ReturnStatus	status;
+    char		tmp[MAXHOSTNAMELEN];
 
     if (debugSysStubs) {
 	printf("Sys_SethostnameStub\n");
@@ -167,18 +173,17 @@ Sys_SethostnameStub(name, namelen)
 	Mach_SetErrno(EPERM);
 	return -1;
     }
-    if (namelen > MAX_HOST_NAME_LEN) {
+    if (namelen > MAXHOSTNAMELEN - 1) {
 	Mach_SetErrno(EINVAL);
 	return -1;
     }
-    status = Vm_CopyIn(namelen, name, sysHostName);
+    status = Vm_CopyIn(namelen, name, tmp);
     if (status != SUCCESS) {
-	sysHostNameLen = 0;
 	Mach_SetErrno(Compat_MapCode(status));
 	return -1;
     }
-    sysHostName[namelen] = 0;
-    sysHostNameLen = namelen;
+    tmp[namelen] = '\0';
+    strcpy(sys_HostName, tmp);
     return 0;
 }
 

@@ -67,6 +67,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <status.h>
 #include <stdio.h>
 #include <sysTestCall.h>
+#include <user/sys/param.h>
 
 /*
  * Forward declarations to procedures defined in this file:
@@ -138,6 +139,7 @@ int sys_ParamSizesDecl[] = {
     sizeof(Proc_ControlBlock),		/* SYS_PARAM_PCB		*/
     sizeof(Fs_Device),			/* SYS_PARAM_FS_DEVICE		*/
     sizeof(Proc_PCBArgString),		/* SYS_PARAM_PCBARG		*/
+    MAXHOSTNAMELEN,			/* SYS_PARAM_HOSTNAME		*/
 
 };
 
@@ -300,8 +302,10 @@ static SysCallEntry sysCalls[] = {
      * The following are placeholders for Zebra system calls which aren't 
      * in the standard kernel. 
      */
-    ErrorProc,   		ErrorProc,   TRUE,	3,   NILPARM,
-    ErrorProc,   		ErrorProc,   TRUE,	3,   NILPARM,
+    ErrorProc,   		ErrorProc,   		TRUE,	3,   NILPARM,
+    ErrorProc,   		ErrorProc,   		TRUE,	3,   NILPARM,
+    Sys_GetHostName,		Proc_DoRemoteCall, 	FALSE,	1,   NILPARM,
+    Sys_SetHostName,		Proc_DoRemoteCall, 	FALSE,	1,   NILPARM,
 };
 
 
@@ -484,7 +488,13 @@ static Sys_CallParam paramsArray[] = {
     /* local */                         /* SYS_SYNC_SEMOP		104 */
     /* local */                         /* VM_MPROTECT			105 */
     /* special */			/* SYS_PROC_VFORK	        106 */
-    /* local */				/* SYS_NET_GET_ROUTES		107 */			
+    /* local */				/* SYS_NET_GET_ROUTES		107 */
+    /* local */				/* SYS_NET_DELETE_ROUTE		108 */
+    /* local */				/* SYS_ZSS_CMD			109 */
+    /* local */				/* SYS_ZEBRA_CMD		110 */
+    SYS_PARAM_HOSTNAME,		PARM_OC,	/* SYS_SYS_GET_HOSTNAME	111 */
+    SYS_PARAM_HOSTNAME,		PARM_IA,	/* SYS_SYS_SET_HOSTNAME	112 */
+
     /*
      * Insert new system call information above this line.
      */

@@ -86,6 +86,7 @@
  * SYS_PARAM_RANGE2	-	End of range for array.
  * SYS_PARAM_PCB	-	Process control block.
  * SYS_PARAM_FS_DEVICE	-	Device specification.
+ * SYS_PARAM_HOSTNAME	-	Hostname.
  */
 
 #define SYS_PARAM_INT			0
@@ -105,6 +106,7 @@
 #define SYS_PARAM_PCB			14
 #define SYS_PARAM_FS_DEVICE		15
 #define SYS_PARAM_PCBARG		16
+#define SYS_PARAM_HOSTNAME		17
 
 typedef struct {
     int type;

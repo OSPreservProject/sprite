@@ -41,10 +41,12 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #ifdef sun4c
 #include <devSCSIC90.h>
 #endif /* sun4c */
+#include <user/sys/param.h>
 
 Boolean	sys_ErrorShutdown = FALSE;
 Boolean	sys_ShuttingDown = FALSE;
 
+char	sys_HostName[MAXHOSTNAMELEN];
 
 /*
  *----------------------------------------------------------------------
@@ -139,6 +141,83 @@ Sys_SetTimeOfDay(timePtr, localOffset, DST)
     return(SUCCESS);
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sys_GetHostName --
+ *
+ *	Stub for the Sys_GetHostName system call.
+ *	Returns the name of the host.
+ *
+ * Results:
+ *	SUCCESS 		The call was successful.
+ *	SYS_ARG_NOACCESS	The user arguments were not accessible.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Sys_GetHostName(namePtr)
+    char	*namePtr;		/* Buffer to store host name. */
+{
+    int		nameLen;
+
+    nameLen = strlen(sys_HostName);
+    if (Proc_ByteCopy(FALSE, nameLen+1, (Address) sys_HostName, 
+	(Address) namePtr) != SUCCESS) {
+
+	return SYS_ARG_NOACCESS;
+    }
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sys_SetHostName --
+ *
+ *	Stub for the Sys_SetHostName system call.
+ *	Sets the name of the host. Only the root can make this call.
+ *
+ * Results:
+ *	SUCCESS 		The call was successful.
+ *	SYS_ARG_NOACCESS	The user arguments were not accessible.
+ *	SYS_INVALID_ARG		The name was too long.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Sys_SetHostName(namePtr)
+    char	*namePtr;		/* Buffer to store host name. */
+{
+    char		tmp[MAXHOSTNAMELEN+1];
+    int			length;
+    Proc_ControlBlock 	*procPtr;
+
+    procPtr = Proc_GetEffectiveProc();
+    if (procPtr->effectiveUserID != 0) {
+	return GEN_NO_PERMISSION;
+    }
+    if (Proc_StringNCopy(MAXHOSTNAMELEN+1, namePtr, tmp, &length) != SUCCESS) {
+	return SYS_ARG_NOACCESS;
+    }
+    /*
+     * Make sure that the name wasn't too long.
+     */
+    if (length == MAXHOSTNAMELEN+1) {
+	return SYS_INVALID_ARG;
+    }
+    strcpy(sys_HostName, tmp);
+    return(SUCCESS);
+}
 
 /*
  *----------------------------------------------------------------------

@@ -50,6 +50,7 @@ extern	Boolean	sys_ErrorShutdown;	/* Set after a bad trap or error */
 extern	Boolean	sys_ErrorSync;		/* Set while syncing disks */
 extern	Boolean sys_CallProfiling;	/* Set if timing system calls */
 extern	int	sys_NumCalls[];
+extern	char	sys_HostName[];		/* The name of this host. */
 
 extern void	Sys_Init _ARGS_((void));
 extern void	Sys_SyncDisks _ARGS_((int trapType));
@@ -61,6 +62,8 @@ extern ReturnStatus Sys_SetTimeOfDay _ARGS_((Time *timePtr, int localOffset,
 		    Boolean DST));
 extern void	Sys_RecordCallStart _ARGS_((void));
 extern void	Sys_RecordCallFinish _ARGS_((int callNum));
+extern ReturnStatus Sys_GetHostName _ARGS_((char *name));
+extern ReturnStatus Sys_SetHostName _ARGS_((char *name));
 
 extern int	vprintf _ARGS_(());
 extern void	panic _ARGS_(());
@@ -88,6 +91,8 @@ extern ReturnStatus Sys_DoNothing();
 extern ReturnStatus Sys_Shutdown();
 extern ReturnStatus Sys_GetMachineInfo();
 extern ReturnStatus Sys_GetMachineInfoNew();
+extern ReturnStatus Sys_GetHostName();
+extern ReturnStatus Sys_SetHostName();
 
 #endif /* KERNEL */
 #endif /* _ASM */

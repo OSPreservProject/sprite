@@ -541,7 +541,8 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
 		    lastArraySize = size;
 		}
 		break;
- 	    case SYS_PARAM_FS_NAME: 
+	    case SYS_PARAM_FS_NAME: 
+	    case SYS_PARAM_HOSTNAME:
                 /*
 		 * The argument is a string.  If copying a string in, make
 		 * it accessible and figure out its size dynamically.  If
