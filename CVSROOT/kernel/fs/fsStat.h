@@ -334,6 +334,20 @@ typedef struct Fs_RecoveryStats {
 } Fs_RecoveryStats;
 
 /*
+ * Cache conistency statistics.
+ */
+typedef struct Fs_ConsistStats {
+    int files;			/* The number of times consistency was checked*/
+    int clients;		/* The number of clients considered */
+    int notCaching;		/* # of other clients that weren't caching */
+    int readCaching;		/* # of other clients that were read caching */
+    int writeCaching;		/* # of lastWriters that re-opened  */
+    int writeBack;		/* # of lastWriters forced to write-back */
+    int readInvalidate;		/* # of readers forced to stop caching */
+    int writeInvalidate;	/* # of writers forced to stop caching */
+} Fs_ConsistStats;
+
+/*
  * File system statistics.
  */
 typedef struct Fs_Stats {
@@ -348,6 +362,7 @@ typedef struct Fs_Stats {
     Fs_NameCacheStats	nameCache;	/* Server name cache */
     Fs_ObjectStats	object;		/* Counts of various objects */
     Fs_RecoveryStats	recovery;	/* Crash recovery and reopening */
+    Fs_ConsistStats	consist;	/* Cache consistency actions */
 } Fs_Stats;
 
 /*
