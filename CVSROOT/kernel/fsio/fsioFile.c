@@ -323,6 +323,11 @@ FsFileReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
     if (domainPtr == (FsDomain *)NIL) {
 	return(FS_DOMAIN_UNAVAILABLE);
     }
+#ifdef reopenPrefixChecking
+    /*
+     * This seems like an extreme check, although it could be restored
+     * if FsRmtFileCltOpen was fixed to save the prefix ID (somehow)
+     */
     prefixPtr = FsPrefixFromFileID(&reopenParamsPtr->prefixFileID);
     if (prefixPtr == (FsPrefix *)NIL) {
 	Sys_Panic(SYS_WARNING, "FsFileReopen: no prefix <%d,%d>, client %d\n",
@@ -332,6 +337,7 @@ FsFileReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	status = FS_DOMAIN_UNAVAILABLE;
 	goto reopenReturn;
     }
+#endif reopenPrefixChecking
     status = FsLocalFileHandleInit(&reopenParamsPtr->fileID, &handlePtr);
     if (status != SUCCESS) {
 	goto reopenReturn;
@@ -429,14 +435,12 @@ reopenReturn:
  */
 /*ARGSUSED*/
 ReturnStatus
-FsFileCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, nameInfoPtr,
-	    ioHandlePtrPtr)
+FsFileCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPtr)
     FsFileID		*ioFileIDPtr;	/* I/O fileID from the name server */
     int			*flagsPtr;	/* Return only.  The server returns
 					 * a modified useFlags in FsFileState */
     int			clientID;	/* IGNORED */
     ClientData		streamData;	/* FsFileState. */
-    FsNameInfo		*nameInfoPtr;	/* We set the fileID part of this. */
     FsHandleHeader	**ioHandlePtrPtr;/* Return - a handle set up for
 					 * I/O to a file, NIL if failure. */
 {
@@ -445,12 +449,6 @@ FsFileCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, nameInfoPtr,
     status = FsLocalFileHandleInit(ioFileIDPtr,
 		(FsLocalFileIOHandle **)ioHandlePtrPtr);
     if (status == SUCCESS) {
-	/*
-	 * Save the fileID needed to get attributes from the name
-	 * server when you only have the open stream.  For regular
-	 * files the name server and the I/O server are the same guy.
-	 */
-	nameInfoPtr->fileID = *ioFileIDPtr;
 	/*
 	 * Return the new useFlags from the server.  It has stripped off
 	 * execute permission for directories.

@@ -54,7 +54,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 typedef struct FsDeviceState {
     int		accessTime;	/* Access time from disk descriptor */
     int		modifyTime;	/* Modify time from disk descriptor */
-    FsFileID	nameFileID;	/* Needed to get to name server for attrs. */
     FsFileID	streamID;	/* Used to set up client list */
 } FsDeviceState;
 
@@ -187,10 +186,6 @@ FsDeviceSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	deviceDataPtr = Mem_New(FsDeviceState);
 	deviceDataPtr->modifyTime = descPtr->dataModifyTime;
 	deviceDataPtr->accessTime = descPtr->accessTime;
-	deviceDataPtr->nameFileID = handlePtr->hdr.fileID;
-	if (clientID != rpc_SpriteID) {
-	    deviceDataPtr->nameFileID.type = FS_RMT_FILE_STREAM;
-	}
 	/*
 	 * Choose a streamID for the client that points to the device server.
 	 * We only need to choose the name here, that's why we discard
@@ -232,14 +227,11 @@ FsDeviceSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, nameInfoPtr,
-	ioHandlePtrPtr)
+FsDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPtr)
     register FsFileID	*ioFileIDPtr;	/* I/O fileID */
     int			*flagsPtr;	/* FS_READ | FS_WRITE ... */
     int			clientID;	/* Host doing the open */
     ClientData		streamData;	/* Reference to FsDeviceState struct */
-    FsNameInfo		*nameInfoPtr;	/* We set the fileID part here for
-					 * use in getting attributes later */
     FsHandleHeader	**ioHandlePtrPtr;/* Return - a locked handle set up for
 					 * I/O to a device, NIL if failure. */
 {
@@ -285,13 +277,6 @@ FsDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, nameInfoPtr,
 	    devHandlePtr->use.write++;
 	}
 	*ioHandlePtrPtr = (FsHandleHeader *)devHandlePtr;
-	/*
-	 * Save the fileID needed later to get back to the name server
-	 * when settting/getting attributes for the device.
-	 */
-	if (nameInfoPtr != (FsNameInfo *)NIL) {
-	    nameInfoPtr->fileID = deviceDataPtr->nameFileID;
-	}
 	FsHandleUnlock(devHandlePtr);
     } else {
 	FsHandleRelease(devHandlePtr, TRUE);
@@ -322,13 +307,11 @@ FsDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, nameInfoPtr,
  */
 /*ARGSUSED*/
 ReturnStatus
-FsRmtDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, nameInfoPtr,
-	    ioHandlePtrPtr)
+FsRmtDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPtr)
     FsFileID		*ioFileIDPtr;	/* I/O fileID */
     int			*flagsPtr;	/* FS_READ | FS_WRITE ... */
     int			clientID;	/* Host doing the open */
     ClientData		streamData;	/* FsDeviceState */
-    FsNameInfo		*nameInfoPtr;	/* FileID field set for attributes */
     FsHandleHeader	**ioHandlePtrPtr;/* Return - a handle set up for
 					 * I/O to a device, NIL if failure. */
 {
@@ -370,10 +353,6 @@ FsRmtDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, nameInfoPtr,
 	    recovPtr->use.write++;
 	}
 	*ioHandlePtrPtr = (FsHandleHeader *)rmtHandlePtr;
-	/*
-	 * Save name fileID for dealing with attributes later.
-	 */
-	nameInfoPtr->fileID = deviceStatePtr->nameFileID;
 	FsHandleUnlock(rmtHandlePtr);
     }
     Mem_Free((Address)deviceStatePtr);
@@ -489,8 +468,7 @@ Fs_RpcDevOpen(srvToken, clientID, command, storagePtr)
     paramPtr = (FsDeviceRemoteOpenPrm *) storagePtr->requestParamPtr;
     status = (fsStreamOpTable[paramPtr->fileID.type].cltOpen)
 		    (&paramPtr->fileID, &paramPtr->useFlags,
-		     clientID, storagePtr->requestDataPtr,
-		     (FsNameInfo *)NIL, &hdrPtr);
+		     clientID, storagePtr->requestDataPtr, &hdrPtr);
     if (status == SUCCESS) {
 	/*
 	 * Return the fileID to the other host so it can
