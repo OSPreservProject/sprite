@@ -39,6 +39,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <procMigrate.h>
 
 #include <stdio.h>
+#include <assert.h>
 
 Boolean fsio_MigDebug = FALSE;
 #define DEBUG( format ) \
@@ -276,6 +277,7 @@ Fsio_DeencapStream(bufPtr, streamPtrPtr)
     }
 
     if (status == SUCCESS) {
+	assert(streamPtr != (Fs_Stream *)NIL);
 	*streamPtrPtr = streamPtr;
     } else {
 	Fsutil_HandleLock(streamPtr);
