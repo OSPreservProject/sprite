@@ -2026,15 +2026,25 @@ CheckPermissions(handlePtr, useFlags, idPtr, type)
 	(descPtr->fileType != FS_FILE)) {
 	return(FS_WRONG_TYPE);
     }
-
     /*
-     * Check for ownership permission first.
+     * Reset SETUID/SETGID bit when writing a file.
      */
+    if ((useFlags & FS_WRITE) && (descPtr->fileType == FS_FILE) &&
+	(descPtr->permissions & (FS_SET_UID|FS_SET_GID))) {
+	descPtr->permissions &= ~(FS_SET_UID|FS_SET_GID);
+	descPtr->flags |= FS_FD_DIRTY;
+    }
+    /*
+     * Check for ownership permission.  This probably redundant with
+     * respect to the checking done by FsLocalSetAttr.
+     */
+#ifdef notdef
     if (useFlags & FS_OWNERSHIP) {
 	if ((uid != descPtr->uid) && (uid != 0)) {
 	    return(FS_NOT_OWNER);
 	}
     }
+#endif notdef
     /*
      * Check read/write/exec permissions against one of the owner bits,
      * the group bits, or the world bits.  'permBits' is set to
