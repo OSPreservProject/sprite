@@ -57,6 +57,7 @@ DevConfigDevice devDevice[] = {
 /*  { 0, 1, DEV_SCSI_DISK, Dev_SCSIInitDevice}, */
     { 0, 3, DEV_SCSI_WORM, Dev_SCSIInitDevice},
     { 0, 4, DEV_SCSI_TAPE, Dev_SCSIInitDevice},
+    { 0, 5, DEV_SCSI_WORM, Dev_SCSIInitDevice},
 
 /*  { 1, 0, DEV_SCSI_DISK, Dev_SCSIInitDevice},		/* Units 8-15 */
 /*  { 1, 1, DEV_SCSI_DISK, Dev_SCSIInitDevice},		/* Units 16-23 */
