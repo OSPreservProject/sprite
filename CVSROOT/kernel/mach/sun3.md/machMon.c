@@ -182,7 +182,7 @@ Mon_StartNmi()
 	}
 #endif
 #ifdef SUN3
-	*SunInterruptReg |= MACH_ENABLE_LEVEL7_INTR;
+	*Mach_InterruptReg |= MACH_ENABLE_LEVEL7_INTR;
 #endif
 	stoppedNMI = FALSE;
     }
@@ -229,7 +229,7 @@ Mon_StopNmi()
 	machVectorTablePtr->autoVec[6] = MonNmiNop;
 #endif SUN2
 #ifdef SUN3
-	*SunInterruptReg &= ~MACH_ENABLE_LEVEL7_INTR;
+	*Mach_InterruptReg &= ~MACH_ENABLE_LEVEL7_INTR;
 #endif SUN3
     }
 }
