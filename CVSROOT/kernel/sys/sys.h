@@ -41,7 +41,7 @@ extern	Boolean	sys_ErrorSync;		/* Set while syncing disks */
 extern	int	sys_NumCalls[];
 
 extern	void	Sys_Init();
-extern	void	printf();
+extern  void     printf _ARGS_((char *format, ...));
 extern	void	panic();
 extern	int	vprintf();
 
