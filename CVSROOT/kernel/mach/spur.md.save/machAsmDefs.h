@@ -396,11 +396,12 @@
  *	    2) Switch to the debuggers own spill and saved window stacks.
  *	    3) Turn off interrupts, turn on all traps, and turn off and 
  *	       invalidate the ibuffer.
- *	    4) Call routine _MachCallDebugger(errorType, &machDebugState)
- *	    5) Restore state from _machDebugState (note that this will 
+ *	    4) Flush the cache.
+ *	    5) Call routine _MachCallDebugger(errorType, &machDebugState)
+ *	    6) Restore state from _machDebugState (note that this will 
  *	       reenable the ibuffer unless the debugger has modified the
  *	       kpsw to not have it enabled).
- *	    6) Do a normal return from trap.
+ *	    7) Do a normal return from trap.
  *
  *	regErrorVal -	Register that holds an error value.
  *	constErrorVal -	Constant error value.
@@ -421,6 +422,13 @@
 	wr_kpsw		VOL_TEMP1, $0; \
 	invalidate_ib; \
 	\
+	add_nt		r1, r0, $0; \
+	LD_CONSTANT(r2, VMMACH_CACHE_SIZE); \
+1:	st_external	r0, r1, $MACH_CO_FLUSH; \
+	add_nt		r1, r1, $VMMACH_CACHE_BLOCK_SIZE; \
+	cmp_br_delayed	lt, r1, r2, 1b; \
+	Nop; \
+	\
 	add_nt		OUTPUT_REG1, regErrorVal, $constErrorVal; \
 	ld_32		OUTPUT_REG2, r0, $debugStatePtr; \
 	Nop; \
@@ -436,6 +444,31 @@
 	add_nt		RETURN_VAL_REG, r0, $MACH_NORM_RETURN; \
 	jump		ReturnTrap; \
 	Nop
+
+/*
+ * Save the cache controller state.
+ */
+#define SAVE_CC_STATE() \
+	add_nt		r1, r0, $0; \
+	LD_CONSTANT(r2, 0xff03b000); \
+	nop; \
+1:	ld_external	r5, r1, $MACH_CO_RD_REG; \
+	nop; \
+	ld_external	r6, r1, $(MACH_CO_RD_REG + 0x20); \
+	wr_insert	$1; \
+	insert		r5, r5, r6; \
+	ld_external	r6, r1, $(MACH_CO_RD_REG + 0x40); \
+	wr_insert	$2; \
+	insert		r5, r5, r6; \
+	ld_external	r6, r1, $(MACH_CO_RD_REG + 0x60); \
+	wr_insert	$3; \
+	insert		r5, r5, r6; \
+	st_32		r5, r2, $0; \
+	add_nt		r1, r1, $0x80; \
+	add_nt		r2, r2, $4; \
+	add_nt		r3, r0, $0x1000; \
+	cmp_br_delayed	lt, r1, r3, 1b; \
+	nop
 
 /*
  * FETCH_CUR_INSTRUCTION(destReg) --

@@ -132,6 +132,8 @@
 	.globl _MachUserAction
 
 /*
+ * The KPSW value to set and 
+/*
  * Trap table.  The hardware jumps to virtual 0x1000 when any type of trap
  * occurs.
  */
@@ -182,6 +184,14 @@
 #endif
 
 	.org 0x1100
+	/*
+	 * This entry needs to be at the same place in 
+	 * both the physical and virtual space.  If it's moved
+	 * here, it needs to move in loMem.s as well.
+	 */
+        .globl _debugger_active_address
+_debugger_active_address:
+
 /*
  ****************************************************************************
  *
@@ -218,6 +228,7 @@ numArgsPtr:			.long _machNumArgs
 debugStatePtr:			.long _machDebugState
 debugSWStackBase:		.long MACH_DEBUG_STACK_BOTTOM
 debugSpillStackEnd:		.long (MACH_DEBUG_STACK_BOTTOM + MACH_KERN_STACK_SIZE)
+ccStatePtr:			.long 0xff03b000
 
 /*
  * The instruction to execute on return from a signal handler.  Is here
@@ -296,24 +307,11 @@ start:
  *				page tables.
  */
 #define	MEM_SLOT_MASK		0xff000000
-#define	KERN_PT_FIRST_PAGE	1024
+#define KERN_FIRST_PHYS_PAGE	2
+#define	KERN_PT_FIRST_PAGE	60
 #define	KERN_NUM_PAGES		1024
 #define	KERN_PT_BASE	(MEM_SLOT_MASK | (KERN_PT_FIRST_PAGE * VMMACH_PAGE_SIZE))
-#define	KERN_PT2_BASE	(KERN_PT_BASE + VMMACH_SEG_PT_SIZE / 4 * VMMACH_KERN_PT_QUAD)
-
-/*
- * Zero out all of the physical memory where the kernel page tables are
- * going to be at.
- */
-	LD_CONSTANT(r1, KERN_PT_BASE)
-	add_nt		r2, r2, $0
-	LD_CONSTANT(r3, VMMACH_NUM_PT_PAGES * VMMACH_PAGE_SIZE)
-
-1:	add_nt		r4, r1, r2
-	st_32		r0, r4, $0
-	add_nt		r2, r2, $4
-	cmp_br_delayed	lt, r2, r3, 1b
-	Nop
+#define	KERN_PT2_BASE	(KERN_PT_BASE + ((VMMACH_SEG_PT_SIZE / 4) * VMMACH_KERN_PT_QUAD))
 
 /*
  * Initialize the kernel page tables.  In the code that follows registers have 
@@ -337,6 +335,24 @@ start:
 	add_nt		r1, r1, $4
 	add_nt		r3, r3, r4
 	sub		r2, r2, $1
+/* IMPORTANT NOTE: This should be a compare against 0 but there is a hack
+ * for now to let us refresh the CC wells. */
+	cmp_br_delayed	gt, r2, $1, 1b
+	Nop
+
+/*
+ * Remap 16 Mbytes of the device 2nd level page tables for now.
+ */
+	LD_CONSTANT(r1, KERN_PT2_BASE)
+	add_nt		r1, r1, $512 
+	add_nt		r2, r0, $4
+	LD_CONSTANT(r3, MEM_SLOT_MASK | ((KERN_PT_FIRST_PAGE - 4) << VMMACH_PAGE_FRAME_SHIFT) | VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | VMMACH_KRW_URO_PROT | VMMACH_REFERENCED_BIT | VMMACH_MODIFIED_BIT)
+	LD_CONSTANT(r4, 1 << VMMACH_PAGE_FRAME_SHIFT)
+1:
+	st_32		r3, r1, $0
+	add_nt		r1, r1, $4
+	add_nt		r3, r3, r4
+	sub		r2, r2, $1
 	cmp_br_delayed	gt, r2, $0, 1b
 	Nop
 
@@ -346,7 +362,7 @@ start:
  */
 	LD_CONSTANT(r1, KERN_PT_BASE)
 	add_nt		r2, r0, $KERN_NUM_PAGES
-	LD_CONSTANT(r3, MEM_SLOT_MASK | VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | VMMACH_KRW_URO_PROT | VMMACH_REFERENCED_BIT | VMMACH_MODIFIED_BIT)
+	LD_CONSTANT(r3, MEM_SLOT_MASK | (KERN_FIRST_PHYS_PAGE << VMMACH_PAGE_FRAME_SHIFT) | VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | VMMACH_KRW_URO_PROT | VMMACH_REFERENCED_BIT | VMMACH_MODIFIED_BIT)
 
 1:
 	st_32		r3, r1, $0
@@ -378,7 +394,7 @@ start:
  * Clear out the cache.
  */
 	LD_CONSTANT(r1, 0x03000000)
-	LD_CONSTANT(r2, VMMACH_CACHE_SIZE)
+	LD_CONSTANT(r2, (0x03000000 | VMMACH_CACHE_SIZE))
 1:
 	st_32		r0, r1, $0
 	add_nt		r1, r1, $VMMACH_CACHE_BLOCK_SIZE
@@ -389,13 +405,27 @@ start:
  * Clear snoop tags.
  */
 	LD_CONSTANT(r1, 0x04000000)
-	LD_CONSTANT(r2, VMMACH_CACHE_SIZE)
+	LD_CONSTANT(r2, (0x04000000 | VMMACH_CACHE_SIZE))
 1:
 	st_32		r0, r1, $0
 	add_nt		r1, r1, $VMMACH_CACHE_BLOCK_SIZE
 	cmp_br_delayed	lt, r1, r2, 1b
 	Nop
 #endif
+
+refreshWell:
+	LD_CONSTANT(r1, MACH_CC_FAULT_ADDR)
+	LD_CONSTANT(r2, MACH_KPSW_CC_REFRESH)
+	rd_kpsw		r3
+	wr_kpsw		r3, r2
+	rd_special	r7, pc
+	add_nt		r7, r7, $24
+	ld_32_ri	r2, r1, $0
+	nop
+	jump		ErrorTrap
+	nop
+	wr_kpsw		r3, $0
+
 
 /*
  * Initialize the cwp, swp and SPILL_SP to their proper values.
@@ -412,6 +442,8 @@ start:
 	add_nt		r1, r0, $-1
 	WRITE_STATUS_REGS(MACH_FE_STATUS_0, r1)
 
+	SAVE_CC_STATE()
+
 /*
  * Now jump to virtual mode through the following sequence:
  *
@@ -424,7 +456,8 @@ start:
 	wr_kpsw		r0, $0
 	invalidate_ib
 	add_nt		r1, r0, $(MACH_KPSW_PREFETCH_ENA | MACH_KPSW_IBUFFER_ENA | MACH_KPSW_VIRT_DFETCH_ENA | MACH_KPSW_VIRT_IFETCH_ENA | MACH_KPSW_FAULT_TRAP_ENA | MACH_KPSW_ERROR_TRAP_ENA | MACH_KPSW_ALL_TRAPS_ENA)
-	call		_main
+	LD_PC_RELATIVE(r2, mainAddr)
+	jump_reg	r2, $0
 	wr_kpsw		r1, $0
 	jump		ErrorTrap
 	Nop
@@ -433,6 +466,7 @@ start:
 	Nop
 #endif
 
+mainAddr:	.long	_main
 /*
  *---------------------------------------------------------------------------
  *
@@ -710,7 +744,20 @@ ErrorTrap:
  */
 faultIntr_Const1:
 	.long	MACH_KPSW_USE_CUR_PC
+faultIntr_Const2:
+	.long	MACH_KPSW_CC_REFRESH
 FaultIntr:
+	LD_PC_RELATIVE(SAFE_TEMP1, faultIntr_Const2)
+	rd_kpsw		VOL_TEMP1
+        and             VOL_TEMP1, VOL_TEMP1, SAFE_TEMP1
+        cmp_br_delayed  eq, VOL_TEMP1, r0, $faultIntr_NormFault
+	nop
+	READ_STATUS_REGS(MACH_FE_STATUS_0, SAFE_TEMP1)
+	WRITE_STATUS_REGS(MACH_FE_STATUS_0, SAFE_TEMP1)
+	return_trap	CUR_PC_REG, $16
+	nop
+
+faultIntr_NormFault:
 	/*
 	 * On this type of trap we are supposed to return to the current 
 	 * PC.
@@ -721,7 +768,7 @@ FaultIntr:
 	/*
 	 * Read the fault/error status register.
 	 */
-	READ_STATUS_REGS(MACH_FE_STATUS_0, VOL_TEMP1)
+	READ_STATUS_REGS(MACH_FE_STATUS_0, SAFE_TEMP1)
 #ifdef BARB
 	/*
 	 * Simulate a virtual memory fault.
@@ -731,14 +778,14 @@ FaultIntr:
 	/*
 	 * If no bits are set then it must be an interrupt.
 	 */
-	cmp_br_delayed	eq, VOL_TEMP1, r0, Interrupt
+	cmp_br_delayed	eq, SAFE_TEMP1, r0, Interrupt
 	Nop
 	/*
 	 * If any of the bits FEStatus<19:16> are set then is one of the
 	 * four VM faults.  Store the fault type in a safe temporary and
 	 * call the VMFault handler.
 	 */
-	extract		SAFE_TEMP1, VOL_TEMP1, $2
+	extract		SAFE_TEMP1, SAFE_TEMP1, $2
 	and		SAFE_TEMP1, SAFE_TEMP1, $0xf
 	cmp_br_delayed	ne, SAFE_TEMP1, r0, VMFault
 	Nop
@@ -1950,6 +1997,34 @@ RestoreState:
 /*
  *----------------------------------------------------------------------------
  *
+ * MachRefreshCCWells()
+ *
+ *	Cause a fault in order to refresh the CC wells.
+ *
+ *----------------------------------------------------------------------------
+ */
+machRefresh_Const1:
+	.long		MACH_CC_FAULT_ADDR
+machRefresh_Const2:
+	.long		MACH_KPSW_CC_REFRESH
+
+	.globl _MachRefreshCCWells
+_MachRefreshCCWells:
+	rd_kpsw		SAFE_TEMP1
+	LD_PC_RELATIVE(SAFE_TEMP2, machRefresh_Const1)
+	LD_PC_RELATIVE(SAFE_TEMP3, machRefresh_Const2)
+	wr_kpsw		SAFE_TEMP1, SAFE_TEMP3
+	ld_32_ri	VOL_TEMP1, SAFE_TEMP2, $0
+	nop
+	jump		ErrorTrap
+	nop
+	wr_kpsw		SAFE_TEMP1, $0
+	return		RETURN_ADDR_REG, $8
+	nop
+
+/*
+ *----------------------------------------------------------------------------
+ *
  * MachRunUserProc()
  *
  *	Start the user process executing.
@@ -2033,7 +2108,7 @@ _MachContextSwitch:
 	/*
 	 * We are now in the new process so return.
 	 */
-	return		RETURN_ADDR_REG, $0
+	return		RETURN_ADDR_REG, $8
 	Nop
 
 /*

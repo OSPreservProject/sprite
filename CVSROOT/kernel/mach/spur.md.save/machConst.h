@@ -204,8 +204,14 @@
 
 /*
  * Sprite defined bits in the kpsw.
+ *
+ *	MACH_KPSW_CC_REFRESH	Taking a fault to refresh the cache controller
+ *				floating well.
+ *	MACH_KPSW_USE_CUR_PC	Use the current PC when returning from a trap
+ *				not the next PC.
  */
-#define	MACH_KPSW_USE_CUR_PC		0x10000
+#define	MACH_KPSW_CC_REFRESH		0x10000
+#define	MACH_KPSW_USE_CUR_PC		0x20000
 
 /*
  * Bits in UPSW (see SPUR-ISA page 36).
@@ -452,5 +458,11 @@
  * The physical address of the UART.
  */
 #define	MACH_UART_PHYS_ADDR	0x10000
+
+/*
+ * The virtual address that is always guaranteed to cause a fault so that
+ * we can refresh the CC wells.
+ */
+#define	MACH_CC_FAULT_ADDR	0x3ffffffc
 
 #endif _MACHCONST

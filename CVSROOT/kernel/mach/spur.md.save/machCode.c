@@ -382,7 +382,9 @@ Mach_StartUserProc(procPtr, entryPoint)
     /*
      * Allocate memory for the saved window stack.
      */
-    Vm_UserMap(statePtr->userState.minSWP, statePtr->userState.maxSWP);
+    Vm_UserMap(VM_READWRITE_ACCESS,
+	       statePtr->userState.maxSWP - statePtr->userState.minSWP, 
+	       statePtr->userState.minSWP);
     MachRunUserProc();
     /* THIS DOES NOT RETURN */
 }
@@ -420,7 +422,8 @@ Mach_ExecUserProc(procPtr, userStackPtr, entryPoint)
     /*
      * Free up the old saved window stack.
      */
-    Vm_UserUnmap(statePtr->userState.minSWP, statePtr->userState.maxSWP);
+    Vm_UserUnmap(statePtr->userState.maxSWP - statePtr->userState.minSWP,
+		 statePtr->userState.minSWP);
 
     regStatePtr = &statePtr->userState.trapRegState;
     regStatePtr->regs[MACH_SPILL_SP][1] = (int)userStackPtr;
@@ -971,12 +974,13 @@ MachGetWinMem()
 	     * Free the highest page because we never want more than two
 	     * full pages at once.
 	     */
-	    Vm_UserUnmap(statePtr->userState.minSWP + VMMACH_PAGE_SIZE,
-			 statePtr->userState.maxSWP);
 	    statePtr->userState.maxSWP -= VMMACH_PAGE_SIZE;
+	    Vm_UserUnmap(VMMACH_PAGE_SIZE, statePtr->userState.maxSWP);
 	}
 	statePtr->userState.minSWP -= VMMACH_PAGE_SIZE;
-	Vm_UserMap(statePtr->userState.minSWP, statePtr->userState.maxSWP);
+	Vm_UserMap(VM_READWRITE_ACCESS,
+		   statePtr->userState.maxSWP - statePtr->userState.minSWP, 
+		   statePtr->userState.minSWP);
     } else if (swp > statePtr->userState.maxSWP - 2 * MACH_SAVED_WINDOW_SIZE) {
 	/*
 	 * Need to allocate more at the high end.
@@ -990,12 +994,13 @@ MachGetWinMem()
 	     * Free the lowest page because we never want more than two
 	     * full pages at once.
 	     */
-	    Vm_UserUnmap(statePtr->userState.minSWP,
-			 statePtr->userState.minSWP + VMMACH_PAGE_SIZE);
+	    Vm_UserUnmap(VMMACH_PAGE_SIZE, statePtr->userState.minSWP);
 	    statePtr->userState.minSWP += VMMACH_PAGE_SIZE;
 	}
 	statePtr->userState.maxSWP += VMMACH_PAGE_SIZE;
-	Vm_UserMap(statePtr->userState.minSWP, statePtr->userState.maxSWP);
+	Vm_UserMap(VM_READWRITE_ACCESS,
+		   statePtr->userState.maxSWP - statePtr->userState.minSWP, 
+		   statePtr->userState.minSWP);
     }
 }
 
