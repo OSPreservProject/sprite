@@ -97,6 +97,7 @@ void		Rpc_Reply();
 void		Rpc_ErrorReply();
 int		Rpc_FreeMem();
 
+ReturnStatus    Rpc_CreateServer();
 ReturnStatus	Rpc_Echo();
 ReturnStatus	Rpc_Ping();
 ReturnStatus	Rpc_EchoTest();
