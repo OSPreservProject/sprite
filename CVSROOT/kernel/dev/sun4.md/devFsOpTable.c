@@ -156,18 +156,27 @@ DevFsTypeOps devFsOpTable[] = {
                    DevFBIOControl, DevFBClose, NullProc,
                    DEV_NO_ATTACH_PROC, NoDevice, DevFBMMap},
     /*
-     * VME link device.
+     * This exists only on the Symmetry, so use all null entries
+     */
+    {DEV_ZDC_DISK, NoDevice, NullProc, NullProc,
+		   Dev_NullIOControl, NullProc, NullProc,
+		   DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+     
+    /*
+     * The audio device may exist for the sun4.  If so, ignore it for now.
+     */
+    {DEV_AUDIO, NoDevice, NullProc, NullProc,
+		Dev_NullIOControl, NullProc, NullProc,
+		DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+    /*
+     * VME link board device.
      */
     {DEV_VMELINK, DevVMElinkOpen, DevVMElinkRead, DevVMElinkWrite,
 	 	  DevVMElinkIOControl, NullProc, NullProc,
 	 	  DEV_NO_ATTACH_PROC, NoDevice},
     /*
-     * These devices don't exist on a sun4.
+     * No such device on the sun4.
      */
-    {15, NullProc, NullProc, NullProc, NullProc, NullProc, NullProc, 
-		   DEV_NO_ATTACH_PROC, NullProc, NullProc},
-    {16, NullProc, NullProc, NullProc, NullProc, NullProc, NullProc, 
-		   DEV_NO_ATTACH_PROC, NullProc, NullProc},
     {17, NullProc, NullProc, NullProc, NullProc, NullProc, NullProc, 
 		   DEV_NO_ATTACH_PROC, NullProc, NullProc},
     /*
@@ -188,6 +197,7 @@ DevFsTypeOps devFsOpTable[] = {
     {DEV_SCSI_ROBOT, DevSCSIExbRobotOpen, NullProc, NullProc,
 	            DevSCSIExbRobotIOControl, DevSCSIExbRobotClose,
 	            NullProc, DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+>>>>>>> 9.4
 };
 
 int devNumDevices = sizeof(devFsOpTable) / sizeof(DevFsTypeOps);

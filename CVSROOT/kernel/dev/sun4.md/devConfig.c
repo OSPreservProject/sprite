@@ -52,8 +52,7 @@ DevConfigController devCntrlr[] = {
     { "Jaguar2", 0x9800, DEV_VME_D16A16, 2, DevJaguarInit, 216, DevJaguarIntr},
     { "Jaguar3", 0xc000, DEV_VME_D16A16, 3, DevJaguarInit, 217, DevJaguarIntr},
     { "tmr0", 0xFFD14000, DEV_OBIO, 0, Dev_TimerProbe, 0, ((Boolean (*)())0)},
-    { "VMElink", 0x100, DEV_VME_D16A16, 0, DevVMElinkInit, 0,
-	  ((Boolean (*)())0)},
+    { "VMElink", 0x0100, DEV_VME_D16A16, 0,DevVMElinkInit, 218,DevVMElinkIntr},
 };
 int devNumConfigCntrlrs = sizeof(devCntrlr) / sizeof(DevConfigController);
 
