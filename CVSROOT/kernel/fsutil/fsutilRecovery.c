@@ -322,6 +322,7 @@ RemoteHandle(hdrPtr)
 	case FS_PFS_NAMING_STREAM:
 	case FS_RMT_PFS_STREAM:
 	case FS_CONTROL_STREAM:
+	case FS_PFS_CONTROL_STREAM:
 	    return(TRUE);
 	default:
 	    return(FALSE);
