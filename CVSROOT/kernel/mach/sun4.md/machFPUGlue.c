@@ -114,6 +114,7 @@ suword(address,value)
 
 }
 
+#include <sun4/fpu/globals.h>
 
 void
 MachFPU_Emulate(processID, instAddr, userRegsPtr, curWinPtr)
@@ -122,9 +123,15 @@ MachFPU_Emulate(processID, instAddr, userRegsPtr, curWinPtr)
     Mach_RegState 	*userRegsPtr;
     Mach_RegWindow	*curWinPtr;
 {
+	union {
+		int		i;
+		fp_inst_type	inst;
+	}		kluge;
     enum ftt_type result;
 
-    result = fp_emulator(instAddr, userRegsPtr, curWinPtr, userRegsPtr);
+    fptrapaddr = (char *) instAddr;	/* bad inst addr in case we trap */
+    _fp_current_pfregs = userRegsPtr;
+    result = fpu_simulator(instAddr, (fsr_type *) & (userRegsPtr->fsr));
     switch (result) {
     case ftt_none:
 	break;
@@ -148,7 +155,5 @@ MachFPU_Emulate(processID, instAddr, userRegsPtr, curWinPtr)
 	break;
     }
 }
-_fp_read_pfreg() { } 
-_fp_write_pfreg() { }
 
 #endif /* lint */
