@@ -271,16 +271,16 @@ extern void Timer_SetTimeOfDay _ARGS_((Time newUniversal, int newLocalOffset,
  * found in any of the machine dependent implementations.
  */
 
-extern void Timer_TimerInit _ARGS_((unsigned short timer));
-extern void Timer_TimerStart _ARGS_((register unsigned short timer));
-extern void Timer_TimerInactivate _ARGS_((register unsigned short timer));
+extern void Timer_TimerInit _ARGS_((int timer));
+extern void Timer_TimerStart _ARGS_((int timer));
+extern void Timer_TimerInactivate _ARGS_((int timer));
 
 
 /*
  * Used by the dump routines in the utils module for debugging.
  */
-extern void Timer_TimerGetInfo _ARGS_((void));
-extern void Timer_DumpQueue _ARGS_((void));
+extern void Timer_TimerGetInfo _ARGS_((ClientData data));
+extern void Timer_DumpQueue _ARGS_((ClientData data));
 extern void Timer_DumpStats _ARGS_((ClientData arg));
 
 #endif /* _TIMER */
