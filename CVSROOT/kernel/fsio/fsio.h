@@ -391,7 +391,7 @@ typedef struct Fsutil_UseCounts {
 
 /*
  * Exported type for async I/O requests.
- *
+ */
 typedef struct Fsio_Request *Fsio_RequestToken;
 
 extern Fsio_RequestToken Fsio_DeviceBlockIOAsync();
@@ -490,5 +490,6 @@ extern ReturnStatus Fsio_NoProc();
 extern ReturnStatus Fsio_NullProc();
 extern Fs_HandleHeader *Fsio_NoHandle();
 
+extern ReturnStatus Fsio_RpcStreamMigCloseNew();
 
 #endif
