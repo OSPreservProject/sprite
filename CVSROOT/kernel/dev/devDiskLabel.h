@@ -74,6 +74,13 @@ typedef struct Sun_DiskLabel {
 #define SUN_SUMMARY_SECTOR	17
 #define SUN_DOMAIN_SECTOR	18
 
+/* 
+ * SUN_LABEL_SECTOR -- sector holding the disk label
+ * SUN_BOOT_SECTOR -- first sector of the boot program
+ */
+#define SUN_LABEL_SECTOR 0
+#define SUN_BOOT_SECTOR 1
+
 /*
  * DEC_NUM_DISK_PARTS is the number of partitions that are recorded in
  * the label information.  The size of the padding in the Dec_DiskLabel
