@@ -336,7 +336,6 @@ FsFileReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
     FsLocalFileIOHandle	    	*handlePtr;	/* Local handle for file */
     register ReturnStatus	status = SUCCESS; /* General return code */
     FsDomain			*domainPtr;
-    FsUseCounts			useChange;
 
     *outDataPtr = (ClientData) NIL;
     *outSizePtr = 0;

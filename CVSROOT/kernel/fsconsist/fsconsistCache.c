@@ -621,7 +621,6 @@ FsReopenConsistency(handlePtr, clientID, use, cacheablePtr, openTimeStampPtr)
     int				useFlags = 0;
     Boolean			cacheable;
     ReturnStatus		status = SUCCESS;
-    Boolean			found;
     register FsConsistInfo	*consistPtr = &handlePtr->consist;
     register FsClientInfo	*clientPtr;
 

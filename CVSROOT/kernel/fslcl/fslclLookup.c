@@ -760,8 +760,17 @@ FindComponent(parentHandlePtr, component, compLen, isDotDot, curHandlePtrPtr)
 				    status, component, dirEntryPtr->fileNumber);
 			    }
 			    goto exit;	/* to quiet lint... */
+#ifndef lint
 			} else if (*s1++ != *s2++) {
 			    break;
+#else
+			} else {
+			    if (*s1 != *s2) {
+				break;
+			    }
+			    s1++;
+			    s2++;
+#endif
 			}
 		    } while (TRUE);
 		}
