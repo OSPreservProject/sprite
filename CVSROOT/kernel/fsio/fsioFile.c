@@ -1033,10 +1033,20 @@ Fsio_FileRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
     register Fsio_FileIOHandle *handlePtr =
 	    (Fsio_FileIOHandle *)streamPtr->ioHandlePtr;
     register ReturnStatus status;
+    int savedOffset = readPtr->offset;
+    int savedLength = readPtr->length;
 
     status = Fscache_Read(&handlePtr->cacheInfo, readPtr->flags,
 	    readPtr->buffer, readPtr->offset, &readPtr->length, remoteWaitPtr);
     replyPtr->length = readPtr->length;
+    if ((status == SUCCESS) && (readPtr->flags & FS_SWAP)) {
+	/*
+	 * While page-ins on the file server come from its cache, we
+	 * inform the cache that these pages are good canidicates
+	 * for replacement.
+	 */
+	Fscache_BlocksUnneeded(streamPtr, savedOffset, savedLength, FALSE);
+    }
     return(status);
 }
 
@@ -1067,6 +1077,8 @@ Fsio_FileWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
     register Fsio_FileIOHandle *handlePtr =
 	    (Fsio_FileIOHandle *)streamPtr->ioHandlePtr;
     register ReturnStatus status;
+    int savedOffset = writePtr->offset;
+    int savedLength = writePtr->length;
 
     /*
      * Get a reference to the domain so it can't be dismounted during the I/O.
@@ -1081,12 +1093,21 @@ Fsio_FileWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
 			  writePtr->buffer, writePtr->offset,
 			  &writePtr->length, remoteWaitPtr);
     replyPtr->length = writePtr->length;
-    if (status == SUCCESS && (fsutil_WriteThrough || fsutil_WriteBackASAP)) {
-	/*
-	 * When in write-through or asap mode we have to force the descriptor
-	 * to disk on every write.
-	 */
-	status = Fsdm_FileDescWriteBack(handlePtr, FALSE);
+    if (status == SUCCESS) {
+	if (writePtr->flags & FS_SWAP) {
+	    /*
+	     * While page-outs on the file server go to its cache, we
+	     * inform the cache that these pages are good canidicates
+	     * for replacement.
+	     */
+	    Fscache_BlocksUnneeded(streamPtr, savedOffset, savedLength, FALSE);
+	} else if (fsutil_WriteThrough || fsutil_WriteBackASAP) {
+	    /*
+	     * When in write-through or asap mode we have to force the
+	     * descriptor to disk on every write.
+	     */
+	    status = Fsdm_FileDescWriteBack(handlePtr, FALSE);
+	}
     }
 
     Fscache_AllowReadAhead(&handlePtr->readAhead);
