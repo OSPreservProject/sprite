@@ -230,8 +230,6 @@ typedef struct Fs_Stream {
  *		other operations, like remove, don't pollute the trace.
  *	FS_SERVER_WRITE_THRU - Set on writes that are supposed to be written
  *			       through to the server.
- *	FS_LAST_DIRTY_BLOCK - Set on remote writes when this is the
- *		last dirty block of the file to be written back.
  *	FS_RMT_SHARED - Set on streams that are shared among clients on
  *		separate machines.  For regular files this means that the
  *		stream offset is being maintained on the server.
@@ -239,8 +237,7 @@ typedef struct Fs_Stream {
  *		the destination of a migration is getting a stream for
  *		the first time.   It needs to know this in order to do
  *		I/O client book-keeping correctly.
- *	FS_WB_ON_LDB - Write this file back to disk if this is the last dirty
- *		       block.
+ *	FS_WRITE_TO_DISK - Write this block through to disk.
  *	FS_MAP - File is being mapped into virtual memory.
  *	FS_MIGRATED_FILE - Migration related.  This says a file has been
  *		involved in a migration, so (for example) if the file
@@ -269,13 +266,18 @@ typedef struct Fs_Stream {
 #define FSUTIL_TRACE_FLAG	0x00400000
 #define FS_USER_OUT		0x00800000
 #define	FS_SERVER_WRITE_THRU	0x01000000
-#define	FS_LAST_DIRTY_BLOCK	0x02000000
 #define FS_RMT_SHARED		0x04000000
 #define FS_NEW_STREAM		0x08000000
-#define	FS_WB_ON_LDB		0x10000000
+#define	FS_WRITE_TO_DISK	0x10000000
 #define	FS_MAP			0x20000000
 #define	FS_MIGRATED_FILE	0x40000000
 #define	FS_MIGRATING		0x80000000
+/*
+ * These functions were eliminated to free up their status bits.
+ * The code associated with them should be removed.
+ */
+#define FS_LAST_DIRTY_BLOCK	0x00000000
+#define FS_WB_ON_LDB		0x00000000
 
 
 /*
