@@ -853,7 +853,6 @@ Fsio_StreamClientKill(hdrPtr, clientID)
 	 */
 	Fsutil_HandleUnlock(streamPtr);
     } else {
-	Fsutil_HandleRelease(streamPtr, TRUE);
 	Fsutil_HandleRemove(streamPtr);
     }
 }
