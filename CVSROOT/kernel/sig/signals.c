@@ -519,6 +519,8 @@ Sig_SendProc(procPtr, sigNum, code)
     if (procPtr->state == PROC_MIGRATED ||
         (procPtr->genFlags & PROC_MIGRATING)) {
 	return(SigMigSend(procPtr, sigNum, code));
+    } else if (procPtr->state == PROC_EXITING) {
+	return(PROC_INVALID_PID);
     } else {
 	LocalSend(procPtr, sigNum, code);
 	return(SUCCESS);
