@@ -1191,18 +1191,9 @@ FsServerStreamIOControl(streamPtr, ioctlPtr, replyPtr)
 	    }
 	    break;
 	}
-	case IOC_PREFIX: {
-	    FsPrefix	*prefixPtr;
-	    prefixPtr = streamPtr->nameInfoPtr->prefixPtr;
-	    if (ioctlPtr->outBufSize < prefixPtr->prefixLength) {
-		status = GEN_INVALID_ARG;
-		break;
-	    }
-	    strcpy(ioctlPtr->outBuffer, prefixPtr->prefix);
-	    replyPtr->length = prefixPtr->prefixLength;
+	case IOC_PREFIX: 
 	    status = SUCCESS;
 	    break;
-	}
 	default:
 	    status = GEN_NOT_IMPLEMENTED;
 	    break;
@@ -1311,7 +1302,7 @@ FsServerStreamClose(streamPtr, clientID, procID, flags, size, data)
 	dummy.hdr.fileID.type = -1;
 	dummy.ioHandlePtr = (FsHandleHeader *)ctrlHandlePtr;
 	FsHandleLock(ctrlHandlePtr);
-	FsPrefixHandleClose(ctrlHandlePtr->prefixPtr);
+	FsPrefixHandleClose(ctrlHandlePtr->prefixPtr, FS_ANY_PREFIX);
 	(void)FsControlClose(&dummy, clientID, procID, flags, 0, (ClientData)NIL);
     }
     Sync_LockClear(&pdevHandlePtr->lock);
@@ -2015,7 +2006,9 @@ FsPseudoStreamRead(streamPtr, readPtr, waitPtr, replyPtr)
 	replyPtr->length = 0;
 	status = FS_WOULD_BLOCK;
     }
-    pdevHandlePtr->ctrlHandlePtr->accessTime = fsTimeInSeconds;
+    if (status == SUCCESS) {
+	pdevHandlePtr->ctrlHandlePtr->accessTime = fsTimeInSeconds;
+    }
 exit:
     if (status == DEV_OFFLINE) {
 	/*
@@ -2170,7 +2163,9 @@ FsPseudoStreamWrite(streamPtr, writePtr, waitPtr, replyPtr)
 	writePtr->length -= numBytes;
     }
     replyPtr->length = amountWritten;
-    pdevHandlePtr->ctrlHandlePtr->modifyTime = fsTimeInSeconds;
+    if (amountWritten > 0) {
+	pdevHandlePtr->ctrlHandlePtr->modifyTime = fsTimeInSeconds;
+    }
 exit:
     if (status == DEV_OFFLINE) {
 	/*
@@ -2309,23 +2304,10 @@ FsPseudoStreamIOControl(streamPtr, ioctlPtr, replyPtr)
 		}
 		break;
 	    }
-	    case IOC_PREFIX: {
-		/* 
-		 * We handle the prefix request since the prefix is in the
-		 * Sprite domain. 
-		 */
-		FsPrefix	*prefixPtr;
-		prefixPtr = streamPtr->nameInfoPtr->prefixPtr;
-		if (ioctlPtr->outBufSize < prefixPtr->prefixLength) {
-		    status = GEN_INVALID_ARG;
-		    break;
-		}
-		strcpy(ioctlPtr->outBuffer, prefixPtr->prefix);
-		replyPtr->length = prefixPtr->prefixLength;
+	    case IOC_PREFIX: 
 		status = SUCCESS;
 		sendToServer = FALSE;
 		break;
-	    }
 	}
 	if (status == SUCCESS && sendToServer) {
 	    request.hdr.operation	= PDEV_IOCTL;
