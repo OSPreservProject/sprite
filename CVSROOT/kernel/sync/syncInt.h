@@ -28,12 +28,16 @@
  *----------------------------------------------------------------------
  */
 
-#define SyncAddLockStats(regPtr, lock) \
-    { \
-	 (regPtr)->hit += FIELD(lock, hit); \
-	(regPtr)->miss += FIELD(lock, miss); \
-	SyncMergePrior(FIELD(lock, priorCount), FIELD(lock, priorTypes), \
-	(regPtr));}
+#define SyncAddLockStats(regPtr, lock) 					\
+    { 									\
+	 (regPtr)->hit += FIELD(lock, hit); 				\
+	(regPtr)->miss += FIELD(lock, miss); 				\
+	if (((Sync_Lock *) lock)->type == SYNC_LOCK) { 			\
+	    SyncMergePrior((Sync_Lock *) (lock), (regPtr));		\
+	} else {							\
+	    SyncMergePrior((Sync_Semaphore *) (lock), (regPtr));	\
+	}								\
+    }
 
 extern 	void 	SyncSlowWait();
 extern 	void 	SyncSlowLock();
@@ -46,7 +50,9 @@ extern	Boolean	SyncEventWaitInt();
  *
  * FIELD --
  *
- *	Used to get a field from either a lock or a semaphore.
+ *	Some of the routines take either semaphores or locks as parameters.
+ *	This macro is used to get the desired field from the object,
+ *	regardless of its type.
  *
  * Results:
  *	Value of the field.

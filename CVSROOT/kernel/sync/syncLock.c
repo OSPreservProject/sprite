@@ -104,6 +104,8 @@ Sync_Init()
  *	This is the kernel version of the Sync_GetLock routine. The user
  * 	version is written in assembler, but in the kernel we want to
  *	record locking statistics so we have our own version.
+ *	If LOCKREG is not defined then don't compile any of this, so that 
+ *	the faster user version  is used.
  *
  * Results:
  *	None.
@@ -123,14 +125,9 @@ Sync_GetLock(lockPtr)
     if (Mach_TestAndSet(&(lockPtr->inUse)) != 0) {
 	Sync_SlowLock(lockPtr); 
     } else {
-#ifndef CLEAN_LOCK
-	lockPtr->holderPC = Mach_GetPC(); 
-	lockPtr->holderPCBPtr = Proc_GetCurrentProc();
-	lockPtr->hit++;
-	SyncAddPrior(lockPtr->type, &(lockPtr->priorCount), 
-		     lockPtr->priorTypes,(Address) lockPtr, 
-		     lockPtr->holderPCBPtr);
-#endif
+	SyncRecordHit(lockPtr);
+	SyncStoreDbgInfo(lockPtr);
+	SyncAddPrior(lockPtr);
     }
 }
 
@@ -142,6 +139,8 @@ Sync_GetLock(lockPtr)
  *
  *	The kernel version of the unlock routine. We have a different
  *	version from the user so we can do locking statistics.
+ *	If LOCKREG is not defined then don't compile any of this, so that 
+ *	the faster user version  is used.
  *
  * Results:
  *	None.
@@ -152,18 +151,16 @@ Sync_GetLock(lockPtr)
  *----------------------------------------------------------------------
  */
 
-
 ReturnStatus
 Sync_Unlock(lockPtr)
     Sync_Lock *lockPtr;
 {
     lockPtr->inUse = 0;
-    SyncDeleteCurrent((Address) lockPtr,lockPtr->holderPCBPtr);
+    SyncDeleteCurrent(lockPtr);
     if (lockPtr->waiting) {
 	Sync_SlowBroadcast((int)lockPtr, &lockPtr->waiting);
     }
 }
-
 
 /*
  *----------------------------------------------------------------------------
@@ -205,19 +202,13 @@ Sync_SlowLock(lockPtr)
 	    break;
 	}
 	(void) SyncEventWaitInt((unsigned int)lockPtr, FALSE);
-#ifndef CLEAN_LOCK
-	lockPtr->miss++;
-#endif
+	SyncRecordMiss(lockPtr);
 	MASTER_UNLOCK(sched_MutexPtr);
 	MASTER_LOCK(sched_MutexPtr);
     }
-#ifndef CLEAN_LOCK
-    lockPtr->holderPC = Mach_GetPC(); 
-    lockPtr->holderPCBPtr = Proc_GetCurrentProc();
-    lockPtr->hit++;
-    SyncAddPrior(lockPtr->type, &(lockPtr->priorCount), lockPtr->priorTypes, 
-		 (Address) lockPtr, lockPtr->holderPCBPtr);
-#endif
+    SyncRecordHit(lockPtr);
+    SyncStoreDbgInfo(lockPtr);
+    SyncAddPrior(lockPtr);
     MASTER_UNLOCK(sched_MutexPtr);
     return(SUCCESS);
 }
@@ -262,7 +253,7 @@ Sync_SlowWait(conditionPtr, lockPtr, wakeIfSignal)
      */
     lockPtr->inUse = 0;
     lockPtr->waiting = FALSE;
-    SyncDeleteCurrent((Address) lockPtr,lockPtr->holderPCBPtr);
+    SyncDeleteCurrent(lockPtr);
     SyncEventWakeupInt((unsigned int)lockPtr);
     sigPending = SyncEventWaitInt((unsigned int) conditionPtr, wakeIfSignal);
     MASTER_UNLOCK(sched_MutexPtr);
@@ -384,7 +375,7 @@ Sync_UnlockAndSwitch(lockPtr, state)
      */
     lockPtr->inUse = 0;
     lockPtr->waiting = FALSE;
-    SyncDeleteCurrent((Address) lockPtr, lockPtr->holderPCBPtr);
+    SyncDeleteCurrent(lockPtr);
     SyncEventWakeupInt((unsigned int)lockPtr);
     Sched_ContextSwitchInt(state);
 

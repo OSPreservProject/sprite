@@ -22,13 +22,27 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "stdlib.h"
 #include "dbg.h"
 
+/*
+ * Lock registration semaphore.
+ */
 Sync_Semaphore regMutex = Sync_SemInitStatic("regMutex");
 Sync_Semaphore *regMutexPtr = &regMutex;
 
+/*
+ * Number of types registered.
+ */
 static 	int	syncTypeCount = 0;
-static 	Boolean	initialized = FALSE;
-static  Sync_RegElement		regInfo[SYNC_MAX_LOCK_TYPES];
 
+/*
+ * Information on each type of lock registered.
+ */
+static  Sync_RegElement		regInfo[SYNC_MAX_LOCK_TYPES];
+static 	Boolean	initialized = FALSE;
+
+/*
+ * Keep track of locks we see with bad types. This is for debugging purposes
+ * only.
+ */
 #define  MAX_BAD_TYPES	100
 struct  BadLockType {
 	Address		lockPtr;
@@ -66,14 +80,16 @@ Sync_LockStatInit()
      * regMutex can't be treated like a normal lock otherwise we have a
      * chicken and the egg problem.
      */
+#ifdef LOCKREG
     regMutex.type = -1; 
+#endif
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * SyncAddPriorLock --
+ * SyncAddPriorInt --
  *
  *	Adds the prior lock  to the list of prior locks  in the 
  *	current lock. Adds the current lock to the stack of 
@@ -89,14 +105,17 @@ Sync_LockStatInit()
  *----------------------------------------------------------------------
  */
 
+/*ARGSUSED*/
+
 void
-SyncAddPriorLock(type, priorCountPtr, priorTypes, lockPtr, pcbPtr)
+SyncAddPriorInt(type, priorCountPtr, priorTypes, lockPtr, pcbPtr)
     int				type;
     int 			*priorCountPtr;
     int				*priorTypes;
     Address			lockPtr;
     Proc_ControlBlock		*pcbPtr;
 {
+#ifdef LOCKDEP
     int			priorType;
     int			i;
     Address		priorLockPtr;
@@ -105,10 +124,10 @@ SyncAddPriorLock(type, priorCountPtr, priorTypes, lockPtr, pcbPtr)
     if (pcbPtr == (Proc_ControlBlock *) NIL || !initialized) {
 	return;
     }
+
     Proc_GetCurrentLock(pcbPtr, &priorType, &priorLockPtr);
     if (priorType > syncTypeCount) {
 	if (badTypeCount < MAX_BAD_TYPES) {
-	    DBG_CALL;
 	    badType[badTypeCount].lockPtr = priorLockPtr;
 	    badType[badTypeCount].pc = FIELD(priorLockPtr, holderPC);
 	    badType[badTypeCount].type = priorType;
@@ -130,21 +149,20 @@ SyncAddPriorLock(type, priorCountPtr, priorTypes, lockPtr, pcbPtr)
 	}
     }
     if (type == 0) {
-	Sync_RegisterAnyLock(lockPtr);
-/* this routine never gets called if CLEAN_LOCK is defined, but lint 
+	Sync_LockRegister(lockPtr);
+/* this routine never gets called if LOCKREG is not defined, but lint 
  * will complain about this assignment anyway.
  */
-#ifndef CLEAN_LOCK
 	type = FIELD(lockPtr, type);
-#endif
     }
     Proc_PushLockStack(pcbPtr, type, lockPtr);
+#endif
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * SyncDeleteCurrentLock --
+ * SyncDeleteCurrentInt --
  *
  *	Removes a prior lock from the lock stack.
  *
@@ -158,7 +176,7 @@ SyncAddPriorLock(type, priorCountPtr, priorTypes, lockPtr, pcbPtr)
  */
 
 void
-SyncDeleteCurrentLock(lockPtr, pcbPtr)
+SyncDeleteCurrentInt(lockPtr, pcbPtr)
     Address			lockPtr;
     Proc_ControlBlock		*pcbPtr;
 {
@@ -171,7 +189,7 @@ SyncDeleteCurrentLock(lockPtr, pcbPtr)
 /*
  *----------------------------------------------------------------------
  *
- *  SyncMergePriorLocks --
+ *  SyncMergePriorInt --
  *
  *	Merge the prior entries for a given lock with the prior entries
  *	for the type. If an entry is a duplicate it is discarded, and
@@ -186,7 +204,7 @@ SyncDeleteCurrentLock(lockPtr, pcbPtr)
  *----------------------------------------------------------------------
  */
 void
-SyncMergePriorLocks(priorCount, priorTypes, regPtr)
+SyncMergePriorInt(priorCount, priorTypes, regPtr)
     int 		priorCount;
     int			*priorTypes;
     Sync_RegElement	*regPtr;
@@ -212,7 +230,7 @@ SyncMergePriorLocks(priorCount, priorTypes, regPtr)
 	}
     }
     if (i < priorCount) {
-	printf("SyncMergePriorLocks: %d too many prior types.\n",
+	printf("SyncMergePriorInt: %d too many prior types.\n",
 	       priorCount - i);
     }
 }
@@ -220,7 +238,7 @@ SyncMergePriorLocks(priorCount, priorTypes, regPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Sync_RegisterAnyLock --
+ * Sync_RegisterInt --
  *
  *	Registers a lock of either class (semaphore or lock). If an element
  *	of the type exists then the lock is added to the linked list of 
@@ -240,11 +258,15 @@ SyncMergePriorLocks(priorCount, priorTypes, regPtr)
  *----------------------------------------------------------------------
  */
 
+#ifdef LOCKREG
+/* ARGSUSED */
+#endif
 
 void
-Sync_RegisterAnyLock(lock)
+Sync_RegisterInt(lock)
     Address		lock;		/*lock to be registered */
 {
+#ifdef LOCKREG
     List_Links		*lockQueuePtr;
     Sync_RegElement	*regPtr;
     char		*name;
@@ -252,15 +274,20 @@ Sync_RegisterAnyLock(lock)
     int			*typePtr;
     Sync_ListInfo	*listInfoPtr;
     int			i;
-#ifdef LOCKREG
 
-    name = FIELD(lock,name);
     typePtr = &(FIELD(lock,type)) ;
-    if (*typePtr != 0 || name == (char *) 0) {
+    if (*typePtr != 0) {
+	return;
+    }
+    name = FIELD(lock,name);
+    if (name == (char *) 0) {
 	return;
     }
     if (initialized) {
 	MASTER_LOCK(regMutexPtr);
+    }
+    if (*typePtr != 0 || FIELD(lock, name) == (char *) 0) {
+	goto exit;
     }
     listInfoPtr = &(FIELD(lock,listInfo));
     regPtr = (Sync_RegElement *) NIL;
@@ -287,9 +314,12 @@ Sync_RegisterAnyLock(lock)
 	List_Init((List_Links *) &(regPtr->activeLocks));
 	syncTypeCount++;
     }
+    lockQueuePtr = (List_Links *) &(regPtr->activeLocks);
+    if (listInfoPtr == lockQueuePtr->prevPtr) {
+	panic("Trying to reregister a lock.\n");
+    }
     regPtr->class = ((Sync_Lock *) lock)->class;
     *typePtr = regPtr->type;
-    lockQueuePtr = (List_Links *) &(regPtr->activeLocks);
     listInfoPtr->lock = lock;
     List_InitElement((List_Links *) listInfoPtr);
     List_Insert((List_Links *) listInfoPtr, 
@@ -304,7 +334,7 @@ exit:
 /*
  *----------------------------------------------------------------------
  *
- * Sync_CheckoutAnyLock --
+ * Sync_CheckoutInt --
  *
  *	Used to de-register ("checkout") a lock when it is being
  *	deallocated. It is removed from the linked list of active locks for
@@ -320,15 +350,19 @@ exit:
  *----------------------------------------------------------------------
  */
 
+#ifdef LOCKREG
+/*ARGSUSED*/
+#endif
+
 void
-Sync_CheckoutAnyLock(lock)
+Sync_CheckoutInt(lock)
     Address		lock;		/*lock to be registered */
 {
+#ifdef LOCKREG
     List_Links		*lockQueuePtr;
     List_Links		*itemPtr;
     Sync_RegElement	*regPtr;
     int			type;
-#ifdef LOCKREG
 
     if (initialized) {
 	MASTER_LOCK(regMutexPtr);
@@ -465,7 +499,9 @@ Sync_ResetLockStats()
 	LIST_FORALL(lockQueuePtr, itemPtr) {
 	    FIELD(((Sync_ListInfo *) itemPtr)->lock, hit) = 0;
 	    FIELD(((Sync_ListInfo *) itemPtr)->lock, miss) = 0;
+#ifdef LOCKDEP
 	    FIELD(((Sync_ListInfo *) itemPtr)->lock, priorCount) = 0;
+#endif
 	}
 	regPtr->hit = 0;
 	regPtr->miss = 0;
