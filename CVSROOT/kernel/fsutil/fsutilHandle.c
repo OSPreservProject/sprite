@@ -371,7 +371,7 @@ FsHandleInstall(fileIDPtr, size, name, hdrPtrPtr)
 ENTRY Boolean
 HandleInstallInt(fileIDPtr, handleLimit, hdrPtr, foundPtr)
     register Fs_FileID	*fileIDPtr;	/* Identfies handle to install. */
-    int			handleLimit;	/* Determines how many handles can
+    unsigned int	handleLimit;	/* Determines how many handles can
 					 * exist before we return NULL */
     FsHandleHeader	*hdrPtr;	/* Handle to install into table. */    
     Boolean		*foundPtr;	/* TRUE upon return if handle found */

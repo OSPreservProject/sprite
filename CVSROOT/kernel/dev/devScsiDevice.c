@@ -366,18 +366,14 @@ DevScsiTestReady(scsiDevicePtr)
  */
 
 ReturnStatus
-DevScsiIOControl(devPtr, command, byteOrder, inBufSize, inBuffer, outBufSize, outBuffer)
+DevScsiIOControl(devPtr, ioctlPtr, replyPtr)
     ScsiDevice	*devPtr;	/* SCSI Handle for device. */
-    int command;		/* IO Control Command. */
-    int byteOrder;		/* Caller's byte ordering */
-    int inBufSize;		/* Input buffer size. */
-    char *inBuffer;		/* IO Control input buffer. */
-    int outBufSize;		/* Output buffer size. */
-    char *outBuffer;		/* IO Control input buffer. */
+    Fs_IOCParam *ioctlPtr;	/* Standard I/O Control parameter block */
+    Fs_IOReply *replyPtr;	/* Size of outBuffer and returned signal */
 {
     ReturnStatus	status;
 
-    if (command == IOC_SCSI_COMMAND) {
+    if (ioctlPtr->command == IOC_SCSI_COMMAND) {
 	Dev_ScsiCommand	 *cmdPtr;
 	Dev_ScsiStatus	 *statusPtr;
 	ScsiCmd		 scsiCmd;
@@ -387,21 +383,21 @@ DevScsiIOControl(devPtr, command, byteOrder, inBufSize, inBuffer, outBufSize, ou
 	 * the input buffer is large enough to have the parameter
 	 * block and the output buffer can hold the return status.
 	 */
-	if ((inBufSize < sizeof(Dev_ScsiCommand)) ||
+	if ((ioctlPtr->inBufSize < sizeof(Dev_ScsiCommand)) ||
 	    (outBufSize < sizeof(Dev_ScsiStatus))) {
 	    return(GEN_INVALID_ARG);
 	}
-	cmdPtr = (Dev_ScsiCommand *) inBuffer;
+	cmdPtr = (Dev_ScsiCommand *) ioctlPtr->inBuffer;
 	if ((cmdPtr->bufferLen < 0) ||
 	    (cmdPtr->bufferLen > devPtr->maxTransferSize)) {
 	    return FS_BUFFER_TOO_BIG;
 	}
-	scsiCmd.commandBlockLen = inBufSize - sizeof(Dev_ScsiCommand);
+	scsiCmd.commandBlockLen = ioctlPtr->inBufSize - sizeof(Dev_ScsiCommand);
 	if ((scsiCmd.commandBlockLen < 0) || (scsiCmd.commandBlockLen > 16)) {
 	    return(GEN_INVALID_ARG);
 	}
-	statusPtr = (Dev_ScsiStatus *) outBuffer;
-	bcopy(inBuffer + sizeof(Dev_ScsiCommand), scsiCmd.commandBlock,
+	statusPtr = (Dev_ScsiStatus *) ioctlPtr->outBuffer;
+	bcopy(ioctlPtr->inBuffer + sizeof(Dev_ScsiCommand), scsiCmd.commandBlock,
 	      scsiCmd.commandBlockLen);
 	scsiCmd.dataToDevice = cmdPtr->dataToDevice;
 	scsiCmd.bufferLen = cmdPtr->bufferLen;
@@ -409,7 +405,7 @@ DevScsiIOControl(devPtr, command, byteOrder, inBufSize, inBuffer, outBufSize, ou
 	statusPtr->senseDataLen = outBufSize - sizeof(Dev_ScsiStatus);
 	status = DevScsiSendCmdSync(devPtr, &scsiCmd, &statusByte,
 		&(statusPtr->amountTransferred), &(statusPtr->senseDataLen),
-		outBuffer + sizeof(Dev_ScsiStatus));
+		ioctlPtr->outBuffer + sizeof(Dev_ScsiStatus));
 	statusPtr->statusByte = statusByte;
 	if (status == SUCCESS) {
 	    status = Vm_CopyOut(statusPtr->amountTransferred, scsiCmd.buffer,

@@ -624,31 +624,25 @@ DevSCSITapeWrite(devicePtr, writePtr, replyPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-DevSCSITapeIOControl(devicePtr, command, byteOrder, inBufSize, inBuffer,
-				 outBufSize, outBuffer)
+DevSCSITapeIOControl(devicePtr, ioctlPtr, replyPtr)
     Fs_Device *devicePtr;
-    int command;
-    int byteOrder;
-    int inBufSize;
-    char *inBuffer;
-    int outBufSize;
-    char *outBuffer;
+    Fs_IOCParam *ioctlPtr;	/* Standard I/O Control parameter block */
+    Fs_IOReply *replyPtr;	/* Size of outBuffer and returned signal */
 {
     ScsiTape *tapePtr;
     ReturnStatus status = SUCCESS;
 
     tapePtr = (ScsiTape *)(devicePtr->data);
-     if ((command&~0xffff) == IOC_SCSI) {
-	 status = DevScsiIOControl(tapePtr->devPtr, command, byteOrder,
-			 inBufSize, inBuffer, outBufSize, outBuffer);
+     if ((ioctlPtr->command & ~0xffff) == IOC_SCSI) {
+	 status = DevScsiIOControl(tapePtr->devPtr, ioctlPtr, replyPtr);
 	 return status;
 
      }
 
-    switch(command) {
+    switch(ioctlPtr->command) {
 	case IOC_REPOSITION: {
 	    Ioc_RepositionArgs *repoArgsPtr;
-	    repoArgsPtr = (Ioc_RepositionArgs *)inBuffer;
+	    repoArgsPtr = (Ioc_RepositionArgs *)ioctlPtr->inBuffer;
 
 	    switch (repoArgsPtr->base) {
 		case IOC_BASE_ZERO:
@@ -675,8 +669,8 @@ DevSCSITapeIOControl(devicePtr, command, byteOrder, inBufSize, inBuffer,
 	    break;
 	}
 	case IOC_TAPE_COMMAND: {
-	    Dev_TapeCommand *cmdPtr = (Dev_TapeCommand *)inBuffer;
-	    if (inBufSize < sizeof(Dev_TapeCommand)) {
+	    Dev_TapeCommand *cmdPtr = (Dev_TapeCommand *)ioctlPtr->inBuffer;
+	    if (ioctlPtr->inBufSize < sizeof(Dev_TapeCommand)) {
 		return(DEV_INVALID_ARG);
 	    }
 	    switch (cmdPtr->command) {

@@ -98,7 +98,7 @@ FsRemoteRead(streamPtr, readPtr, waitPtr, replyPtr)
     readParams.io.procID = readPtr->procID;
     readParams.io.familyID = readPtr->familyID;
     readParams.io.uid = readPtr->uid;
-    readParams.io.gid = readPtr->gid;
+    readParams.io.reserved = 0;
 
     storage.requestParamPtr = (Address)&readParams;
     storage.requestParamSize = sizeof(readParams);
@@ -420,7 +420,7 @@ FsRemoteWrite(streamPtr, writePtr, waitPtr, replyPtr)
     writeParams.io.procID = writePtr->procID;
     writeParams.io.familyID = writePtr->familyID;
     writeParams.io.uid = writePtr->uid;
-    writeParams.io.gid = writePtr->gid;
+    writeParams.io.reserved = 0;
 
     storage.requestParamPtr = (Address)&writeParams;
     storage.requestParamSize = sizeof(writeParams);
@@ -795,6 +795,7 @@ Fs_RpcSelectStub(srvToken, clientID, command, storagePtr)
  *
  * FsRemoteIOControl --
  *
+ *	Client stub for RPC_FS_IOCONTROL.
  *	Do a special operation on a remote Sprite file/device/pipe/etc.
  *
  * Results:
@@ -806,12 +807,10 @@ Fs_RpcSelectStub(srvToken, clientID, command, storagePtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsRemoteIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
+FsRemoteIOControl(streamPtr, ioctlPtr, replyPtr)
     Fs_Stream	*streamPtr;
-    int         command;
-    int		byteOrder;
-    Fs_Buffer   *inBufPtr;		/* Command inputs */
-    Fs_Buffer   *outBufPtr;		/* Buffer for return parameters */
+    Fs_IOCParam *ioctlPtr;		/* I/O Control parameter block */
+    Fs_IOReply *replyPtr;		/* Return length and signal */
 {
     register FsHandleHeader	*hdrPtr = streamPtr->ioHandlePtr;
     FsSpriteIOCParams		params;
@@ -822,21 +821,22 @@ FsRemoteIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	
     params.fileID = hdrPtr->fileID;
     params.streamID = streamPtr->hdr.fileID;
-    params.procID = (Proc_PID) NIL;
-    params.familyID = (Proc_PID) NIL;
-    params.command = command;
-    params.inBufSize = inBufPtr->size;
-    params.outBufSize = outBufPtr->size;
-    params.byteOrder = byteOrder;
+    params.procID = ioctlPtr->procID;
+    params.familyID = ioctlPtr->familyID;
+    params.command = ioctlPtr->command;
+    params.inBufSize = ioctlPtr->inBufSize;
+    params.outBufSize = ioctlPtr->outBufSize;
+    params.byteOrder = ioctlPtr->byteOrder;
+    params.uid = ioctlPtr->uid;
 
     storage.requestParamPtr = (Address)&params;
     storage.requestParamSize = sizeof(FsSpriteIOCParams);
-    storage.requestDataPtr = (Address) inBufPtr->addr;
-    storage.requestDataSize = inBufPtr->size;
-    storage.replyParamPtr = (Address)NIL;
-    storage.replyParamSize = 0;
-    storage.replyDataPtr = (Address)outBufPtr->addr;
-    storage.replyDataSize = outBufPtr->size;
+    storage.requestDataPtr = (Address) ioctlPtr->inBuffer;
+    storage.requestDataSize = ioctlPtr->inBufSize;
+    storage.replyParamPtr = (Address)replyPtr;
+    storage.replyParamSize = sizeof(Fs_IOReply);
+    storage.replyDataPtr = (Address)ioctlPtr->outBuffer;
+    storage.replyDataSize = ioctlPtr->outBufSize;
 
     status = Rpc_Call(hdrPtr->fileID.serverID, RPC_FS_IO_CONTROL, &storage);
     if (status == RPC_TIMEOUT || status == FS_STALE_HANDLE ||
@@ -884,8 +884,8 @@ Fs_RpcIOControl(srvToken, clientID, command, storagePtr)
     register	Rpc_ReplyMem		*replyMemPtr;
     ReturnStatus			status;
     Address				outBufPtr;
-    Fs_Buffer				outBuf;
-    Fs_Buffer				inBuf;
+    Fs_IOCParam				ioctl;
+    Fs_IOReply				*replyPtr;
 
     paramsPtr = (FsSpriteIOCParams *)storagePtr->requestParamPtr;
 
@@ -913,47 +913,56 @@ Fs_RpcIOControl(srvToken, clientID, command, storagePtr)
 	    FsHandleRelease(hdrPtr, TRUE);
 	    return(FS_STALE_HANDLE);
     }
-    
+    FsHandleUnlock(hdrPtr);
+
     if (paramsPtr->outBufSize != 0) {
 	outBufPtr = (Address)malloc(paramsPtr->outBufSize);
     } else {
 	outBufPtr = (Address)NIL;
     }
-    FsHandleUnlock(hdrPtr);
-    inBuf.addr = storagePtr->requestDataPtr;
-    inBuf.size = paramsPtr->inBufSize;
-    inBuf.flags = 0;
-    outBuf.addr = outBufPtr;
-    outBuf.size = paramsPtr->outBufSize;
-    outBuf.flags = 0;
+    ioctl.command = paramsPtr->command;
+    ioctl.inBuffer = storagePtr->requestDataPtr;
+    ioctl.inBufSize = paramsPtr->inBufSize;
+    ioctl.outBuffer = outBufPtr;
+    ioctl.outBufSize = paramsPtr->outBufSize;
+    ioctl.flags = 0;	/* All buffers in kernel space */
+    ioctl.byteOrder = paramsPtr->byteOrder;
+    ioctl.procID = paramsPtr->procID;
+    ioctl.familyID = paramsPtr->familyID;
+    ioctl.uid = paramsPtr->uid;
+
+    replyPtr = mnew(Fs_IOReply);
+    replyPtr->length = paramsPtr->outBufSize;
+    replyPtr->flags = 0;
+    replyPtr->signal = 0;
+    replyPtr->code = 0;
+
     status = (*fsStreamOpTable[hdrPtr->fileID.type].ioControl)(streamPtr,
-	    paramsPtr->command, paramsPtr->byteOrder, &inBuf, &outBuf);
+		&ioctl, replyPtr);
 #ifdef lint
-    status = FsFileIOControl(streamPtr,
-	    paramsPtr->command, paramsPtr->byteOrder, &inBuf, &outBuf);
-    status = FsPipeIOControl(streamPtr,
-	    paramsPtr->command, paramsPtr->byteOrder, &inBuf, &outBuf);
-    status = FsDeviceIOControl(streamPtr,
-	    paramsPtr->command, paramsPtr->byteOrder, &inBuf, &outBuf);
+    status = FsFileIOControl(streamPtr, &ioctl, replyPtr);
+    status = FsPipeIOControl(streamPtr, &ioctl, replyPtr);
+    status = FsDeviceIOControl(streamPtr, &ioctl, replyPtr);
+    status = FsPseudoStreamIOControl(streamPtr, &ioctl, replyPtr);
 #endif /* lint */
     FsHandleRelease(hdrPtr, FALSE);
 
     FS_RPC_DEBUG_PRINT1("Fs_RpcIOControl returns <%x>\n", status);
 
-    if (status != SUCCESS || paramsPtr->outBufSize == 0) {
-	if (paramsPtr->outBufSize != 0) {
-	    free((Address) outBufPtr);
-	}
-	Rpc_Reply(srvToken, status, storagePtr,(int (*)())NIL, (ClientData)NIL);
-    } else {
-	storagePtr->replyDataPtr = outBufPtr;
-	storagePtr->replyDataSize = paramsPtr->outBufSize;
-	replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
-	replyMemPtr->paramPtr = (Address) NIL;
-	replyMemPtr->dataPtr = outBufPtr;
-	Rpc_Reply(srvToken, SUCCESS, storagePtr, 
-		  (int (*)()) Rpc_FreeMem, (ClientData) replyMemPtr);
+    if ((replyPtr->length == 0) && (outBufPtr != (Address)NIL)) {
+	free((Address) outBufPtr);
+	outBufPtr = (Address)NIL;
     }
+    storagePtr->replyDataPtr = outBufPtr;
+    storagePtr->replyDataSize = replyPtr->length;
+    storagePtr->replyParamPtr = (Address)replyPtr;
+    storagePtr->replyParamSize = sizeof(Fs_IOReply);
+
+    replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
+    replyMemPtr->paramPtr = (Address)replyPtr;
+    replyMemPtr->dataPtr = outBufPtr;
+    Rpc_Reply(srvToken, status, storagePtr, 
+	      (int (*)()) Rpc_FreeMem, (ClientData) replyMemPtr);
 
     return(SUCCESS);
 }

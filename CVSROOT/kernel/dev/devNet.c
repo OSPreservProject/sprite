@@ -561,15 +561,10 @@ DevNet_FsSelect(devicePtr, readPtr, writePtr, exceptPtr)
 
 /*ARGSUSED*/
 ReturnStatus
-DevNet_FsIOControl(devicePtr, command, byteOrder, inBufSize, inBuffer,
-		outBufSize, outBuffer)
+DevNet_FsIOControl(devicePtr, ioctlPtr, replyPtr)
     Fs_Device	*devicePtr;
-    int		command;
-    int		byteOrder;
-    int		inBufSize;
-    Address	inBuffer;
-    int		outBufSize;
-    Address	outBuffer;
+    Fs_IOCParam *ioctlPtr;
+    Fs_IOReply *replyPtr;
 {
     return(FAILURE);
 }

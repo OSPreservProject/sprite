@@ -150,14 +150,10 @@ TimerInit(tmrp)
  */
 
 ReturnStatus
-Dev_TimerIOControl(devicePtr, command, inBufSize, inBuffer, outBufSize,
-		     outBuffer)
+Dev_TimerIOControl(devicePtr, ioctlPtr, replyPtr)
     Fs_Device	        *devicePtr;
-    int			command;
-    int			inBufSize;
-    Address		inBuffer;
-    int			outBufSize;
-    Address		outBuffer;
+    Fs_IOCParam		*ioctlPtr;
+    Fs_IOReply		*replyPtr;
 {
    register volatile DevTimerChip *tmrp = dev_TimerAddr;
    register DevTimerVal *set;
@@ -165,43 +161,43 @@ Dev_TimerIOControl(devicePtr, command, inBufSize, inBuffer, outBufSize,
    unsigned int t0, t1;
    DevTimerTest *tare;
 
-    switch (command) {
+    switch (ioctlPtr->command) {
        case IOC_DEV_TIMER_INIT: 
 		    TimerInit(tmrp); 
 		    return (SUCCESS);
        case IOC_DEV_TIMER_CMDWR:   
-		    if ( inBufSize != 1) {
+		    if ( ioctlPtr->inBufSize != 1) {
 			return(GEN_INVALID_ARG);
 		    } 
 		    DEV_TIMER_CMD_PORT;
-		    tmrp->d_reg = *(unsigned char *) inBuffer;
+		    tmrp->d_reg = *(unsigned char *) ioctlPtr->inBuffer;
 		    return(SUCCESS); 
        case IOC_DEV_TIMER_DATAWR:  
-		    if ( inBufSize != 1) {
+		    if ( ioctlPtr->inBufSize != 1) {
 			return(GEN_INVALID_ARG);
 		    } 
 		    DEV_TIMER_DATA_PORT;
-		    tmrp->d_reg = *(unsigned char *) inBuffer;
+		    tmrp->d_reg = *(unsigned char *) ioctlPtr->inBuffer;
 		    return(SUCCESS); 
       case IOC_DEV_TIMER_CMDRD:   
-		    if ( outBufSize != 1) {
+		    if ( ioctlPtr->outBufSize != 1) {
 			return(GEN_INVALID_ARG);
 		    } 
 		    DEV_TIMER_CMD_PORT;
-		    *( unsigned char *) outBuffer = tmrp->d_reg;
+		    *( unsigned char *) ioctlPtr->outBuffer = tmrp->d_reg;
 		    return(SUCCESS);
        case IOC_DEV_TIMER_DATARD:  
-		    if ( outBufSize != 1) {
+		    if ( ioctlPtr->outBufSize != 1) {
 			return(GEN_INVALID_ARG);
 		    } 
 		    DEV_TIMER_DATA_PORT;
-		    *( unsigned char *) outBuffer = tmrp->d_reg;
+		    *( unsigned char *) ioctlPtr->outBuffer = tmrp->d_reg;
 		    return(SUCCESS);
        case IOC_DEV_TIMER_TEST:
-		    if (outBufSize != sizeof(DevTimerTest)) {
+		    if (ioctlPtr->outBufSize != sizeof(DevTimerTest)) {
 			return(GEN_INVALID_ARG);
 		    } 
-		    tare = (DevTimerTest *) outBuffer;
+		    tare = (DevTimerTest *) ioctlPtr->outBuffer;
 		    Dev_TimerReadReg( (unsigned char *) &t0, 4); 
 		    Dev_TimerReadReg( (unsigned char *) &t1, 4);
 		    tare->proc = t1-t0;
@@ -209,11 +205,11 @@ Dev_TimerIOControl(devicePtr, command, inBufSize, inBuffer, outBufSize,
 		    tare->inLine = t1-t0;
 		    return(SUCCESS);
        case IOC_DEV_TIMER_SET:
-		    if (inBufSize != sizeof(DevTimerVal)) {
+		    if (ioctlPtr->inBufSize != sizeof(DevTimerVal)) {
 			return(GEN_INVALID_ARG);
 		    } 
 		    DEV_TIMER_CMD_PORT;
-		    set = (DevTimerVal *) inBuffer;
+		    set = (DevTimerVal *) ioctlPtr->inBuffer;
 		    DISABLE_INTR();
 		    tmrp->d_reg = set->cmd; 
 		    MACH_DELAY(2);

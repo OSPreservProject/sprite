@@ -145,17 +145,7 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
 		     openResults.streamData, name, &streamPtr->ioHandlePtr);
 	if (status == SUCCESS) {
 	    if (streamPtr->flags & FS_TRUNC) {
-		Fs_Buffer inBuf;
-		Fs_Buffer outBuf;
-		int length = 0;
-
-		inBuf.addr = (Address)&length;
-		inBuf.size = sizeof(int);
-		inBuf.flags = 0;
-		outBuf.addr = (Address) NIL;
-		outBuf.size = 0;
-		outBuf.flags = 0;
-		(void)Fs_IOControl(streamPtr, IOC_TRUNCATE, &inBuf, &outBuf);
+		(void)Fs_TruncStream(streamPtr, 0);
 	    }
 	    *streamPtrPtr = streamPtr;
 	    switch (useFlags & (FS_READ | FS_WRITE)) {
@@ -485,22 +475,56 @@ Fs_Trunc(pathName, length)
 {
     Fs_Stream *streamPtr;
     ReturnStatus status;
-    Fs_Buffer inBuf;
-    Fs_Buffer outBuf;
 
     streamPtr = (Fs_Stream *)NIL;
     status = Fs_Open(pathName, FS_WRITE | FS_FOLLOW, FS_FILE, 0, &streamPtr);
     if (status != SUCCESS) {
 	return(status);
     }
-    inBuf.addr = (Address)&length;
-    inBuf.size = sizeof(int);
-    inBuf.flags = 0;
-    outBuf.addr = (Address) NIL;
-    outBuf.size = 0;
-    outBuf.flags = 0;
-    status = Fs_IOControl(streamPtr, IOC_TRUNCATE, &inBuf, &outBuf);
+    Fs_TruncStream(streamPtr, length);
     (void)Fs_Close(streamPtr);
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_TruncStream --
+ *
+ *	Truncate a file to a given length given an open stream.
+ *	This is a thin layer on top of Fs_IOControl that is called
+ *	from Fs_Trunc and from Fs_Open.
+ *
+ * Results:
+ *	An error code
+ *
+ * Side effects:
+ *	The files length gets set and any data beyond that is deleted.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fs_TruncStream(streamPtr, length)
+    Fs_Stream *streamPtr;
+    int length;
+{
+    ReturnStatus status;
+    Proc_ControlBlock *procPtr = Proc_GetEffectiveProc();
+    Fs_IOCParam ioctl;
+    Fs_IOReply reply;
+
+    ioctl.command = IOC_TRUNCATE;
+    ioctl.inBuffer = (Address)&length;
+    ioctl.inBufSize = sizeof(int);
+    ioctl.outBuffer = (Address) NIL;
+    ioctl.outBufSize = 0;
+    ioctl.byteOrder = mach_ByteOrder;
+    ioctl.procID = procPtr->processID;
+    ioctl.familyID = procPtr->familyID;
+    ioctl.uid = procPtr->effectiveUserID;
+    ioctl.flags = 0;
+
+    status = Fs_IOControl(streamPtr, &ioctl, &reply);
     return(status);
 }
 

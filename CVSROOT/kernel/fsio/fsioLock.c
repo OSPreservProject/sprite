@@ -95,33 +95,32 @@ FsLockInit(lockPtr)
  */
 
 ReturnStatus
-FsIocLock(lockPtr, command, byteOrder, inBufPtr, streamIDPtr)
+FsIocLock(lockPtr, ioctlPtr, streamIDPtr)
     register FsLockState *lockPtr;	/* Locking state for a file. */
-    int		command;		/* IOC_LOCK, IOC_UNLOCK */
-    int		byteOrder;		/* Client's byte ordering */
-    Fs_Buffer	*inBufPtr;		/* Buffer containing Ioc_LockArgs */
+    Fs_IOCParam *ioctlPtr;		/* I/O control parameter block */
     Fs_FileID	*streamIDPtr;		/* ID of stream associated with lock */
 {
     register Ioc_LockArgs *lockArgsPtr;
     register ReturnStatus status = SUCCESS;
     Ioc_LockArgs lockArgs;
 
-    if (byteOrder != mach_ByteOrder) {
+    if (ioctlPtr->byteOrder != mach_ByteOrder) {
 	int size = sizeof(Ioc_LockArgs);
-	Swap_Buffer(inBufPtr->addr, inBufPtr->size, byteOrder, mach_ByteOrder,
+	Swap_Buffer(ioctlPtr->inBuffer, ioctlPtr->inBufSize,
+		    ioctlPtr->byteOrder, mach_ByteOrder,
 		    "wwww", (Address)&lockArgs, &size);
 	if (size != sizeof(Ioc_LockArgs)) {
 	    status = GEN_INVALID_ARG;
 	} else {
 	    lockArgsPtr = &lockArgs;
 	}
-    } else if (inBufPtr->size < sizeof(Ioc_LockArgs)) {
+    } else if (ioctlPtr->inBufSize < sizeof(Ioc_LockArgs)) {
 	status = GEN_INVALID_ARG;
     } else {
-	lockArgsPtr = (Ioc_LockArgs *)inBufPtr->addr;
+	lockArgsPtr = (Ioc_LockArgs *)ioctlPtr->inBuffer;
     }
     if (status == SUCCESS) {
-	if (command == IOC_LOCK) {
+	if (ioctlPtr->command == IOC_LOCK) {
 	    status = FsLock(lockPtr, lockArgsPtr, streamIDPtr);
 	} else {
 	    status = FsUnlock(lockPtr, lockArgsPtr, streamIDPtr);

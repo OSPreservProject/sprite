@@ -192,8 +192,8 @@ extern ReturnStatus Dev_BlockDeviceIOControl();
 #define	Dev_BlockDeviceIO(handlePtr, requestPtr) \
        (((handlePtr)->blockIOProc)((handlePtr),(requestPtr)))
 
-#define	Dev_BlockDeviceIOControl(handle, cmd, byteOrder, isize, ibuf, osize, obuf) \
-       (((handle)->IOControlProc)((handle),(cmd),(byteOrder),(isize),(ibuf),(osize),(obuf)))
+#define	Dev_BlockDeviceIOControl(handle, ioctlPtr, replyPtr) \
+       (((handle)->IOControlProc)((handle),(ioctlPtr), (replyPtr)))
 
 
 #endif /* lint */

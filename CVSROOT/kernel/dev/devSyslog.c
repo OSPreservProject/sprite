@@ -387,20 +387,15 @@ Dev_SyslogClose(devicePtr, useFlags, openCount, writerCount)
  */
 /* ARGSUSED */
 ReturnStatus
-Dev_SyslogIOControl(devicePtr, command, byteOrder, inBufSize, inBuffer, outBufSize,
-		     outBuffer)
+Dev_SyslogIOControl(devicePtr, ioctlPtr, replyPtr)
     Fs_Device	        *devicePtr;
-    int			command;
-    int			byteOrder;
-    int			inBufSize;
-    Address		inBuffer;
-    int			outBufSize;
-    Address		outBuffer;
+    Fs_IOCParam		*ioctlPtr;
+    Fs_IOReply		*replyPtr;
 {
     ReturnStatus	status = SUCCESS;
 
     MASTER_LOCK(&syslogMutex);
-    switch (command) {
+    switch (ioctlPtr->command) {
 	case	IOC_REPOSITION:
 	    /*
 	     * Reposition doesn't matter

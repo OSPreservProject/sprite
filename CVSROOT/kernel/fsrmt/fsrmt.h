@@ -35,17 +35,6 @@ typedef struct FsRemoteIOParam {
 } FsRemoteIOParam;
 
 /*
- * Parameters for the I/O Control RPC.
- */
-
-typedef struct FsRemoteIOCParam {
-    Fs_FileID	fileID;		/* File to manipulate. */
-    Fs_FileID	streamID;	/* Stream to the file, needed for locking */
-    Fs_IOCParam	ioc;		/* IOControl parameter block */
-} FsRemoteIOCParam;
-
-
-/*
  * Parameters for the iocontrol RPC
  */
 
@@ -58,8 +47,19 @@ typedef struct FsSpriteIOCParams {
     int		inBufSize;	/* Size of input params to ioc. */
     int		outBufSize;	/* Size of results from ioc. */
     int		byteOrder;	/* Defines client's byte ordering */
-    int		reserved;	/* Extra */
+    int		uid;		/* Effective User ID */
 } FsSpriteIOCParams;
+
+/*
+ * Parameters for the I/O Control RPC.  (These aren't used, oops,
+ * someday they should be used.)
+ */
+
+typedef struct FsRemoteIOCParam {
+    Fs_FileID	fileID;		/* File to manipulate. */
+    Fs_FileID	streamID;	/* Stream to the file, needed for locking */
+    Fs_IOCParam	ioc;		/* IOControl parameter block */
+} FsRemoteIOCParam;
 
 /*
  * Parameters for the block copy RPC.

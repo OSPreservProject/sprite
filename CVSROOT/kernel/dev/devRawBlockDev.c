@@ -260,18 +260,13 @@ DevRawBlockDevWrite(devicePtr, writePtr, replyPtr)
 
 /*ARGSUSED*/
 ReturnStatus
-DevRawBlockDevIOControl(devicePtr, command, byteOrder, inBufSize, inBuffer,
-				 outBufSize, outBuffer)
+DevRawBlockDevIOControl(devicePtr, ioctlPtr, replyPtr)
     Fs_Device *devicePtr;	/* Device pointer to operate of. */
-    int command;		/* IO Control to be performed. */
-    int byteOrder;		/* Caller's byte ordering */
-    int inBufSize;		/* Size of inBuffer in bytes. */
-    char *inBuffer;		/* Input data to command. */
-    int outBufSize;		/* Size of inBuffer in bytes. */
-    char *outBuffer;		/* Output data from command. */
+    Fs_IOCParam *ioctlPtr;	/* Standard I/O Control parameter block */
+    Fs_IOReply *replyPtr;	/* reply length and signal */
 {
     return Dev_BlockDeviceIOControl((DevBlockDeviceHandle *) (devicePtr->data),
-		command, byteOrder, inBufSize, inBuffer, outBufSize, outBuffer);
+		ioctlPtr, replyPtr);
 }
 
 /*

@@ -624,18 +624,17 @@ Fs_PageCopy(srcStreamPtr, destStreamPtr, offset, numBytes)
  */
 
 ReturnStatus
-Fs_IOControl(streamPtr, command, inBufPtr, outBufPtr)
+Fs_IOControl(streamPtr, ioctlPtr, replyPtr)
     register Fs_Stream *streamPtr;
-    int command;			/* IOControl command */
-    Fs_Buffer *inBufPtr;		/* Command inputs */
-    Fs_Buffer *outBufPtr;		/* Command specific return parameters */
+    Fs_IOCParam *ioctlPtr;		/* I/O Control parameter block */
+    Fs_IOReply *replyPtr;		/* Return length and signal */
 {
     register ReturnStatus	status;
     register Boolean		retry;
+    register int		command = ioctlPtr->command;
     int				offset;
     Ioc_LockArgs		*lockArgsPtr;
     register int		streamType;
-    Fs_Buffer			xtraInBuf;
 
     /*
      * Retry loop to handle server error recovery and blocking locks.
@@ -655,47 +654,34 @@ Fs_IOControl(streamPtr, command, inBufPtr, outBufPtr)
 	 * IOC_LOCK and IOC_UNLOCK.  We have to fill in the process and hostID
 	 * entries in the buffer passed in from the user.
 	 */
-	switch(command) {
-	    case IOC_NUM_READABLE:
-		offset = streamPtr->offset;
-		xtraInBuf.addr = (Address) &offset;
-		xtraInBuf.size = sizeof(int);
-		xtraInBuf.flags = 0;
-		inBufPtr = &xtraInBuf;
-		break;
-	    case IOC_LOCK:
-	    case IOC_UNLOCK: {
-		lockArgsPtr = (Ioc_LockArgs *)inBufPtr->addr;
-		lockArgsPtr->hostID = rpc_SpriteID;
-		Sync_GetWaitToken(&lockArgsPtr->pid, &lockArgsPtr->token);
-		break;
-	    }
+	if (command == IOC_NUM_READABLE) {
+	    offset = streamPtr->offset;
+	    ioctlPtr->inBuffer = (Address) &offset;
+	    ioctlPtr->inBufSize = sizeof(int);
+	    ioctlPtr->flags &= ~FS_USER_IN;
+	} else if (command == IOC_LOCK || command == IOC_UNLOCK) {
+	    lockArgsPtr = (Ioc_LockArgs *)ioctlPtr->inBuffer;
+	    lockArgsPtr->hostID = rpc_SpriteID;
+	    Sync_GetWaitToken(&lockArgsPtr->pid, &lockArgsPtr->token);
 	}
 
-	/*
-	 * Call down stream to see if the IOControl is applicable.
-	 * If so, we may also have to adjust some state of our own.
-	 */
+	replyPtr->length = ioctlPtr->outBufSize;
+	replyPtr->flags = 0;
+	replyPtr->signal = 0;
+	replyPtr->code = 0;
 	status = (*fsStreamOpTable[streamType].ioControl)
-	    (streamPtr, command, mach_ByteOrder, inBufPtr, outBufPtr);
+			(streamPtr, ioctlPtr, replyPtr);
 #ifdef lint
-	status = FsFileIOControl(streamPtr, command,
-		    mach_ByteOrder, inBufPtr, outBufPtr);
-	status = FsRmtFileIOControl(streamPtr, command,
-		    mach_ByteOrder, inBufPtr, outBufPtr);
-	status = FsDeviceIOControl(streamPtr, command,
-		    mach_ByteOrder, inBufPtr, outBufPtr);
-	status = FsRemoteIOControl(streamPtr, command,
-		    mach_ByteOrder, inBufPtr, outBufPtr);
-	status = FsPipeIOControl(streamPtr, command,
-		    mach_ByteOrder, inBufPtr, outBufPtr);
-	status = FsControlIOControl(streamPtr, command,
-		    mach_ByteOrder, inBufPtr, outBufPtr);
-	status = FsServerStreamIOControl(streamPtr, command,
-		    mach_ByteOrder, inBufPtr, outBufPtr);
-	status = FsPseudoStreamIOControl(streamPtr, command,
-		    mach_ByteOrder, inBufPtr, outBufPtr);
+	status = FsFileIOControl(streamPtr, ioctlPtr, replyPtr);
+	status = FsRmtFileIOControl(streamPtr, ioctlPtr, replyPtr);
+	status = FsDeviceIOControl(streamPtr, ioctlPtr, replyPtr);
+	status = FsRemoteIOControl(streamPtr, ioctlPtr, replyPtr);
+	status = FsPipeIOControl(streamPtr, ioctlPtr, replyPtr);
+	status = FsControlIOControl(streamPtr, ioctlPtr, replyPtr);
+	status = FsServerStreamIOControl(streamPtr, ioctlPtr, replyPtr);
+	status = FsPseudoStreamIOControl(streamPtr, ioctlPtr, replyPtr);
 #endif /* lint */
+
 	switch(status) {
 	    case SUCCESS:
 		break;
@@ -743,11 +729,11 @@ Fs_IOControl(streamPtr, command, inBufPtr, outBufPtr)
 	    register int newOffset;
 	    register Ioc_RepositionArgs	*iocArgsPtr;
 
-	    if (inBufPtr->addr == (Address)NIL) {
+	    if (ioctlPtr->inBuffer == (Address)NIL) {
 		status = GEN_INVALID_ARG;
 		break;
 	    }
-	    iocArgsPtr = (Ioc_RepositionArgs *)inBufPtr->addr;
+	    iocArgsPtr = (Ioc_RepositionArgs *)ioctlPtr->inBuffer;
 	    switch(iocArgsPtr->base) {
 		case IOC_BASE_ZERO:
 		    newOffset = iocArgsPtr->offset;
@@ -769,8 +755,8 @@ Fs_IOControl(streamPtr, command, inBufPtr, outBufPtr)
 	    if (newOffset < 0) {
 		status = GEN_INVALID_ARG;
 	    } else {
-		if (outBufPtr->addr != (Address)NIL) {
-		    *(int *)outBufPtr->addr = newOffset;
+		if (ioctlPtr->outBuffer != (Address)NIL) {
+		    *(int *)ioctlPtr->outBuffer = newOffset;
 		}
 		streamPtr->offset = newOffset;
 	    }
@@ -793,10 +779,10 @@ Fs_IOControl(streamPtr, command, inBufPtr, outBufPtr)
 	    if (streamPtr->flags & FS_NON_BLOCKING) {
 		flags |= IOC_NON_BLOCKING;
 	    }
-	    if (outBufPtr->addr == (Address)NIL) {
+	    if (ioctlPtr->outBufSize != sizeof(int)) {
 		status = GEN_INVALID_ARG;
 	    } else {
-		*(int *)outBufPtr->addr |= flags;
+		*(int *)ioctlPtr->outBuffer |= flags;
 	    }
 	    break;
 	}
@@ -810,11 +796,11 @@ Fs_IOControl(streamPtr, command, inBufPtr, outBufPtr)
 	     * are not in the input word.
 	     */
 	    register int flags;
-	    if (inBufPtr->addr == (Address)NIL) {
+	    if (ioctlPtr->inBufSize != sizeof(int)) {
 		status = GEN_INVALID_ARG;
 		break;
 	    }
-	    flags = *(int *)inBufPtr->addr;
+	    flags = *(int *)ioctlPtr->inBuffer;
 	    if ((flags & IOC_APPEND) && (streamPtr->flags & FS_WRITE) == 0) {
 		status = FS_NO_ACCESS;
 		break;
@@ -833,11 +819,11 @@ Fs_IOControl(streamPtr, command, inBufPtr, outBufPtr)
 	}
 	case IOC_CLEAR_BITS:{
 	    register int flags;
-	    if (inBufPtr->addr == (Address)NIL) {
+	    if (ioctlPtr->inBufSize != sizeof(int)) {
 		status = GEN_INVALID_ARG;
 		break;
 	    }
-	    flags = *(int *)inBufPtr->addr;
+	    flags = *(int *)ioctlPtr->inBuffer;
 	    if (flags & IOC_APPEND) {
 		streamPtr->flags &= ~FS_APPEND;
 	    }
@@ -858,6 +844,12 @@ Fs_IOControl(streamPtr, command, inBufPtr, outBufPtr)
 	case IOC_SET_OWNER:
 	case IOC_MAP:
 	     break;
+    }
+    /*
+     * Generate signal returned from stream-specific routine.
+     */
+    if (replyPtr->signal != 0) {
+	Sig_Send(replyPtr->signal, replyPtr->code, PROC_MY_PID, FALSE);
     }
     return(status);
 }

@@ -1496,12 +1496,10 @@ FsDeviceSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsDeviceIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
+FsDeviceIOControl(streamPtr, ioctlPtr, replyPtr)
     Fs_Stream *streamPtr;		/* Stream to a device. */
-    int command;
-    int byteOrder;
-    Fs_Buffer *inBufPtr;
-    Fs_Buffer *outBufPtr;
+    Fs_IOCParam *ioctlPtr;		/* I/O Control parameter block */
+    Fs_IOReply *replyPtr;		/* Return length and signal */
 {
     register FsDeviceIOHandle *devHandlePtr =
 	    (FsDeviceIOHandle *)streamPtr->ioHandlePtr;
@@ -1510,22 +1508,15 @@ FsDeviceIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
     static Boolean warned = FALSE;
 
     FsHandleLock(devHandlePtr);
-    switch (command) {
+    switch (ioctlPtr->command) {
 	case IOC_LOCK:
 	case IOC_UNLOCK:
-	    status = FsIocLock(&devHandlePtr->lock, command, byteOrder,
-				inBufPtr, &streamPtr->hdr.fileID);
+	    status = FsIocLock(&devHandlePtr->lock, ioctlPtr,
+			&streamPtr->hdr.fileID);
 	    break;
 	default:
-	    if ((byteOrder != mach_ByteOrder) && !warned) {
-		warned = TRUE;
-		FsFileError(streamPtr->ioHandlePtr,
-		    "Device I/O control byte swapping not done",
-		    SUCCESS);
-	    }
 	    status = (*devFsOpTable[DEV_TYPE_INDEX(devicePtr->type)].ioctl)
-		    (devicePtr, command, byteOrder, inBufPtr->size, inBufPtr->addr,
-		    outBufPtr->size, outBufPtr->addr);
+		    (devicePtr, ioctlPtr, replyPtr);
 	    break;
     }
     FsHandleUnlock(devHandlePtr);

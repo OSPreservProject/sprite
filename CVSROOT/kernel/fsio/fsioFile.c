@@ -1361,25 +1361,23 @@ FsFileBlockCopy(srcHdrPtr, dstHdrPtr, blockNum)
 
 /*ARGSUSED*/
 ReturnStatus
-FsFileIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
+FsFileIOControl(streamPtr, ioctlPtr, replyPtr)
     Fs_Stream *streamPtr;		/* Stream to local file */
-    int command;			/* File specific I/O control */
-    int byteOrder;			/* Client's byte order */
-    Fs_Buffer *inBufPtr;		/* Command inputs */
-    Fs_Buffer *outBufPtr;		/* Buffer for return parameters */
+    Fs_IOCParam *ioctlPtr;		/* I/O Control parameter block */
+    Fs_IOReply *replyPtr;		/* Return length and signal */
 {
     register FsLocalFileIOHandle *handlePtr =
 	    (FsLocalFileIOHandle *)streamPtr->ioHandlePtr;
     register ReturnStatus status = SUCCESS;
 
     FsHandleLock(handlePtr);
-    switch(command) {
+    switch(ioctlPtr->command) {
 	case IOC_REPOSITION:
 	    break;
 	case IOC_GET_FLAGS:
-	    if ((outBufPtr->size >= sizeof(int)) &&
-		(outBufPtr->addr != (Address)NIL)) {
-		*(int *)outBufPtr->addr = 0;
+	    if ((ioctlPtr->outBufSize >= sizeof(int)) &&
+		(ioctlPtr->outBuffer != (Address)NIL)) {
+		*(int *)ioctlPtr->outBuffer = 0;
 	    }
 	    break;
 	case IOC_SET_FLAGS:
@@ -1389,17 +1387,18 @@ FsFileIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	case IOC_TRUNCATE: {
 	    int length;
 
-	    if (inBufPtr->size >= sizeof(int) && byteOrder != mach_ByteOrder) {
+	    if (ioctlPtr->inBufSize < sizeof(int)) {
+		status = GEN_INVALID_ARG;
+	    } else if (ioctlPtr->byteOrder != mach_ByteOrder) {
 		int size = sizeof(int);
-		Swap_Buffer(inBufPtr->addr, sizeof(int), byteOrder,
-			    mach_ByteOrder, "w", (Address)&length, &size);
+		Swap_Buffer(ioctlPtr->inBuffer, sizeof(int),
+			    ioctlPtr->byteOrder, mach_ByteOrder,
+			    "w", (Address)&length, &size);
 		if (size != sizeof(int)) {
 		    status = GEN_INVALID_ARG;
 		}
-	    } else if (inBufPtr->size < sizeof(int)) {
-		status = GEN_INVALID_ARG;
 	    } else {
-		length = *(int *)inBufPtr->addr;
+		length = *(int *)ioctlPtr->inBuffer;
 	    }
 	    if (status == SUCCESS) {
 		status = FsFileTrunc(handlePtr, length, 0);
@@ -1408,7 +1407,7 @@ FsFileIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	}
 	case IOC_LOCK:
 	case IOC_UNLOCK:
-	    status = FsIocLock(&handlePtr->lock, command, byteOrder, inBufPtr,
+	    status = FsIocLock(&handlePtr->lock, ioctlPtr,
 				&streamPtr->hdr.fileID);
 	    break;
 	case IOC_NUM_READABLE: {
@@ -1420,32 +1419,33 @@ FsFileIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	    int streamOffset;
 	    int size;
 
-	    if (inBufPtr->size == sizeof(int) && byteOrder != mach_ByteOrder) {
+	    if (ioctlPtr->inBufSize != sizeof(int)) {
+		status = GEN_INVALID_ARG;
+	    } else if (ioctlPtr->byteOrder != mach_ByteOrder) {
 		size = sizeof(int);
-		Swap_Buffer(inBufPtr->addr, inBufPtr->size, byteOrder,
-			    mach_ByteOrder, "w", (Address)&streamOffset, &size);
+		Swap_Buffer(ioctlPtr->inBuffer, ioctlPtr->inBufSize,
+			    ioctlPtr->byteOrder, mach_ByteOrder, "w",
+			    (Address)&streamOffset, &size);
 		if (size != sizeof(int)) {
 		    status = GEN_INVALID_ARG;
 		}
-	    } else if (inBufPtr->size != sizeof(int)) {
-		status = GEN_INVALID_ARG;
 	    } else {
-		streamOffset = *(int *)inBufPtr->addr;
+		streamOffset = *(int *)ioctlPtr->inBuffer;
 	    }
 	    if (status == SUCCESS) {
 		bytesAvailable = handlePtr->cacheInfo.attr.lastByte + 1 -
 				streamOffset;
-		if (outBufPtr->size >= sizeof(int) &&
-		    byteOrder != mach_ByteOrder) {
+		if (ioctlPtr->outBufSize != sizeof(int)) {
+		    status = GEN_INVALID_ARG;
+		} else if (ioctlPtr->byteOrder != mach_ByteOrder) {
 		    Swap_Buffer((Address)&bytesAvailable, sizeof(int),
-			mach_ByteOrder, byteOrder, "w", outBufPtr->addr, &size);
+			mach_ByteOrder, ioctlPtr->byteOrder, "w",
+			ioctlPtr->outBuffer, &size);
 		    if (size != sizeof(int)) {
 			status = GEN_INVALID_ARG;
 		    }
-		} else if (outBufPtr->size != sizeof(int)) {
-		    status = GEN_INVALID_ARG;
 		} else {
-		    *(int *)outBufPtr->addr = bytesAvailable;
+		    *(int *)ioctlPtr->outBuffer = bytesAvailable;
 		}
 	    }
 	    break;

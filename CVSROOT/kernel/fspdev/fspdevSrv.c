@@ -91,8 +91,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  *	PDEV_NAMING		Set on the naming request-response channel.
  *	PDEV_REQUEST_ABORTED	Set when the client aborts during a request-
  *				response transaction so we ignore the next rply.
- *	FS_USER			This flag is borrowed from the stream flags
- *				and it indicates the buffers are in user space
+ *	FS_USER_IN/OUT		These flags are borrowed from the stream flags
+ *				and indicate which buffers are in user space
  */
 #define PDEV_SETUP		0x0001
 #define PDEV_BUSY		0x0002
@@ -106,7 +106,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #define PDEV_NO_BIG_WRITES	0x0200
 #define PDEV_NAMING		0x0400
 #define PDEV_REQUEST_ABORTED	0x0800
-/*resrv FS_USER			0x8000 */
+/*resrv FS_USER_IN		0x8000 */
+/*resrv FS_USER_OUT	      0x800000 */
 
 /*
  * Forward declarations.
@@ -310,7 +311,7 @@ RequestResponse(pdevHandlePtr, hdrSize, requestHdrPtr, inputSize, inputBuf,
 	firstByte += hdrSize;
 	if (inputSize > 0) {
 	    status = Vm_CopyOutProc(inputSize, inputBuf, 
-			(pdevHandlePtr->flags & FS_USER) == 0, serverProcPtr,
+			(pdevHandlePtr->flags & FS_USER_IN) == 0, serverProcPtr,
 			(Address)&pdevHandlePtr->requestBuf.data[firstByte]);
 	}
     }
@@ -661,12 +662,10 @@ FsServerStreamRead(streamPtr, readPtr, waitPtr, replyPtr)
  */
 /*ARGSUSED*/
 ENTRY ReturnStatus
-FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
+FsServerStreamIOControl(streamPtr, ioctlPtr, replyPtr)
     Fs_Stream	*streamPtr;	/* Stream to server handle. */
-    int		command;	/* The control operation to be performed. */
-    int		byteOrder;	/* Client's byte order, should be same */
-    Fs_Buffer *inBufPtr;	/* Command inputs */
-    Fs_Buffer *outBufPtr;	/* Buffer for return parameters */
+    Fs_IOCParam *ioctlPtr;	/* Standard I/O Control parameter block */
+    Fs_IOReply *replyPtr;	/* Output buffer length and signal to return */
 {
     ReturnStatus	status = SUCCESS;
     register PdevServerIOHandle	*pdevHandlePtr =
@@ -674,10 +673,10 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 
     LOCK_MONITOR;
 
-    if (byteOrder != mach_ByteOrder) {
-	panic( "FsServerStreamIOControl: wrong byte order\n");
+    if (ioctlPtr->byteOrder != mach_ByteOrder) {
+	panic("FsServerStreamIOControl: wrong byte order\n");
     }
-    switch (command) {
+    switch (ioctlPtr->command) {
 	case IOC_PDEV_SET_BUF: {
 	    /*
 	     * The server is declaring the buffer space used for requests
@@ -693,11 +692,10 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	     *		to let the client's open transaction begin.
 	     */
 	    register Pdev_SetBufArgs *argPtr =
-		    (Pdev_SetBufArgs *)inBufPtr->addr;
-	    register Proc_ControlBlock *procPtr;
+		    (Pdev_SetBufArgs *)ioctlPtr->inBuffer;
 	    register int extraBytes;
 
-	    if (inBufPtr->size != sizeof(Pdev_SetBufArgs)) {
+	    if (ioctlPtr->inBufSize != sizeof(Pdev_SetBufArgs)) {
 		status = GEN_INVALID_ARG;
 	    } else if ((pdevHandlePtr->flags & PDEV_SETUP) == 0) {
 		/*
@@ -732,8 +730,7 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 		pdevHandlePtr->readBuf.firstByte = -1;
 		pdevHandlePtr->readBuf.lastByte = -1;
 
-		procPtr = Proc_GetEffectiveProc();
-		pdevHandlePtr->serverPID = procPtr->processID;
+		pdevHandlePtr->serverPID = ioctlPtr->procID;
 
 		/*
 		 * The state has been marked BUSY to simplify waiting in the
@@ -763,10 +760,10 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	     *		Set/unset write-behind buffering in the request buffer.
 	     */
 	    register Boolean writeBehind;
-	    if (inBufPtr->size < sizeof(Boolean)) {
+	    if (ioctlPtr->inBufSize < sizeof(Boolean)) {
 		status = GEN_INVALID_ARG;
 	    } else {
-		writeBehind = *(Boolean *)inBufPtr->addr;
+		writeBehind = *(Boolean *)ioctlPtr->inBuffer;
 		if (writeBehind) {
 		    pdevHandlePtr->flags |= PDEV_WRITE_BEHIND;
 		} else {
@@ -781,10 +778,10 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	     *		Set/unset the client's ability to make large writes.
 	     */
 	    register Boolean allowLargeWrites;
-	    if (inBufPtr->size < sizeof(Boolean)) {
+	    if (ioctlPtr->inBufSize < sizeof(Boolean)) {
 		status = GEN_INVALID_ARG;
 	    } else {
-		allowLargeWrites = *(Boolean *)inBufPtr->addr;
+		allowLargeWrites = *(Boolean *)ioctlPtr->inBuffer;
 		if (allowLargeWrites) {
 		    pdevHandlePtr->flags &= ~PDEV_NO_BIG_WRITES;
 		} else {
@@ -805,8 +802,8 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	     *		We notify waiting clients if the server has
 	     *		added read-ahead data.
 	     */
-	    register Pdev_BufPtrs *argPtr = (Pdev_BufPtrs *)inBufPtr->addr;
-	    if (inBufPtr->size != sizeof(Pdev_BufPtrs)) {
+	    register Pdev_BufPtrs *argPtr = (Pdev_BufPtrs *)ioctlPtr->inBuffer;
+	    if (ioctlPtr->inBufSize != sizeof(Pdev_BufPtrs)) {
 		status = GEN_INVALID_ARG;
 	    } else {
 		/*
@@ -896,9 +893,9 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	     *		Notify the replyReady condition, and lastly
 	     *		notify waiting clients about new select state.
 	     */
-	    register Pdev_Reply *srvReplyPtr = (Pdev_Reply *)inBufPtr->addr;
+	    register Pdev_Reply *srvReplyPtr = (Pdev_Reply *)ioctlPtr->inBuffer;
 
-	    if (inBufPtr->size < sizeof(Pdev_Reply)) {
+	    if (ioctlPtr->inBufSize < sizeof(Pdev_Reply)) {
 		/*
 		 * inBuffer must be at least as big as Pdev_Reply.
 		 * It will be larger during PDEV_SMALL_REPLY which
@@ -921,22 +918,19 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 		if (srvReplyPtr->replySize > 0) {
 		    register Proc_ControlBlock *clientProcPtr;
 		    /*
-		     * Copy the reply into the waiting buffers.  PDEV_WRITE is
-		     * handled specially because the reply buffer is just an
-		     * integer variable in the kernel, while the input buffer
-		     * is in user space, which is indicated by the FS_USER flag.
-		     *  - To be fully general we'd need a user space flag for
-		     * 	both the input buffer and the reply.
+		     * Copy the reply into the waiting buffers.
 		     */
-		    if ((command == IOC_PDEV_SMALL_REPLY) &&
+		    if ((ioctlPtr->command == IOC_PDEV_SMALL_REPLY) &&
 			((srvReplyPtr->replySize > PDEV_SMALL_DATA_LIMIT) ||
-			 (inBufPtr->size <
+			 (ioctlPtr->inBufSize <
 				 sizeof(Pdev_Reply) + srvReplyPtr->replySize))){
 			status = GEN_INVALID_ARG;
 		    } else {
-			if (((pdevHandlePtr->flags & FS_USER) == 0) ||
-			    (pdevHandlePtr->operation == PDEV_WRITE)) {
-			    if (command == IOC_PDEV_SMALL_REPLY) {
+			if ((pdevHandlePtr->flags & FS_USER_OUT) == 0) {
+			    /*
+			     * Reply buffer in the kernel.
+			     */
+			    if (ioctlPtr->command == IOC_PDEV_SMALL_REPLY) {
 				bcopy(((Pdev_ReplyData *)srvReplyPtr)->data,
 					pdevHandlePtr->replyBuf,
 					srvReplyPtr->replySize);
@@ -947,10 +941,14 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 			    }
 			} else {
 			    clientProcPtr = Proc_LockPID(pdevHandlePtr->clientPID);
+			    /*
+			     * Reply buffer in the client's address space.
+			     * Do a cross-address-space copy.
+			     */
 			    if (clientProcPtr == (Proc_ControlBlock *)NIL) {
 				status = FS_BROKEN_PIPE;
 			    } else {
-				if (command == IOC_PDEV_SMALL_REPLY) {
+				if (ioctlPtr->command == IOC_PDEV_SMALL_REPLY) {
 				    status =
 					Vm_CopyOutProc(srvReplyPtr->replySize,
 					((Pdev_ReplyData *)srvReplyPtr)->data,
@@ -999,14 +997,14 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	     *		Notify waiting clients.
 	     */
 
-	    if (inBufPtr->size != sizeof(int)) {
+	    if (ioctlPtr->inBufSize != sizeof(int)) {
 		status = FS_INVALID_ARG;
 	    } else {
 		/*
 		 * Update the select state of the pseudo-device and
 		 * wake up any clients waiting on their pseudo-stream.
 		 */
-		pdevHandlePtr->selectBits = *(int *)inBufPtr->addr;
+		pdevHandlePtr->selectBits = *(int *)ioctlPtr->inBuffer;
 		PdevClientNotify(pdevHandlePtr);
 	    }
 	    break;
@@ -1016,7 +1014,7 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	     * the device.  This is used, for example, to implement processing
 	     * of interrupt characters by the TTY driver.
 	     */
-	    status = FsPdevSignalOwner(pdevHandlePtr->ctrlHandlePtr, inBufPtr);
+	    status = FsPdevSignalOwner(pdevHandlePtr->ctrlHandlePtr, ioctlPtr);
 	    break;
 	}
 	case IOC_PFS_OPEN: {
@@ -1033,8 +1031,8 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	    int newStreamID;			/* For the server */
 	    FsOpenResults openResults;		/* For the client */
 
-	    if (inBufPtr->size < sizeof(Fs_FileID) ||
-		outBufPtr->size < sizeof(int)) {
+	    if (ioctlPtr->inBufSize < sizeof(Fs_FileID) ||
+		ioctlPtr->outBufSize < sizeof(int)) {
 		status = GEN_INVALID_ARG;
 	    } else if (pdevHandlePtr->flags & PDEV_REQUEST_ABORTED) {
 		pdevHandlePtr->flags &= ~PDEV_REQUEST_ABORTED;
@@ -1042,12 +1040,12 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 		break;
 	    } else {
 		newStreamID = FsPfsOpenConnection(pdevHandlePtr,
-			    (Fs_FileID *)inBufPtr->addr, &openResults);
-		if (outBufPtr->flags & FS_USER) {
+			    (Fs_FileID *)ioctlPtr->inBuffer, &openResults);
+		if (ioctlPtr->flags & FS_USER_OUT) {
 		    Vm_CopyOut(sizeof(int), (Address)&newStreamID,
-				outBufPtr->addr);
+				ioctlPtr->outBuffer);
 		} else {
-		    *(int *)outBufPtr->addr = newStreamID;
+		    *(int *)ioctlPtr->outBuffer = newStreamID;
 		}
 		if (newStreamID < 0) {
 		    status = FAILURE;
@@ -1081,10 +1079,10 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	     */
 	    register Fs_FileID *fileIDPtr;
 
-	    if (inBufPtr->size < sizeof(Fs_FileID)) {
+	    if (ioctlPtr->inBufSize < sizeof(Fs_FileID)) {
 		status = FS_INVALID_ARG;
 	    } else {
-		fileIDPtr = (Fs_FileID *)inBufPtr->addr;
+		fileIDPtr = (Fs_FileID *)ioctlPtr->inBuffer;
 		pdevHandlePtr->userLevelID = *fileIDPtr;
 	    }
 	    break;
@@ -1101,14 +1099,14 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	    register Proc_ControlBlock *procPtr;
 	    register FsOpenResults *openResultsPtr;
 
-	    if (inBufPtr->size < sizeof(int)) {
+	    if (ioctlPtr->inBufSize < sizeof(int)) {
 		status = GEN_INVALID_ARG;
 	    } else if (pdevHandlePtr->flags & PDEV_REQUEST_ABORTED) {
 		pdevHandlePtr->flags &= ~PDEV_REQUEST_ABORTED;
 		PdevClientNotify(pdevHandlePtr);
 		break;
 	    } else {
-		passedStreamID = *(int *)inBufPtr->addr;
+		passedStreamID = *(int *)ioctlPtr->inBuffer;
 		procPtr = Proc_GetEffectiveProc();
 		status = FsGetStreamPtr(procPtr, passedStreamID, &streamPtr);
 		if (status == SUCCESS) {
@@ -1184,11 +1182,11 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	    } else {
 		numReadable = sizeof(Pdev_BufPtrs);
 	    }
-	    if (outBufPtr->addr == (Address)NIL ||
-		outBufPtr->size < sizeof(int)) {
+	    if (ioctlPtr->outBuffer == (Address)NIL ||
+		ioctlPtr->outBufSize < sizeof(int)) {
 		status = GEN_INVALID_ARG;
 	    } else {
-		*(int *)outBufPtr->addr = numReadable;
+		*(int *)ioctlPtr->outBuffer = numReadable;
 		status = SUCCESS;
 	    }
 	    break;
@@ -1197,11 +1195,6 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	    status = GEN_NOT_IMPLEMENTED;
 	    break;
     }
-#ifdef notdef
-    if (status != SUCCESS) {
-	printf("PdevServer IOControl #%x returning %x\n", command, status);
-    }
-#endif notdef
     UNLOCK_MONITOR;
     return(status);
 }
@@ -1224,9 +1217,9 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
  */
 
 ReturnStatus
-FsPdevSignalOwner(ctrlHandlePtr, inBufPtr)
+FsPdevSignalOwner(ctrlHandlePtr, ioctlPtr)
     PdevControlIOHandle *ctrlHandlePtr;
-    Fs_Buffer *inBufPtr;
+    Fs_IOCParam *ioctlPtr;
 {
     register ReturnStatus status;
     register Pdev_Signal *sigPtr;
@@ -1238,13 +1231,12 @@ FsPdevSignalOwner(ctrlHandlePtr, inBufPtr)
 	 * No owner declared, this is a no-op.
 	 */
 	status = SUCCESS;
-    } else if (inBufPtr == (Fs_Buffer *)NIL ||
-	inBufPtr->size != sizeof(Pdev_Signal)) {
+    } else if (ioctlPtr->inBufSize != sizeof(Pdev_Signal)) {
 	status = FS_INVALID_ARG;
     } else {
 	register int savedEuid;
 
-	sigPtr = (Pdev_Signal *)inBufPtr->addr;
+	sigPtr = (Pdev_Signal *)ioctlPtr->inBuffer;
 	procPtr = Proc_GetEffectiveProc();
 	savedEuid = procPtr->effectiveUserID;
 	procPtr->effectiveUserID = 0;
@@ -1451,7 +1443,7 @@ FsPseudoStreamOpen(pdevHandlePtr, flags, clientID, procID, userID)
     request.param.open.hostID	= clientID;
     request.param.open.uid	= userID;
 
-    pdevHandlePtr->flags &= ~FS_USER;
+    pdevHandlePtr->flags &= ~(FS_USER_IN|FS_USER_OUT);
     status = RequestResponse(pdevHandlePtr, sizeof(Pdev_Request), &request.hdr,
 			 0, (Address) NIL, 0, (Address) NIL, (Fs_IOReply *)NIL,
 			 (Sync_RemoteWaiter *)NIL);
@@ -1518,7 +1510,7 @@ FsPseudoStreamLookup(pdevHandlePtr, requestPtr, argSize, argsPtr,
     }
     pdevHandlePtr->flags |= PDEV_BUSY;
 
-    pdevHandlePtr->flags &= ~FS_USER;
+    pdevHandlePtr->flags &= ~(FS_USER_IN|FS_USER_OUT);
     status = RequestResponse(pdevHandlePtr, sizeof(Pfs_Request),
 		&requestPtr->hdr, argSize, argsPtr, sizeof(FsRedirectInfo),
 		(Address)&redirectInfo, &ioReply,
@@ -1601,7 +1593,7 @@ FsPseudoStream2Path(pdevHandlePtr, requestPtr, dataPtr, name1ErrorPtr,
     }
     pdevHandlePtr->flags |= PDEV_BUSY;
 
-    pdevHandlePtr->flags &= ~FS_USER;
+    pdevHandlePtr->flags &= ~(FS_USER_IN|FS_USER_OUT);
     status = RequestResponse(pdevHandlePtr, sizeof(Pfs_Request),
 		&requestPtr->hdr, sizeof(Fs2PathData), (Address)dataPtr,
 		sizeof(Fs2PathRedirectInfo), (Address)&redirectInfo,
@@ -1683,7 +1675,7 @@ FsPseudoGetAttr(fileIDPtr, clientID, attrPtr)
 	}
     }
     pdevHandlePtr->flags |= PDEV_BUSY;
-    pdevHandlePtr->flags &= ~FS_USER;
+    pdevHandlePtr->flags &= ~(FS_USER_IN|FS_USER_OUT);
     request.hdr.operation = PDEV_GET_ATTR;
     status = RequestResponse(pdevHandlePtr, sizeof(Pdev_Request), &request.hdr,
 			0, (Address) NIL,
@@ -1753,7 +1745,7 @@ FsPseudoSetAttr(fileIDPtr, attrPtr, idPtr, flags)
 	}
     }
     pdevHandlePtr->flags |= PDEV_BUSY;
-    pdevHandlePtr->flags &= ~FS_USER;
+    pdevHandlePtr->flags &= ~(FS_USER_IN|FS_USER_OUT);
     request.hdr.operation = PDEV_SET_ATTR;
     request.param.setAttr.uid = idPtr->user;
     request.param.setAttr.flags = flags;
@@ -1892,7 +1884,6 @@ FsPseudoStreamRead(streamPtr, readPtr, waitPtr, replyPtr)
     register PdevClientIOHandle *cltHandlePtr =
 	    (PdevClientIOHandle *)streamPtr->ioHandlePtr;
     register PdevServerIOHandle *pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
-    register Ioc_Owner *ownerPtr;
     Pdev_Request	request;
 
     LOCK_MONITOR;
@@ -1908,18 +1899,21 @@ FsPseudoStreamRead(streamPtr, readPtr, waitPtr, replyPtr)
     pdevHandlePtr->flags |= PDEV_BUSY;
 
 #ifdef notdef
-    /*
-     * Check for access inside the owning process group.
-     */
-    ownerPtr = &pdevHandlePtr->ctrlHandlePtr->owner;
-    if (((ownerPtr->procOrFamily == IOC_OWNER_FAMILY) &&
-	 (readPtr->familyID != ownerPtr->id)) ||
-	((ownerPtr->procOrFamily == IOC_OWNER_PROC) &&
-	 (readPtr->procID != ownerPtr->id))) {
-	printf("PdevRead: ownership conflict\n");
-	status = GEN_ABORTED_BY_SIGNAL;
-	replyPtr->signal = SIG_TTY_INPUT;
-	goto exit;
+    {
+	register Ioc_Owner *ownerPtr;
+	/*
+	 * Check for access inside the owning process group.
+	 */
+	ownerPtr = &pdevHandlePtr->ctrlHandlePtr->owner;
+	if (((ownerPtr->procOrFamily == IOC_OWNER_FAMILY) &&
+	     (readPtr->familyID != ownerPtr->id)) ||
+	    ((ownerPtr->procOrFamily == IOC_OWNER_PROC) &&
+	     (readPtr->procID != ownerPtr->id))) {
+	    printf("PdevRead: ownership conflict\n");
+	    status = GEN_ABORTED_BY_SIGNAL;
+	    replyPtr->signal = SIG_TTY_INPUT;
+	    goto exit;
+	}
     }
 #endif
 
@@ -1994,7 +1988,9 @@ FsPseudoStreamRead(streamPtr, readPtr, waitPtr, replyPtr)
 	request.hdr.operation		= PDEV_READ;
 	request.param.read		= *readPtr;
 
-	pdevHandlePtr->flags |= (readPtr->flags & FS_USER);
+	if (readPtr->flags & FS_USER) {
+	    pdevHandlePtr->flags |= FS_USER_IN;
+	}
 	status = RequestResponse(pdevHandlePtr, sizeof(Pdev_Request),
 	    &request.hdr, 0, (Address) NIL, readPtr->length, readPtr->buffer,
 		    replyPtr, waitPtr);
@@ -2015,7 +2011,7 @@ exit:
 	status = SUCCESS;
 	replyPtr->length = 0;
     }
-    pdevHandlePtr->flags &= ~(PDEV_BUSY|FS_USER);
+    pdevHandlePtr->flags &= ~(PDEV_BUSY|FS_USER_IN);
 exitNoServer:
     Sync_Broadcast(&pdevHandlePtr->access);
     UNLOCK_MONITOR;
@@ -2063,7 +2059,6 @@ FsPseudoStreamWrite(streamPtr, writePtr, waitPtr, replyPtr)
     int			amountWritten;
     int			numBytes;
     int			maxRequestSize;
-    Ioc_Owner		*ownerPtr;
 
     LOCK_MONITOR;
     /*
@@ -2078,27 +2073,33 @@ FsPseudoStreamWrite(streamPtr, writePtr, waitPtr, replyPtr)
 	    goto exitNoServer;
 	}
     }
-    pdevHandlePtr->flags |= (PDEV_BUSY|(writePtr->flags & FS_USER));
+    pdevHandlePtr->flags |= PDEV_BUSY;
+    if (writePtr->flags & FS_USER) {
+	pdevHandlePtr->flags |= FS_USER_OUT;
+    }
 
 #ifdef notdef
-    /*
-     * Check for access inside the owning process group.
-     * (This doesn't work presently, 6/89.  We'll rely on
-     * the tty driver to do this checking for us.)
-     *
-     * Getting 4.3 BSD semantics is tricky because the operation is
-     * supposed to succeed if the TTYOUT signal is blocked. Need a
-     * flag passed down from Fs_Write.
-     */
-    ownerPtr = &pdevHandlePtr->ctrlHandlePtr->owner;
-    if (((ownerPtr->procOrFamily == IOC_OWNER_FAMILY) &&
-	 (writePtr->familyID != ownerPtr->id)) ||
-	((ownerPtr->procOrFamily == IOC_OWNER_PROC) &&
-	 (writePtr->procID != ownerPtr->id))) {
-	printf("PdevWrite: ownership conflict\n");
-	status = GEN_ABORTED_BY_SIGNAL;
-	replyPtr->signal = SIG_TTY_OUTPUT;
-	goto exit;
+    {
+	/*
+	 * Check for access inside the owning process group.
+	 * (This doesn't work presently, 6/89.  We'll rely on
+	 * the tty driver to do this checking for us.)
+	 *
+	 * Getting 4.3 BSD semantics is tricky because the operation is
+	 * supposed to succeed if the TTYOUT signal is blocked. Need a
+	 * flag passed down from Fs_Write.
+	 */
+	Ioc_Owner		*ownerPtr;
+	ownerPtr = &pdevHandlePtr->ctrlHandlePtr->owner;
+	if (((ownerPtr->procOrFamily == IOC_OWNER_FAMILY) &&
+	     (writePtr->familyID != ownerPtr->id)) ||
+	    ((ownerPtr->procOrFamily == IOC_OWNER_PROC) &&
+	     (writePtr->procID != ownerPtr->id))) {
+	    printf("PdevWrite: ownership conflict\n");
+	    status = GEN_ABORTED_BY_SIGNAL;
+	    replyPtr->signal = SIG_TTY_OUTPUT;
+	    goto exit;
+	}
     }
 #endif
     /*
@@ -2170,7 +2171,7 @@ exit:
     if (replyPtr->signal != 0) {
 	printf("PdevWrite: signal %d\n", replyPtr->signal);
     }
-    pdevHandlePtr->flags &= ~(PDEV_BUSY|FS_USER);
+    pdevHandlePtr->flags &= ~(PDEV_BUSY|FS_USER_OUT);
 exitNoServer:
     Sync_Broadcast(&pdevHandlePtr->access);
     UNLOCK_MONITOR;
@@ -2196,17 +2197,13 @@ exitNoServer:
  */
 
 ReturnStatus
-FsPseudoStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
+FsPseudoStreamIOControl(streamPtr, ioctlPtr, replyPtr)
     Fs_Stream	*streamPtr;	/* Stream to pseudo-device */
-    int		command;	/* The control operation to be performed. */
-    int		byteOrder;	/* Client's byte order */
-    Fs_Buffer   *inBufPtr;	/* Command inputs */
-    Fs_Buffer	*outBufPtr;	/* Buffer for return parameters */
+    Fs_IOCParam *ioctlPtr;	/* Standard I/O Control parameter block */
+    Fs_IOReply *replyPtr;	/* Output buffer length and signal to return */
 {
     ReturnStatus 	status;
     Pdev_Request	request;
-    Fs_IOReply		ioReply;
-    register Proc_ControlBlock *procPtr;
     register PdevClientIOHandle *cltHandlePtr =
 	    (PdevClientIOHandle *)streamPtr->ioHandlePtr;
     register PdevServerIOHandle *pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
@@ -2231,15 +2228,16 @@ FsPseudoStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
      * for generic I/O controls are copied in, and if we are being called
      * from an RPC stub they are also in kernel space.
      */
-    if ((command > IOC_GENERIC_LIMIT) &&
-	(inBufPtr->flags & FS_USER) != 0) {
-	pdevHandlePtr->flags |= FS_USER;
-
+    if (ioctlPtr->flags & FS_USER_IN) {
+	pdevHandlePtr->flags |= FS_USER_IN;
+    }
+    if (ioctlPtr->flags & FS_USER_OUT) {
+	pdevHandlePtr->flags |= FS_USER_OUT;
     }
 
     status = SUCCESS;
 
-    if (command == IOC_NUM_READABLE &&
+    if (ioctlPtr->command == IOC_NUM_READABLE &&
 	pdevHandlePtr->readBuf.data != (Address)NIL) {
 	/*
 	 * Trap out the IOC_NUM_READABLE if there's a read ahead buf.
@@ -2251,17 +2249,18 @@ FsPseudoStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	    bytesAvail = pdevHandlePtr->readBuf.lastByte -
 			 pdevHandlePtr->readBuf.firstByte + 1;
 	}
-	if (byteOrder != mach_ByteOrder) {
+	if (ioctlPtr->outBufSize != sizeof(int)) {
+	    status = GEN_INVALID_ARG;
+	} else if (ioctlPtr->byteOrder != mach_ByteOrder) {
 	    int size = sizeof(int);
 	    Swap_Buffer((Address)&bytesAvail, sizeof(int),
-		mach_ByteOrder, byteOrder, "w", outBufPtr->addr, &size);
+		mach_ByteOrder, ioctlPtr->byteOrder, "w", ioctlPtr->outBuffer,
+		&size);
 	    if (size != sizeof(int)) {
 		status = GEN_INVALID_ARG;
 	    }
-	} else if (outBufPtr->size != sizeof(int)) {
-	    status = GEN_INVALID_ARG;
 	} else {
-	    *(int *)outBufPtr->addr = bytesAvail;
+	    *(int *)ioctlPtr->outBuffer = bytesAvail;
 	}
 	DBG_PRINT( ("IOC  %x,%x num readable %d\n",
 		pdevHandlePtr->hdr.fileID.major,
@@ -2272,17 +2271,16 @@ FsPseudoStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	 * Switch out on command for any special processing,
 	 * then do a request-response transaction with the server.
 	 */
-	switch(command) {
+	switch(ioctlPtr->command) {
 	    case IOC_SET_OWNER: {
 		/*
 		 * Siphon off the ownership so we can enforce it in the kernel.
 		 */
-		if (inBufPtr == (Fs_Buffer *)NIL ||
-		    inBufPtr->size < sizeof(Ioc_Owner)) {
+		if (ioctlPtr->inBufSize < sizeof(Ioc_Owner)) {
 		    status = GEN_INVALID_ARG;
 		} else {
 		    pdevHandlePtr->ctrlHandlePtr->owner =
-			    *(Ioc_Owner *)inBufPtr->addr;
+			    *(Ioc_Owner *)ioctlPtr->inBuffer;
 		}
 		break;
 	    }
@@ -2290,41 +2288,28 @@ FsPseudoStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 		/*
 		 * Do our own get owner, but let the server see the request.
 		 */
-		if (outBufPtr == (Fs_Buffer *)NIL ||
-		    outBufPtr->size < sizeof(Ioc_Owner)) {
+		if (ioctlPtr->outBufSize < sizeof(Ioc_Owner)) {
 		    status = GEN_INVALID_ARG;
 		} else {
-		    *(Ioc_Owner *)outBufPtr->addr =
+		    *(Ioc_Owner *)ioctlPtr->outBuffer =
 			    pdevHandlePtr->ctrlHandlePtr->owner;
 		}
 		break;
 	    }
 	}
 	if (status == SUCCESS) {
-	    procPtr = Proc_GetEffectiveProc();
-	    request.hdr.operation		= PDEV_IOCTL;
-	    request.param.ioctl.command		= command;
-	    request.param.ioctl.inBuffer	= 0;
-	    request.param.ioctl.inBufSize	= inBufPtr->size;
-	    request.param.ioctl.outBuffer	= 0;
-	    request.param.ioctl.outBufSize	= outBufPtr->size;
-	    request.param.ioctl.byteOrder	= byteOrder;
-	    request.param.ioctl.procID		= procPtr->processID;
-	    request.param.ioctl.familyID	= procPtr->familyID;
-	    request.param.ioctl.uid		= procPtr->effectiveUserID;
-	    if (procPtr->fsPtr->numGroupIDs > 0) {
-		request.param.read.gid	= procPtr->fsPtr->groupIDs[0];
-	    }
+	    request.hdr.operation	= PDEV_IOCTL;
+	    request.param.ioctl		= *ioctlPtr;
 
 	    status = RequestResponse(pdevHandlePtr, sizeof(Pdev_Request),
 				 &request.hdr,
-				 inBufPtr->size, inBufPtr->addr,
-				 outBufPtr->size, outBufPtr->addr,
-				 &ioReply, (Sync_RemoteWaiter *)NIL);
+				 ioctlPtr->inBufSize, ioctlPtr->inBuffer,
+				 ioctlPtr->outBufSize, ioctlPtr->outBuffer,
+				 replyPtr, (Sync_RemoteWaiter *)NIL);
 	}
     }
 
-    pdevHandlePtr->flags &= ~(PDEV_BUSY|FS_USER);
+    pdevHandlePtr->flags &= ~(PDEV_BUSY|FS_USER_IN|FS_USER_OUT);
 exit:
     Sync_Broadcast(&pdevHandlePtr->access);
     UNLOCK_MONITOR;

@@ -550,15 +550,14 @@ exit:
  */
 /*ARGSUSED*/
 ReturnStatus
-FsPipeIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
+FsPipeIOControl(streamPtr, ioctlPtr, replyPtr)
     Fs_Stream *streamPtr;
-    int command;
-    int byteOrder;
-    Fs_Buffer *inBufPtr;
-    Fs_Buffer *outBufPtr;
+    Fs_IOCParam *ioctlPtr;		/* I/O Control parameter block */
+    Fs_IOReply *replyPtr;		/* Return length and signal */
 {
     register FsPipeIOHandle *handlePtr =
 	    (FsPipeIOHandle *)streamPtr->ioHandlePtr;
+    register int command = ioctlPtr->command;
     ReturnStatus status = SUCCESS;
 
     switch(command) {
@@ -574,17 +573,19 @@ FsPipeIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	     */
 	    int flags;
 	    int size;
-	    if (inBufPtr->size >= sizeof(int) && byteOrder != mach_ByteOrder) {
+
+	    if (ioctlPtr->inBufSize != sizeof(int)) {
+		status = GEN_INVALID_ARG;
+	    } else if (ioctlPtr->byteOrder != mach_ByteOrder) {
 		size = sizeof(int);
-		Swap_Buffer(inBufPtr->addr, inBufPtr->size, byteOrder,
+		Swap_Buffer(ioctlPtr->inBuffer, ioctlPtr->inBufSize,
+			    ioctlPtr->byteOrder,
 			    mach_ByteOrder, "w", (Address)&flags, &size);
 		if (size != sizeof(int)) {
 		    status = GEN_INVALID_ARG;
 		}
-	    } else if (inBufPtr->size != sizeof(int)) {
-		status = GEN_INVALID_ARG;
 	    } else {
-		flags = *(int *)inBufPtr->addr;
+		flags = *(int *)ioctlPtr->inBuffer;
 	    }
 	    if (status != SUCCESS) {
 		return(status);
@@ -600,19 +601,20 @@ FsPipeIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	case IOC_UNLOCK:
 	    return(GEN_NOT_IMPLEMENTED);
 	case IOC_NUM_READABLE: {
-	    int bytesAvailable;
-	    bytesAvailable = handlePtr->lastByte - handlePtr->firstByte;
-	    if (outBufPtr->size >= sizeof(int) && byteOrder != mach_ByteOrder) {
+	    int bytesAvailable = handlePtr->lastByte - handlePtr->firstByte;
+
+	    if (ioctlPtr->outBufSize != sizeof(int)) {
+		status = GEN_INVALID_ARG;
+	    } else if (ioctlPtr->byteOrder != mach_ByteOrder) {
 		int size = sizeof(int);
 		Swap_Buffer((Address)&bytesAvailable, sizeof(int),
-		    mach_ByteOrder, byteOrder, "w", outBufPtr->addr, &size);
+		    mach_ByteOrder, ioctlPtr->byteOrder, "w",
+		    ioctlPtr->outBuffer, &size);
 		if (size != sizeof(int)) {
 		    status = GEN_INVALID_ARG;
 		}
-	    } else if (outBufPtr->size != sizeof(int)) {
-		status = GEN_INVALID_ARG;
 	    } else {
-		*(int *)outBufPtr->addr = bytesAvailable;
+		*(int *)ioctlPtr->outBuffer = bytesAvailable;
 	    }
 	    return(status);
 	}

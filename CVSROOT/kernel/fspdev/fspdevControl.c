@@ -249,32 +249,29 @@ FsControlRead(streamPtr, readPtr, waitPtr, replyPtr)
  */
 
 ReturnStatus
-FsControlIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
+FsControlIOControl(streamPtr, ioctlPtr, replyPtr)
     Fs_Stream *streamPtr;		/* I/O handle */
-    int command;			/* File specific I/O control */
-    int byteOrder;			/* Client byte order, should be same */
-    Fs_Buffer *inBufPtr;		/* Command inputs */
-    Fs_Buffer *outBufPtr;		/* Buffer for return parameters */
-
+    Fs_IOCParam *ioctlPtr;		/* I/O Control parameter block */
+    Fs_IOReply *replyPtr;		/* Return length and signal */
 {
     register PdevControlIOHandle *ctrlHandlePtr =
 	    (PdevControlIOHandle *)streamPtr->ioHandlePtr;
     register ReturnStatus status;
 
-    if (byteOrder != mach_ByteOrder) {
-	panic( "FsControlIOControl: wrong byte order\n");
+    if (ioctlPtr->byteOrder != mach_ByteOrder) {
+	panic("FsControlIOControl: wrong byte order\n");
     }
-    switch(command) {
+    switch(ioctlPtr->command) {
 	case IOC_PDEV_SIGNAL_OWNER:
-	    status = FsPdevSignalOwner(ctrlHandlePtr, inBufPtr);
+	    status = FsPdevSignalOwner(ctrlHandlePtr, ioctlPtr);
 	    break;
 	case IOC_REPOSITION:
 	    status = SUCCESS;
 	    break;
 	case IOC_GET_FLAGS:
-	    if ((outBufPtr->size >= sizeof(int)) &&
-		(outBufPtr->addr != (Address)NIL)) {
-		*(int *)outBufPtr->addr = 0;
+	    if (ioctlPtr->outBufSize >= sizeof(int)) {
+		*(int *)ioctlPtr->outBuffer = 0;
+		replyPtr->length = sizeof(int);	/* to quiet lint */
 	    }
 	    status = SUCCESS;
 	    break;
@@ -289,14 +286,14 @@ FsControlIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	case IOC_LOCK:
 	case IOC_UNLOCK:
 	    FsHandleLock(ctrlHandlePtr);
-	    status = FsIocLock(&ctrlHandlePtr->lock, command, byteOrder,
-			       inBufPtr, &streamPtr->hdr.fileID);
+	    status = FsIocLock(&ctrlHandlePtr->lock, ioctlPtr,
+			    &streamPtr->hdr.fileID);
 	    FsHandleUnlock(ctrlHandlePtr);
 	    break;
 	case IOC_NUM_READABLE: {
 	    register int bytesAvailable;
 
-	    if (outBufPtr->size < sizeof(int)) {
+	    if (ioctlPtr->outBufSize < sizeof(int)) {
 		return(GEN_INVALID_ARG);
 	    }
 	    FsHandleLock(ctrlHandlePtr);
@@ -307,7 +304,7 @@ FsControlIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	    }
 	    FsHandleUnlock(ctrlHandlePtr);
 	    status = SUCCESS;
-	    *(int *)outBufPtr->addr = bytesAvailable;
+	    *(int *)ioctlPtr->outBuffer = bytesAvailable;
 	    break;
 	}
 	case IOC_SET_OWNER:

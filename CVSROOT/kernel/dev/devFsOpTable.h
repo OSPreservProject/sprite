@@ -43,33 +43,52 @@ typedef struct DevFsTypeOps {
      * Device Open - called during an open of a device file.
      *	(*openProc)(devicePtr, flags, notifyToken)
      *		Fs_Device *devicePtr;		(Identifies device)
-     *		int flags;			(Usage flags from open)
+     *		int flags;			(FS_READ, FS_WRITE, FS_APPEND)
      *		Fs_NotifyToken notifyToken;	(Handle on device used with
      *						(Fs_NotifyWriter/Reader calls)
      */
     ReturnStatus (*open)();
     /*
      * Device Read - called to get data from a device.
+     * Device Write - called to pass data to a device.
+     *
+     * Both Read and Write take a Fs_IOParam record that indicates the
+     * buffer, length, and offset of the transfer.  There is also
+     * procID, familyID, and uid information for additional permission checks.
+     * The length, buffer, and offset should be kept read-only because
+     * they may be re-used by higher levels.
+     * These also take a Fs_IOReply record that should be updated to
+     * reflect the length transferred, and a signal/code to generate.
+     * The length, signal, and code are all initialized to zero before
+     * the call into the device driver.
+     *
      *	(*readProc)(devicePtr, readPtr, replyPtr)
      *		Fs_Device *devicePtr;		(Identifies device)
-     *		Fs_IOParam *readPtr;		(See fsIO.h)
-     *		Fs_IOReply *replyPtr;		(See fsIO.h)
-     */
-    ReturnStatus (*read)();
-    /*
-     * Device Write - called to pass data to a device.
+     *		Fs_IOParam *readPtr;		(See above comments)
+     *		Fs_IOReply *replyPtr;		(See above comments)
      *	(*writeProc)(devicePtr, writePtr, replyPtr)
      *		Fs_Device *devicePtr;		(Identifies device)
-     *		Fs_IOParam *writePtr;		(See fsIO.h)
-     *		Fs_IOReply *replyPtr;		(See fsIO.h)
+     *		Fs_IOParam *writePtr;		(See above comments)
+     *		Fs_IOReply *replyPtr;		(See above comments)
      */
+    ReturnStatus (*read)();
     ReturnStatus (*write)();
     /*
      * Device I/O Control - perform a device-specific operation
+     * This takes an Fs_IOCParam record that specifies the inBuffer,
+     * inBufSize, outBuffer, and outBufSize.  It also indicates
+     * the command, byteOrder, procID, familyID, and uid.
+     * The driver is responsible for fixing up the contents of the
+     * inBuffer to match mach_ByteOrder, and fixing up the contents
+     * of the outBuffer to match ioctlPtr->byteOrder.
+     * The Fs_IOReply is used as in read and write.  The length is
+     * initialized to ioctlPtr->outBufSize, so normally this doesn't
+     * have to be modified.
+     *
      *	(*ioctlProc)(devicePtr, ioctlPtr, replyPtr)
      *		Fs_Device *devicePtr;		(Identifies device)
-     *		Fs_IOCParam *ioctlPtr;		(See fsIO.h)
-     *		Fs_IOReply *replyPtr;		(See fsIO.h)
+     *		Fs_IOCParam *ioctlPtr;		(See above comments)
+     *		Fs_IOReply *replyPtr;		(See above comments)
      */
     ReturnStatus (*ioctl)();
     /*

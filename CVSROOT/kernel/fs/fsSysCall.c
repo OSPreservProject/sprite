@@ -1686,8 +1686,8 @@ Fs_IOControlStub(streamID, command, inBufSize, inBuffer,
     Fs_ProcessState *fsPtr;
     Fs_Stream 	 *streamPtr;
     register ReturnStatus status = SUCCESS;
-    Fs_Buffer	inBuf;
-    Fs_Buffer	outBuf;
+    Fs_IOCParam ioctl;
+    Fs_IOReply reply;
 
     /*
      * Get a stream pointer.
@@ -1702,6 +1702,12 @@ Fs_IOControlStub(streamID, command, inBufSize, inBuffer,
 	return(FS_STALE_HANDLE);
     }
 
+    ioctl.command = command;
+    ioctl.byteOrder = mach_ByteOrder;
+    ioctl.procID = procPtr->processID;
+    ioctl.familyID = procPtr->familyID;
+    ioctl.uid = procPtr->effectiveUserID;
+
     /*
      * Fast path for non-generic I/O controls to pseudo-devices.
      * We don't copy in/out the user's parameter blocks because the
@@ -1711,20 +1717,18 @@ Fs_IOControlStub(streamID, command, inBufSize, inBuffer,
      */
     if ((streamPtr->ioHandlePtr->fileID.type == FS_LCL_PSEUDO_STREAM) &&
 	(command > IOC_GENERIC_LIMIT)) {
-	inBuf.size = inBufSize;
-	inBuf.addr = inBuffer;
-	inBuf.flags = FS_USER;
-	outBuf.size = outBufSize;  
-	outBuf.addr = outBuffer;
-	outBuf.flags = FS_USER;
-	return(Fs_IOControl(streamPtr, command, &inBuf, &outBuf));
+	ioctl.inBufSize = inBufSize;
+	ioctl.inBuffer = inBuffer;
+	ioctl.outBufSize = outBufSize;  
+	ioctl.outBuffer = outBuffer;
+	ioctl.flags = FS_USER_IN|FS_USER_OUT;
+	return(Fs_IOControl(streamPtr, &ioctl, &reply));
     }
 
     if (inBufSize > IOC_MAX_BYTES || outBufSize > IOC_MAX_BYTES) {
 	return(SYS_INVALID_ARG);
     }
-    inBuf.flags = 0;
-    outBuf.flags = 0;
+    ioctl.flags = 0;	/* We'll copy buffer's into/out of the kernel */
 
     /*
      * The input parameters are copied into kernel
@@ -1733,25 +1737,26 @@ Fs_IOControlStub(streamID, command, inBufSize, inBuffer,
      */
     if ((outBufSize > 0) && (outBuffer != (Address)0) &&
 			    (outBuffer != (Address)NIL)){
-	outBuf.addr = (Address) malloc(outBufSize);
-	outBuf.size = outBufSize;
+	ioctl.outBuffer = (Address) malloc(outBufSize);
+	ioctl.outBufSize = outBufSize;
     } else {
-	outBuf.addr = (Address)NIL;
-	outBuf.size = 0;
+	ioctl.outBuffer = (Address)NIL;
+	ioctl.outBufSize = 0;
     }
     if ((inBufSize > 0) && (inBuffer != (Address)0) &&
 			   (inBuffer != (Address)NIL)) {
-	inBuf.addr  = (Address) malloc(inBufSize);
-	inBuf.size = inBufSize;
+	ioctl.inBuffer  = (Address) malloc(inBufSize);
+	ioctl.inBufSize = inBufSize;
     } else {
-	inBuf.addr = (Address)NIL;
-	inBuf.size = 0;
+	ioctl.inBuffer = (Address)NIL;
+	ioctl.inBufSize = 0;
     }
 
-    if (inBuf.size && Vm_CopyIn(inBuf.size, inBuffer, inBuf.addr) != SUCCESS) {
+    if (ioctl.inBufSize &&
+	Vm_CopyIn(ioctl.inBufSize, inBuffer, ioctl.inBuffer) != SUCCESS) {
 	status = SYS_ARG_NOACCESS;
     } else {
-	status = Fs_IOControl(streamPtr, command, &inBuf, &outBuf);
+	status = Fs_IOControl(streamPtr, &ioctl, &reply);
 	if (status == SUCCESS) {
 	    /*
 	     * Post process the set/get flags stuff because the close-on-exec
@@ -1762,14 +1767,14 @@ Fs_IOControlStub(streamID, command, inBufSize, inBuffer,
 	    switch(command) {
 		case IOC_GET_FLAGS: {
 		    if (fsPtr->streamFlags[streamID] & FS_CLOSE_ON_EXEC) {
-			*(int *)outBuf.addr |= IOC_CLOSE_ON_EXEC;
+			*(int *)ioctl.outBuffer |= IOC_CLOSE_ON_EXEC;
 		    }
 		    break;
 		}
 		case IOC_SET_BITS:
 		case IOC_SET_FLAGS: {
 		    int flags;
-		    flags = *(int *)inBuf.addr;
+		    flags = *(int *)ioctl.inBuffer;
 
 		    if (flags & IOC_CLOSE_ON_EXEC) {
 			fsPtr->streamFlags[streamID] |= FS_CLOSE_ON_EXEC;
@@ -1780,23 +1785,24 @@ Fs_IOControlStub(streamID, command, inBufSize, inBuffer,
 		}
 		case IOC_CLEAR_BITS:{
 		    int flags;
-		    flags = *(int *)inBuf.addr;
+		    flags = *(int *)ioctl.inBuffer;
 		    if (flags & IOC_CLOSE_ON_EXEC) {
 			fsPtr->streamFlags[streamID] &= ~FS_CLOSE_ON_EXEC;
 		    }
 		    break;
 		}
 	    }
-	    if (outBuf.size) {
-		status = Vm_CopyOut(outBuf.size, outBuf.addr, outBuffer);
+	    if (ioctl.outBufSize) {
+		status = Vm_CopyOut(reply.length, ioctl.outBuffer,
+				    outBuffer);
 	    }
 	}
     }
-    if (inBuf.flags == 0 && inBuf.addr != (Address)NIL) {
-	free(inBuf.addr);
+    if (ioctl.inBuffer != (Address)NIL) {
+	free(ioctl.inBuffer);
     }
-    if (outBuf.flags == 0 && outBuf.addr != (Address)NIL) {
-	free(outBuf.addr);
+    if (ioctl.outBuffer != (Address)NIL) {
+	free(ioctl.outBuffer);
     }
     return(status);
 }
