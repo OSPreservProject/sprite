@@ -62,7 +62,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sysSysCall.h"
 #include "sysSysCallParam.h"
 #include "sysTestCall.h"
+#include "status.h"
 
+/*
+ * Forward declarations to procedures defined in this file:
+ */
+
+extern	ReturnStatus	SysMigCall();
 extern	ReturnStatus	Sys_StatsStub();
 
 #ifndef CLEAN
@@ -435,7 +441,7 @@ static Sys_CallParam paramsArray[] = {
     /* local */				/* SYS_PROC_SETINTERVALTIMER	84 */
     /* local */				/* SYS_FS_WRITEBACKID		85 */
     /* special */			     	/* SYS_PROC_EXEC_ENV	86 */
-   /*
+    /*
      * Insert new system call information above this line.
      */
     NIL,		      NIL		/* array compatibility check */
@@ -448,9 +454,9 @@ static Sys_CallParam paramsArray[] = {
 
 #define LOCAL_CALL 0
 #define FOREIGN_CALL 1
-static int numCalls[SYS_NUM_SYSCALLS];
+int sys_NumCalls[SYS_NUM_SYSCALLS];
 #define RESET_NUMCALLS() Byte_Zero(SYS_NUM_SYSCALLS * sizeof(int), \
-				   (Address) numCalls)
+				   (Address) sys_NumCalls)
 
 
 /*
@@ -487,6 +493,12 @@ SysInitSysCall()
 	if (!entryPtr->special) {
 	    entryPtr->paramsPtr = paramPtr;
 	    paramPtr += entryPtr->numWords;
+	    Exc_InitSyscall(sysCallNum, entryPtr->numWords,
+		    (Address) entryPtr->localFunc, (Address) SysMigCall);
+	} else {
+	    Exc_InitSyscall(sysCallNum, entryPtr->numWords,
+		    (Address) entryPtr->localFunc,
+		    (Address) entryPtr->remoteFunc);
 	}
 	entryPtr++;
     }
@@ -496,134 +508,42 @@ SysInitSysCall()
     }
     RESET_NUMCALLS();
 }
-
 
 /*
  *----------------------------------------------------------------------
  *
- * Sys_SysCall --
+ * SysMigCall --
  *
- *	Perform a system call.
+ *	This procedure is invoked whenever a migrated process invokes
+ *	a kernel call that doesn't have "special" set.  It arranges
+ *	for the kernel call to be sent home in a standard fashion.
  *
  * Results:
- *	None.
+ *	Returns the result of the kernel call, whatever that is.
  *
  * Side effects:
- *	None.
+ *	Depends on the kernel call.
  *
  *----------------------------------------------------------------------
  */
 
 ReturnStatus
-Sys_SysCall(trapStackPtr)
-    register	Exc_TrapStack	*trapStackPtr;	/* The trap stack set up on 
-						 * the system call. */
+SysMigCall(args)
+    Sys_ArgArray args;			/* The arguments to the system call. */
 {
-    register SysCallEntry	*entryPtr;
-    register int		sysCallType;
-    register Proc_ControlBlock	*procPtr;
-    Sys_ArgArray		args;
-    int				argsSize;
+    int sysCallType;
+    ReturnStatus status;
+    register SysCallEntry *entryPtr;
 
-    /*
-     *	User stack format:
-     *
-     *		|------------------|<- user stack pointer
-     *		| Sys call type.   |
-     *		|------------------|
-     *		| PC where user	   |
-     *		| called from.	   |
-     *		|------------------|<- user stack pointer + SYS_ARG_OFFSET
-     *		| Arguments	   |
-     *		| ...		   |
-     *
-     */
-
-    /*
-     * Determine the type of system call.  The type is stored in D0 in addition
-     * to being pushed onto the user stack, but the type in D0 is reset to NIL
-     * if a system call is restarted after migration.
-     */
-    sysCallType = trapStackPtr->genRegs[D0];
-    if (sysCallType == NIL) {
-	int tempSysCallType;
-	if (Vm_CopyIn(sizeof(sysCallType),
-		      (Address) trapStackPtr->userStackPtr,
-		      (Address) &tempSysCallType) != SUCCESS) {
-     	    return(FAILURE);
-	}
-	sysCallType = tempSysCallType;
-     }
-
-
-    /*
-     * See if the system call is legal.
-     */
-    if (sysCallType > sizeof(sysCalls) / sizeof(SysCallEntry) - 1) {
-	return(SYS_INVALID_SYSTEM_CALL);
+    status = Vm_CopyIn(sizeof(sysCallType), Mach_GetStackPointer(),
+	    (Address) &sysCallType);
+    if (status != SUCCESS) {
+	return SYS_ARG_NOACCESS;
     }
     entryPtr = &sysCalls[sysCallType];
-#ifndef CLEAN
-    if (sysTraceSysCalls) {
-	Sys_Printf("SysCall #%d:", sysCallType);
-    }
-#endif CLEAN
-
-    /*
-     * Copy the arguments in.
-     */
-    argsSize = SYS_ARG_SIZE * entryPtr->numWords;
-    if (argsSize > 0) {
-	if (Vm_CopyIn(argsSize,
-		       (Address) (trapStackPtr->userStackPtr + SYS_ARG_OFFSET),
-		       (Address) &args) != SUCCESS) {
-	    return(FAILURE);
-	}
-    }
-
-    /*
-     * If the process is foreign, then [for now] don't let it make any
-     * system calls other than Proc_Exit.
-     */
-    procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
-
-    /*
-     * If this is a fork call then the registers and the program counter
-     * have to be saved in the proc table entry.
-     */
-    if (sysCallType == SYS_PROC_FORK) {
-	procPtr->progCounter = trapStackPtr->excStack.pc;
-	Byte_Copy(sizeof(procPtr->genRegs),
-		 (Address) trapStackPtr->genRegs,
-		 (Address) procPtr->genRegs);
-	procPtr->genRegs[SP] = trapStackPtr->userStackPtr;
-    }
-
-    /*
-     * Now perform the system call.
-     */
-    numCalls[sysCallType] += 1;
-    if (!(procPtr->genFlags & PROC_FOREIGN)) {
-	trapStackPtr->genRegs[D0] = (*entryPtr->localFunc)(args);
-    } else {
-	if (entryPtr->special) {
-	    trapStackPtr->genRegs[D0] = (*entryPtr->remoteFunc)(args);
-	} else {
-	    trapStackPtr->genRegs[D0] = (*entryPtr->remoteFunc)
-			(sysCallType, entryPtr->numWords,
-			 (ClientData *) args.argArray, entryPtr->paramsPtr);
-	}
-    }
-#ifndef CLEAN
-    if (sysTraceSysCalls) {
-	Sys_Printf("#%d returns %x\n", sysCallType,
-			trapStackPtr->genRegs[D0]);
-    }
-#endif CLEAN
-
-    return(SUCCESS);
+    return (*entryPtr->remoteFunc)(sysCallType, entryPtr->numWords,
+	    (ClientData *) &args, entryPtr->paramsPtr);
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -659,10 +579,8 @@ Sys_OutputNumCalls(numToCopy, buffer)
 	/*
 	 * Are arrays stored in row-major or column-major order???
 	 */
-	status = Vm_CopyOut(numToCopy * sizeof(int), (Address) numCalls,
+	status = Vm_CopyOut(numToCopy * sizeof(int), (Address) sys_NumCalls,
 			    buffer);
     }
     return(status);
 }
-
-

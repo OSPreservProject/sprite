@@ -130,6 +130,11 @@ Proc_NewProc(PC, procType, shareHeap, pidPtr, procName, vforkFlag)
     if (pidPtr != (Proc_PID *) NIL) {
 	*pidPtr		= procPtr->processID;
     }
+    procPtr->parentID 		= parentProcPtr->processID;
+
+    procPtr->processor		= parentProcPtr->processor;
+    procPtr->state 		= PROC_READY;
+    procPtr->genFlags 		= procType;
     if (vforkFlag) {
 	procPtr->genFlags |= PROC_VFORKCHILD;
     }
@@ -143,10 +148,7 @@ Proc_NewProc(PC, procType, shareHeap, pidPtr, procName, vforkFlag)
 	procPtr->parentID 	= parentProcPtr->peerProcessID;
     }
     procPtr->familyID 		= parentProcPtr->familyID;
-    procPtr->parentID 		= parentProcPtr->processID;
-    procPtr->userID 		= parentProcPtr->userID;
-    procPtr->effectiveUserID 	= parentProcPtr->effectiveUserID;
-    procPtr->familyID 		= parentProcPtr->familyID;
+    procPtr->kcallTable		= exc_NormalHandlers;
 
     procPtr->billingRate 	= parentProcPtr->billingRate;
     procPtr->recentUsage 	= 0;
@@ -316,6 +318,9 @@ InitUserProc(PC, procPtr, parentProcPtr, shareHeap)
 
     procPtr->sigHoldMask = parentProcPtr->sigHoldMask;
     procPtr->sigPendingMask = parentProcPtr->sigPendingMask;
+    if (Sig_Pending(procPtr)) {
+	procPtr->specialHandling = 1;
+    }
     Byte_Copy(sizeof(procPtr->sigActions), (Address) parentProcPtr->sigActions,
 	      (Address) procPtr->sigActions);
     Byte_Copy(sizeof(procPtr->sigMasks), (Address) parentProcPtr->sigMasks,

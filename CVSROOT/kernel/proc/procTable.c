@@ -24,6 +24,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "machine.h"
 #include "mem.h"
 #include "rpc.h"
+#include "exc.h"
 
 Sync_Lock	tableLock = {0, 0};
 #define	LOCKPTR &tableLock
@@ -160,6 +161,9 @@ InitPCB(pcbPtr, i)
 
     pcbPtr->waitToken = 0;
     pcbPtr->timerArray = (struct ProcIntTimerInfo *) NIL;
+
+    pcbPtr->kcallTable = exc_NormalHandlers;
+    pcbPtr->specialHandling = 0;
 }
 
 

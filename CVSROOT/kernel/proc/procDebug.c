@@ -206,6 +206,7 @@ Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
 
 	case PROC_SINGLE_STEP:
             procPtr->genFlags |= PROC_SINGLE_STEP_FLAG;
+	    procPtr->specialHandling = 1;
 	    /* Fall through to ... */
 	    
 	case PROC_CONTINUE:
@@ -340,7 +341,8 @@ Proc_PutOnDebugList(procPtr, sigNum, statusReg)
     procPtr->termCode	= procPtr->sigCodes[sigNum];
 
     if (procPtr->genFlags & PROC_FOREIGN) {
-	Sys_Panic(SYS_FATAL, "Migrated process being placed on debug list.\n");
+	Sys_Panic(SYS_WARNING,
+		"Migrated process being placed on debug list.\n");
     } else {
 	/*
 	 * Detach the debugable process from its parent.

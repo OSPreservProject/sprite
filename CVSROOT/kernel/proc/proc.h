@@ -145,9 +145,10 @@ typedef struct Proc_ControlBlock {
      *-----------------------------------------------------------------
      */
 
-    Proc_PID	processID;		/* Index into process table for 
-					 * this process. */
-    
+    Proc_PID	processID;		/* Actual process ID of this
+					 * process (for migrated processes
+					 * this is different than the PID
+					 * that the user sees). */
     Proc_PID	parentID;		/* The process ID of the parent 
 					 * of this process. */
     int		familyID;		/* The id of the process family that 
@@ -383,6 +384,25 @@ typedef struct Proc_ControlBlock {
      * Arguments for the process, taken from Proc_Exec.
      */
     char	*argString;
+
+    /*
+     * Used to speed up basic kernel-call processing.  These two fields
+     * must be next to each other in the table, and in the order below.
+     * If you change this, you'll have to change the assembler code that
+     * takes kernel-call traps.
+     */
+
+    ReturnStatus (**kcallTable)();	/* Pointer to array of addresses,
+					 * which are procedures to handle
+					 * the various kernel calls.  Points
+					 * to a different place for migrated
+					 * processes than for processes running
+					 * at home. */
+    int specialHandling;		/* If non-zero, means the process
+					 * requires special (slower) handling
+					 * (deliver signal, switch contexts,
+					 * ect.) on return from the next kernel
+					 * call. */
 } Proc_ControlBlock;
 
 

@@ -112,6 +112,7 @@ Sched_MoveInQueue(procPtr)
 	    sched_DoContextSwitch = TRUE;
 	} 
 	curProcPtr->schedFlags |= SCHED_CONTEXT_SWITCH_PENDING;
+	curProcPtr->specialHandling = 1;
     }
 
     queuePtr = schedReadyQueueHdrPtr;
@@ -244,6 +245,7 @@ Sched_InsertInQueue(procPtr, returnProc)
 	    sched_DoContextSwitch = TRUE;
 	} 
 	itemProcPtr->schedFlags |= SCHED_CONTEXT_SWITCH_PENDING;
+	itemProcPtr->specialHandling = 1;
     }
 
     queuePtr = schedReadyQueueHdrPtr;

@@ -1,8 +1,14 @@
 /* 
  * signals.c --
  *
- * Copyright 1985 Regents of the University of California
- * All rights reserved.
+ * Copyright 1988 Regents of the University of California.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
  *
  * This contains routines that deal with Sprite signals.  See the man pages
  * on signals for an explanation of the Sprite signaling facilities.  The
@@ -302,6 +308,7 @@ Sig_ChangeState(procPtr, actions, sigMasks, pendingMask, sigCodes, holdMask)
     procPtr->sigHoldMask = holdMask & sigCanHoldMask;
     Byte_Copy(sizeof(procPtr->sigCodes), (Address) sigCodes, 
 		(Address) procPtr->sigCodes);
+    procPtr->specialHandling = 1;
 
     UNLOCK_MONITOR;
 }
@@ -399,6 +406,7 @@ LocalSend(procPtr, sigNum, code)
 	    procPtr->sigHoldMask &= ~sigBitMask;
 	    procPtr->sigActions[sigNum] = sigDefActions[sigNum];
 	}
+	procPtr->specialHandling = 1;
 
 	/*
 	 * If the process is waiting or suspended then wake it up.
@@ -728,6 +736,7 @@ Sig_SetHoldMask(newMask, oldMaskPtr)
     }
 
     procPtr->sigHoldMask = newMask & sigCanHoldMask;
+    procPtr->specialHandling = 1;
 
     return(SUCCESS);
 }
@@ -895,6 +904,7 @@ Sig_Pause(sigHoldMask)
     procPtr->oldSigHoldMask = procPtr->sigHoldMask;
     procPtr->sigFlags |= SIG_PAUSE_IN_PROGRESS;
     procPtr->sigHoldMask = sigHoldMask & sigCanHoldMask;
+    procPtr->specialHandling = 1;
 
     /*
      * Wait on the signal condition.  As it turns out since a signal

@@ -67,6 +67,7 @@ extern	Boolean	sys_AtInterruptLevel;
 extern	int	*sys_NumDisableIntrsPtr;
 extern	Boolean	sys_ShuttingDown;
 extern	Boolean	sys_ErrorShutdown;
+extern	int	sys_NumCalls[];
 
 /*
  * Procedure headers.
@@ -83,7 +84,6 @@ extern	void	Sys_UnSafePrintf();
 extern	void	Sys_Panic();
 extern	void	Sys_InterruptProcessor();
 extern	Sys_ProcessorStates	Sys_ProcessorState();
-extern	ReturnStatus	Sys_SysCall();
 
 /*
  *  Declarations of system calls.

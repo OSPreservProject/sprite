@@ -643,6 +643,7 @@ QuantumEnd(procPtr)
     register	Proc_ControlBlock 	*procPtr;
 {
     procPtr->schedFlags |= SCHED_CONTEXT_SWITCH_PENDING;
+    procPtr->specialHandling = 1;
     if (!sys_KernelMode) {
 	sched_DoContextSwitch = TRUE;
     }
