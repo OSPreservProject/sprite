@@ -116,13 +116,6 @@ Prof_Enable(procPtr, buffer, bufSize, offset, scale)
     int scale;
 {
 
-
-#if 0
-    printf("Prof_Enable(p = %x, id = %x, buffer = %08x, bufSize = %d, offset = %d, scale = %d\n",
-	procPtr, procPtr->processID, buffer, bufSize, offset, scale);
-    printf("profCount = %d\n", profCount);
-#endif    
-
     assert(procPtr != (Proc_ControlBlock *) NIL);
     LOCK_MONITOR;
     if (scale != 0 && scale != 1 && procPtr->Prof_Scale == 0) {
@@ -183,34 +176,16 @@ tick(time, clientData)
 {
     Proc_ControlBlock *curProcPtr;
 
-    LOCK_MONITOR;
-    assert(profCount != 0);
-#if 0    
-    if (profCount == 0) {
-	printf("Descheduling profil timer\n");
-	Timer_DescheduleRoutine(&profTimer_QueueElement);
-	return;
-    }
-#endif    
-#if 0
-    printf("Prof tick, mach_KernelMode = %d, profCount = %d\n",
-	mach_KernelMode, profCount);
-#endif
     assert(clientData == profTimer_QueueElement.clientData);
     if (!mach_KernelMode) {
 	assert(profCount);
 	curProcPtr = Proc_GetCurrentProc();
 	assert(curProcPtr !=  (Proc_ControlBlock *) NIL);
-#if 0
-	printf("Prof tick, scale=%d, pc=%08x, profCount = %d\n",
-	    curProcPtr->Prof_Scale,	curProcPtr->Prof_PC, profCount);
-#endif
 	if (curProcPtr->Prof_Scale >= 2) {
 	    curProcPtr->specialHandling = TRUE;
 	}
     }
     Timer_ScheduleRoutine(&profTimer_QueueElement, TRUE);
-    UNLOCK_MONITOR;
     return;
 }
 
@@ -260,11 +235,6 @@ Prof_RecordPC(procPtr)
 	return;
     }
     ++u.shrt;
-
-#if 0
-    printf("Prof_RecordPC(), shrt = %d,  profCount = %d\n", u.shrt, profCount);
-#endif    
-
     if (Vm_CopyOutProc(sizeof(short), u.c, 1, procPtr, (Address) ptr)
       != SUCCESS) {
 	Prof_Disable(procPtr);
