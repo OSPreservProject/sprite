@@ -29,7 +29,6 @@ static char rcsid[] = "$Header$";
 #include <user/sys/time.h>
 #include <user/sys/resource.h>
 #include <user/sys/signal.h>
-#include <user/setjmp.h>
 #include <mach.h>
 #include <proc.h>
 #include <vm.h>
