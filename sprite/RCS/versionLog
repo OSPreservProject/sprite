@@ -89,4 +89,17 @@ Partial VM hack for 3/60 color frame buffer (something better is coming later)
 Fixes to 1.056 regarding bad assembler (couldn't enter kernel debugger in 056)
 Fixes to OMAGIC support (only ds3100 supports OMAGIC)
 This has a bug in IOC_WRITE_BACK for local files.  Returns wrong error code.
+
+1.058	Thu Feb 15 12:02:47 PST 1990
+New net module that maps in the device.  Needed for newer SparcStations.
+Fixed fsdm that handles deletions of swap files right.
+Mousetrap in fscache regarding "block no longer dirty" - just a print statement.
+Fixed Vm_PageIn so VmCOR errors cause a segment to be nuked.
+Also, VmKillSharers only happens once per segment in orderto
+prevent overflowing the Proc_CallFunc queue.
+procServer.c was fixed so the max number of Proc_ServerProcsis
+a function of FSCACHE_MAX_CLEANER_PROCS and VM_MAX_PAGE_OUT_PROCS
+fsio was fixed so that fsync() in the local works.
+Also, sun3 kernel leaves mapping for frame buffers (0x0fd0000)
+intact.
     New files linked in from the net library.
