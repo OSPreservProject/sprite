@@ -82,6 +82,8 @@ typedef struct {
     int		upsw;				/* User psw. */
     int		curPC;				/* Current program counter. */
     int		nextPC;				/* Next program counter. */
+    int		trapType;			/* One of MACH_USE_CUR_PC or
+						 * MACH_USE_NEXT_PC. */
     int		insert;				/* The insert register. */
     int		swp;				/* The saved window pointer. */
     int		cwp;				/* Current window pointer. */

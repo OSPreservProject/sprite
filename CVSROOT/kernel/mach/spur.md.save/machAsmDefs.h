@@ -307,7 +307,7 @@
  *	the following sequence of instructions:
  *
  *		1) VOL_TEMP3 <= cwp
- *		2) VOL_TEMP3 = (VOL_TEMP3 - 1) & 0x1c0 to decrement the cwp
+ *		2) VOL_TEMP3 = (VOL_TEMP3 - 1) & 0x1c to decrement the cwp
  *			and mask out bits in case it wraps.
  *		3) VOL_TEMP3 <<= 5 to shift cwp<4:2> to swp<9:7>
  *		4) VOL_TEMP3 += StackBase
@@ -320,7 +320,7 @@
 	ld_32		VOL_TEMP2, VOL_TEMP1, $MACH_KERN_STACK_START; \
 	rd_special	VOL_TEMP3, cwp; \
 	sub_nt		VOL_TEMP3, VOL_TEMP3, $4; \
-	and		VOL_TEMP3, VOL_TEMP3, 0x1c0; \
+	and		VOL_TEMP3, VOL_TEMP3, 0x1c; \
 	sll		VOL_TEMP3, VOL_TEMP3, $3; \
 	sll		VOL_TEMP3, VOL_TEMP3, $2; \
 	add_nt		VOL_TEMP3, VOL_TEMP3, VOL_TEMP2; \
@@ -339,7 +339,8 @@
 	rd_special	VOL_TEMP2, pc; \
 	add_nt		VOL_TEMP2, VOL_TEMP2, $16; \
 	Nop; \
-	jump		SaveState
+	jump		SaveState; \
+	Nop
 
 /*
  * RESTORE_USER_STATE --
@@ -353,7 +354,8 @@
 	rd_special	VOL_TEMP2, pc; \
 	add_nt		VOL_TEMP2, VOL_TEMP2, $16; \
 	Nop; \
-	jump		RestoreState
+	jump		RestoreState; \
+	Nop
 
 /*
  * USER_ERROR(errorType) --
@@ -367,13 +369,12 @@
  *	errorType - Type of user error.
  */
 #define USER_ERROR(userError) \
-	add_nt		NON_INTR_TEMP1, r0, $userError; \
-	add_nt		NON_INTR_TEMP2, CUR_PC_REG, $0; \
-	add_nt		NON_INTR_TEMP3, NEXT_PC_REG, $0; \
+	add_nt		NON_INTR_TEMP1, CUR_PC_REG, $0; \
+	add_nt		NON_INTR_TEMP2, NEXT_PC_REG, $0; \
 	rd_special	VOL_TEMP1, pc; \
 	return_trap	VOL_TEMP1, $12; \
 	Nop; \
-	cmp_trap	always, r0, r0, $MACH_USER_ERROR_TRAP; \
+	cmp_trap	always, r0, r0, $userError; \
 	Nop
 
 /*
@@ -391,6 +392,33 @@
 	call		_MachUserError; \
 	Nop
 
+
+/*
+ * SWITCH_TO_DEBUGGER_STACKS()
+ *
+ *	Switch to the debugger's spill and overflow stacks.  The act of
+ *	switching to the debugger's overflow stack involves leaving the cwp
+ *	alone and setting the swp equal to the cwp - 1 + stack_base.
+ *	This requires the following sequence of instructions:
+ *
+ *		1) VOL_TEMP2 <= cwp
+ *		2) VOL_TEMP2 = (VOL_TEMP2 - 1) & 0x1c to decrement the cwp
+ *			and mask out bits in case it wraps.
+ *		3) VOL_TEMP2 <<= 5 to shift cwp<4:2> to swp<9:7>
+ *		4) VOL_TEMP2 += StackBase
+ *		5) swp <= VOL_TEMP2
+ */
+#define	SWITCH_TO_DEBUGGER_STACKS() \
+	ld_32		SPILL_SP, r0, $debugSpillStackEnd; \
+	ld_32		VOL_TEMP1, r0, $debugSWStackBase; \
+	rd_special	VOL_TEMP2, cwp; \
+	sub_nt		VOL_TEMP2, VOL_TEMP2, $4; \
+	and		VOL_TEMP2, VOL_TEMP2, 0x1c; \
+	sll		VOL_TEMP2, VOL_TEMP2, $3; \
+	sll		VOL_TEMP2, VOL_TEMP2, $2; \
+	add_nt		VOL_TEMP2, VOL_TEMP2, VOL_TEMP1; \
+	wr_special	swp, VOL_TEMP2, $0
+
 /*
  * CALL_DEBUGGER(regErrorVal, constErrorVal)
  *
@@ -399,9 +427,10 @@
  *	This macro does the following:
  *	
  *	    1) Saves the state into _machDebugState
- *	    2) Call routine _MachCallDebugger(errorType)
- *	    3) Restore state from _machDebugState
- *	    4) Do a normal return from trap.
+ *	    2) Switch to the debuggers own spill and saved window stacks.
+ *	    3) Call routine _MachCallDebugger(errorType)
+ *	    4) Restore state from _machDebugState
+ *	    5) Do a normal return from trap.
  *
  *	regErrorVal -	Register that holds an error value.
  *	constErrorVal -	Constant error value.
@@ -412,6 +441,8 @@
 	add_nt		VOL_TEMP2, VOL_TEMP2, $16; \
 	jump		SaveState; \
 	Nop; \
+	\
+	SWITCH_TO_DEBUGGER_STACKS(); \
 	\
 	add_nt		OUTPUT_REG1, regErrorVal, $constErrorVal; \
 	call		_MachCallDebugger; \
