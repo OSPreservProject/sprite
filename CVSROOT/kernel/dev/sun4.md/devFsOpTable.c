@@ -18,36 +18,37 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "dev.h"
-#include "devInt.h"
-#include "fs.h"
-#include "rawBlockDev.h"
-#include "devFsOpTable.h"
-#include "devTypes.h"
+#include <sprite.h>
+#include <dev.h>
+#include <devInt.h>
+#include <fs.h>
+#include <rawBlockDev.h>
+#include <devFsOpTable.h>
+#include <devTypes.h>
 
 /*
  * Device specific include files.
  */
 
-#include "devSyslog.h"
-#include "devNull.h"
-#include "devSCSIDisk.h"
-#include "devSCSITape.h"
-#include "devSCSIRobot.h"
-#include "xylogics450.h"
-#include "devNet.h"
-#include "devBlockDevice.h"
-#include "scsiHBADevice.h"
-#include "raidExt.h"
-#include "tty.h"
-#include "mouse.h"
-#include "devTMR.h"
-#include "devfb.h"
-#include "devVMElink.h"
-#include "devATC.h"
-#include "devSmem.h"
-#include "devXbus.h"
+#include <devSyslog.h>
+#include <devNull.h>
+#include <devSCSIDisk.h>
+#include <devSCSITape.h>
+#include <devSCSIRobot.h>
+#include <xylogics450.h>
+#include <devNet.h>
+#include <devBlockDevice.h>
+#include <scsiHBADevice.h>
+#include <raidExt.h>
+#include <tty.h>
+#include <mouse.h>
+#include <devTMR.h>
+#include <devfb.h>
+#include <devVMElink.h>
+#include <devATC.h>
+#include <devSmem.h>
+#include <devXbus.h>
+#include <devClientDev.h>
 
 static ReturnStatus NoDevice();
 static ReturnStatus NullProc();
@@ -207,6 +208,13 @@ DevFsTypeOps devFsOpTable[] = {
      */
     {DEV_XBUS, DevXbusOpen, NullProc, NullProc, DevXbusIOControl,
 	 NullProc, NullProc, DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+    /*
+     * /dev/clients
+     */
+    {DEV_CLIENT_STATE,  DevClientStateOpen, DevClientStateRead, NullProc,
+                   DevClientStateIOControl, DevClientStateClose,
+                   DevClientStateSelect, DEV_NO_ATTACH_PROC,
+                   NoDevice, NullProc},
 };
 
 int devNumDevices = sizeof(devFsOpTable) / sizeof(DevFsTypeOps);
