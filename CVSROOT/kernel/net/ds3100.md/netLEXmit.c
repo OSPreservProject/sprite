@@ -467,7 +467,7 @@ NetLEOutput(interPtr, etherHdrPtr, scatterGatherPtr, scatterGatherLength, rpc,
      * and call the higher level routine.
      */
 
-    if (NET_ETHER_COMPARE(statePtr->etherAddress, etherHdrPtr->destination)) {
+    if (!Net_EtherAddrCmp(statePtr->etherAddress, etherHdrPtr->destination)) {
 	int i, length;
 
         length = sizeof(Net_EtherHdr);

@@ -1845,7 +1845,12 @@ NetHppiIOControl(interPtr, ioctlPtr, replyPtr)
 	    Net_UltraAddressGet(&address, &group, &unit);
 	    printf("Setting ultra address to %d/%d\n", group, unit); 
 	    MASTER_LOCK(&interPtr->mutex);
-	    interPtr->netAddress[NET_PROTO_RAW].ultra = address;
+	    status = Net_SetAddress(NET_ADDRESS_ULTRA,
+			(Address) &address, 
+			&interPtr->netAddress[NET_PROTO_RAW]);
+	    if (status != SUCCESS) {
+		panic("NetHppiIOControl: Net_SetAddress failed\n");
+	    }
 	    MASTER_UNLOCK(&interPtr->mutex);
 	    break;
 	}
@@ -2485,8 +2490,8 @@ NetHppiStart(statePtr)
     interPtr = statePtr->interPtr;
     startPtr = &request.start;
     hdrPtr = &startPtr->hdr;
-    if (!(NET_ADDRESS_COMPARE(interPtr->netAddress[NET_PROTO_RAW],
-		netZeroAddress))){
+    if (Net_AddrCmp(&interPtr->netAddress[NET_PROTO_RAW],
+		&netZeroAddress)){
 	printf(
 "NetHppiStart: can't send start command - adapter address not set\n");
 	status = FAILURE;
@@ -2531,8 +2536,8 @@ NetHppiStart(statePtr)
      * to bcopy the netAddress minus its first byte.
      */
     startPtr->netAddressSize = 7;
-    bcopy((char *) &interPtr->netAddress[NET_PROTO_RAW].generic.data[1],
-	(char *) &startPtr->netAddressBuf, sizeof(Net_Address)-1);
+    bcopy(&(((char *) &interPtr->netAddress[NET_PROTO_RAW])[1]),
+	(char *) &startPtr->netAddressBuf, sizeof(Net_UltraAddress)-1);
     startPtr->netAddressBuf[0] = 0x49;
     startPtr->netAddressBuf[5] = 0xfe;
     status = NetHppiSendReq(statePtr, StandardDone, 
@@ -2721,12 +2726,10 @@ ReadDone(interPtr, infoPtr)
 	    printf("ReadDone: received a packet.\n");
 	    *local = '\0';
 	    *remote = '\0';
-	    (void) Net_AddrToString((Net_Address *) 
-		    &reqPtr->localAddress.address, 
-		    NET_PROTO_RAW, NET_NETWORK_ULTRA, local);
-	    (void) Net_AddrToString((Net_Address *) 
-		    &reqPtr->remoteAddress.address, 
-		    NET_PROTO_RAW, NET_NETWORK_ULTRA, remote);
+	    (void) Net_UltraAddrToString(&reqPtr->localAddress.address, 
+		    local);
+	    (void) Net_UltraAddrToString(&reqPtr->remoteAddress.address,
+		    remote);
 	    printf("Local address: %s\n", local);
 	    printf("Remote address: %s\n", remote);
 	    printf("Data size = %d\n", hdrPtr->size);
@@ -2892,19 +2895,18 @@ NetHppiSendDgram(interPtr, netAddressPtr, count, bufSize, buffer, timePtr)
     NetUltraDatagramRequest	*dgramReqPtr;
     NetUltraRequestHdr		*hdrPtr;
     ReturnStatus		status;
-    Net_Address			*addressPtr;
     Timer_Ticks 		startTime;
     Timer_Ticks 		endTime;
     Timer_Ticks 		curTime;
     NetUltraTraceInfo		*tracePtr;
     Net_ScatterGather		scatter;
+    char			*ptr;
 
     MASTER_LOCK(&interPtr->mutex);
 #ifndef CLEAN
     if (netHppiDebug) {
 	char	address[100];
-	(void) Net_AddrToString(netAddressPtr, NET_PROTO_RAW, NET_NETWORK_ULTRA,
-		    address);
+	(void) Net_AddrToString(netAddressPtr, address);
 	printf("NetHppiSendDgram: sending %d bytes to %s\n", bufSize, address);
     }
 #endif
@@ -2920,18 +2922,18 @@ NetHppiSendDgram(interPtr, netAddressPtr, count, bufSize, buffer, timePtr)
     dgramReqPtr->remoteAddress = wildcardAddress;
     dgramReqPtr->remoteAddress.tsapSize = 2;
     dgramReqPtr->remoteAddress.tsap[1] = 1;
-    dgramReqPtr->remoteAddress.address = netAddressPtr->ultra;
-    addressPtr = (Net_Address *) &dgramReqPtr->remoteAddress.address;
-    addressPtr->generic.data[1] = 0x49;
-    addressPtr->generic.data[6] = 0xfe;
+    dgramReqPtr->remoteAddress.address = netAddressPtr->address.ultra;
+    ptr = (char *) &dgramReqPtr->remoteAddress.address;
+    ptr[1] = 0x49;
+    ptr[6] = 0xfe;
     dgramReqPtr->localAddress = wildcardAddress;
     dgramReqPtr->localAddress.tsapSize = 2;
     dgramReqPtr->localAddress.tsap[1] = 1;
     dgramReqPtr->localAddress.address = 
-	interPtr->netAddress[NET_PROTO_RAW].ultra;
-    addressPtr = (Net_Address *) &dgramReqPtr->localAddress.address;
-    addressPtr->generic.data[1] = 0x49;
-    addressPtr->generic.data[6] = 0xfe;
+	interPtr->netAddress[NET_PROTO_RAW].address.ultra;
+    ptr = (char *) &dgramReqPtr->localAddress.address;
+    ptr[1] = 0x49;
+    ptr[6] = 0xfe;
     hdrPtr->cmd = NET_ULTRA_DGRAM_SEND_REQ;
     if (buffer != (Address)NIL) {
 	scatter.bufAddr = buffer;
@@ -3082,9 +3084,7 @@ NetHppiOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength, rpc,
     MASTER_LOCK(&interPtr->mutex);
     if (netHppiDebug) {
 	char	address[100];
-	(void) Net_AddrToString((Net_Address *) 
-		&ultraHdrPtr->remoteAddress.address, 
-		NET_PROTO_RAW, NET_NETWORK_ULTRA,
+	(void) Net_UltraAddrToString(&ultraHdrPtr->remoteAddress.address, 
 		    address);
 	printf("NetHppiOutput: sending to %s\n", address);
     }
@@ -3192,7 +3192,7 @@ NetHppiSource(interPtr, netAddressPtr, count, bufSize, buffer, timePtr)
     NetUltraRequestHdr		*hdrPtr;
     ReturnStatus		status = SUCCESS;
     Address			itemPtr;
-    Net_Address			*addressPtr;
+    char			*ptr;
     Timer_Ticks 		startTime;
     Timer_Ticks 		endTime;
     Timer_Ticks 		curTime;
@@ -3203,8 +3203,7 @@ NetHppiSource(interPtr, netAddressPtr, count, bufSize, buffer, timePtr)
 #ifndef CLEAN
     if (netHppiDebug) {
 	char	address[100];
-	(void) Net_AddrToString(netAddressPtr, NET_PROTO_RAW, NET_NETWORK_ULTRA,
-		    address);
+	(void) Net_AddrToString(netAddressPtr, address);
 	printf("NetUltraSendDgram: sending to %s\n", address);
     }
 #endif
@@ -3215,18 +3214,18 @@ NetHppiSource(interPtr, netAddressPtr, count, bufSize, buffer, timePtr)
     dgramReqPtr->remoteAddress = wildcardAddress;
     dgramReqPtr->remoteAddress.tsapSize = 2;
     dgramReqPtr->remoteAddress.tsap[1] = 1;
-    dgramReqPtr->remoteAddress.address = netAddressPtr->ultra;
-    addressPtr = (Net_Address *) &dgramReqPtr->remoteAddress.address;
-    addressPtr->generic.data[1] = 0x49;
-    addressPtr->generic.data[6] = 0xfe;
+    dgramReqPtr->remoteAddress.address = netAddressPtr->address.ultra;
+    ptr = (char *) &dgramReqPtr->remoteAddress.address;
+    ptr[1] = 0x49;
+    ptr[6] = 0xfe;
     dgramReqPtr->localAddress = wildcardAddress;
     dgramReqPtr->localAddress.tsapSize = 2;
     dgramReqPtr->localAddress.tsap[1] = 1;
     dgramReqPtr->localAddress.address = 
-	interPtr->netAddress[NET_PROTO_RAW].ultra;
-    addressPtr = (Net_Address *) &dgramReqPtr->localAddress.address;
-    addressPtr->generic.data[1] = 0x49;
-    addressPtr->generic.data[6] = 0xfe;
+	interPtr->netAddress[NET_PROTO_RAW].address.ultra;
+    ptr = (char *) &dgramReqPtr->localAddress.address;
+    ptr[1] = 0x49;
+    ptr[6] = 0xfe;
     hdrPtr->cmd = NET_ULTRA_DGRAM_SEND_REQ;
     Timer_GetCurrentTicks(&startTime);
     while(count > 0) {

@@ -58,6 +58,7 @@ NetLEInit(interPtr)
     List_Links		*itemPtr;
     NetLEState		*statePtr;
     char		buffer[32];
+    ReturnStatus	status;
 
     assert(sizeof(NetLE_Reg) == 4);
 
@@ -137,9 +138,13 @@ NetLEInit(interPtr)
     interPtr->maxBytes	= NET_ETHER_MAX_BYTES - sizeof(Net_EtherHdr);
     interPtr->minBytes	= 0;
     interPtr->interfaceData = (ClientData) statePtr;
-    NET_ETHER_ADDR_COPY(statePtr->etherAddress, 
-	interPtr->netAddress[NET_PROTO_RAW].ether);
-    interPtr->broadcastAddress.ether = netEtherBroadcastAddress.ether;
+    status = Net_SetAddress(NET_ADDRESS_ETHER, 
+		(Address) &statePtr->etherAddress,
+		&interPtr->netAddress[NET_PROTO_RAW]);
+    if (status != SUCCESS) {
+	panic("NetLEInit: Net_SetAddress failed\n");
+    }
+    interPtr->broadcastAddress = netEtherBroadcastAddress;
     interPtr->flags |= NET_IFLAGS_BROADCAST;
     statePtr->interPtr = interPtr;
     statePtr->recvMemInitialized = FALSE;

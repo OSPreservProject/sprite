@@ -69,6 +69,7 @@ NetIEInit(interPtr)
     int 	i;
     List_Links	*itemPtr;
     NetIEState	*statePtr;
+    ReturnStatus 	status;
 
     DISABLE_INTR();
 
@@ -209,9 +210,13 @@ NetIEInit(interPtr)
     interPtr->maxBytes	= NET_ETHER_MAX_BYTES - sizeof(Net_EtherHdr);
     interPtr->minBytes	= 0;
     interPtr->interfaceData = (ClientData) statePtr;
-    NET_ETHER_ADDR_COPY(statePtr->etherAddress, 
-	interPtr->netAddress[NET_PROTO_RAW].ether);
-    interPtr->broadcastAddress.ether = netEtherBroadcastAddress.ether;
+    status = Net_SetAddress(NET_ADDRESS_ETHER, 
+		(Address) &statePtr->etherAddress,
+		&interPtr->netAddress[NET_PROTO_RAW]);
+    if (status != SUCCESS) {
+	panic("NetIEInit: Net_SetAddress failed\n");
+    }
+    interPtr->broadcastAddress = netEtherBroadcastAddress;
     interPtr->flags |= NET_IFLAGS_BROADCAST;
     statePtr->interPtr = interPtr;
 
@@ -812,8 +817,7 @@ NetIETransmitCBPrint(xmitCBPtr)
     printf("nextCmdBlock = 0x%x\n", xmitCBPtr->nextCmdBlock);
     printf("bufDescOffset = 0x%x\n", xmitCBPtr->bufDescOffset);
     printf("etherAddress = %s\n", 
-	Net_AddrToString((Net_Address *) &xmitCBPtr->destEtherAddr,
-	NET_PROTO_RAW, NET_NETWORK_ETHER, buffer));
+	Net_EtherAddrToString(&xmitCBPtr->destEtherAddr, buffer));
     printf("type = 0x%x\n", xmitCBPtr->type);
 }
 
@@ -840,11 +844,9 @@ NetIERecvFrameDescPrint(recvFrDescPtr)
     printf("nextRFD = 0x%x\n", recvFrDescPtr->nextRFD);
     printf("recvBufferDesc = 0x%x\n", recvFrDescPtr->recvBufferDesc);
     printf("destAddr = %s\n", 
-	Net_AddrToString((Net_Address *) &recvFrDescPtr->destAddr,
-	NET_PROTO_RAW, NET_NETWORK_ETHER, buffer));
+	Net_EtherAddrToString(&recvFrDescPtr->destAddr, buffer));
     printf("srcAddr = %s\n", 
-	Net_AddrToString((Net_Address *) &recvFrDescPtr->srcAddr,
-	NET_PROTO_RAW, NET_NETWORK_ETHER, buffer));
+	Net_EtherAddrToString(&recvFrDescPtr->srcAddr, buffer));
     printf("type = 0x%x\n", recvFrDescPtr->type);
 }
 
