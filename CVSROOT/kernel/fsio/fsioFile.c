@@ -680,6 +680,14 @@ FsFileScavenge(hdrPtr)
     if (handlePtr->use.ref == 0 &&
 	handlePtr->cacheInfo.blocksInCache == 0 &&
 	FsConsistClients(&handlePtr->consist) == 0) {
+#ifdef CONSIST_DEBUG
+	extern int fsTraceConsistMinor;
+	if (fsTraceConsistMinor == handlePtr->hdr.fileID.minor) {
+	    Sys_Printf("FsFileScavenge <%d,%d> nuked, lastwriter %d\n",
+		handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
+		handlePtr->consist.lastWriter);
+	}
+#endif	CONSIST_DEBUG
 	/*
 	 * Remove handles for files with no users and no blocks in cache.
 	 * We tell VM not to cache the segment associated with the file.
