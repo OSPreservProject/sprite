@@ -137,9 +137,29 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	if (streamIDPtr == (Fs_FileID *)NIL) {
 	    /*
 	     * Set up for get/set attributes.  We point the client
-	     * at the name of the pseudo-device, what else?
+	     * at the name of the pseudo-device if it is not active,
+	     * otherwise we point it at the control stream handle that
+	     * has the current access and modify times.
 	     */
-	    *ioFileIDPtr = handlePtr->hdr.fileID;
+	    if (ctrlHandlePtr->serverID == NIL) {
+		*ioFileIDPtr = handlePtr->hdr.fileID;
+	    } else {
+		*ioFileIDPtr = ctrlHandlePtr->rmt.hdr.fileID;
+		if (clientID != ctrlHandlePtr->serverID) {
+		    /*
+		     * The requesting client is different than the pdev
+		     * server host.  Unfortunately the serverID in the
+		     * control handle is us, the file server.  We have
+		     * to hack the fileID so the client makes the RPC to
+		     * the pdev server.  This relies on a parallel hack
+		     * in FsRemoteGetIOAttr to fix up the serverID by
+		     * using the Fs_Attributes.serverID, which is us,
+		     * so that the correct control handle is found.
+		     */
+		    ioFileIDPtr->type = FS_RMT_CONTROL_STREAM;
+		    ioFileIDPtr->serverID = ctrlHandlePtr->serverID;
+		}
+	    }
 	} else if (ctrlHandlePtr->serverID == NIL) {
 	    /*
 	     * No server process.
@@ -272,7 +292,7 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 	ctrlHandlePtr->seed = ioFileIDPtr->minor & 0x0FFF;
     }
 
-    cltHandlePtr = FsPdevConnect(ioFileIDPtr, clientID, name);
+    cltHandlePtr = FsPdevConnect(ctrlHandlePtr, ioFileIDPtr, clientID);
     if (cltHandlePtr == (PdevClientIOHandle *)NIL) {
 	goto exit;
     }
@@ -371,17 +391,17 @@ exit:
  */
 
 PdevClientIOHandle *
-FsPdevConnect(ioFileIDPtr, clientID, name)
+FsPdevConnect(ctrlHandlePtr, ioFileIDPtr, clientID)
+    PdevControlIOHandle *ctrlHandlePtr;	/* Control stream handle */
     register Fs_FileID	*ioFileIDPtr;	/* I/O fileID */
     int			clientID;	/* Host ID of client-side */
-    char		*name;		/* File name for error msgs */
 {
     Boolean			found;
     FsHandleHeader		*hdrPtr;
     register PdevClientIOHandle	*cltHandlePtr;
 
-    found = FsHandleInstall(ioFileIDPtr, sizeof(PdevClientIOHandle), name,
-			    &hdrPtr);
+    found = FsHandleInstall(ioFileIDPtr, sizeof(PdevClientIOHandle),
+		ctrlHandlePtr->rmt.hdr.name, &hdrPtr);
     cltHandlePtr = (PdevClientIOHandle *)hdrPtr;
     if (found) {
 	if ((cltHandlePtr->pdevHandlePtr != (PdevServerIOHandle *)NIL) &&
@@ -398,8 +418,8 @@ FsPdevConnect(ioFileIDPtr, clientID, name)
 	FsHandleInvalidate((FsHandleHeader *)cltHandlePtr);
 	FsHandleRelease(cltHandlePtr, TRUE);
 
-	found = FsHandleInstall(ioFileIDPtr, sizeof(PdevClientIOHandle), name,
-			&hdrPtr);
+	found = FsHandleInstall(ioFileIDPtr, sizeof(PdevClientIOHandle),
+			ctrlHandlePtr->rmt.hdr.name, &hdrPtr);
 	cltHandlePtr = (PdevClientIOHandle *)hdrPtr;
 	if (found) {
 	    panic( "FsPdevConnect handle still there\n");
@@ -408,11 +428,13 @@ FsPdevConnect(ioFileIDPtr, clientID, name)
     /*
      * Set up the connection state and hook the client handle to it.
      */
-    cltHandlePtr->pdevHandlePtr = FsServerStreamCreate(ioFileIDPtr, name);
+    cltHandlePtr->pdevHandlePtr = FsServerStreamCreate(ioFileIDPtr,
+				    ctrlHandlePtr->rmt.hdr.name);
     if (cltHandlePtr->pdevHandlePtr == (PdevServerIOHandle *)NIL) {
 	FsHandleRemove(cltHandlePtr);
 	return((PdevClientIOHandle *)NIL);
     }
+    cltHandlePtr->pdevHandlePtr->ctrlHandlePtr = ctrlHandlePtr;
     /*
      * Set up the client list in case the client is remote.
      */
