@@ -167,7 +167,11 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
 		    break;
 	    }
 	} else {
+	    /*
+	     * Client open procedure failed.  Clean up the stream.
+	     */
 	    FsHandleLock(streamPtr);
+	    (void)FsStreamClientClose(&streamPtr->clientList, rpc_SpriteID);
 	    FsStreamDispose(streamPtr);
 	}
     } else {
