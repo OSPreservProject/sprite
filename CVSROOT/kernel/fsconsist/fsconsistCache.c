@@ -85,29 +85,6 @@ typedef struct ConsistReply {
     ReturnStatus	status;
 } ConsistReply;
 
-/*
- * Flags to determine what type of operation is required.
- *
- *    	FS_WRITE_BACK_BLOCKS	Write back all dirty blocks.
- *    	FS_INVALIDATE_BLOCKS	Invalidate all block in the cache for this
- *				file.  This means that the file is no longer
- *				cacheable.
- *    	FS_DELETE_FILE		Delete the file from the local cache and
- *				the file handle table.
- *    	FS_CANT_READ_CACHE_PIPE	The named pipe is no longer read cacheable
- *				on the client.  This would happen if two
- *				separate clients tried to read the named pipe
- *				at the same time.
- *	FS_WRITE_BACK_ATTRS	Write back the cached attributes.
- *	FS_DEBUG_CONSIST	Forces machine into debugger
- */
-
-#define	FS_WRITE_BACK_BLOCKS		0x01
-#define	FS_INVALIDATE_BLOCKS		0x02
-#define	FS_DELETE_FILE			0x04
-#define	FS_CANT_READ_CACHE_PIPE		0x08
-#define	FS_WRITE_BACK_ATTRS		0x10
-#define FS_DEBUG_CONSIST		0x100
 
 /*
  * Structure used to keep track of outstanding cache consistency requests.
@@ -1634,59 +1611,17 @@ ProcessConsist(data, callInfoPtr)
 	Sys_Panic(SYS_WARNING, "ProcessConsist: lost the handle\n");
 	return;
     }
+    FsHandleUnlock(handlePtr);
 
     FS_CACHE_DEBUG_PRINT2("ProcessConsist: Got %s request for file %d\n", 
 	ConsistType(consistPtr->args.flags), handlePtr->rmt.hdr.fileID.minor);
 
     /*
-     * Process the request.
+     * Process the request under the per file cache lock.
      */
-    cacheInfoPtr = &handlePtr->cacheInfo;
-    if (cacheInfoPtr->attr.firstByte == -1) {
-	firstBlock = 0;
-    } else {
-	firstBlock = cacheInfoPtr->attr.firstByte / FS_BLOCK_SIZE;
-    }
-    lastBlock = FS_LAST_BLOCK;
+    status = FsCacheConsist(&handlePtr->cacheInfo, consistPtr->args.flags,
+			    &reply.cachedAttr);
 
-    reply.status = SUCCESS;
-    switch (consistPtr->args.flags) {
-	case FS_WRITE_BACK_BLOCKS:
-	    reply.status = FsCacheFileWriteBack(cacheInfoPtr, firstBlock,
-					lastBlock, FS_FILE_WB_WAIT,
-					 &numSkipped);
-	    break;
-	case FS_CANT_READ_CACHE_PIPE:
-	case FS_INVALIDATE_BLOCKS:
-	    FsCacheFileInvalidate(cacheInfoPtr, firstBlock, lastBlock);
-	    cacheInfoPtr->flags |= FS_FILE_NOT_CACHEABLE;
-	    break;
-	case FS_INVALIDATE_BLOCKS | FS_WRITE_BACK_BLOCKS:
-	    reply.status = FsCacheFileWriteBack(cacheInfoPtr, firstBlock,
-					lastBlock, 
-				FS_FILE_WB_INVALIDATE | FS_FILE_WB_WAIT,
-					&numSkipped);
-	    cacheInfoPtr->flags |= FS_FILE_NOT_CACHEABLE;
-	    break;
-	case FS_DELETE_FILE:
-	    FsCacheFileInvalidate(cacheInfoPtr, firstBlock, lastBlock);
-	    cacheInfoPtr->flags |= FS_FILE_NOT_CACHEABLE;
-	    if (handlePtr->rmt.recovery.use.ref > 1) {
-		Sys_Panic(SYS_FATAL,
-		    "ProcessConsist: Ref count > 1 on deleted file handle\n");
-	    }
-	    break;
-	case FS_WRITE_BACK_ATTRS:
-	    break;
-	default:
-	    Sys_Panic(SYS_WARNING, 
-		      "ProcessConsist: Bad consistency action %x\n",
-		      consistPtr->args.flags);
-    }
-    /*
-     * The server wants the cached file attributes that we have.
-     */
-    reply.cachedAttr = cacheInfoPtr->attr;
     FS_CACHE_DEBUG_PRINT2("Returning: mod (%d), acc (%d),",
 		       reply.cachedAttr.modifyTime,
 		       reply.cachedAttr.accessTime);
@@ -1694,7 +1629,7 @@ ProcessConsist(data, callInfoPtr)
 		       reply.cachedAttr.firstByte, reply.cachedAttr.lastByte);
     reply.fileID = handlePtr->rmt.hdr.fileID;
     reply.fileID.type = FS_LCL_FILE_STREAM;
-    FsHandleRelease(handlePtr, TRUE);
+    FsHandleRelease(handlePtr, FALSE);
     /*
      * Set up the reply buffer.
      */

@@ -27,6 +27,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fs.h"
 #include "fsInt.h"
 #include "fsCacheOps.h"
+#include "fsConsist.h"
 #include "fsBlockCache.h"
 #include "fsOpTable.h"
 #include "fsDisk.h"
@@ -101,10 +102,6 @@ FsCacheUpdate(cacheInfoPtr, openForWriting, version, cacheable, attrPtr)
 	 */
 	cacheInfoPtr->version = version;
 	changed = TRUE;
-	if (outOfDate) {
-	    fsStats.handle.versionMismatch++;
-	    cacheInfoPtr->attr = *attrPtr;
-	}
     }
     if (cacheInfoPtr->flags & FS_FILE_GONE) {
 	if (!outOfDate) {
@@ -115,13 +112,17 @@ FsCacheUpdate(cacheInfoPtr, openForWriting, version, cacheable, attrPtr)
 
     /*
      * If we were caching and the file is no longer cacheable, or our copy
-     * is outOfDate, we need to invalidate our cache.
+     * is outOfDate, we need to invalidate our cache.  Note that we do
+     * the cache invalidate with our previous notion of the size.
      */
-    if (!(cacheInfoPtr->flags & FS_FILE_NOT_CACHEABLE) &&
-	(!cacheable || outOfDate)) {
+    if (!cacheable || outOfDate) {
 	fsStats.handle.cacheFlushes++;
 	FsCacheFileInvalidate(cacheInfoPtr, 0, cacheInfoPtr->attr.lastByte /
 						FS_BLOCK_SIZE);
+    }
+    if (outOfDate) {
+	fsStats.handle.versionMismatch++;
+	cacheInfoPtr->attr = *attrPtr;
     }
 
     /*
@@ -414,6 +415,77 @@ FsCacheNumBlocks(cacheInfoPtr)
     numBlocks = FsCacheFileBlocks(cacheInfoPtr);
     UNLOCK_MONITOR;
     return(numBlocks);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * FsCacheConsist --
+ *
+ * 	This is called from ProcessConsist to take a cache consistency
+ *	action in response to a callback from the file server.
+ *
+ * Results:
+ *	The return status from the block cache operations, plus the
+ *	values of the attributes we have cached here on the client.
+ *
+ * Side effects:
+ *	Will writeback and/or invalidate the cache according to the
+ *	request by the server.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+ENTRY ReturnStatus
+FsCacheConsist(cacheInfoPtr, flags, cachedAttrPtr)
+    register FsCacheFileInfo	*cacheInfoPtr;
+    int				flags;
+    FsCachedAttributes		*cachedAttrPtr;
+{
+    ReturnStatus status;
+    int firstBlock;
+    int numSkipped;
+
+    LOCK_MONITOR;
+
+    if (cacheInfoPtr->attr.firstByte == -1) {
+	firstBlock = 0;
+    } else {
+	firstBlock = cacheInfoPtr->attr.firstByte / FS_BLOCK_SIZE;
+    }
+    status = SUCCESS;
+    switch (flags) {
+	case FS_WRITE_BACK_BLOCKS:
+	    status = FsCacheFileWriteBack(cacheInfoPtr, firstBlock,
+			FS_LAST_BLOCK, FS_FILE_WB_WAIT, &numSkipped);
+	    break;
+	case FS_CANT_READ_CACHE_PIPE:
+	case FS_INVALIDATE_BLOCKS:
+	    FsCacheFileInvalidate(cacheInfoPtr, firstBlock, FS_LAST_BLOCK);
+	    cacheInfoPtr->flags |= FS_FILE_NOT_CACHEABLE;
+	    break;
+	case FS_INVALIDATE_BLOCKS | FS_WRITE_BACK_BLOCKS:
+	    status = FsCacheFileWriteBack(cacheInfoPtr, firstBlock,
+			FS_LAST_BLOCK, FS_FILE_WB_INVALIDATE | FS_FILE_WB_WAIT,
+			&numSkipped);
+	    cacheInfoPtr->flags |= FS_FILE_NOT_CACHEABLE;
+	    break;
+	case FS_DELETE_FILE:
+	    FsCacheFileInvalidate(cacheInfoPtr, firstBlock, FS_LAST_BLOCK);
+	    cacheInfoPtr->flags |= FS_FILE_NOT_CACHEABLE;
+	    break;
+	case FS_WRITE_BACK_ATTRS:
+	    break;
+	default:
+	    Sys_Panic(SYS_WARNING, 
+		      "FsCacheConsist: Bad consistency action %x\n", flags);
+	    status = FS_INVALID_ARG;
+	    break;
+    }
+    *cachedAttrPtr = cacheInfoPtr->attr;
+
+    UNLOCK_MONITOR;
+    return(status);
 }
 
 /*
