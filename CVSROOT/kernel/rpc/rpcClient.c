@@ -445,6 +445,11 @@ RpcClientDispatch(chanPtr, rpcHdrPtr)
 	    requestRpcHdrPtr->flags = RPC_ACK | RPC_CLOSE | RPC_SERVER;
 	    requestRpcHdrPtr->delay = rpcMyDelay;
 	    requestRpcHdrPtr->clientID = rpc_SpriteID;
+	    requestRpcHdrPtr->serverID = rpcHdrPtr->serverID;
+	    requestRpcHdrPtr->channel = rpcHdrPtr->channel;
+	    requestRpcHdrPtr->serverHint = rpcHdrPtr->serverHint;
+	    requestRpcHdrPtr->ID = rpcHdrPtr->ID;
+	    requestRpcHdrPtr->numFrags = 0;
 	    requestRpcHdrPtr->fragMask = 0;
 	    requestRpcHdrPtr->paramSize = 0;
 	    requestRpcHdrPtr->dataSize = 0;
