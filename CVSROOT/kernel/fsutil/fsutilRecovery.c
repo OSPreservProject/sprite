@@ -251,6 +251,7 @@ FsWantRecovery(hdrPtr)
 	case FS_RMT_PIPE_STREAM:
 	case FS_RMT_NAMED_PIPE_STREAM:
 	case FS_RMT_PSEUDO_STREAM:
+	case FS_CONTROL_STREAM:
 	    recovPtr->flags |= FS_WANT_RECOVERY;
 	    break;
 	default:
