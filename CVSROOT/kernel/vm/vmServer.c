@@ -14,6 +14,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "vm.h"
 #include "vmInt.h"
+#include "vmSwapDir.h"
 #include "lock.h"
 #include "status.h"
 #include "sched.h"
@@ -26,10 +27,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 Boolean	vmUseFSReadAhead = TRUE;
 extern	Boolean	vm_NoStickySegments;
-Fs_Stream	*vmSwapStreamPtr = (Fs_Stream *)NIL;
 char		*sprintf();
-
-Boolean vmSwapFileDebug = FALSE;
 
 /*
  * Condition to wait on when want to do a swap file operation but someone
@@ -40,70 +38,6 @@ Boolean vmSwapFileDebug = FALSE;
 Sync_Condition	swapFileCondition;
 
 void	Fscache_BlocksUnneeded();
-
-
-/*
- *----------------------------------------------------------------------
- *
- * VmSwapFileRemove --
- *
- *	Remove the swap file for the given segment.
- *
- *	NOTE: This does not have to be synchronized because it is assumed
- *	      that it is called after the memory for the process has already
- *	      been freed thus the swap file can't be messed with.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The swap file is removed.
- *----------------------------------------------------------------------
- */
-VmSwapFileRemove(swapStreamPtr, swapFileName)
-    Fs_Stream	*swapStreamPtr;
-    char	*swapFileName;
-{
-    Proc_ControlBlock	*procPtr;
-    int			origID = NIL;
-    ReturnStatus	status;
-
-    (void)Fs_Close(swapStreamPtr);
-    procPtr = Proc_GetEffectiveProc();
-    if (procPtr->effectiveUserID != PROC_SUPER_USER_ID) {
-	origID = procPtr->effectiveUserID;
-	procPtr->effectiveUserID = PROC_SUPER_USER_ID;
-    }
-    if (swapFileName != (char *) NIL) {
-	if (vmSwapFileDebug) {
-	    status = SUCCESS;
-	    printf("VmSwapFileRemove: not removing swap file %s.\n",
-		       swapFileName);
-	} else {
-	    status = Fs_Remove(swapFileName);
-	}
-	if (status != SUCCESS) {
-	    printf("Warning: VmSwapFileRemove: Fs_Remove(%s) returned %x.\n",
-		      swapFileName, status);
-	    if (status == FS_FILE_NOT_FOUND &&
-		vmSwapStreamPtr != (Fs_Stream *) NIL) {
-		/*
-		 * This can happen if the swap file itself is removed,
-		 * or if the directory gets changed.  Reopen the directory
-		 * to make sure.
-		 */
-		(void) Fs_Close(vmSwapStreamPtr);
-		vmSwapStreamPtr = (Fs_Stream *) NIL;
-		printf("Reopening swap directory.\n");
-		Proc_CallFunc(Vm_OpenSwapDirectory, (ClientData) NIL, 0);
-	    }
-	}
-	free(swapFileName);
-    }
-    if (origID != NIL) {
-	procPtr->effectiveUserID = origID;
-    }
-}
 
 
 /*
@@ -223,157 +157,6 @@ VmPageServerRead(virtAddrPtr, pageFrame)
     return(status);
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * VmOpenSwapDirectory --
- *
- *	Open the swap directory for this machine.  This is needed for 
- *	recovery.  This is called periodically until it successfully opens
- *	the swap directory.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Swap directory stream pointer is set.
- *
- *----------------------------------------------------------------------
- */
-/* ARGSUSED */
-void
-Vm_OpenSwapDirectory(data, callInfoPtr)
-    ClientData		data;	
-    Proc_CallInfo	*callInfoPtr;
-{
-    char		number[34];
-    char		fileName[FS_MAX_PATH_NAME_LENGTH];
-    ReturnStatus	status;
-
-    (void)strcpy(fileName, VM_SWAP_DIR_NAME);
-    (void)sprintf(number, "%u", (unsigned) Sys_GetHostId());
-    (void)strcat(fileName, number);
-    status = Fs_Open(fileName, FS_FOLLOW, FS_DIRECTORY, 0, &vmSwapStreamPtr);
-    if (status != SUCCESS) {
-	/*
-	 * It didn't work, retry in 20 seconds.
-	 */
-	callInfoPtr->interval = 20 * timer_IntOneSecond;
-	vmSwapStreamPtr = (Fs_Stream *)NIL;
-    }
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * VmOpenSwapFile --
- *
- *	Open a swap file for this segment.  Store the name of the swap
- *	file with the segment.
- *
- * Results:
- *	SUCCESS unless swap file could not be opened.
- *
- * Side effects:
- *	Swap file pointer is set in the segment's data struct.
- *
- *----------------------------------------------------------------------
- */
-ReturnStatus
-VmOpenSwapFile(segPtr)
-    register	Vm_Segment	*segPtr;
-{
-    int				status;
-    Proc_ControlBlock		*procPtr;
-    int				origID = NIL;
-    char			fileName[FS_MAX_PATH_NAME_LENGTH];
-    char			*swapFileNamePtr;
-    Fs_Stream			*origCwdPtr;
-
-    if (segPtr->swapFileName == (char *) NIL) {
-	/*
-	 * There is no swap file yet so open one.  This may entail assembling 
-	 * the file name first.  The file name is the segment number.
-	 */
-	VmMakeSwapName(segPtr->segNum, fileName);
-	segPtr->swapFileName = (char *) malloc(strlen(fileName) + 1);
-	(void) strcpy(segPtr->swapFileName, fileName);
-    }
-#ifdef SWAP_FILE_DEBUG
-    printf("Opening swap file %s.\n", segPtr->swapFileName);
-#endif /* SWAP_FILE_DEBUG */
-    procPtr = Proc_GetEffectiveProc();
-    if (procPtr->effectiveUserID != PROC_SUPER_USER_ID) {
-	origID = procPtr->effectiveUserID;
-	procPtr->effectiveUserID = PROC_SUPER_USER_ID;
-    }
-    /*
-     * We want the swap file open to happen relative to the swap directory
-     * for this machine if possible.  This is so that if the swap directory
-     * is a symbolic link and the swap open fails we know that it failed
-     * because the swap server is down, not the server of the symbolic link.
-     */
-    origCwdPtr = procPtr->fsPtr->cwdPtr;
-    if (vmSwapStreamPtr != (Fs_Stream *)NIL) {
-	procPtr->fsPtr->cwdPtr = vmSwapStreamPtr;
-	(void)sprintf(fileName, "%u", (unsigned) segPtr->segNum);
-	swapFileNamePtr = fileName;
-    } else {
-	swapFileNamePtr = segPtr->swapFileName;
-    }
-    status = Fs_Open(swapFileNamePtr, 
-		     FS_READ | FS_WRITE | FS_CREATE | FS_TRUNC | FS_SWAP,
-		     FS_FILE, 0660, &segPtr->swapFilePtr);
-    if (origID != NIL) {
-	procPtr->effectiveUserID = origID;
-    }
-    procPtr->fsPtr->cwdPtr = origCwdPtr;
-    if (status != SUCCESS) {
-	segPtr->swapFilePtr = (Fs_Stream *)NIL;
-	printf("%s VmOpenSwapFile: Could not open swap file %s, reason 0x%x\n", 
-		"Warning:", segPtr->swapFileName, status);
-	return(status);
-    }
-
-    segPtr->flags |= VM_SWAP_FILE_OPENED;
-
-    return(SUCCESS);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * VmMakeSwapName --
- *
- *	Given a buffer to hold the name of the swap file, return the
- *	name corresponding to the given segment.  FileName is assumed to
- *	hold a string long enough for the maximum swap file name.
- *
- * Results:
- *	The pathname is returned in fileName.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-void
-VmMakeSwapName(segNum, fileName)
-    int  segNum;		/* segment for which to create name */ 
-    char *fileName;		/* pointer to area to hold name */
-{
-    char number[34];
-
-    (void)strcpy(fileName, VM_SWAP_DIR_NAME);
-    (void)sprintf(number, "%u", (unsigned) Sys_GetHostId());
-    (void)strcat(fileName, number);
-    (void)strcat(fileName, "/");
-    (void)sprintf(number, "%u", (unsigned) (segNum));
-    (void)strcat(fileName, number);
-}
 
 
 /*

@@ -38,6 +38,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vm.h"
 #include "vmInt.h"
 #include "vmTrace.h"
+#include "vmSwapDir.h"
 #include "user/vm.h"
 #include "sync.h"
 #include "dbg.h"
@@ -2074,15 +2075,35 @@ PageOut(data, callInfoPtr)
 {
     VmCore		*corePtr;
     ReturnStatus	status = SUCCESS;
-    Fs_Stream		*recStreamPtr;
+    Fs_Stream		*recoveryStreamPtr;
+    Boolean		doRecovery;
+    Boolean		returnSwapStream;
 
     vmStat.pageoutWakeup++;
 
     corePtr = (VmCore *) NIL;
     while (TRUE) {
-	PageOutPutAndGet(&corePtr, status, &recStreamPtr);
-	if (recStreamPtr != (Fs_Stream  *)NIL) {
-	    (void) Fsutil_WaitForHost(recStreamPtr, FS_NON_BLOCKING, status);
+	doRecovery = FALSE;
+	PageOutPutAndGet(&corePtr, status, &doRecovery, &recoveryStreamPtr);
+	if (doRecovery) {
+	    /*
+	     * The following shenanigans are used to carefully
+	     * synchronize access to the swap directory stream.
+	     */
+	    returnSwapStream = FALSE;
+	    if (recoveryStreamPtr == (Fs_Stream  *)NIL) {
+		recoveryStreamPtr = VmGetSwapStreamPtr();
+		if (recoveryStreamPtr != (Fs_Stream *)NIL) {
+		    returnSwapStream = TRUE;
+		}
+	    }
+	    if (recoveryStreamPtr != (Fs_Stream  *)NIL) {
+		(void)Fsutil_WaitForHost(recoveryStreamPtr, FS_NON_BLOCKING,
+					 status);
+		if (returnSwapStream) {
+		    VmDoneWithSwapStreamPtr();
+		}
+	    }
 	}
 
 	if (corePtr == (VmCore *) NIL) {
@@ -2091,7 +2112,7 @@ PageOut(data, callInfoPtr)
 	status = VmPageServerWrite(&corePtr->virtPage, 
 				   (unsigned int) (corePtr - coreMap));
 	if (status != SUCCESS) {
-	    if (vmSwapStreamPtr == (Fs_Stream *)NIL ||
+	    if ( ! VmSwapStreamOk() ||
 	        (status != RPC_TIMEOUT && status != FS_STALE_HANDLE &&
 		 status != RPC_SERVICE_DISABLED)) {
 		/*
@@ -2129,22 +2150,28 @@ PageOut(data, callInfoPtr)
  * ----------------------------------------------------------------------------
  */
 ENTRY static void
-PageOutPutAndGet(corePtrPtr, status, recStreamPtrPtr)
+PageOutPutAndGet(corePtrPtr, status, doRecoveryPtr, recStreamPtrPtr)
     VmCore	 **corePtrPtr;		/* On input points to page frame
 					 * to be put back onto allocate list.
 					 * On output points to page frame
 					 * to be cleaned. */
     ReturnStatus status;		/* Status from the write. */
+    Boolean	*doRecoveryPtr;		/* Return.  TRUE if recovery should
+					 * be attempted.  In this case check
+					 * *recStreamPtrPtr and wait for
+					 * recovery on that, or wait for
+					 * recovery on vmSwapStreamPtr. */
     Fs_Stream	 **recStreamPtrPtr;	/* Pointer to stream to do recovery
-					 * on if necessary.  A NIL stream
-					 * pointer is returned if no recovery
-					 * is necessary. */
+					 * on if *doRecoveryPtr is TRUE.  If
+					 * this is still NIL, then do recovery
+					 * on vmSwapStreamPtr instead */
 {
     register	Vm_PTE	*ptePtr;
     register	VmCore	*corePtr;
 
     LOCK_MONITOR;
 
+    *doRecoveryPtr = FALSE;
     *recStreamPtrPtr = (Fs_Stream *)NIL;
     corePtr = *corePtrPtr;
     if (corePtr == (VmCore *)NIL) {
@@ -2161,18 +2188,14 @@ PageOutPutAndGet(corePtrPtr, status, recStreamPtrPtr)
 		    if (!swapDown) {
 			/*
 			 * We have not realized that we have an error yet.
-			 * Determine which stream pointer caused the error
-			 * (the segments swap stream if the swap file is 
-			 * already open or the swap directory stream
-			 * otherwise) and mark the swap as down.
+			 * Mark the swap server as down, and return a
+			 * pointer to the swap stream.  If it isn't open
+			 * yet we'll return NIL, and our caller should use
+			 * vmSwapStreamPtr for recovery, which is guarded
+			 * by a different monitor.
 			 */
-			if (corePtr->virtPage.segPtr->swapFilePtr != 
-							    (Fs_Stream *)NIL) {
-			    *recStreamPtrPtr =
-					corePtr->virtPage.segPtr->swapFilePtr;
-			} else {
-			    *recStreamPtrPtr = vmSwapStreamPtr;
-			}
+			*recStreamPtrPtr = corePtr->virtPage.segPtr->swapFilePtr;
+			*doRecoveryPtr = TRUE;
 			swapDown = TRUE;
 		    }
 		    corePtr->flags &= ~VM_PAGE_BEING_CLEANED;
