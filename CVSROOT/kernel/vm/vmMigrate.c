@@ -100,7 +100,13 @@ Vm_InitiateMigration(procPtr, hostID, infoPtr)
 		}
 	    }
 	    PrepareSegment(segPtr);
+	    /*
+	     * Unlock the process while flushing it to the server -- we might
+	     * have to wait a while while this is going on.
+	     */
+	    Proc_Unlock(procPtr);
 	    status = FlushSegment(segPtr);
+	    Proc_Lock(procPtr);
 	    if (status != SUCCESS) {
 		return(status);
 	    }
