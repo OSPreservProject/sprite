@@ -314,7 +314,7 @@ _Mach_ContextSwitch:
 	 *  Tricky code - We save the fromProcPtr in _machFPUSaveProcPtr and
 	 *  execute a "st %fsr". The "st fsr" will pause until all FPU ops
 	 *  are compete.  If any FPU execptions are pending we will get a
-	 *  FP_EXECPTION trap on the instruction marked by the label 
+	 *  FP_EXCEPTION trap on the instruction marked by the label 
 	 *  _machFPUSyncInst. The routine MachHandleWeirdoInstruction in
 	 *  machCode.c will catch this fault and note it in the processes
 	 *  PCB.  
