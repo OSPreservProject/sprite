@@ -127,6 +127,9 @@ typedef struct Lfs {
     Sync_Lock      lock;	/* Lock protecting the below data structures. */
     int		activeFlags;	/* Flags specifing what processes are active
 				 * on file system. See below for values. */
+    Proc_ControlBlock *cleanerProcPtr; /* Process Control block of cleaner
+					* process. NIL if cleaner is not
+					* active. */
     Sync_Condition writeWait; /* Condition to wait for the file system 
 			       * write to complete. */
     Sync_Condition cleanSegmentsWait; /* Condition to wait for clean
@@ -194,6 +197,7 @@ typedef struct Lfs {
  *					    a disk address.
  * LfsBlockToSegmentNum(lfsPtr, diskAdress)  - Compute the segment number 
  *					 of a disk  address .
+ * LfsIsCleanerProcess(lfsPtr) - Return TRUE if current process is a cleaner.
  *
  * LfsGetCurrentTimestamp(lfsPtr) - Return the current file system timestamp
  */
@@ -228,6 +232,9 @@ typedef struct Lfs {
 					 LfsSegSizeInBlocks((lfsPtr)))
 
 #define	LfsGetCurrentTimestamp(lfsPtr)	(++((lfsPtr)->checkPoint.timestamp))
+
+#define	LfsIsCleanerProcess(lfsPtr) \
+		(Proc_GetCurrentProc() == (lfsPtr)->cleanerProcPtr)
 
 /*
  * Attach detach routines. 
