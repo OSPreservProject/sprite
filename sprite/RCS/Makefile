@@ -31,10 +31,6 @@ MTFLAGS = -msun4
 RTM = sun4c
 MTFLAGS = -msun4
 #endif
-#ifmake sun4c2
-RTM = sun4c2
-MTFLAGS = -msun4
-#endif
 
 #if !empty(TM)
 RTM ?= $(TM)
@@ -303,23 +299,6 @@ sun4c: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	#rsh ginger -n "(cd /home/ginger/sprite/kernels ; ./Save sun4c.sprite)"
 	nm -n sun4c > sun4c.nm
 	-Save sun4c
-
-
-sun4c2: ${OBJS} Makefile .PRECIOUS .NOEXPORT
-	sed 's/MACHINE/$@/g' version.h.template > version.h
-	cat version.h >> $@.versionLog
-	-Save $@
-	rm -f mainHook.o
-	cc -c ${CFLAGS} -Dsun4 -Dsun4c -Dsun4c2 mainHook.c
-	cc -c ${CFLAGS} -Dsun4 -Dsun4c -Dsun4c2 version.c
-	${LD} -X -msun4 -o $@ -e start -T f6004000 ${OBJS} version.o
-	@ls -l $@
-	@size $@
-	update -f -s sun4c2 /sprite/boot/sun4c2.md/${KERNELNAME}
-	#rcp sun4c2 ginger:/home/ginger/sprite/kernels/sun4c2.sprite
-	#rsh ginger -n "(cd /home/ginger/sprite/kernels ; ./Save sun4c2.sprite)"
-	nm -n sun4c2 > sun4c2.nm
-	-Save sun4c2
 
 ds3100: ${OBJS} .PRECIOUS .NOEXPORT
 	sed 's/MACHINE/$@/g' version.h.template > version.h
