@@ -108,7 +108,7 @@ Sched_MoveInQueue(procPtr)
     curProcPtr = Proc_GetCurrentProc();
     if ((curProcPtr != (Proc_ControlBlock *) NIL) &&
 	    (procPtr->weightedUsage < curProcPtr->weightedUsage)) {
-	if (mach_AtInterruptLevel && !mach_KernelMode) {
+	if (Mach_AtInterruptLevel() && !Mach_KernelMode()) {
 	    sched_DoContextSwitch = TRUE;
 	} 
 	curProcPtr->schedFlags |= SCHED_CONTEXT_SWITCH_PENDING;
@@ -241,7 +241,7 @@ Sched_InsertInQueue(procPtr, returnProc)
     itemProcPtr = Proc_GetCurrentProc();
     if ((itemProcPtr != (Proc_ControlBlock *) NIL) &&
 	    (procPtr->weightedUsage < itemProcPtr->weightedUsage)) {
-	if (mach_AtInterruptLevel && !mach_KernelMode) {
+	if (Mach_AtInterruptLevel() && !Mach_KernelMode()) {
 	    sched_DoContextSwitch = TRUE;
 	} 
 	itemProcPtr->schedFlags |= SCHED_CONTEXT_SWITCH_PENDING;
