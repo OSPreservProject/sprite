@@ -626,7 +626,7 @@ extern Sync_RegElement  *regQueuePtr;
 #else /* CLEAN_LOCK */
 
 #define Sync_LockInitStatic(name) \
-    {0,0,0,SYNC_LOCK, 0, (name), (Address) NIL, (Proc_ControlBlock *) NIL,0}
+    {0,0,0,SYNC_LOCK, 0, (name), (Address) NIL, (Proc_ControlBlock *) NIL,0,0}
 
 #endif /* CLEAN_LOCK */
 
