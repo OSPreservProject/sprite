@@ -612,6 +612,22 @@ Sys_StatsStub(command, option, argPtr)
 	    status = Vm_CopyOut(sizeof(Net_EtherStats),
 				(Address)&net_EtherStats, (Address)argPtr);
 	    break;
+	case SYS_DISK_STATS: {
+	    int			bytesAcc;
+	    Sys_DiskStats	*statArrPtr;
+
+	    Vm_MakeAccessible(VM_OVERWRITE_ACCESS,
+			      sizeof(Sys_DiskStats) * option,
+			      (Address)argPtr, &bytesAcc, &statArrPtr);
+	    if (statArrPtr == (Sys_DiskStats *)NIL) {
+		status = SYS_ARG_NOACCESS;
+	    } else {
+		Dev_GetDiskStats(statArrPtr, bytesAcc / sizeof(Sys_DiskStats));
+		Vm_MakeUnaccessible((Address)statArrPtr, bytesAcc);
+		status = SUCCESS;
+	    }
+	    break;
+	}
 	default:
 	    status = GEN_INVALID_ARG;
 	    break;
