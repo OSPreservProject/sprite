@@ -1,4 +1,4 @@
-/* fsNameHash.c --
+/* fslclNameHash.c --
  *
  *      This is a modified version of the hashing utilities used for the
  *      filesystem name cache.  The main difference is that there is a two
@@ -14,19 +14,26 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif  not lint
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsutil.h"
-#include "fsNameHash.h"
-#include "fslcl.h"
-#include "fsStat.h"
-#include "string.h"
-#include "list.h"
-#include "sys.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fslclNameHash.h>
+#include <fslcl.h>
+#include <fsStat.h>
+#include <string.h>
+#include <list.h>
+#include <sys.h>
+
+#include <stdio.h>
 
 static	Sync_Lock nameHashLock = Sync_LockInitStatic("Fs:nameHashLock");
 #define	LOCKPTR	&nameHashLock
 
+static void HashInit _ARGS_((FslclHashTable *table, int numBuckets));
+static int Hash _ARGS_((FslclHashTable *table, char *string, 
+			Fs_HandleHeader *keyHdrPtr));
+static FslclHashEntry *ChainSearch _ARGS_((FslclHashTable *table, char *string,
+			Fs_HandleHeader *keyHdrPtr,  List_Links *hashList));
 
 
 /*
