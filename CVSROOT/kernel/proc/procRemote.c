@@ -330,8 +330,12 @@ GetProcessState(buffer, hostID)
      */
 
     Byte_EmptyBuffer(buffer, int, nameLength);
+
+#ifdef notdef
+/* FIXME */
     Byte_Copy(nameLength, buffer, (Address) procPtr->codeFileName);
     buffer += nameLength;
+#endif notdef
 
     /*
      * Set up the stack and frame pointers.
@@ -725,6 +729,7 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
     ReturnStatus status;		/* returned by assorted procedures */
     ReturnStatus remoteCallStatus;	/* status returned by system call */
     Proc_TraceRecord record;		/* used to store trace data */
+    int lastArraySize = -1;			/* size of last array found */
 
     /*
      * Create a synonym for argsPtr so that integer arguments can be referred
@@ -778,6 +783,7 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
 	    case SYS_PARAM_RANGE1:
 	    case SYS_PARAM_RANGE2:
 	    case SYS_PARAM_PCB:
+	    case SYS_PARAM_PCBARG:
 	    case SYS_PARAM_VM_CMD:
 	    case SYS_PARAM_DUMMY:
 	        /*
@@ -799,7 +805,8 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
 		     * the given type.  The size of the array is either
 		     * the parameter just before the array pointer (an INT),
 		     * or the difference between the two preceding arguments
-		     * (RANGE1 and RANGE2).
+		     * (RANGE1 and RANGE2).  Remember the size of the array,
+		     * since a more arrays of the same size may follow.
 		     *
 		     */
 		    if (i > 0 && specsPtr[i-1].type == SYS_PARAM_INT) {
@@ -816,12 +823,16 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
 			}
 			size = (intArgsArray[i-1] - intArgsArray[i-2] + 1) *
 				sys_ParamSizes[type];
+		    } else if (i > 1 && (specsPtr[i-1].disposition
+					 & (SYS_PARAM_ARRAY))) {
+			size = lastArraySize;
 		    } else {
 			Sys_Panic(SYS_FATAL,
 			      "Proc_DoRemoteCall: bad parameter list.\n");
 			status = FAILURE;
 			goto failure;
 		    }
+		    lastArraySize = size;
 		}
 		break;
  	    case SYS_PARAM_FS_NAME: 
