@@ -178,10 +178,7 @@ VmMach_Init(firstFreePage)
 			 * kernel. */
 {
     VmMachPTE		*ptePtr;
-    VmMachPTE		pte;
     int 		i;
-    int 		firstFreeSegment;
-    Address		virtAddr;
     int			pfNum;
     VmMach_SegData	*machPtr;
 
@@ -800,8 +797,6 @@ VmMach_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr,
     register int		*RPTPMs;
     Proc_ControlBlock		*fromProcPtr;
     ReturnStatus		status = SUCCESS;
-    int				segOffset;
-    int				bytesToCopy;
     int				segToUse;
     int				savedSegReg;
     int				savedRPTPM;
@@ -970,6 +965,7 @@ VmMach_SetPageProt(virtAddrPtr, softPTE)
  *
  * ----------------------------------------------------------------------------
  */
+/*ARGSUSED*/
 ENTRY void
 VmMach_GetRefModBits(virtAddrPtr, virtFrameNum, refPtr, modPtr)
     register	Vm_VirtAddr	*virtAddrPtr;
@@ -1008,6 +1004,7 @@ VmMach_GetRefModBits(virtAddrPtr, virtFrameNum, refPtr, modPtr)
  *
  * ----------------------------------------------------------------------------
  */
+/*ARGSUSED*/
 ENTRY void
 VmMach_ClearRefBit(virtAddrPtr, virtFrameNum)
     register	Vm_VirtAddr	*virtAddrPtr;
@@ -1081,6 +1078,7 @@ VmMach_SetRefBit(addr)
  *
  * ----------------------------------------------------------------------------
  */
+/*ARGSUSED*/
 ENTRY void
 VmMach_ClearModBit(virtAddrPtr, virtFrameNum)
     register	Vm_VirtAddr	*virtAddrPtr;
@@ -1201,6 +1199,7 @@ VmMach_PageValidate(virtAddrPtr, pte)
  *
  * ----------------------------------------------------------------------------
  */
+/*ARGSUSED*/
 ENTRY void
 VmMach_PageInvalidate(virtAddrPtr, virtPage, segDeletion) 
     register	Vm_VirtAddr	*virtAddrPtr;
@@ -1371,6 +1370,7 @@ VmMach_MapInDevice(devPhysAddr, numBytes)
  *
  * ----------------------------------------------------------------------------
  */
+/*ARGSUSED*/
 ReturnStatus
 VmMach_MapKernelIntoUser(kernelVirtAddr, numBytes, userVirtAddr,
 			 realVirtAddrPtr) 
@@ -1613,21 +1613,42 @@ Vm_CopyOut(numBytes, sourcePtr, destPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-Vm_StringNCopy(n, src, dst)
-    register int n;		/* How many characters to place at dst. */
-    register char *src;		/* Source string. */
-    char *dst;			/* Destination area. */
+Vm_StringNCopy(n, src, dst, bytesCopiedPtr)
+    register int	n;			/* How many characters to 
+						 * place at dst. */
+    register char	*src;			/* Source string. */
+    char		*dst;			/* Destination area. */
+    int			*bytesCopiedPtr;	/* OUT: The number of bytes 
+						 * actually copied. */
 {
-    register char *copy = dst;
+    register char	*copy = dst;
+    char		*origSrc = src;
 
     if (n == 0) {
 	return(SUCCESS);
     }
+#ifndef lint
     do {
 	if ((*copy++ = *src) != 0) {
 	    src += 1;
+	} else {
+	    break;
 	}
     } while (--n > 0);
+#else
+    do {
+	*copy = *src;
+	copy++;
+	if (*src != 0) {
+	    src += 1;
+	} else {
+	    break;
+	}
+	n--;
+    } while (n > 0);
+#endif
+    *bytesCopiedPtr = src - origSrc;
+
     return(SUCCESS);
 }
 
@@ -1783,6 +1804,7 @@ VmMachFlushBytes(segPtr, startAddr, numBytes)
  *
  *----------------------------------------------------------------------
  */
+/*ARGSUSED*/
 void
 VmMachFlushSegment(segPtr)
     Vm_Segment	*segPtr;
