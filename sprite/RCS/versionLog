@@ -84,4 +84,9 @@ Proc_Exec supports OMAGIC
 dev supports 3/50 DMA correctly
 fsprefix does't forget hard-wired prefixes
 Partial VM hack for 3/60 color frame buffer (something better is coming later)
+
+1.057	Mon Feb 12 11:32:42 PST 1990
+Fixes to 1.056 regarding bad assembler (couldn't enter kernel debugger in 056)
+Fixes to OMAGIC support (only ds3100 supports OMAGIC)
+This has a bug in IOC_WRITE_BACK for local files.  Returns wrong error code.
     New files linked in from the net library.
