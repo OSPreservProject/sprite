@@ -1306,7 +1306,11 @@ SegmentCleanProc(clientData, callInfoPtr)
 		}
 		size = 0;
 		numCacheBlocksUsed = 0;
+#ifdef ERROR_CHECK
+		if (TRUE) {
+#else
 		if (segs[segNo].activeBytes > 0) { 
+#endif /* ERROR_CHECK */
 		    segPtr = CreateSegmentToClean(lfsPtr, segs[segNo].segNumber,
 				memPtr);
 		    error = DoInCallBacks(SEG_CLEAN_IN, segPtr, 0, &size,
