@@ -16,4 +16,9 @@ CFLAGS	+= -Dvolatile=
 NOOPTIMIZATION	= no -O please
 #endif
 
+#
+# Optimization breaks just about everything.
+#
+NOOPTIMIZATION	= no -O please
+
 #include	<$(SYSMAKEFILE)>
