@@ -211,9 +211,10 @@ extern	Address		Mach_GetUserStackPtr();
 /*
  * Migration routines.
  */
-extern void			Mach_EncapState();
+extern ReturnStatus		Mach_EncapState();
 extern ReturnStatus		Mach_DeencapState();
-extern int			Mach_GetEncapSize();
+extern ReturnStatus		Mach_GetEncapSize();
+extern Boolean			Mach_CanMigrate();
 
 /*
  * Other routines.
