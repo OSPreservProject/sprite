@@ -18,9 +18,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "rpc.h"
 #include "rpcInt.h"
 #include "rpcServer.h"
-#include "fsRpcStubs.h"
+#include "fsrmtRpcStubs.h"
+#include "fsconsist.h"
+#include "fsutil.h"
 #include "procMigrate.h"
-#include "fs.h"
 #include "timer.h"
 #include "sync.h"
 
@@ -39,35 +40,35 @@ RpcService rpcService[RPC_LAST_COMMAND+1] = {
 	RpcEcho, "send",			/* 3 - SEND, server process */
         RpcNull,  "receive",			/* 4 - RECEIVE, unimplemented */
         RpcGetTime, "get time",			/* 5 - GETTIME */
-	Fs_RpcPrefix, "prefix",			/* 6 - FS_PREFIX */
-	Fs_RpcOpen, "open",			/* 7 - FS_OPEN */
-        Fs_RpcRead, "read",			/* 8 - FS_READ */
-        Fs_RpcWrite, "write",			/* 9 - FS_WRITE */
-        Fs_RpcClose, "close",			/* 10 - FS_CLOSE */
-        Fs_RpcRemove, "remove",			/* 11 - FS_UNLINK */
-        Fs_Rpc2Path, "rename",			/* 12 - FS_RENAME */
-        Fs_RpcMakeDir, "makeDir",		/* 13 - FS_MKDIR */
-        Fs_RpcRemove, "rmDir",			/* 14 - FS_RMDIR */
-	Fs_RpcMakeDev, "make dev",		/* 15 - FS_MKDEV */
-        Fs_Rpc2Path, "hard link",		/* 16 - FS_LINK */
+	Fsrmt_RpcPrefix, "prefix",		/* 6 - FS_PREFIX */
+	Fsrmt_RpcOpen, "open",			/* 7 - FS_OPEN */
+        Fsrmt_RpcRead, "read",			/* 8 - FS_READ */
+        Fsrmt_RpcWrite, "write",		/* 9 - FS_WRITE */
+        Fsrmt_RpcClose, "close",		/* 10 - FS_CLOSE */
+        Fsrmt_RpcRemove, "remove",		/* 11 - FS_UNLINK */
+        Fsrmt_Rpc2Path, "rename",		/* 12 - FS_RENAME */
+        Fsrmt_RpcMakeDir, "makeDir",		/* 13 - FS_MKDIR */
+        Fsrmt_RpcRemove, "rmDir",		/* 14 - FS_RMDIR */
+	Fsrmt_RpcMakeDev, "make dev",		/* 15 - FS_MKDEV */
+        Fsrmt_Rpc2Path, "hard link",		/* 16 - FS_LINK */
         RpcNull, "sym link",			/* 17 - FS_SYM_LINK */
-	Fs_RpcGetAttr, "get attr",		/* 18 - FS_GET_ATTR */
-	Fs_RpcSetAttr, "set attr",		/* 19 - FS_SET_ATTR */
-	Fs_RpcGetAttrPath, "stat",		/* 20 - FS_GET_ATTR_PATH */
-	Fs_RpcSetAttrPath, "setAttrPath",	/* 21 - FS_SET_ATTR_PATH */
-	Fs_RpcGetIOAttr, "getIOAttr",		/* 22 - FS_GET_IO_ATTR */
-	Fs_RpcSetIOAttr, "setIOAttr",		/* 23 - FS_SET_IO_ATTR */
-	Fs_RpcDevOpen, "dev open",		/* 24 - FS_DEV_OPEN */
-	Fs_RpcSelectStub, "select",		/* 25 - FS_SELECT */
-	Fs_RpcIOControl, "io control",		/* 26 - FS_IO_CONTROL */
-	Fs_RpcConsist, "consist",		/* 27 - FS_CONSIST */
-	Fs_RpcConsistReply, "consist done",	/* 28 - FS_CONSIST_REPLY */
-	Fs_RpcBlockCopy, "copy block",		/* 29 - FS_COPY_BLOCK */
-	Fs_RpcMigrateStream, "migrate",		/* 30 - FS_MIGRATE */
-	Fs_RpcReleaseStream, "release",		/* 31 - FS_RELEASE */
-	Fs_RpcReopen, "reopen",			/* 32 - FS_REOPEN */
-	Fs_RpcRecovery, "recover",		/* 33 - FS_RECOVERY */
-	Fs_RpcDomainInfo, "domain info",	/* 34 - FS_DOMAIN_INFO */
+	Fsrmt_RpcGetAttr, "get attr",		/* 18 - FS_GET_ATTR */
+	Fsrmt_RpcSetAttr, "set attr",		/* 19 - FS_SET_ATTR */
+	Fsrmt_RpcGetAttrPath, "stat",		/* 20 - FS_GET_ATTR_PATH */
+	Fsrmt_RpcSetAttrPath, "setAttrPath",	/* 21 - FS_SET_ATTR_PATH */
+	Fsrmt_RpcGetIOAttr, "getIOAttr",	/* 22 - FS_GET_IO_ATTR */
+	Fsrmt_RpcSetIOAttr, "setIOAttr",	/* 23 - FS_SET_IO_ATTR */
+	Fsrmt_RpcDevOpen, "dev open",		/* 24 - FS_DEV_OPEN */
+	Fsrmt_RpcSelectStub, "select",		/* 25 - FS_SELECT */
+	Fsrmt_RpcIOControl, "io control",	/* 26 - FS_IO_CONTROL */
+	Fsconsist_RpcConsist, "consist",	/* 27 - FS_CONSIST */
+	Fsconsist_RpcConsistReply, "consist done",/* 28 - FS_CONSIST_REPLY */
+	Fsrmt_RpcBlockCopy, "copy block",	/* 29 - FS_COPY_BLOCK */
+	Fsrmt_RpcMigrateStream, "migrate",	/* 30 - FS_MIGRATE */
+	Fsio_RpcStreamMigClose, "release",	/* 31 - FS_RELEASE */
+	Fsrmt_RpcReopen, "reopen",		/* 32 - FS_REOPEN */
+	Fsutil_RpcRecovery, "recover",		/* 33 - FS_RECOVERY */
+	Fsrmt_RpcDomainInfo, "domain info",	/* 34 - FS_DOMAIN_INFO */
 	Proc_RpcMigCommand, "mig command",	/* 35 - PROC_MIG_COMMAND */
 	Proc_RpcRemoteCall, "rmt call",		/* 36 - PROC_REMOTE_CALL */
 	Proc_RpcRemoteWait, "remote wait",	/* 37 - PROC_REMOTE_WAIT */
