@@ -30,6 +30,7 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include <sys.h>
 #include <dbg.h>
 #include <bstring.h>
+#include <machMon.h>
 
 #if (MACH_MAX_NUM_PROCESSORS == 1) /* uniprocessor implementation */
 #undef MASTER_LOCK
@@ -267,8 +268,14 @@ GetNumPages()
     int			count = 0;
 
 
-    sscanf(mach_BitmapLen+2,"%x",&bitmapLen);
-    sscanf(mach_BitmapAddr+2,"%x",&bitmapAddr);
+    count = sscanf(mach_BitmapLen+2,"%x",&bitmapLen);
+    if (count != 1) {
+	panic("GetNumPages: unable to scan bitmap length.\n");
+    }
+    count = sscanf(mach_BitmapAddr+2,"%x",&bitmapAddr);
+    if (count != 1) {
+	panic("GetNumPages: unable to scan bitmap address.\n");
+    }
     for (i=0;i<bitmapLen;i++) {
 	if (bitmapAddr[i] != 0xffffffff) break;
     }
@@ -279,7 +286,7 @@ GetNumPages()
 	    break;
 	}
     }
-    printf("%d pages of memory\n", pages);
+    Mach_MonPrintf("%d pages of memory\n", pages);
     return(pages); 
 }
 
@@ -1678,9 +1685,27 @@ VmMach_MakeDebugAccessible(addr)
     unsigned virtPage, lowEntry, highEntry;
 
     if (addr < (unsigned)VMMACH_VIRT_CACHED_START) {
-	return(addr > (unsigned)VMMACH_PHYS_CACHED_START &&
-	       addr < (unsigned)VMMACH_PHYS_CACHED_START + 
-			vm_NumPhysPages * VMMACH_PAGE_SIZE);
+	if (addr < (unsigned)VMMACH_PHYS_UNCACHED_START) {
+	    if (addr < (unsigned)VMMACH_PHYS_CACHED_START + 
+			vm_NumPhysPages * VMMACH_PAGE_SIZE) {
+		return TRUE;
+	    } else {
+		return FALSE;
+	    }
+	} else {
+	    if (addr < (unsigned)VMMACH_PHYS_UNCACHED_START + 
+			vm_NumPhysPages * VMMACH_PAGE_SIZE) {
+		return TRUE;
+	    } else if ((addr < (unsigned) MACH_IO_SLOT_ADDR(7)) &&
+			(addr >= (unsigned) MACH_IO_SLOT_ADDR(5))) {
+		return TRUE;
+	    } else if ((addr < (unsigned) MACH_IO_SLOT_ADDR(3)) &&
+			(addr >= (unsigned) MACH_IO_SLOT_ADDR(0))) {
+		return TRUE;
+	    } else {
+		return FALSE;
+	    }
+	}
     }
     if (addr > (unsigned)mach_KernEnd) {
 	return(FALSE);
@@ -1937,7 +1962,6 @@ VmMach_UserMap(numBytes, addr, physAddr,cache, newAddrPtr)
 	 */
 	doAlloc = TRUE;
 	segPtr = procPtr->vmPtr->segPtrArray[VM_HEAP];
-	printf("userMapAllocPtr = 0x%x\n", userMapAllocPtr);
 	addr = (Address) ((unsigned) userMapAllocPtr | 
 		    ((unsigned) physAddr & VMMACH_OFFSET_MASK));
 	if ((unsigned) userMapAllocPtr > (unsigned)
@@ -1990,7 +2014,6 @@ VmMach_UserMap(numBytes, addr, physAddr,cache, newAddrPtr)
     } else {
 	userMapAllocPtr += (infoPtr->lastPage - infoPtr->firstPage + 1) * 
 				vm_PageSize;
-	printf("userMapAllocPtr now = 0x%x\n", userMapAllocPtr);
 	infoPtr->firstPhysPage = firstPhysPage;
     }
     List_Insert((List_Links *) infoPtr, 
