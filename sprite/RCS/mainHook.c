@@ -21,9 +21,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 Boolean main_Debug 	= FALSE; /* If TRUE then enter the debugger */
 Boolean main_DoProf 	= FALSE; /* If TRUE then start profiling */
 Boolean main_DoDumpInit	= TRUE; /* If TRUE then initialize dump routines */
-int main_NumRpcServers	= 4;	 /* # of rpc servers to create */
+int main_NumRpcServers	= 2;	 /* # of rpc servers to create */
 Boolean main_UseAltInit = FALSE; /* TRUE -> try to use /initSprite.new */
-
+Boolean main_AllowNMI = FALSE;	 /* TRUE -> allow non-maskable intrrupts */
 
 
 /*
