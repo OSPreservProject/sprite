@@ -9,7 +9,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif
 
 
 #include "sprite.h"
@@ -301,9 +301,11 @@ Prof_Dump(dumpName)
     Fs_Stream		*streamPtr;
     int			fileOffset;
     int			writeLen;
+#ifdef MCOUNT
     int			index;
     ProfArc		arc;
     ProfRawArc		*rawArcPtr;
+#endif
     SampleHdr		sampleHdr;
 
     status = Fs_Open(dumpName, FS_WRITE|FS_CREATE|FS_TRUNC, FS_FILE,
