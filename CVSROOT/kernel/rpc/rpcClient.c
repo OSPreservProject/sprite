@@ -249,20 +249,28 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr)
 		} else {
 		    char *name;
 		    /*
-		     * Too many acks.  This is a check against a looping
-		     * server process.  In that case the dispatcher on
-		     * the server machine will send us acks forever.
+		     * Too many acks.  It is very likely that the server
+		     * process is hung on some lock.  We hang too in
+		     * order to facilitate debugging, except in the case
+		     * of broadcasts.  We only broadcast for prefixes
+		     * so far, and can tolerate failure.
 		     */
 		    rpcCltStat.tooManyAcks++;
-		    Net_SpriteIDToName(serverID, &name);
-		    if (name == (char *)NIL) {
-			Sys_Panic(SYS_WARNING, 
-			    "RpcDoCall: <%d> seems hung\n", serverID);
+		    if (serverID == RPC_BROADCAST_SERVER_ID) {
+			Sys_Panic(SYS_WARNING,
+			    "RpcDoCall: lots of acks to a Broadcast\n");
+			error = RPC_TIMEOUT;
 		    } else {
-			Sys_Panic(SYS_WARNING, 
-			    "RpcDoCall: %s seems hung\n", name);
+			Net_SpriteIDToName(serverID, &name);
+			if (name == (char *)NIL) {
+			    Sys_Panic(SYS_WARNING, 
+				"RpcDoCall: <%d> seems hung\n", serverID);
+			} else {
+			    Sys_Panic(SYS_WARNING, 
+				"RpcDoCall: %s seems hung\n", name);
+			}
+			numAcks = 0;
 		    }
-		    numAcks = 0;
 		}
 	    } else {
 		/*
