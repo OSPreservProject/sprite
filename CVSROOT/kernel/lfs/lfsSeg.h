@@ -52,14 +52,6 @@ typedef struct LfsSegElement {
 } LfsSegElement;
 
 /*
- * LfsSegLogRange describes the position in the log of the segment. 
- */
-typedef struct LfsSegLogRange {
-    int		current;	/* Current segment being written. */
-    int		prevSeg;	/* Previous segment that was written. */
-    int		nextSeg;	/* Next segment to be written. */
-} LfsSegLogRange;
-/*
  * The LfsSeg structure is used to describe a segment while objects are being
  * added to the segment during writing and removed from the segment during
  * cleaning.  A segment is divided into two regions: the data block region
@@ -76,28 +68,28 @@ typedef struct LfsSeg {
     char	 *segMemPtr;	/* Memory allocated for segment.  */
     LfsSegElement *segElementPtr; /* The SegElements making up the data 
 				   * region of the segment. */
-    char    *summaryPtr;      /* A pointer to the start of the summary
-			       * region of this segment. */
     LfsSegLogRange logRange;	/* Placement of segment in segmented log. */
     int	    numElements;      /* Number of LfsSegElement describing the 
 			       * segment. */
-    int	    numDataBlocks;    /* Number of data blocks in segment. */
-    char    *summaryLimitPtr; /* The last byte of the summary region + 1.*/
+    int	    numBlocks;        /* Number of blocks in segment. */
+    int	    startBlockOffset; /* Starting block offset of this segment. */
     int	    activeBytes;      /* Number of active bytes in segment. */
 	/*
 	 * Some operations of segments require scanning thru the summary 
 	 * and SegElements.  The following fields keep the start require
 	 * from this scans. 
 	 */
+    LfsSegSummary	*curSegSummaryPtr; /* Summary of current summary 
+					    * block. */
     LfsSegSummaryHdr    *curSummaryHdrPtr; 
 				/* Current module header being processed. */
     int	     curElement;	/* Current LfsSegElement. */
     int	     curBlockOffset;    /* The block offset into the segment of the
 				 * end of curElement. */
-    int	     curDataBlockLimit;   /* Last block offset available to the data
-				   * portion of the segment. */
+    int	     curDataBlockLimit;   /* Last block offset available in the 
+				   * segment. */
     char     *curSummaryPtr;    /* Current offset into the summary region. */
-    char     *curSummaryLimitPtr; /* Current last byte of the summary reigon 
+    char     *curSummaryLimitPtr; /* Current last byte of the summary block 
 				   * plus 1. */
 } LfsSeg;
 
@@ -176,10 +168,10 @@ extern LfsSegIoInterface *lfsSegIoInterfacePtrs[];
  *	LfsSeg	*segPtr; 	-- Segment of interest. 
  *	int	blocks;		-- Insure this many data blocks remain.
  *	int	bytesNeeded;    -- Number of bytes needed in the summary
- *				   region
+ *				   region.
  */
 #define	LfsSegGrowSummary(segPtr, blocks, bytesNeeded) \
-		LfsSegSlowGrowSummary((segPtr), (blocks), (bytesNeeded))
+	LfsSegSlowGrowSummary((segPtr), (blocks), (bytesNeeded), FALSE)
 
 /*
  * Return the value of the current pointer into the summary region.
@@ -250,8 +242,8 @@ extern LfsSegIoInterface *lfsSegIoInterfacePtrs[];
 			((segPtr)->curBlockOffset = blockOffset)
 
 #define	LfsSegFetchBytes(segPtr, blockOffset, size) \
-		(LfsSegGetBufferPtr(segPtr)->address + \
-			LfsBlocksToBytes((segPtr)->lfsPtr, blockOffset))
+	((segPtr)->lfsPtr->cleaningMemPtr + LfsSegSize((segPtr)->lfsPtr) - \
+		LfsBlocksToBytes((segPtr)->lfsPtr, blockOffset))
 /* procedures */
 
 extern void LfsSegIoRegister();

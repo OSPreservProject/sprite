@@ -23,6 +23,7 @@
 #include "lfsSuperBlock.h"
 #include "lfsSegUsageInt.h"
 #include "lfsFileLayoutInt.h"
+#include "lfsStats.h"
 
 #include "fsioFile.h"
 #include "fsdm.h"
@@ -38,11 +39,28 @@
 
 /* data structures */
 
+/*
+ * LfsSegLogRange describes the position in the log of the segment. 
+ */
+typedef struct LfsSegLogRange {
+    int		current;	/* Current segment being written. */
+    int		prevSeg;	/* Previous segment that was written. */
+    int		nextSeg;	/* Next segment to be written. */
+} LfsSegLogRange;
+
 typedef struct LfsCheckPoint {
     int	  timestamp;	/* Current file system timestamp. */
     char  *buffer;	/* Memory buffer to place checkpoint. */
     int	  nextArea;	/* Next checkpoint area to write. Must be 0 or 1. */
 } LfsCheckPoint;
+
+typedef struct LfsSegCache {
+    Boolean valid;	
+    int	    segNum;
+    int     startDiskAddress;
+    int     endDiskAddress;
+    char    *memPtr;
+} LfsSegCache;
 
 typedef struct Lfs {
     Fs_Device	  *devicePtr;	/* Device containing file system. 
@@ -58,6 +76,10 @@ typedef struct Lfs {
 				   * segments to be generated. */
     Boolean	   locked;	/* File system is locked. */
     int	      blockSizeShift;   /* Log base 2 of blockSize. */
+    LfsSegLogRange activeLogRange; /* The current segment being written. */
+    int	      activeBlockOffset; /* The block offst in tp the current segment
+				  * to be written. -1 means activeLogRange
+				  * is not valid. */
     Boolean	writeBackActive; /* TRUE if an writeback process active on this
 				  * file system. */
     Boolean  	checkForMoreWork; /* TRUE if writeback should check for more
@@ -68,7 +90,9 @@ typedef struct Lfs {
     int		cleanBlocks;	/* Maximum number of blocks to clean. */
     Fsio_FileIOHandle descCacheHandle; /* File handle use to cache descriptor
 					* block under. */
+    LfsSegCache   segCache;	  /* Cache of recently read segments. */
     char	  *segMemoryPtr; /* Memory to be used for segment writing. */
+    char	  *cleaningMemPtr; /* Memory to be used for cleaning. */
     Boolean	  segMemInUse;	/* TRUE if segment memory is being used. */
     LfsDescMap	  descMap;	/* Descriptor map data. */
     LfsSegUsage   usageArray;   /* Segment usage array data. */
@@ -76,33 +100,51 @@ typedef struct Lfs {
     LfsFileLayout fileLayout;	/* File layout data structures. */
     LfsSuperBlock superBlock;	/* Copy of the file system's super block 
 				 * read at attach time. */
+    Lfs_Stats	stats;		/* Stats on the file system.  */
 } Lfs;
 
-/* procedures */
-/*
+/* Useful macros for LFS.
+ *
+ * LfsSegSize(lfsPtr)	- Return the segment size in bytes.
+ * LfsSegSizeInBlocks(lfsPtr) - Return the segment size in blocks.
+ * LfsBlockSize(lfsPtr)       - Return the block size.
  * LfsBytesToBlocks(lfsPtr, bytes) - Convert bytes into number of blocks.
  * LfsBlocksToBytes(lfsPtr, blocks) - Convert from blocks into bytes.
  * LfsSegNumToDiskAddress(lfsPtr, segNum) - Convert a segment number into
  *					    a disk address.
+ * LfsBlockToSegmentNum(lfsPtr, block)  - Number the segment of a disk 
+ *					  address .
  */
+
+#define	LfsSegSize(lfsPtr) ((lfsPtr)->usageArray.params.segmentSize)
+
+#define	LfsSegSizeInBlocks(lfsPtr) \
+			(LfsSegSize(lfsPtr)>>(lfsPtr)->blockSizeShift)
+
+#define	LfsBlockSize(lfsPtr) ((lfsPtr)->superBlock.hdr.blockSize)
+
 #define	LfsBytesToBlocks(lfsPtr, bytes)	\
-    (((bytes) + (lfsPtr)->superBlock.hdr.blockSize-1)>>(lfsPtr)->blockSizeShift)
+	 (((bytes) + (LfsBlockSize(lfsPtr)-1))>>(lfsPtr)->blockSizeShift)
+
 #define	LfsBlocksToBytes(lfsPtr, blocks) ((blocks)<<(lfsPtr)->blockSizeShift)
 
-#define LfsSegNumToDiskAddress(lfsPtr, segNum) \
-		((int)(lfsPtr)->superBlock.hdr.logStartOffset + \
- (LfsBytesToBlocks((lfsPtr),(lfsPtr)->usageArray.params.segmentSize) * (segNum)))
-
-#define LfsBlockToSegmentNum(lfsPtr, blockNum) \
-		((blockNum - (lfsPtr)->superBlock.hdr.logStartOffset) / \
-	    LfsBytesToBlocks((lfsPtr),(lfsPtr)->usageArray.params.segmentSize))
 
 #define LfsValidSegmentNum(lfsPtr, segNum) (((segNum) >= 0) && \
 		((segNum) < (lfsPtr)->usageArray.params.numberSegments))
 
+
+#define LfsSegNumToDiskAddress(lfsPtr, segNum) \
+		((int)(lfsPtr)->superBlock.hdr.logStartOffset + \
+				 (LfsSegSizeInBlocks((lfsPtr)) * (segNum)))
+
+#define LfsBlockToSegmentNum(lfsPtr, blockNum) \
+		((blockNum - (lfsPtr)->superBlock.hdr.logStartOffset) / \
+					 LfsSegSizeInBlocks((lfsPtr)))
+
 #define	LfsGetCurrentTimestamp(lfsPtr)	(++((lfsPtr)->checkPoint.timestamp))
 
 #define	LfsFromDomainPtr(domainPtr) ((Lfs *) ((domainPtr)->clientData))
+
 
 extern void LfsError();
 extern void LfsSegCleanStart();

@@ -29,16 +29,16 @@ typedef struct LfsStableMemCheckPoint {
 } LfsStableMemCheckPoint;
 
 typedef struct LfsStableMemParams {
-    int blockSize;		/* Block size in bytes for index.  Must be
-				 * a multiple of the file system block size. */
-    unsigned int maxNumBlocks;	/* Maximum number of blocks supported by this
-				 * index. */
+    int blockSize;	/* Block size in bytes for index.  Must be
+			 * a multiple of the file system block size. */
+    int maxNumBlocks;	/* Maximum number of blocks supported by this
+			 * index. */
 } LfsStableMemParams;
 
 
 typedef struct LfsStableMem {
     char 	*dataPtr;	/* Pointer to metadata. */
-    unsigned int *blockIndexPtr; /* Index of current buffer addresses. */
+    int *blockIndexPtr; 	/* Index of current buffer addresses. */
     char	*dirtyBlocksBitMapPtr; /* Bitmap of dirty blocks. */
     int		blockSizeShift;	       /* Log base 2 of params.blockSize. */
     LfsStableMemCheckPoint checkPoint; /* Data to be checkpoint. */

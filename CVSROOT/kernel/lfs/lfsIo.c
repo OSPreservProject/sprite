@@ -55,6 +55,21 @@ LfsReadBytes(lfsPtr, diskAddress, numBytes, bufferPtr)
     ReturnStatus status;
     char	smallBuffer[DEV_BYTES_PER_SECTOR];
 
+    /*
+     * Check in the seg cache.
+     */
+    if (lfsPtr->segCache.valid && 
+         (lfsPtr->segCache.startDiskAddress <= diskAddress) &&
+         (lfsPtr->segCache.endDiskAddress > diskAddress + 
+					LfsBytesToBlocks(lfsPtr, numBytes))) {
+	bcopy(lfsPtr->segCache.memPtr + 
+	    LfsBlocksToBytes(lfsPtr, 
+		diskAddress - lfsPtr->segCache.startDiskAddress), bufferPtr,
+		numBytes);
+	LFS_STATS_INC(lfsPtr->stats.blockio.segCacheHits);
+	return SUCCESS;
+    }
+
 
     bzero((char *)&args, sizeof(args));
 
@@ -79,6 +94,7 @@ LfsReadBytes(lfsPtr, diskAddress, numBytes, bufferPtr)
     if (numBytes < DEV_BYTES_PER_SECTOR) {
 	bcopy(smallBuffer, bufferPtr, numBytes);
     }
+    LFS_STATS_ADD(lfsPtr->stats.blockio.totalBytesRead, numBytes);
     return status;
 }
 
@@ -135,6 +151,7 @@ LfsWriteBytes(lfsPtr, diskAddress, numBytes, bufferPtr)
     if (status != SUCCESS) {
 	LfsError(lfsPtr, status, "LfsWriteBytes");
     }
+    LFS_STATS_ADD(lfsPtr->stats.blockio.totalBytesWritten, numBytes);
     return status;
 }
 

@@ -202,6 +202,7 @@ LfsDescMapSetDiskAddr(lfsPtr, fileNumber, diskAddr)
     if (entryPtr->blockAddress != 0) { 
 	LfsSegUsageFreeBlocks(lfsPtr, sizeof(LfsFileDescriptor), 1, 
 			  (int *)&entryPtr->blockAddress);
+	LFS_STATS_INC(lfsPtr->stats.desc.descMoved);
     }
     entryPtr->blockAddress = diskAddr;
     return SUCCESS;
@@ -333,7 +334,7 @@ Lfs_GetNewFileNumber(domainPtr, dirFileNum, fileNumberPtr)
     static	int dirSeed = 0;
 
     maxNumDesc = mapPtr->params.maxDesc;
-
+    LFS_STATS_INC(lfsPtr->stats.desc.getNewFileNumber);
     if (dirFileNum == -1) {
 	if (dirSeed == 0) {
 	    dirSeed = fsutil_TimeInSeconds;
@@ -354,6 +355,7 @@ Lfs_GetNewFileNumber(domainPtr, dirFileNum, fileNumberPtr)
 	    found = TRUE;
 	    break;
 	}
+	LFS_STATS_INC(lfsPtr->stats.desc.scans);
 	i++;
 	entryPtr++;
         if (i == maxNumDesc) {
@@ -407,6 +409,7 @@ Lfs_FreeFileNumber(domainPtr, fileNumber)
     if ((fileNumber < 0) || (fileNumber >= mapPtr->params.maxDesc)) {
 	return FAILURE;
     }
+    LFS_STATS_INC(lfsPtr->stats.desc.free);
     entryPtr = ((LfsDescMapEntry *) mapPtr->stableMem.dataPtr) + fileNumber;
 
     if (!(entryPtr->flags & LFS_DESC_MAP_ALLOCED)) {
@@ -568,6 +571,9 @@ LfsDescMapWriteDone(segPtr, flags, clientDataPtr)
     Lfs		      *lfsPtr = segPtr->lfsPtr;
     LfsDescMap	      *mapPtr = &(lfsPtr->descMap);
 
+    LFS_STATS_ADD(lfsPtr->stats.desc.mapBlocksWritten,
+		(LfsSegSummaryBytesLeft(segPtr) / sizeof(int)));
+
     LfsStableMemWriteDone(segPtr, flags, clientDataPtr, &(mapPtr->stableMem));
     return;
 
@@ -600,9 +606,13 @@ LfsDescMapClean(segPtr, sizePtr, numCacheBlocksPtr, clientDataPtr)
 {
     Lfs		      *lfsPtr = segPtr->lfsPtr;
     LfsDescMap	      *mapPtr = &(lfsPtr->descMap);
+    Boolean full;
 
-    return LfsStableMemClean(segPtr, sizePtr, numCacheBlocksPtr, 
+    full =  LfsStableMemClean(segPtr, sizePtr, numCacheBlocksPtr, 
 		clientDataPtr, &(mapPtr->stableMem));
 
+    LFS_STATS_ADD(lfsPtr->stats.desc.mapBlockCleaned,
+		*sizePtr/mapPtr->stableMem.params.blockSize);
+    return full;
 }
 

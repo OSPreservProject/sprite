@@ -67,7 +67,7 @@ typedef struct LfsDescMapCheckPoint {
  * with 
  */
 typedef struct LfsDescMapEntry {
-    unsigned int  blockAddress;	    /* The disk block address of the most
+    int  blockAddress;		    /* The disk block address of the most
 				     * current version of the descriptor. */
     unsigned short truncVersion;    /* A version number increamented each 
 				     * time a descriptor is truncated to 

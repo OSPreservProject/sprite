@@ -109,12 +109,12 @@ Lfs_AttachDisk(devicePtr, localName, flags, domainNumPtr)
 	free((char *) lfsPtr);
 	return FAILURE;
     }
-    lfsPtr->blockSizeShift = 
-		LfsLogBase2((unsigned)lfsPtr->superBlock.hdr.blockSize);
+    lfsPtr->blockSizeShift = LfsLogBase2((unsigned)LfsBlockSize(lfsPtr));
+    lfsPtr->activeBlockOffset = -1;
     lfsPtr->writeBackActive = FALSE;
     lfsPtr->checkForMoreWork = FALSE;
     lfsPtr->cleanActive = FALSE;
-    status = LfsLoadFileSystem(lfsPtr); 
+    status = LfsLoadFileSystem(lfsPtr, flags); 
     if (status != SUCCESS) { 
 	free((char *)lfsPtr);
 	return status;
@@ -122,9 +122,8 @@ Lfs_AttachDisk(devicePtr, localName, flags, domainNumPtr)
     lfsPtr->cleanBlocks =   Fscache_ReserveBlocks(
 			        lfsPtr->domainPtr->backendPtr, 
 				lfsPtr->superBlock.hdr.maxNumCacheBlocks +
-	LfsBytesToBlocks(lfsPtr, lfsPtr->usageArray.params.segmentSize),
-	2*LfsBytesToBlocks(lfsPtr, lfsPtr->usageArray.params.segmentSize)
-		);
+				LfsSegSizeInBlocks(lfsPtr),
+				2*LfsSegSizeInBlocks(lfsPtr));
     *domainNumPtr = lfsPtr->domainPtr->domainNumber;
     return status;
 }
@@ -149,6 +148,14 @@ Lfs_DetachDisk(domainPtr)
      Fsdm_Domain *domainPtr;	/* Domain to detach. */
 
 {
+    Lfs	*lfsPtr = LfsFromDomainPtr(domainPtr);
+    ReturnStatus status;
+
+    status = LfsDetachFileSystem(lfsPtr);
+    Fscache_ReleaseReserveBlocks(domainPtr->backendPtr, lfsPtr->cleanBlocks)
+    Sync_LockClear(&lfsPtr->lfsLock);
+    free((char *)lfsPtr);
+    return status;
 }
 
 

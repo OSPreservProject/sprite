@@ -73,8 +73,9 @@ static Fscache_BackendRoutines  lfsBackendRoutines = {
  */
 
 ReturnStatus
-LfsLoadFileSystem(lfsPtr)
+LfsLoadFileSystem(lfsPtr, flags)
     Lfs		*lfsPtr;	/* File system to load checkpoint state. */
+    int  	flags;	
 {
     ReturnStatus	status;
     LfsCheckPointHdr	checkPointHdr[2], *checkPointHdrPtr;
@@ -112,6 +113,7 @@ LfsLoadFileSystem(lfsPtr)
 			lfsPtr->superBlock.hdr.checkPointOffset[choosenOne],
 			 maxSize, checkPointPtr);
     if (status != SUCCESS) {
+	free((char *) checkPointPtr);
 	LfsError(lfsPtr, status, "Can't read checkpoint region");
 	return status;
     }
@@ -134,7 +136,7 @@ LfsLoadFileSystem(lfsPtr)
      */
     status = Fsdm_InstallDomain(checkPointHdrPtr->domainNumber, 
 				checkPointHdrPtr->serverID, lfsPtr->name, 
-				&(lfsPtr->domainPtr));
+				flags, &(lfsPtr->domainPtr));
     if (status != SUCCESS) {
 	free((char *) checkPointHdrPtr);
 	return (status);
@@ -144,6 +146,17 @@ LfsLoadFileSystem(lfsPtr)
     lfsPtr->domainPtr->domainOpsPtr = &lfsDomainOps;
     lfsPtr->domainPtr->clientData = (ClientData) lfsPtr;
 
+    /*
+     * Read in the current stats structure.
+     */
+    { 
+	Lfs_StatsVersion1 *statsPtr = (Lfs_StatsVersion1 *)(trailerPtr + 1);
+	if (statsPtr->version != 1) {
+	    printf("LfsLoad: Bad stats version number %d\n", statsPtr->version);
+	}
+	bcopy ((char *) statsPtr, (char *) &lfsPtr->stats, 
+		sizeof(lfsPtr->stats));
+    }
     checkPointPtr = checkPointPtr + sizeof(LfsCheckPointHdr);
     checkPointSize =  ((char *)trailerPtr) - checkPointPtr;
     /*
@@ -189,6 +202,39 @@ LfsLoadFileSystem(lfsPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * LfsDetachFileSystem --
+ *
+ *	Detach a file system.
+ *
+ * Results:
+ *	SUCCESS if the file system was successfully detach. 
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+LfsDetachFileSystem(lfsPtr)
+    Lfs		*lfsPtr;	/* File system to load checkpoint state. */
+{
+    ReturnStatus	status;
+
+
+    status = LfsCheckPointFileSystem(lfsPtr, LFS_DETACH);
+
+    status = LfsSegDetach(lfsPtr);
+
+    free(lfsPtr->checkPoint.buffer);
+    return status;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * LfsCheckPointFileSystem --
  *
  *	Checkpoint the state of a file system by calling the LFS
@@ -225,7 +271,7 @@ LfsCheckPointFileSystem(lfsPtr, flags)
      */
     checkPointHdrPtr->timestamp = LfsGetCurrentTimestamp(lfsPtr);
     checkPointHdrPtr->size = size + sizeof(LfsCheckPointHdr) + 
-			     sizeof(LfsCheckPointTrailer);
+			 sizeof(LfsCheckPointTrailer);
     checkPointHdrPtr->version = 1;
     checkPointHdrPtr->detachSeconds = fsutil_TimeInSeconds;
     trailerPtr = (LfsCheckPointTrailer *) 
@@ -233,7 +279,16 @@ LfsCheckPointFileSystem(lfsPtr, flags)
     trailerPtr->timestamp = checkPointHdrPtr->timestamp;
     trailerPtr->checkSum = 0;
 
-    blocks = LfsBytesToBlocks(lfsPtr, checkPointHdrPtr->size);
+    /*
+     * Append the stats to the checkpoint regions.
+     */
+    blocks = LfsBytesToBlocks(lfsPtr, checkPointHdrPtr->size + 
+					LFS_STATS_MAX_SIZE);
+    LFS_STATS_ADD(lfsPtr->stats.checkpoint.totalBlocks, blocks);
+    LFS_STATS_ADD(lfsPtr->stats.checkpoint.totalBytes,
+				checkPointHdrPtr->size+LFS_STATS_MAX_SIZE);
+    bcopy ((char *) &lfsPtr->stats, (char *) (trailerPtr + 1), 
+		sizeof(lfsPtr->stats));
     status = LfsWriteBytes(lfsPtr,
 	lfsPtr->superBlock.hdr.checkPointOffset[lfsPtr->checkPoint.nextArea],
 	LfsBlocksToBytes(lfsPtr, blocks), (char *) checkPointHdrPtr);

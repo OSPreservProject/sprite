@@ -26,15 +26,18 @@
 /*
  * The summary area of each segment contains a LfsSegSummary structured 
  * followed by Lfs*Summary for each region type with blocks in the segment.
- * Each region summary type is started by a LfsSegSummaryRegion.
+ * Each region summary type is started by a LfsSegSummaryHdr.
  */
 typedef struct LfsSegSummary {
     unsigned int  magic;	/* Better be LFS_SEG_SUMMARY_MAGIC. */
     unsigned int  timestamp;    /* Timestamp of last write. */
     unsigned int  prevSeg;      /* The previous segment written. */
     unsigned int  nextSeg;      /* The next segment to write. */
-    unsigned int  size;		/* The size of this segment's summary region
-				 * in blocks including this structure. */
+    int  size;			/* The size of this segment's summary region
+				 * in bytes including this structure. */
+    int nextSummaryBlock;	/* The block offset of the next summary block 
+				 * in this segment segment. -1 if this is the
+				 * last summary block in this segment. */
 } LfsSegSummary;
 
 #define	LFS_SEG_SUMMARY_MAGIC	0x1065e6	/* logseg */
@@ -42,7 +45,7 @@ typedef struct LfsSegSummary {
 typedef struct LfsSegSummaryHdr {
     unsigned short moduleType;	   /* Module type of this summary region. */
     unsigned short lengthInBytes;  /* Length of this summary region in bytes. */
-    unsigned int   numDataBlocks;  /* Number data blocks described by this 
+    int   numDataBlocks; 	 /* Number data blocks described by this 
 				    * region. */
 } LfsSegSummaryHdr;
 

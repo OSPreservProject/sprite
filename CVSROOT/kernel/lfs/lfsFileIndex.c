@@ -80,6 +80,7 @@ LfsFile_GetIndex(handlePtr, blockNum, cantBlock, diskAddressPtr)
 	return(FS_DOMAIN_UNAVAILABLE);
     }
     lfsPtr = LfsFromDomainPtr(domainPtr);
+    LFS_STATS_INC(lfsPtr->stats.index.get);
     status = AccessBlock(GET_ADDR, lfsPtr, handlePtr, blockNum, cantBlock,
 				diskAddressPtr);
     Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
@@ -119,12 +120,18 @@ LfsFile_SetIndex(handlePtr, blockNum, cantBlock, diskAddress)
 	return(FS_DOMAIN_UNAVAILABLE);
     }
     lfsPtr = LfsFromDomainPtr(domainPtr);
-    if (diskAddress != FSDM_NIL_INDEX) { 
+    LFS_STATS_INC(lfsPtr->stats.index.set);
+    /*
+     * Checking. 
+     */
+#ifdef ERROR_CHECK
+   if (diskAddress != FSDM_NIL_INDEX) { 
 	segNo = LfsBlockToSegmentNum(lfsPtr, diskAddress);
 	if (!LfsValidSegmentNum(lfsPtr,segNo)) {
 	    panic("LfsFile_SetIndex: bad segment number.\n");
 	}
     }
+#endif
     status = AccessBlock(SET_ADDR, lfsPtr, handlePtr, blockNum, cantBlock,
 		&diskAddress);
     Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
@@ -243,14 +250,21 @@ AccessBlock(op, lfsPtr, handlePtr, blockNum, cantBlock, diskAddressPtr)
     /* 
      * Lookup the parent block in the cache.
      */
+    if (op == GET_ADDR) {
+	LFS_STATS_INC(lfsPtr->stats.index.getFetchBlock);
+    } else {
+	LFS_STATS_INC(lfsPtr->stats.index.setFetchBlock);
+    } 
     Fscache_FetchBlock(&handlePtr->cacheInfo, parentBlockNum,
 		cacheFlags, &parentblockPtr, &found);
     if (found) {
-	if (op == GET_ADDR) {
+	 if (op == GET_ADDR) {
+	    LFS_STATS_INC(lfsPtr->stats.index.getFetchHit);
 	    *diskAddressPtr =  ((int *)parentblockPtr->blockAddr)[parentIndex];
 	    modTime = 0;
 	 } else  { /* SET_ADDR */
 	    int *addrPtr = ((int *)parentblockPtr->blockAddr) + parentIndex; 
+	    LFS_STATS_INC(lfsPtr->stats.index.setFetchHit);
 	    LfsSegUsageFreeBlocks(lfsPtr, FS_BLOCK_SIZE, 1, addrPtr);
 	    *addrPtr = *diskAddressPtr;
 	    modTime = fsutil_TimeInSeconds;
@@ -348,6 +362,7 @@ DeleteIndirectBlock(lfsPtr, handlePtr, virtualBlockNum, diskAddr,
      * If this index block hasn't been allocated yet and not in the  
      * cache we don't need to free anything.
      */
+    LFS_STATS_INC(lfsPtr->stats.index.deleteFetchBlock);
     Fscache_FetchBlock(&handlePtr->cacheInfo, virtualBlockNum,
        (int)(FSCACHE_IO_IN_PROGRESS|FSCACHE_IND_BLOCK), &cacheBlockPtr,&found);
     if (!found && (diskAddr == FSDM_NIL_INDEX)) {
@@ -360,7 +375,8 @@ DeleteIndirectBlock(lfsPtr, handlePtr, virtualBlockNum, diskAddr,
 	/*
 	 * Read it into the cache if it on disk somewhere.
 	 */
-	 status = LfsReadBytes(lfsPtr, diskAddr, FS_BLOCK_SIZE, 
+	LFS_STATS_INC(lfsPtr->stats.index.deleteFetchBlockMiss);
+	status = LfsReadBytes(lfsPtr, diskAddr, FS_BLOCK_SIZE, 
 		       cacheBlockPtr->blockAddr);
 	 if (status != SUCCESS) {
 	     LfsError(lfsPtr, status, "Can't read indirect block.\n");
@@ -456,6 +472,7 @@ LfsFile_TruncIndex(lfsPtr, handlePtr, numBlocks)
     ReturnStatus	status = SUCCESS;
     int			lastByteBlock, fragSize;
 
+    LFS_STATS_INC(lfsPtr->stats.index.truncs);
 
     descPtr = handlePtr->descPtr;
     /*
@@ -491,8 +508,11 @@ LfsFile_TruncIndex(lfsPtr, handlePtr, numBlocks)
 	     * blocks.
 	     */
 	    fragSize = descPtr->lastByte - (lastByteBlock * FS_BLOCK_SIZE);
+	    /*
+	     * Round to the number of LFS blocks it would talk.
+	     */
 	    fragSize = LfsBlocksToBytes(lfsPtr, 
-			fragSize + lfsPtr->superBlock.hdr.blockSize - 1);
+				LfsBytesToBlocks(lfsPtr, fragSize));
 	    (void) LfsSegUsageFreeBlocks(lfsPtr, fragSize, 1, 
 		    descPtr->direct + lastByteBlock);
 	}

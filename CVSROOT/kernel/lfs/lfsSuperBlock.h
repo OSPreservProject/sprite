@@ -50,7 +50,7 @@ typedef struct LfsSuperBlockHdr {
 			  * format the segment is defined below. */
     int logStartOffset;     /* The block offset starting the segmented log. */
     int maxNumCacheBlocks;  /* Maximum number of blocks to clean at a time. */
-    char padding[LFS_SUPER_BLOCK_HDR_SIZE-32];
+    char padding[LFS_SUPER_BLOCK_HDR_SIZE-8*4];
 
 } LfsSuperBlockHdr;
 
@@ -80,7 +80,7 @@ typedef struct LfsSuperBlock {
 
 typedef struct LfsCheckPointHdr {
     unsigned int timestamp;	/* Timestamp of this checkpoint. */
-    unsigned int size;		/* Size of checkpoint in bytes. */
+    int size;			/* Size of checkpoint in bytes. */
     unsigned int version;	/* Region write version number. */
     char domainPrefix[64];	/* Last prefix used for the domain */
     int	 domainNumber;		/* Last domain we ran under. */
@@ -92,7 +92,7 @@ typedef struct LfsCheckPointHdr {
 typedef struct LfsCheckPointRegion {
     unsigned int type;		/* Region type -- see log writing types in
 				 * lfsLogFormat.h. */
-    unsigned int size;		/* Size of the region in bytes. */
+    int size;			/* Size of the region in bytes. */
 
 } LfsCheckPointRegion;
 

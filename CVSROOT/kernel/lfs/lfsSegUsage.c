@@ -580,41 +580,57 @@ LfsGetSegsToClean(lfsPtr, maxBlocks, maxSegArrayLen, segArrayPtr)
     int	 *segArrayPtr;		/* Array of length maxSegArrayLen to return
 				 * segments to clean. */
 {
-    int	numberSegs, segNum, totalActiveBytes, numBlocks, blockSize;
-    int blocks;
+    int	numberSegs, segNum, numBlocks, blockSize;
+    int blocks, i;
     LfsSegUsageEntry *s, *array;
     LfsSegUsage *usagePtr = &(lfsPtr->usageArray);
 
     array = (LfsSegUsageEntry *)(usagePtr->stableMem.dataPtr);
     blockSize = LfsBlockSize(lfsPtr);
-#ifdef XXX
-    SortDirtyList(usagePtr);
-#endif
-    segNum = usagePtr->checkPoint.dirtyLinks[LFS_SEG_USAGE_NEXT];
-    totalActiveBytes = 0;
-    numBlocks = 0;
-    for (numberSegs = 0; (numberSegs < maxSegArrayLen) &&
-			  (numBlocks < maxBlocks); ) {
-	if (segNum == -1) {
-		break;
-	}
+    /*
+     * For each dirty segment.
+     */
+    for (segNum = usagePtr->checkPoint.dirtyLinks[LFS_SEG_USAGE_NEXT];
+	 segNum != NIL;
+	 segNum = s->links[LFS_SEG_USAGE_NEXT]) {
+	int j;
 	s = array + segNum;
+	/*
+	 * Execpt the one currently being written.
+	 */
 	if (usagePtr->checkPoint.currentSegment == segNum) { 
-	    segNum = s->links[LFS_SEG_USAGE_NEXT];
 	    continue;
 	}
+	/*
+	 * Find the proper position in the list for this segment.
+	 */
 
-	blocks =  LfsBytesToBlocks(lfsPtr, s->activeBytes);
-	if (blocks + numBlocks > maxBlocks) {
-	    break;
+        for (i = numberSegs-1; i >= 0; i--) {
+	    if (array[segArrayPtr[i]].activeBytes < s->activeBytes) {
+		break;
+	    } 
 	}
-	numBlocks += blocks;
-
-	segArrayPtr[numberSegs] = segNum;
-	numberSegs++;
-	segNum = s->links[LFS_SEG_USAGE_NEXT];
+	/*
+	 * Insert it at that position by moving all others down. Extend the
+	 * array if it is not full already.
+	 */
+	if (numberSegs < maxSegArrayLen) {
+	    numberSegs++;
+	}
+	for (j = numberSegs-2; j > i; j--) {
+	    segArrayPtr[j+1] = segArrayPtr[j];
+	}
+	segArrayPtr[i+1] = segNum;
     }
-    return numberSegs;
+    numBlocks = 0;
+    for (i = 0; i < numberSegs; i++) {
+	s = array + segArrayPtr[i];
+	numBlocks +=  LfsBytesToBlocks(lfsPtr, s->activeBytes);
+	if (numBlocks > maxBlocks) {
+	    return i;
+	}
+   }
+   return numberSegs;
 }
 
 

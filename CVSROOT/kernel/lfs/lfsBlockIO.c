@@ -82,7 +82,7 @@ Lfs_FileBlockRead(domainPtr, handlePtr, blockPtr)
      * Is a logical file read. Round the size down to the actual
      * last byte in the file.
      */
-
+    LFS_STATS_INC(lfsPtr->stats.blockio.reads);
     descPtr = handlePtr->descPtr;
     if (offset > descPtr->lastByte) {
 	goto exit;
@@ -106,6 +106,8 @@ Lfs_FileBlockRead(domainPtr, handlePtr, blockPtr)
 	LfsCheckRead(lfsPtr, diskAddress, numBytes);
 	status = LfsReadBytes(lfsPtr, diskAddress, 
 			numFrag * FS_FRAGMENT_SIZE,  blockPtr->blockAddr);
+	LFS_STATS_ADD(lfsPtr->stats.blockio.bytesReads, 
+				numFrag * FS_FRAGMENT_SIZE);
     } else {
 	/*
 	 * Zero fill the block.  We're in a 'hole' in the file.
@@ -202,23 +204,45 @@ Lfs_BlockAllocate(domainPtr, handlePtr, offset, numBytes, flags, blockAddrPtr,
     int	newLastByte;
     ReturnStatus status;
     Boolean	dirty = FALSE;
+    int		diskAddress;
     register	Fsdm_FileDescriptor *descPtr;
 
-    status = LfsSegUsageAllocateBytes(lfsPtr, numBytes);
-    if (status != SUCCESS) {
-	*blockAddrPtr = FSDM_NIL_INDEX;
-	return status;
-    }
-    status = SUCCESS;
+    /*
+     * First check to see if we can just allocate the bytes.
+     */
+    LFS_STATS_INC(lfsPtr->stats.blockio.allocs);
     descPtr = handlePtr->descPtr;
     newLastByte = offset + numBytes - 1; 
-    *newBlockPtr = FALSE;
-    *blockAddrPtr = offset / FS_BLOCK_SIZE;
-    if (newLastByte > descPtr->lastByte) {
-	descPtr->lastByte = newLastByte;
-	dirty = TRUE;
+    *blockAddrPtr = FSDM_NIL_INDEX;
+    status = LfsSegUsageAllocateBytes(lfsPtr, numBytes);
+    if (status == SUCCESS) {
+	LFS_STATS_INC(lfsPtr->stats.blockio.fastAllocs);
+	*newBlockPtr = FALSE;
+	*blockAddrPtr = offset / FS_BLOCK_SIZE;
+	 if (newLastByte > descPtr->lastByte) {
+	    descPtr->lastByte = newLastByte;
+	    dirty = TRUE;
+	}
+    } else { 
+	/* 
+	 * Can't just allocated the bytes. Check to see if we are
+	 * really allocating bytes or just overwriting
+	 * some bytes.
+	 */
+	 if (newLastByte <= descPtr->lastByte) {
+	    LFS_STATS_INC(lfsPtr->stats.blockio.slowAllocs);
+	    status = LfsFile_GetIndex(handlePtr, offset / FS_BLOCK_SIZE, FALSE,
+			     &diskAddress);
+	    if ((status == SUCCESS) && (diskAddress != FSDM_NIL_INDEX)) {
+		*newBlockPtr = FALSE;
+		*blockAddrPtr = offset / FS_BLOCK_SIZE;
+	    } else {
+		LFS_STATS_INC(lfsPtr->stats.blockio.slowAllocFails);
+		status = FS_NO_DISK_SPACE;
+	    }
+	 }
     }
-    if (descPtr->firstByte == -1 && 
+    if ((status == SUCCESS) && descPtr->firstByte == -1 && 
 	((descPtr->fileType == FS_NAMED_PIPE) ||
 	 (descPtr->fileType == FS_PSEUDO_DEV) ||
 	 (descPtr->fileType == FS_XTRA_FILE))) {

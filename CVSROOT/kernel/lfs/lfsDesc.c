@@ -69,6 +69,7 @@ Lfs_FileDescFetch(domainPtr, fileNumber, fileDescPtr)
     int		i;
     Boolean	found;
 
+    LFS_STATS_INC(lfsPtr->stats.desc.fetches);
     status = LfsDescMapGetDiskAddr(lfsPtr, fileNumber, &diskAddr);
     if (status != SUCCESS) {
 	return status;
@@ -80,6 +81,7 @@ Lfs_FileDescFetch(domainPtr, fileNumber, fileDescPtr)
     Fscache_FetchBlock(&lfsPtr->descCacheHandle.cacheInfo, diskAddr, 
 		      FSCACHE_DESC_BLOCK, &blockPtr, &found);
     if (!found) {
+	LFS_STATS_INC(lfsPtr->stats.desc.fetchCacheMiss);
 	status = LfsReadBytes(lfsPtr, diskAddr, 
 		lfsPtr->fileLayout.params.descPerBlock * sizeof(*descPtr),
 		blockPtr->blockAddr);
@@ -95,7 +97,9 @@ Lfs_FileDescFetch(domainPtr, fileNumber, fileDescPtr)
 	    break;
 	}
 	if (descPtr->fileNumber == fileNumber) {
-	    bcopy((char *) &(descPtr->common), (char *)fileDescPtr,
+	     LFS_STATS_INC(lfsPtr->stats.desc.goodFetch);
+	     LFS_STATS_ADD(lfsPtr->stats.desc.fetchSearched,i);
+	     bcopy((char *) &(descPtr->common), (char *)fileDescPtr,
 			sizeof(descPtr->common));
 	     status = LfsDescMapGetAccessTime(lfsPtr, fileNumber,
 			    &(fileDescPtr->accessTime));
@@ -145,7 +149,9 @@ Lfs_FileDescStore(domainPtr, handlePtr, fileNumber, fileDescPtr, forceOut)
     Lfs	*lfsPtr = LfsFromDomainPtr(domainPtr);
     ReturnStatus	status = SUCCESS;
 
+    LFS_STATS_INC(lfsPtr->stats.desc.stores);
     if (fileDescPtr->flags & FSDM_FD_FREE) {
+	LFS_STATS_INC(lfsPtr->stats.desc.freeStores);
 	return SUCCESS;
     }
     if (fileDescPtr->flags & FSDM_FD_ACCESSTIME_DIRTY) {
@@ -155,8 +161,10 @@ Lfs_FileDescStore(domainPtr, handlePtr, fileNumber, fileDescPtr, forceOut)
 		  LfsError(lfsPtr, status, "Can't update descriptor map.\n");
           }
 	  fileDescPtr->flags &= ~FSDM_FD_ACCESSTIME_DIRTY;
+	  LFS_STATS_INC(lfsPtr->stats.desc.accessTimeUpdate);
     }
     if (fileDescPtr->flags & FSDM_FD_DIRTY) {
+	LFS_STATS_INC(lfsPtr->stats.desc.dirtyList);
 	Fscache_PutFileOnDirtyList(&handlePtr->cacheInfo, 
 				FSCACHE_FILE_DESC_DIRTY);
     }
@@ -197,6 +205,7 @@ Lfs_FileTrunc(domainPtr, handlePtr, size, delete)
     if (size < 0) {
 	return(GEN_INVALID_ARG);
     }
+    LFS_STATS_INC(lfsPtr->stats.desc.truncs);
 
     descPtr = handlePtr->descPtr;
 
@@ -212,6 +221,7 @@ Lfs_FileTrunc(domainPtr, handlePtr, size, delete)
     if (status == SUCCESS) {
 	if (size == 0) {
 	    int	newVersion;
+	    LFS_STATS_INC(lfsPtr->stats.desc.truncSizeZero);
 	    status = LfsDescMapIncVersion(lfsPtr, 
 			handlePtr->hdr.fileID.minor, &newVersion);
 	}
@@ -221,6 +231,7 @@ Lfs_FileTrunc(domainPtr, handlePtr, size, delete)
     }
 exit:
     if (delete) { 
+	LFS_STATS_INC(lfsPtr->stats.desc.delete);
 	descPtr->flags &= ~FSDM_FD_DIRTY;
 	status = Fscache_RemoveFileFromDirtyList(&handlePtr->cacheInfo);
     } else {
@@ -260,6 +271,7 @@ Lfs_FileDescInit(domainPtr, fileNumber, type, permissions, uid, gid, fileDescPtr
 					   initialize. */
 {
     register int index;
+    LFS_STATS_INC((LfsFromDomainPtr(domainPtr))->stats.desc.inits);
 
     fileDescPtr->magic = FSDM_FD_MAGIC;
     fileDescPtr->flags = FSDM_FD_ALLOC|FSDM_FD_DIRTY;

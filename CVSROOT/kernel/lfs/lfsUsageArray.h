@@ -27,21 +27,23 @@
 /*
  * The segment usage array layout on disk is described by the following 
  * super block resident structure. 
- * It must be LFS_USAGE_ARRAY_PARAM_SIZE (currently 32 bytes) in size. 
+ * It must be LFS_USAGE_ARRAY_PARAM_SIZE (currently 64 bytes) in size. 
  */
-#define	LFS_USAGE_ARRAY_PARAM_SIZE	32
+#define	LFS_USAGE_ARRAY_PARAM_SIZE	64
 
 typedef struct LfsSegUsageParams {
-    unsigned int segmentSize;	/* The number of bytes in each of segment. 
-				 * Must be a multiple of the file system
-				 * block size. */
-    unsigned int numberSegments;/* The number of segments in the system. */
+    int segmentSize;  	   /* The number of bytes in each of segment. 
+			    * Must be a multiple of the file system
+			    * block size. */
+    int numberSegments;	  /* The number of segments in the system. */
     int   minNumClean;    /* The min number of clean segment we allow the
 			   * system to reach before starting clean. */
     int   minFreeBlocks;  /* The min number of free blocks we allow the
 			   * system to reach. */
+    int	  wasteBlocks;	  /* The number of blocks we are willing to wasted at
+			   * the end of a segment. */
     LfsStableMemParams	 stableMem; /* Memory for locating the array. */
-    char  padding[LFS_USAGE_ARRAY_PARAM_SIZE - sizeof(LfsStableMemParams)-8];
+    char  padding[LFS_USAGE_ARRAY_PARAM_SIZE - sizeof(LfsStableMemParams)-5*4];
 } LfsSegUsageParams;
 
 
@@ -77,12 +79,12 @@ typedef struct LfsSegUsageCheckPoint {
  * to form an array index by segment number. 
  */
 typedef struct LfsSegUsageEntry {
-    unsigned int  links[2];  	    /* Used to form doubly linked list of 
+    int  links[2];  	 	    /* Used to form doubly linked list of 
 				     * dirty and clean segments. */
-    unsigned int  activeBytes;      /* An estimate of the number of active
+    int  activeBytes;     	    /* An estimate of the number of active
 				     * bytes in this segment. A value of 
 				     * zero means the segment is clean. */
-    unsigned int  flags;     	    /* Flags described below. */
+    int  flags;     		    /* Flags described below. */
 } LfsSegUsageEntry;
 
 /*
