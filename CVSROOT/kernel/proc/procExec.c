@@ -1769,7 +1769,6 @@ ProcDoRemoteExec(procPtr)
 }
 
 
-#define MACHINECOUNT 4
 int	hostFmt = HOST_FMT;
 char *(*(machType[])) () =  {
     machType68k,
@@ -1816,7 +1815,7 @@ ProcIsObj(streamPtr, doErr)
     if (status != SUCCESS) {
 	return FAILURE;
     }
-    for (i=0;i<MACHINECOUNT;i++) {
+    for (i=0; i < sizeof(machType)/sizeof(*machType); i++) {
 	name = machType[i](hdrSize, buffer, &magic, &syms);
 	if (name != NULL) {
 	    if (doErr) {
