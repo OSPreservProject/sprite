@@ -1,17 +1,8 @@
 /* 
- * fsDisk.c --
+ * ofsDisk.c --
  *
- *	Routines related to managing local disks.  Each partition of a local
- *	disk (partitions are defined by a table on the disk header) is
- *	called a ``domain''.  Fsdm_AttachDisk attaches a domain into the file
- *	system, and FsDeattachDisk removes it.  A domain is given
- *	a number the first time it is ever attached.  This is recorded on
- *	the disk so it doesn't change between boots.  The domain number is
- *	used to identify disks, and a domain number plus a file number is
- *	used to identify files.  Fsdm_DomainFetch is used to get the state
- *	associated with a disk, and Fsdm_DomainRelease releases the reference
- *	on the state.  Fsdm_DetachDisk checks the references on domains in
- *	the normal (non-forced) case so that active disks aren't detached.
+ *	Routines related to managing local disks under the orginial sprite
+ *	file system. 
  *
  * Copyright 1987 Regents of the University of California
  * All rights reserved.
@@ -29,133 +20,114 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
+#include <sprite.h>
 
-#include "fs.h"
-#include "fsutil.h"
-#include "fsdm.h"
-#include "fslcl.h"
-#include "fsNameOps.h"
-#include "fsio.h"
-#include "fsprefix.h"
-#include "fsconsist.h"
-#include "devDiskLabel.h"
-#include "dev.h"
-#include "devFsOpTable.h"
-#include "sync.h"
-#include "rpc.h"
-#include "fsioDevice.h"
-#include "fsdmInt.h"
+#include <fs.h>
+#include <fsutil.h>
+#include <fsdm.h>
+#include <fslcl.h>
+#include <fsNameOps.h>
+#include <fsio.h>
+#include <fsprefix.h>
+#include <fsconsist.h>
+#include <devDiskLabel.h>
+#include <dev.h>
+#include <devFsOpTable.h>
+#include <sync.h>
+#include <rpc.h>
+#include <fsioDevice.h>
+#include <ofs.h>
 
-/*
- * A table of domains indexed by domain number.  For use by a server
- * to map from domain number to info about the domain.
- */
-Fsdm_Domain *fsdmDomainTable[FSDM_MAX_LOCAL_DOMAINS];
-static int domainTableIndex = 0;
+#include <stdio.h>
 
-Sync_Lock	domainTableLock = Sync_LockInitStatic("Fs:domainTableLock");
-#define LOCKPTR (&domainTableLock)
-
-
-static Fscache_IOProcs  physicalIOProcs = {
-    Fsdm_BlockAllocate, 
-    Fsio_FileBlockRead, 
-    Fsio_FileBlockWrite,
-    Fsio_FileBlockCopy
+static Fsdm_DomainOps ofsDomainOps = {
+	Ofs_AttachDisk,
+	Ofs_DetachDisk,
+	Ofs_DomainWriteBack,
+	Ofs_RereadSummaryInfo,
+	Ofs_DomainInfo,
+	Ofs_BlockAllocate,
+	Ofs_GetNewFileNumber,
+	Ofs_FreeFileNumber,
+	Ofs_FileDescInit,
+	Ofs_FileDescFetch,
+	Ofs_FileDescStore,
+	Ofs_FileBlockRead,
+	Ofs_FileBlockWrite,
+	Ofs_FileTrunc,
+	Ofs_DirOpStart,
+	Ofs_DirOpEnd
 };
-/*
- * Forward declarations.
- */
-static int	InstallLocalDomain();
-static void	MarkDomainDown();
-static Boolean	OkToDetach();
-static Boolean	IsSunLabel();
-static Boolean	IsSpriteLabel();
-static Boolean	IsDecLabel();
+
+
+static Fscache_BackendRoutines  ofsBackendRoutines = {
+	    Fsdm_BlockAllocate,
+	    Fsdm_FileTrunc,
+	    Fsdm_FileBlockRead,
+	    Fsdm_FileBlockWrite,
+	    Ofs_ReallocBlock,
+	    Ofs_StartWriteBack,
+
+};
+static 	Fscache_Backend *cacheBackendPtr = (Fscache_Backend *) NIL;
+
+
 
 /*
  *----------------------------------------------------------------------
  *
- * Fsdm_AttachDiskByHandle --
+ * Ofs_Init --
  *
- *	Make a particular open Handle correspond to a prefix. Calls 
- *	Fsdm_AttachDisk to do real work.
+ *	Initialized code of the OFS disk storage manager module.
  *
  * Results:
- *	The SUCCESS if disk attach otherwise a Sprite return status.
  *
  * Side effects:
- *	Many - Those of Fsdm_AttachDisk.
+ *	Registers OFS with Fsdm module.
  *
  *----------------------------------------------------------------------
  */
-
-ReturnStatus
-Fsdm_AttachDiskByHandle(ioHandlePtr, localName, flags)
-    Fs_HandleHeader *ioHandlePtr; /* Open device handle of domain. */
-    char *localName;		/* The local prefix for the domain */
-    int flags;			/* FS_ATTACH_READ_ONLY or FS_ATTACH_LOCAL */
+void
+Ofs_Init()
 {
-    Fsio_DeviceIOHandle *devHandlePtr = (Fsio_DeviceIOHandle *) ioHandlePtr;
-    return Fsdm_AttachDisk(&devHandlePtr->device, localName, flags);
+    Fsdm_RegisterDiskManager("OFS", Ofs_AttachDisk);
 }
-
 
 /*
  *----------------------------------------------------------------------
  *
- * Fsdm_AttachDisk --
+ * Ofs_AttachDisk --
  *
- *	Make a particular local disk partition correspond to a prefix.
- *	This makes sure the disk is up, reads the domain header,
- *	and calls the initialization routine for the block I/O module
- *	of the disk's driver.  By the time this is called the device
- *	initialization routines have already been called from Dev_Config
- *	so the device driver knows how the disk is partitioned into
- *	domains.  This routine sees if the domain is formatted correctly,
- *	and if so attaches it to the set of domains.
+ *	Try to attach a OFS disk from the specified disk.
  *
  * Results:
- *	SUCCESS if the disk was readable and had a good domain header.
  *
  * Side effects:
- *	Sets up the Fsutil_DomainInfo for the domain.
  *
  *----------------------------------------------------------------------
  */
 ReturnStatus
-Fsdm_AttachDisk(devicePtr, localName, flags)
-    register Fs_Device *devicePtr;	/* Device info from I/O handle */
-    char *localName;			/* The local prefix for the domain */
-    int flags;			/* FS_ATTACH_READ_ONLY or FS_ATTACH_LOCAL */
+Ofs_AttachDisk(devicePtr, localName, flags, domainNumPtr)
+    Fs_Device	*devicePtr;	/* Device containing file system. */
+    char *localName;		/* The local prefix for the domain */
+    int  flags;			/* Attach flags. */
+    int *domainNumPtr;		/* OUT: Domain number allocated. */
+
 {
     ReturnStatus status;		/* Error code */
     register Address buffer;		/* Read buffer */
     int headerSector;			/* Starting sector of domain header */
     int numHeaderSectors;		/* Number of sectors in domain header */
     int summarySector;			/* Sector of summary information. */
-    Fsdm_SummaryInfo *summaryInfoPtr;	/* Pointer to summary info. */
-    register Fsdm_Domain *domainPtr;	/* Top level info for the domain stored
-					 * on the device */
-    Fsio_FileIOHandle	*handlePtr;	/* Reference to file handle for root */
-    Fs_FileID	fileID;			/* ID for root directory of domain */
-    int		prefixFlags;		/* For installing the prefix */
-    int		partition;		/* Partition number from the disk. */
+    Ofs_SummaryInfo *summaryInfoPtr;	/* Pointer to summary info. */
     Fs_IOParam	io;			/* I/O Parameter block */
     Fs_IOReply	reply;			/* Results of I/O */
-    int		devFlags;		/* Device flags. */
-    int 	useFlags;		/* Use flags. */
+    int		partition;
+    Fsdm_Domain	*domainPtr;	
+    Ofs_Domain	*ofsPtr;
 
-    /*
-     * Open the raw disk device so we can grub around in the header info.
-     */
-    useFlags = (flags | FS_ATTACH_READ_ONLY) ? FS_READ : (FS_READ|FS_WRITE);
-    status = (*devFsOpTable[DEV_TYPE_INDEX(devicePtr->type)].open)
-	    (devicePtr, useFlags, (Fs_NotifyToken) NIL, &devFlags);
-    if (status != SUCCESS) {
-	return(status);
-    }
+
+    headerSector = summarySector = 0;
 
     bzero((Address)&io, sizeof(io));
     bzero((Address)&reply, sizeof(reply));
@@ -164,7 +136,7 @@ Fsdm_AttachDisk(devicePtr, localName, flags)
      * zero'th sector of the whole disk which describes how the rest of the
      * domain's zero'th cylinder is layed out.
      */
-    buffer = (Address)malloc(DEV_BYTES_PER_SECTOR * FSDM_NUM_DOMAIN_SECTORS);
+    buffer = (Address)malloc(DEV_BYTES_PER_SECTOR * OFS_NUM_DOMAIN_SECTORS);
     io.buffer = buffer;
     io.length = DEV_BYTES_PER_SECTOR;
     io.offset = 0;
@@ -178,36 +150,35 @@ Fsdm_AttachDisk(devicePtr, localName, flags)
      * Check for different disk formats, and figure out how the rest
      * of the zero'th cylinder is layed out.
      */
-    if (IsSunLabel(buffer)) {
-	Fsdm_DomainHeader		*domainHeaderPtr = (Fsdm_DomainHeader *) buffer;
+    if (Fsdm_IsSunLabel(buffer)) {
+	Ofs_DomainHeader	*domainHeaderPtr = (Ofs_DomainHeader *) buffer;
 	int			i;
 	/*
 	 * For Sun formatted disks we put the domain header well past
 	 * the disk label and the boot program.
 	 */
-	numHeaderSectors = FSDM_NUM_DOMAIN_SECTORS;
-	io.length = DEV_BYTES_PER_SECTOR * FSDM_NUM_DOMAIN_SECTORS;
+	numHeaderSectors = OFS_NUM_DOMAIN_SECTORS;
+	io.length = DEV_BYTES_PER_SECTOR * OFS_NUM_DOMAIN_SECTORS;
 	for (i = 2; i < FSDM_MAX_BOOT_SECTORS + 3; i+= FSDM_BOOT_SECTOR_INC) {
 	    io.offset = i * DEV_BYTES_PER_SECTOR;
-	    io.length = DEV_BYTES_PER_SECTOR * FSDM_NUM_DOMAIN_SECTORS;
+	    io.length = DEV_BYTES_PER_SECTOR * OFS_NUM_DOMAIN_SECTORS;
 	    status = (*devFsOpTable[DEV_TYPE_INDEX(devicePtr->type)].read)
 			(devicePtr, &io, &reply);
 	    if (status != SUCCESS) {
 		free(buffer);
 		return(status);
 	    }
-	    if (domainHeaderPtr->magic == FSDM_DOMAIN_MAGIC) {
+	    if (domainHeaderPtr->magic == OFS_DOMAIN_MAGIC) {
 		headerSector = i;
 		summarySector = i - 1;
 	        break;
 	    }
 	}
 	if (i >= FSDM_MAX_BOOT_SECTORS + 3) {
-	    printf("Fsdm_AttachDisk: Can't find domain header.\n");
 	    free(buffer);
 	    return(FAILURE);
 	}
-    } else if (IsSpriteLabel(buffer)) {
+    } else if (Fsdm_IsSpriteLabel(buffer)) {
 	register Fsdm_DiskHeader *diskHeaderPtr;
 	diskHeaderPtr = (Fsdm_DiskHeader *)buffer;
 	headerSector = diskHeaderPtr->domainSector;
@@ -223,14 +194,14 @@ Fsdm_AttachDisk(devicePtr, localName, flags)
 	    free(buffer);
 	    return(status);
 	}
-	if (IsDecLabel(buffer)){
+	if (Fsdm_IsDecLabel(buffer)){
 	    register Dec_DiskLabel *decLabelPtr;
 	    decLabelPtr = (Dec_DiskLabel *)buffer;
 	    headerSector = decLabelPtr->domainSector;
 	    numHeaderSectors = decLabelPtr->numDomainSectors;
 	    summarySector = decLabelPtr->summarySector;
 	} else {
-	    printf("Fsdm_AttachDisk: No disk header\n");
+	    printf("Ofs_AttachDisk: No disk header\n");
 	    free(buffer);
 	    return(FAILURE);
 	}
@@ -246,8 +217,7 @@ Fsdm_AttachDisk(devicePtr, localName, flags)
 	free(buffer);
 	return(status);
     }
-    summaryInfoPtr = (Fsdm_SummaryInfo *) buffer;
-    (void)strcpy(summaryInfoPtr->domainPrefix, localName);
+    summaryInfoPtr = (Ofs_SummaryInfo *) buffer;
 
     /*
      * Read the domain header and save it with the domain state.
@@ -259,207 +229,108 @@ Fsdm_AttachDisk(devicePtr, localName, flags)
     status = (*devFsOpTable[DEV_TYPE_INDEX(devicePtr->type)].read)(devicePtr,
 		&io, &reply);
     if (status != SUCCESS) {
+	free((char *) summaryInfoPtr);
 	free(buffer);
 	return(status);
-    } else if (((Fsdm_DomainHeader *)buffer)->magic != FSDM_DOMAIN_MAGIC) {
-	printf("Fsdm_AttachDisk: Bad magic # on partition header <%x>\n",
-				  ((Fsdm_DomainHeader *)buffer)->magic);
+    } else if (((Ofs_DomainHeader *)buffer)->magic != OFS_DOMAIN_MAGIC) {
+	free((char *) summaryInfoPtr);
 	free(buffer);
 	return(FAILURE);
     }
-
     /*
-     * Attempt to attach the disk under the same domain number each time.
-     * This is required if clients are to be able to re-open files.
+     * Make the domain flag positive to inform caller that this is an
+     * OFS file system even if the mount fails.
      */
-
-    if (summaryInfoPtr->domainNumber != -1) {
-	domainPtr = fsdmDomainTable[summaryInfoPtr->domainNumber];
-	if (domainPtr != (Fsdm_Domain *)NIL) {
-	    if (!(domainPtr->flags & FSDM_DOMAIN_DOWN)) {
-		printf("Fsdm_AttachDisk: domain already attached?\n");
-		free(buffer);
-		/*
-		 * If the domain was attached during the boot, then this
-		 * is the second attach done by the user-level program
-		 * that checks and attachs the disk.  In that case clear
-		 * the bit indicating that the domain was just checked.
-		 * This special case handling of the "just checked" bit
-		 * will go away as soon as we trust the "domain safe"
-		 * bit. 
-		 */
-		if (domainPtr->flags & FSDM_DOMAIN_ATTACH_BOOT) {
-		    domainPtr->flags &= ~FSDM_DOMAIN_ATTACH_BOOT;
-		    domainPtr->summaryInfoPtr->flags &= 
-				    ~FSDM_DOMAIN_JUST_CHECKED;
-		    printf("Fsdm_AttachDisk: clearing just-checked bit\n");
-		    if ((flags & FS_ATTACH_READ_ONLY) == 0) {
-			printf("Fsdm_AttachDisk: disk is read-only\n");
-			status = FsdmWriteBackSummaryInfo(domainPtr);
-			if (status != SUCCESS) {
-			    panic( 
-		"Fsdm_AttachDisk: Summary write failed, status %x\n", status);
-			}
-		    }
-		}
-		return(FS_DOMAIN_UNAVAILABLE);
-	    }
-	}
-    } else {
-	domainPtr = (Fsdm_Domain *)NIL;
-    }
-    if (domainPtr == (Fsdm_Domain *)NIL) {
-	domainPtr = (Fsdm_Domain *)malloc(sizeof(Fsdm_Domain));
-	domainPtr->flags = 0;
-	domainPtr->refCount = 0;
-    }
-    domainPtr->headerPtr = (Fsdm_DomainHeader *) buffer;
-    domainPtr->summaryInfoPtr = summaryInfoPtr;
-    domainPtr->summarySector = summarySector;
-
-    if (rpc_SpriteID == 0) {
-	/*
-	 * Find the spriteID on the disk if we don't know it by now.
-	 * This is the last resort.  Usually reverse arp or the hook
-	 * in the RPC protocol have established our ID.  If there are
-	 * no other Sprite hosts running on the network , however,
-	 * then this code will execute.
-	 */
-	printf("Fsdm_AttachDisk: setting rpc_SpriteID to 0x%x from disk header\n",
-		    domainPtr->headerPtr->device.serverID);
-	if (domainPtr->headerPtr->device.serverID <= 0) {
-	    panic("Bad sprite ID\n");
-	}
-	rpc_SpriteID = domainPtr->headerPtr->device.serverID;
-    }
-    /*
-     * Set up the ClientData part of *devicePtr to reference the
-     * Fsdm_Geometry part of the domain header.  This is used by the
-     * block I/O routines.
-     */
-    ((DevBlockDeviceHandle *) (devicePtr->data))->clientData = 
-			(ClientData)&domainPtr->headerPtr->geometry;
+    *domainNumPtr = 1;
     /* 
      * Verify the device specification by checking the partition
-     * number kept in the domain header.  
+     * number kept in the domain header. 
      */
-    partition = domainPtr->headerPtr->device.unit;
+    partition = ((Ofs_DomainHeader *)buffer)->device.unit;
     if (partition >= 0 && partition < FSDM_NUM_DISK_PARTS) {
 	if ((devicePtr->unit % FSDM_NUM_DISK_PARTS) != partition) {
-	    printf("Fsdm_AttachDisk: partition mis-match, arg %d disk %d\n",
-		  devicePtr->unit, partition);
-	    domainPtr->flags |= FSDM_DOMAIN_DOWN;
+	    printf("Ofs_AttachDisk: partition mis-match, arg %d disk %d\n",
+		      devicePtr->unit, partition);
+	    free((char *) summaryInfoPtr);
+	    free(buffer);
 	    return(FAILURE);
 	}
     }
+    status = Fsdm_InstallDomain(summaryInfoPtr->domainNumber,
+		((Ofs_DomainHeader *)buffer)->device.serverID, 
+		localName, flags, &domainPtr);
+    if (status != SUCCESS) {
+	if (status == FS_FILE_BUSY) {
+	    if (domainPtr->flags & FSDM_DOMAIN_ATTACH_BOOT) {
+		domainPtr->flags &= ~FSDM_DOMAIN_ATTACH_BOOT;
+		summaryInfoPtr->flags &=  ~OFS_DOMAIN_JUST_CHECKED;
+		printf("Ofs_AttachDisk: clearing just-checked bit\n");
+		if ((flags & FS_ATTACH_READ_ONLY) == 0) {
+		    io.buffer = (char *) summaryInfoPtr;
+		    io.length = DEV_BYTES_PER_SECTOR;
+		    io.offset = summarySector * DEV_BYTES_PER_SECTOR;
+		    status = 
+		     (*devFsOpTable[DEV_TYPE_INDEX(devicePtr->type)].write)
+					(devicePtr, &io, &reply);
+		    if (status != SUCCESS) {
+			panic( 
+	    "Ofs_AttachDisk: Summary write failed, status %x\n", status);
+		    }
+		}
+	    }
+	    status = FS_DOMAIN_UNAVAILABLE;
+	}
+	free((char *) summaryInfoPtr);
+	free(buffer);
+	return status;
+    }
+    if (cacheBackendPtr == (Fscache_Backend *) NIL) {
+	cacheBackendPtr = 
+		Fscache_RegisterBackend(&ofsBackendRoutines,(ClientData) 0, 0);
+    }
+
+    ofsPtr = (Ofs_Domain *) malloc(sizeof(Ofs_Domain));
+    bzero((char *) ofsPtr, sizeof(Ofs_Domain));
+
+    domainPtr->backendPtr = cacheBackendPtr;
+    domainPtr->domainOpsPtr = &ofsDomainOps;
+    domainPtr->clientData = (ClientData) ofsPtr;
+
+    ofsPtr->domainPtr = domainPtr;
+    ofsPtr->headerPtr = (Ofs_DomainHeader *) buffer;
+    ofsPtr->summaryInfoPtr = summaryInfoPtr;
+    ofsPtr->summarySector = summarySector;
+    ofsPtr->blockDevHandlePtr = (DevBlockDeviceHandle *) (devicePtr->data);
     /*
      * Fix up the device information in the domain header
      * as this is used by the block I/O routines.
      */
-    domainPtr->headerPtr->device.unit = devicePtr->unit;
-    domainPtr->headerPtr->device.type = devicePtr->type;
-    domainPtr->headerPtr->device.data = devicePtr->data;
+    ofsPtr->headerPtr->device.unit = devicePtr->unit;
+    ofsPtr->headerPtr->device.type = devicePtr->type;
+    ofsPtr->headerPtr->device.data = devicePtr->data;
 
     /*
      * After reading the low level header information from the disk we
      * install the domain into the set of active domains and initialize
      * things for block I/O.
      */
-    fileID.type = FSIO_LCL_FILE_STREAM;
-    fileID.serverID = rpc_SpriteID;
-    fileID.major = InstallLocalDomain(domainPtr);
-    if (fileID.major == -1) {
-	printf("Fsdm_AttachDisk: can't attach disk -- too many domains.\n");
-	domainPtr->flags |= FSDM_DOMAIN_DOWN;
-	return(FAILURE);
-    }
-    summaryInfoPtr->domainNumber = fileID.major;
-    fileID.minor = FSDM_ROOT_FILE_NUMBER;
 
-    status = Fsdm_IOInit(domainPtr, fileID.major);
+    status = OfsIOInit(domainPtr);
     if (status != SUCCESS) {
-	printf( "Fsdm_AttachDisk: can't initialize block I/O %x\n",
+	printf( "Ofs_InitializeDomain: can't initialize block I/O %x\n",
 		status);
 	domainPtr->flags |= FSDM_DOMAIN_DOWN;
 	return(status);
     }
+    *domainNumPtr = domainPtr->domainNumber;
+    return status;
 
-    /*
-     * Now that the block I/O is set up we can read the file descriptor
-     * of the root directory of the domain.
-     */
-    status = Fsio_LocalFileHandleInit(&fileID, localName, &handlePtr);
-    if (status != SUCCESS) {
-	printf( "Fsdm_AttachDisk: can't get root file handle %x\n",
-		status);
-	domainPtr->flags |= FSDM_DOMAIN_DOWN;
-	return(status);
-    }
-    Fsutil_HandleUnlock(handlePtr);
-    /*
-     * The attach will succeed from this point, so print out info..
-     */
-    printf("%s: devType %#x devUnit %#x ", localName,
-	    devicePtr->type, devicePtr->unit);
-    /*
-     * Install a prefix for the domain.  We always import it so that
-     * we can get to the disk locally.  Then we either keep the domain
-     * private or export it depending on the flags argument.
-     */
-    prefixFlags = FSPREFIX_IMPORTED;
-    if (flags & FS_ATTACH_LOCAL) {
-	prefixFlags |= FSPREFIX_LOCAL;
-	printf("local ");
-    } else {
-	prefixFlags |= FSPREFIX_EXPORTED;
-	printf("exported ");
-    }
-    (void)Fsprefix_Install(localName, (Fs_HandleHeader *)handlePtr,
-			  FS_LOCAL_DOMAIN,  prefixFlags);
-
-    /*
-     * Finally mark the domain to indicate that if we go down hard,
-     * clean recovery of this domain is impossible.
-     */
-    if ((domainPtr->summaryInfoPtr->flags & FSDM_DOMAIN_NOT_SAFE) == 0) {
-	domainPtr->summaryInfoPtr->flags |= FSDM_DOMAIN_ATTACHED_CLEAN;
-	printf("clean ");
-    } else {
-	domainPtr->summaryInfoPtr->flags &= ~FSDM_DOMAIN_ATTACHED_CLEAN;
-	printf("NOT clean ");
-    }
-    domainPtr->summaryInfoPtr->flags |= FSDM_DOMAIN_NOT_SAFE |
-					FSDM_DOMAIN_TIMES_VALID;
-    if (!(flags & FS_DEFAULT_DOMAIN)) {
-	domainPtr->summaryInfoPtr->flags &= ~FSDM_DOMAIN_JUST_CHECKED;
-    }
-    domainPtr->summaryInfoPtr->attachSeconds = fsutil_TimeInSeconds;
-    if ((flags & FS_ATTACH_READ_ONLY) == 0) {
-	status = FsdmWriteBackSummaryInfo(domainPtr);
-	if (status != SUCCESS) {
-	    panic( "Fsdm_AttachDisk: Summary write failed, status %x\n", status);
-	}
-    } else {
-	printf("read only ");
-    }
-    if (flags & FS_DEFAULT_DOMAIN) {
-	domainPtr->flags = FSDM_DOMAIN_ATTACH_BOOT;
-    } else {
-	domainPtr->flags = 0;
-    }
-
-    printf(" %d kbytes free\n", domainPtr->summaryInfoPtr->numFreeKbytes);
-    /*
-     * Make sure a name hash table exists now that we have a disk attached.
-     */
-    Fslcl_NameHashInit();
-    return(SUCCESS);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * Fsdm_IOInit --
+ * OfsIOInit --
  *
  *	Initialize a particular local domain for I/O.
  *
@@ -474,44 +345,46 @@ Fsdm_AttachDisk(devicePtr, localName, flags)
  */
 
 ReturnStatus
-Fsdm_IOInit(domainPtr, domainNumber)
-    register	Fsdm_Domain	*domainPtr;
-    int				domainNumber;
+OfsIOInit(domainPtr)
+    Fsdm_Domain	*domainPtr;
 {
+    register	Ofs_Domain	*ofsPtr;
     ReturnStatus		status;
     Fscache_Attributes		attr;
+    int			domainNumber;
 
+    ofsPtr = OFS_PTR_FROM_DOMAIN(domainPtr);
+    domainNumber = domainPtr->domainNumber;
     /*
      * Initialize the file handle used for raw I/O, i.e. for file descriptors,
      * the bitmaps, and indirect blocks.
      */
 
-    bzero((Address)&domainPtr->physHandle, sizeof(domainPtr->physHandle));
-    domainPtr->physHandle.hdr.fileID.major = domainNumber;
-    domainPtr->physHandle.hdr.fileID.minor = 0;
-    domainPtr->physHandle.hdr.fileID.type = FSIO_LCL_FILE_STREAM;
-    domainPtr->physHandle.descPtr = (Fsdm_FileDescriptor *)NIL;
+    bzero((Address)&ofsPtr->physHandle, sizeof(ofsPtr->physHandle));
+    ofsPtr->physHandle.hdr.fileID.major = domainNumber;
+    ofsPtr->physHandle.hdr.fileID.minor = 0;
+    ofsPtr->physHandle.hdr.fileID.type = FSIO_LCL_FILE_STREAM;
+    ofsPtr->physHandle.descPtr = (Fsdm_FileDescriptor *)NIL;
 
     bzero((Address)&attr, sizeof(attr));
     attr.lastByte = 0x7fffffff;
-    Fscache_InfoInit(&domainPtr->physHandle.cacheInfo,
-		    (Fs_HandleHeader *) &domainPtr->physHandle,
-		    0, TRUE, &attr, &physicalIOProcs);
+    Fscache_FileInfoInit(&ofsPtr->physHandle.cacheInfo,
+		    (Fs_HandleHeader *) &ofsPtr->physHandle,
+		    0, TRUE, &attr, domainPtr->backendPtr);
 
-    status = FsdmBlockAllocInit(domainPtr);
+    status = OfsBlockAllocInit(ofsPtr);
     if (status != SUCCESS) {
 	printf( "Block Alloc init failed for domain %d\n",
 		domainNumber);
 	return(status);
     }
-
-    status = FsdmFileDescAllocInit(domainPtr);
+    status = OfsFileDescAllocInit(ofsPtr);
     if (status != SUCCESS) {
 	printf( "File Desc alloc init failed for domain %d\n",
 		domainNumber);
 	return(status);
     }
-    return(SUCCESS);
+    return(status);
 }
 
 
@@ -519,7 +392,7 @@ Fsdm_IOInit(domainPtr, domainNumber)
 /*
  *----------------------------------------------------------------------
  *
- * Fsdm_DetachDisk --
+ * Ofs_DetachDisk --
  *
  *	Remove a local domain from the set of accessible domains.
  *
@@ -533,112 +406,62 @@ Fsdm_IOInit(domainPtr, domainNumber)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-Fsdm_DetachDisk(prefixName)
-    char	*prefixName;	/* Name that the disk is attached under. */
+Ofs_DetachDisk(domainPtr)
+    Fsdm_Domain	*domainPtr;
 {
-    Fs_HandleHeader	*hdrPtr;
-    char		*lookupName;
-    int			domainType;
-    Fsprefix		*prefixPtr;
-    Fs_FileID		rootID;
-    int			serverID;
-    int			domain;
-    register Fsdm_Domain	*domainPtr;
+    register Ofs_Domain	*ofsPtr = OFS_PTR_FROM_DOMAIN(domainPtr);
+    Ofs_DomainHeader	*headerPtr;
     int			i;
     ReturnStatus	status;
-    int			blocksLeft;
-    Fsdm_DomainHeader	*headerPtr;
-    int			blocksSkipped;
+    int			blocksLeft, blocksSkipped;
 
-    /*
-     * Find the domain to detach.
-     */
-    status = Fsprefix_Lookup(prefixName, 
-		   FSPREFIX_EXACT | FSPREFIX_EXPORTED | FSPREFIX_LOCAL,
-		   rpc_SpriteID, &hdrPtr, &rootID, &lookupName,
-		   &serverID, &domainType, &prefixPtr);
-    if (status != SUCCESS) {
-	return(status);
-    } else if (hdrPtr->fileID.type != FSIO_LCL_FILE_STREAM) {
-	return(GEN_INVALID_ARG);
-    }
-    domain = hdrPtr->fileID.major;
-    domainPtr = Fsdm_DomainFetch(domain, FALSE);
-    if (domainPtr == (Fsdm_Domain *)NIL) {
-	return(FS_DOMAIN_UNAVAILABLE);
-    }
-
-    /*
-     * Recall dirty blocks from remote clients, and copy dirty file descriptors
-     * into their cache blocks.  Once done, don't allow any more dirty
-     * blocks to enter the cache.
-     */
-    Fsconsist_GetAllDirtyBlocks(domain, TRUE);	
-    status = Fsutil_HandleDescWriteBack(FALSE, -1);
-    if (status != SUCCESS) {
-	printf( "Fsdm_DetachDisk: handle write-back failed <%x>.\n",
-	    status);
-    }
-    /*
-     * Mark the domain and wait for other users of the domain to leave.
-     * The user can interrupt this wait, at which point we bail out.
-     */
-    if (!OkToDetach(domainPtr)) {
-	Fsdm_DomainRelease(domain);
-	return(FS_FILE_BUSY);
-    }
-    /*
-     * Nuke the prefix table entry.  Actually, this closes the handle
-     * and leaves the prefix entry with no handle.
-     */
-    Fsprefix_HandleClose(prefixPtr, FSPREFIX_EXPORTED);
     /*
      * Write all dirty blocks, bitmaps, etc. to disk and take the
      * domain down.
      */
     Fscache_WriteBack(-1, &blocksLeft, FALSE);	/* Write back the cache. */
-    headerPtr = domainPtr->headerPtr;
-    Fscache_FileWriteBack(&domainPtr->physHandle.cacheInfo,
+    headerPtr = ofsPtr->headerPtr;
+    Fscache_FileWriteBack(&ofsPtr->physHandle.cacheInfo,
 	    headerPtr->fileDescOffset,
 	    headerPtr->fileDescOffset + 
 		(headerPtr->numFileDesc / FSDM_FILE_DESC_PER_BLOCK) + 1,
 	    FSCACHE_WRITE_BACK_AND_INVALIDATE, &blocksSkipped);
-    Fsdm_DomainWriteBack(domain, FALSE, TRUE);/* Write back domain info. */
-    MarkDomainDown(domainPtr);
+    Fsdm_DomainWriteBack(ofsPtr->physHandle.hdr.fileID.major, FALSE, TRUE);
+	/* Write back domain info. */
     /*
      * We successfully brought down the disk, so mark it as OK.
      * The detach time is noted in order to track how long disks are available.
      */
-    domainPtr->summaryInfoPtr->flags &= ~FSDM_DOMAIN_NOT_SAFE;
-    domainPtr->summaryInfoPtr->flags &= ~FSDM_DOMAIN_JUST_CHECKED;
-    domainPtr->summaryInfoPtr->detachSeconds = fsutil_TimeInSeconds;
-    status = FsdmWriteBackSummaryInfo(domainPtr);
+    ofsPtr->summaryInfoPtr->flags &= ~OFS_DOMAIN_NOT_SAFE;
+    ofsPtr->summaryInfoPtr->flags &= ~OFS_DOMAIN_JUST_CHECKED;
+    ofsPtr->summaryInfoPtr->detachSeconds = Fsutil_TimeInSeconds();
+    status = OfsWriteBackSummaryInfo(ofsPtr);
     if (status != SUCCESS) {
-	panic( "Fsdm_DetachDisk: Summary write failed, status %x\n",
+	panic( "Ofs_DetachDisk: Summary write failed, status %x\n",
 		    status);
     }
 
     /*
      * Free up resources for the domain.
      */
-    Sync_LockClear(&domainPtr->dataBlockLock);
-    Sync_LockClear(&domainPtr->fileDescLock);
-    free((Address)domainPtr->headerPtr);
-    free((Address)domainPtr->summaryInfoPtr);
-    free((Address)domainPtr->dataBlockBitmap);
-    free((Address)domainPtr->cylinders);
-    for (i = 0; i < FSDM_NUM_FRAG_SIZES; i++) {
+    Sync_LockClear(&ofsPtr->dataBlockLock);
+    Sync_LockClear(&ofsPtr->fileDescLock);
+    free((Address)ofsPtr->headerPtr);
+    free((Address)ofsPtr->summaryInfoPtr);
+    free((Address)ofsPtr->dataBlockBitmap);
+    free((Address)ofsPtr->cylinders);
+    for (i = 0; i < OFS_NUM_FRAG_SIZES; i++) {
 	List_Links	*fragList;
-	FsdmFragment	*fragPtr;
-	fragList = domainPtr->fragLists[i];
+	OfsFragment	*fragPtr;
+	fragList = ofsPtr->fragLists[i];
 	while (!List_IsEmpty(fragList)) {
-	    fragPtr = (FsdmFragment *)List_First(fragList);
+	    fragPtr = (OfsFragment *)List_First(fragList);
 	    List_Remove((List_Links *)fragPtr);
 	    free((Address)fragPtr);
 	}
 	free((Address)fragList);
     }
-    free((Address)domainPtr->fileDescBitmap);
+    free((Address)ofsPtr->fileDescBitmap);
 
     return(SUCCESS);
 }
@@ -647,7 +470,7 @@ Fsdm_DetachDisk(prefixName)
 /*
  *----------------------------------------------------------------------
  *
- * Fsdm_DomainWriteBack --
+ * Ofs_DomainWriteBack --
  *
  *	Force all domain information to disk.
  *
@@ -659,405 +482,24 @@ Fsdm_DetachDisk(prefixName)
  *
  *----------------------------------------------------------------------
  */
-void
-Fsdm_DomainWriteBack(domain, shutdown, detach)
-    int		domain;		/* Domain number, -1 means all domains */
+ReturnStatus
+Ofs_DomainWriteBack(domainPtr, shutdown)
+    Fsdm_Domain	*domainPtr;	/* Domain to writeback. */
     Boolean	shutdown;	/* TRUE if are syncing to shutdown the system.*/
-    Boolean	detach;		/* TRUE if are writing back as part of 
-				 * detaching the domain.  This is used to force 
-				 * the domain fetch to work even if it is
-				 * marked as down. */
 {
-    register	Fsdm_Domain	*domainPtr;
+    register	Ofs_Domain	*ofsPtr = OFS_PTR_FROM_DOMAIN(domainPtr);
     ReturnStatus		status1, status2;
-    int				firstDomain;
-    register int 		lastDomain;
-    register int 		i;
 
-    if (domain >= 0) {
-	/*
-	 * Write back a particular domain.
-	 */
-	firstDomain = domain;
-	lastDomain = domain;
+    status1 = OfsWriteBackDataBlockBitmap(ofsPtr);
+    status2 = OfsWriteBackFileDescBitmap(ofsPtr);
+    if (shutdown && status1 == SUCCESS && status2 == SUCCESS) {
+	ofsPtr->summaryInfoPtr->flags &= ~OFS_DOMAIN_NOT_SAFE;
+	ofsPtr->summaryInfoPtr->detachSeconds = Fsutil_TimeInSeconds();
     } else {
-	/*
-	 * Write back all domains.
-	 */
-	firstDomain = 0;
-	lastDomain = FSDM_MAX_LOCAL_DOMAINS - 1;
-	detach = FALSE;
+	ofsPtr->summaryInfoPtr->flags |= OFS_DOMAIN_NOT_SAFE;
     }
-    for (i = firstDomain; i <= lastDomain; i++) {
-	domainPtr = Fsdm_DomainFetch(i, detach);
-	if (domainPtr != (Fsdm_Domain *) NIL) {
-	    status1 = FsdmWriteBackDataBlockBitmap(domainPtr);
-	    status2 = FsdmWriteBackFileDescBitmap(domainPtr);
-	    if (shutdown && status1 == SUCCESS && status2 == SUCCESS) {
-		domainPtr->summaryInfoPtr->flags &= ~FSDM_DOMAIN_NOT_SAFE;
-		domainPtr->summaryInfoPtr->detachSeconds = fsutil_TimeInSeconds;
-	    } else {
-		domainPtr->summaryInfoPtr->flags |= FSDM_DOMAIN_NOT_SAFE;
-	    }
-	    (void)FsdmWriteBackSummaryInfo(domainPtr);
-	    Fsdm_DomainRelease(i);
-	}
-    }
-}
-
-
-
-/*
- *----------------------------------------------------------------------
- *
- * InstallLocalDomain --
- *
- *	Take the information about a newly attached local domain and
- *	save it in the domain table.  The index into this table is
- *	returned and passed around as the identifier for the domain.
- *
- * Results:
- *	The domain number.
- *
- * Side effects:
- *	Save the info in fsVolumeTable
- *
- *----------------------------------------------------------------------
- */
-static ENTRY int
-InstallLocalDomain(domainPtr)
-    Fsdm_Domain *domainPtr;
-{
-    int domainNumber;
-
-    LOCK_MONITOR;
-
-
-    if (domainPtr->summaryInfoPtr->domainNumber == -1) {
-	while ((domainTableIndex < FSDM_MAX_LOCAL_DOMAINS) && 
-		(fsdmDomainTable[domainTableIndex] != (Fsdm_Domain *)NIL)) {
-	    domainTableIndex++;
-	}
-	if (domainTableIndex == FSDM_MAX_LOCAL_DOMAINS) {
-	    printf("InstallLocalDomain: too many local domains.\n");
-	    domainNumber = -1;
-	    goto exit;
-	}
-	fsdmDomainTable[domainTableIndex] = domainPtr;
-	domainNumber = domainTableIndex;
-	domainTableIndex++;
-    } else {
-	domainNumber = domainPtr->summaryInfoPtr->domainNumber;
-	fsdmDomainTable[domainNumber] = domainPtr;
-    }
-
-exit:
-    UNLOCK_MONITOR;
-    return(domainNumber);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * OkToDetach --
- *
- *	Wait for activity in a domain to end and then mark the
- *	domain as being down.  This prints a warning message and
- *	waits in an interruptable state if the domain is in use.
- *	Our caller should back out if we return FALSE.
- *
- * Results:
- *	TRUE if it is ok to detach the domain.
- *
- * Side effects:
- *	The FSDM_DOMAIN_GOING_DOWN flag is set in the domain.
- *
- *----------------------------------------------------------------------
- */
-static ENTRY Boolean
-OkToDetach(domainPtr)
-    Fsdm_Domain	*domainPtr;
-{
-    LOCK_MONITOR;
-
-    domainPtr->flags |= FSDM_DOMAIN_GOING_DOWN;
-    /*
-     * Wait until we are the only user of the domain because 
-     * noone else but the cache block cleaner or us should be using this
-     * domain once we set this flag.
-     */
-    while (domainPtr->refCount > 1) {
-	printf("Waiting for busy domain \"%s\"\n",
-	    domainPtr->summaryInfoPtr->domainPrefix);
-	if (Sync_Wait(&domainPtr->condition, TRUE)) {
-	    domainPtr->flags &= ~FSDM_DOMAIN_GOING_DOWN;
-	    UNLOCK_MONITOR;
-	    return(FALSE);	/* Interrupted while waiting, domain busy */
-	}
-    }
-
-    UNLOCK_MONITOR;
-    return(TRUE);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * MarkDomainDown --
- *
- *	Mark the domain as being down.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The FSDM_DOMAIN_DOWN flag is set.
- *
- *----------------------------------------------------------------------
- */
-static ENTRY void
-MarkDomainDown(domainPtr)
-    Fsdm_Domain	*domainPtr;
-{
-    LOCK_MONITOR;
-
-    domainPtr->flags |= FSDM_DOMAIN_DOWN;
-    if (domainPtr->refCount > 1) {
-	printf("DomainDown: Refcount > 1\n");
-    }
-    domainPtr->refCount = 0;
-
-    UNLOCK_MONITOR;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Fsdm_DomainFetch --
- *
- *	Return a pointer to the given domain if it is available.
- *
- * Results:
- *	Pointer to the domain.
- *
- * Side effects:
- *	Reference count in the domain incremented.
- *
- *----------------------------------------------------------------------
- */
-ENTRY Fsdm_Domain *
-Fsdm_DomainFetch(domain, dontStop)
-    int		domain;		/* Domain to fetch. */
-    Boolean	dontStop;	/* Fetch this domain unless it has been
-				 * totally detached. */
-{
-    register	Fsdm_Domain	*domainPtr;
-
-    LOCK_MONITOR;
-
-    if (domain < 0 || domain >= FSDM_MAX_LOCAL_DOMAINS) {
-	printf( "Fsdm_DomainFetch, bad domain number <%d>\n",
-	    domain);
-	domainPtr = (Fsdm_Domain *)NIL;
-    } else {
-	domainPtr = fsdmDomainTable[domain];
-    }
-    if (domainPtr != (Fsdm_Domain *) NIL) {
-	if (domainPtr->flags & FSDM_DOMAIN_DOWN) {
-	    domainPtr = (Fsdm_Domain *) NIL;
-	} else if (dontStop || !(domainPtr->flags & FSDM_DOMAIN_GOING_DOWN)) {
-	    domainPtr->refCount++;
-	} else {
-	    domainPtr = (Fsdm_Domain *) NIL;
-	}
-    }
-
-    UNLOCK_MONITOR;
-    return(domainPtr);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Fsdm_DomainRelease --
- *
- *	Release access to the given domain using a domain number.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Reference count for the domain decremented.
- *
- *----------------------------------------------------------------------
- */
-ENTRY void
-Fsdm_DomainRelease(domainNum)
-    int	domainNum;
-{
-    register	Fsdm_Domain	*domainPtr;
-
-    LOCK_MONITOR;
-
-    domainPtr = fsdmDomainTable[domainNum];
-    if (domainPtr == (Fsdm_Domain *)NIL) {
-	panic( "Fsdm_DomainRelease: NIL domain pointer\n");
-    }
-
-    domainPtr->refCount--;
-    if (domainPtr->refCount < 0) {
-	panic( "Fsdm_DomainRelease: Negative ref count on domain\n");
-    }
-    if (domainPtr->refCount == 0) {
-	Sync_Broadcast(&domainPtr->condition);
-    }
-
-    UNLOCK_MONITOR;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * IsSunLabel --
- *
- *	Poke around in the input buffer and see if it looks like
- *	a Sun format disk label.
- *
- * Results:
- *	TRUE or FALSE
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-static Boolean
-IsSunLabel(buffer)
-    Address buffer;	/* Buffer containing zero'th sector */
-{
-    register Sun_DiskLabel *sunLabelPtr;
-
-    sunLabelPtr = (Sun_DiskLabel *)buffer;
-    if (sunLabelPtr->magic == SUN_DISK_MAGIC) {
-	/*
-	 * Should check checkSum...
-	 */
-	return(TRUE);
-    } else {
-	return(FALSE);
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * IsDecLabel --
- *
- *	Poke around in the input buffer and see if it looks like
- *	a Dec format disk label.
- *
- * Results:
- *	TRUE or FALSE
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-static Boolean
-IsDecLabel(buffer)
-    Address buffer;	/* Buffer containing zero'th sector */
-{
-    register Dec_DiskLabel *decLabelPtr;
-
-    decLabelPtr = (Dec_DiskLabel *)buffer;
-    if (decLabelPtr->magic == DEC_LABEL_MAGIC) {
-	if (decLabelPtr->spriteMagic == FSDM_DISK_MAGIC &&
-		decLabelPtr->version == DEC_LABEL_VERSION) {
-	    return TRUE;
-	} else {
-	    printf("Dec label version mismatch: %x vs %x\n",
-		    decLabelPtr->version, DEC_LABEL_VERSION);
-	}
-    }
-    return(FALSE);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * IsSpriteLabel --
- *
- *	Poke around in the input buffer and see if it looks like
- *	a Sprite format disk header.
- *
- * Results:
- *	TRUE or FALSE
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-static Boolean
-IsSpriteLabel(buffer)
-    Address buffer;	/* Buffer containing zero'th sector */
-{
-    register Fsdm_DiskHeader	*diskHeaderPtr;
-    register int 		index;
-    register int 		checkSum;
-    int				*headerPtr;
-
-    diskHeaderPtr = (Fsdm_DiskHeader *)buffer;
-    if (diskHeaderPtr->magic == FSDM_DISK_MAGIC) {
-	/*
-	 * Check the checkSum which set so that an XOR of all the
-	 * ints in the disk header comes out to FSDM_DISK_MAGIC also.
-	 */
-	checkSum = 0;
-	for (index = 0, headerPtr = (int *)buffer;
-	     index < DEV_BYTES_PER_SECTOR;
-	     index += sizeof(int), headerPtr++) {
-	    checkSum ^= *headerPtr;
-	}
-	if (checkSum == FSDM_DISK_MAGIC) {
-	    return(TRUE);
-	} else {
-	    printf("IsSpriteLabel: checksum mismatch <%x>\n", checkSum);
-	}
-    }
-    return(FALSE);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Fsdm_Init --
- *
- *	Initialized the disk management routines. This means initializing
- *	the domain table to NIL.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Fsdm_Init()
-{
-    register int index;
-    for (index = 0; index < FSDM_MAX_LOCAL_DOMAINS; index++) {
-        fsdmDomainTable[index] = (Fsdm_Domain *) NIL;
-    }
-
+    (void)OfsWriteBackSummaryInfo(ofsPtr);
+    return (status1 == SUCCESS) ? status2 : status1;
 }
 
 
@@ -1073,7 +515,7 @@ Fsdm_Init()
 /*
  *----------------------------------------------------------------------
  *
- * Fsdm_BlocksToSectors --
+ * OfsBlocksToSectors --
  *
  *	Convert from block indexes (actually, fragment indexes) to
  *	sectors using the geometry information on the disk.  This
@@ -1091,17 +533,15 @@ Fsdm_Init()
  */
 #define SECTORS_PER_FRAG	(FS_FRAGMENT_SIZE / DEV_BYTES_PER_SECTOR)
 int
-Fsdm_BlocksToSectors(fragNumber, data)
+OfsBlocksToSectors(fragNumber, geoPtr)
     int fragNumber;	/* Fragment index to map into block index */
-    ClientData data;	/* ClientData from the device info */
+    register Ofs_Geometry *geoPtr;	/* ClientData from the device info */
 {
-    register Fsdm_Geometry *geoPtr;
     register int sectorNumber;	/* The sector corresponding to the fragment */
     register int cylinder;	/* The cylinder number of the fragment */
     register int rotationalSet;	/* The rotational set with cylinder of frag */
     register int blockNumber;	/* The block number within rotational set */
 
-    geoPtr 		= (Fsdm_Geometry *)data;
     blockNumber		= fragNumber / FS_FRAGMENTS_PER_BLOCK;
     cylinder		= blockNumber / geoPtr->blocksPerCylinder;
     /*
@@ -1120,7 +560,7 @@ Fsdm_BlocksToSectors(fragNumber, data)
 		      geoPtr->blockOffset[blockNumber];
 	sectorNumber += (fragNumber % FS_FRAGMENTS_PER_BLOCK) * 
 			SECTORS_PER_FRAG;
-    } else if (geoPtr->rotSetsPerCyl == FSDM_SCSI_MAPPING) {
+    } else if (geoPtr->rotSetsPerCyl == OFS_SCSI_MAPPING) {
 	/*
 	 * The new way is to map blocks from the start of the disk without
 	 * regard for rotational sets.  There is essentially one rotational
@@ -1132,6 +572,7 @@ Fsdm_BlocksToSectors(fragNumber, data)
 		    SECTORS_PER_FRAG;
     } else {
 	panic("Unknown mapping in domain geometry information\n");
+	sectorNumber = -1;
     }
     return(sectorNumber);
 }
@@ -1139,7 +580,7 @@ Fsdm_BlocksToSectors(fragNumber, data)
 /*
  *----------------------------------------------------------------------
  *
- * Fsdm_BlocksToDiskAddr --
+ * Ofs_BlocksToDiskAddr --
  *
  *	Convert from block indexes (actually, fragment indexes) to
  *	disk address (head, cylinder, sector) using the geometry information
@@ -1156,18 +597,18 @@ Fsdm_BlocksToSectors(fragNumber, data)
  *----------------------------------------------------------------------
  */
 void
-Fsdm_BlocksToDiskAddr(fragNumber, data, diskAddrPtr)
+Ofs_BlocksToDiskAddr(fragNumber, data, diskAddrPtr)
     int fragNumber;	/* Fragment index to map into block index */
     ClientData data;	/* ClientData from the device info */
     Dev_DiskAddr *diskAddrPtr;
 {
-    register Fsdm_Geometry *geoPtr;
+    register Ofs_Geometry *geoPtr;
     register int sectorNumber;	/* The sector corresponding to the fragment */
     register int cylinder;	/* The cylinder number of the fragment */
     register int rotationalSet;	/* The rotational set with cylinder of frag */
     register int blockNumber;	/* The block number within rotational set */
 
-    geoPtr 		= (Fsdm_Geometry *)data;
+    geoPtr 		= (Ofs_Geometry *)data;
     /*
      * Map to block number because the rotational sets are laid out
      * relative to blocks.  After that the cylinder is easy because we know
@@ -1203,7 +644,7 @@ Fsdm_BlocksToDiskAddr(fragNumber, data, diskAddrPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Fsdm_SectorsToRawDiskAddr --
+ * Ofs_SectorsToRawDiskAddr --
  *
  *      Convert from a sector offset to a raw disk address (cyl, head,
  *      sector) using the geometry information on the disk.  This is a
@@ -1221,7 +662,7 @@ Fsdm_BlocksToDiskAddr(fragNumber, data, diskAddrPtr)
  *----------------------------------------------------------------------
  */
 int
-Fsdm_SectorsToRawDiskAddr(sector, numSectors, numHeads, diskAddrPtr)
+Ofs_SectorsToRawDiskAddr(sector, numSectors, numHeads, diskAddrPtr)
     int sector;		/* Sector number (counting from zero 'til the total
 			 * number of sectors in the disk) */
     int numSectors;	/* Number of sectors per track */
@@ -1235,13 +676,14 @@ Fsdm_SectorsToRawDiskAddr(sector, numSectors, numHeads, diskAddrPtr)
     sector			-= diskAddrPtr->cylinder * sectorsPerCyl;
     diskAddrPtr->head		= sector / numSectors;
     diskAddrPtr->sector		= sector - numSectors * diskAddrPtr->head;
+    return 0;
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * Fsdm_RereadSummaryInfo --
+ * Ofs_RereadSummaryInfo --
  *
  *	Reread the summary sector associated with the prefix and update
  *	the domain information. This should be called if the summary
@@ -1259,58 +701,112 @@ Fsdm_SectorsToRawDiskAddr(sector, numSectors, numHeads, diskAddrPtr)
  */
 
 ReturnStatus
-Fsdm_RereadSummaryInfo(prefixName)
-   char	*prefixName;	/* Name that the disk is attached under. */
+Ofs_RereadSummaryInfo(domainPtr)
+    Fsdm_Domain		*domainPtr;	/* Domain to reread summary for. */
 {
-    Fs_HandleHeader	*hdrPtr;
-    char		*lookupName;
-    int			domainType;
-    Fsprefix		*prefixPtr;
-    Fs_FileID		rootID;
-    int			serverID;
-    int			domain;
-    register Fsdm_Domain	*domainPtr;
+    register Ofs_Domain	*ofsPtr = OFS_PTR_FROM_DOMAIN(domainPtr);
     ReturnStatus	status;
     Fs_Device		*devicePtr;
     Fs_IOParam		io;
     Fs_IOReply		reply;
     char		buffer[DEV_BYTES_PER_SECTOR];
 
-    /*
-     * Find the correct domain.
-     */
-    status = Fsprefix_Lookup(prefixName, 
-		   FSPREFIX_EXACT | FSPREFIX_EXPORTED | FSPREFIX_LOCAL,
-		   rpc_SpriteID, &hdrPtr, &rootID, &lookupName, &serverID,
-		   &domainType, &prefixPtr);
-    if (status != SUCCESS) {
-	return(status);
-    } else if (hdrPtr->fileID.type != FSIO_LCL_FILE_STREAM) {
-	return(GEN_INVALID_ARG);
-    }
-    domain = hdrPtr->fileID.major;
-    domainPtr = Fsdm_DomainFetch(domain, FALSE);
-    if (domainPtr == (Fsdm_Domain *)NIL) {
-	return(FS_DOMAIN_UNAVAILABLE);
-    }
-    /*
-     * Read the summary sector.
-     */
     bzero((Address)&io, sizeof(io));
     bzero((Address)&reply, sizeof(reply));
-    devicePtr = &(domainPtr->headerPtr->device);
+    devicePtr = &(ofsPtr->headerPtr->device);
     io.buffer = buffer;
     io.length = DEV_BYTES_PER_SECTOR;
-    io.offset = domainPtr->summarySector * DEV_BYTES_PER_SECTOR;
+    io.offset = ofsPtr->summarySector * DEV_BYTES_PER_SECTOR;
     status = (*devFsOpTable[DEV_TYPE_INDEX(devicePtr->type)].read)
 		(devicePtr, &io, &reply); 
-    if (status != SUCCESS) {
-	return(status);
-    }
     /*
      * Copy information from the buffer.
      */
-    bcopy(buffer, domainPtr->summaryInfoPtr, reply.length);
-    return SUCCESS;
+    if (status == SUCCESS) { 
+	bcopy(buffer, (char *)ofsPtr->summaryInfoPtr, reply.length);
+    }
+    return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ofs_DirOpStart --
+ *
+ *	Mark the start of a directory operation on an OFS file system.
+ *	Since OFS uses fscheck to do crash recovery, this is a noop.
+ *
+ * Results:
+ *	NIL
+ *	
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ClientData
+Ofs_DirOpStart(domainPtr, opFlags, name, nameLen, fileNumber, fileDescPtr,
+		 dirFileNumber, dirOffset, dirFileDescPtr)
+    Fsdm_Domain	*domainPtr;	/* Domain containing the object being modified.
+				 */
+    int		opFlags;	/* Operation code and flags. See fsdm.h for
+				 * definitions. */
+    char	*name;		/* Name of object being operated on. */
+    int		nameLen;	/* Length in characters of name. */
+    int		fileNumber;	/* File number of objecting being operated on.*/
+    Fsdm_FileDescriptor *fileDescPtr; /* FileDescriptor object being operated on
+				       * before operation starts. */
+    int		dirFileNumber;	/* File number of directory containing object.*/
+    int		dirOffset;	/* Byte offset into directory of the directory
+				 * entry containing operation. */
+    Fsdm_FileDescriptor *dirFileDescPtr; /* FileDescriptor of directory before
+					  * operation starts. */
+{
+    return (ClientData) -1;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ofs_DirOpEnd --
+ *
+ *	Mark the end of a directory operation on an OFS file system.
+ *	Since OFS uses fscheck to do crash recovery, this is a noop.
+ *
+ * Results:
+ *	None
+ *	
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ofs_DirOpEnd(domainPtr, clientData, status, opFlags, name, nameLen, 
+		fileNumber,  fileDescPtr, dirFileNumber, dirOffset, 
+		dirFileDescPtr)
+    Fsdm_Domain	*domainPtr;	/* Domain containing the object modified. */
+    ClientData	clientData;	/* ClientData as returned by DirOpStart. */
+    ReturnStatus status;	/* Return status of the operation, SUCCESS if
+				 * operation succeeded. FAILURE otherwise. */
+    int		opFlags;	/* Operation code and flags. See fsdm.h for
+				 * definitions. */
+    char	*name;		/* Name of object being operated on. */
+    int		nameLen;	/* Length in characters of name. */
+    int		fileNumber;	/* File number of objecting being operated on.*/
+    Fsdm_FileDescriptor *fileDescPtr; /* FileDescriptor object after
+				      * operation.*/
+    int		dirFileNumber;	/* File number of directory containing object.*/
+    int		dirOffset;	/* Byte offset into directory of the directory
+				 * entry containing operation. */
+    Fsdm_FileDescriptor *dirFileDescPtr; /* FileDescriptor of directory after
+					  * operation. */
+{
+    return;
 }
 
