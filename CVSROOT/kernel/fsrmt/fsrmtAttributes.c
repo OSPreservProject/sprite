@@ -329,7 +329,7 @@ FsLocalSetAttr(fileIDPtr, attrPtr, idPtr)
     register Fs_Attributes	*attrPtr;
     FsUserIDs *idPtr;
 {
-    register ReturnStatus	status;
+    register ReturnStatus	status = SUCCESS;
     FsLocalFileIOHandle		*handlePtr;
     register FsFileDescriptor	*descPtr;
     FsDomain			*domainPtr;
@@ -352,15 +352,29 @@ FsLocalSetAttr(fileIDPtr, attrPtr, idPtr)
 	status = FS_NOT_OWNER;
 	goto exit;
     }
+    descPtr->permissions = attrPtr->permissions;
+       
+    if (descPtr->fileType == FS_DEVICE ||
+              descPtr->fileType == FS_REMOTE_DEVICE) {
+	  descPtr->devServerID = attrPtr->devServerID;
+	  descPtr->devType = attrPtr->devType;
+	  descPtr->devUnit = attrPtr->devUnit;
+    }
+    descPtr->accessTime       = attrPtr->accessTime.seconds;
+    descPtr->dataModifyTime   = attrPtr->dataModifyTime.seconds;
+    descPtr->descModifyTime   = fsTimeInSeconds;
+       
+    descPtr->fileUsageType    = attrPtr->userType;
+
     if (attrPtr->uid >= 0 && descPtr->uid != attrPtr->uid) {
 	if (idPtr->user != 0) {
 	    /*
 	     * Don't let people give away ownership.
 	     */
 	    status = FS_NO_ACCESS;
-	    goto exit;
+	} else {
+	    descPtr->uid = attrPtr->uid;
 	}
-	descPtr->uid = attrPtr->uid;
     }
     if (attrPtr->gid >= 0 && descPtr->gid != attrPtr->gid) {
 	for (g=0 ; g < idPtr->numGroupIDs; g++) {
@@ -371,22 +385,8 @@ FsLocalSetAttr(fileIDPtr, attrPtr, idPtr)
 	}
 	if (g >= idPtr->numGroupIDs) {
 	    status = FS_NO_ACCESS;
-	    goto exit;
 	}
     }
-    descPtr->permissions = attrPtr->permissions;
-
-    if (descPtr->fileType == FS_DEVICE ||
-	descPtr->fileType == FS_REMOTE_DEVICE) {
-	descPtr->devServerID = attrPtr->devServerID;
-	descPtr->devType = attrPtr->devType;
-	descPtr->devUnit = attrPtr->devUnit;
-    }
-    descPtr->accessTime       = attrPtr->accessTime.seconds;
-    descPtr->dataModifyTime   = attrPtr->dataModifyTime.seconds;
-    descPtr->descModifyTime   = fsTimeInSeconds;
-
-    descPtr->fileUsageType    = attrPtr->userType;
 
     /*
      * Make sure this new info gets to disk.
@@ -397,7 +397,6 @@ FsLocalSetAttr(fileIDPtr, attrPtr, idPtr)
     } else {
 	FsStoreFileDesc(domainPtr, handlePtr->hdr.fileID.minor, descPtr);
 	FsDomainRelease(handlePtr->hdr.fileID.major);
-	status = SUCCESS;
     }
 exit:
     FsHandleRelease(handlePtr, TRUE);
@@ -1324,11 +1323,17 @@ VerifyIOHandle(fileIDPtr)
 	case FS_RMT_DEVICE_STREAM:
 	    fileIDPtr->type = FS_LCL_DEVICE_STREAM;
 	    break;
+        case FS_RMT_PSEUDO_STREAM:
+	    fileIDPtr->type = FS_LCL_PSEUDO_STREAM;
+	    break;
+	case FS_RMT_PIPE_STREAM:
+	    fileIDPtr->type = FS_LCL_PIPE_STREAM;
+	    break;
 	default:
-	    Sys_Panic(SYS_WARNING, "Unknown stream type in VerifyIOHandle %d\n",
-		fileIDPtr->type);
+	    Sys_Panic(SYS_WARNING,
+		    "Unknown stream type (%d) in VerifyIOHandle.\n",
+		    fileIDPtr->type);
 	    return((FsHandleHeader *)NIL);
     }
     return(FsHandleFetch(fileIDPtr));
 }
-
