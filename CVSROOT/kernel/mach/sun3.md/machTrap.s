@@ -156,12 +156,16 @@ MachSyscallTrap:
 	movl	#20002, d0
 	jra	return
 
+2$:
+	|*
+	|* Store this kernel call in the last kernel call variable.
+	|*
+	movl	d0, a0@(MACH_LAST_SYS_CALL_OFFSET)
+
 	|*
 	|* Increment a count of the number of times this kernel call
 	|* has been invoked.
 	|*
-
-2$:
 	asll	#2, d0			| Used to index into tables.
 	movl	#_sys_NumCalls, a0
 	addql	#1, a0@(0, d0:w)
