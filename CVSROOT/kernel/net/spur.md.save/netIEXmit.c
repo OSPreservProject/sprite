@@ -401,6 +401,38 @@ NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 /*
  *----------------------------------------------------------------------
  *
+ * NetIEXmitDrop --
+ *
+ *	This drops the current output packet by marking its scatter/gather
+ *	vector as DONE and notifying the process waiting for its
+ *	output to complete.  This is called in the beginning of the
+ *	Restart sequence.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Resets curScatGathPtr and notifies any process waiting on output.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NetIEXmitDrop()
+{
+    if (curScatGathPtr != (Net_ScatterGather *) NIL) {
+	curScatGathPtr->done = TRUE;
+	if (curScatGathPtr->mutexPtr != (Sync_Semaphore *) NIL) {
+	    NetOutputWakeup(curScatGathPtr->mutexPtr);
+	}
+	curScatGathPtr = (Net_ScatterGather *) NIL;
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NetIEXmitRestart --
  *
  *	Restart transmission of packets after a chip reset.
@@ -422,16 +454,6 @@ NetIEXmitRestart()
     /*
      * Assume that MASTER_LOCK on &netIEMutex is held by caller.
      */
-
-    /*
-     * Drop the current outgoing packet.
-     */    
-    if (curScatGathPtr != (Net_ScatterGather *) NIL) {
-	curScatGathPtr->done = TRUE;
-	if (curScatGathPtr->mutexPtr != (Sync_Semaphore *) NIL) {
-	    NetOutputWakeup(curScatGathPtr->mutexPtr);
-	}
-    }
 
     /*
      * Start output if there are any packets queued up.

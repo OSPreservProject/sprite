@@ -105,8 +105,7 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
      * Do some sanity checks.
      */
     if (descPtr->chipOwned) {
-	printf(
-	    "LE ethernet: Transmit buffer owned by chip.\n");
+	printf("LE ethernet: Transmit buffer owned by chip.\n");
 	return (FAILURE);
     }
 
@@ -222,8 +221,7 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 	     * Along as we only transmit one packet at a time, a buffer
 	     * own by the chip is a serious problem.
 	     */
-	    printf(
-		"LE ethernet: Transmit buffer owned by chip.\n");
+	    printf("LE ethernet: Transmit buffer owned by chip.\n");
 	    return (FAILURE);
 	}
 	descPtr->bufAddrLow = NET_LE_SUN_TO_CHIP_ADDR_LOW(bufPtr);
@@ -457,13 +455,11 @@ NetLEXmitDone()
     }
 
     if (descPtr->chipOwned) {
-	printf(
-	    "LE ethernet: Bogus transmit interrupt. Buffer owned by chip.\n");
+	printf("LE ethernet: Bogus xmit interrupt. Buffer owned by chip.\n");
 	return (FAILURE);
     }
     if (!descPtr->startOfPacket) {
-	printf(
-	    "LE ethernet: Bogus transmit interrupt. Buffer not start of packet.\n");
+	printf("LE ethernet: Bogus xmit interrupt. Buffer not start of packet.\n");
 	return (FAILURE);
     }
 
@@ -476,36 +472,30 @@ NetLEXmitDone()
 	if (descPtr->error) {
 	    net_EtherStats.xmitPacketsDropped++;
 	    if (descPtr->lateCollision) {
-		printf(
-			  "LE ethernet: Transmit late collision.\n");
+		printf("LE ethernet: Transmit late collision.\n");
 	    }
 	    if (descPtr->lostCarrier) {
-		printf(
-			  "LE ethernet: Lost of carrier.\n");
+		printf("LE ethernet: Lost carrier.\n");
 	    }
 	    /*
 	     * Lost of carrier seems to also causes late collision.
 	     * Print only one of the messages.
 	     */
 	    if (descPtr->lateCollision && !descPtr->lostCarrier) {
-		printf(
-			  "LE ethernet: Transmit late collision.\n");
+		printf("LE ethernet: Transmit late collision.\n");
 	    }
 	    if (descPtr->retryError) {
 		net_EtherStats.xmitCollisionDrop++;
 		net_EtherStats.collisions += 16;
-		printf(
-			  "LE ethernet: Too many collisions.\n");
+		printf("LE ethernet: Too many collisions.\n");
 	    }
 	    if (descPtr->underflowError) {
-		printf(
-			  "LE ethernet: Memory underflow error.\n");
+		printf("LE ethernet: Memory underflow error.\n");
 		return (FAILURE);
 	    }
 	}
 	if (descPtr->bufferError) {
-	    printf(
-			  "LE ethernet: Transmit buffering error.\n");
+	    printf("LE ethernet: Transmit buffering error.\n");
 	    return (FAILURE);
 	}
 	if (descPtr->oneRetry) {
@@ -524,12 +514,10 @@ NetLEXmitDone()
 
 	descPtr = NEXT_SEND(descPtr);
 	if (descPtr == netLEStatePtr->xmitDescNextPtr) {
-	    panic( 
-		"LE ethernet: Transmit ring with no end of packet.\n");
+	    panic("LE ethernet: Transmit ring with no end of packet.\n");
 	}
 	if (descPtr->chipOwned) {
-		printf(
-			  "LE ethernet: Transmit Buffer owned by chip.\n");
+		printf("LE ethernet: Transmit Buffer owned by chip.\n");
 		return (FAILURE);
 	}
     }
@@ -703,16 +691,45 @@ NetLEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 /*
  *----------------------------------------------------------------------
  *
- * NetLEXmitRestart --
+ * NetLEXmitDrop --
  *
- *	Restart transmission of packets after a chip reset.
+ *	Drop the current packet.  Called at the beginning of the
+ *	restart sequence, before curScatGathPtr is reset to NIL.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Current scatter gather pointer is reset and new packets may be
- *	sent out.
+ *	Current scatter gather pointer is reset and processes waiting
+ *	for synchronous output are notified.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+NetLEXmitDrop()
+{
+    if (curScatGathPtr != (Net_ScatterGather *) NIL) {
+	curScatGathPtr->done = TRUE;
+	if (curScatGathPtr->mutexPtr != (Sync_Semaphore *) NIL) {
+	    NetOutputWakeup(curScatGathPtr->mutexPtr);
+	}
+	curScatGathPtr = (Net_ScatterGather *) NIL;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetLEXmitRestart --
+ *
+ *	Restart transmission of packets at the end of the restart
+ *	sequence, after a chip reset.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Output queue started up.
  *
  *----------------------------------------------------------------------
  */
@@ -721,16 +738,6 @@ NetLEXmitRestart()
 {
     NetXmitElement	*xmitElementPtr;
     ReturnStatus	status;
-
-    /*
-     * Drop the current outgoing packet.
-     */    
-    if (curScatGathPtr != (Net_ScatterGather *) NIL) {
-	curScatGathPtr->done = TRUE;
-	if (curScatGathPtr->mutexPtr != (Sync_Semaphore *) NIL) {
-	    NetOutputWakeup(curScatGathPtr->mutexPtr);
-	}
-    }
 
     /*
      * Start output if there are any packets queued up.

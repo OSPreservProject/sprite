@@ -353,6 +353,11 @@ NetLERestart()
     DISABLE_INTR();
 
     /*
+     * Drop the current packet so the sender does't get hung.
+     */
+    NetLEXmitDrop();
+
+    /*
      * Reset the world.
      */
     NetLEReset();

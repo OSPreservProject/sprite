@@ -565,6 +565,11 @@ NetIERestart()
     MASTER_LOCK(&netIEMutex);
 
     /*
+     * Drop the current packet.
+     */
+    NetIEXmitDrop();
+
+    /*
      * Reset the world.
      */
     NetIEReset();

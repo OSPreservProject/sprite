@@ -560,6 +560,36 @@ NetLEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 /*
  *----------------------------------------------------------------------
  *
+ * NetLEXmitDrop --
+ *
+ *	Drop the current packet.  Called at the beginning of the
+ *	restart sequence, before curScatGathPtr is reset to NIL.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Current scatter gather pointer is reset and processes waiting
+ *	for synchronous output are notified.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+NetLEXmitDrop()
+{
+    if (curScatGathPtr != (Net_ScatterGather *) NIL) {
+	curScatGathPtr->done = TRUE;
+	if (curScatGathPtr->mutexPtr != (Sync_Semaphore *) NIL) {
+	    NetOutputWakeup(curScatGathPtr->mutexPtr);
+	}
+	curScatGathPtr = (Net_ScatterGather *) NIL;
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NetLEXmitRestart --
  *
  *	Restart transmission of packets after a chip reset.
@@ -578,16 +608,6 @@ NetLEXmitRestart()
 {
     NetXmitElement	*xmitElementPtr;
     ReturnStatus	status;
-
-    /*
-     * Drop the current outgoing packet.
-     */    
-    if (curScatGathPtr != (Net_ScatterGather *) NIL) {
-	curScatGathPtr->done = TRUE;
-	if (curScatGathPtr->mutexPtr != (Sync_Semaphore *) NIL) {
-	    NetOutputWakeup(curScatGathPtr->mutexPtr);
-	}
-    }
 
     /*
      * Start output if there are any packets queued up.
