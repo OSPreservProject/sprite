@@ -1025,7 +1025,9 @@ Dbg_Main(stackHole, dbgStack)
 		    procPtr = (Proc_ControlBlock *) NIL;
 		} else {
 		    procPtr = Proc_GetPCB(pid);
-		    if (procPtr->state == PROC_UNUSED ||
+		    if (procPtr == (Proc_ControlBlock *) NIL ||
+		        procPtr == (Proc_ControlBlock *) 0 ||
+			procPtr->state == PROC_UNUSED ||
 		        procPtr->state == PROC_DEAD ||
 			procPtr->state == PROC_NEW) {
 			Sys_Printf("Can't backtrace stack for process %x\n",
