@@ -28,6 +28,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "net.h"
 #include "swapBuffer.h"
 
+Boolean fsLockDebug = FALSE;
+
 /*
  * A  counter is incremented each time a process waits for a lock.
  * This is used to track locking activity.
@@ -193,6 +195,10 @@ FsLock(lockPtr, argPtr, streamIDPtr)
 	lockOwnerPtr->flags = operation & (IOC_LOCK_EXCLUSIVE|IOC_LOCK_SHARED);
 	List_Insert((List_Links *)lockOwnerPtr,
 		    LIST_ATREAR(&lockPtr->ownerList));
+	if (fsLockDebug) {
+	    printf("Stream <%d,%d> locked %x by proc %x\n", streamIDPtr->major,
+		streamIDPtr->minor, lockOwnerPtr->flags, argPtr->pid);
+	}
     } else if (status == FS_WOULD_BLOCK) {
 	Sync_RemoteWaiter wait;
 	/*
@@ -206,7 +212,14 @@ FsLock(lockPtr, argPtr, streamIDPtr)
 	    wait.pid = argPtr->pid;
 	    wait.waitToken = argPtr->token;
 	    FsWaitListInsert(&lockPtr->waitList, &wait);
+	    if (fsLockDebug) {
+		printf("Stream <%d,%d> Blocked, proc %x\n", streamIDPtr->major,
+		    streamIDPtr->minor, argPtr->pid);
+	    }
 	}
+    } else if (fsLockDebug) {
+	printf("Stream <%d,%d> locking error %x\n", streamIDPtr->major,
+		    streamIDPtr->minor, status);
     }
     return(status);
 }
@@ -314,6 +327,10 @@ FsUnlock(lockPtr, argPtr, streamIDPtr)
 	 * shared lock count has not gone to zero.
 	 */
 	FsWaitListNotify(&lockPtr->waitList);
+	if (fsLockDebug) {
+	    printf("Stream <%d,%d> Unlocked %x, proc %x\n", streamIDPtr->major,
+		streamIDPtr->minor, operation, argPtr->pid);
+	}
     }
     return(status);
 }
@@ -347,6 +364,11 @@ FsLockClose(lockPtr, streamIDPtr)
 	    lockOwnerPtr->streamID.major == streamIDPtr->major &&
 	    lockOwnerPtr->streamID.minor == streamIDPtr->minor &&
 	    lockOwnerPtr->streamID.serverID == streamIDPtr->serverID) {
+	    if (fsLockDebug) {
+		printf("Stream <%d,%d> Lock Closed %x\n",
+		    streamIDPtr->major, streamIDPtr->minor,
+		    lockOwnerPtr->flags);
+	    }
 	    lockPtr->flags &= ~lockOwnerPtr->flags;
 	    List_Remove((List_Links *)lockOwnerPtr);
 	    free((Address)lockOwnerPtr);
@@ -391,6 +413,11 @@ FsLockClientKill(lockPtr, clientID)
 	if (lockOwnerPtr->hostID == clientID) {
 	    breakLock = TRUE;
 	    lockPtr->flags &= ~lockOwnerPtr->flags;
+	    if (fsLockDebug) {
+		printf("Stream <%d,%d> Lock Broken %x Client %d\n",
+		    lockOwnerPtr->streamID.major, lockOwnerPtr->streamID.minor,
+		    lockOwnerPtr->flags, clientID);
+	    }
 	    List_Remove((List_Links *)lockOwnerPtr);
 	    free((Address)lockOwnerPtr);
 	}
