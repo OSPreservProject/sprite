@@ -1362,8 +1362,14 @@ FsFileTrunc(handlePtr, size, flags)
     int			size;		/* Size to truncate the file to. */
     int			flags;		/* FS_TRUNC_DELETE */
 {
+    ReturnStatus status;
     FsCacheTrunc(&handlePtr->cacheInfo, size, flags);
-    return( FsDescTrunc(handlePtr, size) );
+    status = FsDescTrunc(handlePtr, size);
+    if ((flags & FS_TRUNC_DELETE) && handlePtr->cacheInfo.blocksInCache > 0) {
+	Sys_Panic(SYS_FATAL, "FsFileTrunc (delete) %d blocks left over\n",
+		    handlePtr->cacheInfo.blocksInCache);
+    }
+    return(status);
 }
 
 /*
