@@ -150,7 +150,8 @@ extern void 		Proc_CancelCallFunc _ARGS_((ClientData token));
 extern	ReturnStatus	Proc_Debug _ARGS_((Proc_PID pid, 
 				Proc_DebugReq request, int numBytes,
 				Address srcAddr, Address destAddr));
-extern	void		Proc_DestroyMigratedProc _ARGS_((ClientData pidData));
+extern	void		Proc_DestroyMigratedProc _ARGS_((ClientData pidData,
+				Proc_CallInfo *callInfoPtr));
 extern ReturnStatus 	Proc_Detach _ARGS_((int status));
 extern void 		Proc_DetachInt _ARGS_((register 
 				Proc_ControlBlock *procPtr));

@@ -2372,8 +2372,9 @@ Proc_MigrateStartTracing()
  */
 
 void 
-Proc_DestroyMigratedProc(pidData) 
+Proc_DestroyMigratedProc(pidData, callInfoPtr) 
     ClientData pidData;		/* the process ID, as a ClientData */
+    Proc_CallInfo *callInfoPtr;         /* Not used. */
 {
     Proc_ControlBlock 		*procPtr; /* Process to kill. */
     Proc_PID pid = (Proc_PID) pidData;
