@@ -2228,7 +2228,7 @@ Fs_IoctlStub(streamID, request, buf)
 	ioctl.inBuffer = (Address) &flags;
 	flags = IOC_CLOSE_ON_EXEC;
 	status = Fs_IOControl(streamPtr, &ioctl, &reply);
-	procPtr->fsPtr->streamFlags[streamID] |= FS_CLOSE_ON_EXEC;
+	procPtr->fsPtr->streamFlags[streamID] &= ~FS_CLOSE_ON_EXEC;
 	break;
 
 
