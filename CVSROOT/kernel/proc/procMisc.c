@@ -422,12 +422,21 @@ Proc_Dump()
 	    case PROC_DEAD:
 		Sys_Printf(" dead      ");
 		break;
+	    case PROC_MIGRATED:
+		Sys_Printf(" migrated  ");
+		break;
+	    case PROC_NEW:
+		Sys_Printf(" new       ");
+		break;
 	    case PROC_SUSPENDED:
 		if (pcbPtr->genFlags & (PROC_DEBUGGED | PROC_ON_DEBUG_LIST)) {
 		    Sys_Printf(" debug     ");
 		} else {
 		    Sys_Printf(" suspended ");
 		}
+		break;
+	    default:
+		Sys_Printf(" ?%x?", (int) pcbPtr->state);
 		break;
 	}
 	Sys_Printf(" %8x", pcbPtr->event);
