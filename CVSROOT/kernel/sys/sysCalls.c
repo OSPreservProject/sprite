@@ -809,35 +809,6 @@ Sys_StatsStub(command, option, argPtr)
 	    break;
 	}
 	case SYS_FS_RECOV_INFO: {
-	    int 		length;
-	    Fsutil_FsRecovStats	stats;
-	    Address		resultPtr;
-	   
-	    length = sizeof (stats);
-	    if (option <= 0) {
-		/* or print it instead? */
-		status = GEN_INVALID_ARG;
-		break;
-	    }
-	    if (option < length) {
-		length = option;
-	    }
-	    resultPtr = argPtr;
-	    if (resultPtr == (Address) NIL ||
-		    resultPtr == (Address) 0 ||
-		    resultPtr == (Address) USER_NIL) {
-		/* or print it instead? */
-		status = GEN_INVALID_ARG;
-		break;
-	    }
-	    status = Fsutil_FsRecovInfo(length, &stats);
-	    if (status != SUCCESS) {
-		break;
-	    }
-	    status = Vm_CopyOut(length, (Address) &stats, argPtr);
-	    break;
-	}
-	case SYS_FS_RECOV_NAMED_INFO: {
 	    int		length;
 	    Address	resultPtr;
 	    int		lengthNeeded;
@@ -855,7 +826,7 @@ Sys_StatsStub(command, option, argPtr)
 		break;
 	    }
 	    resultPtr = (Address) malloc(length);
-	    status = Fsutil_FsRecovNamedInfo(length, resultPtr, &lengthNeeded);
+	    status = Fsutil_FsRecovInfo(length, resultPtr, &lengthNeeded);
 	    if (status != SUCCESS) {
 		break;
 	    }
