@@ -30,6 +30,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <sysInt.h>
 #include <dbg.h>
 #include <dev.h>
+#include <devVid.h>
 
 /*
  * Calls to panic and printf are protected.
