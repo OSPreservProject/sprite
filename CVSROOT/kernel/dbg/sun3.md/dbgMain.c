@@ -491,7 +491,7 @@ Dbg_InputPacket(interPtr, packetPtr, packetLength)
 	return;
     }
     if (gotPacket) {
-	if (dbgTraceLeve >= 4) {
+	if (dbgTraceLevel >= 4) {
 	    printf("Already have a packet.\n");
 	}
 	return;
