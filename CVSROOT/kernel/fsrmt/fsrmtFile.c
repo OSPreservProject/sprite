@@ -942,6 +942,20 @@ FsrmtFilePageRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
 		    Fscache_UnlockBlock(blockPtr, 0, -1, 0,
 			    FSCACHE_CLEAR_READ_AHEAD);
 		} else {
+#ifdef SOSP
+		    if (readPtr->flags & FS_SWAP) {
+			fs_MoreStats.hitsOnSwapPage++;
+			if (isForeign) {
+			    fs_MoreStats.hitsOnSwapPageM++;
+			}
+		    } else if ((readPtr->flags & (FS_HEAP | FS_SWAP)) == 0) {
+			/* It's a code page */
+			fs_MoreStats.hitsOnCodePage++;
+			if (isForeign) {
+			    fs_MoreStats.hitsOnCodePageM++;
+			}
+		    }
+#endif SOSP91
 		    Fscache_UnlockBlock(blockPtr, 0, -1, 0,
 			    FSCACHE_CLEAR_READ_AHEAD | FSCACHE_BLOCK_UNNEEDED);
 		}
@@ -991,6 +1005,21 @@ FsrmtFilePageRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
 			Fscache_UnlockBlock(blockPtr, 0, -1, 0,
 			    FSCACHE_DELETE_BLOCK);
 		    }
+#ifdef SOSP91
+		    if (readPtr->flags & FS_SWAP) {
+			fs_MoreStats.missesOnSwapPage++;
+			if (isForeign) {
+			    fs_MoreStats.missesOnSwapPageM++;
+			}
+		    } else if ((readPtr->flags & (FS_HEAP | FS_SWAP)) == 0) {
+			/* It's a code page. */
+			fs_MoreStats.missesOnCodePage++;
+			if (isForeign) {
+			    fs_MoreStats.missesOnCodePageM++;
+			}
+		    }
+#endif SOSP91
+
 		    readPtr->length = toRead;
 		    status = Fsrmt_Read(streamPtr, readPtr, remoteWaitPtr, replyPtr);
 		    if (status != SUCCESS) {
