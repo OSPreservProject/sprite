@@ -496,8 +496,7 @@ Fscache_Consist(cacheInfoPtr, flags, cachedAttrPtr)
 	case FSCONSIST_WRITE_BACK_ATTRS:
 	    break;
 	default:
-	    printf( 
-		      "Fscache_Consist: Bad consistency action %x\n", flags);
+	    printf("Fscache_Consist: Bad consistency action %x\n", flags);
 	    status = FS_INVALID_ARG;
 	    break;
     }
@@ -888,34 +887,35 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 		status = FS_WOULD_BLOCK;
 	    }
 	}
-	if (blockPtr == (Fscache_Block *)NIL &&
-	    status == FS_NO_DISK_SPACE) {
-	    /*
-	     * HACK to limit the number of "Alloc failed" messages.
-	     * MAX_MESSAGES - the max number of messages within the interval
-	     * INTERVAL_LIMIT - the time in which MAX_MESSAGES can appear.
-	     * The idea is that less than MAX_MESSAGES can appear within
-	     * any INTERVAL_LIMIT period.
-	     */
-	    static int lastPrintTime = 0;
-	    static int numRecentPrints = 0;
+	if (blockPtr == (Fscache_Block *)NIL) {
+	    if (status == FS_NO_DISK_SPACE) {
+		/*
+		 * HACK to limit the number of "Alloc failed" messages.
+		 * MAX_MESSAGES - the max number of messages within the interval
+		 * INTERVAL_LIMIT - the time in which MAX_MESSAGES can appear.
+		 * The idea is that less than MAX_MESSAGES can appear within
+		 * any INTERVAL_LIMIT period.
+		 */
+		static int lastPrintTime = 0;
+		static int numRecentPrints = 0;
 #define MAX_MESSAGES	2
 #define INTERVAL_LIMIT	30
-
-	    if (fsutil_TimeInSeconds - lastPrintTime >= INTERVAL_LIMIT) {
-		numRecentPrints = 0;
-	    }
-	    if (numRecentPrints < MAX_MESSAGES) {
-		numRecentPrints++;
-		printf("Fscache_Write: Alloc failed <%d,%d> \"%s\" %s\n",
-		    cacheInfoPtr->hdrPtr->fileID.major,
-		    cacheInfoPtr->hdrPtr->fileID.major,
-		    Fsutil_HandleName(cacheInfoPtr->hdrPtr),
-		    "DISK FULL");
-		lastPrintTime = fsutil_TimeInSeconds;
-	    }
+    
+		if (fsutil_TimeInSeconds - lastPrintTime >= INTERVAL_LIMIT) {
+		    numRecentPrints = 0;
+		}
+		if (numRecentPrints < MAX_MESSAGES) {
+		    numRecentPrints++;
+		    printf("Fscache_Write: Alloc failed <%d,%d> \"%s\" %s\n",
+			cacheInfoPtr->hdrPtr->fileID.major,
+			cacheInfoPtr->hdrPtr->fileID.major,
+			Fsutil_HandleName(cacheInfoPtr->hdrPtr),
+			"DISK FULL");
+		    lastPrintTime = fsutil_TimeInSeconds;
+		}
 #undef MAX_MESSAGES
 #undef INTERVAL_LIMIT
+	    }
 	    break;
 	}
 
