@@ -299,7 +299,7 @@ DevFBOpen(devicePtr, useFlags, token, flagsPtr)
 
     switch (machArch) {
     case SYS_SUN4:
-	if (machType == SYS_SUN_4_C ) {
+	if ((machType & SYS_SUN_ARCH_MASK) == SYS_SUN_4_C ) {
 	    whichFb = GetFBType();
 	    if (whichFb == -1) {
 		whichFb = FBTYPE_SUN2BW;
