@@ -259,16 +259,35 @@ RpcRemoteCall(callPtr, dataPtr, dataLength, replyDataPtr,
 	|| ((procPtr->state != PROC_MIGRATED) &&
 	    !((procPtr->state == PROC_NEW) &&
 	      (callPtr->callNumber == SYS_PROC_EXIT)))) {
- 	printf("Warning: Proc_RpcRemoteCall: invalid pid: %x.\n",
-		callPtr->processID);
-	if (procPtr != (Proc_ControlBlock *) NIL) {
-	    Proc_Unlock(procPtr);
+	if ((procPtr != (Proc_ControlBlock *) NIL) &&
+	    (procPtr->genFlags & PROC_MIGRATION_DONE)) {
+	    /*
+	     * Migration is complete, but it hasn't context switched yet.
+	     * This is okay, since nothing it does after that point
+	     * affects the process.  But, if the call is EXIT, flag an error.
+	     * (There's still a race condition in the period between checking
+	     * for this bit and context switching in the migration trap
+	     * routine.  Hmm... Poll, maybe?)
+	     */
+	    if (callPtr->callNumber == SYS_PROC_EXIT) {
+		procPtr->genFlags |= PROC_MIG_ERROR;
+		Proc_Unlock(procPtr);
+		return(SUCCESS);
+	    }
+	} else {
+	    printf("Warning: Proc_RpcRemoteCall: invalid pid: %x.\n",
+		   callPtr->processID);
+	    if (procPtr != (Proc_ControlBlock *) NIL) {
+		printf("Proc_RpcRemoteCall: state = %d, call = %d.\n",
+		       (int) procPtr->state, callPtr->callNumber);
+		Proc_Unlock(procPtr);
+	    }
+	    /*
+	     * Return a special status that indicates the migrated process
+	     * should be destroyed.
+	     */
+	    return (PROC_NO_PEER);
 	}
-	/*
-	 * Return a special status that indicates the migrated process
-	 * should be destroyed.
-	 */
-	return (PROC_NO_PEER);
     }
     Proc_Unlock(procPtr);
     if (callBackVector[callPtr->callNumber].localPtr ==
