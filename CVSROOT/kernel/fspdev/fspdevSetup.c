@@ -524,14 +524,24 @@ FspdevRmtPseudoStreamIoOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
  *----------------------------------------------------------------------
  */
 /*ARGSUSED*/
+#ifndef SOSP91
 ReturnStatus
 FspdevPseudoStreamClose(streamPtr, clientID, procID, flags, size, data)
+#else
+ReturnStatus
+FspdevPseudoStreamClose(streamPtr, clientID, procID, flags, size, data,
+    offsetPtr, rwFlagsPtr)
+#endif
     Fs_Stream		*streamPtr;	/* Client pseudo-stream to close */
     int			clientID;	/* HostID of client closing */
     Proc_PID		procID;		/* ID of closing process, IGNORED */
     int			flags;		/* IGNORED */
     int			size;		/* Should be zero */
     ClientData		data;		/* IGNORED */
+#ifdef SOSP91
+    int			*offsetPtr;
+    int			*rwFlagsPtr;
+#endif
 {
     register FspdevClientIOHandle *cltHandlePtr =
 	    (FspdevClientIOHandle *)streamPtr->ioHandlePtr;

@@ -357,9 +357,16 @@ typedef struct Fsio_StreamTypeOps {
      */
     Boolean	 (*scavenge) _ARGS_((Fs_HandleHeader *hdrPtr));
     void	 (*clientKill) _ARGS_((Fs_HandleHeader *hdrPtr, int clientID));
+#ifdef SOSP91
+    ReturnStatus (*close) _ARGS_((Fs_Stream *streamPtr, int clientID, 
+				  Proc_PID procID, int flags, int dataSize, 
+				  ClientData closeData, int *offsetPtr,
+				  int *rwFlagsPtr));
+#else
     ReturnStatus (*close) _ARGS_((Fs_Stream *streamPtr, int clientID, 
 				  Proc_PID procID, int flags, int dataSize, 
 				  ClientData closeData));
+#endif
 } Fsio_StreamTypeOps;
 
 extern Fsio_StreamTypeOps fsio_StreamOpTable[];

@@ -372,9 +372,15 @@ extern Fs_HandleHeader *FspdevControlVerify _ARGS_((Fs_FileID *fileIDPtr,
 extern ReturnStatus FspdevControlReopen _ARGS_((Fs_HandleHeader *hdrPtr,
 		int clientID, ClientData inData, int *outSizePtr, 
 		ClientData *outDataPtr));
+#ifdef SOSP91
+extern ReturnStatus FspdevControlClose _ARGS_((Fs_Stream *streamPtr, 
+		int clientID, Proc_PID procID, int flags, int size,
+		ClientData data, int *offsetPtr, int *rwFlagsPtr));
+#else
 extern ReturnStatus FspdevControlClose _ARGS_((Fs_Stream *streamPtr, 
 		int clientID, Proc_PID procID, int flags, int size,
 		ClientData data));
+#endif
 extern void FspdevControlClientKill _ARGS_((Fs_HandleHeader *hdrPtr,
 		int clientID));
 extern Boolean FspdevControlScavenge _ARGS_((Fs_HandleHeader *hdrPtr));
@@ -395,9 +401,15 @@ extern ReturnStatus FspdevServerStreamRead _ARGS_((Fs_Stream *streamPtr,
 		Fs_IOReply *replyPtr));
 extern ReturnStatus FspdevServerStreamIOControl _ARGS_((Fs_Stream *streamPtr, 
 		Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
+#ifdef SOSP91
+extern ReturnStatus FspdevServerStreamClose _ARGS_((Fs_Stream *streamPtr, 
+		int clientID, Proc_PID procID, int flags, int size, 
+		ClientData data, int *offsetPtr, int *rwFlagsPtr));
+#else
 extern ReturnStatus FspdevServerStreamClose _ARGS_((Fs_Stream *streamPtr, 
 		int clientID, Proc_PID procID, int flags, int size, 
 		ClientData data));
+#endif
 /*
  * Pseudo-device (client-side) streams
  */
@@ -429,9 +441,15 @@ extern ReturnStatus FspdevPseudoStreamMigrate _ARGS_((Fsio_MigInfo *migInfoPtr,
 		Address *dataPtr));
 extern ReturnStatus FspdevPseudoStreamMigOpen _ARGS_((Fsio_MigInfo *migInfoPtr,
 		int size, ClientData data, Fs_HandleHeader **hdrPtrPtr));
+#ifdef SOSP91
+extern ReturnStatus FspdevPseudoStreamClose _ARGS_((Fs_Stream *streamPtr, 
+		int clientID, Proc_PID procID, int flags, int size,
+		ClientData data, int *offsetPtr, int *rwFlagsPtr));
+#else
 extern ReturnStatus FspdevPseudoStreamClose _ARGS_((Fs_Stream *streamPtr, 
 		int clientID, Proc_PID procID, int flags, int size,
 		ClientData data));
+#endif
 extern void FspdevPseudoStreamCloseInt _ARGS_((	
 		FspdevServerIOHandle *pdevHandlePtr));
 

@@ -346,14 +346,24 @@ Fsio_DeviceIoOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtr
  *----------------------------------------------------------------------
  */
 /*ARGSUSED*/
+#ifndef SOSP91
 ReturnStatus
 Fsio_DeviceClose(streamPtr, clientID, procID, flags, size, data)
+#else
+ReturnStatus
+Fsio_DeviceClose(streamPtr, clientID, procID, flags, size, data, offsetPtr,
+    rwFlagsPtr)
+#endif
     Fs_Stream		*streamPtr;	/* Stream to device */
     int			clientID;	/* HostID of client closing */
     Proc_PID		procID;		/* ID of closing process */
     int			flags;		/* Flags from the stream being closed */
     int			size;		/* Should be zero */
     ClientData		data;		/* IGNORED */
+#ifdef SOSP91
+    int			*offsetPtr;	/* Not used. */
+    int			*rwFlagsPtr;	/* Not used. */
+#endif
 {
     ReturnStatus		status;
     register Fsio_DeviceIOHandle	*devHandlePtr =

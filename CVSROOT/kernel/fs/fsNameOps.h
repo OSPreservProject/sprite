@@ -128,6 +128,22 @@ typedef struct Fs_OpenArgs {
     Fs_UserIDs	id;		/* User and group IDs */
 } Fs_OpenArgs;
 
+#ifdef SOSP91
+typedef struct Fs_OpenArgsSOSP {
+    Fs_FileID	prefixID;	/* File ID from prefix handle, MUST BE FIRST */
+    Fs_FileID	rootID;		/* File ID of root.  MUST FOLLOW prefix ID.
+				 * Used to trap ".." past the root. */
+    int		useFlags;	/* Flags defined in fs.h */
+    int		permissions;	/* Permission bits for created files.  Already
+				 * reflects per-process permission mask */
+    int		type;		/* Used to contrain open to a specific type */
+    int		clientID;	/* True Host ID of client doing the open */
+    int		migClientID;	/* Logical host ID if migrated (the home node)*/
+    Fs_UserIDs	id;		/* User and group IDs */
+    int		realID;
+} Fs_OpenArgsSOSP;
+#endif
+
 typedef struct Fs_OpenResults {
     Fs_FileID	ioFileID;	/* FileID used to get to I/O server.  This is
 				 * set by the name server, although the I/O

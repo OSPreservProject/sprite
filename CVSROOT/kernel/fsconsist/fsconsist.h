@@ -206,7 +206,14 @@ extern ReturnStatus Fsconsist_RpcConsist _ARGS_((ClientData srvToken,
 extern ReturnStatus Fsconsist_RpcConsistReply _ARGS_((ClientData srvToken, 
 			int clientID, int command, Rpc_Storage *storagePtr));
 
+
+#ifdef SOSP91
+extern int Fsconsist_NumClients _ARGS_((Fsconsist_Info *consistPtr,
+					int *numReadPtr, int *numWritePtr));
+#else
 extern int Fsconsist_NumClients _ARGS_((Fsconsist_Info *consistPtr));
+#endif
+
 extern void Fsconsist_AddClient _ARGS_((int clientID));
 
 #endif

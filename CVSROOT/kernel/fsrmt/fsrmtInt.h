@@ -182,8 +182,14 @@ extern ReturnStatus FsrmtFileIoOpen _ARGS_((Fs_FileID *ioFileIDPtr,
 extern ReturnStatus FsrmtFileReopen _ARGS_((Fs_HandleHeader *hdrPtr, 
 		int clientID, ClientData inData, int *outSizePtr, 
 		ClientData *outDataPtr));
+#ifdef SOSP91
+extern ReturnStatus FsrmtFileClose _ARGS_((Fs_Stream *streamPtr, int clientID, 
+		Proc_PID procID, int flags, int dataSize, 
+		ClientData closeData, int *offsetPtr, int *rwFlagsPtr));
+#else
 extern ReturnStatus FsrmtFileClose _ARGS_((Fs_Stream *streamPtr, int clientID, 
 		Proc_PID procID, int flags, int dataSize, ClientData closeData));
+#endif
 extern Boolean FsrmtFileScavenge _ARGS_((Fs_HandleHeader *hdrPtr));
 extern Fs_HandleHeader *FsrmtFileVerify _ARGS_((Fs_FileID *fileIDPtr, 
 		int clientID, int *domainTypePtr));

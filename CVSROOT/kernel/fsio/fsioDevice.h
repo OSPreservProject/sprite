@@ -78,9 +78,17 @@ extern ReturnStatus Fsio_VanillaDevReopen _ARGS_((Fs_Device *devicePtr,
 /*
  * Open operations.
  */
+
+#ifdef SOSP91
+extern ReturnStatus Fsio_DeviceClose _ARGS_((Fs_Stream *streamPtr, 
+				int clientID, Proc_PID procID, int flags, 
+				int size, ClientData data, int *offsetPtr,
+				int *rwFlagsPtr));
+#else
 extern ReturnStatus Fsio_DeviceClose _ARGS_((Fs_Stream *streamPtr, 
 				int clientID, Proc_PID procID, int flags, 
 				int size, ClientData data));
+#endif
 
 /*
  * Stream operations.

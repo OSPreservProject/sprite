@@ -1293,14 +1293,24 @@ FspdevSignalOwner(ctrlHandlePtr, ioctlPtr)
  *----------------------------------------------------------------------
  */
 /*ARGSUSED*/
+#ifdef SOSP91
+ReturnStatus
+FspdevServerStreamClose(streamPtr, clientID, procID, flags, size, data, 
+    offsetPtr, rwFlagsPtr)
+#else
 ReturnStatus
 FspdevServerStreamClose(streamPtr, clientID, procID, flags, size, data)
+#endif
     Fs_Stream		*streamPtr;	/* Service stream to close */
     int			clientID;	/* HostID of client closing */
     Proc_PID		procID;		/* ID of closing process */
     int			flags;		/* Flags from the stream being closed */
     int			size;		/* Should be zero */
     ClientData		data;		/* IGNORED */
+#ifdef SOSP91
+    int			*offsetPtr;
+    int			*rwFlagsPtr;
+#endif
 {
     register FspdevServerIOHandle *pdevHandlePtr =
 	    (FspdevServerIOHandle *)streamPtr->ioHandlePtr;
@@ -1322,7 +1332,12 @@ FspdevServerStreamClose(streamPtr, clientID, procID, flags, size, data)
 	dummy.ioHandlePtr = (Fs_HandleHeader *)ctrlHandlePtr;
 	Fsutil_HandleLock(ctrlHandlePtr);
 	Fsprefix_HandleClose(ctrlHandlePtr->prefixPtr, FSPREFIX_ANY);
+#ifdef SOSP91
+	(void)FspdevControlClose(&dummy, clientID, procID, flags, 0, 
+	    (ClientData)NIL, (int *) NIL, (int *) NIL);
+#else
 	(void)FspdevControlClose(&dummy, clientID, procID, flags, 0, (ClientData)NIL);
+#endif
     }
     Sync_LockClear(&pdevHandlePtr->lock);
     Fsutil_HandleRelease(pdevHandlePtr, TRUE);

@@ -311,14 +311,24 @@ Fsrmt_RpcDevOpen(srvToken, clientID, command, storagePtr)
  *
  *----------------------------------------------------------------------
  */
+#ifdef SOSP91
+ReturnStatus
+Fsrmt_IOClose(streamPtr, clientID, procID, flags, dataSize, closeData,
+    offsetPtr, rwFlagsPtr)
+#else
 ReturnStatus
 Fsrmt_IOClose(streamPtr, clientID, procID, flags, dataSize, closeData)
+#endif
     Fs_Stream		*streamPtr;	/* Stream to remote object */
     int			clientID;	/* ID of closing host */
     Proc_PID		procID;		/* ID of closing process */
     int			flags;		/* Flags from the stream being closed */
     int			dataSize;	/* Size of *closeData, or Zero */
     ClientData		closeData;	/* Copy of cached I/O attributes. */
+#ifdef SOSP91
+    int			*offsetPtr;	/* Not used. */
+    int			*rwFlagsPtr;	/* Not used. */
+#endif
 {
     ReturnStatus		status;
     register Fsrmt_IOHandle *rmtHandlePtr =

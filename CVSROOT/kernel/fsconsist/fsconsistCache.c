@@ -1354,7 +1354,7 @@ Fsconsist_NumClients(consistPtr)
 	    if (clientPtr->use.write > 0) {
 		numWrite++;
 	    } 
-	    if (clientPtr->use.write - clientPtr->use.ref > 0) {
+	    if (clientPtr->use.ref - clientPtr->use.write > 0) {
 		numRead++;
 	    }
 #endif

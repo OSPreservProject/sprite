@@ -236,6 +236,12 @@ Fsio_FileNameOpen(handlePtr, openArgsPtr, openResultsPtr)
     register useFlags = openArgsPtr->useFlags;
     register clientID = openArgsPtr->clientID;
     register Fs_Stream *streamPtr;
+#ifdef SOSP91
+    int realID = -1;
+    if (openResultsPtr->dataSize == sizeof(Fs_OpenArgsSOSP)) {
+	realID = ((Fs_OpenArgsSOSP *) openArgsPtr)->realID;
+    }
+#endif
 
     if ((useFlags & FS_WRITE) &&
 	(handlePtr->descPtr->fileType == FS_DIRECTORY)) {
@@ -330,15 +336,10 @@ Fsio_FileNameOpen(handlePtr, openArgsPtr, openResultsPtr)
 		int numReaders;
 		(void) Fsconsist_NumClients(&handlePtr->consist, 
 		    &numReaders, &numWriters);
-		/*
-		 * BUG: Right now this records effective user id instead of
-		 * real user id. 
-		 */
-
 		SOSP_ADD_OPEN_TRACE(openArgsPtr->clientID, 
 			openArgsPtr->migClientID, openResultsPtr->ioFileID,
 			openResultsPtr->streamID, openArgsPtr->id.user,
-			openArgsPtr->useFlags, numReaders, numWriters,
+			realID, openArgsPtr->useFlags, numReaders, numWriters,
 			fileStatePtr->attr.createTime,
 			fileStatePtr->attr.lastByte + 1);
 	    }
@@ -573,7 +574,7 @@ Fsio_FileClose(streamPtr, clientID, procID, flags, dataSize, closeData)
 #else
 ReturnStatus
 Fsio_FileClose(streamPtr, clientID, procID, flags, dataSize, closeData,
-    offsetPtr)
+    offsetPtr, rwFlagsPtr)
 #endif
     Fs_Stream		*streamPtr;	/* Stream to regular file */
     int			clientID;	/* Host ID of closer */
@@ -583,6 +584,7 @@ Fsio_FileClose(streamPtr, clientID, procID, flags, dataSize, closeData,
     ClientData		closeData;	/* Ref. to Fscache_Attributes */
 #ifdef SOSP91
     int			*offsetPtr;
+    int			*rwFlagsPtr;
 #endif
 {
     register Fsio_FileIOHandle *handlePtr =
@@ -611,13 +613,17 @@ Fsio_FileClose(streamPtr, clientID, procID, flags, dataSize, closeData,
 #ifdef SOSP91
     {
 	int offset;
+	int rwFlags;
 	if ((offsetPtr != (int *) NIL) && !(streamPtr->flags & FS_RMT_SHARED)) {
 	    offset = *offsetPtr;
+	    rwFlags = *rwFlagsPtr;
 	} else {
 	    offset = streamPtr->offset;
+	    rwFlags = (streamPtr->hdr.flags & FSUTIL_RW_FLAGS) >> 8;
 	}
 	SOSP_ADD_CLOSE_TRACE(streamPtr->hdr.fileID, offset, 
-	    handlePtr->cacheInfo.attr.lastByte + 1);
+	    handlePtr->cacheInfo.attr.lastByte + 1, streamPtr->flags,
+	    rwFlags);
     }
 #endif
 
@@ -1102,7 +1108,7 @@ Fsio_FileRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
 
     LIST_FORALL(&consistPtr->clientList, (List_Links *) clientPtr) {
 	if (clientPtr->clientID == readPtr->reserved) {
-	    if (!clientPtr->cached) {
+	    if ((!clientPtr->cached) || clientPtr->clientID == rpc_SpriteID) {
 		use = clientPtr->use;
 		maybeShared = TRUE;
 	    }
@@ -1115,7 +1121,7 @@ Fsio_FileRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
 		if ((!clientPtr->cached) &&
 			((use.write > 0 && clientPtr->use.ref > 0) ||
 			clientPtr->use.write > 0)) {
-		    SOSP_ADD_READ_TRACE(clientPtr->clientID, 
+		    SOSP_ADD_READ_TRACE(readPtr->reserved, 
 			    streamPtr->hdr.fileID, TRUE, readPtr->offset, 
 			    readPtr->length);
 		    break;
@@ -1186,7 +1192,7 @@ Fsio_FileWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
 
     LIST_FORALL(&consistPtr->clientList, (List_Links *) clientPtr) {
 	if (clientPtr->clientID == writePtr->reserved) {
-	    if (!clientPtr->cached) {
+	    if ((!clientPtr->cached) || clientPtr->clientID == rpc_SpriteID) {
 		maybeShared = TRUE;
 	    }
 	    break;
@@ -1196,7 +1202,7 @@ Fsio_FileWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
 	LIST_FORALL(&consistPtr->clientList, (List_Links *) clientPtr) {
 	    if (clientPtr->clientID != writePtr->reserved) {
 		if ((!clientPtr->cached) && clientPtr->use.ref > 0) {
-		    SOSP_ADD_READ_TRACE(clientPtr->clientID, 
+		    SOSP_ADD_READ_TRACE(writePtr->reserved, 
 			    streamPtr->hdr.fileID, FALSE, writePtr->offset, 
 			    writePtr->length);
 		    break;

@@ -1767,7 +1767,16 @@ Fs_IOControlStub(streamID, command, inBufSize, inBuffer,
     }
     if ((inBufSize > 0) && (inBuffer != (Address)0) &&
 			   (inBuffer != (Address)NIL)) {
+#ifdef SOSP91
+	/*
+	 * Allocate space after the arguments on an IOC_REPOSITION for the
+	 * current offset.
+	 */
+	ioctl.inBuffer  = localInBuffer = (Address) 
+				malloc(inBufSize + sizeof(int));
+#else
 	ioctl.inBuffer  = localInBuffer = (Address) malloc(inBufSize);
+#endif
 	ioctl.inBufSize = inBufSize;
     } else {
 	ioctl.inBuffer = (Address)NIL;

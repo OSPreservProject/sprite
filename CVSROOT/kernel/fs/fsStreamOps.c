@@ -175,6 +175,15 @@ Fs_Read(streamPtr, buffer, offset, lenPtr)
 	 */
 	ioPtr->length = toRead;
     }
+
+
+#ifdef SOSP91
+    /*
+     * Record the fact that we read from the stream.
+     */
+    streamPtr->hdr.flags |= FSUTIL_RW_READ;
+#endif
+
     /*
      * Cache the file offset for sequential access.
      */
@@ -314,6 +323,12 @@ Fs_Write(streamPtr, buffer, offset, lenPtr)
 	    break;			/* stream error */
 	}
     }
+#ifdef SOSP91
+    /*
+     * Record the fact that we read from the stream.
+     */
+    streamPtr->hdr.flags |= FSUTIL_RW_WRITE;
+#endif
     /*
      * Return info about the transfer.
      */
@@ -420,11 +435,21 @@ Fs_IOControl(streamPtr, ioctlPtr, replyPtr)
 #ifdef SOSP91
 	} else if ((command == IOC_REPOSITION) &&
 	    (streamType == FSIO_RMT_FILE_STREAM)) {
-	    int		*offsetPtr;
-	    offsetPtr = (int *) (ioctlPtr->inBuffer + 
+	    int		*ptr;
+	    Fs_Attributes attrs;
+
+	    ptr = (int *) (ioctlPtr->inBuffer + 
 				    sizeof(Ioc_RepositionArgs));
-	    *offsetPtr = streamPtr->offset;
-	    ioctlPtr->inBufSize += sizeof(int);
+	    *ptr = streamPtr->offset;
+	    status = Fs_GetAttrStream(streamPtr, &attrs);
+	    if (status == SUCCESS) {
+		*ptr = attrs.size;
+	    } else {
+		*ptr = -1;
+	    }
+	    *ptr = ((streamPtr->hdr.flags & FSUTIL_RW_FLAGS) >> 8);
+	    streamPtr->hdr.flags &= ~FSUTIL_RW_FLAGS;
+	    ioctlPtr->inBufSize += sizeof(int) * 3;
 #endif
 	}
 
@@ -520,9 +545,12 @@ Fs_IOControl(streamPtr, ioctlPtr, replyPtr)
 		    replyPtr->length = sizeof(int);
 		}
 #ifdef SOSP91
-		if (streamType == FSIO_LCL_FILE_STREAM) {
+		if ((streamType == FSIO_LCL_FILE_STREAM) && 
+		    (newOffset != streamPtr->offset)) {
 		    SOSP_ADD_LSEEK_TRACE(streamPtr->hdr.fileID, 
-			streamPtr->offset, newOffset);
+			streamPtr->offset, newOffset, 
+			((streamPtr->hdr.flags & FSUTIL_RW_FLAGS) >> 8));
+		    streamPtr->hdr.flags &= ~FSUTIL_RW_FLAGS;
 		}
 #endif
 		streamPtr->offset = newOffset;
@@ -675,7 +703,7 @@ Fs_Close(streamPtr)
 #ifdef SOSP91
 	status = (fsio_StreamOpTable[streamPtr->ioHandlePtr->fileID.type].close)
 		(streamPtr, rpc_SpriteID, procPtr->processID, streamPtr->flags,
-		0, (ClientData)NIL, (int *) NIL);
+		0, (ClientData)NIL, (int *) NIL, (int *) NIL);
 #else 
 	status = (fsio_StreamOpTable[streamPtr->ioHandlePtr->fileID.type].close)
 		(streamPtr, rpc_SpriteID, procPtr->processID, streamPtr->flags,

@@ -81,8 +81,15 @@ extern ReturnStatus Fsio_PipeReopen _ARGS_((Fs_HandleHeader *hdrPtr,
 	ClientData *outDataPtr));
 extern void Fsio_PipeClientKill _ARGS_((Fs_HandleHeader *hdrPtr, int clientID));
 extern Boolean Fsio_PipeScavenge _ARGS_((Fs_HandleHeader *hdrPtr));
+
+#ifdef SOSP91 
+extern ReturnStatus Fsio_PipeClose _ARGS_((Fs_Stream *streamPtr, int clientID,
+	Proc_PID procID, int flags, int dataSize, ClientData closeData,
+	int *offsetPtr, int *rwFlagsPtr));
+#else
 extern ReturnStatus Fsio_PipeClose _ARGS_((Fs_Stream *streamPtr, int clientID,
 	Proc_PID procID, int flags, int dataSize, ClientData closeData));
+#endif
 
 
 #endif /* _FSIOPIPE */
