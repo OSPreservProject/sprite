@@ -99,6 +99,29 @@ typedef struct Fsconsist_ClientInfo {
 				 * garbage collect the element when set. */
 } Fsconsist_ClientInfo;
 
+/*
+ * INSERT_CLIENT takes care of initializing a new client list entry.
+ */
+#define INSERT_CLIENT(clientList, clientPtr, clientID) \
+    fs_Stats.object.fileClients++;		\
+    clientPtr = mnew(Fsconsist_ClientInfo);	\
+    clientPtr->clientID = clientID;		\
+    clientPtr->use.ref = 0;			\
+    clientPtr->use.write = 0;			\
+    clientPtr->use.exec = 0;			\
+    clientPtr->openTimeStamp = 0;		\
+    clientPtr->cached = FALSE;			\
+    clientPtr->locked = FALSE;			\
+    List_InitElement((List_Links *)clientPtr);	\
+    List_Insert((List_Links *) clientPtr, LIST_ATFRONT(clientList));
+
+/*
+ * REMOVE_CLIENT takes care of removing a client list entry.
+ */
+#define REMOVE_CLIENT(clientPtr) \
+	fs_Stats.object.fileClients--;		\
+	List_Remove((List_Links *) clientPtr);	\
+	free((Address) clientPtr);
 
 /*
  * Client list routines.
