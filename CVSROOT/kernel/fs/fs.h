@@ -66,24 +66,6 @@ typedef struct Fs_ProcessState {
  * only exporting an opaque Fs_StreamPtr type, or by changing the definition
  * of Fs_Stream from a struct to a pointer to the struct.
  */
-/*
- * FsFileID - Uniquely identify a filesystem object.  A type is the first
- *	field, the hostID of the server is next, and the remaining fields 
- *	are interpreted by the implementation of that type of filesystem object
- *	(ie. files, devices, pipes, pseudo-devices, etc.)
- *	A global hash table of filesystem objects, (called "handles")
- *	is maintained with this FsFileID as the hash key.
- */
-typedef struct FsFileID {
-    int		type;		/* Defined below. Used in I/O switch, and
-				 * implicitly indicates what kind of structure
-				 * follows the FsHandleHeader in the Handle. */
-    int		serverID;	/* Host that controls the object.  (This would
-				 * have to be a multi-cast ID for objects
-				 * that support replication.) */
-    int		major;		/* First type specific identifier. */
-    int		minor;		/* Second type sepcific identifier. */
-} FsFileID;			/* 16 BYTES */
 
 /*
  * All kinds of things are referenced from the object hash table.  The generic
@@ -92,7 +74,7 @@ typedef struct FsFileID {
  */
 
 typedef struct FsHandleHeader {
-    FsFileID		fileID;		/* Used as the hash key. */
+    Fs_FileID		fileID;		/* Used as the hash key. */
     int			flags;		/* Defined in fsHandle.c. */
     Sync_Condition	unlocked;	/* Notified when handle is unlocked. */
     int			refCount;	/* Used for garbage collection. */
@@ -108,8 +90,8 @@ typedef struct FsHandleHeader {
  */
 
 typedef struct FsNameInfo {
-    FsFileID		fileID;		/* Identifies file and name server. */
-    FsFileID		rootID;		/* ID of file system root.  Passed
+    Fs_FileID		fileID;		/* Identifies file and name server. */
+    Fs_FileID		rootID;		/* ID of file system root.  Passed
 					 * to name server to prevent ascending
 					 * past the root of a domain with ".."*/
     int			domainType;	/* Name domain type */
