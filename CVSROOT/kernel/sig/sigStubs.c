@@ -31,16 +31,13 @@ static char rcsid[] = "$Header$";
 #include <user/sys/signal.h>
 #include <mach.h>
 #include <proc.h>
+#include <procUnixStubs.h>
 #include <vm.h>
 #include <fsutil.h>
 #include <assert.h>
 #include <sig.h>
 #include <sigInt.h>
 #include <compatInt.h>
-
-#ifndef Mach_SetErrno
-#define Mach_SetErrno(err)
-#endif
 
 extern unsigned int 	sigBitMasks[SIG_NUM_SIGNALS];
 extern int		sigDefActions[SIG_NUM_SIGNALS];
@@ -172,7 +169,7 @@ Sig_SigvecStub(sig, newVectorPtr, oldVectorPtr)
     /*
      * Set magic flag to indicate we're in Unix signal mode.
      */
-    procPtr->unixProgress = 0x11beef22;
+    procPtr->unixProgress = PROC_PROGRESS_UNIX;
 
     status = Compat_UnixSignalToSprite(sig, &spriteSignal);
     if (status == FAILURE || spriteSignal == NULL) {
@@ -195,7 +192,7 @@ Sig_SigvecStub(sig, newVectorPtr, oldVectorPtr)
 		break;
 	    default:
 		newAction.action = SIG_HANDLE_ACTION;
-		newAction.handler = newVector.sv_handler;
+		newAction.handler = (int (*)())newVector.sv_handler;
 	}
 	status = Compat_UnixSigMaskToSprite(newVector.sv_mask,
 					    &newAction.sigHoldMask);
@@ -295,7 +292,7 @@ Sig_SigvecStub(sig, newVectorPtr, oldVectorPtr)
 	      break;
 
 	  default:
-	      oldVector.sv_handler = oldAction.handler;
+	      oldVector.sv_handler = (void (*)())oldAction.handler;
 	      break;
 	  }
 	  (void) Compat_SpriteSigMaskToUnix(oldAction.sigHoldMask, 
@@ -438,16 +435,19 @@ Sig_SigpauseStub(mask)
     status = Compat_UnixSigMaskToSprite(mask,&spriteMask);
     if (status == FAILURE) {
 	Mach_SetErrno(EINVAL);
+	return -1;
     }
     status = Sig_Pause(spriteMask);
     if (debugSigStubs) {
 	printf("Sig_Sigpause done\n");
     }
-    if (status != SUCCESS) {
-	return(status);
-    } else {
-	return(GEN_ABORTED_BY_SIGNAL);
+    Mach_SetErrno(EINTR);
+    if (status == GEN_ABORTED_BY_SIGNAL) {
+	Proc_GetCurrentProc()->unixProgress = PROC_PROGRESS_RESTART;
+	printf("Sigpause: setting RESTART\n");
+	
     }
+    return -1;
 }
 
 

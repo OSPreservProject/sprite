@@ -33,6 +33,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <fs.h>
 #include <fsutil.h>
 #include <fsNameOps.h>
+#include <fsUnixStubs.h>
 #include <fsio.h>
 #include <sync.h>
 #include <list.h>
@@ -85,11 +86,6 @@ static ReturnStatus readInMasks _ARGS_ ((int numStreams, int *userReadMaskPtr,
 static ReturnStatus writeOutMasks _ARGS_ ((int numStreams,
     int *userReadMaskPtr, int *readMaskPtr, int *userWriteMaskPtr, 
     int *writeMaskPtr, int *userExceptMaskPtr, int *exceptMaskPtr));
-
-extern ReturnStatus Fs_Select _ARGS_ ((int numStreams, Time *timeoutPtr,
-    int *inReadMaskPtr, int *outReadMaskPtr, int *inWriteMaskPtr,
-    int *outWriteMaskPtr, int *inExceptMaskPtr, int *outExceptMaskPtr,
-    int *numReadyPtr, int *doTimeoutPtr));
 
 /*
  *----------------------------------------------------------------------

@@ -28,28 +28,27 @@ static char rcsid[] = "$Header$";
 #include <assert.h>
 #include <fsprefix.h>
 #include <user/sys/types.h>
+#include <user/sys/file.h>
 #include <user/sys/wait.h>
 #include <user/sys/time.h>
 #include <user/sys/resource.h>
-#include <user/sys/file.h>
 #include <user/sys/stat.h>
 #include <user/sys/uio.h>
 #include <user/sys/ioctl.h>
 #include <user/sys/termio.h>
 #include <user/sys/termios.h>
-#include <user/sys/socket.h>
 #include <user/sys/dir.h>
 #include <user/sys/dirent.h>
 #include <user/dev/tty.h>
 #include <user/dev/net.h>
 #include <user/dev/graphics.h>
-#include <user/net/if.h>
-#include <user/sys/termios.h>
+#include <user/bit.h>
 #include <user/fcntl.h>
 #include <mach.h>
 #include <proc.h>
 #include <vm.h>
 #include <fs.h>
+#include <fsUnixStubs.h>
 #include <fsutil.h>
 #include <fsutilTrace.h>
 #include <fsio.h>
@@ -74,8 +73,6 @@ char *errs[] = {"ENOERR", "EPERM", "ENOENT", "ESRCH", "EINTR", "EIO",
 #define Mach_SetErrno(err) printf("Error %d (%s) at %d in %s\n", err,\
 	err<sizeof(errs)/sizeof(char *)?errs[err]:"",\
 	__LINE__, __FILE__); Proc_GetActualProc()->unixErrno = (err)
-
-extern char sysHostName[];
 
 /*
  * The following defines are flags that are defined differently in
@@ -115,6 +112,23 @@ extern char sysHostName[];
 #endif
 
 int debugFsStubs;
+
+static int CvtSpriteToUnixType _ARGS_((register int spriteFileType));
+static void CvtSpriteToUnixAtts _ARGS_((register Fs_Attributes *spriteAttsPtr,
+	register struct stat *unixAttsPtr));
+static void CvtTermiosToSgttyb _ARGS_((int termiosFlag, struct termios *ts,
+	struct sgttyb *ttyb, unsigned int *lmode, struct tchars *tc,
+	struct ltchars *ltc));
+static void CvtSgttybToTermios _ARGS_((struct sgttyb *ttyb,
+	unsigned int *lmode, struct tchars *tc, struct ltchars *ltc,
+	struct termios *ts));
+static int GetTermInfo(Fs_Stream *streamPtr, Fs_IOCParam *ioctl,
+	struct sgttyb *ttyb, unsigned int *lmode, struct tchars *tc,
+	struct ltchars *ltc);
+extern int CheckIfPresent _ARGS_((char *name));
+static char *copyin _ARGS_((char *string));
+static int Fs_GetdirInt _ARGS_((Fs_Stream *streamPtr, struct direct *inDir,
+	int *oldOff, int *newOff, struct direct *kernDir));
 
 /*
  *----------------------------------------------------------------------
@@ -157,10 +171,10 @@ CvtSpriteToUnixType(spriteFileType)
 	    unixModeBits = S_IFIFO;
 	    break;
 	case FS_REMOTE_LINK:
-	    unixModeBits = S_IFRLNK;
+	    unixModeBits = S_IFLNK;	/* a lie */
 	    break;
 	case FS_PSEUDO_DEV:
-	    unixModeBits = S_IFPDEV;
+	    unixModeBits = S_IFCHR;	/* another lie */
 	    break;
     }
     return(unixModeBits);
@@ -228,7 +242,7 @@ CvtSpriteToUnixAtts(spriteAttsPtr, unixAttsPtr)
  * CvtTermiosToSgttyb --
  *
  *	Convert from termios structure to sgttyb structure.
- *	Note: ttyb and lmode must be initialized on entry.
+ *	Note: ttyb, lmode, tc, and ltc must be initialized on entry.
  *	This routine is carefully set up to match the behavior
  *	of SunOS for all input combinations.  As a result, this
  *	routine is not intuitive.  It's probably best not to
@@ -321,6 +335,7 @@ CvtTermiosToSgttyb(termiosFlag, ts, ttyb, lmode, tc, ltc)
 	tc->t_startc = ts->c_cc[VSTART];
 	tc->t_stopc = ts->c_cc[VSTOP];
 	ltc->t_suspc = ts->c_cc[VSUSP];
+        ltc->t_dsuspc = ts->c_cc[VDSUSP];
 	ltc->t_rprntc = ts->c_cc[VREPRINT];
 	ltc->t_flushc = ts->c_cc[VDISCARD];
 	ltc->t_werasc = ts->c_cc[VWERASE];
@@ -346,11 +361,11 @@ CvtTermiosToSgttyb(termiosFlag, ts, ttyb, lmode, tc, ltc)
  */
 static void
 CvtSgttybToTermios(ttyb, lmode, tc, ltc, ts)
-    struct sgttyb *ttyb;
-    unsigned int *lmode;
-    struct tchars *tc;
-    struct ltchars *ltc;
-    struct termios *ts;
+    struct sgttyb *ttyb;	/* IN */
+    unsigned int *lmode;	/* IN */
+    struct tchars *tc;		/* IN */
+    struct ltchars *ltc;	/* IN */
+    struct termios *ts;		/* OUT */
 {
     unsigned int flag;
     unsigned int iflag, oflag, cflag, lflag;
@@ -459,10 +474,68 @@ CvtSgttybToTermios(ttyb, lmode, tc, ltc, ts)
     ts->c_cc[VSTART] = tc->t_startc;
     ts->c_cc[VSTOP] = tc->t_stopc;
     ts->c_cc[VSUSP] = ltc->t_suspc;
+    ts->c_cc[VDSUSP] = ltc->t_dsuspc;
     ts->c_cc[VREPRINT] = ltc->t_rprntc;
     ts->c_cc[VDISCARD] = ltc->t_flushc;
     ts->c_cc[VWERASE] = ltc->t_werasc;
     ts->c_cc[VLNEXT] = ltc->t_lnextc;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetTermInfo --
+ *
+ *	Get ttyb, lmode, tc, and ltc.
+ *
+ * Results:
+ *	SUCCESS or FAILURE (returns Sprite error)
+ *
+ * Side effects:
+ *	Changes ttyb, etc.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+GetTermInfo(streamPtr, ioctl, ttyb, lmode, tc, ltc)
+    Fs_Stream		*streamPtr;
+    Fs_IOCParam		*ioctl;
+    struct sgttyb *ttyb;
+    unsigned int *lmode;
+    struct tchars *tc;
+    struct ltchars *ltc;
+{
+    Fs_IOReply          reply;
+    ReturnStatus	status;
+
+    ioctl->command = IOC_TTY_GET_PARAMS;
+    ioctl->outBufSize = sizeof(struct sgttyb);
+    ioctl->outBuffer = (Address) ttyb;
+    status = Fs_IOControl(streamPtr, ioctl, &reply);
+    if (status == SUCCESS) {
+	ioctl->command = IOC_TTY_GET_LM;
+	ioctl->outBufSize = sizeof(int);
+	ioctl->outBuffer = (Address) lmode;
+	status = Fs_IOControl(streamPtr, ioctl, &reply);
+    }
+    if (status == SUCCESS) {
+	ioctl->command = IOC_TTY_GET_TCHARS;
+	ioctl->outBufSize = sizeof(struct tchars);
+	ioctl->outBuffer = (Address) tc;
+	status = Fs_IOControl(streamPtr, ioctl, &reply);
+    }
+    if (status == SUCCESS) {
+	ioctl->command = IOC_TTY_GET_LTCHARS;
+	ioctl->outBufSize = sizeof(struct ltchars);
+	ioctl->outBuffer = (Address) ltc;
+	status = Fs_IOControl(streamPtr, ioctl, &reply);
+    }
+    printf("GetTermInfo: werase = %x, int = %x\n", ltc->t_werasc, tc->t_intrc);
+    if (status != SUCCESS) {
+	printf("GetTermInfo: status %x\n", status);
+    }
+    return status;
 }
 
 /*
@@ -551,7 +624,7 @@ CheckIfPresent(name)
 	    numRedirects++;
 	    if (numRedirects > FS_MAX_LINKS) {
 		printf("Loop\n");
-		return FAILURE;
+		break;
 	    }
 	    status = FsprefixLookupRedirect(redirectInfoPtr, prefixPtr,
 		    &name);
@@ -561,7 +634,7 @@ CheckIfPresent(name)
 	    oldInfoPtr = redirectInfoPtr;
 	    redirectInfoPtr = (Fs_RedirectInfo *)NIL;
 	} else {
-	    return FAILURE;
+	    break;
 	}
     }
 
@@ -687,11 +760,9 @@ Fs_NewWriteStub(streamID, buffer, numBytes)
     int                 writeLength;
     int                 totalAmountWritten;
 
-#if 0
-    if (debugFsStubs) {
+    if (1 || debugFsStubs) {
 	printf("Fs_NewWriteStub(%d, %d)\n", streamID, numBytes);
     }
-#endif
     totalAmountWritten = 0;
     status = Fs_GetStreamPtr(Proc_GetEffectiveProc(), streamID, &streamPtr);
     if (status != SUCCESS) {
@@ -738,10 +809,9 @@ Fs_NewWriteStub(streamID, buffer, numBytes)
  *
  *----------------------------------------------------------------------
  */
-static int
+int
 Fs_NewOpenStubInt(pathName, unixFlags, permissions)
-    int		unixFlags;	/* O_RDONLY O_WRONLY O_RDWR O_NDELAY
-				 * O_APPEND O_CREAT O_TRUNC O_EXCL */
+    int		unixFlags;	/* Unix mode flags. */
     int		permissions;	/* Permission mask to use on creation */
     char	*pathName;	/* The name of the file to open */
 {
@@ -798,8 +868,8 @@ Fs_NewOpenStubInt(pathName, unixFlags, permissions)
     useFlags &= ~FS_KERNEL_FLAGS;
     useFlags |= (FS_USER | FS_FOLLOW);
 
-    printf("Fs_NewOpen: Fs_Open(%s, %x, %x, %x, %x)\n", pathName, useFlags,
-	    FS_FILE, permissions&0777, &streamPtr);
+    printf("Fs_NewOpenStubInt: Fs_Open(%s, %x, %x, %x, %x)\n", pathName,
+	    useFlags, FS_FILE, permissions&0777, &streamPtr);
     status = Fs_Open(pathName, useFlags, FS_FILE,
 	permissions & 0777, &streamPtr);
 
@@ -820,6 +890,7 @@ Fs_NewOpenStubInt(pathName, unixFlags, permissions)
 	Mach_SetErrno(Compat_MapCode(status));
 	return -1;
     }
+    printf("Fs_NewOpenStubInt: result %d\n", streamID);
     return streamID;
 }
 
@@ -849,9 +920,11 @@ Fs_NewOpenStub(pathName, unixFlags, permissions)
 {
     int			pathNameLength;
     char		newName[FS_MAX_PATH_NAME_LENGTH];
+    Proc_ControlBlock	*procPtr = Proc_GetEffectiveProc();
     /*
      * Copy the name in from user space to the kernel stack.
      */
+    procPtr->unixProgress = 0x11beef22;
     if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
 		       &pathNameLength) != SUCCESS) {
 	Mach_SetErrno(EACCES);
@@ -894,6 +967,7 @@ Fs_NewCloseStub(streamID)
 	printf("Fs_CloseStub(%d)\n", streamID);
     }
     status = Fs_UserClose(streamID);
+
     if (status != SUCCESS) {
 	Mach_SetErrno(Compat_MapCode(status));
 	return -1;
@@ -1374,9 +1448,8 @@ Fs_FchownStub(fd, owner, group)
  *
  * Fs_IoctlInt --
  *
- *	Do an ioctl.  This routine does shared setup stuff.
- *	User must initialize ioctl.command, inBuffer, inBufSize, outBuffer,
- *	outBufSize.
+ *	Do an ioctl.  This routine initalizes the ioctl structure and
+ *	performs the ioctl.
  *
  * Results:
  *	Returns -1 on failure.  Sets errno on failure.  Also returns error
@@ -1388,8 +1461,8 @@ Fs_FchownStub(fd, owner, group)
  *
  *----------------------------------------------------------------------
  */
-static int
-Fs_IoctlInt(streamID, command, inBuf, inBufSize, outBuf, outBufSize,
+int
+Fs_IoctlInt(streamID, command, inBufSize, inBuf, outBufSize, outBuf,
 	reply, err)
     int			streamID;
     int			command;
@@ -1403,6 +1476,10 @@ Fs_IoctlInt(streamID, command, inBuf, inBufSize, outBuf, outBufSize,
     ReturnStatus status;
     Fs_Stream *streamPtr;
 
+    if (debugFsStubs) {
+	printf("Fs_IoctlInt(%d, %d, %x, %x, %x, %x, %x, %x)\n", streamID,
+		command, inBufSize ,inBuf, outBufSize, outBuf, reply, err);
+    }
     procPtr = Proc_GetEffectiveProc();
     status = Fs_GetStreamPtr(procPtr, streamID, &streamPtr);
     if (status == SUCCESS) {
@@ -1419,6 +1496,7 @@ Fs_IoctlInt(streamID, command, inBuf, inBufSize, outBuf, outBufSize,
 	status = Fs_IOControl(streamPtr, &ioctl, reply);
     }
     if (status != SUCCESS) {
+	printf("Ioctl %x failed\n", command);
 	*err= Compat_MapCode(status);
 	Mach_SetErrno(*err);
 	return -1;
@@ -1449,7 +1527,14 @@ Fs_LseekStub(streamID, offset, whence)
     int whence;
 {
     int	status;
-    Ioc_RepositionArgs  inArgs;
+    /* The following nonsense is because the SOSP91 code tacks some
+     * stuff on the end of the Ioc_RepositionArgs.  If we don't have
+     * memory there, it is bad.
+     */
+#define inArgs (*inArgsPtr)
+    char buf[sizeof(Ioc_RepositionArgs)+12];
+    Ioc_RepositionArgs *inArgsPtr = (Ioc_RepositionArgs *)buf;
+
     long                retVal;
     int			err;
     Fs_IOReply          reply;
@@ -1476,9 +1561,9 @@ Fs_LseekStub(streamID, offset, whence)
 	    return -1;
     }
     inArgs.offset = offset;
-    status = Fs_IoctlInt(streamID, IOC_REPOSITION, (Address)&inArgs,
-	    sizeof(Ioc_RepositionArgs), (Address)&retVal, sizeof(retVal),
-	    &reply, &err);
+    printf("ioctl: %d, %d\n", inArgs.offset, inArgs.base);
+    status = Fs_IoctlInt(streamID, IOC_REPOSITION, sizeof(Ioc_RepositionArgs),
+	    (Address)&inArgs, sizeof(retVal), (Address)&retVal, &reply, &err);
     if (status < 0) {
 	return -1;
     } else {
@@ -1656,7 +1741,7 @@ Fs_LstatStub(pathName, attrsBufPtr)
     ReturnStatus 	status;	/* status returned by Fs_GetAttributes */
     Fs_Attributes	spriteAttrs;	/* buffer for attributes using
 					   Sprite format. */
-    struct stat		*tmpAttrsBuf;
+    struct stat		tmpAttrsBuf;
     int			pathNameLength;
     char		newName[FS_MAX_PATH_NAME_LENGTH];
 
@@ -1672,17 +1757,18 @@ Fs_LstatStub(pathName, attrsBufPtr)
     } else if (pathNameLength == FS_MAX_PATH_NAME_LENGTH) {
 	status = FS_INVALID_ARG;
     } else {
-	if (CheckIfPresent(newName) != SUCCESS) {
-	    Mach_SetErrno(ENOENT);
-	    return -1;
-	}
 	status = Fs_GetAttributes(newName, FS_ATTRIB_LINK, &spriteAttrs);
-	/*
-	 * See if we just got a remote link.  If so turn around and do a normal
-	 * stat because in compatibility mode we want to follow remote links.
-	 */
-	if (spriteAttrs.type == FS_REMOTE_LINK) {
-	   status = Fs_GetAttributes(newName,FS_ATTRIB_FILE,&spriteAttrs);
+	if (CheckIfPresent(newName) == SUCCESS) {
+	    /*
+	     * See if we just got a remote link.  If so turn around and do
+	     * a normal stat because in compatibility mode we want to
+	     * follow remote links.
+	     */
+	    if (spriteAttrs.type == FS_REMOTE_LINK) {
+	       status = Fs_GetAttributes(newName,FS_ATTRIB_FILE,&spriteAttrs);
+	    }
+	} else {
+	    printf("Skipping stat of remote link\n");
 	}
 	if (status == SUCCESS) {
 	    CvtSpriteToUnixAtts(&spriteAttrs, &tmpAttrsBuf);
@@ -1744,9 +1830,11 @@ Fs_FstatStub(streamID, attrsBufPtr)
 	}
     }
     if (status != SUCCESS) {
+	printf("Fs_Fstat failed\n");
 	Mach_SetErrno(Compat_MapCode(status));
 	return -1;
     }
+    printf("Fs_Fstat ok\n");
     return 0;
 }
 
@@ -2576,34 +2664,13 @@ Fs_IoctlStub(streamID, request, buf)
 	    struct ltchars ltc;
 	    struct termios ts;
 	    struct termio tio;
-#if 1
 
 	    if (debugFsStubs) {
                 printf("ioctl: TCGETS\n");
             }
 
-	    ioctl.command = IOC_TTY_GET_PARAMS;
-	    ioctl.outBufSize = sizeof(struct sgttyb);
-	    ioctl.outBuffer = (Address) &ttyb;
-	    status = Fs_IOControl(streamPtr, &ioctl, &reply);
-	    if (status == SUCCESS) {
-		ioctl.command = IOC_TTY_GET_LM;
-		ioctl.outBufSize = sizeof(int);
-		ioctl.outBuffer = (Address) &lmode;
-		status = Fs_IOControl(streamPtr, &ioctl, &reply);
-	    }
-	    if (status == SUCCESS) {
-		ioctl.command = IOC_TTY_GET_TCHARS;
-		ioctl.outBufSize = sizeof(struct tchars);
-		ioctl.outBuffer = (Address) &tc;
-		status = Fs_IOControl(streamPtr, &ioctl, &reply);
-	    }
-	    if (status == SUCCESS) {
-		ioctl.command = IOC_TTY_GET_LTCHARS;
-		ioctl.outBufSize = sizeof(struct ltchars);
-		ioctl.outBuffer = (Address) &ltc;
-		status = Fs_IOControl(streamPtr, &ioctl, &reply);
-	    }
+	    status = GetTermInfo(streamPtr, &ioctl, &ttyb, &lmode, &tc, &ltc);
+	    printf("TCGETS: werase = %x, int = %x\n", ltc.t_werasc, tc.t_intrc);
 	    if (status == SUCCESS) {
 		CvtSgttybToTermios(&ttyb, &lmode, &tc, &ltc, &ts);
 		if (request==TCGETS) {
@@ -2620,14 +2687,12 @@ Fs_IoctlStub(streamID, request, buf)
 			(Address) &tio, buf);
 		}
 	    }
-#else
-	printf("ioctl: fake TCGETS\n");
-	return -1;
-#endif
         }
 	break;
 
      case TCSETA:
+     case TCSETSW:
+     case TCSETSF:
      case TCSETS: {
 	    struct sgttyb ttyb;
 	    unsigned int lmode;
@@ -2635,15 +2700,27 @@ Fs_IoctlStub(streamID, request, buf)
 	    struct ltchars ltc;
 	    struct termio tio;
 	    struct termios ts;
+#define SETATYPE 0
+#define SETSTYPE 1
+	    int type = SETSTYPE;
+	    if (request==TCSETA) {
+		type = SETATYPE;
+	    }
 
 	    if (debugFsStubs) {
-                printf("ioctl: TCSETS\n");
+                printf("ioctl: TCSETA/S/SW/SF\n");
             }
-	    if (request==TCSETS) {
-	        status = Vm_CopyIn(sizeof(struct winsize),
+	    status = GetTermInfo(streamPtr, &ioctl, &ttyb, &lmode, &tc, &ltc);
+	    printf("TCSETS: werase = %x, int = %x\n", ltc.t_werasc, tc.t_intrc);
+	    if (status != SUCCESS) {
+		Mach_SetErrno(Compat_MapCode(status));
+		return -1;
+	    }
+	    if (type==SETSTYPE) {
+	        status = Vm_CopyIn(sizeof(struct termios),
 		    buf, (Address) &ts);
 	    } else {
-	        status = Vm_CopyIn(sizeof(struct winsize),
+	        status = Vm_CopyIn(sizeof(struct termio),
 		    buf, (Address) &tio);
 		ts.c_iflag = tio.c_iflag;
 		ts.c_oflag = tio.c_oflag;
@@ -2654,30 +2731,38 @@ Fs_IoctlStub(streamID, request, buf)
 		bcopy((Address) tio.c_cc, (Address) ts.c_cc, NCC);
 	    }
 	    if (status == SUCCESS) {
-		CvtTermiosToSgttyb((request==TCSETS)?1:0, &ts, &ttyb,
+		printf("  IOC_TTY_SET_PARAMS\n");
+		CvtTermiosToSgttyb((type==SETSTYPE)?1:0, &ts, &ttyb,
 			&lmode, &tc, &ltc);
 		ioctl.command = IOC_TTY_SET_PARAMS;
-		ioctl.outBufSize = sizeof(struct sgttyb);
-		ioctl.outBuffer = (Address) &ttyb;
+		ioctl.inBufSize = sizeof(struct sgttyb);
+		ioctl.inBuffer = (Address) &ttyb;
 		status = Fs_IOControl(streamPtr, &ioctl, &reply);
 	    }
 	    if (status == SUCCESS) {
+		printf("  IOC_TTY_SET_LM\n");
 		ioctl.command = IOC_TTY_SET_LM;
 		ioctl.inBufSize = sizeof(int);
 		ioctl.inBuffer = (Address) &lmode;
 		status = Fs_IOControl(streamPtr, &ioctl, &reply);
 	    }
 	    if (status == SUCCESS) {
+		printf("  IOC_TTY_SET_TCHARS\n");
 		ioctl.command = IOC_TTY_SET_TCHARS;
 		ioctl.inBufSize = sizeof(struct tchars);
 		ioctl.inBuffer = (Address) &tc;
 		status = Fs_IOControl(streamPtr, &ioctl, &reply);
 	    }
 	    if (status == SUCCESS) {
-		ioctl.command = IOC_TTY_GET_LTCHARS;
-		ioctl.outBufSize = sizeof(struct ltchars);
-		ioctl.outBuffer = (Address) &ltc;
+		printf("  IOC_TTY_SET_LTCHARS\n");
+		ioctl.command = IOC_TTY_SET_LTCHARS;
+		ioctl.inBufSize = sizeof(struct ltchars);
+		ioctl.inBuffer = (Address) &ltc;
 		status = Fs_IOControl(streamPtr, &ioctl, &reply);
+	    }
+	    printf("TCGETS: werase = %x, int = %x\n", ltc.t_werasc, tc.t_intrc);
+	    if (status != SUCCESS) {
+		printf("Debug: TCSET failed\n");
 	    }
         }
 	break;
@@ -2993,7 +3078,27 @@ Fs_IoctlStub(streamID, request, buf)
 
      default:
 	if (debugFsStubs) {
-	    printf("Bad Ioctl: 0x%08x\n",request);
+	    /*
+	     * This code is for debugging, to make it easy to figure
+	     * out what ioctl is unimplemented.
+	     * It can be removed when ioctl development is reasonably
+	     * complete.
+	     */
+	    if ((request&IOC_DIRMASK)==IOC_VOID) {
+		printf("Bad Ioctl: _IO('%c',%d)\n", (request>>8)&0xff,
+			request&0xff);
+	    } else if ((request&IOC_DIRMASK)==IOC_OUT) {
+		printf("Bad Ioctl: _IOR('%c',%d,%d)\n", (request>>8)&0xff,
+			request&0xff, IOCPARM_LEN(request));
+	    } else if ((request&IOC_DIRMASK)==IOC_IN) {
+		printf("Bad Ioctl: _IOW('%c',%d,%d)\n", (request>>8)&0xff,
+			request&0xff, IOCPARM_LEN(request));
+	    } else if ((request&IOC_DIRMASK)==IOC_INOUT) {
+		printf("Bad Ioctl: _IOWR('%c',%d,%d)\n", (request>>8)&0xff,
+			request&0xff, IOCPARM_LEN(request));
+	    } else {
+		printf("Bad Ioctl: 0x%08x\n",request);
+	    }
 	}
 	Mach_SetErrno(EINVAL);
 	return -1;
@@ -3253,6 +3358,9 @@ Fs_MkdirStub(pathName, permissions)
 
     if (debugFsStubs) {
 	printf("Fs_MkdirStub\n");
+    } else {
+	printf("Fs_MkdirStub skipped\n");
+	printf("debugFsStubs at %x\n", &debugFsStubs);
     }
     /*
      * Copy the name in from user space to the kernel stack.
@@ -3508,6 +3616,8 @@ int fd, cmd, arg;
     Proc_ControlBlock *procPtr=Proc_GetEffectiveProc();
     Fs_Stream *streamPtr;
     ReturnStatus status;
+    int value;
+    Address		usp;
 
     status = Fs_GetStreamPtr(procPtr, fd, &streamPtr);
     if (status != SUCCESS) {
@@ -3515,25 +3625,142 @@ int fd, cmd, arg;
 	return -1;
     }
 
+    usp = Mach_UserStack();
+
     switch (cmd) {
-	case F_SETFD:
-	    /*
-	     * SunOS uses this function.  To prevent excess error messages,
-	     * we'll just silently ignore it.
-	     */
-	    break;
 	case F_DUPFD:
+	    value = arg;
+	    status = Fs_GetNewID(fd, (int *)&value);
+	    if (status == SUCCESS) {
+		return value;
+	    }
+	    break;
+
 	case F_GETFD:
-	case F_GETFL:
+	    usp -= sizeof(int);
+	    status = Fs_IOControlStub(fd, IOC_GET_FLAGS, 
+				0, (Address) NULL, sizeof(value), usp);
+	    if (status == SUCCESS) {
+		(void)Vm_CopyIn(sizeof(int), (Address)usp, (Address)value);
+		return (value & IOC_CLOSE_ON_EXEC) ? 1 : 0;
+	    }
+	    break;
+
+	case F_SETFD:
+	    usp -= sizeof(int);
+	    value = IOC_CLOSE_ON_EXEC;
+	    status = Vm_CopyOut(sizeof(value), (Address)&value, usp);
+	    if (status != SUCCESS) {
+		break;
+	    }
+	    if (arg & 1) {
+		status = Fs_IOControlStub(fd, IOC_SET_BITS, 
+				sizeof(value), usp, 0, (Address) NULL);
+	    } else {
+		status = Fs_IOControlStub(fd, IOC_CLEAR_BITS, 
+				sizeof(value), usp, 0, (Address) NULL);
+	    }
+	    if (status == SUCCESS) {
+		return 0;
+	    }
+	    break;
+
+	case F_GETFL:  {
+		int temp, returnValue;
+
+		usp -= sizeof(int);
+		status = Fs_IOControlStub(fd, IOC_GET_FLAGS, 
+				0, (Address) NULL, sizeof(temp), usp);
+		if (status != SUCCESS) {
+		    break;
+		}
+
+		returnValue = 0;
+
+		(void)Vm_CopyIn(sizeof(temp), usp, (Address)&temp);
+		if (temp & IOC_APPEND) {
+		    returnValue |= FAPPEND;
+		}
+		if (temp & IOC_NON_BLOCKING) {
+		    returnValue |= FNDELAY;
+		}
+		if (temp & IOC_ASYNCHRONOUS) {
+		    returnValue |= FASYNC;
+		}
+		return returnValue;
+	    }
+	    break;
+
 	case F_SETFL:
-	case F_GETLK:
-	case F_SETLK:
-	case F_SETLKW:
-	case F_GETOWN:
-	case F_SETOWN:
-	case F_RSETLK:
-	case F_RSETLKW:
-	case F_RGETLK:
+	    value = 0;
+	    if (arg & FAPPEND) {
+		value |= IOC_APPEND;
+	    }
+	    if (arg & FNDELAY) {
+		value |= IOC_NON_BLOCKING;
+	    }
+	    if (arg & FASYNC) {
+		value |= IOC_ASYNCHRONOUS;
+	    }
+	    if (value == 0) {
+		status = SUCCESS;
+	    } else {
+		usp -= sizeof(int);
+		status = Vm_CopyOut(sizeof(value), (Address)&value, usp);
+		if (status != SUCCESS) {
+		    break;
+		}
+		status = Fs_IOControlStub(fd, IOC_SET_BITS, 
+			    sizeof(value), usp, 0, (Address) NULL);
+	    }
+	    if (status == SUCCESS) {
+		return 0;
+	    }
+	    break;
+
+	case F_GETOWN: {
+		Ioc_Owner owner;
+
+		usp -= sizeof(owner);
+		status = Fs_IOControlStub(fd, IOC_GET_OWNER, 
+					  0, (Address) NULL,
+					  sizeof(owner), usp);
+		if (status != SUCCESS) {
+		    break;
+		}
+		(void)Vm_CopyIn(sizeof(owner), (Address)usp, (Address)&owner);
+		if (owner.procOrFamily == IOC_OWNER_FAMILY) {
+		    return -owner.id;
+		} else {
+		    return owner.id;
+		}
+	    }
+	    break;
+
+	case F_SETOWN: {
+		Ioc_Owner owner;
+
+		usp -= sizeof(owner);
+		if (arg < 0) {
+		    owner.id = -arg;
+		    owner.procOrFamily = IOC_OWNER_FAMILY;
+		} else {
+		    owner.id = arg;
+		    owner.procOrFamily = IOC_OWNER_PROC;
+		}
+		status = Vm_CopyOut(sizeof(owner), (Address)&owner, usp);
+		if (status != SUCCESS) {
+		    break;
+		}
+		status = Fs_IOControlStub(fd, IOC_SET_OWNER, 
+				sizeof(owner), usp, 0, (Address) NULL);
+		if (status == SUCCESS) {
+		    return 0;
+		}
+		    
+	    }
+	    break;
+
 	default:
 	    printf("Unimplemented fcntl function %d\n", cmd);
 	    Mach_SetErrno(EINVAL);
@@ -3541,598 +3768,7 @@ int fd, cmd, arg;
 	    break;
     }
 
-    return 0;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Fs_SocketStub --
- *
- *	The stub for the "socket" Unix system call.
- *
- * Results:
- *	Returns -1 on failure.
- *
- * Side effects:
- *	Side effects associated with the system call.
- *	 
- *
- *----------------------------------------------------------------------
- */
-static char streamDevice[276]; /* Max host name + extra format */
-static char dgramDevice[276];
-static char rawDevice[276];
-static Boolean gotHostName = FALSE;
-int
-Fs_SocketStub(domain, type, protocol)
-    int domain;         /* Type of communications domain */
-    int type;           /* Type of socket: SOCK_STREAM, SOCK_DGRAM, SOCK_RAW. */
-    int protocol;       /* Specific protocol to use. */
-{
-    int        		status = 0;
-    int                 streamID;
-    int			err;
-    Fs_IOReply          reply;
-
-    if (debugFsStubs) {
-	printf("Fs_SocketStub(%d, %d, %d)\n",domain, type, protocol);
-    }
-    if (domain != PF_INET) {
-	Mach_SetErrno(EINVAL);
-	return -1;
-    }
-
-    if (!gotHostName) {
-        gotHostName = TRUE;
-	printf("sysHostName = %s\n", sysHostName);
-        sprintf(streamDevice, INET_STREAM_NAME_FORMAT, sysHostName);
-        sprintf(dgramDevice, INET_DGRAM_NAME_FORMAT, sysHostName);
-        sprintf(rawDevice, INET_RAW_NAME_FORMAT, sysHostName);
-    }
-
-    if (type == SOCK_STREAM) {
-        streamID = Fs_NewOpenStubInt(streamDevice, FS_READ|FS_WRITE, 0666);
-    } else if (type == SOCK_DGRAM) {
-        streamID = Fs_NewOpenStubInt(dgramDevice, FS_READ|FS_WRITE, 0666);
-    } else if (type == SOCK_RAW) {
-        streamID = Fs_NewOpenStubInt(rawDevice, FS_READ|FS_WRITE, 0666);
-    } else {
-	Mach_SetErrno(EINVAL);
-        return(SYS_INVALID_ARG);
-    }
-    if (streamID<0) {
-	printf("Fs_SocketStub: open failure\n");
-	return streamID;
-    }
-
-    if (protocol != 0) {
-        status = Fs_IoctlInt(streamID, IOC_NET_SET_PROTOCOL,
-		(Address)&protocol, sizeof(int), NULL, 0, &reply, &err);
-    }
-
-    if (status < 0) {
-	printf("Fs_SocketStub: ioctl failure\n");
-    }
-    return status;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Wait --
- *
- *	Wait for the Inet server to indicate that a socket is ready for
- *	some action.
- *
- * Results:
- *	SUCCESS, or FS_TIMEOUT if a timeout occurred.
- *
- * Side effects:
- *	None. effects associated with the system call.
- *	 
- *
- *----------------------------------------------------------------------
- */
-#if 0
-static ReturnStatus
-Wait(socketID, readSelect, timeOutPtr)
-    int         socketID;       /* Socket to wait on. */
-    Boolean     readSelect;     /* If TRUE, select for reading, else select for
-                                 *  writing. */
-    Time        *timeOutPtr;    /* Timeout to use for select. */
-{
-    ReturnStatus        status;
-    int                 numReady;
-    Address             usp;
-    int                 *numReadyPtr;
-    int                 *userMaskPtr;
-    int			doTimeout;
-    int			inReadMasks[MAX_NUM_ROWS];
-    int			inWriteMasks[MAX_NUM_ROWS];
-    int			inExceptMasks[MAX_NUM_ROWS];
-    int			outReadMasks[MAX_NUM_ROWS];
-    int			outWriteMasks[MAX_NUM_ROWS];
-    int			outExceptMasks[MAX_NUM_ROWS];
-
-    usp = (Address)machCurStatePtr->userState.regState.regs[SP];
-    usp -= sizeof(int);
-    numReadyPtr = (int *)usp;
-
-    /*
-     * Wait until the Inet server indicates the socket is ready.
-     */
-
-    if (socketID < 32) {
-        int     mask;
-
-        usp -= sizeof(int);
-        userMaskPtr = (int *)usp;
-        mask = 1 << socketID;
-        status = Vm_CopyOut(sizeof(int), (Address)&mask, (Address)userMaskPtr);
-        if (status != SUCCESS) {
-            return(status);
-        }
-        if (readSelect) {
-	    status = Fs_Select(socketID, timeOutPtr, inReadMasks,
-		    outReadMasks, (int *)NIL, (int *)NIL, (int *)NIL,
-		    (int *)NIL, numReadyPtr, &doTimeout);
-            status = Fs_SelectStub(socketID, userTimeOutPtr, userMaskPtr,
-                                (int *) NULL, (int *) NULL, numReadyPtr);
-        } else {
-            status = Fs_SelectStub(socketID, userTimeOutPtr, (int *) NULL,
-                                userMaskPtr, (int *) NULL, numReadyPtr);
-        }
-    } else {
-        int     *maskPtr;
-        int     numBytes;
-
-        Bit_Alloc(socketID, maskPtr);
-        Bit_Set(socketID, maskPtr);
-        numBytes = Bit_NumBytes(socketID);
-        usp -= numBytes;
-        userMaskPtr = (int *)usp;
-        status = Vm_CopyOut(numBytes, (Address)maskPtr, (Address)userMaskPtr);
-        if (status != SUCCESS) {
-            return(status);
-        }
-
-        if (readSelect) {
-            status = Fs_SelectStub(socketID, userTimeOutPtr, userMaskPtr,
-                                (int *) NULL, (int *) NULL, numReadyPtr);
-        } else {
-            status = Fs_SelectStub(socketID, userTimeOutPtr, (int *) NULL,
-                                userMaskPtr, (int *) NULL, numReadyPtr);
-        }
-        free((char *) maskPtr);
-    }
-
-    if (status == FS_TIMEOUT) {
-        return(status);
-    } else if (status != SUCCESS) {
-        printf("Wait (socket.c): Fs_Select failed.\n");
-    }
-
-    (void)Vm_CopyIn(sizeof(int), (Address)numReadyPtr, (Address)&numReady);
-    if (numReady != 1) {
-        printf("Wait (socket.c): Fs_Select returned %d ready\n",
-                            numReady);
-    }
-
-    return(SUCCESS);
-}
-#endif
-
-/*
- *----------------------------------------------------------------------
- *
- * Fs_ConnectStub --
- *
- *	The stub for the "connect" Unix system call.
- *
- * Results:
- *	Returns -1 on failure.
- *
- * Side effects:
- *	Side effects associated with the system call.
- *	 
- *
- *----------------------------------------------------------------------
- */
-int
-Fs_ConnectStub(socketID, namePtr, nameLen)
-    int                 socketID;       /* Stream ID of socket. */
-    struct sockaddr     *namePtr;       /* Remote address,port to connect to.*/
-    int                 nameLen;        /* Size of *namePtr. */
-{
-#if 0
-    int 	        status;
-    Fs_IOCParam         ioctl;
-    Fs_IOReply          reply;
-    int			err;
-    struct sockaddr_in	kernName;
-    ReturnStatus	returnStatus;
-
-    if (debugFsStubs) {
-	printf("Fs_ConnectStub(%d, %x, %d)\n", socketID, namePtr, nameLen);
-    }
-    if (nameLen != sizeof(struct sockaddr_in)) {
-	Mach_SetErrno(EINVAL);
-	return -1;
-    } else {
-	if (Vm_CopyIn(nameLen, (Address)namePtr, (Address)&kernName) !=
-		SUCCESS) {
-	    Mach_SetErrno(EFAULT);
-	    return -1;
-	}
-    }
-
-    status = Fs_IoctlInt(socketID, IOC_NET_CONNECT, (Address)&kernName,
-	    nameLen, (Address)NULL, 0, &reply, &err);
-
-    if (status == -1 && err == EWOULDBLOCK) {
-        int flags = 0;
-        int optionsArray[2];
-
-	printf("Fs_ConnectStub: waiting for block\n");
-        /*
-         * The connection didn't immediately complete, so wait if
-         * we're blocking or return EWOULDBLOCK if we're non-blocking.
-         */
-	status = Fs_IoctlInt(socketID, IOC_GET_FLAGS, (Address)NULL, 0,
-		(Address)&flags, sizeof(flags), &reply, &err);
-        if (status == -1) {
-	    return -1;
-	}
-
-        if (flags & IOC_NON_BLOCKING) {
-            Mach_SetErrno(EWOULDBLOCK);
-	    return -1;
-        }
-
-        status = Wait(socketID, FALSE, &time_OneMinute);
-
-        if (status == FS_TIMEOUT) {
-	    Mach_SetErrno(ETIMEDOUT);
-	    return -1;
-        }
-
-        /*
-         * See if the connection successfully completed.
-         */
-        optionsArray[0] = SOL_SOCKET;
-        optionsArray[1] = SO_ERROR;
-        status = Fs_IoctlInt(socketID, IOC_NET_GET_OPTION,
-                        (Address)&optionsArray, sizeof(optionsArray),
-			(Address)&flags, sizeof(int), &reply, &err);
-	status = Fs_IoctlInt(socketID, IOC_NET_GET_OPTION, (Address)NULL, 0,
-		(Address)&returnStatus, sizeof(int), &reply, &err);
-        if (status == -1) {
-	    return -1;
-	}
-	if (returnStatus != SUCCESS) {
-	    Mach_SetErrno(Compat_MapCode(returnStatus));
-	    return -1;
-	}
-    } else if (status == -1) {
-	return -1;
-    }
-#endif
-    return 0;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Fs_AcceptStub --
- *
- *	The stub for the "accept" Unix system call.
- *
- * Results:
- *	Returns -1 on failure.
- *
- * Side effects:
- *	Side effects associated with the system call.
- *	 
- *
- *----------------------------------------------------------------------
- */
-int
-Fs_AcceptStub()
-{
-    printf("accept is not implemented\n");
-    Mach_SetErrno(EINVAL);
-    return -1;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Fs_SendStub --
- *
- *	The stub for the "send" Unix system call.
- *
- * Results:
- *	Returns -1 on failure.
- *
- * Side effects:
- *	Side effects associated with the system call.
- *	 
- *
- *----------------------------------------------------------------------
- */
-int
-Fs_SendStub()
-{
-    printf("send is not implemented\n");
-    Mach_SetErrno(EINVAL);
-    return -1;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Fs_RecvStub --
- *
- *	The stub for the "recv" Unix system call.
- *
- * Results:
- *	Returns -1 on failure.
- *
- * Side effects:
- *	Side effects associated with the system call.
- *	 
- *
- *----------------------------------------------------------------------
- */
-int
-Fs_RecvStub()
-{
-    printf("recv is not implemented\n");
-    Mach_SetErrno(EINVAL);
-    return -1;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Fs_SendmsgStub --
- *
- *	The stub for the "sendmsg" Unix system call.
- *
- * Results:
- *	Returns -1 on failure.
- *
- * Side effects:
- *	Side effects associated with the system call.
- *	 
- *
- *----------------------------------------------------------------------
- */
-int
-Fs_SendmsgStub()
-{
-    printf("sendmsg is not implemented\n");
-    Mach_SetErrno(EINVAL);
-    return -1;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Fs_RecvmsgStub --
- *
- *	The stub for the "recvmsg" Unix system call.
- *
- * Results:
- *	Returns -1 on failure.
- *
- * Side effects:
- *	Side effects associated with the system call.
- *	 
- *
- *----------------------------------------------------------------------
- */
-int
-Fs_RecvmsgStub()
-{
-    printf("recvmsg is not implemented\n");
-    Mach_SetErrno(EINVAL);
-    return -1;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Fs_BindStub --
- *
- *	The stub for the "bind" Unix system call.
- *
- * Results:
- *	Returns -1 on failure.
- *
- * Side effects:
- *	Side effects associated with the system call.
- *	 
- *
- *----------------------------------------------------------------------
- */
-int
-Fs_BindStub()
-{
-    printf("Fs_Bind is not implemented\n");
-    Mach_SetErrno(EINVAL);
-    return -1;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Fs_SetsockoptStub --
- *
- *	The stub for the "setsockopt" Unix system call.
- *
- * Results:
- *	Returns -1 on failure.
- *
- * Side effects:
- *	Side effects associated with the system call.
- *	 
- *
- *----------------------------------------------------------------------
- */
-int
-Fs_SetsockoptStub()
-{
-    printf("Fs_SetSockOpt is not implemented\n");
-    Mach_SetErrno(EINVAL);
-    return -1;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Fs_ListenStub --
- *
- *	The stub for the "listen" Unix system call.
- *
- * Results:
- *	Returns -1 on failure.
- *
- * Side effects:
- *	Side effects associated with the system call.
- *	 
- *
- *----------------------------------------------------------------------
- */
-int
-Fs_ListenStub()
-{
-    printf("Fs_Listen is not implemented\n");
-    Mach_SetErrno(EINVAL);
-    return -1;
-}
-
-/*ARGSUSED*/
-/*
- *----------------------------------------------------------------------
- *
- * Fs_SocketpairStub --
- *
- *	The stub for the "socketpair" Unix system call.
- *
- * Results:
- *	Returns -1 on failure.
- *
- * Side effects:
- *	Side effects associated with the system call.
- *	 
- *
- *----------------------------------------------------------------------
- */
-int
-Fs_SocketpairStub(d, type, protocol, sv)
-    int d, type, protocol;
-    int sv[2];
-{
-    printf("socketpair is not implemented\n");
-    Mach_SetErrno(EINVAL);
-    return -1;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Fs_GetsockoptStub --
- *
- *	The stub for the "getsockopt" Unix system call.
- *
- * Results:
- *	Returns -1 on failure.
- *
- * Side effects:
- *	Side effects associated with the system call.
- *	 
- *
- *----------------------------------------------------------------------
- */
-int
-Fs_GetsockoptStub()
-{
-    printf("getsockopt is not implemented\n");
-    Mach_SetErrno(EINVAL);
-    return -1;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Fs_SendtoStub --
- *
- *	The stub for the "sendto" Unix system call.
- *
- * Results:
- *	Returns -1 on failure.
- *
- * Side effects:
- *	Side effects associated with the system call.
- *	 
- *
- *----------------------------------------------------------------------
- */
-int
-Fs_SendtoStub()
-{
-    printf("sendto is not implemented\n");
-    Mach_SetErrno(EINVAL);
-    return -1;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Fs_RecvfromStub --
- *
- *	The stub for the "recvform" Unix system call.
- *
- * Results:
- *	Returns -1 on failure.
- *
- * Side effects:
- *	Side effects associated with the system call.
- *	 
- *
- *----------------------------------------------------------------------
- */
-int
-Fs_RecvfromStub()
-{
-    printf("recvfrom is not implemented\n");
-    Mach_SetErrno(EINVAL);
-    return -1;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Fs_GetsocknameStub --
- *
- *	The stub for the "getsockname" Unix system call.
- *
- * Results:
- *	Returns -1 on failure.
- *
- * Side effects:
- *	Side effects associated with the system call.
- *	 
- *
- *----------------------------------------------------------------------
- */
-int
-Fs_GetsocknameStub()
-{
-    printf("getsockname is not implemented\n");
-    Mach_SetErrno(EINVAL);
+    Mach_SetErrno(Compat_MapCode(status));
     return -1;
 }
 
@@ -4273,6 +3909,7 @@ Fs_GetdentsStub(fd, buf, nbytes)
     int			status;
     ReturnStatus	returnStatus;
     int			oldOff;	/* dummy */
+    int			newOff;
     int			totalBytes = 0;
     Fs_Attributes	spriteAttrs;
 
@@ -4309,7 +3946,8 @@ Fs_GetdentsStub(fd, buf, nbytes)
     while (nbytes-totalBytes>=sizeof(struct dirent)) {
 	status = Fs_GetdirInt(streamPtr,
 		(struct direct *)(buf+sizeof(off_t)),
-		&oldOff, &tmpBuf.d_off, (struct direct *)(&tmpBuf.d_fileno));
+		&oldOff, &newOff, (struct direct *)(&tmpBuf.d_fileno));
+	tmpBuf.d_off = newOff;
 	if (status == EISDIR) {
 	    break;
 	} else if (status != 0) {
@@ -4353,59 +3991,81 @@ Fs_GetdirentriesStub(fd, buf, nbytes, basep)
     char *buf;
     int nbytes;
     long *basep;
+
 {
-    Fs_Stream		*streamPtr;
-    Proc_ControlBlock	*procPtr;
-    struct direct	tmpBuf;
-    int			status;
-    Fs_Attributes	spriteAttrs;
-    int			oldOff = -1;
-    int			newOff;
-    int			totalBytes = 0;
+    ReturnStatus status;	/* result returned by Fs_Read */
+    Address	usp;
+    int		bytesAcc;
+    Fslcl_DirEntry	*dirPtr;
+    Address	addr;
+    int		i;
+    int		nBytes;
 
     if (debugFsStubs) {
-	printf("Fs_GetdirentriesStub(%d, %x, %d, %x\n", fd, buf, nbytes,
-		basep);
+	printf("Fs_Getdirentries(%d, %x, %d, %x)\n", fd, buf, nbytes, basep);
     }
-
-    if (nbytes<sizeof(struct direct)) {
-	printf("nbytes too small\n");
-	Mach_SetErrno(EINVAL);
-	return -1;
-    }
-
-    procPtr = Proc_GetEffectiveProc();
-    status = Fs_GetStreamPtr(procPtr, fd, &streamPtr);
+    usp = (Address)(Mach_UserStack() - 4);
+    status = Fs_ReadStub(fd, nbytes, buf, (int *)usp);
     if (status == SUCCESS) {
-	status = Fs_GetAttrStream(streamPtr, &spriteAttrs);
-    }
-    if (status != SUCCESS) {
-	printf("Bad stream\n");
-	Mach_SetErrno(EBADF);
-	return -1;
-    }
-
-    if (spriteAttrs.type != FS_DIRECTORY) {
-	printf("Not directory; type = %d\n", spriteAttrs.type);
-	Mach_SetErrno(ENOTDIR);
-	return -1;
-    }
-
-    *basep = streamPtr->offset;
-
-    while (nbytes-totalBytes>=sizeof(struct direct)) {
-	status = Fs_GetdirInt(streamPtr, (struct direct *)buf, &oldOff,
-		&newOff, &tmpBuf);
-	if (status == EISDIR) {
-	    break;
-	} else if (status != 0) {
-	    printf("GetdirInt Error: %x\n", status);
-	    Mach_SetErrno(status);
-	    return -1;
+	(void)Vm_CopyIn(sizeof(int), usp,
+		        (Address)&nBytes);
+	if (nBytes == 0) {
+	    return 0;
 	}
-
-	buf += tmpBuf.d_reclen;
-	totalBytes += tmpBuf.d_reclen;
+    } else {
+	Mach_SetErrno(Compat_MapCode(status));
+	return -1;
     }
-    return totalBytes;
+    Vm_MakeAccessible(VM_OVERWRITE_ACCESS, 
+		nBytes, buf, &bytesAcc, &addr);
+    if (bytesAcc != nBytes) {
+	panic("User buffer not accessible, but we just wrote to it !!!\n");
+    }
+    /*
+     * Check against big-endian/little-endian conflict.
+     * The max record length is 512, which is 02 when byteswapped.
+     * The min record length is 8, which is > 512 when byteswapped.
+     * All other values fall outside the range 8-512 when byteswapped.
+     */
+    dirPtr = (Fslcl_DirEntry *)addr;
+    if (dirPtr->recordLength > FSLCL_DIR_BLOCK_SIZE ||
+	dirPtr->recordLength < 2 * sizeof(int)) {
+	i = bytesAcc;
+	while (i > 0) {
+	    union {
+		short	s;
+		char    c[2];
+	    } shortIn, shortOut;
+	    union {
+		int	i;
+		char    c[4];
+	    } intIn, intOut;
+
+	    if (dirPtr->nameLength <= FS_MAX_NAME_LENGTH) {
+		printf("MachUNIXGetDirEntries: Bad directory format\n");
+	    }
+	    intIn.i = dirPtr->fileNumber;
+	    intOut.c[0] = intIn.c[3];
+	    intOut.c[1] = intIn.c[2];
+	    intOut.c[2] = intIn.c[1];
+	    intOut.c[3] = intIn.c[0];
+	    dirPtr->fileNumber = intOut.i;
+
+	    shortIn.s = dirPtr->recordLength;
+	    shortOut.c[0] = shortIn.c[1];
+	    shortOut.c[1] = shortIn.c[0];
+	    dirPtr->recordLength = shortOut.s;
+
+	    shortIn.s = dirPtr->nameLength;
+	    shortOut.c[0] = shortIn.c[1];
+	    shortOut.c[1] = shortIn.c[0];
+	    dirPtr->nameLength = shortOut.s;
+
+	    i -= dirPtr->recordLength;
+	    dirPtr = (Fslcl_DirEntry *) ((Address)dirPtr +
+		    dirPtr->recordLength);
+	}
+    }
+    Vm_MakeUnaccessible(addr, bytesAcc);
+    return nBytes;
 }
