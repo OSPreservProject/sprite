@@ -99,6 +99,13 @@ extern int rpc_SpriteID;
 #define RPC_RECOV_REOPEN			0x1
 
 /*
+ * Trace types for use with Rpc_HostTrace.  These are defined to be compatible
+ *		with the values defined in rpcRecovery.c
+ *	RPC_RECOV_TRACE_STALE	A stale handle was returned from a file server
+ */
+#define RPC_RECOV_TRACE_STALE	0x1000
+
+/*
  * Forward declarations
  */
 ReturnStatus	Rpc_Call();
@@ -130,5 +137,8 @@ void		Rpc_HostNotify();
 int		Rpc_WaitForHost();
 Boolean		Rpc_HostIsDown();
 void		Rpc_HostPrint();
+void		Rpc_HostTrace();
+void		Rpc_HostSetState();
+int		Rpc_HostGetState();
 
 #endif _RPC
