@@ -603,8 +603,15 @@ RpcProcFork(parentProcPtr, dataPtr, dataLength, replyDataPtr,
 
     if (childProcPtr->argString != (char *) NIL) {
 	free(childProcPtr->argString);
+    }
+    if (parentProcPtr->argString != (Address) NIL) {
+	childProcPtr->argString =
+		(char *) malloc(strlen(parentProcPtr->argString) + 1);
+	(void) strcpy(childProcPtr->argString, parentProcPtr->argString);
+    } else {
 	childProcPtr->argString	= (char *) NIL;
     }
+
 
     Vm_ProcInit(childProcPtr);
 
