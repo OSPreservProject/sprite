@@ -458,10 +458,11 @@ extern void LfsDescMapWriteDone _ARGS_((LfsSeg *segPtr, int flags,
 		ClientData *clientDataPtr));
 extern Boolean LfsDescMapClean _ARGS_((LfsSeg *segPtr, int *sizePtr, 
 		int *numCacheBlocksPtr, ClientData *clientDataPtr));
+extern ReturnStatus LfsDescMapDetach _ARGS_((Lfs *lfsPtr));
 
 static LfsSegIoInterface descMapIoInterface = 
 	{ LfsDescMapAttach, LfsDescMapLayout, LfsDescMapClean,
-	  LfsDescMapCheckpoint, LfsDescMapWriteDone,  0};
+	  LfsDescMapCheckpoint, LfsDescMapWriteDone, LfsDescMapDetach, 0};
 
 
 /*
@@ -535,6 +536,31 @@ LfsDescMapAttach(lfsPtr, checkPointSize, checkPointPtr)
     printf("LfsDescMapAttach - %d allocated descriptors.\n", 
 	    mapPtr->checkPoint.numAllocDesc);
     return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DescMapDetach --
+ *
+ *	Detach routine for the descriptor map. Destory the
+ *	map for this file system.
+ *
+ * Results:
+ *	SUCCESS if attaching is going ok.
+ *
+ * Side effects:
+ *	Many
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+LfsDescMapDetach(lfsPtr)
+    Lfs   *lfsPtr;	     /* File system for attach. */
+{
+    LfsDescMap	      *mapPtr = &(lfsPtr->descMap);
+    return LfsStableMemDestory(lfsPtr, &(mapPtr->stableMem));
 }
 
 /*
