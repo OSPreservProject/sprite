@@ -104,6 +104,9 @@ Fsutil_Reopen(serverID, clientData)
     int serverID;		/* Server we are recovering with */
     ClientData clientData;	/* IGNORED */
 {
+    Boolean		fastBoot;
+
+    fastBoot = Recov_GetHostState(serverID) & RECOV_FAST_BOOT;
     /*
      * Ensure only one instance of Fsutil_Reopen by doing a set-and-test.
      */
@@ -115,22 +118,25 @@ Fsutil_Reopen(serverID, clientData)
      * Recover the prefix table.
      */
     Fsprefix_Reopen(serverID);
-    /*
-     * Wait for opens in progress, then block opens.
-     */
-    Fsprefix_RecoveryCheck(serverID);
-    /*
-     * Recover file handles
-     */
-    ReopenHandles(serverID);
-    /*
-     * Tell the server we're done.
-     */
-    RecoveryDone(serverID);
-    /*
-     * Allow regular opens.
-     */
-    Fsprefix_AllowOpens(serverID);
+
+    if (!fastBoot || !recov_Transparent) {
+	/*
+	 * Wait for opens in progress, then block opens.
+	 */
+	Fsprefix_RecoveryCheck(serverID);
+	/*
+	 * Recover file handles
+	 */
+	ReopenHandles(serverID);
+	/*
+	 * Tell the server we're done.
+	 */
+	RecoveryDone(serverID);
+	/*
+	 * Allow regular opens.
+	 */
+	Fsprefix_AllowOpens(serverID);
+    }
     /*
      * Clear the recovery bit before kicking processes.  Some processes
      * may be locked down doing pseudo-device request/response, and the
