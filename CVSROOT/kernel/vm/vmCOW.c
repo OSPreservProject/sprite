@@ -562,7 +562,7 @@ COWEnd(segPtr, cowInfoPtrPtr)
  *
  *----------------------------------------------------------------------
  */
-Vm_Segment *
+static Vm_Segment *
 FindNewMasterSeg(segPtr, page, othersPtr)
     register	Vm_Segment	*segPtr;	/* Current master. */
     int				page;		/* Virtual page. */
