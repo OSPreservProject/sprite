@@ -272,7 +272,7 @@ void
 Mach_InitFirstProc(procPtr)
     Proc_ControlBlock	*procPtr;
 {
-    procPtr->machStatePtr = (struct Mach_State *)Mem_Alloc(sizeof(Mach_State));
+    procPtr->machStatePtr = (struct Mach_State *)malloc(sizeof(Mach_State));
     procPtr->machStatePtr->kernStackStart = mach_StackBottom;
     procPtr->machStatePtr->setJumpStatePtr = (Mach_SetJumpState *)NIL;
     machCurStatePtr = procPtr->machStatePtr;
@@ -315,7 +315,7 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
     register	Mach_State	*statePtr;
 
     if (procPtr->machStatePtr == (Mach_State *)NIL) {
-	procPtr->machStatePtr = (Mach_State *)Mem_Alloc(sizeof(Mach_State));
+	procPtr->machStatePtr = (Mach_State *)malloc(sizeof(Mach_State));
 	procPtr->machStatePtr->setJumpStatePtr = (Mach_SetJumpState *)NIL;
     }
 
