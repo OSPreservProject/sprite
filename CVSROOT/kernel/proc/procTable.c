@@ -352,9 +352,7 @@ Proc_LockPID(pid)
 
 	if (procPtr->genFlags & PROC_LOCKED) {
 	    do {
-#ifndef CLEAN_LOCK
 		Sync_RecordMiss(lockPtr);
-#endif
 		(void) Sync_Wait(&procPtr->lockedCondition, FALSE);
 	    } while (procPtr->genFlags & PROC_LOCKED);
 	} else {
@@ -362,11 +360,9 @@ Proc_LockPID(pid)
 		procPtr = (Proc_ControlBlock *) NIL;
 	    } else {
 		procPtr->genFlags |= PROC_LOCKED;
-#ifndef CLEAN_LOCK
 		Sync_RecordHit(lockPtr);
 		Sync_StoreDbgInfo(lockPtr, FALSE);
 		Sync_AddPrior(lockPtr);
-#endif
 	    }
 	    break;
 	}
@@ -408,20 +404,14 @@ Proc_Lock(procPtr)
 #endif
 
     while (procPtr->genFlags & PROC_LOCKED) {
-
-#ifndef CLEAN_LOCK
 	Sync_RecordMiss(lockPtr);
-#endif
 	(void) Sync_Wait(&procPtr->lockedCondition, FALSE);
     }
     procPtr->genFlags |= PROC_LOCKED;
 
-#ifndef CLEAN_LOCK
     Sync_RecordHit(lockPtr);
     Sync_StoreDbgInfo(lockPtr, FALSE);
     Sync_AddPrior(lockPtr);
-    Sync_AddPrior(lockPtr);
-#endif
 
     UNLOCK_MONITOR;
 }
