@@ -129,8 +129,7 @@ FsCacheUpdate(cacheInfoPtr, openForWriting, version, cacheable, attrPtr)
      */
     if (!cacheable || outOfDate) {
 	fsStats.handle.cacheFlushes++;
-	FsCacheFileInvalidate(cacheInfoPtr, 0, cacheInfoPtr->attr.lastByte /
-						FS_BLOCK_SIZE);
+	FsCacheFileInvalidate(cacheInfoPtr, 0, FS_LAST_BLOCK);
     }
     if (outOfDate) {
 	fsStats.handle.versionMismatch++;
@@ -1216,6 +1215,11 @@ FsCacheTrunc(cacheInfoPtr, length, flags)
 			cacheInfoPtr->hdrPtr->fileID.minor,
 			cacheInfoPtr->blocksInCache, firstBlock, lastBlock);
 #ifdef notdef
+		    /*
+		     * Use this loop to recover if above panic is
+		     * changed to a warning.  The bug leaving blocks
+		     * in the cache has been fixed, however.
+		     */
 		    while (!List_IsEmpty(&cacheInfoPtr->blockList)) {
 			register FsCacheBlock *blockPtr;
 			register List_Links *listItem;
@@ -1255,6 +1259,11 @@ FsCacheTrunc(cacheInfoPtr, length, flags)
 			}
 			listItem = listItem->nextPtr;
 #ifdef notdef
+			/*
+			 * Don't want to invalidate these as they are
+			 * probably indirect blocks that will be needed
+			 * shortly by FsDescTrunc.
+			 */
 			FsCacheFileInvalidate(cacheInfoPtr, blockPtr->blockNum,
 				blockPtr->blockNum);
 #endif notdef
