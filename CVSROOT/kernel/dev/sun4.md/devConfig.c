@@ -44,13 +44,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 DevConfigController devCntrlr[] = {
    /* Name     Address,  Addr space, ID, InitProc   IntrVector  IntrRoutine. */
     { "SCSI3#0",  0x200000, DEV_VME_D16A24, 0, DevSCSI3Init, 64, DevSCSI3Intr },
-#if 0
     { "SCSI3#1", 0x210000, DEV_VME_D16A24, 1, DevSCSI3Init, 65, DevSCSI3Intr },
     { "SCSI3#2", 0x220000, DEV_VME_D16A24, 2, DevSCSI3Init, 66, DevSCSI3Intr },
     { "SCSI3#3", 0x230000, DEV_VME_D16A24, 3, DevSCSI3Init, 67, DevSCSI3Intr },
     { "Xylogics450", 0xee40, DEV_VME_D16A16,	 0, DevXylogics450Init,
 				    72, DevXylogics450Intr},
-#endif
     { "Jaguar0", 0x8800, DEV_VME_D16A16, 0, DevJaguarInit, 211, DevJaguarIntr},
     { "Jaguar1", 0x9000, DEV_VME_D16A16, 1, DevJaguarInit, 215, DevJaguarIntr},
     { "Jaguar2", 0x9800, DEV_VME_D16A16, 2, DevJaguarInit, 216, DevJaguarIntr},
