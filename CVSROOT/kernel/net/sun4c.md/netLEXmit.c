@@ -95,6 +95,7 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
     int					amountNeeded;
 #if defined(sun3) || defined(sun4)
     Net_ScatterGather			newScatGathArr[NET_LE_NUM_XMIT_BUFFERS];
+    register Boolean			reMapped = FALSE;
 #endif
 
     netLEStatePtr = &netLEState;
@@ -109,16 +110,8 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 	return (FAILURE);
     }
 
-
     netLEState.transmitting = TRUE;
     curScatGathPtr = scatterGatherPtr;
-#if defined(sun3) || defined(sun4)
-    /*
-     * Remap the packet into network addressible memory.
-     */
-    VmMach_NetMapPacket(scatterGatherPtr, scatterGatherLength, newScatGathArr);
-    scatterGatherPtr = newScatGathArr;
-#endif
 
     /*
      * Since the first part of a packet is always the ethernet header that
@@ -212,6 +205,19 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 
 	    }
 	 }
+#if defined(sun3) || defined(sun4)
+	if (!reMapped) { 
+	    /*
+	     * Remap the packet into network addressible memory.
+	     */
+	    VmMach_NetMapPacket(scatterGatherPtr, scatterGatherLength-bufCount, 
+				newScatGathArr);
+	    bufPtr = newScatGathArr->bufAddr + 
+			(bufPtr - scatterGatherPtr->bufAddr);
+	    scatterGatherPtr = newScatGathArr;
+	    reMapped = TRUE;
+	}
+#endif
 	/*
 	 * Add bufPtr of length length to the next buffer of the chain.
 	 */
@@ -307,7 +313,7 @@ static	Boolean	xmitMemAllocated = FALSE;
 static void
 AllocateXmitMem()
 {
-    unsigned int	memBase;		
+    unsigned int	memBase;	
 
     /*
      * Allocate the ring of transmission buffer descriptors.  
@@ -327,7 +333,6 @@ AllocateXmitMem()
      * Allocate the first buffer for a packet.
      */
     firstDataBuffer = VmMach_NetMemAlloc(NET_LE_MIN_FIRST_BUFFER_SIZE);
-
     xmitMemAllocated = TRUE;
     return;
 }
