@@ -2580,3 +2580,9 @@ ReturnStatus VmMach_SharedStartAddr() {}
 void VmMach_SharedSegFinish() {}
 void VmMach_SharedProcStart() {}
 void VmMach_SharedProcFinish() {}
+
+void
+/*ARGSUSED*/
+VmMach_HandleSegMigration(segPtr)
+    Vm_Segment	*segPtr;
+{}
