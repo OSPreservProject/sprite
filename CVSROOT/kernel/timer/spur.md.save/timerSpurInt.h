@@ -1,5 +1,5 @@
 /*
- * devTimerSpurInt.h --
+ * timerSpurInt.h --
  *
  *	Types and constants for the SPUR Cache Controller timers.
  *
@@ -26,7 +26,7 @@
 #define _DEVTIMERINT
 
 #include "mach.h"
-#include "devCounter.h"
+#include "timerTick.h"
 
 /*
  * In order to convert a free running timer to some time we can use
@@ -43,10 +43,11 @@
 #endif
 
 /*
- * For the first spur kernel - 172ns.
+ * For the first spur kernel - 144ns.
  */
 
-#define	TIMER_FREQ	((unsigned int) 5813953)
+/* #define	TIMER_FREQ	((unsigned int) 5813953) */
+#define	TIMER_FREQ	((unsigned int) 6944444) 
 
 
 /*
@@ -123,11 +124,11 @@
 
 /*
  * Declarations of the .s functions for access the timers. The routines are
- * private the devTimer module. Routines can be found in devTimerT0.s.
+ * private the timer module. Routines can be found in timerT0.s.
  */
 
-extern ReturnStatus Dev_TimerT0Read();
-extern ReturnStatus Dev_TimerT0Write();
+extern ReturnStatus Timer_T0Read();
+extern ReturnStatus Timer_T0Write();
 
 
 #endif _DEVTIMERINT
