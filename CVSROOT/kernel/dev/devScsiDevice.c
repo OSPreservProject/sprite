@@ -492,9 +492,12 @@ DevScsiIOControl(devPtr, ioctlPtr, replyPtr)
         if (senseBufLen > senseDataLen) {
 	    senseBufLen = senseDataLen;
 	}
-	bcopy(senseData, (char *)(ioctlPtr->outBuffer + sizeof(Dev_ScsiStatus)
-				     + statusPtr->amountTransferred) ,
+	if (senseBufLen >= 0) {
+	    bcopy(senseData, 
+			(char *)(ioctlPtr->outBuffer + sizeof(Dev_ScsiStatus)
+					 + statusPtr->amountTransferred) ,
 	                 senseBufLen);
+	}
 	return status;
     } else {
 	return GEN_INVALID_ARG;
