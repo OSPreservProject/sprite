@@ -231,15 +231,15 @@ Dev_SCSIInitController(cntrlrPtr)
      * a filesystem block so that an unaligned block can be mapped into it.
      */
     scsiPtr->senseBuffer =
-	    (DevSCSISense *)Vm_DevBufferAlloc(&devIOBuffer,
+	    (DevSCSISense *)VmMach_DevBufferAlloc(&devIOBuffer,
 					       sizeof(DevSCSISense));
-    Vm_GetDevicePage((int)scsiPtr->senseBuffer);
+    VmMach_GetDevicePage((int)scsiPtr->senseBuffer);
 
-    scsiPtr->labelBuffer = Vm_DevBufferAlloc(&devIOBuffer,
+    scsiPtr->labelBuffer = VmMach_DevBufferAlloc(&devIOBuffer,
 					     DEV_BYTES_PER_SECTOR);
-    Vm_GetDevicePage((int)scsiPtr->labelBuffer);
+    VmMach_GetDevicePage((int)scsiPtr->labelBuffer);
 
-    scsiPtr->IOBuffer = Vm_DevBufferAlloc(&devIOBuffer,
+    scsiPtr->IOBuffer = VmMach_DevBufferAlloc(&devIOBuffer,
 					  2 * FS_BLOCK_SIZE);
     
     /*
@@ -847,7 +847,7 @@ DevSCSISectorIO(command, devPtr, firstSector, numSectorsPtr, buffer)
      * Map the buffer into the special area of multibus memory that
      * the device can DMA into.
      */
-    buffer = Vm_DevBufferMap(*numSectorsPtr * devPtr->sectorSize,
+    buffer = VmMach_DevBufferMap(*numSectorsPtr * devPtr->sectorSize,
 			     buffer, scsiPtr->IOBuffer);
     DevSCSISetupCommand(command, devPtr, firstSector, *numSectorsPtr);
     status = DevSCSICommand(devPtr->slaveID, scsiPtr,
@@ -931,7 +931,7 @@ DevSCSITapeIO(command, devPtr, buffer, countPtr)
 	 * the device can DMA into.  Probably have to worry about
 	 * the buffer size.
 	 */
-	buffer = Vm_DevBufferMap(*countPtr * DEV_BYTES_PER_SECTOR,
+	buffer = VmMach_DevBufferMap(*countPtr * DEV_BYTES_PER_SECTOR,
 				 buffer, scsiPtr->IOBuffer);
     }
     DevSCSISetupTapeCommand(command, devPtr, countPtr);
