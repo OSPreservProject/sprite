@@ -539,13 +539,14 @@ Fs_RpcWrite(srvToken, clientID, command, storagePtr)
 	if (streamPtr != &dummyStream) {
 	    FsHandleUnlock(streamPtr);
 	}
-	FS_TRACE_HANDLE(FS_TRACE_WRITE, hdrPtr);
 	if (paramsPtr->flags & FS_RMT_SHARED) {
 	    offsetPtr = &streamPtr->offset;
 	} else {
 	    offsetPtr = &paramsPtr->offset;
 	}
 	lengthWritten = paramsPtr->length;
+	FS_TRACE_IO(FS_TRACE_SRV_WRITE_2, hdrPtr->fileID, *offsetPtr,
+		    lengthWritten );
 	status = (fsStreamOpTable[hdrPtr->fileID.type].write)(streamPtr,
 		    paramsPtr->flags, storagePtr->requestDataPtr,
 		    offsetPtr, &lengthWritten, &paramsPtr->waiter);
@@ -565,7 +566,7 @@ Fs_RpcWrite(srvToken, clientID, command, storagePtr)
 		    hdrPtr->fileID.type);
 	} else {
 	    FsLocalFileIOHandle *handlePtr = (FsLocalFileIOHandle *)hdrPtr;
-	    FS_TRACE_HANDLE(FS_TRACE_4, hdrPtr);
+	    FS_TRACE_HANDLE(FS_TRACE_DEL_LAST_WR, hdrPtr);
 	    FsDeleteLastWriter(&handlePtr->consist, clientID);
 	}
     }
