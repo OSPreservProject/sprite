@@ -57,18 +57,19 @@
  * and passed through FsLookupOperation() to domain-specific routines.
  */
 
-#define	FS_DOMAIN_PREFIX		0
-#define	FS_DOMAIN_OPEN			1
-#define	FS_DOMAIN_GET_ATTR		2
-#define	FS_DOMAIN_SET_ATTR		3
-#define	FS_DOMAIN_MAKE_DEVICE		4
-#define	FS_DOMAIN_MAKE_DIR		5
-#define	FS_DOMAIN_REMOVE		6
-#define	FS_DOMAIN_REMOVE_DIR		7
-#define	FS_DOMAIN_RENAME		8
-#define	FS_DOMAIN_HARD_LINK		9
+#define	FS_DOMAIN_IMPORT		0
+#define	FS_DOMAIN_EXPORT		1
+#define	FS_DOMAIN_OPEN			2
+#define	FS_DOMAIN_GET_ATTR		3
+#define	FS_DOMAIN_SET_ATTR		4
+#define	FS_DOMAIN_MAKE_DEVICE		5
+#define	FS_DOMAIN_MAKE_DIR		6
+#define	FS_DOMAIN_REMOVE		7
+#define	FS_DOMAIN_REMOVE_DIR		8
+#define	FS_DOMAIN_RENAME		9
+#define	FS_DOMAIN_HARD_LINK		10
 
-#define	FS_NUM_NAME_OPS			10
+#define	FS_NUM_NAME_OPS			11
 
 extern	ReturnStatus (*fsDomainLookup[FS_NUM_DOMAINS][FS_NUM_NAME_OPS])();
 
