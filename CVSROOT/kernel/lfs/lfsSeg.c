@@ -23,6 +23,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <sync.h>
 #include <fsStat.h>
 #include <fsrecov.h>
+#include <recov.h>
 
 #define	LOCKPTR	&lfsPtr->lock
 
