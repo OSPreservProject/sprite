@@ -31,13 +31,14 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <sprite.h>
 #include <stdio.h>
 #include <net.h>
+#include <fs.h>
+#include <vm.h>
+#include <fsio.h>
 #include <devNet.h>
 #include <user/netInet.h>
 #include <stdlib.h>
 #include <sync.h>
-#include <fs.h>
-#include <vm.h>
-#include <fsio.h>
+#include <fsioDevice.h>
 #include <user/net.h>
 #include <bstring.h>
 
