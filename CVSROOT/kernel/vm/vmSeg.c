@@ -55,7 +55,8 @@ Sync_Condition	codeSegCondition;
 extern	Vm_Segment  **Fs_RetSegPtr();
 static void DeleteSeg _ARGS_((register Vm_Segment *segPtr));
 static void CleanSegment _ARGS_((register Vm_Segment *segPtr));
-static 	void	    FillSegmentInfo();
+static 	void	    FillSegmentInfo _ARGS_((Vm_Segment *segPtr, 
+					   Vm_SegmentInfo *infoPtr));
 static ReturnStatus AddToSeg _ARGS_((register Vm_Segment *segPtr,
 	int firstPage, int lastPage, int newNumPages, VmSpace newSpace,
 	VmSpace *oldSpacePtr));
