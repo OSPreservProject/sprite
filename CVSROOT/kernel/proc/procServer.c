@@ -320,9 +320,6 @@ Proc_ServerProc()
     register	ServerInfo	*serverInfoPtr;
     Proc_CallInfo		callInfo;
     int				i;
-    Proc_ControlBlock		*procPtr; /* our process information */
-
-    procPtr = Proc_GetCurrentProc();
 
     MASTER_LOCK(&serverMutex);
     Sync_SemRegister(&serverMutex);

@@ -1403,7 +1403,9 @@ char *x;
 	if (strbuf[i]=='\0') {
 	    return TRUE;
 	}
-	if (!isprint(strbuf[i])) return FALSE;
+	if (!isprint(strbuf[i])) {
+	    return FALSE;
+	}
     }
     strbuf[39]='\0';
     return TRUE;
@@ -1506,7 +1508,9 @@ RpcClientChannel *x;
 {
     int i;
     RpcClientChannel chan;
-    if (!READIN(RpcClientChannel,x,&chan)) return FALSE;
+    if (!READIN(RpcClientChannel,x,&chan)) {
+	return FALSE;
+    }
     for (i=0;i<rpcNumChannels;i++) {
 	if (rpcChannelPtrPtr[i] == x) {
 	    printf("RPC client: \"waitCondition\", server %d ",
@@ -1540,7 +1544,9 @@ RpcServerState *x;
 {
     int i;
     RpcServerState state;
-    if (!READIN(RpcServerState,x,&state)) return FALSE;
+    if (!READIN(RpcServerState,x,&state)) {
+	return FALSE;
+    }
     for (i=0;i<rpcMaxServers;i++) {
 	if (rpcServerPtrPtr[i] == x) {
 	    printf("RPC server:\"waitCondition\", client %d ",
@@ -1583,7 +1589,9 @@ ServerInfo *x;
 {
     int i;
     ServerInfo info;
-    if (!READIN(ServerInfo,x,&info)) return FALSE;
+    if (!READIN(ServerInfo,x,&info)) {
+	return FALSE;
+    }
     for (i=0;i<proc_NumServers;i++) {
 	if (serverInfoTable+i == x) {
 	    printf("ServerProc: \"condition\" (waiting for task)");
