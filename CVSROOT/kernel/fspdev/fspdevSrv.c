@@ -906,6 +906,35 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	    PdevClientNotify(pdevHandlePtr);
 	    break;
 	}
+	case IOC_PDEV_READY:
+	    /*
+	     * Master has made the device ready.  The inBuffer contains
+	     * new select bits.
+	     *
+	     * Side effects:
+	     *		Notify waiting clients.
+	     */
+
+	    if (inBufPtr->size != sizeof(int)) {
+		status = FS_INVALID_ARG;
+	    } else {
+		/*
+		 * Update the select state of the pseudo-device and
+		 * wake up any clients waiting on their pseudo-stream.
+		 */
+		pdevHandlePtr->selectBits = *(int *)inBufPtr->addr;
+		PdevClientNotify(pdevHandlePtr);
+	    }
+	    break;
+	case IOC_PDEV_SIGNAL_OWNER: {
+	    /*
+	     * The server wants to signal the process (group) that owns
+	     * the device.  This is used, for example, to implement processing
+	     * of interrupt characters by the TTY driver.
+	     */
+	    status = FsPdevSignalOwner(pdevHandlePtr->ctrlHandlePtr, inBufPtr);
+	    break;
+	}
 	case IOC_PFS_OPEN: {
 	    /*
 	     * A pseudo-filesystem server is replying to an open request by
@@ -957,7 +986,6 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	    PdevClientNotify(pdevHandlePtr);
 	    break;
 	}
-#ifdef notdef
 	case IOC_PFS_SET_ID: {
 	    /*
 	     * A pseudo-filesystem server is setting its own notion of the
@@ -973,32 +1001,11 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	    }
 	    break;
 	}
-#endif
 	case IOC_PFS_PASS_STREAM:
 	    /*
 	     * A pseudo-filesystem server is replying to an open request by
 	     * asking us to pass one of its open streams to the client.
 	     */
-	    break;
-	case IOC_PDEV_READY:
-	    /*
-	     * Master has made the device ready.  The inBuffer contains
-	     * new select bits.
-	     *
-	     * Side effects:
-	     *		Notify waiting clients.
-	     */
-
-	    if (inBufPtr->size != sizeof(int)) {
-		status = FS_INVALID_ARG;
-	    } else {
-		/*
-		 * Update the select state of the pseudo-device and
-		 * wake up any clients waiting on their pseudo-stream.
-		 */
-		pdevHandlePtr->selectBits = *(int *)inBufPtr->addr;
-		PdevClientNotify(pdevHandlePtr);
-	    }
 	    break;
 	case IOC_REPOSITION:
 	    status = GEN_INVALID_ARG;
@@ -1060,6 +1067,56 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
     UNLOCK_MONITOR;
     return(status);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsPdevSignalOwner --
+ *
+ *	Send a signal to the owning process or family of a pseudo-device.
+ *
+ * Results:
+ *	FS_INVALID_ARG if the input buffer isn't right.
+ *
+ * Side effects:
+ *	Bypasses permissions and sends the signal.  Permissions have to
+ *	be bypassed otherwise the pseudo-device server has to be setuid.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+FsPdevSignalOwner(ctrlHandlePtr, inBufPtr)
+    PdevControlIOHandle *ctrlHandlePtr;
+    Fs_Buffer *inBufPtr;
+{
+    register ReturnStatus status;
+    register Pdev_Signal *sigPtr;
+    register Ioc_Owner *ownerPtr = &ctrlHandlePtr->owner;
+    register Proc_ControlBlock *procPtr;
+
+    if (ownerPtr->procOrFamily == 0) {
+	/*
+	 * No owner declared, this is a no-op.
+	 */
+	status = SUCCESS;
+    } else if (inBufPtr == (Fs_Buffer *)NIL ||
+	inBufPtr->size != sizeof(Pdev_Signal)) {
+	status = FS_INVALID_ARG;
+    } else {
+	register int savedEuid;
+
+	sigPtr = (Pdev_Signal *)inBufPtr->addr;
+	procPtr = Proc_GetEffectiveProc();
+	savedEuid = procPtr->effectiveUserID;
+	procPtr->effectiveUserID = 0;
+	status = Sig_Send(sigPtr->signal, sigPtr->code, ownerPtr->id,
+		 (ownerPtr->procOrFamily == IOC_OWNER_FAMILY));
+	procPtr->effectiveUserID = savedEuid;
+    }
+    return(status);
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -1678,6 +1735,8 @@ FsPseudoStreamRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     register PdevClientIOHandle *cltHandlePtr =
 	    (PdevClientIOHandle *)streamPtr->ioHandlePtr;
     register PdevServerIOHandle *pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
+    register Ioc_Owner *ownerPtr;
+    Proc_ControlBlock	*procPtr;
     Pdev_Request	request;
 
     LOCK_MONITOR;
@@ -1691,6 +1750,27 @@ FsPseudoStreamRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	}
     }
     pdevHandlePtr->flags |= PDEV_BUSY;
+
+    procPtr = Proc_GetEffectiveProc();
+#ifdef notdef
+    /*
+     * Check for access inside the owning process group.
+     *
+     * Getting the same semantics as 4.3 BSD are tricky because different
+     * things happen if the process is blocking SIG_TTY_INPUT.  It may
+     * be better to return a special error code here and do the signalling
+     * inside Fs_Read depending on the signal mask.
+     */
+    ownerPtr = &pdevHandlePtr->ctrlHandlePtr->owner;
+    if (((ownerPtr->procOrFamily == IOC_OWNER_FAMILY) &&
+	 (procPtr->familyID != ownerPtr->id)) ||
+	((ownerPtr->procOrFamily == IOC_OWNER_PROC) &&
+	 (procPtr->processID != ownerPtr->id))) {
+	status = FS_SIG_TTYIN;
+/*	Sig_Send(SIG_TTY_INPUT, SIG_NO_CODE, procPtr->processID, 0); */
+	goto exit;
+    }
+#endif /* notdef */
 
     if (pdevHandlePtr->readBuf.data != (Address)NIL) {
 	/*
@@ -1758,13 +1838,10 @@ FsPseudoStreamRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	    FsFastWaitListNotify(&pdevHandlePtr->srvReadWaitList);
 	}
     } else if (pdevHandlePtr->selectBits & FS_READABLE) {
-	Proc_ControlBlock	*procPtr;
-
 	/*
 	 * No read ahead buffer and the state is readable.
 	 * Set up and do the request-response exchange.
 	 */
-	procPtr = Proc_GetEffectiveProc();
 	request.hdr.operation		= PDEV_READ;
 	request.param.read.offset	= *offsetPtr;
 	request.param.read.familyID	= procPtr->familyID;
@@ -1861,6 +1938,27 @@ FsPseudoStreamWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     }
     pdevHandlePtr->flags |= (PDEV_BUSY|(flags & FS_USER));
 
+    procPtr = Proc_GetEffectiveProc();
+#ifdef notdef
+    /*
+     * Check for access inside the owning process group.
+     *
+     * Getting 4.3 BSD semantics is tricky because the operation is
+     * supposed to succeed if the TTYOUT signal is blocked.  We should
+     * probably return a special error code here and do the signalling
+     * inside Fs_Write.
+     */
+    ownerPtr = &pdevHandlePtr->ctrlHandlePtr->owner;
+    if (((ownerPtr->procOrFamily == IOC_OWNER_FAMILY) &&
+	 (procPtr->familyID != ownerPtr->id)) ||
+	((ownerPtr->procOrFamily == IOC_OWNER_PROC) &&
+	 (procPtr->processID != ownerPtr->id))) {
+	status = FS_SIG_TTYOUT;
+/*	Sig_Send(SIG_TTY_OUTPUT, SIG_NO_CODE, procPtr->processID, 0); */
+	goto exit;
+    }
+#endif /* notdef */
+
     /*
      * Allow flow control by checking the select bits and only trying
      * the operation if the state allows it.
@@ -1875,7 +1973,6 @@ FsPseudoStreamWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
      * The write request parameters are the offset and flags parameters.
      * The buffer contains the data to write.
      */
-    procPtr = Proc_GetEffectiveProc();
     if (pdevHandlePtr->flags & PDEV_WRITE_BEHIND) {
 	request.hdr.operation		= PDEV_WRITE_ASYNC;
     } else {
@@ -2002,50 +2099,77 @@ FsPseudoStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 
     }
 
-    switch (command) {
+    status = SUCCESS;
+
+    if (command == IOC_NUM_READABLE &&
+	pdevHandlePtr->readBuf.data != (Address)NIL) {
 	/*
-	 * Trap out the IOC_NUM_READABLE here if there's a read ahead buf.
+	 * Trap out the IOC_NUM_READABLE if there's a read ahead buf.
 	 */
-	case IOC_NUM_READABLE: {
-	    if (pdevHandlePtr->readBuf.data != (Address)NIL) {
-		int bytesAvail;
-		if (pdevHandlePtr->flags & PDEV_READ_BUF_EMPTY) {
-		    bytesAvail = 0;
-		} else {
-		    bytesAvail = pdevHandlePtr->readBuf.lastByte -
-				 pdevHandlePtr->readBuf.firstByte + 1;
-		}
-		status = SUCCESS;
-		if (byteOrder != mach_ByteOrder) {
-		    int size = sizeof(int);
-		    Swap_Buffer((Address)&bytesAvail, sizeof(int),
-			mach_ByteOrder, byteOrder, "w", outBufPtr->addr, &size);
-		    if (size != sizeof(int)) {
-			status = GEN_INVALID_ARG;
-		    }
-		} else if (outBufPtr->size != sizeof(int)) {
+	int bytesAvail;
+	if (pdevHandlePtr->flags & PDEV_READ_BUF_EMPTY) {
+	    bytesAvail = 0;
+	} else {
+	    bytesAvail = pdevHandlePtr->readBuf.lastByte -
+			 pdevHandlePtr->readBuf.firstByte + 1;
+	}
+	if (byteOrder != mach_ByteOrder) {
+	    int size = sizeof(int);
+	    Swap_Buffer((Address)&bytesAvail, sizeof(int),
+		mach_ByteOrder, byteOrder, "w", outBufPtr->addr, &size);
+	    if (size != sizeof(int)) {
+		status = GEN_INVALID_ARG;
+	    }
+	} else if (outBufPtr->size != sizeof(int)) {
+	    status = GEN_INVALID_ARG;
+	} else {
+	    *(int *)outBufPtr->addr = bytesAvail;
+	}
+	DBG_PRINT( ("IOC  %x,%x num readable %d\n",
+		pdevHandlePtr->hdr.fileID.major,
+		pdevHandlePtr->hdr.fileID.minor,
+		bytesAvail) );
+    } else {
+	/*
+	 * Switch out on command for any special processing,
+	 * then do a request-response transaction with the server.
+	 */
+	switch(command) {
+	    case IOC_SET_OWNER: {
+		/*
+		 * Siphon off the ownership so we can enforce it in the kernel.
+		 */
+		if (inBufPtr == (Fs_Buffer *)NIL ||
+		    inBufPtr->size < sizeof(Ioc_Owner)) {
 		    status = GEN_INVALID_ARG;
 		} else {
-		    *(int *)outBufPtr->addr = bytesAvail;
+		    pdevHandlePtr->ctrlHandlePtr->owner =
+			    *(Ioc_Owner *)inBufPtr->addr;
 		}
-		DBG_PRINT( ("IOC  %x,%x num readable %d\n",
-			pdevHandlePtr->hdr.fileID.major,
-			pdevHandlePtr->hdr.fileID.minor,
-			bytesAvail) );
 		break;
 	    }
-	    /*
-	     * FALL through to request-response if no read-ahead buffer
-	     */
+	    case IOC_GET_OWNER: {
+		/*
+		 * Do our own get owner, but let the server see the request.
+		 */
+		if (outBufPtr == (Fs_Buffer *)NIL ||
+		    outBufPtr->size < sizeof(Ioc_Owner)) {
+		    status = GEN_INVALID_ARG;
+		} else {
+		    *(Ioc_Owner *)outBufPtr->addr =
+			    pdevHandlePtr->ctrlHandlePtr->owner;
+		}
+		break;
+	    }
 	}
-	default: {
+	if (status == SUCCESS) {
 	    procPtr = Proc_GetEffectiveProc();
 	    request.hdr.operation		= PDEV_IOCTL;
 	    request.param.ioctl.command		= command;
 	    request.param.ioctl.familyID	= procPtr->familyID;
 	    request.param.ioctl.procID		= procPtr->processID;
 	    request.param.ioctl.byteOrder	= byteOrder;
-	
+	    
 	    status = RequestResponse(pdevHandlePtr, sizeof(Pdev_Request),
 				     &request.hdr,
 				     inBufPtr->size, inBufPtr->addr,
