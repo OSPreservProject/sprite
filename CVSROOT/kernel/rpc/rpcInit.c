@@ -96,9 +96,9 @@ Rpc_Init()
 	 * Precompute some scatter/gather vector elements.  Buffer space
 	 * for the RPC headers is part of the channel struct so the
 	 * scatter/gather elements that point to the RPC header can
-	 * be set up once here.  Similarly, the channel and transport
-	 * field of the request RPC header are set up once here as they
-	 * are always the same.  Finally, the conditionPtr that is part
+	 * be set up once here.  Similarly, the channel
+	 * of the request RPC header is set up once here as it
+	 * is always the same.  Finally, the conditionPtr that is part
 	 * of the scatter/gather element is cleared because we don't
 	 * use this feature of the network module.
 	 */
@@ -107,8 +107,8 @@ Rpc_Init()
 	bufferPtr->bufAddr = (Address)&chanPtr->requestRpcHdr;
 	bufferPtr->length = sizeof(RpcHdr);
 	bufferPtr->conditionPtr = (Sync_Condition *)NIL;
+	chanPtr->requestRpcHdr.version = RPC_NATIVE_VERSION;
 	chanPtr->requestRpcHdr.channel = chanPtr->index;
-	chanPtr->requestRpcHdr.transport = PROTO_ETHER;
 	chanPtr->request.paramBuffer.conditionPtr = (Sync_Condition *)NIL;
 	chanPtr->request.dataBuffer.conditionPtr = (Sync_Condition *)NIL;
 
@@ -118,8 +118,8 @@ Rpc_Init()
 	    bufferPtr->bufAddr = (Address)&chanPtr->fragRpcHdr[frag];
 	    bufferPtr->length = sizeof(RpcHdr);
 	    bufferPtr->conditionPtr = (Sync_Condition *)NIL;
+	    chanPtr->fragRpcHdr[frag].version = RPC_NATIVE_VERSION;
 	    chanPtr->fragRpcHdr[frag].channel = chanPtr->index;
-	    chanPtr->fragRpcHdr[frag].transport = PROTO_ETHER;
 	    chanPtr->fragment[frag].paramBuffer.conditionPtr =
 			(Sync_Condition *)NIL;
 	    chanPtr->fragment[frag].dataBuffer.conditionPtr =
