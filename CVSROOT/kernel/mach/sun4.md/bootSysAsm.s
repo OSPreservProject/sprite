@@ -94,7 +94,17 @@ zeroing:
 	bne	zeroing
 	nop
 doneZeroing:
-#ifdef NOTDEF
+	/*
+	 * Now set the stack pointer to my own stack for the first kernel
+	 * process.  The stack grows towards low memory.  I start it at
+	 * the beginning of the text segment (CAREFUL: if loading demand-paged,
+	 * then the beginning of the text segment is 32 bytes before the
+	 * first code.  Set it really at the beginning of the text segment and
+	 * not at the beginning of the code.), and it can grow up to
+	 * MACH_KERN_START.
+	 */
+	set	MACH_KERN_STACK_START, %sp
+
 	/*
 	 * Now set up initial trap table by copying machProtoVectorTable
 	 * into reserved space at the correct alignment.  The table must
@@ -102,61 +112,64 @@ doneZeroing:
 	 * ~MACH_TRAP_ADDR_MASK + 1 bytes.  We copy doubles (8 bytes at
 	 * a time) for speed.  %g1 is source for copy, %g2 is destination,
 	 * %g3 is the counter copy, %g4 and %g5 are the registers used for
-	 * the double-word copy, 
+	 * the double-word copy, %l1 is for holding the size of the table,
+	 * and %l2 contains the number of bytes to copy.
 	 */
 	mov	0x1, %g6
 	set	machProtoVectorTable, %g1		/* g1 contains src */
+#ifdef NOTDEF
 	mov	%g1, %o0
 	call	_printArg
 	nop
+#endif NOTDEF
 	mov	0x2, %g6
+#ifdef NOTDEF
 	set	reserveSpace, %o0
 	call	_printArg
 	nop
+#endif NOTDEF
 	set	reserveSpace, %g2			/* g2 to contain dest */
-	add	%g2, (1 + ~MACH_TRAP_ADDR_MASK), %g2	/* add size of table */
+	set	(1 + ~MACH_TRAP_ADDR_MASK), %l1
+	set	((1 + ~MACH_TRAP_ADDR_MASK) / 8), %l2	/* # bytes to copy */
+	add	%g2, %l1, %g2				/* add size of table */
 	and	%g2, MACH_TRAP_ADDR_MASK, %g2		/* align to 4k bound. */
+#ifdef NOTDEF
 	mov	%g2, %o0
 	call	_printArg
 	nop
+#endif NOTDEF
 	clr	%g3					/* clear counter */
 	mov	0x3, %g6
 copyingTable:
+#ifdef NOTDEF
 	ldda	[%g1] VMMACH_KERN_PROGRAM_SPACE, %g4	/* %g4 and %g5 in */
 	mov	0x4, %g6
-	stda	%g4, [%g2] VMMACH_KERN_PROGRAM_SPACE	/* $g4 and %g5 out */
+	stda	%g4, [%g2] VMMACH_KERN_PROGRAM_SPACE	/* %g4 and %g5 out */
+#else /* NOTDEF */
+	mov	0x4, %g6
+	ldd	[%g1], %g4				/* %g4 and %g5 in */
+	std	%g4, [%g2] 				/* %g4 and %g5 out */
+	ldd	[%g1 + 8], %g4
+	std	%g4, [%g2 + 8]
+#endif /* NOTDEF */
 	mov	0x5, %g6
-	add	%g1, 8, %g1				/* incr. addresses */
-	add	%g2, 8, %g2
-	add	%g3, 1, %g3				/* incr. counter */
-	cmp	%g3, ((1 + ~MACH_TRAP_ADDR_MASK) / 8)	/* how many copies */
+	add	%g2, 16, %g2				/* incr. destination */
+	add	%g3, 2, %g3				/* incr. counter */
+	cmp	%g3, %l2				/* how many copies */
 	bne	copyingTable
 	nop
 	mov	0x6, %g6
 	mov	%g3, %o0
-	call	_printArg
+	mov	%g2, %l5
+	call	_printArg				/* print counter */
 	nop
-	mov	%g1, %o0
-	call	_printArg
+	mov	%l5, %o0
+	call	_printArg				/* print after dest */
 	nop
 	mov	0x7, %g6
-	mov	%g2, %o0
-	call	_printArg
-	nop
-	mov	0x8, %g6
 	set	reserveSpace, %g2			/* g2 to be trap base */
-	add	%g2, (1 + ~MACH_TRAP_ADDR_MASK), %g2	/* add size of table */
+	add	%g2, %l1, %g2				/* add size of table */
 	and	%g2, MACH_TRAP_ADDR_MASK, %g2		/* align to 4k bound. */
-	call	_main
-	nop
-#endif NOTDEF
-	mov	0x9, %g6
-	set	MACH_KERN_STACK_START, %sp
-	mov	0xa, %g6
-	mov	%sp, %o0
-	call	_printArg
-	nop
-	mov	0xb, %g6
 	call	_main
 	nop
 .align 8
