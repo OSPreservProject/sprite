@@ -24,8 +24,9 @@
 #ifndef _FSPREFIX
 #define _FSPREFIX
 
-#include "list.h"
-#include "fs.h"
+#include <list.h>
+#include <fs.h>
+#include <fsNameOps.h>
 
 /*
  * Fsprefix defines an entry in the prefix table.  Now it is just a linked
@@ -116,28 +117,37 @@ extern Boolean fsprefix_FileNameTrace;
 /*
  * Major prefix table entry points.
  */
-extern	void		Fsprefix_Init();
-extern	Fsprefix *	Fsprefix_Install();
-extern	ReturnStatus	Fsprefix_Lookup();
-extern	void		Fsprefix_Load();
+extern void Fsprefix_Init _ARGS_((void));
+extern Fsprefix *Fsprefix_Install _ARGS_((char *prefix, 
+		Fs_HandleHeader *hdrPtr, int domainType, int flags));
+extern ReturnStatus Fsprefix_Lookup _ARGS_((char *fileName, int flags, 
+		int clientID, Fs_HandleHeader **hdrPtrPtr,
+		Fs_FileID *rootIDPtr, char **lookupNamePtr, int *serverIDPtr,
+		int *domainTypePtr, Fsprefix **prefixPtrPtr));
+extern void Fsprefix_Load _ARGS_((char *prefix, int serverID, int flags));
 /*
  * Recovery related procedures
  */
-extern	void		Fsprefix_Reopen();
-extern	void		Fsprefix_AllowOpens();
-extern	void		Fsprefix_RecoveryCheck();
-extern	ReturnStatus	Fsprefix_OpenCheck();
-extern	int		Fsprefix_OpenInProgress();
-extern	void		Fsprefix_OpenDone();
-extern	Fsprefix *	Fsprefix_FromFileID();
-extern	void		Fsprefix_HandleClose();
+extern void Fsprefix_Reopen _ARGS_((int serverID));
+extern void Fsprefix_AllowOpens _ARGS_((int serverID));
+extern void Fsprefix_RecoveryCheck _ARGS_((int serverID));
+extern ReturnStatus Fsprefix_OpenCheck _ARGS_((Fs_HandleHeader *prefixHdrPtr));
+extern int Fsprefix_OpenInProgress _ARGS_((Fs_FileID *fileIDPtr));
+extern void Fsprefix_OpenDone _ARGS_((Fs_HandleHeader *prefixHdrPtr));
+extern Fsprefix *Fsprefix_FromFileID _ARGS_((Fs_FileID *fileIDPtr));
+extern void Fsprefix_HandleClose _ARGS_((Fsprefix *prefixPtr, int flags));
 
-extern  ReturnStatus 	Fsprefix_LookupOperation();
-extern  ReturnStatus	FsprefixLookupRedirect();
-extern	ReturnStatus	Fsprefix_TwoNameOperation();
+extern ReturnStatus Fsprefix_LookupOperation _ARGS_((char *fileName, 
+		int operation, Boolean follow, Address argsPtr,
+		Address resultsPtr, Fs_NameInfo *nameInfoPtr));
+extern ReturnStatus FsprefixLookupRedirect _ARGS_((
+		Fs_RedirectInfo *redirectInfoPtr, Fsprefix *prefixPtr,
+		char **fileNamePtr));
+extern ReturnStatus Fsprefix_TwoNameOperation _ARGS_((int operation, 
+		char *srcName, char *dstName, Fs_LookupArgs *lookupArgsPtr));
 
-extern  ReturnStatus	Fsprefix_Clear();
-extern  ReturnStatus	Fsprefix_DumpExport();
-extern  void	Fsprefix_Export();
+extern Boolean Fsprefix_Clear _ARGS_((char *prefix, int deleteFlag));
+extern ReturnStatus Fsprefix_DumpExport _ARGS_((int size, Address buffer));
+extern void Fsprefix_Export _ARGS_((char *prefix, int clientID,Boolean delete));
 
 #endif _FSPREFIX
