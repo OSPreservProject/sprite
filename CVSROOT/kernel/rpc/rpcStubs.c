@@ -31,6 +31,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <sync.h>
 #include <sig.h>
 #include <fsio.h>
+#include <fsioRpc.h>
 
 /*
  * The RPC service procedure switch.  This table and the arguments
