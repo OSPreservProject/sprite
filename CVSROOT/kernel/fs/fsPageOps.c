@@ -212,6 +212,14 @@ Fs_PageCopy(srcStreamPtr, destStreamPtr, offset, numBytes)
     Address			swapPageCopy = (Address) NIL;
     Boolean			swapPageAllocated = FALSE;
 
+    if (srcStreamPtr == (Fs_Stream *) NIL) {
+	printf("Fs_PageCopy: srcStreamPtr is NIL (failed recovery?)\n");
+	return FAILURE;
+    }
+    if (destStreamPtr == (Fs_Stream *) NIL) {
+	printf("Fs_PageCopy: destStreamPtr is NIL (failed recovery?)\n");
+	return FAILURE;
+    }
     srcHdrPtr = srcStreamPtr->ioHandlePtr;
     destHdrPtr = destStreamPtr->ioHandlePtr;
     lastBlock = (unsigned int) (offset + numBytes - 1) / FS_BLOCK_SIZE;
