@@ -536,15 +536,15 @@ FsFileClose(hdrPtr, clientID, flags, dataSize, closeData)
 	    handlePtr->use.ref, handlePtr->use.write, handlePtr->use.exec);
     }
     /*
-     * Handle pending deletes.  We mark the disk descriptor as deleted,
-     * tell other clients about the remove, and return a special code
-     * to remote clients so it knows we removed the file.
-     * The 'file gone' flag is used to guard against delayed writes
-     * comming in as/after the file gets deleted.
+     * Handle pending deletes
+     *	1. We mark the disk descriptor as deleted,
+     *	2. We scan the client list and call-back to the last writer if
+     *		it is not the client doing the close.
+     *	3. We return FS_FILE_REMOVED to the calling client so it knows
+     *		to nuke its cache.
      */
     if ((handlePtr->use.ref == 0) && (handlePtr->flags & FS_FILE_DELETED)) {
 	status = FsDeleteFileDesc(handlePtr);
-	handlePtr->flags |= FS_FILE_GONE;
 	FsClientRemoveCallback(&handlePtr->consist, clientID);
 	FsHandleRelease(handlePtr, TRUE);
 	FsHandleRemove(handlePtr);
@@ -608,12 +608,9 @@ FsFileClientKill(hdrPtr, clientID)
     /*
      * Handle pending deletes.  We mark the disk descriptor as deleted
      * and tell other clients about the remove.
-     * The 'file gone' flag is used to guard against delayed writes
-     * comming in as/after the file gets deleted.
      */
     if ((handlePtr->use.ref == 0) && (handlePtr->flags & FS_FILE_DELETED)) {
 	(void)FsDeleteFileDesc(handlePtr);
-	handlePtr->flags |= FS_FILE_GONE;
 	FsClientRemoveCallback(&handlePtr->consist, clientID);
 	FsHandleRemove(handlePtr);
     } else {
@@ -1301,7 +1298,7 @@ FsFileIOControl(hdrPtr, command, inBufSize, inBuffer, outBufSize, outBuffer)
 		return(GEN_INVALID_ARG);
 	    }
 	    length = *(int *)inBuffer;
-	    status = FsFileTrunc(handlePtr, length);
+	    status = FsFileTrunc(handlePtr, length, 0);
 	    break;
 	}
 	case IOC_LOCK:
@@ -1360,11 +1357,12 @@ FsFileIOControl(hdrPtr, command, inBufSize, inBuffer, outBufSize, outBuffer)
  */
 
 ReturnStatus
-FsFileTrunc(handlePtr, size)
+FsFileTrunc(handlePtr, size, flags)
     FsLocalFileIOHandle	*handlePtr;	/* File to truncate. */
     int			size;		/* Size to truncate the file to. */
+    int			flags;		/* FS_TRUNC_DELETE */
 {
-    FsCacheTrunc(&handlePtr->cacheInfo, size, FALSE);
+    FsCacheTrunc(&handlePtr->cacheInfo, size, flags);
     return( FsDescTrunc(handlePtr, size) );
 }
 
