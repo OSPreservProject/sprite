@@ -944,13 +944,34 @@ Fsrmt_RpcIOControl(srvToken, clientID, command, storagePtr)
      * Update server's shadow stream offset for IOC_REPOSITION
      */
     if (ioctl.command == IOC_REPOSITION) {
-	register int newOffset;
+	int newOffset = -1;
 	register Ioc_RepositionArgs	*iocArgsPtr;
+	Ioc_RepositionArgs	iocArgs;
+	int size;
+	int inSize;
 
-	if (ioctl.inBuffer == (Address)NIL) {
+	if (ioctl.inBuffer == (Address)NIL ||
+	    (ioctl.inBufSize != sizeof(Ioc_RepositionArgs))) {
 	    status = GEN_INVALID_ARG;
-	} else {
-	    iocArgsPtr = (Ioc_RepositionArgs *)ioctl.inBuffer;
+	} else if (ioctl.format != mach_Format) {
+		int fmtStatus;
+		size = sizeof(Ioc_RepositionArgs);
+		inSize = ioctl.inBufSize;
+		fmtStatus = Fmt_Convert("ww", ioctl.format, &inSize,
+				ioctl.inBuffer, mach_Format, &size,
+				(Address) &iocArgs);
+		if (fmtStatus != 0) {
+		    printf("Format of ioctl failed <0x%x>\n", fmtStatus);
+		    status = GEN_INVALID_ARG;
+		}
+		if (size != sizeof(Ioc_RepositionArgs)) {
+		    status = GEN_INVALID_ARG;
+		}
+		iocArgsPtr = &iocArgs;
+	    } else {
+		iocArgsPtr = (Ioc_RepositionArgs *)ioctl.inBuffer;
+	    }
+	if (status == SUCCESS) {
 	    switch(iocArgsPtr->base) {
 		case IOC_BASE_ZERO:
 		    newOffset = iocArgsPtr->offset;
@@ -972,11 +993,32 @@ Fsrmt_RpcIOControl(srvToken, clientID, command, storagePtr)
 	    if (newOffset < 0) {
 		status = GEN_INVALID_ARG;
 	    } else {
-		if (ioctl.outBuffer != (Address)NIL) {
-		    *(int *)ioctl.outBuffer = newOffset;
-		    replyPtr->length = sizeof(int);
+		if (ioctl.outBufSize >= sizeof(int) &&
+		    ioctl.outBuffer == (Address) NIL) {
+		    if (ioctl.format != mach_Format) {
+			int size = sizeof(int);
+			int inSize = sizeof(int);
+			int fmtStatus;
+			fmtStatus = Fmt_Convert("w", mach_Format, &inSize,
+						(Address) &newOffset,
+						ioctl.format, 
+						&size,
+						(Address) ioctl.outBuffer);
+			if (fmtStatus != 0) {
+			    printf("Format of ioctl failed <0x%x>\n",
+				   fmtStatus);
+			    status = GEN_INVALID_ARG;
+			}
+			if (size != sizeof(int)) {
+			    status = GEN_INVALID_ARG;
+			}
+		    } else {
+			*(int *)ioctl.outBuffer = newOffset;
+		    }
 		}
-		streamPtr->offset = newOffset;
+		if (status == SUCCESS) {
+		    streamPtr->offset = newOffset;
+		}
 	    }
 	}
     }
