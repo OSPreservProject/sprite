@@ -23,6 +23,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "byte.h"
 #include "vm.h"
 
+extern	int	etext;
 
 /*
  * An on/off profiling switch.
@@ -95,7 +96,7 @@ Prof_Init()
      * to PC to index calculations done in mcount and Prof_CollectInfo.
      */
 
-    numInstructions = ((int)&endText - (int)&spriteStart) / sizeof(short);
+    numInstructions = ((int)&etext - (int)&spriteStart) / sizeof(short);
     Sys_Printf("Prof_Init: # instructions in kernel = %d\n", numInstructions);
 
     /*
@@ -223,7 +224,7 @@ Prof_CollectInfo(stackPtr)
 	register int index;	/* Index into the array of counters */
 
 	pc = stackPtr->excStack.pc;
-	if (pc >= (int) &spriteStart && pc <= (int) &endText) {
+	if (pc >= (int) &spriteStart && pc <= (int) &etext) {
 	    index = (pc - (int) &spriteStart) >> PROF_PC_SHIFT;
 	    if (index < pcSampleSize) {
 		pcSamples[index]++;
@@ -299,7 +300,7 @@ Prof_Dump(dumpName)
      */
 
     sampleHdr.lowpc	= (Address) &spriteStart;
-    sampleHdr.highpc	= (Address) &endText;
+    sampleHdr.highpc	= (Address) &etext;
     sampleHdr.size	= (pcSampleSize * sizeof(short)) + sizeof(sampleHdr);
 
     fileOffset = 0;
