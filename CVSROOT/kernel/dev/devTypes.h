@@ -37,6 +37,7 @@
  *	DEV_MOUSE		Mouse and keystroke info for window systems
  *	DEV_AUDIO		Audio device
  *	DEV_SCSI_ROBOT		Tape robot on the SCSI bus.
+ *      DEV_SMEM                Kernel memory image
  *
  *
  * NOTE: These numbers correspond to the major numbers for the devices
@@ -58,6 +59,7 @@
 #define	DEV_RAID		10
 #define	DEV_DEBUG		11
 #define DEV_SCSI_ROBOT		20
+#define DEV_SMEM                14
 
 #if (!defined(ds3100)) && (!defined(ds5000))
 #define DEV_MOUSE		12
@@ -94,7 +96,7 @@
  * Following device(s) exist only on Sequent Symmetry
  */
 
-#define DEV_ZDC_DISK		14
+/*#define DEV_ZDC_DISK		14*/
 
 /*
  * The following device types are defined for SPUR as of 7/15/89.  They
