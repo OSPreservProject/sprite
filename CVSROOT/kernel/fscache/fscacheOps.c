@@ -736,7 +736,6 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
     int			firstBlock;	/* The first block of the write */
     int			lastBlock;	/* The last block to write */
     Boolean		found;		/* From fetching cached blocks */
-    int			numBytes;	/* Amount actually written each time */
     int			oldOffset;	/* Initial value of the offset */
     int			lastFileBlock;	/* Last block in the file */
     int			blockAddr;	/* For allocating blocks */

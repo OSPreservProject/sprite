@@ -82,7 +82,7 @@ Fscache_ReadAheadInit(readAheadPtr)
  */
 void
 Fscache_ReadAheadSyncLockCleanup(readAheadPtr)
-    register	Fscache_ReadAheadInfo *readAheadPtr;
+    Fscache_ReadAheadInfo *readAheadPtr;
 {
     Sync_LockClear(&readAheadPtr->lock);
 }
