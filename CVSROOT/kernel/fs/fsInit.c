@@ -267,13 +267,11 @@ Fs_ProcInit()
 
 	standalone = TRUE;
 	sprintf(buffer, "%s/boot", LOCAL_DISK_NAME);
-	printf("Trying to open %s.\n", buffer);
 	status = Fs_Open(buffer, FS_READ, FS_DIRECTORY, 0, &dummy);
 	if (status != SUCCESS) {
 	    printf("Can't open %s <0x%x>\n", buffer, status);
 	    standalone = FALSE;
 	} else {
-	    printf("Open succeeded.\n");
 	    argc = Mach_GetBootArgs(10, 100, argv, argBuffer);
 	    for (i = 0; i < argc; i++) {
 		if (!strcmp(argv[i], "-c")) {
@@ -291,7 +289,6 @@ Fs_ProcInit()
 	    if (status != SUCCESS) {
 		panic("Fs_ProcInit: Unable to open local disk prefix!");
 	    } else {
-		printf("Installing %s prefix.\n", rootPrefix);
 		FsPrefixInstall(rootPrefix, streamPtr->ioHandlePtr, 
 			FS_LOCAL_DOMAIN, 
 			FS_LOCAL_PREFIX|FS_IMPORTED_PREFIX|FS_OVERRIDE_PREFIX);
@@ -302,7 +299,6 @@ Fs_ProcInit()
      * Try and open /.
      */
     status = FAILURE;
-    printf("Trying to open /.\n");
     do {
 	status = Fs_Open("/", FS_READ, FS_DIRECTORY, 0, &stream);
 	if (status != SUCCESS) {
@@ -318,15 +314,12 @@ Fs_ProcInit()
 	    (void)Sync_WaitTime(time_OneMinute);
 	}
     } while (status != SUCCESS);
-    printf("Open succeeded.\n");
     Fs_Close(stream);
     fsPtr->cwdPtr = (Fs_Stream *)NIL;
-    printf("Trying to open /boot.\n");
     status = Fs_Open("/boot", FS_READ, FS_DIRECTORY, 0, &fsPtr->cwdPtr);
     if (status != SUCCESS) {
 	panic("Fs_ProcInit: can't open /boot.\n");
     }
-    printf("Open succeeded.\n");
     /*
      * Set the default permissions mask; it indicates the maximal set of
      * permissions that a newly created file can have.
