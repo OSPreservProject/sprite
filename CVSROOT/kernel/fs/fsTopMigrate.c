@@ -1,5 +1,5 @@
 /*
- * fsMigrate.c --
+ * fsTopMigrate.c --
  *
  * Procedures to handle migrating open files between machines.  The basic
  * strategy is to first do some local book-keeping on the client we are
@@ -25,18 +25,20 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsutil.h"
-#include "fsconsist.h"
-#include "fspdev.h"
-#include "fsio.h"
-#include "fsprefix.h"
-#include "fsNameOps.h"
-#include "fsStat.h"
-#include "byte.h"
-#include "rpc.h"
-#include "procMigrate.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsconsist.h>
+#include <fspdev.h>
+#include <fsio.h>
+#include <fsprefix.h>
+#include <fsNameOps.h>
+#include <fsStat.h>
+#include <byte.h>
+#include <rpc.h>
+#include <procMigrate.h>
+#include <string.h>
+#include <stdio.h>
 
 extern int fsio_MigDebug;
 #define DEBUG( format ) \
@@ -114,12 +116,12 @@ Fs_InitiateMigration(procPtr, hostID, infoPtr)
      *		permissions		int
      *		# files			int
      *		per-file flags		(# files) * char
-     *		encapsulated files	(# files) * (FsMigInfo + int)
-     *		cwd			FsMigInfo + int + strlen(cwdPrefix) + 1
+     *		encapsulated files	(# files) * (Fsio_MigInfo + int)
+     *		cwd			Fsio_MigInfo + int + strlen(cwdPrefix) + 1
      */
     infoPtr->size = (4 + fsPtr->numGroupIDs) * sizeof(int) +
-	    streamFlagsLen + numStreams * (sizeof(FsMigInfo) + sizeof(int)) +
-	    sizeof(FsMigInfo) + cwdLength;
+	    streamFlagsLen + numStreams * (sizeof(Fsio_MigInfo) + sizeof(int)) +
+	    sizeof(Fsio_MigInfo) + cwdLength;
     return(SUCCESS);	
 }
 
@@ -144,7 +146,7 @@ Fs_InitiateMigration(procPtr, hostID, infoPtr)
 int
 Fs_GetEncapSize()
 {
-    return(sizeof(FsMigInfo));
+    return(sizeof(Fsio_MigInfo));
 }
 
 
@@ -223,12 +225,12 @@ Fs_EncapFileState(procPtr, hostID, infoPtr, ptr)
      *		permissions		int
      *		# files			int
      *		per-file flags		(# files) * char
-     *		encapsulated files	(# files) * (FsMigInfo + int)
-     *		cwd			FsMigInfo + int + strlen(cwdPrefix) + 1
+     *		encapsulated files	(# files) * (Fsio_MigInfo + int)
+     *		cwd			Fsio_MigInfo + int + strlen(cwdPrefix) + 1
      */
     size = (4 + fsPtr->numGroupIDs) * sizeof(int) +
-	    streamFlagsLen + numStreams * (sizeof(FsMigInfo) + sizeof(int)) +
-	    sizeof(FsMigInfo) + cwdLength;
+	    streamFlagsLen + numStreams * (sizeof(Fsio_MigInfo) + sizeof(int)) +
+	    sizeof(Fsio_MigInfo) + cwdLength;
     if (size != infoPtr->size) {
 	panic("Fs_EncapState: size of encapsulated state changed.\n");
 	return(FAILURE);
@@ -264,7 +266,7 @@ Fs_EncapFileState(procPtr, hostID, infoPtr, ptr)
 	return(status);
     }
     fsPtr->cwdPtr = (Fs_Stream *) NIL;
-    ptr += sizeof(FsMigInfo);
+    ptr += sizeof(Fsio_MigInfo);
     encaps = 1;
 
     for (i = 0; i < fsPtr->numStreams; i++) {
@@ -282,9 +284,9 @@ Fs_EncapFileState(procPtr, hostID, infoPtr, ptr)
 	    encaps++;
 	} else {
 	    Byte_FillBuffer(ptr, int, NIL);
-	    bzero(ptr, sizeof(FsMigInfo));
+	    bzero(ptr, sizeof(Fsio_MigInfo));
 	}	
-	ptr += sizeof(FsMigInfo);
+	ptr += sizeof(Fsio_MigInfo);
     }
 
 #ifndef CLEAN   
@@ -330,7 +332,6 @@ Fs_DeencapFileState(procPtr, infoPtr, buffer)
     char *cwdName;
     int cwdLength;
     Fs_Stream *prefixStreamPtr;
-    int deencaps;
 
     /*
      * Set up an fsPtr for the process.  Initialize some fields so that
@@ -417,7 +418,7 @@ Fs_DeencapFileState(procPtr, infoPtr, buffer)
 	fsPtr->cwdPtr = (Fs_Stream *) NIL;
         goto failure;
     }
-    buffer += sizeof(FsMigInfo);
+    buffer += sizeof(Fsio_MigInfo);
 
     
 
@@ -436,7 +437,7 @@ Fs_DeencapFileState(procPtr, infoPtr, buffer)
 		    goto failure;
 	    }
 	}
-	buffer += sizeof(FsMigInfo);
+	buffer += sizeof(Fsio_MigInfo);
     }
 
 #ifndef CLEAN   
