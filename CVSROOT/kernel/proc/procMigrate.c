@@ -109,7 +109,6 @@ static ReturnStatus DeencapProcState();
 static ReturnStatus UpdateState();
 
 static ReturnStatus ResumeExecution();
-static ReturnStatus KillRemoteCopy();
 
 /*
  * Procedures for statistics gathering
@@ -716,9 +715,9 @@ Proc_MigrateTrap(procPtr)
      * Otherwise, forget the dependency after eviction.
      */
     if (!foreign) {
-	Proc_AddMigDependency(procPtr->processID, hostID);
+	ProcMigAddDependency(procPtr->processID, procPtr->peerProcessID);
     } else {
-	Proc_RemoveMigDependency(procPtr->processID);
+	ProcMigRemoveDependency(procPtr->processID, TRUE);
     }
 
 
@@ -809,7 +808,7 @@ Proc_MigrateTrap(procPtr)
      */
     Proc_Lock(procPtr);
     if (!(procPtr->genFlags & PROC_MIG_ERROR)) {
-	KillRemoteCopy(procPtr, hostID);
+	ProcMigKillRemoteCopy(procPtr->peerProcessID);
     }
     procPtr->genFlags &= ~(PROC_MIGRATING|PROC_REMOTE_EXEC_PENDING|
 			   PROC_MIG_ERROR);
@@ -821,13 +820,18 @@ Proc_MigrateTrap(procPtr)
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_END_MIG,
 		     (ClientData) &record);
     }
-    Sig_SendProc(procPtr, SIG_KILL, (int) status);
 #ifndef CLEAN
     if (proc_MigDoStats) {
 	PROC_MIG_INC_STAT(errors);
     }
 #endif /* CLEAN */
+    /*
+     * The migration failed, so exit.  By calling the exit routine
+     * directly we avoid problems that might result from having no
+     * VM, etc.
+     */
     Proc_Unlock(procPtr);
+    Proc_ExitInt(PROC_TERM_DESTROYED, (int) PROC_NO_PEER, 0);
 }
 
 /*
@@ -868,24 +872,6 @@ ProcMigReceiveProcess(cmdPtr, procPtr, inBufPtr, outBufPtr)
 	~PROC_MIGRATION_DONE;
 
     /*
-     * Update statistics.
-     */
-    if (procPtr->genFlags & PROC_FOREIGN) {
-	PROC_MIG_INC_STAT(foreign);
-#ifndef CLEAN
-	if (proc_MigDoStats) {
-	    PROC_MIG_INC_STAT(imports);
-	}
-#endif /* CLEAN */
-    } else {
-#ifndef CLEAN
-	if (proc_MigDoStats) {
-	    PROC_MIG_INC_STAT(returns);
-	    PROC_MIG_DEC_STAT(remote);
-	}
-#endif /* CLEAN */
-    }
-    /*
      * Go through the list of callbacks to generate the size of the buffer
      * we'll need.  In unusual circumstances, a caller may return a status
      * other than SUCCESS. In this case, the process should be continuable!
@@ -907,6 +893,7 @@ ProcMigReceiveProcess(cmdPtr, procPtr, inBufPtr, outBufPtr)
 	    if (proc_MigDebugLevel > 0) {
 		panic("ProcMigReceiveProcess: special flag set?! (continuable -- but call Fred)");
 	    }
+	    procPtr->genFlags &= ~PROC_MIGRATING;
 	    Proc_Unlock(procPtr);
 	    return(PROC_MIGRATION_REFUSED);
 	}
@@ -932,10 +919,30 @@ ProcMigReceiveProcess(cmdPtr, procPtr, inBufPtr, outBufPtr)
 		   "(can't get name)", 
 #endif /* BREAKS_KDBX */
 		   Stat_GetMsg(status));
+	    procPtr->genFlags &= ~PROC_MIGRATING;
 	    Proc_Unlock(procPtr);
 	    return(status);
 	}
 	bufPtr += infoPtr->size;
+    }
+
+    /*
+     * Update statistics.
+     */
+    if (procPtr->genFlags & PROC_FOREIGN) {
+	PROC_MIG_INC_STAT(foreign);
+#ifndef CLEAN
+	if (proc_MigDoStats) {
+	    PROC_MIG_INC_STAT(imports);
+	}
+#endif /* CLEAN */
+    } else {
+#ifndef CLEAN
+	if (proc_MigDoStats) {
+	    PROC_MIG_INC_STAT(returns);
+	    PROC_MIG_DEC_STAT(remote);
+	}
+#endif /* CLEAN */
     }
 
     procPtr->genFlags &= ~PROC_MIGRATING;
@@ -1294,7 +1301,7 @@ DeencapProcState(procPtr, infoPtr, bufPtr)
 	 * Forget the dependency on the other host; we're running
 	 * locally now.
 	 */
-	Proc_RemoveMigDependency(procPtr->processID);
+	ProcMigRemoveDependency(procPtr->processID, TRUE);
 	/*
 	 * Update remote CPU usage stats.
 	 */
@@ -1447,8 +1454,13 @@ ProcRemoteSuspend(procPtr, exitFlags)
 	    printf("ProcRemoteSuspend: host %d is down; killing process %x.\n",
 		       procPtr->peerHostID, procPtr->processID);
 	}
-	Proc_Unlock(procPtr);
-	Proc_ExitInt(PROC_TERM_DESTROYED, (int) PROC_NO_PEER, 0);
+	/*
+	 * Perform an exit on behalf of the process -- it's not
+	 * in a state where we can signal it.  The process is
+         * unlocked as a side effect.
+	 */
+	ProcExitProcess(procPtr, PROC_TERM_DESTROYED, (int) PROC_NO_PEER, 0,
+			FALSE);
 	/*
 	 * This point should not be reached, but the N-O-T-R-E-A-C-H-E-D
 	 * directive causes a complaint when there's code after it.
@@ -1571,14 +1583,15 @@ ProcMigEncapCallback(cmdPtr, procPtr, inBufPtr, outBufPtr)
 /*
  *----------------------------------------------------------------------
  *
- * KillRemoteCopy --
+ * ProcMigKillRemoteCopy --
  *
  *	Inform the remote host that a failure occurred during migration,
  * 	so the incomplete process on the remote host will kill the process.
  *	This just sets up and issues a MigCommand.
  *
  * Results:
- *	A ReturnStatus is returned, from the RPC.
+ *	None.  The caller doesn't normally care about the status of the
+ *	RPC.
  *
  * Side effects:
  *	A remote procedure call is performed and the migrated process
@@ -1587,19 +1600,20 @@ ProcMigEncapCallback(cmdPtr, procPtr, inBufPtr, outBufPtr)
  *----------------------------------------------------------------------
  */
 
-static ReturnStatus
-KillRemoteCopy(procPtr, hostID)
-    register Proc_ControlBlock 	*procPtr;    /* The process being migrated */
-    int hostID;				     /* Host to which it migrates */
+void
+ProcMigKillRemoteCopy(processID)
+    Proc_PID processID; 		/* The ID of the remote process */
 {
     ReturnStatus status;
     ProcMigCmd cmd;
+    int hostID;				     /* Host to notify. */
 
     /*
      * Set up for the RPC.
      */
     cmd.command = PROC_MIGRATE_CMD_DESTROY;
-    cmd.remotePid = procPtr->peerProcessID;
+    cmd.remotePid = processID;
+    hostID = Proc_GetHostID(processID);
 
     status = ProcMigCommand(hostID, &cmd, (Proc_MigBuffer *) NIL,
 			    (Proc_MigBuffer *) NIL);
@@ -1857,6 +1871,12 @@ Proc_WaitForMigration(processID)
 	UNLOCK_MONITOR;
 	return(PROC_INVALID_PID);
     }
+    /*
+     * While in the middle of migration, wait on the condition
+     * and then recheck the flags and the processID.
+     * This avoids the possibility of
+     * the procPtr getting recycled while we're waiting.
+     */
     while (procPtr->genFlags & (PROC_MIG_PENDING | PROC_MIGRATING)) {
 	Proc_Unlock(procPtr);
 	if (Sync_Wait(&migrateCondition, TRUE)) {
@@ -1864,10 +1884,12 @@ Proc_WaitForMigration(processID)
 	    return(GEN_ABORTED_BY_SIGNAL);
 	}
 	Proc_Lock(procPtr);
+	if (procPtr->processID != processID) {
+	    Proc_Unlock(procPtr);
+	    return(PROC_INVALID_PID);
+	}
     }
-    if (procPtr->processID != processID) {
-	status = PROC_INVALID_PID;
-    } else if (procPtr->genFlags & PROC_MIGRATION_DONE) {
+    if (procPtr->genFlags & PROC_MIGRATION_DONE) {
 	status = SUCCESS;
     } else {
 	status = FAILURE;
@@ -2175,7 +2197,7 @@ Proc_DestroyMigratedProc(pidData)
 	/*
 	 * Make sure the dependency on this process goes away.
 	 */
-	Proc_RemoveMigDependency(pid);
+	ProcMigRemoveDependency(pid, TRUE);
 	return;
     }
     if ((procPtr->state != PROC_MIGRATED) &&
@@ -2200,7 +2222,7 @@ Proc_DestroyMigratedProc(pidData)
 	/*
 	 * Make sure the dependency on this process goes away.
 	 */
-	Proc_RemoveMigDependency(pid);
+	ProcMigRemoveDependency(pid, TRUE);
 	return;
     }
 
@@ -2218,7 +2240,7 @@ Proc_DestroyMigratedProc(pidData)
 	/*
 	 * Make sure the dependency on this process goes away.
 	 */
-	Proc_RemoveMigDependency(pid);
+	ProcMigRemoveDependency(pid, TRUE);
 	return;
     }	
 	
@@ -2227,11 +2249,13 @@ Proc_DestroyMigratedProc(pidData)
 	/*
 	 * Perform an exit on behalf of the process -- it's not
 	 * in a state where we can signal it.  The process is
-         * unlocked as a side effect.
+         * unlocked as a side effect.    We tell
+	 * the recovery system that it should try later on to
+	 * notify the other host since we aren't able to right now.
 	 */
 	ProcExitProcess(procPtr, PROC_TERM_DESTROYED, (int) PROC_NO_PEER, 0,
 			FALSE);
-	Proc_RemoveMigDependency(pid);
+	ProcMigRemoveDependency(pid, FALSE);
 	/*
 	 * Update statistics.
 	 */
