@@ -48,6 +48,8 @@ static int bytesWritten;
  */
 #define	STREAM_BUFFER_SIZE	512
 static char streamBuffer[STREAM_BUFFER_SIZE];
+
+int sysPanicOK = 0;	/* 1 if initialized enough to panic */
 
 /*
  * ----------------------------------------------------------------------------
@@ -197,6 +199,10 @@ panic(va_alist)
     va_start(args);
     format = va_arg(args, char *);
 
+    if (!sysPanicOK) {
+	Mach_MonPrintf("Fatal Error: ");
+	Mach_MonPrintf(format, args);
+    }
     Dev_VidEnable(TRUE);	/* unblank the screen */
     Dev_SyslogDebug(TRUE);	/* divert /dev/syslog output to the screen */
     if (!sysPanicing) {
