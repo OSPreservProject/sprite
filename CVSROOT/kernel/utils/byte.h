@@ -34,10 +34,12 @@
 
 /*
  * Character arrays (strings & character buffers) are set up to be
- * padded to make sure that integers are aligned on even addresses.
- * Byte_AlignAddr rounds lengths to the next even number.
+ * padded to make sure that objects are aligned on double-word boundaries
+ * Byte_AlignAddr rounds lengths to the next boundary.
  */
 
-#define Byte_AlignAddr(address) ((address + 1) & ~1)
+#define Byte_AlignAddr(address) \
+	((((unsigned int) address) + (sizeof(double) - 1)) & \
+	 ~(sizeof(double) - 1))
 
 #endif _BYTE
