@@ -166,7 +166,7 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
      */
     streamPtr = FsStreamAddClient(&migInfoPtr->streamID, rpc_SpriteID,
 			     (FsHandleHeader *)NIL,
-			     migInfoPtr->flags, (char *)NIL,
+			     migInfoPtr->flags & ~FS_NEW_STREAM, (char *)NIL,
 			     &foundClient, &foundStream);
     if (!foundClient) {
 	migInfoPtr->flags |= FS_NEW_STREAM;
@@ -231,6 +231,7 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
     status = (*fsStreamOpTable[migInfoPtr->ioFileID.type].migrate)
 		(migInfoPtr, rpc_SpriteID, &streamPtr->flags,
 		 &streamPtr->offset, &size, &data);
+    streamPtr->flags &= ~FS_NEW_STREAM;
 
 #define CHECK_FAILURE
 #ifdef CHECK_FAILURE
