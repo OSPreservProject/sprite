@@ -11,18 +11,19 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif
 
+#define MCOUNT
 
-#include "sprite.h"
-#include "stdio.h"
-#include "prof.h"
-#include "profInt.h"
-#include "dbg.h"
-#include "sys.h"
-#include "timer.h"
-#include "mach.h"
-#include "fs.h"
-#include "vm.h"
-#include "bstring.h"
+#include <sprite.h>
+#include <stdio.h>
+#include <prof.h>
+#include <profInt.h>
+#include <dbg.h>
+#include <sys.h>
+#include <timer.h>
+#include <mach.h>
+#include <fs.h>
+#include <vm.h>
+#include <bstring.h>
 
 extern	int	etext;
 

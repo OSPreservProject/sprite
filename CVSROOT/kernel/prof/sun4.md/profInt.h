@@ -15,7 +15,7 @@
 
 /* procedures */
 
-extern void mcount _ARGS_((void));
+extern void __mcount _ARGS_((unsigned int callerPC, unsigned int calleePC));
 
 /*
  * A histogram of PC samples is kept for use by gprof.

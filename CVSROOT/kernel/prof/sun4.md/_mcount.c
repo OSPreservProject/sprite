@@ -16,12 +16,15 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif
 
-#include "sprite.h"
-#include "prof.h"
-#include "profInt.h"
-#include "sync.h"
-#include "sys.h"
-#include "dbg.h"
+#include <sprite.h>
+#include <prof.h>
+#include <profInt.h>
+#include <sync.h>
+#include <sys.h>
+#include <dbg.h>
+#include <stdio.h>
+
+#define MCOUNT
 
 /*
  * Boolean to prevent recursion in mcount.  This only works
@@ -65,12 +68,11 @@ static Sync_Semaphore	mcountMutex = Sync_SemInitStatic("mcountMutex");
  *----------------------------------------------------------------------
  */
 void
-mcount()
+__mcount(callerPC, calleePC)
+    unsigned int callerPC;	/* PC of instr. that called mcount's caller */
+    unsigned int calleePC;	/* PC of instr. that called mcount */
 {
 #ifdef MCOUNT
-    register unsigned int calleePC;	/* PC of instr. that called mcount */
-    register unsigned int callerPC;	/* PC of instr. that called mcount's 
-					 * caller */
     register unsigned int instructionNumber;	/* Index into profArcIndex */
     register ProfRawArc *arcPtr;	/* Pointer to arc data storage */
 
@@ -85,31 +87,12 @@ mcount()
     }
 
     /*
-     * Get the PC that was saved after the jsr mcount instruction.
-     * This is done by getting our frame pointer and then looking
-     * next to it on the stack for the saved PC.
-     * The saved PC identifies the caller of mcount and the callee
-     * of the call graph arc.
-     */
-
-    calleePC  = Prof_CalleePC();
-
-
-    /*
-     * Get the PC that was saved after the jsr foo instruction.
-     * This PC identifies the caller of foo and the caller in
-     * the call graph arc.
-     */
-
-    callerPC = Prof_CallerPC();
-
-    /*
-     * Use the PC of the jsr foo instruction as an index into the
+     * Use the PC of the caller as an index into the
      * index of stored arcs.  There should only be one call instruction
      * that corresponds to the index.
      *
      * Go from PC to instruction number by subracting off the base
-     * PC and dividing by the instruction size (2 bytes).
+     * PC and dividing by the instruction size (4 bytes).
      */
 
     if (callerPC < (unsigned int)&spriteStart) {
