@@ -1501,12 +1501,39 @@ Vm_PageIn(virtAddr, protFault)
 	VmZeroPage(virtFrameNum);
 	*ptePtr |= VM_MODIFIED_BIT;
 	status = SUCCESS;
+	if (vm_Tracing) {
+	    Vm_TracePageFault	faultRec;
+
+	    faultRec.segNum = transVirtAddr.segPtr->segNum;
+	    faultRec.pageNum = transVirtAddr.page;
+	    faultRec.faultType = VM_TRACE_ZERO_FILL;
+	    VmStoreTraceRec(VM_TRACE_PAGE_FAULT_REC, sizeof(faultRec),
+			    (Address)&faultRec, TRUE);
+	}
     } else if (*ptePtr & VM_ON_SWAP_BIT) {
 	vmStat.psFilled++;
 	status = VmPageServerRead(&transVirtAddr, virtFrameNum);
+	if (vm_Tracing) {
+	    Vm_TracePageFault	faultRec;
+
+	    faultRec.segNum = transVirtAddr.segPtr->segNum;
+	    faultRec.pageNum = transVirtAddr.page;
+	    faultRec.faultType = VM_TRACE_SWAP_FILE;
+	    VmStoreTraceRec(VM_TRACE_PAGE_FAULT_REC, sizeof(faultRec),
+			    (Address)&faultRec, TRUE);
+	}
     } else {
 	vmStat.fsFilled++;
 	status = VmFileServerRead(&transVirtAddr, virtFrameNum);
+	if (vm_Tracing && transVirtAddr.segPtr->type == VM_HEAP) {
+	    Vm_TracePageFault	faultRec;
+
+	    faultRec.segNum = transVirtAddr.segPtr->segNum;
+	    faultRec.pageNum = transVirtAddr.page;
+	    faultRec.faultType = VM_TRACE_OBJ_FILE;
+	    VmStoreTraceRec(VM_TRACE_PAGE_FAULT_REC, sizeof(faultRec),
+			    (Address)&faultRec, TRUE);
+	}
     }
 
     *ptePtr |= VM_REFERENCED_BIT;
@@ -2293,6 +2320,7 @@ Vm_Clock(data, callInfoPtr)
     Timer_GetTimeOfDay(&curTime, (int *) NIL, (Boolean *) NIL);
 
     if (vm_Tracing) {
+	vmTraceStats.numTraces++;
 	VmMach_Trace();
 
 	/*

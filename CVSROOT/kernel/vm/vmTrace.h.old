@@ -50,6 +50,7 @@ extern	int		vmTraceNextByte;
 typedef struct {
     int			traceDumps;
     int			traceDrops;
+    int			numTraces;
     VmMach_TraceStats	machStats;
 } Vm_TraceStats;
 extern	Vm_TraceStats	vmTraceStats;
@@ -71,6 +72,7 @@ extern	Vm_TraceStats	vmTraceStats;
  *	VM_TRACE_SEG_DESTROY_REC A record of type Vm_TraceSegDestroy.
  *	VM_TRACE_PTE_CHANGE_REC	A record of type Vm_TracePTEChangeRec.
  *	VM_TRACE_CLEAR_COW_REC	A record of type Vm_TraceClearCOW
+ *	VM_TRACE_PAGE_FAULT_REC	A record of type Vm_TracePageFault
  */
 #define	VM_TRACE_START_REC		-1
 #define	VM_TRACE_END_REC		-2
@@ -82,6 +84,7 @@ extern	Vm_TraceStats	vmTraceStats;
 #define	VM_TRACE_SEG_DESTROY_REC	-8
 #define	VM_TRACE_PTE_CHANGE_REC		-9
 #define	VM_TRACE_CLEAR_COW_REC		-10
+#define	VM_TRACE_PAGE_FAULT_REC		-11
 #define	VM_TRACE_MIN_REC_TYPE		-11
 
 /*
@@ -105,6 +108,7 @@ typedef struct {
     Address	cacheStartAddr;		/* The start of the FS cache. */
     Address	cacheEndAddr;		/* The end of the FS cache. */
     Vm_Stat	startStats;		/* Stats at the start of the trace. */
+    int		tracesPerSecond;	/* The number of traces per second. */
 } Vm_TraceStart;
 
 /*
@@ -218,6 +222,30 @@ typedef struct {
 #define	VM_TRACE_GIVEN_FROM_MASTER	9
 #define	VM_TRACE_TAKEN_BY_SLAVE		10
 #define	VM_TRACE_COW_COR_CHANGE		11
+#define	VM_TRACE_MAX_PTE_CHANGE_TYPE	11
+
+/*
+ * Page fault type record.
+ */
+typedef struct {
+    short		recType;	/* Always VM_TRACE_PAGE_FAULT_REC. */
+    short		segNum;		/* The segment that the page is in. */
+    unsigned short	pageNum;	/* The virtual page number. */
+    short		faultType;	/* One of VM_TRACE_ZERO_FILL, 
+					 * VM_TRACE_OBJ_FILE, 
+					 * VM_TRACE_SWAP_FILE. */
+} Vm_TracePageFault;
+
+/*
+ * Different types of page faults:
+ *
+ *	VM_TRACE_ZERO_FILL	Page was zero filled.
+ *	VM_TRACE_OBJ_FILE	Page was demand loaded from the object file.
+ *	VM_TRACE_SWAP_FILE	Page was loaded in from the swap file.
+ */
+#define	VM_TRACE_ZERO_FILL	1
+#define	VM_TRACE_OBJ_FILE	2
+#define	VM_TRACE_SWAP_FILE	3
 
 /*
  * Clear copy-on-write record.

@@ -378,6 +378,7 @@ Vm_Cmd(command, arg)
 	    traceStartPtr->cacheEndAddr = vmBlockCacheEndAddr;
 	    Byte_Copy(sizeof(Vm_Stat), (Address)&vmStat, 
 		      &traceStartPtr->startStats);
+	    traceStartPtr->tracesPerSecond = tracesPerSecond;
 
 	    vm_Tracing = TRUE;
 	    vmTracesPerClock = tracesPerSecond;
