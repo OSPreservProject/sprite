@@ -90,6 +90,15 @@ extern int rpc_SpriteID;
 #define RPC_WHEN_HOST_REBOOTS		0x2
 
 /*
+ * Host state flags for use by RPC clients.  These flags are set
+ * by users of the RPC module to define/get host states beyond
+ * the simple up/down state maintained by the RPC system.
+ *	RPC_FS_REOPEN		The client is in the fs re-open phase.
+ *				This is used to block open requests.
+ */
+#define RPC_FS_REOPEN			0x1
+
+/*
  * Forward declarations
  */
 ReturnStatus	Rpc_Call();
