@@ -25,7 +25,7 @@
 #include "vm.h"
 #else
 #include <kernel/vm.h>
-#endif
+#endif /* */
 
 #define	NEW_PAGE_SIZE		0x2000
 #define	NEW_SEG_SIZE		0x20000
@@ -74,4 +74,4 @@ typedef struct {
 	: (NEW_SEG_SIZE+((PROC_CODE_LOAD_ADDR(x)+(x).code-1) & ~(NEW_SEG_SIZE-1))))
 #define PROC_BSS_LOAD_ADDR(x)  (PROC_DATA_LOAD_ADDR(x)+(x).data)
 
-#endif _PROCAOUT
+#endif /* _PROCAOUT */
