@@ -485,14 +485,15 @@ FsFileCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPtr)
  */
 
 ReturnStatus
-FsFileClose(hdrPtr, clientID, flags, dataSize, closeData)
-    FsHandleHeader	*hdrPtr;	/* Handle to close */
+FsFileClose(streamPtr, clientID, flags, dataSize, closeData)
+    Fs_Stream		*streamPtr;	/* Stream to regular file */
     int			clientID;	/* Client closing */
     int			flags;		/* Flags from the stream being closed */
     int			dataSize;	/* Size of closeData */
     ClientData		closeData;	/* Ref. to FsCachedAttributes */
 {
-    register FsLocalFileIOHandle *handlePtr = (FsLocalFileIOHandle *)hdrPtr;
+    register FsLocalFileIOHandle *handlePtr =
+	    (FsLocalFileIOHandle *)streamPtr->ioHandlePtr;
     ReturnStatus		status;
     Boolean			wasCached = TRUE;
 
@@ -502,7 +503,8 @@ FsFileClose(hdrPtr, clientID, flags, dataSize, closeData)
     if (!FsConsistClose(&handlePtr->consist, clientID, flags, &wasCached)) {
 	Sys_Panic(SYS_WARNING,
 		  "FsFileClose, client %d unknown for file <%d,%d>\n",
-		  clientID, hdrPtr->fileID.major, hdrPtr->fileID.minor);
+		  clientID, handlePtr->hdr.fileID.major,
+		  handlePtr->hdr.fileID.minor);
 	FsHandleUnlock(handlePtr);
 	return(FS_STALE_HANDLE);
     }
@@ -532,7 +534,7 @@ FsFileClose(hdrPtr, clientID, flags, dataSize, closeData)
     if (handlePtr->use.ref < 0 || handlePtr->use.write < 0 ||
 	handlePtr->use.exec < 0) {
 	Sys_Panic(SYS_FATAL, "FsFileClose <%d,%d> use %d, write %d, exec %d\n",
-	    hdrPtr->fileID.major, hdrPtr->fileID.minor,
+	    handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
 	    handlePtr->use.ref, handlePtr->use.write, handlePtr->use.exec);
     }
     /*

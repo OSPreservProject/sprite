@@ -839,38 +839,39 @@ ServerStreamCreate(ctrlHandlePtr, ioFileIDPtr, slaveClientID, slaveProcessID)
  */
 
 ReturnStatus
-FsPseudoStreamClose(hdrPtr, clientID, flags, size, data)
-    FsHandleHeader	*hdrPtr;	/* Handle to close */
+FsPseudoStreamClose(streamPtr, clientID, flags, size, data)
+    Fs_Stream		*streamPtr;	/* Client pseudo-stream to close */
     int			clientID;	/* HostID of client closing */
     int			flags;		/* Flags from the stream being closed */
     int			size;		/* Should be zero */
     ClientData		data;		/* IGNORED */
 {
     register PdevClientIOHandle *cltHandlePtr =
-	    (PdevClientIOHandle *)hdrPtr;
+	    (PdevClientIOHandle *)streamPtr->ioHandlePtr;
     Boolean cache = FALSE;
 
     DBG_PRINT( ("Client closing pdev %x,%x\n", 
-		hdrPtr->fileID.major,
-		hdrPtr->fileID.minor) );
+		cltHandlePtr->hdr.fileID.major,
+		cltHandlePtr->hdr.fileID.minor) );
+
+    if (cltHandlePtr->streamPtr != (Fs_Stream *)NIL) {
+	/*
+	 * Clean up the stream we had to create on this host in order for a
+	 * remote client to do I/O.
+	 */
+	FsHandleLock(cltHandlePtr->streamPtr);
+	FsStreamClientClose(cltHandlePtr->streamPtr, clientID);
+	FsStreamDispose(cltHandlePtr->streamPtr);
+    }
     /*
      * Notify the server that a client has gone away.  Then we get rid
      * of our reference to the server's handle and nuke our own.
      */
-    if (cltHandlePtr->streamPtr != (Fs_Stream *)NIL) {
-	FsHandleLock(cltHandlePtr->streamPtr);
-	FsHandleRelease(cltHandlePtr->streamPtr, TRUE);
-	FsHandleRemove(cltHandlePtr->streamPtr);
-    }
     PseudoStreamCloseInt(cltHandlePtr->pdevHandlePtr);
     FsIOClientClose(&cltHandlePtr->clientList, clientID, 0, &cache);
     FsHandleRelease(cltHandlePtr->pdevHandlePtr, FALSE);
-    FsHandleRelease(hdrPtr, TRUE);
-    FsHandleRemove(hdrPtr);
-    /*
-     * Clean up the stream we had to create on this host in order for a
-     * remote client to do I/O.
-     */
+    FsHandleRelease(cltHandlePtr, TRUE);
+    FsHandleRemove(cltHandlePtr);
     return(SUCCESS);
 }
 
@@ -952,18 +953,18 @@ exit:
  *----------------------------------------------------------------------
  */
 /*ARGSUSED*/
-FsServerStreamClose(hdrPtr, clientID, flags, size, data)
-    FsHandleHeader	*hdrPtr;	/* Handle to close */
+FsServerStreamClose(streamPtr, clientID, flags, size, data)
+    Fs_Stream		*streamPtr;	/* Service stream to close */
     int			clientID;	/* HostID of client closing */
     int			flags;		/* Flags from the stream being closed */
     int			size;		/* Should be zero */
     ClientData		data;		/* IGNORED */
 {
     register PdevServerIOHandle *pdevHandlePtr =
-	    (PdevServerIOHandle *)hdrPtr;
+	    (PdevServerIOHandle *)streamPtr->ioHandlePtr;
 
     DBG_PRINT( ("Server Closing pdev %x,%x\n", 
-	    hdrPtr->fileID.major, hdrPtr->fileID.minor) );
+	    pdevHandlePtr->hdr.fileID.major, pdevHandlePtr->hdr.fileID.minor) );
 
     PdevClientWakeup(pdevHandlePtr);
     FsHandleRelease(pdevHandlePtr, TRUE);
@@ -1404,15 +1405,15 @@ FsControlReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsControlClose(hdrPtr, clientID, flags, size, data)
-    FsHandleHeader	*hdrPtr;	/* ControlIOHandle to close */
+FsControlClose(streamPtr, clientID, flags, size, data)
+    Fs_Stream		*streamPtr;	/* Control stream */
     int			clientID;	/* HostID of client closing */
     int			flags;		/* Flags from the stream being closed */
     int			size;		/* Should be zero */
     ClientData		data;		/* IGNORED */
 {
     register PdevControlIOHandle *ctrlHandlePtr =
-	    (PdevControlIOHandle *)hdrPtr;
+	    (PdevControlIOHandle *)streamPtr->ioHandlePtr;
     register PdevNotify *notifyPtr;
     int extra = 0;
 
@@ -1436,8 +1437,7 @@ FsControlClose(hdrPtr, clientID, flags, size, data)
      */
     ctrlHandlePtr->serverID = NIL;
     if (ctrlHandlePtr->rmt.hdr.fileID.serverID != rpc_SpriteID) {
-	(void)FsSpriteClose(&ctrlHandlePtr->rmt, rpc_SpriteID, 0, 0,
-				(ClientData)NIL);
+	(void)FsSpriteClose(streamPtr, rpc_SpriteID, 0, 0, (ClientData)NIL);
     }
     FsHandleRelease(ctrlHandlePtr, TRUE);
     return(SUCCESS);

@@ -515,8 +515,8 @@ Fs_RpcDevOpen(srvToken, clientID, command, storagePtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsDeviceClose(hdrPtr, clientID, flags, size, data)
-    FsHandleHeader	*hdrPtr;	/* Handle to close */
+FsDeviceClose(streamPtr, clientID, flags, size, data)
+    Fs_Stream		*streamPtr;	/* Stream to device */
     int			clientID;	/* HostID of client closing */
     int			flags;		/* Flags from the stream being closed */
     int			size;		/* Should be zero */
@@ -524,13 +524,14 @@ FsDeviceClose(hdrPtr, clientID, flags, size, data)
 {
     ReturnStatus		status;
     register FsDeviceIOHandle	*devHandlePtr =
-	    (FsDeviceIOHandle *)hdrPtr;
+	    (FsDeviceIOHandle *)streamPtr->ioHandlePtr;
     Boolean			cache = FALSE;
 
     if (!FsIOClientClose(&devHandlePtr->clientList, clientID, flags, &cache)) {
 	Sys_Panic(SYS_WARNING,
 		  "FsDeviceClose, client %d unknown for device <%d,%d>\n",
-		  clientID, hdrPtr->fileID.major, hdrPtr->fileID.minor);
+		  clientID, devHandlePtr->hdr.fileID.major,
+		  devHandlePtr->hdr.fileID.minor);
 	FsHandleRelease(devHandlePtr, TRUE);
 	return(FS_STALE_HANDLE);
     }
@@ -550,7 +551,7 @@ FsDeviceClose(hdrPtr, clientID, flags, size, data)
 
     if (devHandlePtr->use.ref < 0 || devHandlePtr->use.write < 0) {
 	Sys_Panic(SYS_FATAL, "FsDeviceClose <%d,%d> ref %d, write %d\n",
-	    hdrPtr->fileID.major, hdrPtr->fileID.minor,
+	    devHandlePtr->hdr.fileID.major, devHandlePtr->hdr.fileID.minor,
 	    devHandlePtr->use.ref, devHandlePtr->use.write);
     }
     /*
@@ -647,8 +648,8 @@ FsDeviceClientKill(hdrPtr, clientID)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsRemoteIOClose(hdrPtr, clientID, flags, dataSize, closeData)
-    FsHandleHeader	*hdrPtr;	/* Handle to close */
+FsRemoteIOClose(streamPtr, clientID, flags, dataSize, closeData)
+    Fs_Stream		*streamPtr;	/* Stream to remote object */
     int			clientID;	/* ID of closing host */
     int			flags;		/* Flags from the stream being closed */
     int			dataSize;	/* Size of *closeData, or Zero */
@@ -656,7 +657,7 @@ FsRemoteIOClose(hdrPtr, clientID, flags, dataSize, closeData)
 {
     ReturnStatus		status;
     register FsRemoteIOHandle *rmtHandlePtr =
-	    (FsRemoteIOHandle *)hdrPtr;
+	    (FsRemoteIOHandle *)streamPtr->ioHandlePtr;
 
     /*
      * Decrement local references.
@@ -669,15 +670,15 @@ FsRemoteIOClose(hdrPtr, clientID, flags, dataSize, closeData)
     if (rmtHandlePtr->recovery.use.ref < 0 ||
 	rmtHandlePtr->recovery.use.write < 0) {
 	Sys_Panic(SYS_FATAL, "FsRemoteIOClose: <%d,%d> ref %d write %d\n",
-	    hdrPtr->fileID.major, hdrPtr->fileID.minor,
+	    rmtHandlePtr->hdr.fileID.major, rmtHandlePtr->hdr.fileID.minor,
 	    rmtHandlePtr->recovery.use.ref,
 	    rmtHandlePtr->recovery.use.write);
     }
 
-    if (!FsHandleValid(hdrPtr)) {
+    if (!FsHandleValid(streamPtr->ioHandlePtr)) {
 	status = FS_STALE_HANDLE;
     } else {
-	status = FsSpriteClose(rmtHandlePtr, clientID, flags,
+	status = FsSpriteClose(streamPtr, clientID, flags,
 			       dataSize, closeData);
     }
     /*

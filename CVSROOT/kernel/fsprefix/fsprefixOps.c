@@ -985,6 +985,7 @@ PrefixHandleClear(prefixPtr, status)
     ReturnStatus status;
 {
     register FsHandleHeader *hdrPtr = prefixPtr->hdrPtr;
+    Fs_Stream dummy;
 
     if (hdrPtr == (FsHandleHeader *)NIL) {
 	return;
@@ -998,7 +999,9 @@ PrefixHandleClear(prefixPtr, status)
 	FsWantRecovery(hdrPtr);
     }
     FsHandleLock(hdrPtr);
-    (void)(*fsStreamOpTable[hdrPtr->fileID.type].close)(hdrPtr, rpc_SpriteID,
+    dummy.ioHandlePtr = hdrPtr;
+    dummy.hdr.fileID.type = -1;
+    (void)(*fsStreamOpTable[hdrPtr->fileID.type].close)(&dummy, rpc_SpriteID,
 		    0, 0, (ClientData)NIL);
     prefixPtr->hdrPtr = (FsHandleHeader *)NIL;
 }

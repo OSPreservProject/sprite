@@ -198,14 +198,15 @@ FsPipeHandleInit(fileIDPtr, findIt)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsPipeClose(hdrPtr, clientID, flags, dataSize, closeData)
-    FsHandleHeader	*hdrPtr;	/* Handle to close */
+FsPipeClose(streamPtr, clientID, flags, dataSize, closeData)
+    Fs_Stream		*streamPtr;	/* Stream to a pipe */
     int			clientID;	/* Client closing */
     int			flags;		/* Flags from the stream being closed */
     int			dataSize;	/* Should be 0 */
     ClientData		closeData;	/* Should be NIL */
 {
-    register FsPipeIOHandle *handlePtr = (FsPipeIOHandle *)hdrPtr;
+    register FsPipeIOHandle *handlePtr = 
+	    (FsPipeIOHandle *)streamPtr->ioHandlePtr;
     Boolean cache = FALSE;
 
     if (!FsIOClientClose(&handlePtr->clientList, clientID, flags, &cache)) {
