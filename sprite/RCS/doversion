@@ -1,11 +1,13 @@
 #! /sprite/cmds/csh -f
 #
-#	Usage: doversion releaseNumber versionInfo
+#	Usage: doversion releaseNumber versionInfo outFile
+#
 #	releaseNumber is the major number for the version (currently 1)
 #	versionInfo controls the minor number of the version. If it is
-#	TRUE then the version is incremented from the last build, if
-#	it is FALSE it is not incremented, and any other value is taken
-#	to be the version number to use.
+#		TRUE then the version is incremented from the last build, if
+#		it is FALSE it is not incremented, and any other value is taken
+#		to be the version number to use.
+#	outFile is the name of the .h file to generate.
 #
 # $Header$ SPRITE (Berkeley)
 #
@@ -21,16 +23,22 @@
 
 set release = $1
 set versionInfo = $2
+set outFile = $3
+
+set log = "no"
+
 set version = `cat version`
 switch($versionInfo) 
     case "TRUE":
 	@ version++
 	echo $version > version
+	set log = "yes"
 	breaksw
     case "FALSE":
 	breaksw
     default:
 	set version = $versionInfo
+	set log = "yes"
 	breaksw
 endsw
 echo $version > version
@@ -40,5 +48,13 @@ else if ($version < 100) then
     set version = "0"$version
 endif
 
-mkversion -p "SPRITE VERSION $release.$version (MACHINE)" 
+if ($log == "yes") then
+    echo "" >> versionLog
+    echo "$release.$version	`date`" >> versionLog
+    echo ""
+    echo "Please log message for $release.$version in versionLog"
+    echo ""
+endif
+
+mkversion -p "SPRITE VERSION $release.$version (MACHINE)" > $outFile
 
