@@ -26,14 +26,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vm.h"
 #include "vmMach.h"
 #include "dbg.h"
-#include "sysStats.h"
 #include "string.h"
 
-/*
- * This holds the state of the simple allocate for multibus memory.
- */
-
-VmMach_DevBuffer devIOBuffer;
 
 int devConfigDebug = FALSE;
 
@@ -211,100 +205,17 @@ Dev_Config()
 		(int)VmMach_MapInDevice((Address)cntrlrPtr->address,memoryType);
 	}
 	if (cntrlrPtr->address != NIL) {
-	    cntrlrPtr->exists = (*cntrlrPtr->initProc)(cntrlrPtr);
-	    if (cntrlrPtr->exists) {
-		printf("%s-%d at kernel address %x\n", cntrlrPtr->name,
-			      cntrlrPtr->controllerID, cntrlrPtr->address);
+	    ClientData	callBackData;
+	    callBackData = (*cntrlrPtr->initProc)(cntrlrPtr);
+	    if (callBackData != DEV_NO_CONTROLLER) {
+		printf("%s at kernel address %x\n", cntrlrPtr->name,
+			       cntrlrPtr->address);
 		if (cntrlrPtr->vectorNumber > 0) {
 		    Mach_SetHandler(cntrlrPtr->vectorNumber,
-				    cntrlrPtr->intrProc);
+			cntrlrPtr->intrProc, callBackData);
 		}
 	    }
 	}
     }
-    /*
-     * Spin through all potentially attached devices and initialize them.
-     * These routines have to be able to tell if their controller init
-     * routine succeeded.
-     */
-    for (index = 0 ; index < devNumConfigDevices ; index++) {
-	register DevConfigDevice *devPtr;
-	devPtr = &devDevice[index];
-	(void)(*devPtr->initProc)(devPtr);
-    }
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * Dev_GatherDiskStats --
- *
- *	Determine which disks are idle.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-void
-Dev_GatherDiskStats()
-{
-    register int		 index;
-    register DevConfigController *cntrlrPtr;
-
-    for (index = 0; index < devNumConfigCntrlrs; index++) {
-	cntrlrPtr = &devCntrlr[index];
-	if (cntrlrPtr->exists) {
-	    (*cntrlrPtr->idleProc)(cntrlrPtr);
-	}
-    }
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Dev_GetDiskStats --
- *
- *	Return statistics about the different disks.
- *
- * Results:
- *	Number of statistics entries returned.
- *
- * Side effects:
- *	Entries in *diskStatPtr filled in.
- *
- *----------------------------------------------------------------------
- */
-int
-Dev_GetDiskStats(diskStatArr, numEntries)
-    register Sys_DiskStats *diskStatArr;	/* Where to store the disk 
-						 * stats. */
-    int			   numEntries;		/* The number of elements in 
-						 * diskStatArr. */
-{
-    register int		 index;
-    register DevConfigController *cntrlrPtr;
-    int				 entriesUsed = 0;
-
-    for (index = 0;
-         index < devNumConfigCntrlrs && entriesUsed < numEntries;
-	 index++) {
-	cntrlrPtr = &devCntrlr[index];
-	if (cntrlrPtr->exists) {
-	    (void)strcpy(diskStatArr->name, cntrlrPtr->name);
-	    diskStatArr->controllerID = cntrlrPtr->controllerID;
-	    diskStatArr->numSamples = cntrlrPtr->numSamples;
-	    diskStatArr->idleCount = cntrlrPtr->idleCount;
-	    diskStatArr->diskReads = cntrlrPtr->diskReads;
-	    diskStatArr->diskWrites = cntrlrPtr->diskWrites;
-	    entriesUsed++;
-	    diskStatArr++;
-	}
-    }
-    return(entriesUsed);
-}
