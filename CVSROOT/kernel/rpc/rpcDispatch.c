@@ -145,14 +145,30 @@ Rpc_Dispatch(packetPtr, packetLength)
 	if (rpcHdrPtr->serverID != RPC_BROADCAST_SERVER_ID &&
 	    rpcHdrPtr->serverID != rpc_SpriteID) {
 	    /*
-	     * Perhaps the Intel chip is wack-o
+	     * A bug, or the Intel chip is wack-o
 	     */
-	    Sys_Printf("Rpc_Dispatch: junk serverID %d\n", rpcHdrPtr->serverID);
-	    badErrors++;
-	    if (badErrors > 4) {
-		Sys_Printf("Resetting network interface\n");
-		badErrors = 0;
-		Net_Reset();
+	    if (rpcHdrPtr->serverID > 0 &&
+		rpcHdrPtr->serverID < NET_NUM_SPRITE_HOSTS) {
+		Sys_Panic(SYS_WARNING, "Rpc_Dispatch, wrong server ID %d\n");
+		Sys_Printf("\tClient %d rpc %d ether dest %x:%x:%x:%x:%x:%x\n",
+		       rpcHdrPtr->clientID, rpcHdrPtr->command,
+		       rawPacketPtr->etherHdr.destination.byte1 & 0xff,
+		       rawPacketPtr->etherHdr.destination.byte2 & 0xff,
+		       rawPacketPtr->etherHdr.destination.byte3 & 0xff,
+		       rawPacketPtr->etherHdr.destination.byte4 & 0xff,
+		       rawPacketPtr->etherHdr.destination.byte5 & 0xff,
+		       rawPacketPtr->etherHdr.destination.byte6 & 0xff);
+
+	    } else {
+		Sys_Printf("Rpc_Dispatch: junk serverID %d from client %d\n", 
+			    rpcHdrPtr->serverID,
+			    rpcHdrPtr->clientID);
+		badErrors++;
+		if (badErrors > 4) {
+		    Sys_Printf("Resetting network interface\n");
+		    badErrors = 0;
+		    Net_Reset();
+		}
 	    }
 	    return;
 	}
