@@ -189,66 +189,71 @@ Dev_SyslogWrite(devicePtr, offset, bufSize, bufPtr, bytesWrittenPtr)
     int	i;
     int	toWrite;
 
-    origSize = bufSize;
 
-    MASTER_LOCK(syslogMutex);
-    if (!openForReading) {
-	for (i = 0; i < bufSize; i++, bufPtr++) {
-	    Mon_PutChar(*bufPtr);
+    if (!dbg_UsingSyslog) {
+	if (!openForReading) {
+	    for (i = 0; i < bufSize; i++, bufPtr++) {
+		Mon_PutChar(*bufPtr);
+	    }
+	    *bytesWrittenPtr = bufSize;
+	    return(SUCCESS);
 	}
-	*bytesWrittenPtr = bufSize;
-    } else {
-	if (firstIndex != -1 && firstIndex <= lastIndex) {
+	MASTER_LOCK(syslogMutex);
+    }
+
+    origSize = bufSize;
+    if (firstIndex != -1 && firstIndex <= lastIndex) {
+	/*
+	 * Fill up until the end of the buffer or until run out of
+	 * bytes, whichever comes first.
+	 */
+	toWrite = SYSLOG_BUF_SIZE - (lastIndex + 1);
+	if (toWrite > bufSize) {
+	    toWrite = bufSize;
+	}
+	Byte_Copy(toWrite, bufPtr, &syslogBuffer[lastIndex + 1]);
+	bufSize -= toWrite;
+	bufPtr += toWrite;
+	lastIndex += toWrite;
+    }
+    if (bufSize > 0) {
+	int	nextIndex;
+
+	nextIndex = lastIndex + 1;
+	if (nextIndex == SYSLOG_BUF_SIZE) {
+	    nextIndex = 0;
+	}
+	if (nextIndex == firstIndex) {
 	    /*
-	     * Fill up until the end of the buffer or until run out of
-	     * bytes, whichever comes first.
+	     * Buffer overflow
 	     */
-	    toWrite = SYSLOG_BUF_SIZE - (lastIndex + 1);
+	    if (!overflow) {
+		Mon_Printf("Dev_SyslogWrite: Buffer overflow, dumping overflow ...\n");
+		overflow = TRUE;
+	    }
+	    for (i = 0; i < bufSize; i++, bufPtr++) {
+		Mon_PutChar(*bufPtr);
+	    }
+	} else {
+	    if (firstIndex == -1) {
+		toWrite = SYSLOG_BUF_SIZE;
+		firstIndex = 0;
+	    } else {
+		toWrite = firstIndex - nextIndex;
+	    }
 	    if (toWrite > bufSize) {
 		toWrite = bufSize;
 	    }
-	    Byte_Copy(toWrite, bufPtr, &syslogBuffer[lastIndex + 1]);
+	    Byte_Copy(toWrite, bufPtr, syslogBuffer);
+	    lastIndex = nextIndex + toWrite - 1;
 	    bufSize -= toWrite;
-	    bufPtr += toWrite;
-	    lastIndex += toWrite;
 	}
-	if (bufSize > 0) {
-	    int	nextIndex;
-
-	    nextIndex = lastIndex + 1;
-	    if (nextIndex == SYSLOG_BUF_SIZE) {
-		nextIndex = 0;
-	    }
-	    if (nextIndex == firstIndex) {
-		/*
-		 * Buffer overflow
-		 */
-		if (!overflow) {
-		    Mon_Printf("Dev_SyslogWrite: Buffer overflow, dumping overflow ...\n");
-		    overflow = TRUE;
-		}
-		for (i = 0; i < bufSize; i++, bufPtr++) {
-		    Mon_PutChar(*bufPtr);
-		}
-	    } else {
-		if (firstIndex == -1) {
-		    toWrite = SYSLOG_BUF_SIZE;
-		    firstIndex = 0;
-		} else {
-		    toWrite = firstIndex - nextIndex;
-		}
-		if (toWrite > bufSize) {
-		    toWrite = bufSize;
-		}
-		Byte_Copy(toWrite, bufPtr, syslogBuffer);
-		lastIndex = nextIndex + toWrite - 1;
-		bufSize -= toWrite;
-	    }
-	}
-	Fs_NotifyReader(notifyToken);
-	*bytesWrittenPtr = origSize - bufSize;
     }
-    MASTER_UNLOCK(syslogMutex);
+    if (!dbg_UsingSyslog) {
+	Fs_NotifyReader(notifyToken);
+	MASTER_UNLOCK(syslogMutex);
+    }
+    *bytesWrittenPtr = origSize - bufSize;
     return(SUCCESS);
 }
 
@@ -462,3 +467,35 @@ Dev_SyslogDebug(stopLog)
 	}
     }
 }
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_SyslogReturnBuffer --
+ *
+ *	Return the data in the syslog buffer to the caller.  Intended to be
+ *	called by the debugger.
+ *
+ * Results:
+ *	Pointer to buffer and the first and last indices.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Dev_SyslogReturnBuffer(bufPtrPtr, firstIndexPtrPtr, lastIndexPtrPtr, bufSizePtr)
+    char	**bufPtrPtr;
+    int		**firstIndexPtrPtr;
+    int		**lastIndexPtrPtr;
+    int		*bufSizePtr;
+{
+    *bufPtrPtr = syslogBuffer;
+    *firstIndexPtrPtr = &firstIndex;
+    *lastIndexPtrPtr = &lastIndex;
+    *bufSizePtr = SYSLOG_BUF_SIZE;
+}
+
