@@ -21,6 +21,7 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include <vmInt.h>
 #include <vmMach.h>
 #include <vmMachInt.h>
+#include <machMon.h>
 #include <list.h>
 #include <mach.h>
 #include <proc.h>
@@ -257,7 +258,13 @@ GetNumPages()
     unsigned		page;
     unsigned		maxPage;
     char		temp;
+    int *		bitmapAddr;
+    int			bitmapLen;
+    int			i;
 
+    /*
+     * First we'll use the old probe method.
+     */
     page = (((unsigned)vmMemEnd & ~VMMACH_PHYS_CACHED_START) + 
 					VMMACH_PAGE_SIZE) / VMMACH_PAGE_SIZE;
     maxPage = (VMMACH_PHYS_UNCACHED_START - VMMACH_PHYS_CACHED_START) /
@@ -271,6 +278,24 @@ GetNumPages()
 
     printf("%d pages of memory\n", page);
 
+    /*
+     * Now we'll use the bitmap method.  We can probably do without
+     * the probes and switch to this.
+     */
+    sscanf(Mach_MonGetenv("bitmaplen")+2,"%x",&bitmapLen);
+    sscanf(Mach_MonGetenv("bitmap")+2,"%x",&bitmapAddr);
+    for (i=0;i<bitmapLen;i++) {
+	if (bitmapAddr[i] != 0xffffffff) break;
+    }
+    if (i != page) {
+	printf("Warning: bitmap says %d pages of memory\n", i);
+    }
+    for (;i<bitmapLen;i++) {
+	if (bitmapAddr[i] != 0x00000000) {
+	    printf("Warning: Memory fragmentation at page %x\n",i);
+	    break;
+	}
+    }
     return(page);
 }
 
