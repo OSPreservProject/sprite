@@ -639,4 +639,9 @@ Fixed a few compat bugs:
     Fixed the sanity checks in the LFS module that check whether clean
 	segments are really clean.
     New files linked in from the net library.
-    New files linked in from the net library.
+
+1.113	Thu May 14 20:41:19 PDT 1992
+    Minimized printf's from the net module complaining about
+        CRC and framing errors.
+    Added printf's to report rpc channel delays.
+    
