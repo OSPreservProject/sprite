@@ -378,6 +378,24 @@ typedef struct Fs_Buffer {
 typedef Address Fs_NotifyToken;
 
 /*
+ * Flags returned from device driver open procedures.
+ *
+ * FS_DEV_DONT_LOCK	- Do not lock the device's handle during IO operations.
+ *			  The default is to only allow one call to a device's
+ *			  read or write procedures active at any time. Device's
+ *			  that set this flag are responsible for doing their
+ *			  own synchronization.
+ * FS_DEV_DONT_COPY	- Do not copy user resident IO buffers in and out of
+ *			  the kernel for this device. The default is to 
+ *			  malloc() a kernel resident buffer for device IO
+ *			  operation.  Device's that set this flag are
+ *			  responsible for doing IO operations directly to
+ *			  user's address spaces.
+ */
+
+#define	FS_DEV_DONT_LOCK	0x1
+#define	FS_DEV_DONT_COPY	0x2
+/*
  * Filesystem initialization calls.
  */
 extern	void	Fs_Init();
