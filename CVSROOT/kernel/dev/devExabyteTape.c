@@ -45,6 +45,7 @@ DevExabyteInit(tapePtr)
     DevSCSITape	*tapePtr;	/* Tape drive state */
 {
     tapePtr->type = SCSI_EXABYTE;
+    tapePtr->blockSize = DEV_EXABYTE_BLOCK_SIZE;
     tapePtr->setupProc = ExabyteSetup;
     tapePtr->statusProc = ExabyteStatus;
     tapePtr->errorProc = ExabyteError;
@@ -73,9 +74,9 @@ ExabyteSetup(tapePtr, commandPtr, controlBlockPtr, countPtr, dmaCountPtr)
     DevSCSITape	*tapePtr;	/* Tape drive state */
     int *commandPtr;		/* In/Out tape command */
     DevSCSITapeControlBlock *controlBlockPtr;	/* CMD Block to set up */
-    int *countPtr;		/* In - Transfer count, blocks or bytes!
+    int *countPtr;		/* In - Transfer count in bytes.
 				 * Out - The proper byte count for CMD block */
-    int *dmaCountPtr;		/* In - Transfer count, blocks or bytes!
+    int *dmaCountPtr;		/* In - Transfer count in bytes.
 				 * Out - The proper DMA byte count for caller */
 {
     switch (*commandPtr) {
@@ -98,8 +99,13 @@ ExabyteSetup(tapePtr, commandPtr, controlBlockPtr, countPtr, dmaCountPtr)
 	    break;
 	case SCSI_READ:
 	case SCSI_WRITE:
-	    controlBlockPtr->code = 1;	/* Fixed block-size transfers */
-	    *dmaCountPtr = *countPtr * DEV_BYTES_PER_SECTOR;
+	    /*
+	     * The command block takes a block count.  The code value
+	     * of 1 indicates fixed size blocks.  FIX HERE to handle
+	     * transfers smaller than 1K.
+	     */
+	    controlBlockPtr->code = 1;
+	    *countPtr /= tapePtr->blockSize;
 	    break;
 	case SCSI_WRITE_EOF:
 	    /*
