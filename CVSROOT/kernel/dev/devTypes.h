@@ -1,7 +1,7 @@
 /*
- * devTypesInt.h --
+ * devTypes.h --
  *
- *	Declarations of device type numbers for SPUR machines.
+ *	This file declares the major device types used in Sprite.
  *
  * Copyright 1988 Regents of the University of California
  * Permission to use, copy, modify, and distribute this
@@ -15,8 +15,8 @@
  * $Header$ SPRITE (Berkeley)
  */
 
-#ifndef _DEVTYPESINT
-#define _DEVTYPESINT
+#ifndef _DEVTYPES
+#define _DEVTYPES
 
 /* constants */
 
@@ -34,7 +34,7 @@
  *	DEV_SCSI_HBA		Raw SCSI HBA device driver
  *	DEV_RAID		Raw interface to disk array
  *	DEV_DEBUG		For debugging disk arrays?
- *	DEV_EVENT		Mouse and keystroke info for window systems
+ *	DEV_MOUSE		Mouse and keystroke info for window systems
  *
  *
  * NOTE: These numbers correspond to the major numbers for the devices
@@ -65,5 +65,4 @@
 #define	DEV_SCSI0_HBA	1
 #define	DEV_JAGUAR_HBA  2
 
-#endif /* _DEVTYPESINT */
-
+#endif /* _DEVTYPES */
