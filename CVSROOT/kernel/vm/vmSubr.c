@@ -472,7 +472,7 @@ VmValidatePagesInt(segPtr,  firstPage, lastPage, zeroFill, clobber)
 	segCreate.segType = segPtr->type;
 	segCreate.cor = FALSE;
 	VmStoreTraceRec(VM_TRACE_SEG_CREATE_REC, sizeof(segCreate),
-			&segCreate, TRUE);
+			(Address)&segCreate, TRUE);
 	segPtr->flags |= VM_SEG_CREATE_TRACED;
     }
 

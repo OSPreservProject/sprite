@@ -1402,7 +1402,7 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
 		segCreate.segType = destSegPtr->type;
 		segCreate.cor = TRUE;
 		VmStoreTraceRec(VM_TRACE_SEG_CREATE_REC, sizeof(segCreate),
-				&segCreate, TRUE);
+				(Address)&segCreate, TRUE);
 	    }
 	    /*
 	     * We are allowing copy-on-write.  Make a copy-on-ref image of the
@@ -1425,7 +1425,7 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
 	segCreate.segType = destSegPtr->type;
 	segCreate.cor = FALSE;
 	VmStoreTraceRec(VM_TRACE_SEG_CREATE_REC, sizeof(segCreate),
-			&segCreate, TRUE);
+			(Address)&segCreate, TRUE);
     }
 
     /*
@@ -1601,7 +1601,7 @@ VmSegCantCOW(segPtr)
     if (!VmSegCanCOW(segPtr)) {
 	return;
     }
-    VmCOWCopySeg(segPtr);
+    (void)VmCOWCopySeg(segPtr);
     VmSegCOWDone(segPtr, TRUE);
 }
 
@@ -1907,31 +1907,40 @@ VmGetSegPtr(segNum)
 /*
  * ----------------------------------------------------------------------------
  *
- * VmClearSegTraceTimes --
+ * VmTraceSegStart --
  *
- *     Reset all segment trace times.
+ *	Reset all segment trace times and dump a creation record for
+ *	each in-use segment.
  *
  * Results:
- *     None.
+ *	None.
  *
  * Side effects:
- *     All segment trace times are set to 0.
+ *	All segment trace times are set to 0.
  *     
  * ----------------------------------------------------------------------------
  */
-ENTRY void
-VmClearSegTraceTimes()
+INTERNAL void
+VmTraceSegStart()
 {
     int		i;
     Vm_Segment	*segPtr;
 
-    LOCK_MONITOR;
-
     for (i = 0, segPtr = segmentTable; i < vmNumSegments; i++, segPtr++) {
 	if (i != VM_SYSTEM_SEGMENT) {
 	    segPtr->traceTime = 0;
+	    if (segPtr->refCount > 0 ||
+	        (segPtr->flags & VM_SEG_INACTIVE)) {
+		Vm_TraceSegCreate	segCreate;
+    
+		segCreate.segNum = segPtr->segNum;
+		segCreate.parSegNum = -1;
+		segCreate.segType = segPtr->type;
+		segCreate.cor = segPtr->numCORPages > 0;
+		VmStoreTraceRec(VM_TRACE_SEG_CREATE_REC, sizeof(segCreate),
+				(Address)&segCreate, TRUE);
+		segPtr->flags |= VM_SEG_CREATE_TRACED;
+	    }
 	}
     }
-
-    UNLOCK_MONITOR;
 }

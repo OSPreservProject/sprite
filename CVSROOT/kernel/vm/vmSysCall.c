@@ -183,7 +183,7 @@ static char	buffer[8192];
 
 void	SetVal();
 
-#define SETVAR(var, val) SetVal("var", val, &(var))
+#define SETVAR(var, val) SetVal("var", val, (int *)&(var))
 
 
 /*
@@ -264,9 +264,10 @@ Vm_Cmd(command, arg)
         case VM_SET_CLOCK_PAGES:
             SETVAR(vmPagesToCheck, arg);
             break;
-        case VM_SET_CLOCK_INTERVAL:
+        case VM_SET_CLOCK_INTERVAL: {
 	    SETVAR(vmClockSleep, (int) (arg * timer_IntOneSecond));
             break;
+	}
 	case VM_SET_COPY_SIZE:
 	    SETVAR(copySize, arg);
 	    break;
@@ -345,7 +346,6 @@ Vm_Cmd(command, arg)
 	    break;
 	case VM_START_TRACING: {
 	    ReturnStatus	status;
-	    int			tracesPerSecond;
 	    void		VmTraceDaemon();
 	    Vm_TraceStart	*traceStartPtr;
 	    extern int		etext;
@@ -356,7 +356,7 @@ Vm_Cmd(command, arg)
 		Sys_Printf("VmCmd: Tracing already running.\n");
 		break;
 	    }
-	    tracesPerSecond = arg;
+	    vmTracesPerClock = arg;
 	    Sys_Printf("Vm_Cmd: Tracing started at %d times per second\n",
 			arg);
 
@@ -377,32 +377,23 @@ Vm_Cmd(command, arg)
 	    traceStartPtr->cacheStartAddr = vmBlockCacheBaseAddr;
 	    traceStartPtr->cacheEndAddr = vmBlockCacheEndAddr;
 	    Byte_Copy(sizeof(Vm_Stat), (Address)&vmStat, 
-		      &traceStartPtr->startStats);
-	    traceStartPtr->tracesPerSecond = tracesPerSecond;
-
-	    vm_Tracing = TRUE;
-	    vmTracesPerClock = tracesPerSecond;
-	    vmTracesToGo = vmTracesPerClock;
-	    vmClockSleep = timer_IntOneSecond / tracesPerSecond;
+		      (Address)&traceStartPtr->startStats);
+	    traceStartPtr->tracesPerSecond = vmTracesPerClock;
 	    vmTraceFirstByte = 0;
 	    vmTraceNextByte = sizeof(Vm_TraceStart);
-	    vmTraceTime = 0;
-	    VmClearSegTraceTimes();
 
 	    String_Copy(VM_TRACE_FILE_NAME, fileName);
 	    Cvt_UtoA((unsigned) Sys_GetHostId(), 10, hostNum);
 	    String_Cat(hostNum, fileName);
 
-	    status = Fs_Open(fileName,
-			     FS_WRITE | FS_CREATE | FS_APPEND,
+	    status = Fs_Open(fileName, FS_WRITE | FS_CREATE,
 			     FS_FILE, 0660, &vmTraceFilePtr);
 	    if (status != SUCCESS) {
 		Sys_Panic(SYS_WARNING, 
 		    "Vm_Cmd: Couldn't open trace file, reason %x\n", 
 		    status);
-		vm_Tracing = FALSE;
-		vmClockSleep = timer_IntOneSecond;
-		vmTraceFilePtr = (Fs_Stream *)NIL;
+	    } else {
+		vmTraceNeedsInit = TRUE;
 	    }
 	    break;
 	}

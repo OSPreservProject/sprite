@@ -515,7 +515,7 @@ COWEnd(segPtr, cowInfoPtrPtr)
 
 	    clearCOW.segNum = cowSegPtr->segNum;
 	    VmStoreTraceRec(VM_TRACE_CLEAR_COW_REC, sizeof(clearCOW),
-			    &clearCOW, TRUE);
+			    (Address)&clearCOW, TRUE);
 	}
 	cowSegPtr->cowInfoPtr = (VmCOWInfo *)NIL;
 	if (cowSegPtr->type == VM_STACK) {

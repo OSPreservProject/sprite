@@ -79,6 +79,7 @@ extern	Vm_TraceStats	vmTraceStats;
  *	VM_TRACE_PTE_CHANGE_REC	A record of type Vm_TracePTEChangeRec.
  *	VM_TRACE_CLEAR_COW_REC	A record of type Vm_TraceClearCOW
  *	VM_TRACE_PAGE_FAULT_REC	A record of type Vm_TracePageFault
+ *	VM_TRACE_END_INIT_REC	Trace initialization has completed.
  */
 #define	VM_TRACE_START_REC		-1
 #define	VM_TRACE_END_REC		-2
@@ -91,7 +92,8 @@ extern	Vm_TraceStats	vmTraceStats;
 #define	VM_TRACE_PTE_CHANGE_REC		-9
 #define	VM_TRACE_CLEAR_COW_REC		-10
 #define	VM_TRACE_PAGE_FAULT_REC		-11
-#define	VM_TRACE_MIN_REC_TYPE		-11
+#define	VM_TRACE_END_INIT_REC		-12
+#define	VM_TRACE_MIN_REC_TYPE		-12
 
 /*
  * Start trace record.
@@ -267,7 +269,7 @@ typedef struct {
  * every time a trace is taken.
  */
 extern	int		vmTraceTime;
-
+extern	Boolean		vmTraceNeedsInit;
 extern	int		vmTracesPerClock;
 extern	int		vmTracesToGo;
 extern	Fs_Stream	*vmTraceFilePtr;

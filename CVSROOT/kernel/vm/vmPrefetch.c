@@ -153,7 +153,7 @@ StartPrefetch(segPtr, ptePtr)
  *
  * ----------------------------------------------------------------------------
  */
-/* ARGSUSED */
+/*ARGSUSED*/
 static void
 DoPrefetch(data, callInfoPtr)
     ClientData		data;

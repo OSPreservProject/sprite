@@ -2319,7 +2319,19 @@ Vm_Clock(data, callInfoPtr)
 
     Timer_GetTimeOfDay(&curTime, (int *) NIL, (Boolean *) NIL);
 
-    if (vm_Tracing) {
+    if (vmTraceNeedsInit) {
+	short	initEnd;
+
+	vmTraceTime = 0;
+	VmTraceSegStart();
+	VmMach_Trace();
+	VmStoreTraceRec(VM_TRACE_END_INIT_REC, sizeof(short),
+			(Address)&initEnd, TRUE);
+	vmTracesToGo = vmTracesPerClock;
+	vmClockSleep = timer_IntOneSecond / vmTracesPerClock;
+	vm_Tracing = TRUE;
+	vmTraceNeedsInit = FALSE;
+    } else if (vm_Tracing) {
 	vmTraceStats.numTraces++;
 	VmMach_Trace();
 
