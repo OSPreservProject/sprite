@@ -421,9 +421,10 @@ SyncCallBack(data, callInfoPtr)
     ClientData		data;
     Proc_CallInfo	*callInfoPtr;
 {
-    printf("Syncing disks\n");
+    printf("Syncing disks");
     Fs_Sync(-1, (Boolean)data);
     callInfoPtr->interval = 0;
+    printf(".\n");
 }
 
 
