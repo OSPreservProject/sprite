@@ -1341,9 +1341,12 @@ Proc_DestroyMigratedProc(pidData)
     Sync_RemoveWaiter(procPtr);
 #endif
 
-    if (procPtr->state == PROC_MIGRATED) {
+    if (procPtr->state == PROC_MIGRATED ||
+	procPtr->state == PROC_MIGRATING ||
+	procPtr->state == PROC_NEW) {
 	/*
-	 * Perform an exit on behalf of the process.  Unlock the
+	 * Perform an exit on behalf of the process -- it's not
+	 * in a state where we can signal it.  Unlock the
 	 * process again, since ProcExitProcess locks it.  [Is there
 	 * any race condition?  e.g., ProcExitProcess must be careful
 	 * about the process it's passed.]
@@ -1358,6 +1361,7 @@ Proc_DestroyMigratedProc(pidData)
 	 * handle cleaning up dependencies.
 	 */
 	Sig_SendProc(procPtr, SIG_KILL, PROC_NO_PEER);
+	Proc_Unlock(procPtr);
     }
 
 }
