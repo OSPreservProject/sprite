@@ -62,6 +62,12 @@ static Boolean		OkToScavenge();
 #define RECOVERY_COMPLETE	0x2
 #define RECOVERY_FAILED		0x4
 
+/*
+ * A global counter of the clients active in recovery is kept.
+ * This is used to control print statements so we aren't noisey
+ * in the middle of recovery, but only at the beginning and end.
+ */
+int fsutil_NumRecovering = 0;
 
 
 /*
@@ -972,12 +978,20 @@ Fsutil_RpcRecovery(srvToken, clientID, command, storagePtr)
 {
     int *flagsPtr = (int *)storagePtr->requestParamPtr;
     if (*flagsPtr & CLT_RECOV_IN_PROGRESS) {
-	Net_HostPrint(clientID, "started recovery\n");
-	Recov_SetClientState(clientID, CLT_RECOV_IN_PROGRESS);
-    } else {
+	if (Recov_GetClientState(clientID, CLT_RECOV_IN_PROGRESS) == 0) {
+	    fsutil_NumRecovering++;
+	    if (fsutil_NumRecovering == 1) {
+		Net_HostPrint(clientID, "initiated client recovery\n");
+	    }
+	    Recov_SetClientState(clientID, CLT_RECOV_IN_PROGRESS);
+	}
 	fs_Stats.recovery.clientRecovered++;
-	Net_HostPrint(clientID, "completed recovery\n");
+    } else {
 	Recov_ClearClientState(clientID, CLT_RECOV_IN_PROGRESS);
+	fsutil_NumRecovering--;
+	if (fsutil_NumRecovering == 0) {
+	    Net_HostPrint(clientID, "completed client recovery\n");
+	}
     }
     Rpc_Reply(srvToken, SUCCESS, storagePtr, (int(*)())NIL, (ClientData)NIL);
     return(SUCCESS);
@@ -1001,8 +1015,71 @@ Fsutil_RpcRecovery(srvToken, clientID, command, storagePtr)
  */
 ReturnStatus
 Fsutil_FsRecovInfo(length, resultPtr)
-    int		length;
-    char	*resultPtr;
+    int				length;		/* size of data buffer */
+    Fsutil_FsRecovStats		*resultPtr;		/* data buffer */
 {
+    Hash_Search			hashSearch;
+    Fs_HandleHeader		*hdrPtr;
+
+    /*
+     * Other things we want eventually:
+     *	files read versus write
+     *	open files
+     *	writable but no blocks in cache
+     *	#blocks in cache, #dirty blocks in cache
+     *	how long has it been since used?
+     */
+    resultPtr->numHandles = 0;
+    resultPtr->numHandleRefCounts = 0;
+    resultPtr->numRead = 0;
+    resultPtr->numWrite = 0;
+    resultPtr->numExecute = 0;
+    resultPtr->numAppend = 0;
+    resultPtr->recovWanted = fs_Stats.recovery.number;
+    resultPtr->existingHandles = fs_Stats.handle.exists;
+    bzero((char *) (resultPtr->typeInfo),
+	    sizeof (resultPtr->typeInfo[0]) * FSIO_NUM_STREAM_TYPES);
+
+    /*
+     * How do I tell if it's open?  Handle also has a stream?
+     * How do I match these up?  Hash on something?  Yes - hash table is
+     * called fileHashTable, and pass it ptr to fileID.
+     */
+    Hash_StartSearch(&hashSearch);
+    for (hdrPtr = Fsutil_GetNextHandle(&hashSearch);
+	 hdrPtr != (Fs_HandleHeader *) NIL;
+         hdrPtr = Fsutil_GetNextHandle(&hashSearch)) {
+
+	if (hdrPtr->fileID.type != FSIO_STREAM) {
+	    resultPtr->numHandles++;
+	    resultPtr->numHandleRefCounts += hdrPtr->refCount;
+	} else {
+	    Fs_Stream	*streamPtr;
+
+	    streamPtr = (Fs_Stream *) hdrPtr;
+	    resultPtr->typeInfo[FSIO_STREAM].num++;
+	    resultPtr->typeInfo[FSIO_STREAM].refCount += hdrPtr->refCount;
+
+	    if (streamPtr->flags & FS_READ) {
+		resultPtr->numRead++;
+	    }
+	    if (streamPtr->flags & FS_WRITE) {
+		resultPtr->numWrite++;
+	    }
+	    if (streamPtr->flags & FS_EXECUTE) {
+		resultPtr->numExecute++;
+	    }
+	    if (streamPtr->flags & FS_APPEND) {
+		resultPtr->numAppend++;
+	    }
+	    if (streamPtr->ioHandlePtr != (Fs_HandleHeader *) NIL) {
+		resultPtr->typeInfo[streamPtr->ioHandlePtr->fileID.type].num++;
+	    resultPtr->typeInfo[streamPtr->ioHandlePtr->fileID.type].refCount
+		    += streamPtr->ioHandlePtr->refCount;
+	    }
+	}
+	Fsutil_HandleUnlock(hdrPtr);
+    }
+
     return SUCCESS;
 }
