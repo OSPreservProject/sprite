@@ -324,7 +324,17 @@ extern	Boolean	mach_KernelMode;
 extern	int	mach_NumProcessors;
 extern	Boolean	mach_AtInterruptLevel;
 extern	int	*mach_NumDisableIntrsPtr;
+/*
+ * mach_MachineType is a string used to expand $MACHINE in pathnames.
+ */
 extern	char	*mach_MachineType;
+/*
+ * mach_ByteOrder defines a byte ordering/structure alignment type
+ * used when servicing IOControls.  The input and output buffers for
+ * IOControls have to be made right by the server.
+ */
+extern	int	mach_ByteOrder;
+
 /*
  * Routine to initialize mach module.  Must be called first as part of boot 
  * sequence.
