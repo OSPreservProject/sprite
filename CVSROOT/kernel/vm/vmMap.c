@@ -78,7 +78,7 @@ VmMapPage(pfNum)
 		virtAddr.page = virtPage;
 		virtAddr.offset = 0;
 		virtAddr.flags = 0;
-		virtAddr.sharedPtr = (Vm_SegProcList *)NULL;
+		virtAddr.sharedPtr = (Vm_SegProcList *)NIL;
 		*ptePtr |= VM_PHYS_RES_BIT | pfNum;
 		VmMach_PageValidate(&virtAddr, *ptePtr);
 #ifdef spur
@@ -181,7 +181,7 @@ VmUnmapPage(mappedAddr)
     virtAddr.page = (unsigned int) (mappedAddr) >> vmPageShift;
     virtAddr.offset = 0;
     virtAddr.flags = 0;
-    virtAddr.sharedPtr = (Vm_SegProcList *)NULL;
+    virtAddr.sharedPtr = (Vm_SegProcList *)NIL;
 
     ptePtr = VmGetPTEPtr(vm_SysSegPtr, virtAddr.page);
     *ptePtr &= ~(VM_PHYS_RES_BIT | VM_PAGE_FRAME_FIELD);

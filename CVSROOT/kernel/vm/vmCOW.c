@@ -201,7 +201,7 @@ DoFork(srcSegPtr, destSegPtr)
 
     virtAddr.segPtr = srcSegPtr;
     virtAddr.flags = 0;
-    virtAddr.sharedPtr = (Vm_SegProcList *)NULL;
+    virtAddr.sharedPtr = (Vm_SegProcList *)NIL;
     for (; virtPage <= lastPage;
 	 virtPage++, VmIncPTEPtr(srcPTEPtr, 1), VmIncPTEPtr(destPTEPtr, 1)) {
 	if (!(*srcPTEPtr & VM_VIRT_RES_BIT)) {
@@ -312,7 +312,7 @@ VmCOWCopySeg(segPtr)
     lastPage = firstPage + segPtr->numPages - 1;
     virtAddr.segPtr = segPtr;
     virtAddr.flags = 0;
-    virtAddr.sharedPtr = (Vm_SegProcList *)NULL;
+    virtAddr.sharedPtr = (Vm_SegProcList *)NIL;
     for (virtAddr.page = firstPage, ptePtr = VmGetPTEPtr(segPtr, firstPage);
 	 virtAddr.page <= lastPage;
 	 virtAddr.page++, VmIncPTEPtr(ptePtr, 1)) {
@@ -385,7 +385,7 @@ VmCOWDeleteFromSeg(segPtr, firstPage, lastPage)
     }
     virtAddr.segPtr = segPtr;
     virtAddr.flags = 0;
-    virtAddr.sharedPtr = (Vm_SegProcList *)NULL;
+    virtAddr.sharedPtr = (Vm_SegProcList *)NIL;
     for (ptePtr = VmGetPTEPtr(segPtr, firstPage);
 	 firstPage <= lastPage;
 	 firstPage++, VmIncPTEPtr(ptePtr, 1)) {
@@ -988,7 +988,7 @@ COW(virtAddrPtr, ptePtr, isResident, deletePage)
 	virtAddr.segPtr = mastSegPtr;
 	virtAddr.page = virtAddrPtr->page;
 	virtAddr.flags = 0;
-	virtAddr.sharedPtr = (Vm_SegProcList *)NULL;
+	virtAddr.sharedPtr = (Vm_SegProcList *)NIL;
 	if (isResident) {
 	    /*
 	     * The page is resident and locked down by our caller. 
@@ -1103,7 +1103,7 @@ GiveAwayPage(srcSegPtr, virtPage, srcPTEPtr, destSegPtr, others)
     virtAddr.segPtr = srcSegPtr;
     virtAddr.page = virtPage;
     virtAddr.flags = 0;
-    virtAddr.sharedPtr = (Vm_SegProcList *)NULL;
+    virtAddr.sharedPtr = (Vm_SegProcList *)NIL;
     pageFrame = Vm_GetPageFrame(*srcPTEPtr);
     destPTEPtr = VmGetPTEPtr(destSegPtr, virtPage);
     *destPTEPtr = *srcPTEPtr & ~VM_COW_BIT;

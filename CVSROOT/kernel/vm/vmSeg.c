@@ -55,6 +55,7 @@ static  void	    CleanSegment();
 static 	void	    FillSegmentInfo();
 static ReturnStatus AddToSeg();
 static ReturnStatus GetRemoteSegInfo();
+void		    Fs_StreamCopy();
 
 int	vmNumSegments = 256;
 
@@ -634,7 +635,6 @@ VmSegmentDeleteInt(segPtr, procPtr, procLinkPtrPtr, objStreamPtrPtr, migFlag)
 		    procLinkPtr = (VmProcLink *) List_Next((List_Links *) procLinkPtr);
 		} while (!List_IsAtEnd(segPtr->procList, (List_Links *) procLinkPtr));
 
-		return(VM_DELETE_NOTHING);
 		panic("%s%s",
 	                "VmSegmentDeleteInt: Could not find segment on shared",
 			"segment list.\n");
@@ -673,7 +673,6 @@ VmSegmentDeleteInt(segPtr, procPtr, procLinkPtrPtr, objStreamPtrPtr, migFlag)
 	LIST_FORALL((List_Links *)&sharedSegTable,(List_Links *)sharedSeg) {
 	    if (sharedSeg->segPtr == segPtr) {
 		List_Remove((List_Links *)sharedSeg);
-		sharedSeg = (Vm_SharedSegTable *)NULL;
 		found = 1;
 		break;
 	    }
@@ -847,7 +846,7 @@ CleanSegment(segPtr)
     segPtr->flags |= VM_SEG_DEAD;
 
     virtAddr.segPtr = segPtr;
-    virtAddr.sharedPtr = (Vm_SegProcList *)NULL;
+    virtAddr.sharedPtr = (Vm_SegProcList *)NIL;
     if (segPtr->type == VM_STACK) {
 	virtAddr.page = mach_LastUserStackPage - segPtr->numPages + 1;
     } else {
@@ -1032,7 +1031,7 @@ EndDelete(segPtr, firstPage, lastPage)
      * Free up any resident pages.
      */
     virtAddr.segPtr = segPtr;
-    virtAddr.sharedPtr = (Vm_SegProcList *)NULL;
+    virtAddr.sharedPtr = (Vm_SegProcList *)NIL;
     for (virtAddr.page = firstPage, ptePtr = VmGetPTEPtr(segPtr, firstPage);
 	 virtAddr.page <= lastPage;
 	 virtAddr.page++, VmIncPTEPtr(ptePtr, 1)) {
@@ -1417,7 +1416,7 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
     Fs_Stream			*newFilePtr;
 
     if (srcSegPtr->type == VM_HEAP) {
-	(void)Fs_StreamCopy(srcSegPtr->filePtr, &newFilePtr);
+	Fs_StreamCopy(srcSegPtr->filePtr, &newFilePtr);
     } else {
 	newFilePtr = (Fs_Stream *) NIL;
     }
