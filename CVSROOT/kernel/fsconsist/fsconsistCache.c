@@ -280,7 +280,7 @@ StartConsistency(consistPtr, clientID, useFlags, cacheablePtr)
      * to disable client caching.  There are other special cases that
      * are not cached:
      *  1. Swap files are not cached on clients.
-     *	2. Directories are not cacheable so we don't have to
+     *	2. Non-files, (dirs, links) are not cacheable so we don't have to
      *	   worry about keeping them consistent.  (This could be done.)
      *  3. Files that are being concurrently write-shared are not cached.
      *     This includes one writer and one or more readers on other hosts,
@@ -290,7 +290,7 @@ StartConsistency(consistPtr, clientID, useFlags, cacheablePtr)
     if ((useFlags & FS_SWAP) && (clientID != rpc_SpriteID)) {
 	cacheable = FALSE;
     } else if (((FsLocalFileIOHandle *)consistPtr->hdrPtr)->descPtr->fileType
-		    == FS_DIRECTORY) {
+		    != FS_FILE) {
 	cacheable = FALSE;
     }
     if (cacheable) {
