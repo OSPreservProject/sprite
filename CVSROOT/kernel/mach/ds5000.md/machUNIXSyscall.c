@@ -77,7 +77,7 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include "user/sys/resource.h"
 #include "user/sys/uio.h"
 #include "stat.h"
-#include "signal.h"
+#include "ultrixSignal.h"
 #include "fs.h"
 #include "fsdm.h"
 #include "fslcl.h"	/* Directory format */
