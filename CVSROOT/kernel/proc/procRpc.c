@@ -4,8 +4,14 @@
  *	Procedures to handle remote procedure calls on behalf of migrated
  *	processes.
  *
- * Copyright (C) 1986 Regents of the University of California
- * All rights reserved.
+ * Copyright (C) 1986, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
  */
 
 #ifndef lint
@@ -791,7 +797,8 @@ Proc_RpcRemoteWait(srvToken, clientID, command, storagePtr)
 	replyMemPtr->paramPtr = (Address) NIL;
 	replyMemPtr->dataPtr = storagePtr->replyDataPtr;
 
-	Rpc_Reply(srvToken, status, storagePtr, Rpc_FreeMem, replyMemPtr);
+	Rpc_Reply(srvToken, status, storagePtr, Rpc_FreeMem,
+		(ClientData) replyMemPtr);
     } else {
 	Mem_Free((Address) childInfoPtr);
     }

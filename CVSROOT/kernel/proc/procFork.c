@@ -6,8 +6,14 @@
  *	to the proc table monitor to get a PCB and calls to the family monitor
  *	to put a newly created process into a process family.
  *
- * Copyright (C) 1985 Regents of the University of California
- * All rights reserved.
+ * Copyright (C) 1985, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
  */
 
 #ifndef lint
@@ -15,18 +21,19 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 #include "sprite.h"
+#include "byte.h"
+#include "list.h"
+#include "machine.h"
+#include "mem.h"
 #include "proc.h"
 #include "procInt.h"
-#include "sync.h"
 #include "sched.h"
-#include "timer.h"
-#include "list.h"
-#include "vm.h"
-#include "sys.h"
-#include "machine.h"
-#include "byte.h"
-#include "string.h"
 #include "status.h"
+#include "string.h"
+#include "sync.h"
+#include "sys.h"
+#include "timer.h"
+#include "vm.h"
 
 ReturnStatus    InitUserProc();
 

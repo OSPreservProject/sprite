@@ -5,7 +5,16 @@
  *	process to wait for the termination of other processes.  This file
  *	maintains a monitor to synchronize between exiting, detaching, and
  *	waiting processes.  The monitor also synchronizes access to the
- *	dead list. 
+ *	dead list.
+ *
+ * Copyright 1986, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
  *
  *	Proc table fields managed by this monitor:
  *
@@ -101,10 +110,6 @@
  *	---------------------------------------------------------------------
  *	  The Reaper		Proc_Reaper 	kernel process to clean the
  *						dead list. 
- *
- *
- * Copyright 1986 Regents of the University of California
- * All rights reserved.
  */
 
 #ifndef lint

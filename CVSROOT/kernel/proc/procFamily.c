@@ -10,7 +10,13 @@
  *	is the familyID field.
  *
  * Copyright (C) 1986 Regents of the University of California
- * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
  */
 
 #ifndef lint
@@ -104,7 +110,7 @@ ProcFamilyInsert(procPtr, familyID)
     }
 
 again:
-    hashEntryPtr = Hash_Find(famHashTable, familyID);
+    hashEntryPtr = Hash_Find(famHashTable, (Address) familyID);
     famHdrPtr = (FamilyHeader *) Hash_GetValue(hashEntryPtr);
     if (famHdrPtr == (FamilyHeader *) NIL) {
 	famHdrPtr = (FamilyHeader *) Mem_Alloc(sizeof(FamilyHeader));
@@ -167,7 +173,7 @@ ProcFamilyRemove(procPtr)
 	return;
     }
 
-    hashEntryPtr = Hash_LookOnly(famHashTable, procPtr->familyID);
+    hashEntryPtr = Hash_LookOnly(famHashTable, (Address) procPtr->familyID);
     if (hashEntryPtr == (Hash_Entry *) NIL) {
 	Sys_Panic(SYS_FATAL, "ProcFamilyRemove: Family not in hash table\n");
     }
@@ -218,7 +224,7 @@ Proc_LockFamily(familyID, familyListPtr, userIDPtr)
     LOCK_MONITOR;
 
 again:
-    hashEntryPtr = Hash_LookOnly(famHashTable, familyID);
+    hashEntryPtr = Hash_LookOnly(famHashTable, (Address) familyID);
     if (hashEntryPtr == (Hash_Entry *) NIL) {
 	UNLOCK_MONITOR;
 	return(PROC_INVALID_FAMILY_ID);
@@ -269,7 +275,7 @@ Proc_UnlockFamily(familyID)
 
     LOCK_MONITOR;
 
-    hashEntryPtr = Hash_LookOnly(famHashTable, familyID);
+    hashEntryPtr = Hash_LookOnly(famHashTable, (Address) familyID);
     if (hashEntryPtr == (Hash_Entry *) NIL) {
 	Sys_Panic(SYS_FATAL, "Proc_UnlockFamily: Family doesn't exist\n");
     }
@@ -403,7 +409,7 @@ Proc_SetFamilyID(pid, familyID)
     }
 
     ProcFamilyRemove(procPtr);
-    status = ProcFamilyInsert(procPtr, familyID);
+    status = ProcFamilyInsert(procPtr, (int) familyID);
     if (status == SUCCESS) {
 	procPtr->familyID = familyID;
     } else {
