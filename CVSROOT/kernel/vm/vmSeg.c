@@ -47,7 +47,7 @@ static	List_Links      deadSegListHdr;
 /*
  * Condition to wait on when waiting for a code segment to be set up.
  */
-static	Sync_Condition	codeSegCondition;
+Sync_Condition	codeSegCondition;
 
 extern	Vm_Segment  **Fs_RetSegPtr();
 static  void	    DeleteSeg();
