@@ -61,7 +61,7 @@ extern Boolean main_AllowNMI;	/* If TRUE then allow non-maskable interrupts.*/
 
 extern int main_NumRpcServers;	/* # of rpc servers to spawn off */
 
-int main_PrintInitRoutines = TRUE;/* print out each routine as it's called. */
+int main_PrintInitRoutines = FALSE;/* print out each routine as it's called. */
 
 extern	Address	vmMemEnd;	/* The end of allocated kernel memory. */
 
