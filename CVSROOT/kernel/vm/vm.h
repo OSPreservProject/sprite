@@ -258,6 +258,12 @@ typedef struct Vm_SegProcList {
 extern	Boolean	vm_CanCOW;
 
 /*
+ * Maximum number of pageout processes.  This information is needed in
+ * order to configure the correct number of Proc_ServerProcs
+ */
+#define VM_MAX_PAGE_OUT_PROCS	3
+
+/*
  * The initialization procedures.
  */
 extern	void	Vm_BootInit();

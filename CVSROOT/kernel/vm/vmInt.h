@@ -230,7 +230,6 @@ extern	int		vmPagesToCheck;	/* Number of pages to check each time
 					 * that the clock is run. */
 extern	unsigned int	vmClockSleep;	/* Number of seconds to sleep between
 					 * iterations of the clock. */
-#define VM_MAX_PAGE_OUT_PROCS	3
 extern	int		vmMaxPageOutProcs; /* Maximum number of page out procs
 					    * at any given time. */
 extern	Boolean		vmCORReadOnly;	/* After a cor fault the page is marked
