@@ -25,7 +25,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fs.h"
 #include "rawBlockDev.h"
 #include "devFsOpTable.h"
-#include "devTypesInt.h"
+#include "devTypes.h"
 
 /*
  * Device specific include files.
