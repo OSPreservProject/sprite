@@ -1126,7 +1126,7 @@ Fsutil_TestForHandles(serverID)
     Hash_Search			hashSearch;
     register	Fs_HandleHeader	*hdrPtr;
     int				count = 0;
-    return 1;
+
     Hash_StartSearch(&hashSearch);
     for (hdrPtr = Fsutil_GetNextHandle(&hashSearch);
 	 hdrPtr != (Fs_HandleHeader *) NIL;
