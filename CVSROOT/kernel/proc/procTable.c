@@ -278,7 +278,7 @@ Proc_InitMainProc()
 
     Mach_InitFirstProc(procPtr);
     Vm_ProcInit(procPtr);
-    VmMach_SetupContext(procPtr);
+    (void) VmMach_SetupContext(procPtr);
 
     procPtr->familyID 		= PROC_NO_FAMILY;	/* not in a family */
     
