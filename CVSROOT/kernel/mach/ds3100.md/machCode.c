@@ -165,7 +165,7 @@ extern void Timer_TimerServiceInterrupt();
 extern void Dev_DC7085Interrupt();
 extern void MachFPInterrupt();
 
-static void PrintError _ARGS_((void));
+extern void PrintError _ARGS_((void));
 static void PrintInst _ARGS_((unsigned pc, unsigned inst));
 static void SoftFPReturn _ARGS_((void));
 static void MemErrorInterrupt _ARGS_((void));
@@ -1201,7 +1201,7 @@ MachUserReturn(procPtr)
     Address			pc;
 
 
-    if (procPtr->Prof_Scale != 0 && procPtr->Prof_PC != 0) {
+    if (procPtr->Prof_Scale >= 2 && procPtr->Prof_PC != 0) {
 	Prof_RecordPC(procPtr);
     }
 
@@ -1743,7 +1743,7 @@ Mach_SendSignal(sigType)
     }
 }
 
-static void
+void
 PrintError()
 {
     panic("Error on stack\n");
