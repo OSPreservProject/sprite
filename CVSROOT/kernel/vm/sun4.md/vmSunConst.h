@@ -316,6 +316,7 @@ DoneCheck:
  *	VMMACH_NUM_CACHE_TAGS		Number of tags in the cache
  *	VMMACH_CACHE_TAG_INCR		Byte size for incrementing thru tags
  *	VMMACH_CACHE_LINE_SIZE		Line size in bytes
+ *	VMMACH_CACHE_SHIFT		Number to shift by to = line size
  *	VMMACH_NUM_CACHE_LINES		Number of lines in cache
  *	VMMACH_CACHE_SIZE		Total size of cache in bytes of data
  */
@@ -327,6 +328,7 @@ DoneCheck:
 #define	VMMACH_ENABLE_CACHE_BIT		0x10
 #define	VMMACH_CACHE_TAG_INCR		0x10
 #define	VMMACH_CACHE_LINE_SIZE		0x10
+#define	VMMACH_CACHE_SHIFT		0x4
 #define	VMMACH_NUM_CACHE_TAGS		VMMACH_NUM_CACHE_LINES
 #define VMMACH_CACHE_SIZE  (VMMACH_CACHE_LINE_SIZE * VMMACH_NUM_CACHE_LINES)
 
