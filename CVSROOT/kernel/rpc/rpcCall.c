@@ -114,9 +114,9 @@ Rpc_Call(serverID, command, storagePtr)
     register RpcClientChannel *chanPtr;	/* Handle for communication channel */
     register ReturnStatus error;	/* General error return status */
     Time histTime;			/* Time for histogram taking */
-    int srvBootID;			/* Boot time stamp from server, used to
+    unsigned	int srvBootID;		/* Boot time stamp from server, used to
 					 * track server reboots */
-    int notActive = 0;			/* Not active flag from server */
+    Boolean notActive = 0;		/* Not active flag from server */
 
     if (serverID < 0) {
 	Sys_Panic(SYS_FATAL, "Rpc_Call, bad serverID");
