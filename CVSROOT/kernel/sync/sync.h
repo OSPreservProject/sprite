@@ -223,6 +223,23 @@ extern	void		Sync_CheckoutAnyLock();
 extern	void		Sync_PrintLockStats();
 
 extern Sync_RegElement  *regQueuePtr;
+
+/*
+ * If CLEAN_LOCK is defined then don't register locks and don't keep track
+ * of lock dependency pairs.
+ */
+#ifdef CLEAN_LOCK
+#undef LOCKREG
+#undef LOCKDEP
+#endif
+
+/*
+ * If LOCKDEP is  defined then we need to register locks.
+ */
+#ifdef LOCKDEP
+#define LOCKREG
+#endif
+
 
 
 /*
@@ -255,7 +272,9 @@ extern Sync_RegElement  *regQueuePtr;
  *----------------------------------------------------------------------------
  */
 #ifndef CLEAN_LOCK  /* locking statistics version */
+
 #if (MACH_MAX_NUM_PROCESSORS == 1) /* uniprocessor implementation */
+
 #define MASTER_LOCK(semaphore) \
     { \
         sync_Instrument.numLocks++; \
@@ -278,7 +297,9 @@ extern Sync_RegElement  *regQueuePtr;
 			     (semaphore)->holderPCBPtr); \
 	}\
     }
+
 #else  			/* multiprocessor implementation */
+
 #define MASTER_LOCK(semaphore) \
     { \
 	int missFlag = 0;\
@@ -311,8 +332,11 @@ extern Sync_RegElement  *regQueuePtr;
 			     (semaphore)->holderPCBPtr); \
     }
 #endif  /* multiprocessor implementation */
-#else   /* CLEAN */
+
+#else   /* CLEAN -- These are the clean versions of the macros */
+
 #if (MACH_MAX_NUM_PROCESSORS == 1) /* uniprocessor implementation */
+
 #define MASTER_LOCK(semaphore) \
     { \
         sync_Instrument.numLocks++; \
@@ -371,12 +395,11 @@ extern Sync_RegElement  *regQueuePtr;
  *----------------------------------------------------------------------------
  */
 
-#ifdef NOLOCKDEP
-
 #define MASTER_UNLOCK(semaphore) \
     { \
         sync_Instrument.numUnlocks++; \
 	(semaphore)->value = 0; \
+	SyncDeleteCurrent((Address)(semaphore),(semaphore)->holderPCBPtr);\
 	if (!Mach_AtInterruptLevel()) { \
 	    --mach_NumDisableIntrsPtr[Mach_GetProcessorNumber()]; \
 	    if (mach_NumDisableIntrsPtr[Mach_GetProcessorNumber()] == 0) { \
@@ -385,21 +408,6 @@ extern Sync_RegElement  *regQueuePtr;
 	} \
     }
 
-#else  /* NOLOCKDEP */
-
-#define MASTER_UNLOCK(semaphore) \
-    { \
-        sync_Instrument.numUnlocks++; \
-	(semaphore)->value = 0; \
-	SyncDeleteCurrentLock((Address)(semaphore),(semaphore)->holderPCBPtr);\
-	if (!Mach_AtInterruptLevel()) { \
-	    --mach_NumDisableIntrsPtr[Mach_GetProcessorNumber()]; \
-	    if (mach_NumDisableIntrsPtr[Mach_GetProcessorNumber()] == 0) { \
-		Mach_EnableIntr(); \
-	    } \
-	} \
-    }
-#endif /* NOLOCKDEP */
 
 /* 
  * Condition variables can be used in critical sections guarded by
@@ -541,7 +549,6 @@ extern Sync_RegElement  *regQueuePtr;
  */
 
 #ifdef CLEAN_LOCK
-#define NOLOCKDEP
 
 #define Sync_SemInitStatic(name) \
     {0,0,0, SYNC_SEMAPHORE,(char *)NIL,(Address)NIL,(Proc_ControlBlock *) NIL,0}
@@ -665,7 +672,7 @@ extern Sync_RegElement  *regQueuePtr;
  * Sync_IsRegistered --
  *
  *	Returns true if a lock or semaphore has already been registered. If
- *	CLEAN_LOCK is defined then this macro always returns FALSE.
+ *	LOCKREG is not defined then this macro always returns FALSE.
  *
  * Results:
  *	TRUE if lock or semaphore registered.
@@ -676,16 +683,16 @@ extern Sync_RegElement  *regQueuePtr;
  *----------------------------------------------------------------------
  */
 
-#ifdef CLEAN_LOCK
-
-#define Sync_IsRegistered(lock) FALSE
-
-#else /* CLEAN_LOCK */
+#ifdef LOCKREG
 
 #define Sync_IsRegistered(lock) \
     (((lock)->type > 0) ? TRUE : FALSE)
 
-#endif /* CLEAN_LOCK */
+#else /* LOCKREG */
+
+#define Sync_IsRegistered(lock) FALSE
+
+#endif /* LOCKREG */
 
 /*
  *----------------------------------------------------------------------
@@ -693,7 +700,7 @@ extern Sync_RegElement  *regQueuePtr;
  * Sync_LockRegister --
  *
  *	Used to add a lock to the registration database.
- *	If CLEAN_LOCK is defined then this macro does nothing.
+ *	If LOCKREG is not defined then this macro does nothing.
  *
  * Results:
  *	None.
@@ -703,11 +710,7 @@ extern Sync_RegElement  *regQueuePtr;
  *
  *----------------------------------------------------------------------
  */
-#ifdef CLEAN_LOCK
-
-#define Sync_LockRegister(sem) {}
-
-#else /* CLEAN_LOCK */
+#ifdef LOCKREG
 
 #define Sync_LockRegister(lock) \
     { \
@@ -716,7 +719,11 @@ extern Sync_RegElement  *regQueuePtr;
 	} \
     }
 
-#endif /* CLEAN_LOCK */
+#else /* LOCKREG */
+
+#define Sync_LockRegister(sem) {}
+
+#endif /* LOCKREG */
 
 
 
@@ -726,7 +733,7 @@ extern Sync_RegElement  *regQueuePtr;
  * Sync_LockClear --
  *
  *	Used to clear and deregister a lock before it is freed.
- *	If CLEAN_LOCK is defined then this macro does nothing.
+ *	If LOCKREG is not defined then this macro does nothing.
  *
  * Results:
  *	None.
@@ -736,11 +743,7 @@ extern Sync_RegElement  *regQueuePtr;
  *
  *----------------------------------------------------------------------
  */
-#ifdef CLEAN_LOCK
-
-#define Sync_LockClear(sem) 
-
-#else /* CLEAN_LOCK */
+#ifdef LOCKREG
 
 #define Sync_LockClear(lock) \
     { \
@@ -749,7 +752,11 @@ extern Sync_RegElement  *regQueuePtr;
 	} \
     }
 
-#endif /* CLEAN_LOCK */
+#else /* LOCKREG */
+
+#define Sync_LockClear(sem) 
+
+#endif /* LOCKREG */
 
 /*
  *----------------------------------------------------------------------
@@ -758,7 +765,7 @@ extern Sync_RegElement  *regQueuePtr;
  *
  *	When a lock is grabbed the prior lock must be added to the prior
  *	types for the lock.
- *	This macro does nothing if NOLOCKDEP is defined.
+ *	This macro does nothing if LOCKDEP is not defined.
  *
  * Results:
  *	None.
@@ -769,17 +776,17 @@ extern Sync_RegElement  *regQueuePtr;
  *----------------------------------------------------------------------
  */
 
-#ifdef NOLOCKDEP
-
-#define SyncAddPrior(type, priorCount, priorTypes, lockPtr, pcbPtr)
-
-#else /* NOLOCKDEP */
+#ifdef LOCKDEP
 
 #define SyncAddPrior(type, priorCount, priorTypes, lockPtr, pcbPtr) \
     { SyncAddPriorLock((type), (priorCount), (priorTypes), (lockPtr), \
     (pcbPtr)); }
 
-#endif /* NOLOCKDEP */
+#else /* LOCKDEP */
+
+#define SyncAddPrior(type, priorCount, priorTypes, lockPtr, pcbPtr)
+
+#endif /* LOCKDEP */
 
 /*
  *----------------------------------------------------------------------
@@ -788,7 +795,7 @@ extern Sync_RegElement  *regQueuePtr;
  *
  *	When a lock is cleared its statistics must be added to those for
  *	the type as a whole.
- *	This macro does nothing if NOLOCKDEP is defined.
+ *	This macro does nothing if LOCKDEP is not defined.
  *
  * Results:
  *	None.
@@ -799,15 +806,46 @@ extern Sync_RegElement  *regQueuePtr;
  *----------------------------------------------------------------------
  */
 
-#ifdef NOLOCKDEP
-
-#define SyncMergePrior(priorCount, priorTypes, regPtr)
-
-#else /* NOLOCKDEP */
+#ifdef LOCKDEP
 
 #define SyncMergePrior(priorCount, priorTypes, regPtr) \
     { SyncMergePriorLocks((priorCount), (priorTypes), (regPtr)); } 
 
-#endif /* NOLOCKDEP */
+#else /* LOCKDEP */
+
+#define SyncMergePrior(priorCount, priorTypes, regPtr)
+
+#endif /* LOCKDEP */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SyncDeleteCurrent --
+ *
+ *	When we unlock a lock we have to delete it from the stack of 
+ *	current locks.
+ *	If LOCKDEP is not defined then don't do anything.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The lock is removed from the lock stack in the current pcb.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifdef LOCKDEP
+
+#define SyncDeleteCurrent(lockPtr, pcbPtr) \
+    { SyncDeleteCurrentLock((lockPtr), (pcbPtr)); }
+
+#else /* LOCKDEP */
+
+#define SyncDeleteCurrent(lockPtr, pcbPtr) 
+
+#endif /* LOCKDEP */
 
 #endif /* _SYNC */
+

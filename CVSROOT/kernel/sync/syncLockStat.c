@@ -108,11 +108,13 @@ SyncAddPriorLock(type, priorCountPtr, priorTypes, lockPtr, pcbPtr)
 	} else if (i >= SYNC_MAX_PRIOR && firstOverflow) {
 	    printf("SyncAddPrior: too many prior types.\n");
 	    firstOverflow = FALSE;
-/*	    DBG_CALL; */
 	}
     }
     if (type == 0) {
 	Sync_RegisterAnyLock(lockPtr);
+/* this routine never gets called if CLEAN_LOCK is defined, but lint 
+ * will complain about this assignment anyway.
+ */
 #ifndef CLEAN_LOCK
 	type = FIELD(lockPtr, type);
 #endif
@@ -228,7 +230,7 @@ Sync_RegisterAnyLock(lock)
     int			*typePtr;
     Sync_ListInfo	*listInfoPtr;
     int			i;
-#ifndef CLEAN_LOCK
+#ifdef LOCKREG
 
     if (initialized) {
 	MASTER_LOCK(regMutexPtr);
@@ -274,7 +276,7 @@ exit:
     if (initialized) {
 	MASTER_UNLOCK(regMutexPtr);
     }
-#endif
+#endif /* LOCKREG */
 }
 
 /*
@@ -304,7 +306,7 @@ Sync_CheckoutAnyLock(lock)
     List_Links		*itemPtr;
     Sync_RegElement	*regPtr;
     int			type;
-#ifndef CLEAN_LOCK
+#ifdef LOCKREG
 
     if (initialized) {
 	MASTER_LOCK(regMutexPtr);
@@ -328,7 +330,7 @@ exit:
     if (initialized) {
 	MASTER_UNLOCK(regMutexPtr);
     }
-#endif /* CLEAN_LOCK */
+#endif /* LOCKREG */
 }
 
 /*
@@ -364,7 +366,7 @@ Sync_GetLockStats(size, argPtr)
     int			index;
     ReturnStatus	status;
 
-#ifndef CLEAN_LOCK
+#ifdef LOCKREG
     MASTER_LOCK(regMutexPtr);
     if (size <= 0) {
 	status = SUCCESS;
@@ -403,7 +405,7 @@ Sync_GetLockStats(size, argPtr)
 exit:
     MASTER_UNLOCK(regMutexPtr);
     return (status);
-#else
+#else  /* LOCKREG */
     return (FAILURE);
-#endif /* CLEAN_LOCK */
+#endif /* LOCKREG */
 }

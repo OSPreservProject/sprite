@@ -104,7 +104,7 @@ Sync_Init()
  *	This is the kernel version of the Sync_GetLock routine. The user
  * 	version is written in assembler, but in the kernel we want to
  *	record locking statistics so we have our own version.
- *	If CLEAN_LOCK is defined then don't compile any of this, so that 
+ *	If LOCKREG is not defined then don't compile any of this, so that 
  *	the faster user version  is used.
  *
  * Results:
@@ -117,7 +117,7 @@ Sync_Init()
  *----------------------------------------------------------------------
  */
 
-#ifndef CLEAN_LOCK
+#ifdef LOCKREG
 
 ReturnStatus
 Sync_GetLock(lockPtr)
@@ -135,7 +135,7 @@ Sync_GetLock(lockPtr)
     }
 }
 
-#endif /* CLEAN_LOCK */
+#endif /* LOCKREG */
 
 /*
  *----------------------------------------------------------------------
@@ -144,7 +144,7 @@ Sync_GetLock(lockPtr)
  *
  *	The kernel version of the unlock routine. We have a different
  *	version from the user so we can do locking statistics.
- *	If CLEAN_LOCK is defined then don't compile any of this, so that 
+ *	If LOCKREG is not defined then don't compile any of this, so that 
  *	the faster user version  is used.
  *
  * Results:
@@ -156,7 +156,7 @@ Sync_GetLock(lockPtr)
  *----------------------------------------------------------------------
  */
 
-#ifndef CLEAN_LOCK
+#ifdef LOCKREG
 
 ReturnStatus
 Sync_Unlock(lockPtr)
@@ -169,7 +169,7 @@ Sync_Unlock(lockPtr)
     }
 }
 
-#endif /* CLEAN_LOCK */
+#endif /* LOCKREG */
 
 /*
  *----------------------------------------------------------------------------
@@ -268,9 +268,7 @@ Sync_SlowWait(conditionPtr, lockPtr, wakeIfSignal)
      */
     lockPtr->inUse = 0;
     lockPtr->waiting = FALSE;
-#ifndef CLEAN_LOCK
-    SyncDeleteCurrentLock((Address) lockPtr,lockPtr->holderPCBPtr);
-#endif
+    SyncDeleteCurrent((Address) lockPtr,lockPtr->holderPCBPtr);
     SyncEventWakeupInt((unsigned int)lockPtr);
     sigPending = SyncEventWaitInt((unsigned int) conditionPtr, wakeIfSignal);
     MASTER_UNLOCK(sched_MutexPtr);
@@ -392,9 +390,7 @@ Sync_UnlockAndSwitch(lockPtr, state)
      */
     lockPtr->inUse = 0;
     lockPtr->waiting = FALSE;
-#ifndef CLEAN_LOCK
-    SyncDeleteCurrentLock((Address) lockPtr, lockPtr->holderPCBPtr);
-#endif
+    SyncDeleteCurrent((Address) lockPtr, lockPtr->holderPCBPtr);
     SyncEventWakeupInt((unsigned int)lockPtr);
     Sched_ContextSwitchInt(state);
 
