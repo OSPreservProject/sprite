@@ -63,9 +63,9 @@ Boolean fsFileNameTrace = FALSE;
 ReturnStatus FsLookupRedirect();
 ReturnStatus LocatePrefix();
 ReturnStatus GetPrefix();
-void PrefixHandleClear();
+void FsPrefixHandleClose();
 void PrefixUpdate();
-void PrefixInsert();
+FsPrefix *PrefixInsert();
 void GetNilPrefixes();
 void DoReopen();
 char *NameOp();
@@ -245,7 +245,7 @@ FsLookupOperation(fileName, operation, follow, argsPtr, resultsPtr, nameInfoPtr)
 			 * used to get to the server and try again in case
 			 * the prefix is served elsewhere.
 			 */
-			PrefixHandleClear(prefixPtr);
+			FsPrefixHandleClose(prefixPtr);
 			status = FS_LOOKUP_REDIRECT;
 		    }
 		    break;
@@ -377,10 +377,10 @@ retry:
 		 * prefix used to get to the server and try again.
 		 */
 		if ((srcNameError) && (srcName[0] == '/')) {
-		    PrefixHandleClear(srcPrefixPtr);
+		    FsPrefixHandleClose(srcPrefixPtr);
 		    status = FS_LOOKUP_REDIRECT;
 		} else if ((!srcNameError) && (dstName[0] == '/')) {
-		    PrefixHandleClear(dstPrefixPtr);
+		    FsPrefixHandleClose(dstPrefixPtr);
 		    status = FS_LOOKUP_REDIRECT;
 		}
 	    }
@@ -486,7 +486,7 @@ getAttr:
 		    if (status2 == SUCCESS) {
 			goto getAttr;
 		    } else if (dstName[0] == '/') {
-			PrefixHandleClear(dstPrefixPtr);
+			FsPrefixHandleClose(dstPrefixPtr);
 			status = FS_LOOKUP_REDIRECT;
 			srcNameError = FALSE;
 		    }
@@ -757,14 +757,14 @@ FsPrefixInit()
  *	Add an entry to the prefix table.
  *
  * Results:
- *	A return code.
+ *	A pointer to the prefix table entry.
  *
  * Side effects:
  *	Add an entry to the prefix table.
  *
  *----------------------------------------------------------------------
  */
-ENTRY void
+ENTRY FsPrefix *
 FsPrefixInstall(prefix, hdrPtr, domainType, flags)
     char		*prefix;	/* String to install as a prefix */
     FsHandleHeader	*hdrPtr;	/* Handle from server of the prefix */
@@ -782,12 +782,12 @@ FsPrefixInstall(prefix, hdrPtr, domainType, flags)
 	     */
 	    PrefixUpdate(prefixPtr, hdrPtr, domainType, flags);
 	    UNLOCK_MONITOR;
-	    return;
+	    return(prefixPtr);
 	}
     }
-    PrefixInsert(prefix, hdrPtr, domainType, flags);
+    prefixPtr = PrefixInsert(prefix, hdrPtr, domainType, flags);
     UNLOCK_MONITOR;
-    return;
+    return(prefixPtr);
 }
 
 /*
@@ -830,7 +830,8 @@ Fs_PrefixLoad(prefix, flags)
     /*
      * Add new entry to the table.
      */
-    PrefixInsert(prefix, (FsHandleHeader *)NIL, -1, flags&~FS_OVERRIDE_PREFIX);
+    (void)PrefixInsert(prefix, (FsHandleHeader *)NIL, -1,
+			flags & ~FS_OVERRIDE_PREFIX);
     UNLOCK_MONITOR;
     return;
 }
@@ -851,7 +852,7 @@ Fs_PrefixLoad(prefix, flags)
  *
  *----------------------------------------------------------------------
  */
-INTERNAL void
+INTERNAL FsPrefix *
 PrefixInsert(prefix, hdrPtr, domainType, flags)
     char		*prefix;	/* The prefix itself */
     FsHandleHeader	*hdrPtr;	/* Handle for the prefix from server */
@@ -879,6 +880,7 @@ PrefixInsert(prefix, hdrPtr, domainType, flags)
     List_Init(&prefixPtr->exportList);
 
     List_Insert((List_Links *)prefixPtr, LIST_ATFRONT(prefixList));
+    return(prefixPtr);
 }
 
 /*
@@ -1171,7 +1173,7 @@ Fs_PrefixClear(prefix, deleteFlag)
     LIST_FORALL(prefixList, (List_Links *)prefixPtr) {
 	if (String_Compare(prefixPtr->prefix, prefix) == 0) {
 	    if (prefixPtr->hdrPtr != (FsHandleHeader *)NIL) {
-		PrefixHandleClear(prefixPtr);
+		FsPrefixHandleClose(prefixPtr);
 	    }
 	    prefixPtr->flags &= ~FS_EXPORTED_PREFIX;
 	    if (deleteFlag && prefixPtr->prefixLength != 1) {
@@ -1198,7 +1200,7 @@ Fs_PrefixClear(prefix, deleteFlag)
 /*
  *----------------------------------------------------------------------
  *
- * PrefixHandleClear --
+ * FsPrefixHandleClose --
  *
  *	Close the handle associated with a prefix.  We do remember the
  *	serverID from the handle as this is used in recovery later.
@@ -1212,7 +1214,7 @@ Fs_PrefixClear(prefix, deleteFlag)
  *----------------------------------------------------------------------
  */
 void
-PrefixHandleClear(prefixPtr)
+FsPrefixHandleClose(prefixPtr)
     FsPrefix *prefixPtr;
 {
     register FsHandleHeader *hdrPtr = prefixPtr->hdrPtr;
@@ -1321,7 +1323,7 @@ GetPrefix(fileName, follow, hdrPtrPtr, rootIDPtr, lookupNamePtr, domainTypePtr,
 						    hdrPtrPtr);
 	    if (status == FS_NEW_PREFIX) {
 		fsStats.prefix.found++;
-		FsPrefixInstall(*lookupNamePtr, *hdrPtrPtr, *domainTypePtr, 
+		(void)FsPrefixInstall(*lookupNamePtr, *hdrPtrPtr,*domainTypePtr,
 				FS_IMPORTED_PREFIX);
 	    }
 	}
@@ -1372,7 +1374,7 @@ FsPrefixReopen(serverID)
 	    domainType = -1;
 	    status = LocatePrefix(prefixPtr->prefix, &domainType, &hdrPtr);
 	    if (status == FS_NEW_PREFIX) {
-		FsPrefixInstall(prefixPtr->prefix, hdrPtr, domainType,
+		(void)FsPrefixInstall(prefixPtr->prefix, hdrPtr, domainType,
 			    FS_IMPORTED_PREFIX);
 	    }
 	}
