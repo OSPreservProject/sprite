@@ -70,7 +70,6 @@ static EventTableType eventTable[] = {
     {'d', RESERVED_EVENT, NULL_ARG, "Put machine into the kernel debugger"},
     {'e', Timer_DumpStats, (ClientData) 'e', "Dump timer stats"},
     {'f', Fsutil_PrintTrace,   (ClientData) -1, "Dump filesystem trace"},
-    {'i', (void (*)()) Proc_KDump, (ClientData) 0,"Dump process locks"},
     {'m', Mem_DumpStats, (ClientData) FALSE,"Dump memory stats"},
     {'n', Net_Reset, (ClientData)0,"Reset the network interface"},
     {'o', (void (*)()) Dev_VidEnable, (ClientData) 1,"Turn video on"},
