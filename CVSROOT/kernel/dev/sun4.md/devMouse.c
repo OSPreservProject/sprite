@@ -82,8 +82,7 @@ static DevZ8530 mouse = {		/* Information used by device driver. */
 
 static ClientData token;		/* Used for Fs call-backs to wake up
 					 * waiting processes. */
-static int mouseInUse;			/* Non-zero means mouse is being used,
-					 * so don't permit any more opens. */
+static int mouseInUse;			/* Non-zero means mouse is active. */
 static volatile int outputBuffer = -1;	/* One-character output buffer shared
 					 * without explicit synchronization
 					 * between background and interrupt-
@@ -161,11 +160,6 @@ DevMouseOpen(devicePtr, useFlags, notifyToken)
     }
 
     LOCK_MONITOR;
-
-    if (mouseInUse != 0) {
-	UNLOCK_MONITOR;
-	return Compat_MapToSprite(EBUSY);
-    }
 
     mouseInUse = 1;
     token = notifyToken;
