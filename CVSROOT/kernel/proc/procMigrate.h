@@ -19,11 +19,19 @@
 #ifndef _PROCMIGRATE
 #define _PROCMIGRATE
 
+#ifdef KERNEL
 #include <user/proc.h>
 #include <procTypes.h>
 #include <trace.h>
 #include <sys.h>
 #include <netTypes.h>
+#else
+#include <proc.h>
+#include <kernel/procTypes.h>
+#include <kernel/trace.h>
+#include <kernel/sys.h>
+#include <kernel/netTypes.h>
+#endif
 
 /*
  * Flags for the migFlags field in a PCB.
@@ -261,48 +269,6 @@ typedef struct Proc_DestroyMigProcData {
     ReturnStatus status;		/* status to return when it exits */
 } Proc_DestroyMigProcData;
 
-/*
- * Information for encapsulating process state.
- */
-
-/*
- * Identifiers to match encapsulated states and modules.
- * Make sure to update PROC_MIG_NUM_CALLBACKS if one is added!
- */
-typedef enum {
-    PROC_MIG_ENCAP_PROC,
-    PROC_MIG_ENCAP_VM,
-    PROC_MIG_ENCAP_FS,
-    PROC_MIG_ENCAP_MACH,
-    PROC_MIG_ENCAP_PROF,
-    PROC_MIG_ENCAP_SIG,
-    PROC_MIG_ENCAP_EXEC,
-} Proc_EncapToken;
-
-#define PROC_MIG_NUM_CALLBACKS 7
-
-/*
- * Each module that participates has a token defined for it.
- * It also provides routines to encapsulate and deencapsulate data,
- * as well as optional routines that may be called prior to migration
- * and subsequent to migration.  This structure is passed around to
- * other modules performing encapsulation.
- */
-typedef struct {
-    Proc_EncapToken	token;		/* info about encapsulated data */
-    int			size;		/* size of encapsulated data */
-    ClientData		data;		/* for use by encapsulator */
-    int			special;	/* indicates special action required */
-    ClientData		specialToken;	/* for use during special action */
-    int			processed;	/* indicates this module did possibly
-					   destructive encapsulation operation
-					   and should be called to clean up
-					   on failure */
-					   
-} Proc_EncapInfo;
-  
-    
-    
 
 
 /*
