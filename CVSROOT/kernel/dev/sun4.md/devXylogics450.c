@@ -707,6 +707,8 @@ DevXylogics450DiskAttach(devicePtr)
 
     controllerID = XYLOGICS_CTRL_NUM_FROM_DEVUNIT(devicePtr->unit);
     diskNumber = XYLOGICS_DISK_NUM_FROM_DEVUNIT(devicePtr->unit);
+/* XXX */ printf("XyDiskAttach unit 0x%x ctrlr %d disk %d\n",
+			       devicePtr->unit, controllerID, diskNumber);
     xyPtr = xylogics[controllerID];
     if (xyPtr == (XylogicsController *)NIL ||
 	xyPtr == (XylogicsController *)0 ||
@@ -932,6 +934,8 @@ ReadDiskLabel(xyPtr, diskPtr)
 	printf("Xylogics-%d: disk%d, couldn't read the label\n",
 			     xyPtr->number, diskPtr->slaveID);
     } else {
+/*XXX*/	printf("Header Bytes <%x, %x, %x, %x>\n", labelBuffer[0],
+		       labelBuffer[1], labelBuffer[2], labelBuffer[3]);
 	headerPtr = (XylogicsSectorHeader *)labelBuffer;
 	diskPtr->xyDriveType = headerPtr->driveType;
 	diskLabelPtr = (Sun_DiskLabel *)(&labelBuffer[4]);
