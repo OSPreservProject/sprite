@@ -1910,12 +1910,12 @@ unixNewSyscallReturn:
  *	   Else regs[A3] <= 1 and v0 <= Compat_MapCode(status).
  */
 1:
+    sw		v1, MACH_TRAP_REGS_OFFSET + (V1 * 4)(s0)
     nor         v1, $0, $0
     add		a3, $0, $0
     beq         v0, v1, 3f
     nop
 2:
-    lw		v1, MACH_TRAP_REGS_OFFSET + (V1 * 4)(s0)
     lw		a0, MACH_TRAP_REGS_OFFSET + (A0 * 4)(s0)
     lw		a1, MACH_TRAP_REGS_OFFSET + (A1 * 4)(s0)
     lw		a2, MACH_TRAP_REGS_OFFSET + (A2 * 4)(s0)
@@ -2136,3 +2136,23 @@ BadRead:
 	.globl	MachProbeEnd
 MachProbeEnd:
 .end
+/*----------------------------------------------------------------------------
+ *
+ * Mach_Return2 --
+ *
+ *	Set the second return value for Unix compat. routines that
+ *	return two values.
+ *
+ * Results:
+ *     	None.
+ *
+ * Side effects:
+ *	v1 <- val
+ *
+ *----------------------------------------------------------------------------
+ */
+    .globl Mach_Return2
+Mach_Return2:
+
+    move	v1, a0
+    j		ra
