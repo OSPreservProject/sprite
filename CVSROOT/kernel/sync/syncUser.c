@@ -7,8 +7,20 @@
  *	A process is blocked by making it wait on an event.  An event is
  *	just an uninterpreted integer that gets 'signaled' by the routine
  *	Sync_UserSlowBroadcast.
+ *	
+ *	We pin a user's page into memory before touching it.  This
+ *	simplifies locking and lets us hold the sched master lock
+ *	while touching user memory.  
+ *	
+ *	The calls to Vm_MakeAccessible are assumed to succeed because
+ *	the calls to Vm_PinUserMemory succeeded.  The calls to 
+ *	Vm_MakeAccessible come before obtaining the sched master lock; 
+ *	this shouldn't matter for native Sprite (Vm_MakeAccessible 
+ *	shouldn't block), but it could make a difference for the
+ *	Sprite server (on Mach).  The locks set by Vm_MakeAccessible
+ *	should not be held while waiting for an event.
  *
- * Copyright 1986 Regents of the University of California
+ * Copyright 1986, 1991 Regents of the University of California
  * All rights reserved.
  */
 
@@ -54,12 +66,9 @@ Sync_SlowLockStub(lockPtr)
 {
     ReturnStatus	status = SUCCESS;
     Proc_ControlBlock	*procPtr;
-#ifdef	sequent
-    Sync_UserLock *userLockPtr =
-		(Sync_UserLock*) ((Address) lockPtr + mach_KernelVirtAddrUser);
-#else	/* !sequent */
-    Sync_UserLock *userLockPtr = lockPtr;
-#endif	/* sequent */
+    Sync_UserLock	*userLockPtr; /* lock's addr in kernel addr space */
+    int			numBytes; /* number of bytes accessible */
+    Boolean		waiting = TRUE;
 
     procPtr = Proc_GetCurrentProc();
 
@@ -68,10 +77,22 @@ Sync_SlowLockStub(lockPtr)
     if (status != SUCCESS) {
 	return(status);
     }
-    MASTER_LOCK(sched_MutexPtr);
-    while (Mach_TestAndSet(&(userLockPtr->inUse)) != 0) {
-	userLockPtr->waiting = TRUE;
-	(void) SyncEventWaitInt((unsigned int)userLockPtr, TRUE);
+
+    while (waiting) {
+	Vm_MakeAccessible(VM_READWRITE_ACCESS, sizeof(*lockPtr),
+			  (Address)lockPtr, &numBytes,
+			  (Address *)&userLockPtr);
+	MASTER_LOCK(sched_MutexPtr);
+	waiting = (Mach_TestAndSet(&(userLockPtr->inUse)) != 0);
+	if (waiting) {
+	    userLockPtr->waiting = TRUE;
+	}
+	Vm_MakeUnaccessible((Address)userLockPtr, numBytes);
+	if (!waiting) {
+	    break;
+	}
+
+	(void) SyncEventWaitInt((unsigned int)lockPtr, TRUE);
 #ifdef spur
 	Mach_InstCountEnd(1);
 #endif
@@ -81,12 +102,17 @@ Sync_SlowLockStub(lockPtr)
 	    status = GEN_ABORTED_BY_SIGNAL;
 	    break;
 	}
+	MASTER_UNLOCK(sched_MutexPtr);
     }
 #ifdef spur
     if (Mach_InstCountIsOn(1)) {
 	panic("About to unlock sched_Mutex with inst count on.\n");
     }
 #endif
+
+    /* 
+     * We always exit the loop holding the sched master lock.
+     */
     MASTER_UNLOCK(sched_MutexPtr);
 
     (void)Vm_UnpinUserMem(sizeof(*lockPtr), (Address)lockPtr);
@@ -126,24 +152,25 @@ Sync_SlowWaitStub(event, lockPtr, wakeIfSignal)
     Boolean		wakeIfSignal;
 {
     ReturnStatus	status;
-#ifdef	sequent
-    Sync_UserLock *userLockPtr =
-		(Sync_UserLock*) ((Address) lockPtr + mach_KernelVirtAddrUser);
-#else	/* !sequent */
-    Sync_UserLock *userLockPtr = lockPtr;
-#endif	/* sequent */
+    Sync_UserLock 	*userLockPtr; /* lock's addr in kernel addr space */
+    int			numBytes; /* number of bytes accessible */
 
     status = Vm_PinUserMem(VM_READWRITE_ACCESS, sizeof(*lockPtr),
 			(Address)lockPtr);
     if (status != SUCCESS) {
 	return(status);
     }
+
+    Vm_MakeAccessible(VM_READWRITE_ACCESS, sizeof(*lockPtr),
+		      (Address)lockPtr, &numBytes,
+		      (Address *)&userLockPtr);
     MASTER_LOCK(sched_MutexPtr);
     /*
      * release the monitor lock and wait on the condition
      */
     userLockPtr->inUse = 0;
     userLockPtr->waiting = FALSE;
+    Vm_MakeUnaccessible((Address)userLockPtr, numBytes);
     SyncEventWakeupInt((unsigned int)lockPtr);
 
     if (SyncEventWaitInt(event, wakeIfSignal)) {
@@ -188,21 +215,22 @@ Sync_SlowBroadcastStub(event, waitFlagPtr)
     int *waitFlagPtr;
 {
     ReturnStatus	status;
-#ifdef	sequent
-    int *userWaitFlagPtr =(int*)((Address)waitFlagPtr+mach_KernelVirtAddrUser);
-#else	/* !sequent */
-    int *userWaitFlagPtr = waitFlagPtr;
-#endif	/* sequent */
+    int		*userWaitFlagPtr; /* waitFlagPtr in kernel addr space */
+    int		numBytes;	/* number of bytes accessible */
 
     status = Vm_PinUserMem(VM_READWRITE_ACCESS, sizeof(*waitFlagPtr), 
 			(Address)waitFlagPtr);
     if (status != SUCCESS) {
 	return(status);
     }
+    Vm_MakeAccessible(VM_READWRITE_ACCESS, sizeof(*waitFlagPtr),
+		      (Address)waitFlagPtr, &numBytes,
+		      (Address *)&userWaitFlagPtr);
 
     MASTER_LOCK(sched_MutexPtr);
 
     *userWaitFlagPtr = FALSE;
+    Vm_MakeUnaccessible((Address)userWaitFlagPtr, numBytes);
     SyncEventWakeupInt(event);
 
 #ifdef spur
