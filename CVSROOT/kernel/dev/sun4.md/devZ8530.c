@@ -85,9 +85,10 @@ static void		Write();
  */
 
 void
-DevZ8530Activate(zPtr)
-    register DevZ8530 *zPtr;		/* Information about the device. */
+DevZ8530Activate(ptr)
+    void *ptr;
 {
+    register DevZ8530 *zPtr = ptr;	/* Information about the device. */
     int speed;
 
     MASTER_LOCK(&z8530Mutex);
@@ -149,8 +150,8 @@ DevZ8530Activate(zPtr)
 
 /* ARGSUSED */
 int
-DevZ8530RawProc(zPtr, operation, inBufSize, inBuffer, outBufSize, outBuffer)
-    register DevZ8530 *zPtr;	/* Our information about device. */
+DevZ8530RawProc(ptr, operation, inBufSize, inBuffer, outBufSize, outBuffer)
+    void *ptr;
     int operation;		/* What to do:  TD_RAW_OUTPUT_READY etc. */
     int inBufSize;		/* Size of input buffer for operation. */
     char *inBuffer;		/* Input buffer. */
@@ -158,6 +159,7 @@ DevZ8530RawProc(zPtr, operation, inBufSize, inBuffer, outBufSize, outBuffer)
     char *outBuffer;		/* Output buffer. */
 {
     int result = 0;
+    register DevZ8530 *zPtr = ptr;	/* Our information about device. */
 
     MASTER_LOCK(&z8530Mutex);
     switch (operation) {
