@@ -249,9 +249,10 @@ Sys_Shutdown(flags, rebootString)
     /*
      * Sync the disks.
      */
-
-    Sys_Printf("Syncing disks\n");
-    Fs_Sync(-1, flags != 0);
+    if (flags & SYS_WRITE_BACK) {
+	Sys_Printf("Syncing disks\n");
+	Fs_Sync(-1, flags & SYS_KILL_PROCESSES);
+    }
 
     if (flags & SYS_HALT) {
 	Mon_Abort();
