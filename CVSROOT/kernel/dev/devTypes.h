@@ -58,6 +58,12 @@
 #define DEV_MOUSE		12
 
 /*
+ * Following device(s) exist only on Sequent Symmetry
+ */
+
+#define DEV_ZDC_DISK		13
+
+/*
  * The following device types are defined for SPUR as of 7/15/89.  They
  * should be changed so that don't overlap the device types above.
  * Also, why do two different devices have the same number?
