@@ -20,9 +20,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "mach.h"
-#ifdef sun4
-#include "machMon.h"
-#endif sun4
 #include "proc.h"
 #include "procInt.h"
 #include "sync.h"
@@ -426,6 +423,12 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
 	    status = PROC_BAD_AOUT_FORMAT;
 	    goto execError;
 	}
+#ifdef sun4
+	if ((aoutPtr->machineType & 0x0f) != PROC_SPARC) {
+	    status = PROC_BAD_AOUT_FORMAT;
+	    goto execError;
+	}
+#endif sun4
     }
 
     /*
@@ -452,6 +455,12 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
      *  3) Original arguments arg[1] through arg[n] are shifted over.
      */
     userStackPointer = mach_MaxUserStackAddr;
+#ifdef sun4
+    /*
+     * I'm requiring the user stack pointer to be double-word aligned, for now.
+     */
+    (unsigned int) userStackPointer &= ~7;
+#endif sun4
     for (argNumber = 0, argPtr = argPtrArray; 
 	 argNumber < numArgs;
 	 argNumber++) {
@@ -728,9 +737,10 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
     copyLength = (argNumber + envNumber + 2) * sizeof(Address) + sizeof(int);
     newArgPtrArray[argNumber] = (char *) USER_NIL;
     newEnvPtrArray[envNumber] = (char *) USER_NIL;
+#ifndef sun4
     userStackPointer -= copyLength;
-#ifdef sun4
-    userStackPointer -= ((realLength) + 7) & ~7;
+#else /* sun4 */
+    userStackPointer -= ((copyLength) + 7) & ~7;
 #endif /* sun4 */
     tArgNumber = argNumber;
     (void) Vm_CopyOut(sizeof(int), (Address) &tArgNumber,
@@ -783,9 +793,6 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
      * because there is an implicit enable interrupts when we return to user 
      * mode.
      */
-#ifdef sun4
-    Mach_MonPrintf("Calling Mach_ExecUserProc with userStackPtr 0x%x, argc %d\n", userStackPointer, tArgNumber);
-#endif sun4
     Mach_ExecUserProc(procPtr, userStackPointer, (Address) entry);
     panic("DoExec: Proc_RunUserProc returned.\n");
 
@@ -979,11 +986,6 @@ SetupVM(procPtr, aoutPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr,
     Vm_ExecInfo			execInfo;
     Fs_Stream			*heapFilePtr;
 
-#ifdef sun4
-    printf("SetupVM for procPtr 0x%x\n", procPtr);
-    printf("aoutPtr->data = %d, bss = %d, code = %d\n", aoutPtr->data,
-	    aoutPtr->bss, aoutPtr->code);
-#endif sun4
     if (*codeSegPtrPtr == (Vm_Segment *) NIL) {
 	execInfoPtr = &execInfo;
 	execInfoPtr->entry = aoutPtr->entry;
@@ -1037,11 +1039,6 @@ SetupVM(procPtr, aoutPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr,
     /* 
      * Set up the heap image.
      */
-#ifdef sun4
-	printf("execInfoPtr->heapPages = %d\n", execInfoPtr->heapPages);
-	printf("execInfoPtr->heapPageOffset = %d\n",
-		execInfoPtr->heapPageOffset);
-#endif sun4
     segPtr = Vm_SegmentNew(VM_HEAP, heapFilePtr, execInfoPtr->heapFileOffset,
 			       execInfoPtr->heapPages, 
 			       execInfoPtr->heapPageOffset, procPtr);

@@ -129,9 +129,6 @@ Proc_NewProc(PC, procType, shareHeap, pidPtr, procName, vforkFlag)
     char	*procName;	/* Name for process control block */
     Boolean     vforkFlag;      /* Added for vfork */
 {
-#ifdef sun4
-    printf("Creating new proc 0x%x\n", procPtr);
-#endif sun4
     ReturnStatus	status;
     Proc_ControlBlock 	*procPtr;	/* The new process being created */
     Proc_ControlBlock 	*parentProcPtr;	/* The parent of the new process,
