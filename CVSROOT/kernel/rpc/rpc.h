@@ -61,6 +61,10 @@ typedef struct Rpc_Storage {
 
 /* 
  * Structure to use for the simple call back to free up memory.
+ * The reply a service stub generates is held onto until the
+ * next request from the client arrives.  These pointers are to
+ * memory that should be free'ed - ie. the previous reply.
+ * If either pointer is NIL then it isn't freed.  See Rpc_Reply.
  */
 
 typedef struct {
@@ -78,6 +82,12 @@ typedef struct {
  * which needs to know who it is relative to file servers.
  */
 extern int rpc_SpriteID;
+
+/*
+ * Flags for the Rpc_RebootNotify.
+ */
+#define RPC_WHEN_HOST_DOWN		0x1
+#define RPC_WHEN_HOST_REBOOTS		0x2
 
 /*
  * Forward declarations
@@ -107,7 +117,7 @@ void		Rpc_PrintTrace();
 ReturnStatus	Rpc_DumpTrace();
 void		Rpc_StampTest();
 
-void		Rpc_RebootNotify();
+void		Rpc_HostNotify();
 int		Rpc_WaitForHost();
 Boolean		Rpc_HostIsDown();
 
