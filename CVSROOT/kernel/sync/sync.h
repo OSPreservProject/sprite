@@ -56,24 +56,28 @@ typedef struct Sync_Instrument {
 } Sync_Instrument;
 
 typedef struct Sync_Semaphore {
-    int value;			/* value of semaphore */
-    int miss;			/* count of misses on lock */
-    char *name;			/* name of semaphore */
-    Address pc;			/* pc of lock holder */
-    char *lineInfo;		/* line/file of lock holder */
+    int value;				/* value of semaphore */
+    int miss;				/* count of misses on lock */
+    char *name;				/* name of semaphore */
+    Address holderPC;			/* pc of lock holder */
+    Proc_ControlBlock *holderPCBPtr;	/* process id of lock holder */
 } Sync_Semaphore;
 
 #ifdef CLEAN
-#define SYNC_SEM_INIT_STATIC(name) {0,0,(char *)NIL,(Address)NIL,(char *)NIL}
+#define SYNC_SEM_INIT_STATIC(name) \
+    {0,0,(char *)NIL,(Address)NIL,(Proc_ControlBlock *) NIL}
 #define SYNC_SEM_INIT_DYNAMIC(sem,semName) { \
     (sem)->value = (sem)->miss = 0; (sem)->name = (char *)NIL; \
-    (sem)->pc = (Address)NIL; (sem)->lineInfo = (char *)NIL; }
+    (sem)->holderPC = (Address)NIL; \
+    (sem)->holderPCBPtr = (Proc_ControlBlock *) NIL; }
 
 #else
-#define SYNC_SEM_INIT_STATIC(name) {0,0,name,(Address) NIL,""}
+#define SYNC_SEM_INIT_STATIC(name) \
+    {0,0,name,(Address) NIL,(Proc_ControlBlock *) NIL}
 #define SYNC_SEM_INIT_DYNAMIC(sem,semName) { \
     (sem)->value = (sem)->miss = 0; (sem)->name = semName; \
-    (sem)->pc = (Address)NIL; (sem)->lineInfo = ""; }
+    (sem)->holderPC = (Address)NIL; \
+    (sem)->holderPCBPtr = (Proc_ControlBlock *) NIL; }
 
 #endif
 
@@ -161,23 +165,13 @@ extern 	void 		Sync_PrintStat();
  *----------------------------------------------------------------------------
  */
 
-/* The following 2 macros are used to turn __LINE__ into a string. The first
- * turns its argument into a string, but it doesn't expand the argument so you
- * end up with the string "__LINE__". The second expands __LINE__ before passing
- * it to the first. These are only defined and used within the MASTER_LOCK
- * and MASTER_UNLOCK definitions
- */
-
-#define _hack(x) #x
-#define _hack2(x) _hack(x)
-
 #ifdef lint
 #define MASTER_LOCK(semaphore) \
     { \
         sync_Instrument.numLocks++; \
 	if (!Mach_AtInterruptLevel()) { \
 	    Mach_DisableIntr(); \
-	    mach_NumDisableIntrsPtr[0]++; \
+	    mach_NumDisableIntrsPtr[Mach_GetProcessorNumber()]++; \
 	} \
 	if ((semaphore)->value == 1) { \
 	    panic("Deadlock!!! (semaphore @ 0x%x)\n", (int)(semaphore)); \
@@ -194,19 +188,18 @@ extern 	void 		Sync_PrintStat();
         sync_Instrument.numLocks++; \
 	if (!Mach_AtInterruptLevel()) { \
 	    Mach_DisableIntr(); \
-	    mach_NumDisableIntrsPtr[0]++; \
+	    mach_NumDisableIntrsPtr[Mach_GetProcessorNumber()]++; \
 	} \
 	if ((semaphore)->value == 1) { \
 	    panic("Deadlock!!!(%s @ 0x%x)\nHolder PC: 0x%x Current PC: 0x%x\n" \
-		"Holder: %s Current: line " _hack2(__LINE__) \
-		", file " __FILE__ "\n", \
-		(semaphore)->name,(int)(semaphore),(int)(semaphore)->pc,\
-		Mach_GetPC(),(semaphore)->lineInfo); \
+		"Holder PCB @ 0x%x Current PCB @ 0x%x\n", \
+		(semaphore)->name,(int)(semaphore),(int)(semaphore)->holderPC,\
+		(int) Mach_GetPC(),(int) (semaphore)->holderPCBPtr, \
+		(int) Proc_GetCurrentProc()); \
 	} else { \
 	    (semaphore)->value++;\
-	    (semaphore)->pc = Mach_GetPC(); \
-	    (semaphore)->lineInfo = "line " _hack2(__LINE__) \
-		", file " __FILE__ ; \
+	    (semaphore)->holderPC = Mach_GetPC(); \
+	    (semaphore)->holderPCBPtr = Proc_GetCurrentProc(); \
 	}\
     }
 #else  			/* multiprocessor implementation */
@@ -228,13 +221,14 @@ extern 	void 		Sync_PrintStat();
 	    if(Mach_TestAndSet(&((semaphore)->value)) == 0) { \
 		break; \
 	    } else if (missFlag == 0) { \
-		(semaphore)->miss++; \
 		missFlag = 1; \
 	    } \
 	} \
-	(semaphore)->pc = Mach_GetPC(); \
-	(semaphore)->lineInfo = "line " _hack2(__LINE__) \
-		", file " __FILE__ ; \
+	if(missFlag == 1) { \
+	    (semaphore)->miss++; \
+	} \
+	(semaphore)->holderPC = Mach_GetPC(); \
+	(semaphore)->holderPCBPtr = Proc_GetCurrentProc(); \
     }
 #endif  /* multiprocessor implementation */
 #else   /* CLEAN */
@@ -244,7 +238,7 @@ extern 	void 		Sync_PrintStat();
         sync_Instrument.numLocks++; \
 	if (!Mach_AtInterruptLevel()) { \
 	    Mach_DisableIntr(); \
-	    mach_NumDisableIntrsPtr[0]++; \
+	    mach_NumDisableIntrsPtr[Mach_GetProcessorNumber()]++; \
 	} \
 	if ((semaphore)->value == 1) { \
 	    panic("Deadlock!!! (semaphore @ 0x%x)\n", (int)(semaphore)); \
