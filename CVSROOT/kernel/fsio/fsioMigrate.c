@@ -552,6 +552,40 @@ Fs_RpcStartMigration(srvToken, clientID, command, storagePtr)
 /*
  * ----------------------------------------------------------------------------
  *
+ * FsPassStream --
+ *
+ *	This is called from Fs_Open as a cltOpen routine.  It's job is
+ *	to take an encapsulated stream from a pseudo-device server and
+ *	unencapsulate it so the Fs_Open returns the stream that the
+ *	pseudo-device server had.
+ *
+ * Results:
+ *	A return status.
+ *
+ * Side effects:
+ *	Deencapsulates a stream.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+
+ReturnStatus
+FsPassStream(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtrPtr)
+    Fs_FileID		*ioFileIDPtr;	/* I/O fileID from the name server */
+    int			*flagsPtr;	/* Return only.  The server returns
+					 * a modified useFlags in FsFileState */
+    int			clientID;	/* IGNORED */
+    ClientData		streamData;	/* Pointer to encapsulated stream. */
+    char		*name;		/* File name for error msgs */
+    FsHandleHeader	**ioHandlePtrPtr;/* Return - a handle set up for
+					 * I/O to a file, NIL if failure. */
+{
+    return(FAILURE);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
  * Fs_GetEncapSize --
  *
  *	Return the size of the encapsulated stream.

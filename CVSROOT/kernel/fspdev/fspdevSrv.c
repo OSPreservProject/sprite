@@ -1025,6 +1025,51 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	     * A pseudo-filesystem server is replying to an open request by
 	     * asking us to pass one of its open streams to the client.
 	     */
+#ifdef work_in_progress
+	    register int passedStreamID;	/* From the server */
+	    FsOpenResults openResults;		/* For the client */
+	    Address encapStream;		/* packaged stream */
+	    int encapSize;			/* size of package */
+	    register Proc_ControlBlock *procPtr;
+	    register FsOpenResults *openResultsPtr;
+
+	    if (inBufPtr->size < sizeof(int)) {
+		status = GEN_INVALID_ARG;
+	    } else {
+		passedStreamID = *(int *)inBufPtr->addr;
+		procPtr = Proc_GetEffectiveProc();
+		status = FsGetStreamPtr(procPtr, passedStreamID, &streamPtr);
+		if (status == SUCCESS) {
+		    encapSize = Fs_GetEncapSize();
+		    encapStream = (Address)malloc(encapSize);
+		    status = Fs_EncapStream(streamPtr, encapStream);
+		    if (status == SUCCESS) {
+			/*
+			 * Set up open results so Fs_Open will call a cltOpen
+			 * routine that will unpackage the encapsulated stream.
+			 */
+			bzero((char *)&openResults, sizeof(FsOpenResults);
+			openResults.fileID.type = FS_PASSING_STREAM;
+			openResults.dataSize = encapSize;
+			openResults.streamData = encapStream;
+
+			openResultsPtr =
+				(FsOpenResults *)pdevHandlePtr->replyBuf;
+			*openResultsPtr = openResults;
+		    }
+		}
+	    }
+	    if (status != SUCCESS) {
+		pdevHandlePtr->flags |= PDEV_REPLY_FAILED;
+		pdevHandlePtr->reply.replySize = 0;
+	    } else {
+		pdevHandlePtr->reply.replySize = sizeof(FsOpenResults);
+	    }
+	    pdevHandlePtr->reply.status = status;
+	    pdevHandlePtr->flags |= PDEV_REPLY_READY;
+	    Sync_Broadcast(&pdevHandlePtr->replyReady);
+	    PdevClientNotify(pdevHandlePtr);
+#endif work_in_progress
 	    break;
 	case IOC_REPOSITION:
 	    status = GEN_INVALID_ARG;
