@@ -165,6 +165,7 @@ Proc_AddMigDependency(processID, hostID)
 		      "Proc_AddMigDependency: process %x already registered.\n",
 		      processID);
 	}
+	UNLOCK_MONITOR;
 	return;
     }
     Hash_SetValue(hashEntryPtr, (ClientData) dependPtr);
@@ -210,6 +211,7 @@ Proc_RemoveMigDependency(processID)
 		      "Proc_RemoveMigDependency: process %x not registered.\n",
 		      processID);
 	}
+	UNLOCK_MONITOR;
 	return;
     }
     dependPtr = (DependInfo *) Hash_GetValue(hashEntryPtr);
