@@ -116,7 +116,9 @@ Fs_GetAttrStream(streamPtr, attrPtr)
 	    status = FsRmtFileGetIOAttr(&hdrPtr->fileID, rpc_SpriteID, attrPtr);
 	    status = FsDeviceGetIOAttr(&hdrPtr->fileID, rpc_SpriteID, attrPtr);
 	    status = FsPipeGetIOAttr(&hdrPtr->fileID, rpc_SpriteID, attrPtr);
-	    status = FsPseudoStreamGetIOAttr(&hdrPtr->fileID, rpc_SpriteID,
+	    status = FsRmtControlGetIOAttr(&hdrPtr->fileID, rpc_SpriteID,
+			attrPtr);
+	    status = FsControlGetIOAttr(&hdrPtr->fileID, rpc_SpriteID,
 			attrPtr);
 #endif lint
 	}
@@ -325,7 +327,8 @@ Fs_SetAttrStream(streamPtr, attrPtr, idPtr, flags)
 	    status = FsRmtFileSetIOAttr(&hdrPtr->fileID, attrPtr, flags);
 	    status = FsDeviceSetIOAttr(&hdrPtr->fileID, attrPtr, flags);
 	    status = FsPipeSetIOAttr(&hdrPtr->fileID, attrPtr, flags);
-	    status = FsPseudoStreamSetIOAttr(&hdrPtr->fileID, attrPtr, flags);
+	    status = FsRmtControlSetIOAttr(&hdrPtr->fileID, attrPtr, flags);
+	    status = FsControlSetIOAttr(&hdrPtr->fileID, attrPtr, flags);
 #endif lint
 	}
 	if (status == SUCCESS) {
@@ -1153,6 +1156,19 @@ FsRemoteGetIOAttr(fileIDPtr, clientID, attrPtr)
 
     getAttrResultsParam.attrResults.fileID = *fileIDPtr;
     getAttrResultsParam.attrResults.attrs = *attrPtr;
+    /*
+     * We have to fix up the fileID of control handles in the case that
+     * the pseudo-device server is remote from us.  The problem is that
+     * we have to RPC to the pseduo-device server, but the fileID of the
+     * control stream (where the access/modify times are) has the
+     * file serverID.  Fortuneatly this is in the regular attributes so
+     * we can patch it up.  We add two lines of code here instead of
+     * nearly duplicating this procedure into a FsRmtControlGetIOAttr
+     * routine that has the patch.
+     */
+    if (fileIDPtr->type == FS_RMT_CONTROL_STREAM) {
+	getAttrResultsParam.attrResults.fileID.serverID = attrPtr->serverID;
+    }
 
     storage.requestParamPtr = (Address) &getAttrResultsParam;
     storage.requestParamSize = sizeof(FsGetAttrResultsParam);
@@ -1234,7 +1250,7 @@ Fs_RpcGetIOAttr(srvToken, clientID, command, storagePtr)
 #ifdef lint
 	status = FsDeviceGetIOAttr(&hdrPtr->fileID, rpc_SpriteID, attrPtr);
 	status = FsPipeGetIOAttr(&hdrPtr->fileID, rpc_SpriteID, attrPtr);
-	status = FsPseudoStreamGetIOAttr(&hdrPtr->fileID, rpc_SpriteID,attrPtr);
+	status = FsControlGetIOAttr(&hdrPtr->fileID, rpc_SpriteID,attrPtr);
 #endif lint
 	FsHandleRelease(hdrPtr, FALSE);
     } else {
@@ -1286,6 +1302,19 @@ FsRemoteSetIOAttr(fileIDPtr, attrPtr, flags)
     setAttrParam.fileID = *fileIDPtr;
     setAttrParam.attrs = *attrPtr;
     setAttrParam.flags = flags;
+    /*
+     * We have to fix up the fileID of control handles in the case that
+     * the pseudo-device server is remote from us.  The problem is that
+     * we have to RPC to the pseduo-device server, but the fileID of the
+     * control stream (where the access/modify times are) has the
+     * file serverID.  Fortuneatly this is in the regular attributes so
+     * we can patch it up.  We add two lines of code here instead of
+     * nearly duplicating this procedure into a FsRmtControlSetIOAttr
+     * routine that has the patch.
+     */
+    if (fileIDPtr->type == FS_RMT_CONTROL_STREAM) {
+	setAttrParam.fileID.serverID = attrPtr->serverID;
+    }
     storage.requestParamPtr = (Address) &setAttrParam;
     storage.requestParamSize = sizeof(FsRemoteSetAttrParams);
     storage.requestDataPtr = (Address) NIL;
@@ -1368,7 +1397,7 @@ Fs_RpcSetIOAttr(srvToken, clientID, command, storagePtr)
 #ifdef lint
     status = FsDeviceSetIOAttr(&hdrPtr->fileID, attrPtr,setAttrParamPtr->flags);
     status = FsPipeSetIOAttr(&hdrPtr->fileID, attrPtr, setAttrParamPtr->flags);
-    status = FsPseudoStreamSetIOAttr(&hdrPtr->fileID, attrPtr,
+    status = FsControlSetIOAttr(&hdrPtr->fileID, attrPtr,
 					setAttrParamPtr->flags);
 #endif lint
 
