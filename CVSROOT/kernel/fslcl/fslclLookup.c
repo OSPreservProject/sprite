@@ -2319,6 +2319,8 @@ CacheDirBlockWrite(handlePtr, blockPtr, blockNum, length)
 #endif /* lint */
     if (blockAddr == FSDM_NIL_INDEX) {
 	status = FS_NO_DISK_SPACE;
+	printf("CacheDirBlockWrite: out of space for %s.\n",
+	       Fsutil_HandleName(handlePtr));	/* DEBUG */
 	if (handlePtr->descPtr->lastByte + 1 < offset) {
 	    /*
 	     * Delete the block if are appending and this was a new cache
