@@ -239,9 +239,11 @@ Fspdev_PrintRec(clientData, event, printHeaderFlag)
  */
 
 void
-Fspdev_PrintTrace(numRecs)
-    int numRecs;
+Fspdev_PrintTrace(clientData)
+    ClientData clientData;
 {
+    int numRecs = (int)clientData;
+
     if (numRecs < 0) {
 	numRecs = fspdevTraceLength;
     }

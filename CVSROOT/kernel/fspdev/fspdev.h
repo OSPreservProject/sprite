@@ -62,7 +62,7 @@ extern ReturnStatus FspdevPfsDomainInfo _ARGS_((Fs_FileID *fileIDPtr,
 			Fs_DomainInfo *domainInfoPtr));
 extern void Fspdev_InitializeOps _ARGS_((void));
 
-extern void Fspdev_PrintTrace _ARGS_((int numRecs));
+extern void Fspdev_PrintTrace _ARGS_((ClientData numRecs));
 
 extern ReturnStatus Fspdev_PrintRec _ARGS_((ClientData clientData, int event,
 			Boolean printHeaderFlag));
