@@ -152,8 +152,8 @@ extern	ReturnStatus	FsSpriteBlockWrite();
 extern	ReturnStatus	FsSpriteSelect();
 extern	ReturnStatus	FsRemoteIOControl();
 extern	ReturnStatus	FsSpriteClose();
-extern	ReturnStatus	FsSpriteGetIOAttr();
-extern	ReturnStatus	FsSpriteSetIOAttr();
+extern	ReturnStatus	FsRemoteGetIOAttr();
+extern	ReturnStatus	FsRemoteSetIOAttr();
 extern	ReturnStatus	FsSpriteBlockCopy();
 extern	ReturnStatus	FsSpriteDomainInfo();
 
