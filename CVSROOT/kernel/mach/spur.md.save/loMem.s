@@ -2194,20 +2194,20 @@ SpecialUserTraps:
 	add_nt		OUTPUT_REG5,SAFE_TEMP1,$0    /* Put the handle
 							pointer where we 
 	                                                can get at it.  */
-	call		1f                          /* Bump the windows */
 	add_nt		SPILL_SP, SPILL_SP, $-16      /* Make room on stack */
 
-						/* Our operands are now
-						   in the input registers */
-1:	st_40		INPUT_REG3, SPILL_SP, $0    /* First operand */
-	st_40		INPUT_REG4, SPILL_SP, $8    /* Second operand */
-	add_nt		OUTPUT_REG3, INPUT_REG1,$0  /* opcode */
-	add_nt		OUTPUT_REG4, INPUT_REG2,$0  /* destReg */
+	st_40		OUTPUT_REG3, SPILL_SP, $0    /* First operand */
+	st_40		OUTPUT_REG4, SPILL_SP, $8    /* Second operand */
+	add_nt		OUTPUT_REG3, OUTPUT_REG1,$0  /* opcode */
+	add_nt		OUTPUT_REG4, OUTPUT_REG2,$0  /* destReg */
 	add_nt		OUTPUT_REG1, CUR_PC_REG, $0
 	add_nt		OUTPUT_REG2, NEXT_PC_REG, $0
-	add_nt		OUTPUT_REG5, SPILL_SP, $0
-	jump_reg	INPUT_REG5, $0
+	call		@touserf
 	nop
+@touser: 
+	jump_reg	INPUT_REG5, $0
+	add_nt		INPUT_REG5, SPILL_SP, $0
+
 
 specialUserTraps_Error:
 	/*
@@ -3255,7 +3255,7 @@ ParseInstruction:
 	extract		SRC_REG, SRC_REG, $2	/* s1 <20:16> to <04:00> */
 	and		SRC_REG, SRC_REG, $0x1f /* Pitch the extra bits */
 
-	cmp_br_delayed	ult, SRC_REG,  $31, @getf  
+	cmp_br_delayed	lt, SRC_REG,  $31, @getf  
 	nop
 	jump		@endf
 	add_nt		SRC_REG, SAVED_R15, $0   /* get r31 directly */
@@ -3347,7 +3347,7 @@ parse_op:
 	extract		SRC_REG,SRC_REG,$1
 	and		SRC_REG,SRC_REG,$0x1f
 	
-	cmp_br_delayed	ult, SRC_REG,  $31, @getf
+	cmp_br_delayed	lt, SRC_REG,  $31, @getf
 	nop
 	jump		@endf
 	add_nt		SRC_REG, SAVED_R15, $0   /* get r31 directly */
@@ -3457,8 +3457,11 @@ parse_store:
 	 * Get value being stored
 	 */
 
-	add_nt		SRC_REG,OUTPUT_REG2,r0   /* Register number */
-	cmp_br_delayed	ult, SRC_REG,  $31, @getf
+	extract		SRC_REG, TRAP_INST, $1		/* register number */
+	srl		SRC_REG, SRC_REG,$1
+	and		SRC_REG, SRC_REG,$0x1f
+
+	cmp_br_delayed	lt, SRC_REG,  $31, @getf
 	nop
 	jump		@endf
 	add_nt		SRC_REG, SAVED_R15, $0   /* get r31 directly */
@@ -3475,6 +3478,7 @@ parse_store:
 	Nop
 
 @end:
+
 	add_nt		OUTPUT_REG2,SRC_REG,$0
 
 
