@@ -79,7 +79,8 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include "stat.h"
 #include "signal.h"
 #include "fs.h"
-#include "fsDisk.h"
+#include "fsdm.h"
+#include "../fslcl/fslclInt.h"	/* Directory format */
 
 /*
  * System call entry structure.  Note that this is different than the one
@@ -1596,7 +1597,7 @@ MachUNIXGetDirEntries(fd, buf, nbytes, basep)
     ReturnStatus status;	/* result returned by Fs_Read */
     Address	usp;
     int		bytesAcc;
-    FsDirEntry	*dirPtr;
+    FslclDirEntry	*dirPtr;
     Address	addr;
     int		i;
 
@@ -1611,16 +1612,20 @@ MachUNIXGetDirEntries(fd, buf, nbytes, basep)
     } else {
 	return(status);
     }
-    /* 
-     * Translate and byte swap things if necessary.
-     */
     Vm_MakeAccessible(VM_OVERWRITE_ACCESS, 
 		machCurStatePtr->userState.unixRetVal, buf, &bytesAcc, &addr);
     if (bytesAcc != machCurStatePtr->userState.unixRetVal) {
 	panic("User buffer not accessible, but we just wrote to it !!!\n");
     }
-    dirPtr = (FsDirEntry *)addr;
-    if (dirPtr->nameLength > FS_MAX_NAME_LENGTH) {
+    /*
+     * Check against big-endian/little-endian conflict.
+     * The max record length is 512, which is 02 when byteswapped.
+     * The min record length is 8, which is > 512 when byteswapped.
+     * All other values fall outside the range 8-512 when byteswapped.
+     */
+    dirPtr = (FslclDirEntry *)addr;
+    if (dirPtr->recLength > FS_DIR_BLOCK_SIZE ||
+	dirPtr->recLenght < offsetof(struct direct, d_name[0]) {
 	i = bytesAcc;
 	while (i > 0) {
 	    union {
@@ -1653,7 +1658,7 @@ MachUNIXGetDirEntries(fd, buf, nbytes, basep)
 	    dirPtr->nameLength = shortOut.s;
 
 	    i -= dirPtr->recordLength;
-	    dirPtr = (FsDirEntry *) ((Address)dirPtr + dirPtr->recordLength);
+	    dirPtr = (FslclDirEntry *) ((Address)dirPtr + dirPtr->recordLength);
 	}
     }
     Vm_MakeUnaccessible(addr, bytesAcc);
