@@ -204,23 +204,19 @@ FsFileSyncLockCleanup(handlePtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsFileSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
-	dataSizePtr, clientDataPtr)
+FsFileSrvOpen(handlePtr, openArgsPtr, openResultsPtr)
      register FsLocalFileIOHandle *handlePtr;	/* A handle from FsLocalLookup.
 					 * Should be LOCKED upon entry,
 					 * Returned UNLOCKED. */
-     int		clientID;	/* Host ID of client doing the open */
-     register int	useFlags;	/* FS_READ | FS_WRITE | FS_EXECUTE */
-     Fs_FileID		*ioFileIDPtr;	/* Return - same as handle file ID */
-     Fs_FileID		*streamIDPtr;	/* Return ID of stream to the file. 
-					 * NIL during set/get attributes */
-     int		*dataSizePtr;	/* Return - sizeof(FsFileState) */
-     ClientData		*clientDataPtr;	/* Return - a reference to FsFileState
-					 * used by FsCltFileOpen.  Nothing is
-					 * returned during set/get attrs */
+     FsOpenArgs		*openArgsPtr;	/* Standard open arguments */
+     FsOpenResults	*openResultsPtr;/* For returning ioFileID, streamID,
+					 * and FsFileState */
 {
     FsFileState *fileStatePtr;
     ReturnStatus status;
+    register useFlags = openArgsPtr->useFlags;
+    register clientID = openArgsPtr->clientID;
+    register Fs_Stream *streamPtr;
 
     if ((useFlags & FS_WRITE) &&
 	(handlePtr->descPtr->fileType == FS_DIRECTORY)) {
@@ -253,11 +249,11 @@ FsFileSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
     /*
      * Set up the ioFileIDPtr so our caller can set/get attributes.
      */
-    *ioFileIDPtr = handlePtr->hdr.fileID;
+    openResultsPtr->ioFileID = handlePtr->hdr.fileID;
     if (clientID != rpc_SpriteID) {
-	ioFileIDPtr->type = FS_RMT_FILE_STREAM;
+	openResultsPtr->ioFileID.type = FS_RMT_FILE_STREAM;
     }
-    if (clientDataPtr == (ClientData *)NIL) { 
+    if (useFlags == 0) { 
 	/*
 	 * Only being called from the get/set attributes code.
 	 * Setting up the ioFileID is all that is needed.
@@ -295,24 +291,20 @@ FsFileSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	     * the client doesn't have to worry about it.
 	     */
 	    fileStatePtr->newUseFlags = useFlags;
-	    *clientDataPtr = (ClientData)fileStatePtr;
-	    *dataSizePtr = sizeof(FsFileState);
+	    openResultsPtr->streamData = (ClientData)fileStatePtr;
+	    openResultsPtr->dataSize = sizeof(FsFileState);
 
 	    /*
 	     * Now set up a shadow stream on here on the server so we
 	     * can support shared offset even after migration.
-	     * Note: prefix handles get opened, but no stream is set
-	     * up for them as there is never an offset for them, hence
-	     * this check against a NIL streamID pointer.
+	     * Note: prefix handles get opened, but the stream is not used,
+	     * could dispose stream in FsLocalExport.
 	     */
-	    if (streamIDPtr != (Fs_FileID *)NIL) {
-		register Fs_Stream *streamPtr;
 
-		streamPtr = FsStreamNewClient(rpc_SpriteID, clientID,
-		    (FsHandleHeader *)handlePtr, useFlags, handlePtr->hdr.name);
-		*streamIDPtr = streamPtr->hdr.fileID;
-		FsHandleRelease(streamPtr, TRUE);
-	    }
+	    streamPtr = FsStreamNewClient(rpc_SpriteID, clientID,
+		(FsHandleHeader *)handlePtr, useFlags, handlePtr->hdr.name);
+	    openResultsPtr->streamID = streamPtr->hdr.fileID;
+	    FsHandleRelease(streamPtr, TRUE);
 	    return(SUCCESS);
 	} else {
 	    /*
@@ -324,7 +316,8 @@ FsFileSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	    printf("Consistency failed %x on <%d,%d>\n", status,
 		handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor);
 	    FsHandleLock(handlePtr);
-	    FsConsistKill(&handlePtr->consist, clientID, &ref, &write, &exec);
+	    FsConsistKill(&handlePtr->consist, clientID,
+			  &ref, &write, &exec);
 	    handlePtr->use.ref   -= ref;
 	    handlePtr->use.write -= write;
 	    handlePtr->use.exec  -= exec;
@@ -1008,21 +1001,20 @@ FsFileMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsFileRead(streamPtr, flags, buffer, offsetPtr,  lenPtr, remoteWaitPtr)
+FsFileRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
     Fs_Stream		*streamPtr;	/* Open stream to the file. */
-    int			flags;		/* Usage flags. */
-    register Address	buffer;		/* Where to read into. */
-    int 		*offsetPtr;	/* In/Out byte offset */
-    int			*lenPtr;	/* In/Out bytes to read. */
+    Fs_IOParam		*readPtr;	/* Read parameter block. */
     Sync_RemoteWaiter	*remoteWaitPtr;	/* Process info for remote waiting */
+    Fs_IOReply		*replyPtr;	/* Signal to return, if any,
+					 * plus the amount read. */
 {
     register FsLocalFileIOHandle *handlePtr =
 	    (FsLocalFileIOHandle *)streamPtr->ioHandlePtr;
     register ReturnStatus status;
 
-    status = FsCacheRead(&handlePtr->cacheInfo, flags, buffer, *offsetPtr,
-			 lenPtr, remoteWaitPtr);
-    *offsetPtr += *lenPtr;
+    status = FsCacheRead(&handlePtr->cacheInfo, readPtr->flags, readPtr->buffer,
+			    readPtr->offset, &readPtr->length, remoteWaitPtr);
+    replyPtr->length = readPtr->length;
     return(status);
 }
 
@@ -1044,13 +1036,11 @@ FsFileRead(streamPtr, flags, buffer, offsetPtr,  lenPtr, remoteWaitPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsFileWrite(streamPtr, flags, buffer, offsetPtr,  lenPtr, remoteWaitPtr)
+FsFileWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
     Fs_Stream		*streamPtr;	/* Open stream to the file. */
-    int			flags;		/* Usage flags. */
-    register Address	buffer;		/* Where to read into. */
-    int 		*offsetPtr;	/* In/Out byte offset */
-    int			*lenPtr;	/* In/Out bytes to read. */
+    Fs_IOParam		*writePtr;	/* Read parameter block */
     Sync_RemoteWaiter	*remoteWaitPtr;	/* Process info for remote waiting */
+    Fs_IOReply		*replyPtr;	/* Signal to return, if any */
 {
     register FsLocalFileIOHandle *handlePtr =
 	    (FsLocalFileIOHandle *)streamPtr->ioHandlePtr;
@@ -1064,8 +1054,10 @@ FsFileWrite(streamPtr, flags, buffer, offsetPtr,  lenPtr, remoteWaitPtr)
 	return(FS_DOMAIN_UNAVAILABLE);
     }
     FsWaitForReadAhead(&handlePtr->readAhead);
-    status = FsCacheWrite(&handlePtr->cacheInfo, flags, buffer, *offsetPtr,
-			  lenPtr, remoteWaitPtr);
+    status = FsCacheWrite(&handlePtr->cacheInfo, writePtr->flags,
+			  writePtr->buffer, writePtr->offset,
+			  &writePtr->length, remoteWaitPtr);
+    replyPtr->length = writePtr->length;
     if (status == SUCCESS && (fsWriteThrough || fsWriteBackASAP)) {
 	/*
 	 * When in write-through or asap mode we have to force the descriptor
@@ -1074,7 +1066,6 @@ FsFileWrite(streamPtr, flags, buffer, offsetPtr,  lenPtr, remoteWaitPtr)
 	status = FsWriteBackDesc(handlePtr, FALSE);
     }
 
-    *offsetPtr += *lenPtr;
     FsAllowReadAhead(&handlePtr->readAhead);
     FsDomainRelease(handlePtr->hdr.fileID.major);
     return(status);
