@@ -74,7 +74,9 @@ _Mach_DisableIntr:
  *	It should be okay for it to use the out registers, however.
  *	That just means that if it's called from assembly code, I shouldn't
  *	use those out registers in the calling routine, but I never do that
- *	anyway.
+ *	anyway.  This enables all interrupts, so if before disabling them
+ *	we had only certain priority interrupts enabled, this will lose
+ *	that information.
  *
  * Results:
  *	None.

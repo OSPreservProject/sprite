@@ -76,9 +76,6 @@ loopStart:
 	nop
 
 begin:
-	mov	%psr, %g1			/* turn interrupts back on */
-	and	%g1, MACH_ENABLE_INTR, %g1
-	mov	%g1, %psr
 	/*
 	 * Zero out the bss segment.
 	 */
@@ -115,6 +112,14 @@ doneZeroing:
 	 */
 	set	MACH_STACK_START, %fp
 	set	(MACH_STACK_START - MACH_SAVED_WINDOW_SIZE), %sp
+	andn	%sp, 0x7, %sp			/* double-word aligned */
+/* for debugging */
+	set	_debugSpace, %VOL_TEMP1
+	st	%g0, [%VOL_TEMP1]
+	st	%sp, [%VOL_TEMP1 + 4]
+	set	_debugCounter, %VOL_TEMP1
+	set	0x2, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
 
 	/*
 	 * Now set up initial trap table by copying machProtoVectorTable
@@ -124,7 +129,9 @@ doneZeroing:
 	 * a time) for speed.  %g1 is source for copy, %g2 is destination,
 	 * %g3 is the counter copy, %g4 and %g5 are the registers used for
 	 * the double-word copy, %l1 is for holding the size of the table,
-	 * and %l2 contains the number of bytes to copy.
+	 * and %l2 contains the number of bytes to copy.  %g6 stores the
+	 * original destination, so that we can do some further copies, and
+	 * so that we can put it into the tbr..
 	 */
 	set	machProtoVectorTable, %g1		/* g1 contains src */
 	set	reserveSpace, %g2			/* g2 to contain dest */
@@ -132,6 +139,7 @@ doneZeroing:
 	set	((1 + ~MACH_TRAP_ADDR_MASK) / 8), %l2	/* # bytes to copy */
 	add	%g2, %l1, %g2				/* add size of table */
 	and	%g2, MACH_TRAP_ADDR_MASK, %g2		/* align to 4k bound. */
+	mov	%g2, %g6				/* keep value of dest */
 	clr	%g3					/* clear counter */
 copyingTable:
 	ldd	[%g1], %g4				/* copy first 2 words */
@@ -143,12 +151,30 @@ copyingTable:
 	cmp	%g3, %l2				/* how many copies */
 	bne	copyingTable
 	nop
-	mov	%tbr, %TBR_REG				/* save real tbr */
-	and	%TBR_REG, MACH_TRAP_ADDR_MASK, %TBR_REG	/* mask off trap type */
-	set	reserveSpace, %g2			/* g2 to be trap base */
-	add	%g2, %l1, %g2				/* add size of table */
-	and	%g2, MACH_TRAP_ADDR_MASK, %g2		/* align to 4k bound. */
-	mov	%g2, %tbr				/* switch in mine */
+
+	/*
+	 * Now copy in the overflow and underflow trap code.  These traps
+	 * bypass the regular preamble and postamble for speed, and because
+	 * they are coded so that the only state they need save is the psr.
+	 * %g6 was the trap table address saved from above.
+	 */
+	set	machProtoWindowOverflow, %g1		/* new src */
+	set	MACH_WINDOW_OVERFLOW, %g2		/* get trap offset */
+	add	%g6, %g2, %g2				/* offset in table */
+	ldd	[%g1], %g4				/* copy first 2 words */
+	std	%g4, [%g2]
+	ldd	[%g1 + 8], %g4				/* copy next 2 words */
+	std	%g4, [%g2 + 8]
+
+	set	machProtoWindowUnderflow, %g1		/* new src */
+	set	MACH_WINDOW_UNDERFLOW, %g2		/* get trap type */
+	add	%g6, %g2, %g2				/* offset in table */
+	ldd	[%g1], %g4				/* copy first 2 words */
+	std	%g4, [%g2]
+	ldd	[%g1 + 8], %g4				/* copy next 2 words */
+	std	%g4, [%g2 + 8]
+
+	mov	%g6, %tbr			/* switch in my trap address */
 	MACH_WAIT_FOR_STATE_REGISTER()			/* let it settle for
 							 * the necessary
 							 * amount of time.  Note
@@ -158,6 +184,12 @@ copyingTable:
 							 * to the old tbr if
 							 * interrupts are
 							 * disabled.  */
+#ifdef NOTDEF
+	mov	%psr, %g1			/* turn interrupts back on */
+	and	%g1, MACH_ENABLE_INTR, %g1
+	mov	%g1, %psr
+	MACH_WAIT_FOR_STATE_REGISTER()
+#endif NOTDEF
 	call	_main
 	nop
 .align 8
@@ -201,6 +233,18 @@ machProtoVectorTable:
 	or	%VOL_TEMP1, %lo(_MachTrap), %VOL_TEMP1
 	jmp	%VOL_TEMP1		/* must use non-pc-relative jump here */
 	nop
+
+machProtoWindowOverflow:
+	sethi	%hi(MachHandleWindowOverflowTrap), %VOL_TEMP1
+	or	%VOL_TEMP1, %lo(MachHandleWindowOverflowTrap), %VOL_TEMP1
+	jmp	%VOL_TEMP1
+	rd	%psr, %CUR_PSR_REG
+
+machProtoWindowUnderflow:
+	sethi	%hi(MachHandleWindowUnderflowTrap), %VOL_TEMP1
+	or	%VOL_TEMP1, %lo(MachHandleWindowUnderflowTrap), %VOL_TEMP1
+	jmp	%VOL_TEMP1
+	rd	%psr, %CUR_PSR_REG
 
 .align	8
 reserveSpace:	.skip	0x2000

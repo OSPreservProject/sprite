@@ -79,54 +79,35 @@
 .globl	_MachTrap
 _MachTrap:
 	/*
-	 * This test is here right now just because overflow and underflow
-	 * are still jumping from here.  Later they will go directly from
-	 * vector table.   They restore their psr's themselves and do not
-	 * return to MachReturnFromTrap.  I read psr here, since compares
-	 * below change its condition codes!!!
+	 * Save the state registers.  This is safe, since we're saving them
+	 * to local registers.
+	 * The psr is saved here for now, but maybe it should be saved in
+	 * delay slot of the trap table??
+	 * The pc and npc were saved into their regs as part of the trap
+	 * instruction.
 	 */
 	mov	%psr, %CUR_PSR_REG
 	mov	%tbr, %CUR_TBR_REG
-	and	%CUR_TBR_REG, MACH_TRAP_TYPE_MASK, %VOL_TEMP1 /* get trap */
-
-	/*
-	 * For now these are here.  They should be direct entries in the
-	 * vector table, with psr saved.  All the rest should go through
-	 * this trap preamble.
-	 */
-	cmp	%VOL_TEMP1, MACH_WINDOW_OVERFLOW	/* my overflow */
-	be	MachHandleWindowOverflowTrap
-	nop
-	cmp	%VOL_TEMP1, MACH_WINDOW_UNDERFLOW	/* my underflow */
-	be	MachHandleWindowUnderflowTrap
-	nop
-	cmp	%VOL_TEMP1, MACH_LEVEL10_INT		/* clock interrupt */
-	be	WeHandleIt
-	nop
-	cmp	%VOL_TEMP1, MACH_LEVEL6_INT		/* ether interrupt */
-	be	WeHandleIt
-	nop
-	cmp	%VOL_TEMP1, MACH_TRAP_DEBUGGER
-	be	WeHandleIt
-	nop
-							/* no - their stuff */
-	add	%VOL_TEMP1, %TBR_REG, %VOL_TEMP1 /* add t.t. to real tbr */
-	jmp	%VOL_TEMP1		/* jmp (non-pc-rel) to real tbr */
-	nop
-
-WeHandleIt:
-	/*
-	 * The others that should go through this trap preamble follow.
-	 */
-	/*
-	 * Save the state registers.  This is safe, since we're saving them
-	 * to local registers.
-	 * The psr is saved above for now, since the compares above would change
-	 * its condition codes otherwise.
-	 * The tbr is also saved above for now for compares.
-	 */
 	mov	%y, %CUR_Y_REG
-	/* pc and npc were saved into their regs as part of trap instruction */
+    /* for debugging */
+	set	_debugCounter, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	set	500, %VOL_TEMP2
+	subcc	%VOL_TEMP2, %VOL_TEMP1, %g0
+	ble	FinishedDebugging
+	nop
+	sll	%VOL_TEMP1, 2, %VOL_TEMP1
+	set	_debugSpace, %VOL_TEMP2
+	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2
+	st	%g0, [%VOL_TEMP2]
+	st	%CUR_TBR_REG, [%VOL_TEMP2 + 4]
+	st	%CUR_PC_REG, [%VOL_TEMP2 + 8]
+	st	%fp, [%VOL_TEMP2 + 12]
+	set	_debugCounter, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2
+	add	%VOL_TEMP2, 4, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+FinishedDebugging:
 	/*
 	 * Are we in an invalid window? If so, deal with it.
 	 */
@@ -146,6 +127,8 @@ WindowOkay:
 	mov	%fp, %sp
 	set	MACH_SAVED_STATE_FRAME, %VOL_TEMP1
 	sub	%sp, %VOL_TEMP1, %sp
+	andn	%sp, 0x7, %sp			/* double-word aligned */
+
 
 	/*
 	 * For now, this only saves the globals to the stack.  The locals
@@ -158,20 +141,24 @@ WindowOkay:
 	 * into the state structure.  I don't do this yet.
 	 */
 	MACH_SR_HIGHPRIO()	/* traps on, maskable interrupts off */
-	/* well, we've already determined this, but later there'll be more */
 	and	%CUR_TBR_REG, MACH_TRAP_TYPE_MASK, %VOL_TEMP1 /* get trap */
 	cmp	%VOL_TEMP1, MACH_LEVEL10_INT		/* clock interrupt */
-	be	MachHandleInterrupt
+	be	MachHandleTimerInterrupt
+	nop
+	cmp	%VOL_TEMP1, MACH_LEVEL14_INT
+	be	MachHandleTimerInterrupt
 	nop
 	cmp	%VOL_TEMP1, MACH_LEVEL6_INT		/* ether interrupt */
-	be	MachHandleInterrupt
+	be	MachHandleEtherInterrupt
+	nop
+	cmp	%VOL_TEMP1, 0x100			/* level 0 int */
+	be	MachHandleLevel0Interrupt
 	nop
 	cmp	%VOL_TEMP1, MACH_TRAP_DEBUGGER		/* enter debugger */
 	be	MachHandleDebugTrap
 	nop
-
-
-
+	be	MachHandleDebugTrap		/* all  others to debugger */
+	nop
 
 
 /*
@@ -243,6 +230,23 @@ UnderflowOkay:
  */
 .globl	MachHandleWindowOverflowTrap
 MachHandleWindowOverflowTrap:
+    /* for debugging */
+	set	_debugCounter, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	set	500, %VOL_TEMP2
+	subcc	%VOL_TEMP2, %VOL_TEMP1, %g0
+	ble	FinishedDebugging1
+	nop
+	sll	%VOL_TEMP1, 2, %VOL_TEMP1
+	set	_debugSpace, %VOL_TEMP2
+	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2
+	st	%CUR_PC_REG, [%VOL_TEMP2]
+	st	%fp, [%VOL_TEMP2 + 4]
+	set	_debugCounter, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2
+	add	%VOL_TEMP2, 2, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+FinishedDebugging1:
 	set	MachWindowOverflow, %VOL_TEMP1
 	jmpl	%VOL_TEMP1, %SAFE_TEMP
 	nop
@@ -339,8 +343,25 @@ MachWindowOverflow:
  *
  * ----------------------------------------------------------------------
  */
-.globl	MachHandleWindowOverflowTrap
+.globl	MachHandleWindowUnderflowTrap
 MachHandleWindowUnderflowTrap:
+    /* for debugging */
+	set	_debugCounter, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	set	500, %VOL_TEMP2
+	subcc	%VOL_TEMP2, %VOL_TEMP1, %g0
+	ble	FinishedDebugging2
+	nop
+	sll	%VOL_TEMP1, 2, %VOL_TEMP1
+	set	_debugSpace, %VOL_TEMP2
+	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2
+	st	%CUR_PC_REG, [%VOL_TEMP2]
+	st	%fp, [%VOL_TEMP2 + 4]
+	set	_debugCounter, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2
+	add	%VOL_TEMP2, 2, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+FinishedDebugging2:
 	mov	%g3, %VOL_TEMP1			/* clear out globals */
 	mov	%g4, %VOL_TEMP2
 	restore					/* retreat a window */
@@ -405,40 +426,17 @@ MachHandleWindowUnderflowTrap:
  */
 .globl	MachWindowUnderflow
 MachWindowUnderflow:
-#ifndef NOTDEF
 	/*
-	 * wait - I can't do that! - Debugger restores from debug window t
-	 * debug window, too, of course.  So, if we're in debug window, fp
-	 * should be debug stack base.  Check that.
+	 * Check to see if we're about to return to the trap window from
+	 * the debugger.  If so, then the frame pointer should be equal
+	 * to the base of the debugger stack.  If it is, change it to be
+	 * the top of the regular stack, so that when we return to the previous
+	 * window, our sp is at the top of the regular stack.
 	 */
 	set	MACH_DEBUG_STACK_START, %VOL_TEMP1
 	cmp	%VOL_TEMP1, %fp
 	bne	RegularStack
 	nop
-	/* Deal with restoring regular stack */
-
-#else	NOTDEF
-	/*
-	 * Check value of sp - is it in debugger range?  If so, we're returning
-	 * from the debugger and must switch stacks.
-	 * MACH_KERN_START < debugSP <= MACH_DEBUG_STACK_START
-	 */
-	set	MACH_DEBUG_STACK_START, %VOL_TEMP1
-	subcc	%VOL_TEMP1, %sp, %g0
-	bl	RegularStack
-	nop
-	set	MACH_KERN_START, %VOL_TEMP1
-	subcc	%sp, %VOL_TEMP1, %g0
-	bg	DealWithDebugStack
-	nop
-	/* We're in trouble - the stack pointer is bogus */
-	/* For now I deal with this for debugging by infinite looping. */
-BogusStackPtr:
-	set	BogusStackPtr, %VOL_TEMP2
-	jmp	%VOL_TEMP2
-	nop
-
-#endif NOTDEF
 
 DealWithDebugStack:
 	/* Set stack pointer of next window to regular frame pointer */
@@ -447,6 +445,23 @@ DealWithDebugStack:
 	nop
 	
 RegularStack:
+    /* for debugging */
+	set	_debugCounter, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	set	500, %VOL_TEMP2
+	subcc	%VOL_TEMP2, %VOL_TEMP1, %g0
+	ble	FinishedDebugging4
+	nop
+	sll	%VOL_TEMP1, 2, %VOL_TEMP1
+	set	_debugSpace, %VOL_TEMP2
+	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2
+	st	%g0, [%VOL_TEMP2]
+	st	%fp, [%VOL_TEMP2 + 4]
+	set	_debugCounter, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2
+	add	%VOL_TEMP2, 2, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+FinishedDebugging4:
 	/*
 	 * It should be ok to use locals here - it's a dead window.
 	 * Note that this means one cannot do a restore and then a save
