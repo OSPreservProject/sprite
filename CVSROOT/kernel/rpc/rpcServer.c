@@ -151,14 +151,12 @@ Rpc_Server()
 	RPC_TRACE(rpcHdrPtr, RPC_SERVER_A, " input");
 #endif TIMESTAMP
 	/*
-	 * Allow a bootID of zero for stateless boottime RPCs like
-	 * get time of day.  Otherwise check this generation stamp
-	 * to detect reboots by clients.  Recov_HostAlive will block
-	 * us until the recovery actions triggered by a reboot are done.
+	 * Monitor message traffic to keep track of other hosts.  This call
+	 * has a side effect of blocking the server process while any
+	 * crash recovery call-backs are in progress.
 	 */
-	if (rpcHdrPtr->bootID != 0) {
-	    Recov_HostAlive(srvPtr->clientID, rpcHdrPtr->bootID, FALSE);
-	}
+	Recov_HostAlive(srvPtr->clientID, rpcHdrPtr->bootID,
+			FALSE, rpcHdrPtr->flags & RPC_NOT_ACTIVE);
 	/*
 	 * Before branching to the service procedure we check that the
 	 * server side of RPC is on, and that the RPC number is good.
