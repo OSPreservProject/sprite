@@ -302,11 +302,13 @@ Dev_SyslogWrite(devicePtr, writePtr, replyPtr)
 	    writePtr->length -= toWrite;
 	}
     }
+
     if (!dbg_UsingSyslog) {
 	Fsio_DevNotifyReader(notifyToken);
 	MASTER_UNLOCK(&syslogMutex);
     }
     replyPtr->length = origSize - writePtr->length;
+
     return(SUCCESS);
 }
 
@@ -518,9 +520,9 @@ Dev_SyslogDebug(stopLog)
     if (stopLog) {
 	if (syslogDebugCount == 0) {
 	    savedOpenForReading = openForReading;
-	    openForReading = FALSE;
+	    Dev_SyslogClose((Fs_Device *) NIL, FS_READ, 0, 0);
 	}
-	syslogDebugCount++;
+        syslogDebugCount++;
     } else {
 	syslogDebugCount--;
 	if (syslogDebugCount == 0) {
