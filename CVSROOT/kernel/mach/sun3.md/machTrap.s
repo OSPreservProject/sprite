@@ -6,8 +6,9 @@
 |* All rights reserved.
 |*
 
-#include "machConst.h"
-#include "machAsmDefs.h"
+#include <machConst.h>
+#include <machAsmDefs.h>
+#include <user/status.h>
 
 .data
 .asciz "$Header$ SPRITE (Berkeley)"
@@ -390,7 +391,7 @@ MachSyscallTrap:
 
 	cmpl	_machMaxSysCall, d0
 	jls	2f
-	movl	#20002, d0
+	movl	#SYS_INVALID_SYSTEM_CALL, d0
 	jra	return
 
 2:
