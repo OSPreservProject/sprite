@@ -48,6 +48,8 @@ NM = mcount
 
 UPDATE = /sprite/cmds.${MACHINE}/update
 MKVERSION = /sprite/cmds.${MACHINE}/mkversion
+RELEASE = 1
+NEWVERSION ?= TRUE
 
 GINGER = ginger.Berkeley.EDU
 ENVY = envy.Berkeley.EDU
@@ -128,25 +130,29 @@ ALLSRCS= Makefile version.c
 
 HDRS = sprite.h
 
-sun2: ${OBJS} Makefile .PRECIOUS .NOEXPORT
-	rm -f $@ version.o
-	rm -f mainHook.o
-	cc -c ${CFLAGS} mainHook.c
-	${MKVERSION} -p "SPRITE VERSION 1.0 (Sun2)" > version.h
-	cc -c ${CFLAGS} version.c
-	${LD} -X -o $@ -e start -T 804000 ${OBJS} version.o \
-	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBC}
-	@ls -l $@
-	@size $@
-	update -f -s $@ /sprite/boot/$@.sprite
-	rcp /sprite/boot/$@.sprite ${ENVY}:/bnf2/sprite/sun2.new
-	nm $@ | sort > $@.nm
+.BEGIN: 
+	doversion ${RELEASE} ${NEWVERSION} > version.h.template
+
+#sun2: ${OBJS} Makefile .PRECIOUS .NOEXPORT
+#	rm -f $@ version.o
+#	rm -f mainHook.o
+#	cc -c ${CFLAGS} mainHook.c
+#	${MKVERSION} -p "SPRITE VERSION 1.0 (Sun2)" > version.h
+#	cc -c ${CFLAGS} version.c
+#	${LD} -X -o $@ -e start -T 804000 ${OBJS} version.o \
+#	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBC}
+#	@ls -l $@
+#	@size $@
+#	update -f -s $@ /sprite/boot/$@.sprite
+#	rcp /sprite/boot/$@.sprite ${ENVY}:/bnf2/sprite/sun2.new
+#	nm -n $@  > $@.nm
 
 sun3: ${OBJS} Makefile .PRECIOUS .NOEXPORT
+	sed 's/MACHINE/$@/g' version.h.template > version.h
+	cat version.h >> $@.versionLog
 	-Save $@
 	rm -f mainHook.o
 	cc -c ${CFLAGS} mainHook.c
-	${MKVERSION} -p "SPRITE VERSION 1.0 (sun3)" > version.h
 	cc -c ${CFLAGS} version.c
 	${LD} -X -o $@ -e start -T e004000 ${OBJS} version.o \
 	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBC}
@@ -157,39 +163,42 @@ sun3: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	rcp /sprite/boot/$@.md/sprite.new ${GINGER}:/sprite3/$@.new
 	rsh rosemary "(cd /tmp/sprite ; ./Save sun3.sprite)"
 	rcp $@ rosemary:/tmp/sprite/$@.sprite
-	nm $@ | sort > $@.nm
+	nm -n  > $@.nm
 
 sun4: ${OBJS} Makefile .PRECIOUS .NOEXPORT
+	sed 's/MACHINE/$@/g' version.h.template > version.h
+	cat version.h >> $@.versionLog
 	-Save $@
 	rm -f mainHook.o
 	cc -c ${CFLAGS} -Dsun4 mainHook.c
-	${MKVERSION} -p "SPRITE VERSION 1.0 (sun4)" > version.h
 	cc -c ${CFLAGS} -Dsun4 version.c
 	${LD} -X -msun4 -o $@ -e start -T f6004020 ${OBJS} version.o \
 	    -L/sprite/lib/${TM}.md ${LIBC}
 	@ls -l $@
 	@size $@
 	update -f -s $@ /sprite/boot/$@.md/sprite.new
-	nm $@ | sort > $@.nm
+	nm -n $@ > $@.nm
 
 sun4c: ${OBJS} Makefile .PRECIOUS .NOEXPORT
+	sed 's/MACHINE/$@/g' version.h.template > version.h
+	cat version.h >> $@.versionLog
 	-Save $@
 	rm -f mainHook.o
 	cc -c ${CFLAGS} -Dsun4 -Dsun4c mainHook.c
-	${MKVERSION} -p "SPRITE VERSION 1.0 (sun4c)" > version.h
 	cc -c ${CFLAGS} -Dsun4 -Dsun4c version.c
 	${LD} -X -msun4 -o $@ -e start -T f6004000 ${OBJS} version.o \
 	    -L/sprite/lib/${TM}.md ${LIBC}
 	@ls -l $@
 	@size $@
 	update -f -s $@ /sprite/boot/$@.md/sprite.new
-	nm $@ | sort > $@.nm
+	nm -n $@ > $@.nm
 
 profile2: ${PROFOBJS} Makefile .PRECIOUS
+	sed 's/MACHINE/$@/g' version.h.template > version.h
+	cat version.h >> $@.versionLog
 	rm -f $@
 	rm -f mainHook.o
 	cc -c ${CFLAGS} mainHook.c
-	@${MKVERSION} -p "SPRITE VERSION 1.0 (profile2)" > version.h
 	@cc -c ${CFLAGS} version.c
 	${LD} -X -o $@ -e start -T 804000 ${PROFOBJS} version.o \
 	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBC}
@@ -197,13 +206,14 @@ profile2: ${PROFOBJS} Makefile .PRECIOUS
 	@size $@
 	update -f -s $@ /sprite/boot/$@.sprite
 	rcp /sprite/boot/$@.sprite ${ENVY}:/bnf2/sprite/sun2
-	nm $@ | sort > $@.nm
+	nm -n $@ > $@.nm
 
 profile3: ${PROFOBJS} Makefile .PRECIOUS
+	sed 's/MACHINE/$@/g' version.h.template > version.h
+	cat version.h >> $@.versionLog
 	rm -f $@
 	rm -f mainHook.o
 	cc -c ${CFLAGS} mainHook.c
-	@${MKVERSION} -p "SPRITE VERSION 1.0 (profile3)" > version.h
 	@cc -c ${CFLAGS} version.c
 	${LD} -X -o $@ -e start -T e004000 ${PROFOBJS} version.o \
 	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBC}
@@ -211,13 +221,14 @@ profile3: ${PROFOBJS} Makefile .PRECIOUS
 	@size $@
 	update -f -s $@ /sprite/boot/$@.sprite
 	rcp /sprite/boot/$@.sprite ${GINGER}:/sprite3/tmp/$@
-	nm $@ | sort > $@.nm
+	nm -n $@ > $@.nm
 
 ds3100: ${OBJS} .PRECIOUS
+	sed 's/MACHINE/$@/g' version.h.template > version.h
+	cat version.h >> $@.versionLog
 	rm -f $@
 	rm -f mainHook.o
 	cc -c ${CFLAGS} mainHook.c
-	@${MKVERSION} -p "SPRITE VERSION 1.0 (ds3100)" > version.h
 	@cc -c ${CFLAGS} version.c
 	${LD} -N -o ds3100 -e start -T 80030000 ${OBJS} version.o \
 		-L/sprite/lib/${TM}.md ${LIBC}
