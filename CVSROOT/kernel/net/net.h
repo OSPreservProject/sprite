@@ -88,12 +88,19 @@ extern	ReturnStatus	Net_Output();
 extern	void	Net_EtherOutputSync();
 extern	void	Net_Intr();
 extern	void	Net_GatherCopy();
+
 extern	ReturnStatus Net_InstallRouteStub();
 extern	ReturnStatus Net_InstallRoute();
 extern	void	Net_SpriteIDToName();
 extern	void	Net_RouteInit();
 extern	void	Net_NameToAddr();
 extern	void	Net_AddrToName();
+
+Net_Route	*Net_IDToRoute();
+int		 Net_AddrToID();
+
+extern Net_Route *Net_Arp();
+extern int	Net_RevArp();
 
 extern	ReturnStatus	Net_FsOpen();
 extern	ReturnStatus	Net_FsRead();

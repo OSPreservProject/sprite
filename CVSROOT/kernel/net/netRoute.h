@@ -82,10 +82,7 @@ typedef struct NetSpriteArp {
  * Forward declarations.
  */
 
-Net_Route	*Net_IDToRoute();
-int		 Net_AddrToID();
 ReturnStatus	 NetRouteMessage();
-Net_Route	*NetArp();
-int		 Net_ArpInput();
+int		 NetArpInput();
 
 #endif _NETROUTE
