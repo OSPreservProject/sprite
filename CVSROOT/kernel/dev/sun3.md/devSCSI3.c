@@ -750,7 +750,7 @@ SendCommand(devPtr, scsiCmdPtr)
     register volatile unsigned char *modePtr; /* pointer to mode register */
     register char *charPtr;
     Controller	*ctrlPtr;
-    int i;
+    int i, numAttempts;
     int size;				/* Number of bytes to transfer */
     Address addr;			/* Kernel address of transfer */
 
@@ -810,18 +810,18 @@ SendCommand(devPtr, scsiCmdPtr)
      */
 
     regsPtr->sbc.write.data = SI_HOST_ID;
-    for (i = 0; i < SBC_NUM_RETRIES; i++) {
+    for (numAttempts = 0; numAttempts < SBC_NUM_RETRIES; numAttempts++) {
 	/*
 	 * Wait for the bus to go to BUS FREE - busy line not held.
 	 */
-	for (i=0 ; i < WAIT_LENGTH ; i++) {
+	for (i=0 ; i < (WAIT_LENGTH/10) ; i++) {
 	    if ((regsPtr->sbc.read.curStatus & SBC_CBSR_BSY) == 0) {
 		break;
 	    } else {
 		MACH_DELAY(10);
 	    }
 	}
-	if (i == WAIT_LENGTH) {
+	if (i == (WAIT_LENGTH/10)) {
 	    /*
 	     * Probably a higher level synchronization error.  The
 	     * SCSI bus is probably busy with another transaction.
@@ -868,7 +868,7 @@ SendCommand(devPtr, scsiCmdPtr)
 	    return(FAILURE);
 	}
     }
-    if (i == SBC_NUM_RETRIES) {
+    if (numAttempts == SBC_NUM_RETRIES) {
 	Reset(ctrlPtr);
 	printf("Warning: %s unable to select target %s\n", ctrlPtr->name,
 				devPtr->handle.locationName);
@@ -1334,7 +1334,7 @@ WaitReg(ctrlPtr, thisRegPtr, type, conditions, reset, bitSel)
     ReturnStatus status = DEV_TIMEOUT;
     register unsigned int thisReg;
 
-    for (i=0 ; i<WAIT_LENGTH ; i++) {
+    for (i=0 ; i<(WAIT_LENGTH/10) ; i++) {
 	switch (type) {
 	    case REG_BYTE: {
 		unsigned char *charPtr = (unsigned char *) thisRegPtr;
@@ -1469,7 +1469,7 @@ WaitPhase(ctrlPtr, phase, reset)
     ReturnStatus status = DEV_TIMEOUT;
     register unsigned char thisReg;
 
-    for (i=0 ; i<WAIT_LENGTH ; i++) {
+    for (i=0 ; i<(WAIT_LENGTH/10) ; i++) {
 	thisReg = regsPtr->sbc.read.curStatus;
 	if (devSCSI3Debug > 10 && i < 5) {
 	    printf("%d/%x ", i, thisReg);
