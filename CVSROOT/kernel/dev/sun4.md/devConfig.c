@@ -71,11 +71,15 @@ int devScsiNumHBATypes = sizeof(devScsiAttachProcs) /
  * The choices are:
  * Drive 0 partition 0 of xylogics 450 controller 0.
  * SCSI Disk target ID 0 LUN 0 partition 0 on SCSI3 HBA 0. 
+ * SCSI Disk target ID 0 LUN 0 partition 0 on SCSI3 HBA 1. 
  */
 Fs_Device devFsDefaultDiskPartitions[] = { 
     { -1, DEV_XYLOGICS, 0, (ClientData) NIL },	
     { -1, SCSI_MAKE_DEVICE_TYPE(DEV_SCSI_DISK, DEV_SCSI3_HBA, 0, 0, 0, 0),
 	  SCSI_MAKE_DEVICE_UNIT(DEV_SCSI_DISK, DEV_SCSI3_HBA, 0, 0, 0, 0),
+		(ClientData) NIL }, 
+    { -1, SCSI_MAKE_DEVICE_TYPE(DEV_SCSI_DISK, DEV_SCSI3_HBA, 1, 0, 0, 0),
+	  SCSI_MAKE_DEVICE_UNIT(DEV_SCSI_DISK, DEV_SCSI3_HBA, 1, 0, 0, 0),
 		(ClientData) NIL }, 
     };
 int devNumDefaultDiskPartitions = sizeof(devFsDefaultDiskPartitions) / 
