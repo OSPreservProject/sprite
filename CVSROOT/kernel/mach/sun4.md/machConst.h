@@ -87,6 +87,7 @@
 #define	MACH_LEVEL14_INT	0x1e0
 #define	MACH_LEVEL15_INT	0x1f0
 
+#define	MACH_TRAP_UNIX_SYSCALL	MACH_TRAP_INSTR_FIRST
 #define	MACH_TRAP_DEBUGGER	MACH_TRAP_INSTR_1
 #define	MACH_TRAP_SYSCALL	MACH_TRAP_INSTR_3
 #define	MACH_TRAP_SIG_RETURN	MACH_TRAP_INSTR_4
@@ -110,11 +111,11 @@
 #define	MACH_FLUSH_WINDOWS_TRAP	((MACH_TRAP_FLUSH_WINDOWS - 0x800) >> 4)
 
 /*
- * Mask for extracting the trap type from the psr.
+ * Mask for extracting the trap type from the tbr.
  */
 #define	MACH_TRAP_TYPE_MASK	0xFF0
 /*
- * Mask for extracting the trap base address from the psr.
+ * Mask for extracting the trap base address from the tbr.
  */
 #define MACH_TRAP_ADDR_MASK	0xFFFFF000
 
@@ -166,6 +167,8 @@
 						 * previous mode not supervisor,
 						 * current mode supervisor. */
 #define	MACH_NO_INTR_USER_PSR		0xF80
+#define MACH_CARRY_BIT			0x00100000
+#define MACH_CARRY_BITMASK		(~MACH_CARRY_BIT)
 /*
  * psr value for interrupts disabled, traps enabled and window 0.
  * Both supervisor and previous supervisor mode bits are set.
@@ -237,6 +240,7 @@
  * MAGIC		A magic number which is pushed onto the stack before
  *			a context switch.  Used to verify that the stack
  *			doesn't get trashed.
+ * MACH_UNIX_ERRNO_OFFSET	Errno offset in Proc_ControlBlock
  */
 #define	MACH_KERN_START		0xf6000000
 #define	MACH_STACK_START	(MACH_KERN_START + 0x6000)
@@ -245,6 +249,7 @@
 #define MACH_KERN_END		VMMACH_NET_MAP_START
 #define	MACH_KERN_STACK_SIZE	(MACH_STACK_START - MACH_STACK_BOTTOM)
 #define	MACH_BARE_STACK_OFFSET	(MACH_KERN_STACK_SIZE - 8)
+#define	MACH_UNIX_ERRNO_OFFSET	696
 
 /*
  * Constants for the user's address space.
