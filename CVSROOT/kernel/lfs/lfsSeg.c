@@ -1008,6 +1008,9 @@ DoInCallBacks(type, segPtr, flags, sizePtr, numCacheBlocksPtr, clientDataPtr)
 	     default:
 		 panic("lfsSeg.c: Bad case statement\n");
 	     }
+	     if (error) {
+		    break;
+	     }
 	     segPtr->curBlockOffset += segPtr->curSummaryHdrPtr->numDataBlocks;
 	     /*
 	      * Skip to the next summary header. 
@@ -1212,13 +1215,16 @@ DoOutCallBacks(type, segPtr, flags, checkPointPtr, sizePtr, clientDataPtr)
  *
  * SegmentCleanProc --
  *
- *	Proc_CallFunc procedure for cleaning segments write.
+ *	Proc_CallFunc procedure for cleaning segments. The routine
+ *	reads the segments into memory by calling the "Clean IN"
+ *	routines and writes the data out by callin the "Clean OUT"
+ *	routines.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	None.	
+ *	Segments are mark as clean.	
  *
  *----------------------------------------------------------------------
  */
@@ -1231,10 +1237,10 @@ SegmentCleanProc(clientData, callInfoPtr)
 
 {
     register Lfs *lfsPtr = (Lfs *) clientData;       
-#define	MAX_NUM_TO_CLEAN 100
+#define	MAX_NUM_TO_CLEAN 25
     int		numSegsToClean;
     LfsSegList	segs[MAX_NUM_TO_CLEAN];
-    int		i, numCacheBlocksUsed, totalCacheBlocksUsed;
+    int		i, cacheBlocksInUse;
     LfsSeg	 *segPtr;
     Boolean	full;
     ReturnStatus	status;
@@ -1243,31 +1249,39 @@ SegmentCleanProc(clientData, callInfoPtr)
     Boolean		error;
     char		*memPtr;
 
+    lfsPtr->cleanerProcPtr = Proc_GetCurrentProc();
+    /*
+     * Reserve the memory and cache blocks needed for cleaning.
+     */
     LfsMemReserve(lfsPtr, &cacheBlocksReserved, &memPtr);
-    do { 
-	for (i = 0; i < LFS_MAX_NUM_MODS; i++) {
-	    clientDataArray[i] = (ClientData) NIL;
-	}
-	numSegsToClean = MAX_NUM_TO_CLEAN;
-	numSegsToClean = LfsGetSegsToClean(lfsPtr, 
-			 cacheBlocksReserved, numSegsToClean, segs);
-
-	if (numSegsToClean < 2) {
-	    break;
-	}
+    numSegsToClean = LfsGetSegsToClean(lfsPtr, MAX_NUM_TO_CLEAN, segs);
+    /*
+     * Loop until the there are less than two segments to clean.
+     */
+    while (numSegsToClean > 1) {
 	LFS_STATS_INC(lfsPtr->stats.cleaning.getSegsRequests);
 	LFS_STATS_ADD(lfsPtr->stats.cleaning.segsToClean, numSegsToClean);
-	printf("%s: Cleaning started - %d segs\n", lfsPtr->name, 
-				numSegsToClean);
+	    printf("%s: Cleaning started - %d segs\n", lfsPtr->name,
+			numSegsToClean);
 	/*
 	 * Reading in segments to clean.
 	 */
-	totalSize = 0;
-	totalCacheBlocksUsed = 0;
+	for (i = 0; i < LFS_MAX_NUM_MODS; i++) {
+	    clientDataArray[i] = (ClientData) NIL;
+	}
+	totalSize = 0;		  /* Total size in bytes of data cleaned. */
+	cacheBlocksInUse = 0; /* Number of cache blocks in use. */
 	numCleaned = 0;
-	for (i = 0; (i < numSegsToClean) && 
-		    (totalCacheBlocksUsed < cacheBlocksReserved); i++) { 
-	    int size;
+	for (i = 0; i < numSegsToClean; i++) {
+	    int size, numCacheBlocksUsed;
+	    /*
+	     * If this segment will no fit in the space reserved in the
+	     * cache then end cleaning.
+	     */
+	    if (cacheBlocksInUse + segs[i].activeBytes/FS_BLOCK_SIZE >
+						cacheBlocksReserved) {
+		break;
+	    }
 	    segPtr = CreateSegmentToClean(lfsPtr, segs[i].segNumber, memPtr);
 	    size = 0;
 	    numCacheBlocksUsed = 0;
@@ -1295,12 +1309,12 @@ SegmentCleanProc(clientData, callInfoPtr)
 		numCleaned++;
 	    }
 	    totalSize += size;
-	    totalCacheBlocksUsed += numCacheBlocksUsed;
+	    cacheBlocksInUse += numCacheBlocksUsed;
 	}
+	numSegsToClean = i;
 	LFS_STATS_ADD(lfsPtr->stats.cleaning.segReads,numCleaned);
 	LFS_STATS_ADD(lfsPtr->stats.cleaning.bytesCleaned,totalSize);
-	LFS_STATS_ADD(lfsPtr->stats.cleaning.cacheBlocksUsed,
-			totalCacheBlocksUsed);
+	LFS_STATS_ADD(lfsPtr->stats.cleaning.cacheBlocksUsed, cacheBlocksInUse);
 	/*
 	 * Write out segments cleaned.
 	 */
@@ -1353,11 +1367,13 @@ SegmentCleanProc(clientData, callInfoPtr)
 	}
 	printf("%s: Cleaned %d segments in %d segments\n", 
 		    lfsPtr->name, numCleaned, numWritten);
-    } while (numSegsToClean > 2);
+	numSegsToClean = LfsGetSegsToClean(lfsPtr, MAX_NUM_TO_CLEAN, segs);
+    }
     lfsPtr->segCache.valid = FALSE;
     LfsMemRelease(lfsPtr, cacheBlocksReserved, memPtr);
     LOCK_MONITOR;
     lfsPtr->activeFlags &= ~LFS_CLEANER_ACTIVE;
+    lfsPtr->cleanerProcPtr = (Proc_ControlBlock *) NIL;
     if (lfsPtr->activeFlags & LFS_CHECKPOINTWAIT_ACTIVE) {
 	UNLOCK_MONITOR;
 	status = LfsCheckPointFileSystem(lfsPtr, 0);
@@ -1547,8 +1563,9 @@ LfsSegCheckPoint(lfsPtr, flags, checkPointPtr, checkPointSizePtr)
 	     * Since the cleaner does checkpoints frequently, we can safely
 	     * ignore TIMER checkpoints.
 	     */
+	    (*checkPointSizePtr) = -1;
 	    UNLOCK_MONITOR;
-	    return GEN_EINTR;
+	    return SUCCESS;
         }
 	if (!(flags & (LFS_CHECKPOINT_DETACH|LFS_CHECKPOINT_CLEANER))) {
 	    /*
@@ -1562,6 +1579,7 @@ LfsSegCheckPoint(lfsPtr, flags, checkPointPtr, checkPointSizePtr)
 	    while (lfsPtr->activeFlags & LFS_CHECKPOINTWAIT_ACTIVE) { 
 		Sync_Wait(&lfsPtr->checkPointWait, FALSE);
 	    }
+	    (*checkPointSizePtr) = -1;
 	    UNLOCK_MONITOR;
 	    return SUCCESS;
 	} 
@@ -1574,8 +1592,9 @@ LfsSegCheckPoint(lfsPtr, flags, checkPointPtr, checkPointSizePtr)
     if (!(flags & LFS_CHECKPOINT_CLEANER)) { 
 	while (lfsPtr->activeFlags & LFS_CHECKPOINT_ACTIVE) {
 	    if (flags & LFS_CHECKPOINT_TIMER) {
+		(*checkPointSizePtr) = -1;
 		UNLOCK_MONITOR;
-		return GEN_EINTR;
+		return SUCCESS;
 	    }
 	    Sync_Wait(&lfsPtr->checkPointWait, FALSE);
 	}
