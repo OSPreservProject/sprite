@@ -18,6 +18,7 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
+#include "sync.h"
 #include "devRaid.h"
 #include "devRaidUtil.h"
 
