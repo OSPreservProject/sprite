@@ -110,11 +110,5 @@ int		 Net_AddrToID();
 extern Net_Route *Net_Arp();
 extern int	Net_RevArp();
 
-extern	ReturnStatus	Net_FsOpen();
-extern	ReturnStatus	Net_FsRead();
-extern	ReturnStatus	Net_FsWrite();
-extern	ReturnStatus	Net_FsIOControl();
-extern	ReturnStatus	Net_FsClose();
-extern	ReturnStatus	Net_FsSelect();
 
 #endif _NET

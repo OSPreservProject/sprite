@@ -27,6 +27,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "list.h"
 #include "net.h"
 #include "netInt.h"
+#include "devNet.h"
 #include "byte.h"
 #include "dbg.h"
 
@@ -431,7 +432,7 @@ Net_Input(packetPtr, packetLength)
             break;
 
 	default:
-	    NetEtherHandler(packetPtr, packetLength);
+	    DevNetEtherHandler(packetPtr, packetLength);
 	    break;
     }
 }

@@ -57,8 +57,6 @@ extern	NetEtherFuncs	netEtherFuncs;
 /*
  * Procedures for the internet packet handler.
  */
-extern	void	NetEtherHandler();
-
 extern	void	NetOutputWakeup();
 
 #endif _NETINT
