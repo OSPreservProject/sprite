@@ -19,6 +19,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sig.h"
 #include "mem.h"
 #include "list.h"
+#include "string.h"
 
 
 /*
@@ -109,15 +110,17 @@ Proc_Resume(procPtr)
  */
 
 ReturnStatus
-Proc_GetPCBInfo(firstPid, lastPid, bufferPtr, trueNumBuffersPtr)
+Proc_GetPCBInfo(firstPid, lastPid, bufferPtr, argsPtr, trueNumBuffersPtr)
     Proc_PID 		firstPid;	     /* First pid to get info for. */
     Proc_PID		lastPid;	     /* Last pid to get info for. */
     Proc_ControlBlock 	*bufferPtr;	     /* Pointer to buffers. */
+    Proc_PCBArgString	*argsPtr;	     /* Pointer to argument strings. */
     int 		*trueNumBuffersPtr;  /* The actual number of buffers 
 						used.*/
 {
     register Proc_ControlBlock 	*procPtr;
     int				i, j;
+    char 			buf[PROC_PCB_ARG_LENGTH];
 
     if ((firstPid != PROC_MY_PID) && (firstPid > lastPid)) {
 	return(SYS_INVALID_ARG);
@@ -131,10 +134,23 @@ Proc_GetPCBInfo(firstPid, lastPid, bufferPtr, trueNumBuffersPtr)
 	 *  Return PCB for the current process.
 	 */
 
+	procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
 	if (Proc_ByteCopy(FALSE, sizeof(Proc_ControlBlock), 
-		(Address) Proc_GetEffectiveProc(Sys_GetProcessorNumber()),
-		(Address) bufferPtr) != SUCCESS) {
+		(Address) procPtr, (Address) bufferPtr) != SUCCESS) {
 	    return(SYS_ARG_NOACCESS);
+	}
+	if (argsPtr != (Proc_PCBArgString *) NIL) {
+	    if (procPtr->argString != (Address) NIL) {
+		Proc_StringNCopy(PROC_PCB_ARG_LENGTH - 1, procPtr->argString,
+				 buf);
+		buf[PROC_PCB_ARG_LENGTH - 1] = '\0';
+	    } else {
+		buf[0] = '\0';
+	    }
+	    if (Proc_ByteCopy(FALSE, PROC_PCB_ARG_LENGTH, buf,
+			      (Address) argsPtr) != SUCCESS) {
+		return(SYS_ARG_NOACCESS);
+	    }
 	}
     } else {
 
@@ -153,6 +169,19 @@ Proc_GetPCBInfo(firstPid, lastPid, bufferPtr, trueNumBuffersPtr)
 	    if (Proc_ByteCopy(FALSE, sizeof(Proc_ControlBlock), 
 		(Address) procPtr, (Address) &(bufferPtr[j])) != SUCCESS) {
 		return(SYS_ARG_NOACCESS);
+	    }
+	    if (argsPtr != (Proc_PCBArgString *) NIL) {
+		if (procPtr->argString != (Address) NIL) {
+		    Proc_StringNCopy(PROC_PCB_ARG_LENGTH - 1,
+				     procPtr->argString, buf);
+		    buf[PROC_PCB_ARG_LENGTH - 1] = '\0';
+		} else {
+		    buf[0] = '\0';
+		}
+		if (Proc_ByteCopy(FALSE, PROC_PCB_ARG_LENGTH, buf,
+				  (Address) &(argsPtr[j])) != SUCCESS) {
+		    return(SYS_ARG_NOACCESS);
+		}
 	    }
 	}
 
@@ -460,8 +489,19 @@ Proc_Dump()
 	}
 	Sys_Printf(" %8x", pcbPtr->event);
 	Sys_Printf(" %8x", pcbPtr->progCounter);
-	Sys_Printf(" %s", pcbPtr->codeFileName);
-	Sys_Printf("\n");
+	if (pcbPtr->argString != (Address) NIL) {
+	    char cmd[30];
+	    char *space;
+
+	    String_NCopy(30, pcbPtr->argString, cmd);
+	    space = String_FindChar(cmd, ' ');
+	    if (space != (char *) NULL) {
+		*space = '\0';
+	    }
+	    Sys_Printf(" %s\n", cmd);
+	} else {
+	    Sys_Printf("\n");
+	}
     }
     return(SUCCESS);
 }
@@ -662,3 +702,4 @@ Proc_SetServerPriority(pid)
 {
     Proc_GetPCB(pid)->billingRate = PROC_NO_INTR_PRIORITY;
 }
+
