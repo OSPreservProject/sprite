@@ -636,7 +636,6 @@
 	rd_kpsw		destReg; \
 	extract		destReg, destReg, $3; \
 	sll		destReg,destReg,$2; \
-	add_nt		destReg, r0, $0 ; \
 	ld_32	destReg, destReg, $_machCurStatePtrs
 
 /*
@@ -656,10 +655,26 @@
 	rd_kpsw		tempReg; \
 	extract		tempReg, tempReg, $3; \
 	sll		tempReg,tempReg,$2; \
-	add_nt		tempReg, r0, $0 ; \
 	add_nt		tempReg,tempReg,$_machCurStatePtrs ; \
 	st_32		srcReg,tempReg,$0
 
+
+/*
+ * LD_CURRENT_PCB_PTR(destReg)
+ * Load a pointer to the PCB Proc_ControlBlock structure of the process 
+ * executing on this processor. The pointer can be found by indexing
+ * into runningProcesses using the pnum read from the kpsw.
+ */
+
+#define	LD_CURRENT_PCB_PTR(destReg) \
+	rd_kpsw		destReg; \
+	extract		destReg, destReg, $3; \
+	sll		destReg,destReg,$2; \
+	ld_32		destReg, destReg, $runningProcesses ; \
+	Nop ; \
+	ld_32		destReg, destReg, $0 ; \
+	Nop ; \
+	ld_32		destReg, destReg, $0 
 
 /*
  * GET_PNUM_FROM_BOARD(pnumReg) 
