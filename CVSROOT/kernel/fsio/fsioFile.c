@@ -1408,8 +1408,10 @@ Fsio_FileIOControl(streamPtr, ioctlPtr, replyPtr)
 	case IOC_SET_BITS:
 	case IOC_CLEAR_BITS:
 	    break;
+	case IOC_MAP:
 	case IOC_TRUNCATE: {
-	    int length;
+	    int arg;		/* The truncation length for IOC_TRUNCATE,
+				 * The mapping flag for IOC_MAP. */
 
 	    if (ioctlPtr->inBufSize < sizeof(int)) {
 		status = GEN_INVALID_ARG;
@@ -1419,7 +1421,7 @@ Fsio_FileIOControl(streamPtr, ioctlPtr, replyPtr)
 		int fmtStatus;
 		fmtStatus = Fmt_Convert("w", ioctlPtr->format, &inSize, 
 				ioctlPtr->inBuffer, mach_Format, &outSize,
-				(Address) &length);
+				(Address) &arg);
 		if (fmtStatus != 0) {
 		    printf("Format of ioctl failed <0x%x>\n", fmtStatus);
 		    status = GEN_INVALID_ARG;
@@ -1428,13 +1430,18 @@ Fsio_FileIOControl(streamPtr, ioctlPtr, replyPtr)
 		    status = GEN_INVALID_ARG;
 		}
 	    } else {
-		length = *(int *)ioctlPtr->inBuffer;
+		arg = *(int *)ioctlPtr->inBuffer;
 	    }
 	    if (status == SUCCESS) {
-		if (length < 0) {
-		    status = GEN_INVALID_ARG;
+		if (ioctlPtr->command == IOC_TRUNCATE) {
+		    if (arg < 0) {
+			status = GEN_INVALID_ARG;
+		    } else {
+			status = Fsio_FileTrunc(handlePtr, arg, 0);
+		    }
 		} else {
-		    status = Fsio_FileTrunc(handlePtr, length, 0);
+		    status = Fsconsist_MappedConsistency(handlePtr,
+			    ioctlPtr->uid, arg);
 		}
 	    }
 	    break;
@@ -1499,7 +1506,6 @@ Fsio_FileIOControl(streamPtr, ioctlPtr, replyPtr)
 	}
 	case IOC_SET_OWNER:
 	case IOC_GET_OWNER:
-	case IOC_MAP:
 	    status = GEN_NOT_IMPLEMENTED;
 	    break;
 	case IOC_PREFIX:
