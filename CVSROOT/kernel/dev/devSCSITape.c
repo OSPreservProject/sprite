@@ -600,7 +600,7 @@ DevSCSITapeWrite(devicePtr, writePtr, replyPtr)
 	    break;
 	}
     }
-    writePtr->length = totalTransfer;
+    replyPtr->length = totalTransfer;
     if (error == SUCCESS) {
 	tapePtr->state |= SCSI_TAPE_WRITTEN;
     }
