@@ -921,7 +921,7 @@ Sig_Pause(sigHoldMask)
      */
     (void) Sync_Wait(&signalCondition, TRUE);
 
-    if (procPtr->sigPendingMask & ((SigGetBitMask(SIG_MIGRATE_TRAP)) ||
+    if (procPtr->sigPendingMask & ((SigGetBitMask(SIG_MIGRATE_TRAP)) |
 				   (SigGetBitMask(SIG_MIGRATE_HOME)))) {
 	status = GEN_ABORTED_BY_SIGNAL;
     } else {
