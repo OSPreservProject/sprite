@@ -350,9 +350,9 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
     if (user) {
 	statePtr->userState.userStackPtr =
 		fromStatePtr->userState.userStackPtr;
-	Byte_Copy(sizeof(statePtr->userState.trapRegs),
-		  (Address)fromStatePtr->userState.trapRegs,
-		  (Address)statePtr->userState.trapRegs);
+	bcopy((Address)fromStatePtr->userState.trapRegs,
+		  (Address)statePtr->userState.trapRegs,
+		  sizeof(statePtr->userState.trapRegs));
     }
     if (startPC == (Address)NIL) {
 	stackPtr->startPC = (Address)fromStatePtr->userState.excStackPtr->pc;
@@ -519,9 +519,9 @@ Mach_CopyState(statePtr, destProcPtr)
     destStatePtr = destProcPtr->machStatePtr;
     destStatePtr->userState.userStackPtr =
 				statePtr->userState.userStackPtr;
-    Byte_Copy(sizeof(int) * (MACH_NUM_GPRS - 1),
-	      (Address)statePtr->userState.trapRegs,
-	      (Address)destStatePtr->userState.trapRegs);
+    bcopy((Address)statePtr->userState.trapRegs,
+	      (Address)destStatePtr->userState.trapRegs,
+	      sizeof(int) * (MACH_NUM_GPRS - 1));
     destStatePtr->userState.excStackPtr->pc = 
 				    statePtr->userState.excStackPtr->pc;
     destStatePtr->userState.excStackPtr->statusReg = 
@@ -553,9 +553,9 @@ Mach_GetDebugState(procPtr, debugStatePtr)
     register	Mach_State	*machStatePtr;
 
     machStatePtr = procPtr->machStatePtr;
-    Byte_Copy(sizeof(machStatePtr->userState.trapRegs),
-	      (Address)machStatePtr->userState.trapRegs,
-	      (Address)debugStatePtr->regState.regs);
+    bcopy((Address)machStatePtr->userState.trapRegs,
+	      (Address)debugStatePtr->regState.regs,
+	      sizeof(machStatePtr->userState.trapRegs));
     debugStatePtr->regState.regs[SP] = 
 			(int)machStatePtr->userState.userStackPtr;
     debugStatePtr->regState.pc = machStatePtr->userState.excStackPtr->pc;
@@ -588,9 +588,9 @@ Mach_SetDebugState(procPtr, debugStatePtr)
     register	Mach_State	*machStatePtr;
 
     machStatePtr = procPtr->machStatePtr;
-    Byte_Copy(sizeof(machStatePtr->userState.trapRegs) - sizeof(int),
-	      (Address)debugStatePtr->regState.regs,
-	      (Address)machStatePtr->userState.trapRegs);
+    bcopy((Address)debugStatePtr->regState.regs,
+	      (Address)machStatePtr->userState.trapRegs,
+	      sizeof(machStatePtr->userState.trapRegs) - sizeof(int));
     machStatePtr->userState.userStackPtr = 
 				(Address)debugStatePtr->regState.regs[SP];
     machStatePtr->userState.excStackPtr->pc = 
@@ -657,13 +657,13 @@ Mach_InitSyscall(callNum, numArgs, normalHandler, migratedHandler)
 {
     machMaxSysCall++;
     if (machMaxSysCall != callNum) {
-	Sys_Panic(SYS_FATAL, "out-of-order kernel call initialization");
+	panic("out-of-order kernel call initialization");
     }
     if (machMaxSysCall >= MAXCALLS) {
-	Sys_Panic(SYS_FATAL, "too many kernel calls");
+	panic("too many kernel calls");
     }
     if (numArgs > MAXARGS) {
-	Sys_Panic(SYS_FATAL, "too many arguments to kernel call");
+	panic("too many arguments to kernel call");
     }
     machArgOffsets[machMaxSysCall] = 8 + numArgs*4;
     machArgDispatch[machMaxSysCall] = 
@@ -696,8 +696,8 @@ Mach_SetHandler(vectorNumber, handler)
     int	*vecTablePtr;
 
     if (vectorNumber < 64 || vectorNumber > 255) {
-	Sys_Printf("%d: ", vectorNumber);
-	Sys_Panic(SYS_WARNING, "Bad vector number\n");
+	printf("%d: ", vectorNumber);
+	printf("Warning: Bad vector number\n");
     } else {
 	vecTablePtr = (int *) MachGetVBR();
 	vecTablePtr[vectorNumber] = (int)handler;
@@ -778,19 +778,18 @@ MachTrap(trapStack)
 
 #ifndef SUN3
 		if (trapStack.busErrorReg.parErrU || trapStack.busErrorReg.parErrL) {
-		    Sys_Panic(SYS_FATAL, "Parity error!!!\n");
+		    panic("Parity error!!!\n");
 		    return(MACH_KERN_ERROR);
 		}
 
 		if (trapStack.busErrorReg.busErr) {
-		    Sys_Panic(SYS_FATAL, "System bus error\n");
+		    panic("System bus error\n");
 		    return(MACH_KERN_ERROR);
 		}
 #endif
 
 		if (procPtr == (Proc_ControlBlock *)NIL) {
-		    Sys_Panic(SYS_FATAL, 
-			   "MachTrap: Current process is NIL!! Trap PC 0x%x\n",
+		    panic("MachTrap: Current process is NIL!! Trap PC 0x%x\n",
 			   (unsigned) trapStack.excStack.pc);
 		}
 
@@ -870,7 +869,7 @@ MachTrap(trapStack)
 		 * Ignore this for now because otherwise we can't debug mint
 		 */
 		if (!dbg_BeingDebugged) {
-		    Sys_Printf("MachTrap: Spurious interrupt\n");
+		    printf("MachTrap: Spurious interrupt\n");
 		}
 		return(MACH_OK);
 
@@ -915,7 +914,7 @@ MachTrap(trapStack)
 
 #ifndef SUN3
 	    if (trapStack.busErrorReg.parErrU || trapStack.busErrorReg.parErrL) {
-		Sys_Panic(SYS_FATAL, "Parity error!!!\n");
+		panic("Parity error!!!\n");
 		return(MACH_KERN_ERROR);
 	    }
 #endif
@@ -933,7 +932,7 @@ MachTrap(trapStack)
 #endif
 	if (Vm_PageIn((Address)trapStack.excStack.tail.addrBusErr.faultAddr, 
 		      protError) != SUCCESS) {
-		Sys_Printf(
+		printf(
 		    "MachTrap: Bus error in user proc %X, PC = %x, addr = %x BR Reg %x\n",
 			    procPtr->processID, 
 			    trapStack.excStack.pc,
@@ -1181,20 +1180,21 @@ SetupSigHandler(procPtr, sigStackPtr, pc)
      * Copy the exception stack onto the signal stack.
      */
     excStackSize = Mach_GetExcStackSize(statePtr->userState.excStackPtr);
-    Byte_Copy(excStackSize, (Address)statePtr->userState.excStackPtr,
-	      (Address)&(sigStackPtr->sigContext.machContext.excStack));
+    bcopy((Address)statePtr->userState.excStackPtr,
+	      (Address)&(sigStackPtr->sigContext.machContext.excStack),
+	      excStackSize);
     /*
      * Copy the user state onto the signal stack.
      */
-    Byte_Copy(sizeof(Mach_UserState), (Address)&statePtr->userState,
-	      (Address)&(sigStackPtr->sigContext.machContext.userState));
+    bcopy((Address)&statePtr->userState,
+	      (Address)&(sigStackPtr->sigContext.machContext.userState),
+	      sizeof(Mach_UserState));
     /*
      * Copy the stack out to user space.
      */
     if (Vm_CopyOut(sizeof(SignalStack), (Address)sigStackPtr, 
 			(Address)usp) != SUCCESS) {
-        Sys_Panic(SYS_WARNING,
-                  "HandleSig: No room on stack for signal, PID=%x.\n",
+        printf("Warning: HandleSig: No room on stack for signal, PID=%x.\n",
                   procPtr->processID);
         Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
     }
@@ -1207,7 +1207,7 @@ SetupSigHandler(procPtr, sigStackPtr, pc)
      */
     if (statePtr->userState.excStackPtr !=
 			(Mach_ExcStack *)statePtr->userState.trapRegs[SP]) {
-	Sys_Panic(SYS_FATAL, "Mach_HandleSig: SP != excStackPtr\n");
+	panic("Mach_HandleSig: SP != excStackPtr\n");
     }
     statePtr->userState.userStackPtr = usp;
     excStackPtr = (Mach_ExcStack *) ((Address)statePtr->userState.excStackPtr + 
@@ -1251,9 +1251,8 @@ ReturnFromSigHandler(procPtr)
     if (Vm_CopyIn(sizeof(Sig_Stack) + sizeof(Sig_Context),
 		  (Address) (statePtr->userState.userStackPtr), 
 		  (Address) &sigStack.sigStack) != SUCCESS) {
-	Sys_Panic(SYS_WARNING,
-	  "Mach_Code: Stack too small to extract trap info, PID=%x.\n",
-	  procPtr->processID);
+	printf("%s Mach_Code: Stack too small to extract trap info, PID=%x.\n",
+		"Warning:", procPtr->processID);
 	Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
     }
     sigStack.sigStack.contextPtr = &sigStack.sigContext;
@@ -1267,9 +1266,9 @@ ReturnFromSigHandler(procPtr)
      */
     statePtr->userState.userStackPtr = 
 		    sigStack.sigContext.machContext.userState.userStackPtr;
-    Byte_Copy(sizeof(int) * (MACH_NUM_GPRS - 1),
-	      (Address)sigStack.sigContext.machContext.userState.trapRegs,
-	      (Address)statePtr->userState.trapRegs);
+    bcopy((Address)sigStack.sigContext.machContext.userState.trapRegs,
+	      (Address)statePtr->userState.trapRegs,
+	      sizeof(int) * (MACH_NUM_GPRS - 1));
 
     /*
      * Verify that the exception stack is OK.
@@ -1277,18 +1276,18 @@ ReturnFromSigHandler(procPtr)
     curSize = Mach_GetExcStackSize(statePtr->userState.excStackPtr);
     oldSize = Mach_GetExcStackSize(&sigStack.sigContext.machContext.excStack);
     if (oldSize == -1) {
-	Sys_Printf("Mach_Code: Bad signal stack type.\n");
+	printf("Mach_Code: Bad signal stack type.\n");
 	Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
     }
     if (sigStack.sigContext.machContext.excStack.statusReg & MACH_SR_SUPSTATE) {
-	Sys_Printf("Mach_Code: User set kernel bit on signal stack\n");
+	printf("Mach_Code: User set kernel bit on signal stack\n");
 	Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
     }
     /*
      * Copy the exception stack in.
      */
-    Byte_Copy(oldSize, (Address)&sigStack.sigContext.machContext.excStack,
-	      (Address)&statePtr->sigExcStack);
+    bcopy((Address)&sigStack.sigContext.machContext.excStack,
+	      (Address)&statePtr->sigExcStack, oldSize);
     statePtr->sigExcStackSize = oldSize;
     /*
      * Set the restored stack pointer to point to where the
@@ -1334,7 +1333,7 @@ Mach_GetExcStackSize(excStackPtr)
 	case MACH_LONG_BUS_FAULT:
 	    return(MACH_LONG_BUS_FAULT_SIZE);
 	default:
-	    Sys_Panic(SYS_WARNING, "Mach_GetTrapStackSize: Bad stack format.\n");
+	    printf("Warning: Mach_GetTrapStackSize: Bad stack format.\n");
 	    return(-1);
     }
 }
