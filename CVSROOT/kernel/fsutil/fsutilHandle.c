@@ -28,6 +28,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsLocalDomain.h"
 #include "fsDisk.h"
 #include "fsFile.h"
+#include "fsTrace.h"
 #include "fsNamedPipe.h"
 #include "hash.h"
 
@@ -35,7 +36,7 @@ static Sync_Lock fileHashLock = {0, 0};
 #define	LOCKPTR	&fileHashLock
 
 /*
- * Macro for debug tracing.
+ * Macro for debug trace prints.
  */
 int fsHandleTrace = FALSE;
 #ifndef CLEAN
@@ -75,8 +76,9 @@ Hash_Table	*fileHashTable = &fileHashTableStruct;
 #define FS_HANDLE_LOCKED	0x2
 #define FS_HANDLE_WANTED	0x4
 #define FS_HANDLE_REMOVED	0x8
-#define FS_HANDLE_INVALID	0x10
-#define FS_HANDLE_DONT_CACHE	0x20
+#define FS_HANDLE_FREED		0x10
+#define FS_HANDLE_INVALID	0x20
+#define FS_HANDLE_DONT_CACHE	0x40
 
 /*
  * Macro to lock a file handle.
@@ -126,7 +128,7 @@ FsHandleInit(fileHashSize)
 
 int	fsMaxNumHandles = 1024;
 int	fsMinScavengeInterval = 5;
-int	lastScavengeTime = 0;
+extern	fsLastScavengeTime;
 
 
 /*
@@ -175,7 +177,7 @@ again:
 	 * limit on the number of handles.
 	 */
 	if (fsStats.handle.exists > fsMaxNumHandles &&
-	    fsTimeInSeconds - lastScavengeTime > fsMinScavengeInterval) {
+	    fsTimeInSeconds - fsLastScavengeTime > fsMinScavengeInterval) {
 	    Fs_HandleScavengeStub((ClientData)0);
 	}
 	/*
@@ -189,7 +191,7 @@ again:
 	hdrPtr->refCount = 1;
 	hdrPtr->flags |= FS_HANDLE_INSTALLED;
 	Hash_SetValue(hashEntryPtr, hdrPtr);
-	HANDLE_TRACE(hdrPtr, "new");
+	FS_TRACE_HANDLE(FS_TRACE_INSTALL_NEW, hdrPtr);
     } else {
 	found = TRUE;
 	hdrPtr = (FsHandleHeader *) Hash_GetValue(hashEntryPtr);
@@ -199,14 +201,13 @@ again:
 	     * the reference count until we lock it, so we have to
 	     * jump back and rehash as the handle may have been deleted.
 	     */
-	    HANDLE_TRACE(hdrPtr, "install waiting");
 	    (void) Sync_Wait(&hdrPtr->unlocked, FALSE);
 	    fsStats.handle.lockWaits++;
 	    goto again;
 	}
 	fsStats.handle.installHits++;
 	hdrPtr->refCount++;
-	HANDLE_TRACE(hdrPtr, "found");
+	FS_TRACE_HANDLE(FS_TRACE_INSTALL_HIT, hdrPtr);
     }
     hdrPtr->flags |= FS_HANDLE_LOCKED;
     fsStats.handle.locks++;
@@ -263,14 +264,12 @@ again:
 	 * to increment the reference count on it.
 	 */
 	fsStats.handle.lockWaits++;
-	HANDLE_TRACE(hdrPtr, "fetch waiting");
 	(void) Sync_Wait(&hdrPtr->unlocked, FALSE);
 	goto again;
     }
     fsStats.handle.locks++;
     hdrPtr->flags |= FS_HANDLE_LOCKED;
     hdrPtr->refCount++;
-    HANDLE_TRACE(hdrPtr, "fetch");
 
     UNLOCK_MONITOR;
     return(hdrPtr);
@@ -329,7 +328,6 @@ FsHandleIncRefCount(hdrPtr, amount)
     LOCK_MONITOR;
 
     hdrPtr->refCount += amount;
-    HANDLE_TRACE(hdrPtr, "inc ref");
 
     UNLOCK_MONITOR;
 }
@@ -360,7 +358,6 @@ FsHandleDecRefCount(hdrPtr)
     LOCK_MONITOR;
 
     hdrPtr->refCount--;
-    HANDLE_TRACE(hdrPtr, "dec ref");
 
     UNLOCK_MONITOR;
 }
@@ -393,7 +390,6 @@ FsHandleDup(hdrPtr)
     LOCK_HANDLE(hdrPtr);
 
     hdrPtr->refCount++;
-    HANDLE_TRACE(hdrPtr, "dup");
 
     UNLOCK_MONITOR;
     return(hdrPtr);
@@ -510,7 +506,6 @@ FsHandleReleaseHdr(hdrPtr, locked)
 	}
     }
     hdrPtr->refCount--;
-    HANDLE_TRACE(hdrPtr, "released");
 
     if (hdrPtr->refCount < 0) {
 	UNLOCK_MONITOR;
@@ -525,8 +520,10 @@ FsHandleReleaseHdr(hdrPtr, locked)
 	 * The handle has been removed, we are the last reference, and
 	 * noone in GetNextHandle is trying to grab this handle.
 	 */
+	FS_TRACE_HANDLE(FS_TRACE_RELEASE_FREE, hdrPtr);
         Mem_Free((Address)hdrPtr);
      } else {
+	FS_TRACE_HANDLE(FS_TRACE_RELEASE_LEAVE, hdrPtr);
 	UNLOCK_HANDLE(hdrPtr);
     }
     UNLOCK_MONITOR;
@@ -557,8 +554,6 @@ FsHandleRemoveInt(hdrPtr)
     register FsHandleHeader *hdrPtr;  /* Header of handle to remove. */
 {
     register	Hash_Entry	*hashEntryPtr;
-
-    HANDLE_TRACE(hdrPtr, "remove");
 
     if (!(hdrPtr->flags & FS_HANDLE_INVALID)) {
 	hashEntryPtr = Hash_LookOnly(fileHashTable, (Address) &hdrPtr->fileID);
@@ -591,8 +586,10 @@ FsHandleRemoveInt(hdrPtr)
 	 * or simply has a reference to it.  GetNextHandle or HandleRelease
 	 * will free the handle for us later.
 	 */
+	FS_TRACE_HANDLE(FS_TRACE_REMOVE_LEAVE, hdrPtr);
 	hdrPtr->flags |= FS_HANDLE_REMOVED;
     } else {
+	FS_TRACE_HANDLE(FS_TRACE_REMOVE_FREE, hdrPtr);
 	Mem_Free((Address) hdrPtr);
     }
 }
@@ -699,6 +696,22 @@ FsGetNextHandle(hashSearchPtr)
 	 hashEntryPtr = Hash_Next(fileHashTable, hashSearchPtr)) {
 	hdrPtr = (FsHandleHeader *) Hash_GetValue(hashEntryPtr);
 	/*
+	 * See if another iterator is blocked on this handle, and skip
+	 * it if there is one.  This is done for two reasons,
+	 * 1) to avoid freeing the handle more than once (once for each
+	 *	iterator that sets the FS_HANDLE_WANTED bit) if it gets
+	 *	removed while we are waiting for it.  This problem could
+	 *	be fixed by adding a waitCount field to the handle header.
+	 * 2) to avoid hanging the system on single locked handle. 
+	 */
+	if ((hdrPtr->flags & FS_HANDLE_WANTED) &&
+	    (hdrPtr->flags & FS_HANDLE_LOCKED)){
+	    Sys_Panic(SYS_WARNING, "GetNextHandle skipping <%d,%d> type %d hash 0x%x\n",
+		hdrPtr->fileID.major, hdrPtr->fileID.minor,
+		hdrPtr->fileID.type, hashEntryPtr);
+	    continue;
+	}
+	/*
 	 * Mark the handle so that it won't get blown away while we are
 	 * trying to lock it and then lock it.  If it gets removed from
 	 * the hash table while we were locking it, then throw it away.
@@ -762,7 +775,9 @@ FsHandleInvalidate(hdrPtr)
     if (hashEntryPtr == (Hash_Entry *) NIL) {
 	UNLOCK_MONITOR;
 	Sys_Panic(SYS_FATAL,
-		"FsHandleInvalidate: Could not find handle in hash table.\n");
+		"FsHandleInvalidate: Can't find <%d,%d> type %d\n",
+		    hdrPtr->fileID.major, hdrPtr->fileID.minor,
+		    hdrPtr->fileID.type);
 	return;
     }
     Hash_Delete(fileHashTable, hashEntryPtr);
