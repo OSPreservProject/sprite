@@ -38,6 +38,10 @@
  *	DEV_AUDIO		Audio device
  *	DEV_SCSI_ROBOT		Tape robot on the SCSI bus.
  *      DEV_SMEM                Kernel memory image
+ *	DEV_CLIENT_STATE	Device for tracking clients of server.
+ *	DEV_STDFB		"Standard" frame buffer. The idea is that this
+ *				device behaves the same on machine types,
+ *				unlike the mouse or graphics device.
  *
  *
  * NOTE: These numbers correspond to the major numbers for the devices
@@ -58,8 +62,19 @@
 #define	DEV_SCSI_HBA		9
 #define	DEV_RAID		10
 #define	DEV_DEBUG		11
-#define DEV_SCSI_ROBOT		20
+/* Number 12 taken below. */
+#define DEV_PLACEHOLDER_3	13      /* for ds3100 unused graphics device */
 #define DEV_SMEM                14
+/* #define DEV_ZDC_DISK		14	Only on sequent symmetry */
+#define DEV_AUDIO		15
+#define DEV_VMELINK		16
+#define DEV_STDFB 		17
+#define DEV_ATC			18      /* used by sun4 only */
+#define DEV_PLACEHOLDER_4       18      /* used by decstations */
+#define DEV_PLACEHOLDER_5	19
+#define DEV_SCSI_ROBOT		20
+#define	DEV_XBUS		21
+#define	DEV_CLIENT_STATE	22
 
 
 #if (!defined(ds3100)) && (!defined(ds5000))
@@ -80,26 +95,8 @@
 #define DEV_SII_HBA	0
 #endif 
 
-#define DEV_PLACEHOLDER_3	13      /* for ds3100 unused graphics device */
-#define DEV_AUDIO		15
-#define DEV_VMELINK		16
-#define DEV_ATC			18      /* used by sun4 only */
-#define DEV_PLACEHOLDER_4       18      /* used by decstations */
-#define DEV_PLACEHOLDER_5	19
-#define	DEV_XBUS		21
 
-/*
- * "Standard" frame buffer. The idea is that this device behave the same on
- * machine types, unlike the mouse or graphics device.
- */
 
-#define DEV_STDFB 17
-
-/*
- * Following device(s) exist only on Sequent Symmetry
- */
-
-/*#define DEV_ZDC_DISK		14*/
 
 /*
  * The following device types are defined for SPUR as of 7/15/89.  They
