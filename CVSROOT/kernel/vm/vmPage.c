@@ -1348,11 +1348,13 @@ Vm_ReservePage(pfNum)
 
     LOCK_MONITOR;
 
-    corePtr = &coreMap[pfNum];
-    TakeOffAllocList(corePtr);
-    corePtr->virtPage.segPtr = vm_SysSegPtr;
-    corePtr->flags = 0;
-    corePtr->lockCount = 1;
+    if (pfNum < vmStat.numPhysPages) {
+	corePtr = &coreMap[pfNum];
+	TakeOffAllocList(corePtr);
+	corePtr->virtPage.segPtr = vm_SysSegPtr;
+	corePtr->flags = 0;
+	corePtr->lockCount = 1;
+    }
 
     UNLOCK_MONITOR;
 }
