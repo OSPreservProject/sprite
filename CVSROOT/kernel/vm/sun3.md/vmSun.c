@@ -149,7 +149,8 @@ static Sync_Semaphore volatile *vmMachMutexPtr = &vmMachMutex;
 #define	SET_ALL_PAGE_MAP(virtAddr, pte) { \
     int	__i; \
     for (__i = 0; __i < VMMACH_CLUSTER_SIZE; __i++) { \
-	VmMachSetPageMap((virtAddr) + __i * VMMACH_PAGE_SIZE_INT, (pte) + __i); \
+	VmMachSetPageMap((Address)((virtAddr) + __i * VMMACH_PAGE_SIZE_INT),\
+	(VmMachPTE)((pte) + __i)); \
     } \
 }
 
@@ -237,8 +238,15 @@ static	VmMachPTE		*refModMap;
 /*
  * Macro to get a pointer into a software segment's hardware segment table.
  */
+#ifdef CLEAN
 #define GetHardSegPtr(machPtr, segNum) \
     ((machPtr)->segTablePtr + (segNum) - (machPtr)->offset)
+#else
+#define GetHardSegPtr(machPtr, segNum) \
+    ( ((unsigned)((segNum) - (machPtr)->offset) > (machPtr)->numSegs) ? \
+    (panic("Invalid segNum\n"),(machPtr)->segTablePtr) : \
+    ((machPtr)->segTablePtr + (segNum) - (machPtr)->offset) )
+#endif
 
 /*
  * The maximum amount of kernel code + data available. 
@@ -2102,7 +2110,7 @@ VmMach_SetPageProt(virtAddrPtr, softPTE)
     MASTER_LOCK(vmMachMutexPtr);
 
     machPtr = virtAddrPtr->segPtr->machPtr;
-    pmegNum = *GetHardSegPtr(machPtr, PageToSeg(virtAddrPtr->page));
+    pmegNum = *GetHardSegPtr(machPtr, PageToSeg(virtAddrPtr->page-segOffset(virtAddrPtr)+virtAddrPtr->segPtr->offset));
     if (pmegNum != VMMACH_INV_PMEG) {
 	virtAddr = ((virtAddrPtr->page << VMMACH_PAGE_SHIFT) & 
 			VMMACH_PAGE_MASK) + vmMachPTESegAddr;	
@@ -2174,7 +2182,7 @@ VmMach_AllocCheck(virtAddrPtr, virtFrameNum, refPtr, modPtr)
     *modPtr = refModMap[virtFrameNum] & VMMACH_MODIFIED_BIT;
     if (!*refPtr || !*modPtr) {
 	machPtr = virtAddrPtr->segPtr->machPtr;
-	pmegNum = *GetHardSegPtr(machPtr, PageToSeg(virtAddrPtr->page));
+	pmegNum = *GetHardSegPtr(machPtr, PageToSeg(virtAddrPtr->page-segOffset(virtAddrPtr)+virtAddrPtr->segPtr->offset));
 	if (pmegNum != VMMACH_INV_PMEG) {
 	    hardPTE = 0;
 	    virtAddr = 
@@ -2247,7 +2255,8 @@ VmMach_GetRefModBits(virtAddrPtr, virtFrameNum, refPtr, modPtr)
     *modPtr = refModMap[virtFrameNum] & VMMACH_MODIFIED_BIT;
     if (!*refPtr || !*modPtr) {
 	machPtr = virtAddrPtr->segPtr->machPtr;
-	pmegNum = *GetHardSegPtr(machPtr, PageToSeg(virtAddrPtr->page));
+	pmegNum = *GetHardSegPtr(machPtr, PageToSeg(virtAddrPtr->page-
+		segOffset(virtAddrPtr)+virtAddrPtr->segPtr->offset));
 	if (pmegNum != VMMACH_INV_PMEG) {
 	    hardPTE = 0;
 	    virtAddr = 
@@ -2302,7 +2311,8 @@ VmMach_ClearRefBit(virtAddrPtr, virtFrameNum)
 
     refModMap[virtFrameNum] &= ~VMMACH_REFERENCED_BIT;
     machPtr = virtAddrPtr->segPtr->machPtr;
-    pmegNum = *GetHardSegPtr(machPtr, PageToSeg(virtAddrPtr->page));
+    pmegNum = *GetHardSegPtr(machPtr, PageToSeg(virtAddrPtr->page-
+	    segOffset(virtAddrPtr)+virtAddrPtr->segPtr->offset));
     if (pmegNum != VMMACH_INV_PMEG) {
 	virtAddr = ((virtAddrPtr->page << VMMACH_PAGE_SHIFT) & 
 			VMMACH_PAGE_MASK) + vmMachPTESegAddr;
@@ -2361,7 +2371,8 @@ VmMach_ClearModBit(virtAddrPtr, virtFrameNum)
 
     refModMap[virtFrameNum] &= ~VMMACH_MODIFIED_BIT;
     machPtr = virtAddrPtr->segPtr->machPtr;
-    pmegNum = *GetHardSegPtr(machPtr, PageToSeg(virtAddrPtr->page));
+    pmegNum = *GetHardSegPtr(machPtr, PageToSeg(virtAddrPtr->page-
+	    segOffset(virtAddrPtr)+virtAddrPtr->segPtr->offset));
     if (pmegNum != VMMACH_INV_PMEG) {
 	virtAddr = ((virtAddrPtr->page << VMMACH_PAGE_SHIFT) & 
 			VMMACH_PAGE_MASK) + vmMachPTESegAddr;
@@ -2430,7 +2441,8 @@ VmMach_PageValidate(virtAddrPtr, pte)
     /*
      * Find out the hardware segment that has to be mapped.
      */
-    hardSeg = PageToSeg(virtAddrPtr->page);
+    hardSeg = PageToSeg(virtAddrPtr->page-segOffset(virtAddrPtr)+
+	    segPtr->offset);
     segTablePtr = GetHardSegPtr(segPtr->machPtr, hardSeg);
 
     if (*segTablePtr == VMMACH_INV_PMEG) {
@@ -2560,7 +2572,8 @@ PageInvalidate(virtAddrPtr, virtPage, segDeletion)
 	return;
     }
     machPtr = virtAddrPtr->segPtr->machPtr;
-    pmegNum = *GetHardSegPtr(machPtr, PageToSeg(virtAddrPtr->page));
+    pmegNum = *GetHardSegPtr(machPtr, PageToSeg(virtAddrPtr->page-
+	    segOffset(virtAddrPtr)+virtAddrPtr->segPtr->offset));
     if (pmegNum == VMMACH_INV_PMEG) {
 	return;
     }
@@ -2667,8 +2680,10 @@ VmMach_PinUserPages(mapType, virtAddrPtr, lastPage)
 
     machPtr = virtAddrPtr->segPtr->machPtr;
 
-    firstSeg = PageToSeg(virtAddrPtr->page);
-    lastSeg = PageToSeg(lastPage);
+    firstSeg = PageToSeg(virtAddrPtr->page-segOffset(virtAddrPtr)+
+	    virtAddrPtr->segPtr->offset);
+    lastSeg = PageToSeg(lastPage-segOffset(virtAddrPtr)+
+	    virtAddrPtr->segPtr->offset);
     /*
      * Lock down the PMEG behind the first segment.
      */
@@ -2721,8 +2736,10 @@ VmMach_UnpinUserPages(virtAddrPtr, lastPage)
     MASTER_LOCK(vmMachMutexPtr);
 
     machPtr = virtAddrPtr->segPtr->machPtr;
-    firstSeg = PageToSeg(virtAddrPtr->page);
-    lastSeg = PageToSeg(lastPage);
+    firstSeg = PageToSeg(virtAddrPtr->page -
+	    segOffset(virtAddrPtr)+virtAddrPtr->segPtr->offset);
+    lastSeg = PageToSeg(lastPage -
+	    segOffset(virtAddrPtr)+virtAddrPtr->segPtr->offset);
     for (; firstSeg <= lastSeg; firstSeg++) {
 	pmegNum = *GetHardSegPtr(machPtr, firstSeg);
 	if (pmegNum == VMMACH_INV_PMEG) {
@@ -2845,7 +2862,7 @@ VmMach_MapInDevice(devPhysAddr, type)
 	oldContext = VmMachGetContextReg();
 	for (i = 0; i < VMMACH_NUM_CONTEXTS; i++) {
 	    VmMachSetContextReg(i);
-	    VmMachSetSegMap(freePMEGAddr, pmeg);
+	    VmMachSetSegMap(freePMEGAddr, (unsigned char) pmeg);
 	}
 	VmMachSetContextReg(oldContext);
 	VmMachSetPageMap(freePMEGAddr, pte);
@@ -2917,6 +2934,7 @@ DevBufferInit()
  * 32Bit DMA stubs for the sun3.  The 32-bit user dvma stuff isn't on the
  * sun3's, just the sun4's.
  */
+/*ARGSUSED*/
 Address
 VmMach_32BitDMAAlloc(numBytes, srcAddr)
     int		numBytes;		/* Number of bytes to map in. */
@@ -2924,6 +2942,7 @@ VmMach_32BitDMAAlloc(numBytes, srcAddr)
 {
     panic("VmMach_32BitDMAAlloc: should never be called on a sun3!\n");
 }
+/*ARGSUSED*/
 void
 VmMach_32BitDMAFree(numBytes, mapAddr)
     int		numBytes;		/* Number of bytes to map in. */
@@ -2931,7 +2950,6 @@ VmMach_32BitDMAFree(numBytes, mapAddr)
 {
     panic("VmMach_32BitDMAFree: should never be called on a sun3!\n");
 }
-
 
 static	Boolean	dmaPageBitMap[VMMACH_DMA_SIZE / VMMACH_PAGE_SIZE_INT];
 
@@ -3037,8 +3055,6 @@ VmMach_DMAFree(numBytes, mapAddr)
     Address	endAddr;
     int		numPages;
     int		i, j;
-    Boolean	foundIt = FALSE;
-    int		virtPage;
  
     /* calculate number of pages to free */
 						/* beginning of first page */
@@ -3667,6 +3683,9 @@ VmMach_SharedProcStart(procPtr)
     sharedData->allocFirstFree = 0;
     bzero((Address) sharedData->allocVector, VMMACH_SHARED_NUM_BLOCKS*
 	    sizeof(int));
+    procPtr->vmPtr->sharedStart = (Address) VMMACH_SHARED_START_ADDR;
+    procPtr->vmPtr->sharedEnd = (Address) VMMACH_SHARED_START_ADDR +
+	    VMMACH_USER_SHARED_PAGES*VMMACH_PAGE_SIZE;
 }
 
 /*
