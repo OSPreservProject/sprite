@@ -477,6 +477,7 @@ Fsdm_InstallDomain(domainNumber, serverID, prefixName, flags, domainPtrPtr)
 	if (!(oldDomainPtr->flags & FSDM_DOMAIN_DOWN)) {
 	    printf("Fsdm_AttachDisk: %s already attached at domain %d\n",
 			oldDomainPtr->domainPrefix, domainNumber);
+	    *domainPtrPtr = oldDomainPtr;
 	    UNLOCK_MONITOR;
 	    return(FS_FILE_BUSY);
 	} 
