@@ -23,6 +23,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <sprite.h>
 #include <stdio.h>
 #include <bstring.h>
+#include <string.h>
 #include <fs.h>
 #include <dev.h>
 #include <devInt.h>
@@ -33,6 +34,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <stdlib.h>
 #include <dbg.h>
 #include <mach.h>
+#include <string.h>
      
 static ReturnStatus InitExbRobot _ARGS_((Fs_Device *devicePtr,
      ScsiDevice *devPtr));
@@ -206,6 +208,7 @@ DevSCSIExbRobotError(devPtr, scsiCmdPtr)
     statusByte = scsiCmdPtr->statusByte;
     statusPtr = (ScsiStatus *) &statusByte;
     sensePtr = (ScsiClass0Sense *) scsiCmdPtr->senseBuffer;
+    senseLength = scsiCmdPtr->senseLen;
     robotPtr = (ScsiExbRobot *) devPtr->clientData;
     name = devPtr->locationName;
 
@@ -229,7 +232,8 @@ DevSCSIExbRobotError(devPtr, scsiCmdPtr)
      * The EXB-120 only returns class 7 (extended sense) data.
      */
     
-    DevScsiMapClass7Sense(senseLength, sensePtr, &status, errorString);
+    DevScsiMapClass7Sense(senseLength, (char *)sensePtr,
+			  &status, errorString);
     if (errorString[0]) {
 	printf("Warning: %s at %s error: %s\n", robotPtr->name, name,
 	       errorString);
@@ -362,7 +366,6 @@ DevSCSIExbRobotIOControl(devicePtr, ioctlPtr, replyPtr)
     int 		scsiCmd;
     int 		amountTransferred;
     ExbRobotModeSelectData	modeSelData;
-    char		senseBuffer[SCSI_EXB_ROBOT_SENSE_LEN];
     
     bzero((char *) &scsiRobotCmd, sizeof(ScsiCmd));
 
@@ -385,7 +388,8 @@ DevSCSIExbRobotIOControl(devicePtr, ioctlPtr, replyPtr)
 	if (ioctlPtr->outBuffer == NULL) {
 	    return DEV_INVALID_ARG;
 	}
-	ExbRobotInquiry(&scsiRobotCmd, ioctlPtr->outBuffer);
+	ExbRobotInquiry(&scsiRobotCmd,
+			(ExbRobotInquiryData *)ioctlPtr->outBuffer);
 	break;
     case IOC_ROBOT_MODE_SEL: 
 	scsiCmd = SCSI_MODE_SELECT;
@@ -394,7 +398,8 @@ DevSCSIExbRobotIOControl(devicePtr, ioctlPtr, replyPtr)
     case IOC_ROBOT_DISPLAY: 
 	scsiCmd = SCSI_MODE_SELECT;
 	bzero((char *) &modeSelData, sizeof(ExbRobotModeSelectData));
-	ExbModeSelect(&scsiRobotCmd, cmdPtr, &modeSelData, sizeof(modeSelData));
+	ExbModeSelect(&scsiRobotCmd, cmdPtr,
+		      (Address)&modeSelData, sizeof(modeSelData));
 	break;
     case IOC_ROBOT_MOVE_MEDIUM:
 	scsiCmd = SCSI_MOVE_MEDIUM;
@@ -417,7 +422,8 @@ DevSCSIExbRobotIOControl(devicePtr, ioctlPtr, replyPtr)
 	if (ioctlPtr->outBuffer == NULL) {
 	    return DEV_INVALID_ARG;
 	}
-	ExbReqSense(&scsiRobotCmd, ioctlPtr->outBuffer);
+	ExbReqSense(&scsiRobotCmd,
+		    (ExbRobotSenseData *)ioctlPtr->outBuffer);
 	break;
     default:
 	/* Invalid or Command not supported. */

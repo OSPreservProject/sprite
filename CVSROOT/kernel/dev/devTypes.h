@@ -30,13 +30,13 @@
  *	DEV_KEYBOARD		Keyboard
  *	DEV_SCSI_DISK		Disk on the SCSI bus
  *	DEV_SCSI_TAPE		Tape drive on the SCSI bus
- *	DEV_SCSI_ROBOT		Tape robot on the SCSI bus.
  *	DEV_XYLOGICS		Xylogics 450 controller
  *	DEV_SCSI_HBA		Raw SCSI HBA device driver
  *	DEV_RAID		Raw interface to disk array
  *	DEV_DEBUG		For debugging disk arrays?
  *	DEV_MOUSE		Mouse and keystroke info for window systems
  *	DEV_AUDIO		Audio device
+ *	DEV_SCSI_ROBOT		Tape robot on the SCSI bus.
  *
  *
  * NOTE: These numbers correspond to the major numbers for the devices
