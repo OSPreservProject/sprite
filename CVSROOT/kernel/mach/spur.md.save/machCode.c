@@ -27,6 +27,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "swapBuffer.h"
 #include "dev/ccdev.h"
 #include "machConfig.h"
+#include "devCC.h"
 
 
 int mach_NumProcessors = 1;
@@ -1014,6 +1015,12 @@ MachInterrupt(intrStatusReg, kpsw)
     register unsigned	int	intrMask;
     register int		intrType;
     unsigned	int	statusReg;
+    int 	oldmode;
+
+#ifdef spur
+    /* Re-enable the performance counters */
+    oldmode = Dev_CCIdleCounters(TRUE, dev_CurrentCounterMode);
+#endif
 
     globStatusReg = intrStatusReg;
     mach_KernelMode[Mach_GetProcessorNumber()] = !(kpsw & MACH_KPSW_PREV_MODE);
@@ -1055,6 +1062,12 @@ MachInterrupt(intrStatusReg, kpsw)
 	intrType++;
     }
     mach_AtInterruptLevel[Mach_GetProcessorNumber()] = FALSE;
+
+#ifdef spur
+    /* Restore the performance counters */
+    oldmode = Dev_CCIdleCounters(TRUE, oldmode);
+#endif
+
 }
 
 
