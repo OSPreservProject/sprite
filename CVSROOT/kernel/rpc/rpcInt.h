@@ -33,9 +33,11 @@ extern unsigned int rpcBootID;
  * An RPC message is composed of three parts:  the RPC control information,
  * the first data area, ``parameters'', and the second data area, ``data''.
  * A set of three buffer scatter/gather elements is used to specify
- * a complete message.
+ * a complete message. A fourth part of the message is the transport 
+ * protocol header buffer that proceed any message.
  */
 typedef struct RpcBufferSet {
+    Net_ScatterGather	protoHdrBuffer;
     Net_ScatterGather	rpcHdrBuffer;
     Net_ScatterGather	paramBuffer;
     Net_ScatterGather	dataBuffer;

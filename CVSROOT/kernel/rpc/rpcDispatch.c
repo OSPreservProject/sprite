@@ -40,16 +40,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 int	rpc_SpriteID = 0;
 
-/*
- * The packet as it looks sitting in the ethernet buffers.
- */
-typedef struct RpcRawPacket {
-    Net_EtherHdr	etherHdr;
-    RpcHdr		rpcHdr;
-    /*
-     * data follows
-     */
-} RpcRawPacket;
 
 /*
  * Occasionally the Intel ethernet interface wacks out and passes us garbage.
@@ -106,17 +96,13 @@ int  RpcValidateClient();
  *----------------------------------------------------------------------
  */
 
-Rpc_Dispatch(packetPtr, packetLength)
-    Address	packetPtr;	/* pointer to the packet in the hardware
-				 * receive buffers */
-    int		packetLength;	/* its size */
+Rpc_Dispatch(headerType, headerPtr, rpcHdrPtr, packetLength)
+    int		headerType;	/* Type of transport header. */
+    Address	headerPtr;	/* Pointer to transport header. */
+    register RpcHdr	*rpcHdrPtr; /* RPC header of packet. */
+    int		packetLength;	    /* Size of RPC packet. */
 {
-    register RpcHdr	*rpcHdrPtr;
     register int expectedLength;
-    Net_EtherHdr	*etherHdrPtr;
-
-    etherHdrPtr = (Net_EtherHdr *)packetPtr;
-    rpcHdrPtr = (RpcHdr *) (packetPtr + sizeof(Net_EtherHdr));
 
     if (rpcHdrPtr->version == RPC_SWAPPED_VERSION) {
 	/*
@@ -154,8 +140,7 @@ Rpc_Dispatch(packetPtr, packetLength)
 	}
 	return;
     }
-    expectedLength = sizeof(Net_EtherHdr) +
-		     sizeof(RpcHdr) +
+    expectedLength =  sizeof(RpcHdr) +
 		     rpcHdrPtr->paramSize +
 		     rpcHdrPtr->dataSize;
     if (packetLength < expectedLength) {
@@ -198,18 +183,12 @@ Rpc_Dispatch(packetPtr, packetLength)
 	     */
 	    if (rpcHdrPtr->serverID > 0 &&
 		rpcHdrPtr->serverID < NET_NUM_SPRITE_HOSTS) {
-		Net_EtherAddress	dest;
-		NET_ETHER_ADDR_COPY(NET_ETHER_HDR_DESTINATION(*etherHdrPtr),
-				    dest);
-		printf("Warning: Rpc_Dispatch, wrong server ID %d\n");
-		printf("\tClient %d rpc %d ether dest %x:%x:%x:%x:%x:%x\n",
-		       rpcHdrPtr->clientID, rpcHdrPtr->command,
-		       NET_ETHER_ADDR_BYTE1(dest) & 0xff,
-		       NET_ETHER_ADDR_BYTE2(dest) & 0xff,
-		       NET_ETHER_ADDR_BYTE3(dest) & 0xff,
-		       NET_ETHER_ADDR_BYTE4(dest) & 0xff,
-		       NET_ETHER_ADDR_BYTE5(dest) & 0xff,
-		       NET_ETHER_ADDR_BYTE6(dest) & 0xff);
+		char	addrBuffer[128];
+		Net_HdrDestString(headerType, headerPtr, 128, addrBuffer);
+		printf("Warning: Rpc_Dispatch, wrong server ID %d\n",
+			rpcHdrPtr->serverID);
+		printf("\tClient %d rpc %d at address: %s\n",
+		       rpcHdrPtr->clientID, rpcHdrPtr->command, addrBuffer);
 
 	    } else {
 		printf("Rpc_Dispatch: junk serverID %d from client %d\n",
@@ -231,7 +210,7 @@ Rpc_Dispatch(packetPtr, packetLength)
 	 * (clientID) from the transport level source address.
 	 * This doesn't usually kick in unless the client can't do reverse arp.
 	 */
-	if ( ! RpcValidateClient(etherHdrPtr, rpcHdrPtr)) {
+	if ( ! RpcValidateClient(headerType, headerPtr, rpcHdrPtr)) {
 	    rpcSrvStat.invClient++;
 	    return;
 	}
@@ -397,8 +376,9 @@ RpcScatter(rpcHdrPtr, bufferPtr)
  *----------------------------------------------------------------------
  */
 Boolean
-RpcValidateClient(etherHdrPtr, rpcHdrPtr)
-    Net_EtherHdr *etherHdrPtr;
+RpcValidateClient(headerType, headerPtr, rpcHdrPtr)
+    int		headerType;	/* Type of transport header. */
+    Address	headerPtr;	/* Transport header. */
     RpcHdr 	 *rpcHdrPtr;
 {
     register int		clientID;
@@ -414,24 +394,18 @@ RpcValidateClient(etherHdrPtr, rpcHdrPtr)
 	 */
 	result = TRUE;
     } else if (clientID == 0) {
-	Net_EtherAddress	source;
 	/*
 	 * Look client's transport address up in our in core host table.
 	 */
-	NET_ETHER_ADDR_COPY(NET_ETHER_HDR_SOURCE(*etherHdrPtr), source);
-	clientID = Net_AddrToID(0, NET_ROUTE_ETHER, (ClientData) &source);
+	clientID = Net_HdrToID(headerType, headerPtr);
         printf("Warning: RpcValidateClient had to set clientID %d\n", clientID);
 	if (clientID < 0) {
+	    char	addrBuffer[128];
 	    /*
 	     * Should invoke Reverse ARP to find out the Sprite ID.
 	     */
-	    printf("Client at unknown ethernet address %x:%x:%x:%x:%x:%x\n",
-		       NET_ETHER_ADDR_BYTE1(source) & 0xff,
-		       NET_ETHER_ADDR_BYTE2(source) & 0xff,
-		       NET_ETHER_ADDR_BYTE3(source) & 0xff,
-		       NET_ETHER_ADDR_BYTE4(source) & 0xff,
-		       NET_ETHER_ADDR_BYTE5(source) & 0xff,
-		       NET_ETHER_ADDR_BYTE6(source) & 0xff);
+	    Net_HdrDestString(headerType, headerPtr, 128, addrBuffer);
+	    printf("Client at unknown address: %s\n", addrBuffer);
 	    result = FALSE;
 	} else {
 	    rpcHdrPtr->clientID = clientID;

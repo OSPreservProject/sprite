@@ -50,6 +50,7 @@ Rpc_Init()
     register Net_ScatterGather *bufferPtr;
     register int frag;
     Net_EtherAddress etherAddress;
+    int	     maxHdrSize;
 
     /*
      * Initialize some time parameters.  The 'rpc' structure is used in
@@ -81,6 +82,11 @@ Rpc_Init()
     rpcChannelPtrPtr = (RpcClientChannel **)
 	    Vm_RawAlloc(rpcNumChannels * sizeof(RpcClientChannel *));
 
+    /*
+     * Query the net module of the maximum size protocol header buffer 
+     * needed.
+     */
+    maxHdrSize = Net_MaxProtoHdrSize();
     for (i=0 ; i<rpcNumChannels ; i++) {
 	register RpcClientChannel *chanPtr;
 
@@ -104,6 +110,10 @@ Rpc_Init()
 	 * of the scatter/gather element is cleared because we don't
 	 * use this feature of the network module.
 	 */
+	bufferPtr = &chanPtr->request.protoHdrBuffer;
+	bufferPtr->bufAddr = Vm_RawAlloc(maxHdrSize);
+	bufferPtr->length = maxHdrSize;
+	bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
 
 	bufferPtr = &chanPtr->request.rpcHdrBuffer;
 	bufferPtr->bufAddr = (Address)&chanPtr->requestRpcHdr;
@@ -116,6 +126,11 @@ Rpc_Init()
 
 	for (frag=0 ; frag < RPC_MAX_NUM_FRAGS ; frag++) {
 
+	    bufferPtr = &chanPtr->fragment[frag].protoHdrBuffer;
+	    bufferPtr->bufAddr = Vm_RawAlloc(maxHdrSize);
+	    bufferPtr->length = maxHdrSize;
+	    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
+
 	    bufferPtr = &chanPtr->fragment[frag].rpcHdrBuffer;
 	    bufferPtr->bufAddr = (Address)&chanPtr->fragRpcHdr[frag];
 	    bufferPtr->length = sizeof(RpcHdr);
@@ -127,6 +142,11 @@ Rpc_Init()
 	    chanPtr->fragment[frag].dataBuffer.mutexPtr =
 			(Sync_Semaphore *)NIL;
 	}
+
+	bufferPtr = &chanPtr->reply.protoHdrBuffer;
+	bufferPtr->bufAddr = Vm_RawAlloc(maxHdrSize);
+	bufferPtr->length = maxHdrSize;
+	bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
 
 	bufferPtr = &chanPtr->reply.rpcHdrBuffer;
 	bufferPtr->bufAddr = (Address)&chanPtr->replyRpcHdr;
@@ -204,6 +224,7 @@ RpcInitServerState(index)
 					 * kept in the server's state. */
     register int frag;			/* Index into array of headers used
 					 * for fragmenting */
+    int		maxHdrSize;
     static Sync_Semaphore mutexInit =
 	Sync_SemInitStatic("RpcServerState->mutex");
 
@@ -225,11 +246,16 @@ RpcInitServerState(index)
      */
     srvPtr->replyRpcHdr.ID = 0;
 
+    maxHdrSize = Net_MaxProtoHdrSize();
     /*
      * Set up the buffer address for the RPC header of replies
      * and acks to point to the headers kept here in the server's state.
      */
-    
+    bufferPtr = &srvPtr->reply.protoHdrBuffer;
+    bufferPtr->bufAddr = Vm_RawAlloc(maxHdrSize);
+    bufferPtr->length = maxHdrSize;
+    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
+
     bufferPtr = &srvPtr->reply.rpcHdrBuffer;
     bufferPtr->bufAddr = (Address)&srvPtr->replyRpcHdr;
     bufferPtr->length = sizeof(RpcHdr);
@@ -237,6 +263,11 @@ RpcInitServerState(index)
     srvPtr->reply.paramBuffer.mutexPtr = (Sync_Semaphore *)NIL;
     srvPtr->reply.dataBuffer.mutexPtr = (Sync_Semaphore *)NIL;
     for (frag=0 ; frag < RPC_MAX_NUM_FRAGS ; frag++) {
+	bufferPtr = &srvPtr->fragment[frag].protoHdrBuffer;
+	bufferPtr->bufAddr = Vm_RawAlloc(maxHdrSize);
+	bufferPtr->length = maxHdrSize;
+	bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
+
 	bufferPtr = &srvPtr->fragment[frag].rpcHdrBuffer;
 	bufferPtr->bufAddr = (Address)&srvPtr->fragRpcHdr[frag];
 	bufferPtr->length = sizeof(RpcHdr);
@@ -244,6 +275,11 @@ RpcInitServerState(index)
 	srvPtr->fragment[frag].paramBuffer.mutexPtr = (Sync_Semaphore *)NIL;
 	srvPtr->fragment[frag].dataBuffer.mutexPtr = (Sync_Semaphore *)NIL;
     }
+
+    bufferPtr = &srvPtr->ack.protoHdrBuffer;
+    bufferPtr->bufAddr = Vm_RawAlloc(maxHdrSize);
+    bufferPtr->length = maxHdrSize;
+    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
 
     bufferPtr = &srvPtr->ack.rpcHdrBuffer;
     bufferPtr->bufAddr = (Address)&srvPtr->ackRpcHdr;
@@ -265,6 +301,11 @@ RpcInitServerState(index)
      * Allocate buffer space for the largest possible request.
      */
     
+    bufferPtr = &srvPtr->request.protoHdrBuffer;
+    bufferPtr->bufAddr = Vm_RawAlloc(maxHdrSize);
+    bufferPtr->length = maxHdrSize;
+    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
+
     bufferPtr = &srvPtr->request.rpcHdrBuffer;
     bufferPtr->bufAddr = (Address)&srvPtr->requestRpcHdr;
     bufferPtr->length = sizeof(RpcHdr);
@@ -326,7 +367,7 @@ Rpc_Start()
      */
     
     Mach_GetEtherAddress(&etherAddr);
-    spriteID = Net_RevArp(&etherAddr);
+    spriteID = Net_RevArp(NET_ROUTE_ETHER, &etherAddr);
     if (spriteID > 0) {
 	rpc_SpriteID = spriteID;
 	printf("Reverse Arp, setting Sprite ID to %d\n", spriteID);

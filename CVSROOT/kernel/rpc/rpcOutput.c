@@ -75,9 +75,10 @@ ReturnStatus
 RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
     int			spriteID;	/* Destination host */
     register RpcHdr	*rpcHdrPtr;	/* The RPC header. */
-    RpcBufferSet	*message;	/* A set of 3 scatter/gather vector
-					 * elements that specify where the
-					 * header, parameters, and data are. */
+    RpcBufferSet	*message;	/* A set of 4 scatter/gather vector
+					 * elements that specify where the proto
+					 * header, RPC header, parameters, 
+					 * and data are. */
     RpcBufferSet	*fragment;	/* An array of buffer sets used if
 					 * the message needs to be
 					 * fragmented.  This needs to be
@@ -96,6 +97,9 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 					 * interrupt after they output a packet.
 					 */
 {
+    int		maxPacketSize;	/* Maximum packet size supported by
+				 * the network module for a packet 
+				 * destine for Sprite host spriteID */
 #ifdef PRINT_PACKETS
     if (rpcDumpPackets) {
 	register unsigned short *shortPtr;
@@ -129,12 +133,17 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 	rpcHdrPtr->flags |= RPC_NOT_ACTIVE;
     }
     /*
+     * Query the net module of the maximum transfer size of the route 
+     * to Sprite host spriteID.
+     */
+    maxPacketSize = Net_RouteMTU(spriteID);
+    /*
      * Check to see if we have to fragment.   Note that we pack the first
      * fragment as full as possible so that it might contain more than
      * 1K of data.  If we fragment, however, we break things on 1K boundaries.
      */
     if (rpcHdrPtr->paramSize + rpcHdrPtr->dataSize >
-	RPC_MAX_PACKET_SIZE - sizeof(Net_EtherHdr) - sizeof(RpcHdr)) {
+	maxPacketSize - sizeof(RpcHdr)) {
 	if (rpcHdrPtr->paramSize > RPC_MAX_PARAMSIZE) {
 	    return(RPC_PARAMS_TOOBIG);
 	} else if (rpcHdrPtr->dataSize > RPC_MAX_DATASIZE) {
@@ -176,16 +185,14 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 		 * for best throughput.
 		 */
 		if (paramSize) {
-		    plen = (RPC_MAX_PACKET_SIZE - sizeof(Net_EtherHdr)
-						- sizeof(RpcHdr));
+		    plen = (maxPacketSize - sizeof(RpcHdr));
 		    plen = (plen > paramSize ? paramSize : plen);
 		    paramSize -= plen;
 		} else {
 		    plen = 0;
 		}
 		if (dataSize) {
-		    dlen = (RPC_MAX_PACKET_SIZE - sizeof(Net_EtherHdr)
-						- sizeof(RpcHdr) - plen);
+		    dlen = (maxPacketSize - sizeof(RpcHdr) - plen);
 		    dlen = (dlen > dataSize ? dataSize : dlen);
 		    dataSize -= dlen;
 		} else {
@@ -271,7 +278,7 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 		     * these so we cast its address into a (Net_ScatterGather *)
 		     */
 		    (void) Net_Output(spriteID,
-				(Net_ScatterGather *)&fragment[frag], 3,
+				(Net_ScatterGather *)&fragment[frag], 4,
 				mutexPtr);
 
 		    /*
@@ -318,7 +325,7 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 #ifdef TIMESTAMP
 	RPC_NIL_TRACE(RPC_ETHER_OUT, "Ether output");
 #endif /* TIMESTAMP */
-	(void) Net_Output(spriteID, (Net_ScatterGather *)message, 3, mutexPtr);
+	(void) Net_Output(spriteID, (Net_ScatterGather *)message, 4, mutexPtr);
 
 	RPC_TRACE(rpcHdrPtr, RPC_OUTPUT, "Output");
     }

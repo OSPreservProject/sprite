@@ -159,11 +159,6 @@ typedef struct RpcHdr {
 #define RPC_MAX_SIZE		(RPC_MAX_DATASIZE+RPC_MAX_PARAMSIZE)
 
 /*
- * The following define is for ethernet.  The ethernet limit lets us
- * transmit 1K of data plus header information.
- */
-#define RPC_MAX_PACKET_SIZE	NET_ETHER_MAX_BYTES
-/*
  * An array of bitmasks is kept so the dispatcher can quickly determine if
  * a message is complete.  Indexed by the total number of fragments in the
  * packet, the array contains a complete bitmask for that many fragments.
