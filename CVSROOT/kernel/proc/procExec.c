@@ -1390,6 +1390,7 @@ SetupVM(procPtr, objInfoPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr)
     Fs_Stream			*heapFilePtr;
     ReturnStatus		status;
     Address			heapEnd;
+    int				realCode = 1;
 
     if (*codeSegPtrPtr == (Vm_Segment *) NIL) {
 	execInfoPtr->entry = (int)objInfoPtr->entry;
@@ -1425,6 +1426,13 @@ SetupVM(procPtr, objInfoPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr)
 	/* 
 	 * Set up the code image.
 	 */
+	if (objInfoPtr->codeSize == 0) {
+	    /*
+	     * Things work better if we have a code segment.
+	     */
+	    realCode = 0;
+	    objInfoPtr->codeSize = vm_PageSize;
+	}
 	numPages = (objInfoPtr->codeSize - 1) / vm_PageSize + 1;
 	fileOffset = objInfoPtr->codeFileOffset;
 	pageOffset = (unsigned)objInfoPtr->codeLoadAddr / vm_PageSize;
@@ -1437,7 +1445,11 @@ SetupVM(procPtr, objInfoPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr)
 	}
 	Vm_ValidatePages(segPtr, pageOffset, pageOffset + numPages - 1,
 			 FALSE, TRUE);
-	Vm_InitCode(codeFilePtr, segPtr, execInfoPtr);
+	if (realCode) {
+	    Vm_InitCode(codeFilePtr, segPtr, execInfoPtr);
+	} else {
+	    Vm_InitCode(codeFilePtr, (Vm_Segment *) NIL, (Vm_ExecInfo *) NIL);
+	}
 	*codeSegPtrPtr = segPtr;
 	notFound = TRUE;
     } else {
@@ -1496,13 +1508,19 @@ SetupVM(procPtr, objInfoPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr)
     VmMach_ReinitContext(procPtr);
 
     /*
-     * If heap does not match page boundary, prefetch the partial page.
+     * If heap does not match page boundary, prefetch the partial page
+     * if necessary, and zero the rest.
      */
-    if (((unsigned)heapEnd & (vm_PageSize-1)) != 0 && notFound) {
-	Vm_PageIn(heapEnd, FALSE, procPtr);
-	return status;
+    if (notFound && ((unsigned)heapEnd & (vm_PageSize-1)) != 0) {
+	status = Vm_PageIn((execInfoPtr->bssFirstPage-1)*vm_PageSize,
+		FALSE, procPtr);
+	if (status != SUCCESS) {
+	    printf("SetupVM: heap prefetch failure\n");
+	    return FALSE;
+	}
+	bzero((char *)heapEnd,
+		vm_PageSize-((unsigned)heapEnd&(vm_PageSize-1)));
     }
-
     return(TRUE);
 }
 
