@@ -107,7 +107,7 @@ typedef struct RecovHostState {
 /*
  * Access to the hash table is monitored.
  */
-static Sync_Lock recovLock;
+static Sync_Lock recovLock = {0, 0};
 #define LOCKPTR (&recovLock)
 
 /*
@@ -763,7 +763,8 @@ Recov_GetClientState(spriteID)
  * Recov_SetClientState --
  *
  *	Set a client state bit.  This or's the parameter into the
- *	client state word.
+ *	client state word.  The previous value of the client state
+ *	word is returned so this procedure can be used like test-and-set.
  *
  * Results:
  *	None.
@@ -776,13 +777,14 @@ Recov_GetClientState(spriteID)
  *----------------------------------------------------------------------
  */
 
-ENTRY void
+ENTRY int
 Recov_SetClientState(spriteID, stateBits)
     int spriteID;
     int stateBits;
 {
     Hash_Entry *hashPtr;
     RecovHostState *hostPtr;
+    register oldState;
 
     LOCK_MONITOR;
 
@@ -792,8 +794,10 @@ Recov_SetClientState(spriteID, stateBits)
 	RECOV_INIT_HOST(hostPtr, spriteID, RECOV_STATE_UNKNOWN, 0);
 	hashPtr->value = (Address)hostPtr;
     }
+    oldState = hostPtr->clientState;
     hostPtr->clientState |= stateBits;
     UNLOCK_MONITOR;
+    return(oldState);
 }
 
 /*

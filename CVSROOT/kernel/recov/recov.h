@@ -39,7 +39,7 @@ void		Recov_HostAlive();
 void		Recov_HostDead();
 ReturnStatus	Recov_IsHostDown();
 void		Recov_HostTrace();
-void		Recov_SetClientState();
+int		Recov_SetClientState();
 int		Recov_GetClientState();
 void		Recov_ClearClientState();
 
