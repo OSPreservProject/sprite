@@ -336,7 +336,7 @@ DevReleaseKeyboard()
 {
     ttys[0].inputProc = DevConsoleInputProc;
     ttys[0].inputData = (ClientData) &ttys[0];
-    keyboard.outputProc = DevTtyOutputChar;
+    keyboard.outputProc = NullOutputChar;
     keyboard.outputData = (ClientData) &ttys[0];
 }
 
