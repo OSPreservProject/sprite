@@ -34,13 +34,14 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "sprite.h"
-#include "fs.h"
-#include "lfs.h"
-#include "lfsInt.h"
-#include "fsutil.h"
-#include "fscache.h"
-#include "fsdm.h"
+#include <sprite.h>
+#include <fs.h>
+#include <lfs.h>
+#include <lfsInt.h>
+#include <fsutil.h>
+#include <fscache.h>
+#include <fsdm.h>
+#include <user/time.h>
 
 /*
  * Index operation type for AccessBlock routine.
@@ -239,7 +240,7 @@ GrowBlock(lfsPtr, handlePtr, blockNum, growthSize, diskAddr, cacheFlags)
 	     }
 	}
 
-	Fscache_UnlockBlock(blockPtr,(unsigned)Fsutil_TimeInSeconds(), 
+	Fscache_UnlockBlock(blockPtr,(time_t)Fsutil_TimeInSeconds(), 
 				blockNum, origBlockSize+growthSize, 0);
     }
     /*
@@ -288,7 +289,7 @@ AccessBlock(op, lfsPtr, handlePtr, blockNum, blockSize, cacheFlags,
     LfsDiskAddr parentDiskAddress;
     Fsdm_FileDescriptor 	*descPtr;
     Fscache_Block *parentblockPtr;
-    int	modTime;
+    time_t	modTime;
     Boolean	found;
     ReturnStatus	status;
     LfsDiskAddr *indirectPtr, *directPtr;
@@ -438,7 +439,7 @@ AccessBlock(op, lfsPtr, handlePtr, blockNum, blockSize, cacheFlags,
 		break;
 	     } 
 	 }
-	 Fscache_UnlockBlock(parentblockPtr, (unsigned )modTime, parentBlockNum,
+	 Fscache_UnlockBlock(parentblockPtr, modTime, parentBlockNum,
 			     FS_BLOCK_SIZE, 0);
 	 return status;
     }
@@ -453,7 +454,7 @@ AccessBlock(op, lfsPtr, handlePtr, blockNum, blockSize, cacheFlags,
 				cacheFlags,
 				&parentDiskAddress);
     if (status != SUCCESS) {
-	 Fscache_UnlockBlock(parentblockPtr, (unsigned )0, parentBlockNum,
+	 Fscache_UnlockBlock(parentblockPtr, (time_t)0, parentBlockNum,
 			     FS_BLOCK_SIZE, FSCACHE_DELETE_BLOCK);
 	return status;
     }
@@ -462,7 +463,7 @@ AccessBlock(op, lfsPtr, handlePtr, blockNum, blockSize, cacheFlags,
 	    case GROW_ADDR: 
 	    case GET_ADDR: {
 		 LfsSetNilDiskAddr(diskAddressPtr);
-		 Fscache_UnlockBlock(parentblockPtr, (unsigned)0,
+		 Fscache_UnlockBlock(parentblockPtr, (time_t)0,
 				 parentBlockNum,
 				 FS_BLOCK_SIZE, FSCACHE_DELETE_BLOCK);
 		 break;
@@ -477,9 +478,9 @@ AccessBlock(op, lfsPtr, handlePtr, blockNum, blockSize, cacheFlags,
 		}
 		((LfsDiskAddr *)parentblockPtr->blockAddr)[parentIndex] = 
 			    *diskAddressPtr;
-		 Fscache_UnlockBlock(parentblockPtr, 
-				    (unsigned )Fsutil_TimeInSeconds(),
-				    parentBlockNum, FS_BLOCK_SIZE, 0);
+		 Fscache_UnlockBlock(parentblockPtr,
+				     (time_t)Fsutil_TimeInSeconds(), 
+				     parentBlockNum, FS_BLOCK_SIZE, 0);
 		 break;
 	    }
 	}
@@ -492,7 +493,7 @@ AccessBlock(op, lfsPtr, handlePtr, blockNum, blockSize, cacheFlags,
      LfsCheckRead(lfsPtr, parentDiskAddress, FS_BLOCK_SIZE);
 #endif
      if (status != SUCCESS) {
-	 Fscache_UnlockBlock(parentblockPtr, (unsigned )0, parentBlockNum,
+	 Fscache_UnlockBlock(parentblockPtr, (time_t)0, parentBlockNum,
 			     FS_BLOCK_SIZE, FSCACHE_DELETE_BLOCK);
 	 LfsError(lfsPtr, status, "Can't read indirect block.\n");
 	 return status;
@@ -522,8 +523,8 @@ AccessBlock(op, lfsPtr, handlePtr, blockNum, blockSize, cacheFlags,
 	    break;
 	 }
     }
-    Fscache_UnlockBlock(parentblockPtr, (unsigned) modTime, 
-				parentBlockNum, FS_BLOCK_SIZE, 0);
+    Fscache_UnlockBlock(parentblockPtr, modTime, parentBlockNum,
+			FS_BLOCK_SIZE, 0);
     return(SUCCESS);
 }
 
@@ -578,7 +579,7 @@ DeleteIndirectBlock(lfsPtr, handlePtr, virtualBlockNum, diskAddrPtr,
        (int)(FSCACHE_IO_IN_PROGRESS|FSCACHE_IND_BLOCK), &cacheBlockPtr,&found);
     if (!found) {
 	if (LfsIsNilDiskAddr(diskAddr)) {
-	    Fscache_UnlockBlock(cacheBlockPtr, (unsigned )0, virtualBlockNum,
+	    Fscache_UnlockBlock(cacheBlockPtr, (time_t)0, virtualBlockNum,
 				 FS_BLOCK_SIZE, FSCACHE_DELETE_BLOCK);
 	    blockInCache = FALSE;
 	} else {
@@ -650,11 +651,11 @@ DeleteIndirectBlock(lfsPtr, handlePtr, virtualBlockNum, diskAddrPtr,
 	 * If we deleted all the indexes in this block we can delete the block.
 	 */
 	if (startElement == 0) {
-	    Fscache_UnlockBlock(cacheBlockPtr, (unsigned )0, virtualBlockNum,
+	    Fscache_UnlockBlock(cacheBlockPtr, (time_t)0, virtualBlockNum,
 				 FS_BLOCK_SIZE, FSCACHE_DELETE_BLOCK);
 	    (void) LfsSegUsageFreeBlocks(lfsPtr, FS_BLOCK_SIZE, 1, diskAddrPtr);
 	} else {
-	    Fscache_UnlockBlock(cacheBlockPtr,(unsigned)Fsutil_TimeInSeconds(), 
+	    Fscache_UnlockBlock(cacheBlockPtr,(time_t)Fsutil_TimeInSeconds(), 
 			    virtualBlockNum, FS_BLOCK_SIZE, 0);
 	}
     }
@@ -779,7 +780,7 @@ LfsFile_GrowBlock(lfsPtr, handlePtr, offset, numBytes)
     register	Fsdm_FileDescriptor *descPtr;
     LfsDiskAddr diskAddress;
     int	 oldSize, oldLastBlock;
-
+    char errMsg[1024];
 
     /*
      * Process the common case that we are appending to the end of the file
@@ -865,8 +866,11 @@ LfsFile_GrowBlock(lfsPtr, handlePtr, offset, numBytes)
 				FS_BLOCK_SIZE, 0, &diskAddress);
 	    if ((status != SUCCESS) || LfsIsNilDiskAddr(diskAddress)) {
 		LFS_STATS_INC(lfsPtr->stats.blockio.slowAllocFails);
-		printf("LfsFile_GrowBlock: no space on %s.\n",
-		       lfsPtr->name); /* DEBUG */
+		sprintf(errMsg, "LfsFile_GrowBlock: no space on %s.\n",
+			lfsPtr->name); /* DEBUG */
+		if (Timer_OkToWhine(errMsg)) {
+		    printf(errMsg);
+		}
 		status = FS_NO_DISK_SPACE;
 	    }
 	}
