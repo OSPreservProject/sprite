@@ -25,8 +25,9 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include "sync.h"
 #include "timer.h"
 #include "dbg.h"
-#include "dc7085.h"
 #include "machAddrs.h"
+#include "console.h"
+#include "dc7085.h"
 #include "graphics.h"
 #include "dev/graphics.h"
 
@@ -701,6 +702,8 @@ LoadColorMap(ptr)
     vdacPtr->map = ptr->entry.blue; Mach_EmptyWriteBuffer();
 }
 
+static Boolean	consoleCmdDown = FALSE;
+
 
 /*
  *----------------------------------------------------------------------
@@ -736,18 +739,18 @@ DevGraphicsKbdIntr(ch)
     if (ch < LK_LOWEST) {
        return;
     }
-    if (ch == 0x73) {
-	/*
-	 * F13 key.
-	 */
-	DBG_CALL;
-	return;
-    } else if (ch == 0x74) {
-	/*
-	 * F12 key.
-	 */
-	Mach_MonAbort();
-	return;
+    if (ch == KEY_UP) {
+	consoleCmdDown = FALSE;
+    } else if (ch == KEY_COMMAND) {
+	consoleCmdDown = TRUE;
+    } else if (consoleCmdDown) {
+	char asciiChar;
+
+	asciiChar = DevDC7085TranslateKey(ch, FALSE, FALSE);
+	if (asciiChar != -1) {
+	    Dev_InvokeConsoleCmd(asciiChar);
+	    return;
+	}
     }
 
     /*
@@ -1355,6 +1358,7 @@ DevGraphicsOpen(devicePtr, useFlags, inNotifyToken, flagsPtr)
 	    return(FS_FILE_BUSY);
 	}
 	devGraphicsOpen = TRUE;
+	devDivertXInput = FALSE;
 	notifyToken = inNotifyToken;
 	if (!isMono) {
 	    InitColorMap();

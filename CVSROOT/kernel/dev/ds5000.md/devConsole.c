@@ -24,6 +24,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "graphics.h"
 #include "dc7085.h"
 
+Boolean	devDivertXInput = FALSE;
+
 
 /*
  *----------------------------------------------------------------------
@@ -75,4 +77,31 @@ DevConsoleRawProc(dcPtr, operation, inBufSize, inBuffer, outBufSize, outBuffer)
 	Dev_GraphicsPutc(c);
     }
     return 0;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_ConsoleReset --
+ *
+ *	Change where keyboard input goes.  TRUE => it will go to the normal
+ *	console input routines.  FALSE => means that it will go back to X
+ *	if X is using it.
+ *
+ * Results:
+ *	The return value is the number of bytes returned to the caller
+ *	at outBuffer.
+ *
+ * Side effects:
+ *	Depends on the control operation.  Most likely effect is to
+ *	draw data on the screen.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Dev_ConsoleReset(keyboardMode)
+    Boolean	keyboardMode;
+{
+    devDivertXInput = keyboardMode;
 }

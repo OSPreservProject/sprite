@@ -90,7 +90,8 @@
 #define KEY_CONTROL	0xaf
 #define KEY_UP		0xb3
 #define KEY_REPEAT	0xb4
-#define KEY_F13		0x73
+#define KEY_F1		0x56
+#define KEY_COMMAND	KEY_F1
 
 /*
  * Command characters for the mouse.
@@ -199,5 +200,6 @@ extern void		DevDC7085MouseInit();
 extern void		DevDC7085MousePutCh();
 extern int		DevDC7085MouseGetCh();
 extern void		DevDC7085KBDPutc();
+extern char		DevDC7085TranslateKey();
 
 #endif _DC7085

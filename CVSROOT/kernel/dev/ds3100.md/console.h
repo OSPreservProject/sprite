@@ -19,6 +19,16 @@
 #ifndef _DEVCONSOLE
 #define _DEVCONSOLE
 
+#include "dc7085.h"
+
 extern int	DevConsoleRawProc();
+
+extern Boolean	devDivertXInput;
+
+/*
+ * Maximum interval allowed between hitting the console cmd key and hitting the
+ * command key.
+ */
+#define CONSOLE_CMD_INTERVAL	2
 
 #endif /* _DEVCONSOLE */

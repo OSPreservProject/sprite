@@ -29,6 +29,7 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include "dc7085.h"
 #include "graphics.h"
 #include "machAddrs.h"
+#include "console.h"
 #include <sgtty.h>
 
 static Sync_Semaphore dc7085Mutex = Sync_SemInitStatic("Dev:dc7085Mutex");
@@ -73,11 +74,6 @@ static struct {
     {LPR_B9600, B9600, 9600}, 
     {-1, -1, -1}
 };
-
-/*
- *  Raw key code for a console command.
- */
-#define KEY_CONSOLE_CMD		KEY_F13
 
 /*
  * Ascii values of command keys.
@@ -341,6 +337,7 @@ static Boolean	shiftDown = FALSE;
 static Boolean	ctrlDown = FALSE;
 static Boolean	consoleCmd = FALSE;
 static unsigned char lastChar = 0;
+static Time	consoleCmdTime;
 
 
 /*
@@ -371,7 +368,7 @@ RecvIntr()
 
 	switch ((recvBuf & RBUF_LINE_NUM) >> RBUF_LINE_NUM_SHIFT) {
 	    case KBD_PORT: {
-		if (devGraphicsOpen) {
+		if (devGraphicsOpen && !devDivertXInput) {
 		    MASTER_UNLOCK(&dc7085Mutex);
 		    DevGraphicsKbdIntr(ch);
 		    MASTER_LOCK(&dc7085Mutex);
@@ -389,8 +386,10 @@ RecvIntr()
 			} else if (ch == KEY_CONTROL) {
 			    ctrlDown = TRUE;
 			    break;
-			} else if (ch == KEY_CONSOLE_CMD) {
+			} else if (ch == KEY_COMMAND) {
 			    consoleCmd = TRUE;
+			    Timer_GetTimeOfDay(&consoleCmdTime, (int *)NIL,
+					       (Boolean *)NIL);
 			    break;
 			}
 		    }
@@ -399,45 +398,29 @@ RecvIntr()
 		    ch = lastChar;
 		}
 
-		if (shiftDown) {
-		    asciiChar = shiftedAscii[ch];
-		} else {
-		    asciiChar = unshiftedAscii[ch];
-		}
-		if (asciiChar >= KBD_NOKEY) {
-		    /*
-		     * A function key was typed - ignore it.
-		     */
-		    break;
-		} else if (asciiChar > KBD_MAX_VALUE) {
-		    printf("RecvIntr: Bad key code raw: %d, mapped: %d\n",
-				ch, asciiChar);
-		    break;
-		} else {
-		    if (asciiChar >= 'a' && asciiChar <= 'z') {
-			if (ctrlDown) {
-			    asciiChar = asciiChar - 'a' + '';
-			} else if (shiftDown) {
-			    asciiChar = asciiChar - 'a' + 'A';
+		asciiChar = DevDC7085TranslateKey(ch, shiftDown, ctrlDown);
+		if (asciiChar != -1) {
+		    if (consoleCmd) {
+			Time curTime, diff;
+
+			consoleCmd = FALSE;
+			Timer_GetTimeOfDay(&curTime, (int *)NIL,(Boolean *)NIL);
+			Time_Subtract(curTime, consoleCmdTime, &diff);
+			if (diff.seconds <= CONSOLE_CMD_INTERVAL) {
+			    Dev_InvokeConsoleCmd(asciiChar);
+			} else {
+			    (*devKeyboard.inputProc)(devKeyboard.inputData, 
+						     asciiChar);
 			}
-		    } else if (ctrlDown) {
-			if (asciiChar >= '[' && asciiChar <= '_') {
-			    asciiChar = asciiChar - '@';
-			} else if (asciiChar == ' ' || asciiChar == '@') {
-			    asciiChar = '\0'; 
-			}
+		    } else {
+			(*devKeyboard.inputProc)(devKeyboard.inputData, 
+						 asciiChar);
 		    }
-		}
-		if (consoleCmd) {
-		    consoleCmd = FALSE;
-		    Dev_InvokeConsoleCmd(asciiChar);
-		} else {
-		    (*devKeyboard.inputProc)(devKeyboard.inputData, asciiChar);
 		}
 		break;
 	    }
 	    case MOUSE_PORT:
-		if (devGraphicsOpen) {
+		if (devGraphicsOpen && !devDivertXInput) {
 		    MASTER_UNLOCK(&dc7085Mutex);
 		    DevGraphicsMouseIntr(ch);
 		    MASTER_LOCK(&dc7085Mutex);
@@ -451,6 +434,63 @@ RecvIntr()
 		break;
 	}
     }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevDC7085TranslateKey --
+ *
+ *	Translate a key code to an ascii character.
+ *
+ * Results:
+ *	The ascii character, -1 if couldn't translate it.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+char 
+DevDC7085TranslateKey(ch, shiftDown, ctrlDown)
+    unsigned char	ch;
+    Boolean	shiftDown;
+    Boolean	ctrlDown;
+{
+    char asciiChar;
+
+    if (shiftDown) {
+	asciiChar = shiftedAscii[ch];
+    } else {
+	asciiChar = unshiftedAscii[ch];
+    }
+    if (asciiChar >= KBD_NOKEY) {
+	/*
+	 * A function key was typed - ignore it.
+	 */
+	return(-1);
+    } else if (asciiChar > KBD_MAX_VALUE) {
+	printf("DevDC7085TranslateKey: Bad key code raw: %d, mapped: %d\n",
+		    ch, asciiChar);
+	return(-1);
+    } else {
+	if (asciiChar >= 'a' && asciiChar <= 'z') {
+	    if (ctrlDown) {
+		asciiChar = asciiChar - 'a' + '';
+	    } else if (shiftDown) {
+		asciiChar = asciiChar - 'a' + 'A';
+	    }
+	} else if (ctrlDown) {
+	    if (asciiChar >= '[' && asciiChar <= '_') {
+		asciiChar = asciiChar - '@';
+	    } else if (asciiChar == ' ' || asciiChar == '@') {
+		asciiChar = '\0'; 
+	    }
+	}
+    }
+
+    return(asciiChar);
 }
 
 
