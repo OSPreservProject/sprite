@@ -48,6 +48,16 @@ static Sync_Lock debugLock; 			/* Monitor lock. */
 List_Links	debugListHdr;
 List_Links	*debugList = &debugListHdr;
 
+#ifdef sun4
+/*
+ * The sun4 compiler won't handle the kind of redeclaration of these routines
+ * that's done in this file.
+ */
+extern	void	ProcDebugWakeup();
+extern	void	AddToDebugList();
+extern	void	RemoveFromDebugList();
+#endif sun4
+
 
 /*
  *----------------------------------------------------------------------
@@ -78,7 +88,8 @@ ProcDebugInit()
  *
  * Proc_Debug --
  *
- *	This routine is used to debug a process.
+ *	This routine is used to debug a process. This routine is not
+ *	inside the monitor. 
  *
  * Results:
  *	SYS_INVALID_ARG - 	buffer address was invalid.
@@ -110,9 +121,7 @@ Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
     Proc_DebugState		debugState;
     int				i;
     ReturnStatus		status = SUCCESS;
-
-    LOCK_MONITOR;
-    Sync_LockRegister(LOCKPTR);
+    Proc_ControlBlock		*tProcPtr;
 
     /*
      * If the caller is trying to manipulate a debugged process make sure that
@@ -127,81 +136,19 @@ Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
 	    if (procPtr != (Proc_ControlBlock *) NIL) {
 		Proc_Unlock(procPtr);
 	    }
-	    UNLOCK_MONITOR;
 	    return (PROC_INVALID_PID);
 	}
     }
 
     switch (request) {
 	case PROC_GET_THIS_DEBUG:
-	    /*
-	     * Look for a specific process on the debug list. If it isn't
-	     * there, wait for it to get on the list.
-	     */
-	    while (TRUE) {
-		procPtr = Proc_LockPID(pid);
-		if (procPtr == (Proc_ControlBlock *) NIL ||
-		    (procPtr->genFlags & PROC_DIEING)) {
-		    /*
-		     * The pid they gave us either doesn't exist or the
-		     * corresponding process is exiting.
-		     */
-		    if (procPtr != (Proc_ControlBlock *) NIL) {
-			Proc_Unlock(procPtr);
-		    }
-		    UNLOCK_MONITOR;
-		    return(PROC_INVALID_PID);
-		}
-
-		procPtr->genFlags |= PROC_DEBUG_WAIT;
-
-		if (procPtr->state == PROC_SUSPENDED) {
-		    procPtr->genFlags &= ~PROC_DEBUG_WAIT;
-		    procPtr->genFlags |= PROC_DEBUGGED;
-		    if (procPtr->genFlags & PROC_ON_DEBUG_LIST) {
-			List_Remove((List_Links *) procPtr);
-			procPtr->genFlags &= ~PROC_ON_DEBUG_LIST;
-		    }
-		    break;
-		}
-
-		Proc_Unlock(procPtr);
-		if (Sync_Wait(&debugListCondition, TRUE)) {
-		    Proc_Lock(procPtr);
-		    procPtr->genFlags &= ~PROC_DEBUG_WAIT;
-		    Proc_Unlock(procPtr);
-		    status = GEN_ABORTED_BY_SIGNAL;
-		    break;
-		}
-	    }
+	    status = ProcGetThisDebug(pid, &tProcPtr);
+	    procPtr = tProcPtr;
 	    break;
 	    
 	case PROC_GET_NEXT_DEBUG: {
-	    Boolean	sigPending = FALSE;
-
-	    /*
-	     * Loop through the list of debuggable processes, looking for the 
-	     * first one that hasn't been debugged yet. Wait until one is found.
-	     */
-	    while (!sigPending) {
-		if (!List_IsEmpty(debugList)) {
-		    procPtr = (Proc_ControlBlock *) List_First(debugList);
-		    Proc_Lock(procPtr);
-		    procPtr->genFlags |= PROC_DEBUGGED;
-		    List_Remove((List_Links *) procPtr);
-		    procPtr->genFlags &= ~PROC_ON_DEBUG_LIST;
-		    break;
-		}
-		sigPending = Sync_Wait(&debugListCondition, TRUE);
-	    }
-	    if (!sigPending) {
-		if ((Vm_CopyOut(sizeof(Proc_PID), 
-			  (Address) &procPtr->processID, destAddr)) != SUCCESS){
-		    status = SYS_ARG_NOACCESS;
-		}
-	    } else {
-		status = GEN_ABORTED_BY_SIGNAL;
-	    }
+	    status = ProcGetNextDebug(destAddr, &tProcPtr);
+	    procPtr = tProcPtr;
 	    break;
 	}
 
@@ -303,11 +250,10 @@ Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
 	    break;
     }
 
-    if (status != GEN_ABORTED_BY_SIGNAL) {
+    if (status != GEN_ABORTED_BY_SIGNAL && status != PROC_INVALID_PID) {
 	Proc_Unlock(procPtr);
     }
 
-    UNLOCK_MONITOR;
     return(status);
 }
 
@@ -343,8 +289,8 @@ Proc_SuspendProcess(procPtr, debug, termReason, termStatus, termCode)
     int					termStatus;	/* Termination status.*/
     int					termCode;	/* Termination code. */
 {
-    LOCK_MONITOR;
 
+    Proc_Lock(procPtr);
     procPtr->termReason	= termReason;
     procPtr->termStatus	= termStatus;
     procPtr->termCode	= termCode;
@@ -362,17 +308,14 @@ Proc_SuspendProcess(procPtr, debug, termReason, termStatus, termCode)
 	     * If the process isn't currently being debugged then it goes on 
 	     * the debug list and its parent is notified of a state change.
 	     */
-	    List_Insert((List_Links *) procPtr, LIST_ATREAR(debugList));
-	    Proc_Lock(procPtr);
-	    procPtr->genFlags |= PROC_ON_DEBUG_LIST;
-	    Proc_Unlock(procPtr);
+	    AddToDebugList(procPtr);
 	    Proc_InformParent(procPtr, PROC_SUSPEND_STATUS, FALSE);
-	    Sync_Broadcast(&debugListCondition);
+	    ProcDebugWakeup();
 	} else if (procPtr->genFlags & PROC_DEBUG_WAIT) {
 	    /*
 	     * A process is waiting for this process so wake it up.
 	     */
-	    Sync_Broadcast(&debugListCondition);
+	    ProcDebugWakeup();
 	}
     } else {
 	/*
@@ -381,11 +324,11 @@ Proc_SuspendProcess(procPtr, debug, termReason, termStatus, termCode)
 	 */
 	Proc_InformParent(procPtr, PROC_SUSPEND_STATUS, FALSE);
 	if (procPtr->genFlags & PROC_DEBUG_WAIT) {
-	    Sync_Broadcast(&debugListCondition);
+	    ProcDebugWakeup();
 	}
     }
-
-    UNLOCK_MONITOR_AND_SWITCH(PROC_SUSPENDED);
+    Proc_Unlock(procPtr);
+    Sched_ContextSwitch(PROC_SUSPENDED);
 }
 
 
@@ -414,21 +357,17 @@ Proc_ResumeProcess(procPtr, killingProc)
 							 * the purpose of 
 							 * killing it. */
 {
-    LOCK_MONITOR;
-
     if (procPtr->state == PROC_SUSPENDED &&
         (killingProc || !(procPtr->genFlags & PROC_DEBUGGED))) {
 	/*
 	 * Only processes that are currently suspended and are either being
 	 * killed or aren't being actively debugged can be resumed.
 	 */
-	if (procPtr->genFlags & PROC_ON_DEBUG_LIST) {
-	    List_Remove((List_Links *) procPtr);
-	}
+	RemoveFromDebugList(procPtr);
 	if (procPtr->genFlags & PROC_DEBUG_WAIT) {
-	    Sync_Broadcast(&debugListCondition);
+	    ProcDebugWakeup();
 	}
-	procPtr->genFlags &= ~(PROC_ON_DEBUG_LIST | PROC_DEBUG_WAIT);
+	procPtr->genFlags &= ~PROC_DEBUG_WAIT;
 	Sched_MakeReady(procPtr);
 	if (!killingProc) {
 	    procPtr->termReason = PROC_TERM_RESUMED;
@@ -443,7 +382,6 @@ Proc_ResumeProcess(procPtr, killingProc)
 	}
     }
 
-    UNLOCK_MONITOR;
 }
 
 
@@ -469,3 +407,195 @@ ProcDebugWakeup()
     Sync_Broadcast(&debugListCondition);
     UNLOCK_MONITOR;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcGetThisDebug --
+ *
+ *	Get the specified process on the debug list. If it isn't there
+ *	then wait for it to show up.
+ *
+ * Results:
+ *	PROC_INVALID_PID if process doesn't exist or is dieing.
+ *	GEN_ABORTED_BY_SIGNAL if wait for process was interrupted by a 
+ *	    signal
+ *
+ *
+ * Side effects:
+ *	Process may be locked.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+ProcGetThisDebug(pid, procPtrPtr)
+    Proc_PID		pid;
+    Proc_ControlBlock	**procPtrPtr;
+{
+    register Proc_ControlBlock 	*procPtr;
+    ReturnStatus		status;
+
+
+    LOCK_MONITOR;
+    Sync_LockRegister(LOCKPTR);
+    status = SUCCESS;
+    while (TRUE) {
+	procPtr = Proc_LockPID(pid);
+	if (procPtr == (Proc_ControlBlock *) NIL ||
+	    (procPtr->genFlags & PROC_DIEING)) {
+	    /*
+	     * The pid they gave us either doesn't exist or the
+	     * corresponding process is exiting.
+	     */
+	    if (procPtr != (Proc_ControlBlock *) NIL) {
+		Proc_Unlock(procPtr);
+	    }
+	    status = PROC_INVALID_PID;
+	    goto exit;
+	}
+	procPtr->genFlags |= PROC_DEBUG_WAIT;
+
+	if (procPtr->state == PROC_SUSPENDED) {
+	    procPtr->genFlags &= ~PROC_DEBUG_WAIT;
+	    procPtr->genFlags |= PROC_DEBUGGED;
+	    if (procPtr->genFlags & PROC_ON_DEBUG_LIST) {
+		List_Remove((List_Links *) procPtr);
+		procPtr->genFlags &= ~PROC_ON_DEBUG_LIST;
+	    }
+	    goto exit;
+	}
+
+	Proc_Unlock(procPtr);
+	if (Sync_Wait(&debugListCondition, TRUE)) {
+	    Proc_Lock(procPtr);
+	    procPtr->genFlags &= ~PROC_DEBUG_WAIT;
+	    Proc_Unlock(procPtr);
+	    status = GEN_ABORTED_BY_SIGNAL;
+	    goto exit;
+	}
+    }
+exit:
+    *procPtrPtr = procPtr;
+    UNLOCK_MONITOR;
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcGetNextDebug --
+ *
+ *	Look through the list of debuggable processes and get the
+ *	first one that hasn't been debugged yet. Wait for one if
+ *	there aren't any.
+ *
+ * Results:
+ *	SYS_ARG_NOACCESS if data couldn't be copied to user address space.
+ *	GEN_ABORTED_BY_SIGNAL if wait for process was interrupted by a 
+ *	    signal
+ *
+ * Side effects:
+ *	Process is removed from list, process id is copied to user variable
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+ProcGetNextDebug(destAddr, procPtrPtr)
+    Address		destAddr;
+    Proc_ControlBlock	**procPtrPtr;
+{
+    Boolean			sigPending = FALSE;
+    register Proc_ControlBlock 	*procPtr;
+    ReturnStatus		status;
+
+
+    LOCK_MONITOR;
+
+    status = SUCCESS;
+    while (!sigPending) {
+	if (!List_IsEmpty(debugList)) {
+	    procPtr = (Proc_ControlBlock *) List_First(debugList);
+	    Proc_Lock(procPtr);
+	    procPtr->genFlags |= PROC_DEBUGGED;
+	    List_Remove((List_Links *) procPtr);
+	    procPtr->genFlags &= ~PROC_ON_DEBUG_LIST;
+	    break;
+	}
+	sigPending = Sync_Wait(&debugListCondition, TRUE);
+    }
+    if (!sigPending) {
+	if ((Vm_CopyOut(sizeof(Proc_PID), 
+		  (Address) &procPtr->processID, destAddr)) != SUCCESS){
+	    status = SYS_ARG_NOACCESS;
+	}
+    } else {
+	status = GEN_ABORTED_BY_SIGNAL;
+    }
+    *procPtrPtr = procPtr;
+    UNLOCK_MONITOR;
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AddToDebugList --
+ *
+ *	Adds the given process to the debug list.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Process is added to list, process genFlags is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+AddToDebugList(procPtr)
+    register Proc_ControlBlock 	*procPtr;
+{
+    LOCK_MONITOR;
+
+    List_Insert((List_Links *) procPtr, LIST_ATREAR(debugList));
+    procPtr->genFlags |= PROC_ON_DEBUG_LIST;
+
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RemoveFromDebugList --
+ *
+ *	Removes the given process from the debug list.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The process is removed from the list, process's genFlags field
+ *	is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+RemoveFromDebugList(procPtr)
+    register Proc_ControlBlock 	*procPtr;
+{
+    LOCK_MONITOR;
+
+    if (procPtr->genFlags & PROC_ON_DEBUG_LIST) {
+	List_Remove((List_Links *) procPtr);
+	procPtr->genFlags &= ~PROC_ON_DEBUG_LIST;
+    }
+
+    UNLOCK_MONITOR;
+}
+
+
+
