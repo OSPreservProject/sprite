@@ -1473,7 +1473,7 @@ Proc_KDump()
 		if (space != (char *) NULL) {
 		    *space = '\0';
 		} else {
-		    cmd[30] = '\0';
+		    cmd[29] = '\0';
 		}
 		printf("(%s)", cmd);
 	    }
