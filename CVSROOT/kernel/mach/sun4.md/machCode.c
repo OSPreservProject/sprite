@@ -709,15 +709,6 @@ Mach_ExecUserProc(procPtr, userStackPtr, entryPoint)
 {
     Mach_RegState	tmpTrapState;
 
-    /*
-     * Ugh.  They set this to a different register set in the sun3 and
-     * then set this reg differently in Mach_StartUserProc.  What should I
-     * be doing?
-     */
-    /*
-     * EEK -- Make sure there's enough space here for thing to have
-     * stored its 6 input reg args in a caller's stack frame.
-     */
      /*
       * We do not call DISABLE_INTR here because there's an implicit enable
       * of interrupts in MachRunUserProc().
