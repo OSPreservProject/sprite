@@ -25,17 +25,13 @@
 #define	MACH_FRAME_PTR	14
 
 /*
- * The number of general purpose registers (d0-d7 and a0-a7)
- */
-
-#define	MACH_NUM_GENERAL_REGS	16
-
-/*
- * MACH_KERNEL_START	The address where the kernel image is loaded at.
+ * MACH_KERN_START	The address where the kernel image is loaded at.
  * MACH_CODE_START	The address where the kernel code is loaded at.
  * MACH_STACK_BOTTOM	The address of the bottom of the kernel stack for the
  *			main process that is initially run.
- * MACH_NUM_STACK_PAGES	The number of kernel stack pages.
+ * MACH_KERN_END	The address where the last kernel virtual address is
+ *			at.
+ * MACH_KERN_STACK_SIZE Number of bytes in a kernel stack.
  * MACH_DUMMY_SP_OFFSET	The offset from the bottom of a newly created kernel
  *			where the new stack pointer is to be initially.
  * MACH_DUMMY_FP_OFFSET	The offset from the bottom of a newly created kernel
@@ -48,25 +44,25 @@
  */
 
 #ifdef SUN3
-#define	MACH_KERNEL_START	0xf000000
+#define	MACH_KERN_START		0xf000000
 #define	MACH_CODE_START		0xf004000
 #define	MACH_STACK_BOTTOM	0xf000000
 #else
-#define	MACH_KERNEL_START	0x800000
+#define	MACH_KERN_START		0x800000
 #define	MACH_CODE_START		0x804000
 #define	MACH_STACK_BOTTOM	0x802000
 #endif
-#define	MACH_NUM_STACK_PAGES	((MACH_CODE_START - MACH_STACK_BOTTOM ) / VM_PAGE_SIZE)
-
-#define	MACH_DUMMY_SP_OFFSET	(MACH_NUM_STACK_PAGES * VM_PAGE_SIZE - 42)
-#define	MACH_DUMMY_FP_OFFSET	(MACH_NUM_STACK_PAGES * VM_PAGE_SIZE - 24)
-#define	MACH_EXEC_STACK_OFFSET	(MACH_NUM_STACK_PAGES * VM_PAGE_SIZE - 8)
+#define MACH_KERN_END		VMMACH_DMA_START_ADDR
+#define	MACH_KERN_STACK_SIZE	(MACH_CODE_START - MACH_STACK_BOTTOM)
+#define	MACH_EXEC_STACK_OFFSET	(MACH_KERN_STACK_SIZE - 8)
 
 #define	MAGIC			0xFeedBabe
 
 /*
- * Constants for the user stack.
+ * Constants for the user's address space.
  * 
+ * MACH_FIRST_USER_ADDR		The lowest possible address in the user's VAS.
+ * MACH_LAST_USER_ADDR		The highest possible address in the user's VAS.
  * MACH_LAST_USER_STACK_PAGE	The highest page in the user stack segment.
  * MACH_MAX_USER_STACK_ADDR	The highest value that the user stack pointer
  *				can have.  Note that the stack pointer must be 
@@ -74,32 +70,10 @@
  *				the stack.
  */
 
-#define	MACH_LAST_USER_STACK_PAGE	((MACH_MAX_USER_STACK_ADDR - 1) / VM_PAGE_SIZE)
-#define	MACH_MAX_USER_STACK_ADDR	VM_MAP_SEG_ADDR
-
-/*
- * The indices of all of the registers in the standard 16 register array of
- * saved register.
- */
-
-#define	D0	0
-#define	D1	1
-#define	D2	2
-#define	D3	3
-#define	D4	4
-#define	D5	5
-#define	D6	6
-#define	D7	7
-#define	A0	8
-#define	A1	9
-#define	A2	10
-#define	A3	11
-#define	A4	12
-#define	A5	13
-#define	A6	14
-#define	FP	14
-#define	A7	15
-#define	SP	15
+#define	MACH_FIRST_USER_ADDR		VMMACH_PAGE_SIZE
+#define	MACH_LAST_USER_ADDR		(MACH_MAX_USER_STACK_ADDR - 1)
+#define	MACH_LAST_USER_STACK_PAGE	((MACH_MAX_USER_STACK_ADDR - 1) / VMMACH_PAGE_SIZE)
+#define	MACH_MAX_USER_STACK_ADDR	VMMACH_MAP_SEG_ADDR
 
 #ifdef SUN3
 /*
