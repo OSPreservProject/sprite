@@ -1496,6 +1496,7 @@ MachUNIXFSync(fd)
     return(Fs_FileWriteBackStub(fd, -1, -1, 1));
 }
 
+/*ARGSUSED*/
 ReturnStatus
 MachUNIXSetPriority(which, who, prio)
     int which, who, prio;
@@ -1503,6 +1504,7 @@ MachUNIXSetPriority(which, who, prio)
     return(SUCCESS);
 }
 
+/*ARGSUSED*/
 ReturnStatus
 MachUNIXGetPriority(which, who, prio)
     int which, who, prio;
@@ -1587,6 +1589,7 @@ MachUNIXSetTimeOfDay(tp, tzpPtr)
     return(SUCCESS);
 }
 
+/*ARGSUSED*/
 ReturnStatus
 MachUNIXGetDirEntries(fd, buf, nbytes, basep)
     int  fd;
@@ -1870,6 +1873,7 @@ MachUNIXFTruncate(fd, length)
 			    usp, 0, (Address)NULL));
 }
 
+#ifndef lint
 ReturnStatus
 MachUNIXLongJumpReturn(sigContextPtr)
     struct sigcontext *sigContextPtr;
@@ -1891,9 +1895,10 @@ MachUNIXLongJumpReturn(sigContextPtr)
     regsPtr->mfhi = sigContext.sc_mdhi;
     bcopy(sigContext.sc_fpregs, regsPtr->fpRegs, sizeof(sigContext.sc_fpregs));
     regsPtr->fpStatusReg = sigContext.sc_fpc_csr;
-    MachUNIXBlock(&dummy, sigContext.sc_mask);
+    (void) MachUNIXBlock(&dummy, sigContext.sc_mask);
     return(SUCCESS);
 }
+#endif
 
 ReturnStatus
 MachUNIXFLock(descriptor, operation)
@@ -2106,6 +2111,7 @@ MachUNIXSetITimer(which, value, ovalue)
 				 (Proc_TimerInterval *) ovalue));
 }
 
+/*ARGSUSED*/
 ReturnStatus
 MachUNIXGetSysInfo(op, buffer, nbytes, start, arg)
     unsigned  op;
@@ -2137,6 +2143,7 @@ MachUNIXGetSysInfo(op, buffer, nbytes, start, arg)
 
 /************************ Begin Unimplemented calls **********************/
 
+/*ARGSUSED*/
 ReturnStatus
 MachUNIXSocketPair(d, type, protocol, sv)
     int d, type, protocol;
@@ -2146,6 +2153,7 @@ MachUNIXSocketPair(d, type, protocol, sv)
     return(FAILURE);
 }
 
+/*ARGSUSED*/
 ReturnStatus
 MachUNIXReboot(howto)
     int howto;
@@ -2161,6 +2169,7 @@ MachUNIXSync()
     return(FAILURE);
 }
 
+/*ARGSUSED*/
 ReturnStatus
 MachUNIXPtrace(request, pid, addr, data)
     int request, pid, *addr, data;
@@ -2184,6 +2193,7 @@ MachUNIXSetDOpt()
 }
 
 
+/*ARGSUSED*/
 ReturnStatus
 MachUNIXAdjTime(delta, olddelta)
     struct timeval	*delta;
