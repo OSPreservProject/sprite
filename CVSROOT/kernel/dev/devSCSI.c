@@ -89,9 +89,10 @@ static Sys_SetJumpState setJumpState;
  * Define the maximum number of sectors that may be transferred to the
  * RXT in one shot.  Since we allocate space from the kernel's address
  * space statically, we don't want to make it too much even though
- * the drive can handle 256 blocks in a shot. 
+ * the drive can handle 256 blocks in a shot.  Besides, the drive only
+ * transfers 32 sectors at a time.
  */
-#define MAX_WORM_SECTORS_IO 16
+#define MAX_WORM_SECTORS_IO 32
 
 /*
  * This utility macro should probably be defined in some global header file.
