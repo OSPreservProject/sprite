@@ -29,7 +29,11 @@
  * segment begins.  The offset is in terms of hardware segments.
  */
 typedef struct VmMach_SegData {
+#ifdef sun4
+    unsigned short	*segTablePtr;
+#else
     unsigned char 	*segTablePtr;
+#endif /* sun4 */
     int			offset;
     int			numSegs;
 } VmMach_SegData;
