@@ -256,7 +256,7 @@ extern	Vm_Segment  	*Vm_SegmentNew();
 extern	ReturnStatus 	Vm_SegmentDup();
 extern	void		Vm_SegmentDelete();
 extern	void		Vm_ChangeCodeProt();
-extern	void		Vm_DeleteFromSeg();
+extern	ReturnStatus	Vm_DeleteFromSeg();
 
 /*
  * Procedures for pages.
@@ -325,7 +325,7 @@ extern	Address		Vm_GetKernelStack();
 extern	void		Vm_FreeKernelStack();
 extern	void		Vm_ProcInit();
 extern	ReturnStatus	Vm_PinUserMem();
-extern	ReturnStatus	Vm_UnpinUserMem();
+extern	void		Vm_UnpinUserMem();
 extern	void		Vm_ReservePage();
 
 /*
