@@ -86,12 +86,6 @@ static	List_Links	reservePageListHdr;
 #define	reservePageList	(&reservePageListHdr)
 
 /*
- * Variables used to instrument virtual memory.
- */
-Boolean		vmForceRef = FALSE;
-Boolean		vmForceSwap = FALSE;
-
-/*
  * Condition to wait for a clean page to be put onto the allocate list.
  */
 static	Sync_Condition	cleanCondition;	
@@ -110,11 +104,15 @@ static	Sync_Condition	swapDownCondition;
 #define	MAX_DIRTY_PAGE_FRACTION	4
 int	vmMaxDirtyPages;
 
-/*
- * Variable that indicates whether pages should be freed after they have
- * been cleaned or just put back onto the front of the allocate list.
- */
-Boolean	vmFreeWhenClean = TRUE;
+Boolean	vmFreeWhenClean = TRUE;	
+Boolean	vmAlwaysRefuse = FALSE;	
+Boolean	vmAlwaysSayYes = FALSE;	
+
+int	vmFSPenalty = 0;
+int	vmNumPageGroups = 10;
+int	vmPagesPerGroup;
+int	vmCurPenalty;
+int	vmBoundary;
 
 void		PageOut();
 void		PutOnReserveList();
@@ -846,6 +844,13 @@ Vm_GetRefTime()
 	}
     }
 
+    if (vmAlwaysRefuse) {
+	refTime = 0x7fffffff;
+    } else if (vmAlwaysSayYes) {
+	refTime = 0;
+    }
+    refTime += vmCurPenalty;
+
     UNLOCK_MONITOR;
 
     return(refTime);
@@ -976,7 +981,7 @@ VmPageAllocate(virtAddrPtr, canBlock)
 
     GetRefTime(&refTime, &page);
     if (page == VM_NO_MEM_VAL) {
-	Fs_GetPageFromFS(refTime, &tPage);
+	Fs_GetPageFromFS(refTime + vmCurPenalty, &tPage);
 	if (tPage == -1) {
 	    vmStat.pageAllocs++;
 	    return(DoPageAllocate(virtAddrPtr, canBlock));
@@ -1937,7 +1942,7 @@ PutOnFront(corePtr)
  * is the amount of time for the clock daemon before it runs again.
  */
 unsigned int	vmClockSleep;		
-int		vmPagesToCheck = 50;
+int		vmPagesToCheck = 100;
 static	int	clockHand = 0;
 
 /*
@@ -2195,8 +2200,17 @@ Vm_MapBlock(addr)
     register	Vm_PTE	*ptePtr;
     Vm_VirtAddr		virtAddr;
     unsigned	int	page;
+    int			curFSPages;
 
     vmStat.fsMap++;
+    curFSPages = vmStat.fsMap - vmStat.fsUnmap;
+    if (curFSPages >= vmBoundary) {
+	vmBoundary += vmPagesPerGroup;
+	vmCurPenalty += vmFSPenalty;
+    }
+    if (curFSPages > vmStat.maxFSPages) {
+	vmStat.maxFSPages = curFSPages;
+    }
 
     virtAddr.page = (unsigned int) addr >> vmPageShift;
     virtAddr.offset = 0;
@@ -2247,8 +2261,18 @@ Vm_UnmapBlock(addr, retOnePage, pageNumPtr)
 {
     register	Vm_PTE	*ptePtr;
     Vm_VirtAddr		virtAddr;
+    int			curFSPages;
 
     vmStat.fsUnmap++;
+    curFSPages = vmStat.fsMap - vmStat.fsUnmap;
+
+    if (curFSPages < vmBoundary) {
+	vmBoundary -= vmPagesPerGroup;
+	vmCurPenalty -= vmFSPenalty;
+    }
+    if (curFSPages < vmStat.minFSPages) {
+	vmStat.minFSPages = curFSPages;
+    }
 
     virtAddr.page = (unsigned int) addr >> vmPageShift;
     virtAddr.offset = 0;
@@ -2313,6 +2337,12 @@ Vm_FsCacheSize(startAddrPtr, endAddrPtr)
 	numPages = vmStat.numFreePages - vmStat.minVMPages;
     }
     *endAddrPtr = vmBlockCacheBaseAddr + numPages * vm_PageSize - 1;
+    /*
+     * Compute the penalties to put onto FS pages.
+     */
+    vmPagesPerGroup = vmStat.numFreePages / vmNumPageGroups;
+    vmCurPenalty = 0;
+    vmBoundary = vmPagesPerGroup;
 }
 
 /*---------------------------------------------------------------------------
