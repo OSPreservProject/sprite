@@ -570,8 +570,10 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 	    int	     max = 0;
 	    register DevHBADiskTest  *cmds;
 	    ScsiCmd	*scsiCmds;
-	    Address    mem, dmaMem;
 	    ReturnStatus       errorStatus;
+	    static  char *dmaMem, *dmem;
+	    char *mem;
+	    static int referCount = 0;
 
 	    if ((ioctlPtr->inBufSize % sizeof(DevHBADiskTest)) || 
 		!ioctlPtr->inBufSize) {
@@ -579,20 +581,16 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 	    }
 	    count = ioctlPtr->inBufSize / sizeof(DevHBADiskTest);
 	    cmds = (DevHBADiskTest  * ) ioctlPtr->inBuffer;
-	    for (i = 0; i < count; i++) {
-		if (max < cmds[i].lengthInSectors) {
-		    max = cmds[i].lengthInSectors;
-	        }
-	    }
-	    if (max == 0) {
-		return(GEN_INVALID_ARG);
-	    }
-	    mem = malloc(DEV_BYTES_PER_SECTOR * max + sizeof(ScsiCmd)*count);
-	    scsiCmds = (ScsiCmd *) (mem + DEV_BYTES_PER_SECTOR * max);
-	    dmaMem = VmMach_DMAAlloc(DEV_BYTES_PER_SECTOR * max, mem);
-	    if (dmaMem == (Address) NIL) {
-		panic("IOControlProc: unable to allocate dma memory.");
-	    }
+	    mem = malloc(sizeof(ScsiCmd)*count);
+	    if (referCount == 0) { 
+		    dmem = malloc(128*1024);
+		    dmaMem = VmMach_DMAAlloc(128*1024, dmem);
+		    if (dmaMem == (Address) NIL) {
+			panic("IOControlProc: unable to allocate dma memory.");
+		    }
+	    } 
+	    referCount++;
+	    scsiCmds = (ScsiCmd *) (mem);
 	    errorStatus = 0;
 	    for (i = 0; i < count; i++) {
 		DevScsiGroup0Cmd(diskPtr->devPtr, 
@@ -615,7 +613,11 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 				 (int *) NIL, (char *) NIL);
 		}
 	   }
-	   VmMach_DMAFree(DEV_BYTES_PER_SECTOR * max, dmaMem);
+	   referCount--;
+	   if (referCount == 0) {
+		   VmMach_DMAFree(128*1024, dmaMem);
+		   free(dmem);
+	   }
 	   free(mem);
 	   if (status)
 	       return status;
