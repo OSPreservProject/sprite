@@ -65,8 +65,6 @@ Boolean fsTracing = TRUE;
 Time fsTraceTime;		/* Cost of taking a trace record */
 int fsTracedFile = -1;		/* fileID.minor of traced file */
 
-char *FsFileTypeToString();
-
 typedef struct FsTracePrintTable {
     FsTraceRecType	type;		/* This determines the format of the
 					 * trace record client data. */
@@ -684,7 +682,7 @@ FsFileError(hdrPtr, string, status)
     } else {
 	Net_HostPrint(hdrPtr->fileID.serverID,
 		      FsFileTypeToString(hdrPtr->fileID.type));
-	Sys_Printf("\"%s\" <%d,%d> %s: ", FsHandleName(hdrPtr),
+	Sys_Printf(" \"%s\" <%d,%d> %s: ", FsHandleName(hdrPtr),
 		hdrPtr->fileID.major, hdrPtr->fileID.minor, string);
     }
     switch (status) {
@@ -726,7 +724,7 @@ FsFileError(hdrPtr, string, status)
  *
  * FsFileTypeToString --
  *
- *	Map a stream type to a string.  The string has a trailing blank.
+ *	Map a stream type to a string.  Used for error messages.
  *
  * Results:
  *	A string.
@@ -744,52 +742,65 @@ FsFileTypeToString(type)
 
     switch (type) {
 	case FS_STREAM:
-	    fileType = "Stream ";
+	    fileType = "Stream";
 	    break;
 	case FS_LCL_FILE_STREAM:
-	    fileType = "File ";
+	    fileType = "File";
 	    break;
 	case FS_RMT_FILE_STREAM:
-	    fileType = "RmtFile ";
+	    fileType = "RmtFile";
 	    break;
 	case FS_LCL_DEVICE_STREAM:
-	    fileType = "Device ";
+	    fileType = "Device";
 	    break;
 	case FS_RMT_DEVICE_STREAM:
-	    fileType = "RmtDevice ";
+	    fileType = "RmtDevice";
 	    break;
 	case FS_LCL_PIPE_STREAM:
-	    fileType = "Pipe ";
+	    fileType = "Pipe";
 	    break;
 	case FS_RMT_PIPE_STREAM:
-	    fileType = "RmtPipe ";
+	    fileType = "RmtPipe";
 	    break;
 	case FS_LCL_NAMED_PIPE_STREAM:
-	    fileType = "NamedPipe ";
+	    fileType = "NamedPipe";
 	    break;
 	case FS_RMT_NAMED_PIPE_STREAM:
-	    fileType = "RmtNamedPipe ";
+	    fileType = "RmtNamedPipe";
 	    break;
 	case FS_CONTROL_STREAM:
-	    fileType = "ControlStream ";
+	    fileType = "PdevControlStream";
 	    break;
 	case FS_SERVER_STREAM:
-	    fileType = "SrvStream ";
+	    fileType = "SrvStream";
 	    break;
 	case FS_LCL_PSEUDO_STREAM:
-	    fileType = "LclPdev ";
+	    fileType = "LclPdev";
 	    break;
 	case FS_RMT_PSEUDO_STREAM:
-	    fileType = "RmtPdev ";
+	    fileType = "RmtPdev";
 	    break;
+	case FS_PFS_CONTROL_STREAM:
+	    fileType = "PfsControlStream";
+	    break;
+	case FS_PFS_NAMING_STREAM:
+	    fileType = "PfsNamingStream";
+	    break;
+	case FS_LCL_PFS_STREAM:
+	    fileType = "LclPfs";
+	    break;
+	case FS_RMT_PFS_STREAM:
+	    fileType = "RmtPfs";
+	    break;
+
 	case FS_RMT_UNIX_STREAM:
-	    fileType = "UnixFile ";
+	    fileType = "UnixFile";
 	    break;
 	case FS_RMT_NFS_STREAM:
-	    fileType = "NFSFile ";
+	    fileType = "NFSFile";
 	    break;
 	default:
-	    fileType = "<unknown file type> ";
+	    fileType = "<unknown file type>";
 	    break;
     }
     return(fileType);
