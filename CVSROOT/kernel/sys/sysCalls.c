@@ -542,20 +542,30 @@ Sys_StatsStub(command, option, argPtr)
 	    }
 	    break;
 	}
+#ifdef SOSP91
 	case SYS_SCHED_MORE_STATS: {
-	    Sched_OverallTimes *schedOverallPtr;
+	    Sys_SchedOverallTimes *schedOverallPtr;
+	    Sys_SchedOverallTimes schedOverall;
 
-	    schedOverallPtr = (Sched_OverallTimes *)argPtr;
-	    if (schedOverallPtr == (Sched_OverallTimes *)NIL ||
-		    schedOverallPtr == (Sched_OverallTimes *)0 ||
-		    schedOverallPtr == (Sched_OverallTimes *)USER_NIL) {
+	    schedOverallPtr = (Sys_SchedOverallTimes *)argPtr;
+	    if (schedOverallPtr == (Sys_SchedOverallTimes *)NIL ||
+		    schedOverallPtr == (Sys_SchedOverallTimes *)0 ||
+		    schedOverallPtr == (Sys_SchedOverallTimes *)USER_NIL) {
 		status = GEN_INVALID_ARG;
 	    } else {
-		status = Vm_CopyOut(sizeof(Sched_OverallTimes),
-			(Address)&sched_OverallTimesPerProcessor[0], argPtr);
+		Timer_TicksToTime(sched_OverallTimesPerProcessor[0].kernelTime,
+		    &schedOverall.kernelTime);
+		Timer_TicksToTime(sched_OverallTimesPerProcessor[0].userTime,
+		        &schedOverall.userTime);
+		Timer_TicksToTime(
+			sched_OverallTimesPerProcessor[0].userTimeMigrated,
+			&schedOverall.userTimeMigrated);
+		status = Vm_CopyOut(sizeof(Sys_SchedOverallTimes),
+			(Address)&schedOverall, argPtr);
 	    }
 	    break;
 	}
+#endif SOSP91
 	case SYS_SCHED_STATS: {
 	    Sched_Instrument *schedStatPtr;
 	    Time curTime;
