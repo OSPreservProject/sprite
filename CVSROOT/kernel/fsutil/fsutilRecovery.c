@@ -199,13 +199,32 @@ ReopenHandles(serverID)
 		Net_HostPrint(serverID, "- recovering handles\n");
 		printed = TRUE;
 	    }
+#ifdef NOTDEF
+
+/*
+ * For debugging it would be nice to be able to check for this, but
+ * FS_HANDLE_INVALID isn't defined here.
+ */
+	    if (hdrPtr->flags & FS_HANDLE_INVALID) {
+		printf("Attempting to reopen invalid handle!!!\n");
+	    }
+#endif NOTDEF
 	    status = (*fsio_StreamOpTable[hdrPtr->fileID.type].reopen)(hdrPtr,
 		rpc_SpriteID, (ClientData)NIL, (int *)NIL, (ClientData *)NIL);
 	    RecoveryComplete(&(((Fsrmt_IOHandle *)hdrPtr)->recovery),
 				status);
-	    Fsutil_HandleUnlock(hdrPtr);
+	    /*
+	     * If we removed the handle because it was no longer needed,
+	     * we can't try unlocking it.
+	     */
+	    if (status != FS_NO_HANDLE) {
+		Fsutil_HandleUnlock(hdrPtr);
+	    }
 	    switch (status) {
 		case SUCCESS:
+		    break;
+		case FS_NO_HANDLE:
+		    /* We didn't need to recover this. */
 		    break;
 		case RPC_SERVICE_DISABLED:
 		case RPC_TIMEOUT:
