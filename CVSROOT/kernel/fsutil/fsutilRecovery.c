@@ -44,6 +44,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include <string.h>
 #include <stdio.h>
+#include <devClientDev.h>
 
 
 static void ReopenHandles _ARGS_((int serverID));
@@ -60,8 +61,6 @@ static ReturnStatus DoBulkReopen _ARGS_((int serverID));
 static void FinishReopenHandles _ARGS_((void));
 static ReturnStatus AddReopenHandle _ARGS_((Fs_HandleHeader *hdrPtr));
 static void InitReopenHandles _ARGS_((void));
-void Fsutil_InitBulkReopenOps _ARGS_((int type,
-	Fsutil_BulkReopenOps *reopenOpsPtr));
 
 /*
  * The recovery state for each file is monitored.
@@ -114,14 +113,40 @@ Fsutil_Reopen(serverID, clientData)
     ClientData clientData;	/* IGNORED */
 {
     Boolean		fastBoot;
+    Boolean		serverDriven;
+    unsigned int	state;
 
-    fastBoot = Recov_GetHostState(serverID) & RECOV_FAST_BOOT;
+printf("Fsutil_Reopen called\n");
     /*
      * Ensure only one instance of Fsutil_Reopen by doing a set-and-test.
      */
     if (Recov_SetClientState(serverID, SRV_RECOV_IN_PROGRESS)
 	    & SRV_RECOV_IN_PROGRESS) {
+printf("\tand returning due to already being called.\n");
 	return;
+    }
+    state = Recov_GetHostState(serverID);
+    fastBoot = state & RECOV_FAST_BOOT;
+    serverDriven = state & RECOV_SERVER_DRIVEN;
+printf("\tand is %s\n", serverDriven ? "server driven" : "NOT server driven");
+    if (fastBoot && serverDriven) {
+	printf(
+	"Fsutil_Reopen: %d server doing both transparent and driven recovery\n",
+		serverID);
+	printf("\tI'll just do server-driven.\n");
+	fastBoot = FALSE;
+    }
+    if (state & SRV_DRIVEN_IN_PROGRESS) {
+	panic("Fsutil_Reopen: server-driven recovery out of order.");
+    }
+    if (serverDriven) {
+	/*
+	 * We call back into the recovery module to wait for server rpc
+	 * to wake us.  This will also wake up after some amount of time
+	 * if we don't hear from server.
+	 */
+printf("\twaiting for server-driven RPC to wake us.\n");
+	Recov_WaitForServerDriven(serverID);
     }
     /*
      * Recover the prefix table.
@@ -214,6 +239,7 @@ ReopenHandles(serverID)
     Boolean			doBulkRpc = TRUE;
     ReturnStatus		checkStatus = FAILURE;
 
+printf("ReopenHandles called.\n");
 doSingleRpcsInstead:
     if (doBulkRpc && recov_BulkHandles && serverID == 53) {
 	InitReopenHandles();
@@ -938,7 +964,8 @@ Fsutil_ClientCrashed(spriteID, clientData)
      * client crashed during recovery) so the client can open files
      * the next time it boots.
      */
-    Recov_ClearClientState(spriteID, CLT_RECOV_IN_PROGRESS);
+    Recov_ClearClientState(spriteID,
+	    CLT_RECOV_IN_PROGRESS | CLT_OLD_RECOV | CLT_DOING_SRV_RECOV);
     /*
      * Clean up references to our files.
      */
@@ -1309,6 +1336,72 @@ InitReopenHandles()
     nextHandleIndex = 0;
     return;
 }
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * Dummy functions for bulk reopens - setup and finish --
+ *
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------------
+ */
+ReturnStatus
+NoSetupFunc(hdrPtr, paramsPtr)
+    Fs_HandleHeader	*hdrPtr;
+    Address		paramsPtr;
+{
+    return FAILURE;
+}
+void
+NoFinishFunc(hdrPtr, statePtr, status)
+    Fs_HandleHeader	*hdrPtr;
+    Address		statePtr;
+    ReturnStatus	status;
+{
+    return;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * Fsutil_InitBulkReopenTables --
+ *
+ *	Initialize the bulk reopen ops to be ops used for when there is
+ *	no recovery for the handle type.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------------
+ */
+void
+Fsutil_InitBulkReopenTables()
+{
+    int		i;
+
+    for (i = 0; i < FSIO_NUM_STREAM_TYPES; i++) {
+	/*
+	 * Check first to make sure it hasn't already been set with a valid
+	 * function.
+	 */
+	if ((int) (bulkReopenOps[i].setup) == 0) {
+	    bulkReopenOps[i].setup = NoSetupFunc;
+	    bulkReopenOps[i].finish = NoFinishFunc;
+	}
+    }
+    return;
+}
 
 int	reopensSkipped;
 
@@ -1540,5 +1633,36 @@ DoBulkReopen(serverID)
      * A bad status will only be something like timeout or other rpc-type
      * failure.
      */
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * Fsutil_DoServerRecovery --
+ *
+ *	Do an RPC to client to start it recovering.  This is called from
+ *	a Proc_CallFunc from recovery device.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Starts recovery.
+ *
+ *----------------------------------------------------------------------------
+ */
+ReturnStatus
+Fsutil_DoServerRecovery(clientID)
+    int			clientID;
+{
+    ReturnStatus	status;
+
+    status = Fsrmt_ServerReopen(clientID);
+    if (status == RPC_INVALID_RPC) {
+	Recov_MarkOldClient(clientID);
+    }
+    /* Timeout on rpc should be handled automatically in Recov_HostDown. */
+
     return status;
 }

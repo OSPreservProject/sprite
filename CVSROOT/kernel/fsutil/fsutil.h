@@ -285,5 +285,8 @@ extern int Fsutil_TestForHandles _ARGS_((int serverID));
 extern void Fsutil_ZeroHandleStats _ARGS_((void));
 extern void Fsutil_InitBulkReopenOps _ARGS_((int type,
 	Fsutil_BulkReopenOps *reopenOpsPtr));
+	
+extern ReturnStatus Fsutil_DoServerRecovery _ARGS_((int clientID));
+extern void Fsutil_InitBulkReopenTables _ARGS_((void));
 
 #endif /* _FSUTIL */
