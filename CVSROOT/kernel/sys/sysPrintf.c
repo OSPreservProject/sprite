@@ -109,6 +109,14 @@ writeProc(stream, flush)
  * ----------------------------------------------------------------------------
  */
 
+#ifdef lint
+/* VARARGS1 */
+/* ARGSUSED */
+int vprintf(format)
+    char *format;
+{}
+#else
+/*VARARGS1*/
 int
 vprintf(format, args)
     char	*format;
@@ -139,6 +147,7 @@ vprintf(format, args)
     return (bytesWritten);
 
 }
+#endif
 
 /* 
  *----------------------------------------------------------------------
@@ -157,12 +166,13 @@ vprintf(format, args)
  *----------------------------------------------------------------------
  */
 
-/*
- * panic, printf, and fprintf are only defined when not using lint.
- * For lint, use the libc versions to avoid conflicts.
- */
-#ifndef lint
-/* VARARGS0 */
+#ifdef lint
+/* VARARGS1 */
+/* ARGSUSED */
+void panic(format)
+    char *format;
+{}
+#else
 void
 panic(va_alist)
     va_dcl			/* char *format, then any number of additional
@@ -187,6 +197,7 @@ panic(va_alist)
     DBG_CALL;
     Dev_SyslogDebug(FALSE);
 }
+#endif
 
 /*
  * ----------------------------------------------------------------------------
@@ -204,7 +215,14 @@ panic(va_alist)
  * ----------------------------------------------------------------------------
  */
 
-/*VARARGS0*/
+
+#ifdef lint
+/* VARARGS1 */
+/* ARGSUSED */
+void printf(format)
+    char *format;
+{}
+#else
 void
 printf(va_alist)
     va_dcl
@@ -218,6 +236,7 @@ printf(va_alist)
     (void) vprintf(format, args);
     va_end(args);
 }
+#endif
 
 /*
  * ----------------------------------------------------------------------------
@@ -236,7 +255,12 @@ printf(va_alist)
  * ----------------------------------------------------------------------------
  */
 
-/*VARARGS0*/
+#ifdef lint
+/* VARARGS */
+/* ARGSUSED */
+int fprintf()
+{}
+#else
 int
 fprintf(va_alist)
     va_dcl
@@ -253,4 +277,4 @@ fprintf(va_alist)
     va_end(args);
     return result;
 }
-#endif /* lint */
+#endif
