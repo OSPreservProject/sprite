@@ -1,5 +1,5 @@
 /* 
- * fsSubr.c --
+ * fsutilSubr.c --
  *
  *	Miscellaneous routines.
  *
@@ -12,54 +12,30 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
+#include <sprite.h>
 
-#include "fs.h"
-#include "vm.h"
-#include "rpc.h"
-#include "fsutil.h"
-#include "fsdm.h"
-#include "fslcl.h"
-#include "fsprefix.h"
-#include "fsNameOps.h"
-#include "fsutilTrace.h"
-#include "fsStat.h"
-#include "devDiskLabel.h"
-#include "dev.h"
-#include "sync.h"
-#include "timer.h"
-#include "proc.h"
-#include "trace.h"
-#include "hash.h"
-#include "fsrmt.h"
+#include <fs.h>
+#include <vm.h>
+#include <rpc.h>
+#include <fsutil.h>
+#include <fsdm.h>
+#include <fslcl.h>
+#include <fsprefix.h>
+#include <fsNameOps.h>
+#include <fsutilTrace.h>
+#include <fspdev.h>
+#include <fsStat.h>
+#include <devDiskLabel.h>
+#include <dev.h>
+#include <sync.h>
+#include <timer.h>
+#include <proc.h>
+#include <trace.h>
+#include <hash.h>
+#include <fsrmt.h>
 
+#include <stdio.h>
 
-
-/*
- *----------------------------------------------------------------------
- *
- * Fsutil_UpdateTimeOfDay --
- *
- *	Update the time of day in seconds.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Global time of day variable updated.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Fsutil_UpdateTimeOfDay()
-{
-    Time	time;
-
-    Timer_GetTimeOfDay(&time, (int *) NIL, (Boolean *) NIL);
-    fsutil_TimeInSeconds = time.seconds;
-    Timer_ScheduleRoutine(&fsutil_TimeOfDayElement, TRUE);
-}
 
 
 /*
