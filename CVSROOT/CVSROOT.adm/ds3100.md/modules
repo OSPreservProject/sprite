@@ -54,7 +54,7 @@ sched		kernel/sched
 sig		kernel/sig
 sync		kernel/sync
 sys		kernel/sys
-timer		kernel/timer	-i /sprite/lib/scvs/updateInstalled
+timer		-i /sprite/lib/scvs/updateInstalled kernel/timer
 utils		kernel/utils
 vm		kernel/vm
 
