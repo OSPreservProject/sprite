@@ -174,7 +174,7 @@ Recov_Init()
     List_Init(&crashCallBackList);
     Trace_Init(recovTraceHdrPtr, recovTraceLength,
 		sizeof(RecovTraceRecord), 0);
-    recov_CrashDelay = (unsigned int)(10 * timer_IntOneMinute);
+    recov_CrashDelay = (unsigned int)(timer_IntOneMinute);
     RecovPingInit();
     return;
 }
