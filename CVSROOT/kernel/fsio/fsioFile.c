@@ -79,6 +79,10 @@ FsLocalFileHandleInit(fileIDPtr, name, newHandlePtrPtr)
 	/*
 	 * All set.
 	 */
+	if ((*newHandlePtrPtr)->descPtr == (FsFileDescriptor *)NIL) {
+	    Sys_Panic(SYS_FATAL,
+		"FsLocalFileHandleInit, found handle with no descPtr\n");
+	}
 	return(SUCCESS);
     }
     /*
