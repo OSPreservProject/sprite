@@ -21,12 +21,19 @@
 #ifndef _SYNCLOCK
 #define _SYNCLOCK
 
+/* 
+ * Don't include procTypes.h.  The actual definition of "struct 
+ * Proc_ControlBlock" isn't needed for holderPCBPtr, and including it 
+ * introduces a dependency loop (because it needs the definition of 
+ * Sync_Semaphore, which is defined below). 
+ */
+
 #ifdef KERNEL
 #include <user/list.h>
 #include <user/sync.h>
 #else
 #include <list.h>
-#include <user/sync.h>
+#include <sync.h>
 #endif
 
 /*
@@ -109,7 +116,7 @@ typedef struct Sync_Semaphore {
 #ifndef CLEAN_LOCK
     char *name;				/* name of semaphore */
     Address holderPC;			/* pc of lock holder */
-    Address holderPCBPtr;		/* process holding lock */
+    struct Proc_ControlBlock *holderPCBPtr; /* process holding lock */
 #endif /*CLEAN_LOCK */
 
 #ifdef LOCKDEP
@@ -144,7 +151,7 @@ typedef struct Sync_KernelLock{
 #ifndef CLEAN_LOCK
     char *name;				/* name of lock type */
     Address holderPC;			/* pc of lock holder */
-    Address holderPCBPtr;		/* process holding lock */
+    struct Proc_ControlBlock *holderPCBPtr; /* process holding lock */
 #endif /*CLEAN_LOCK */
 
 #ifdef LOCKDEP

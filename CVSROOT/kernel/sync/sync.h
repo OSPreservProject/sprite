@@ -445,18 +445,18 @@ extern Sync_RegElement  *regQueuePtr;
 
 #define Sync_SemInitStatic(name) \
     {0,0,0, SYNC_SEMAPHORE, 0, SYNC_LISTINFO_INIT, name,(Address) NIL, \
-     (Address) NIL}
+     (Proc_ControlBlock *) NIL}
 #else
 #ifdef LOCKDEP
 
 #define Sync_SemInitStatic(name) \
     {0,0,0, SYNC_SEMAPHORE, 0, SYNC_LISTINFO_INIT, name,(Address) NIL, \
-     (Address) NIL, 0}
+     (Proc_ControlBlock *) NIL, 0}
 
 #else
 
 #define Sync_SemInitStatic(name) \
-    {0,name, (Address) NIL, (Address) NIL}
+    {0,name, (Address) NIL, (Proc_ControlBlock *) NIL}
 
 #endif /* LOCKDEP */
 #endif /* LOCKREG */
@@ -493,7 +493,7 @@ extern Sync_RegElement  *regQueuePtr;
 	(sem)->value = (sem)->miss = 0; (sem)->name = semName; \
 	(sem)->hit = 0; (sem)->type = 0;\
 	(sem)->holderPC = (Address)NIL; (sem)->class = SYNC_SEMAPHORE;\
-	(sem)->holderPCBPtr = (Address) NIL; \
+	(sem)->holderPCBPtr = (Proc_ControlBlock *) NIL; \
 }
 
 #else
@@ -503,7 +503,7 @@ extern Sync_RegElement  *regQueuePtr;
 	(sem)->value = (sem)->miss = 0; (sem)->name = semName; \
 	(sem)->hit = 0; (sem)->type = 0; \
 	(sem)->holderPC = (Address)NIL; (sem)->class = SYNC_SEMAPHORE;\
-	(sem)->holderPCBPtr = (Address) NIL; \
+	(sem)->holderPCBPtr = (Proc_ControlBlock *) NIL; \
 	(sem)->priorCount = 0;\
 }
 
@@ -513,7 +513,7 @@ extern Sync_RegElement  *regQueuePtr;
 #define Sync_SemInitDynamic(sem, semName) { \
 	(sem)->value = 0; (sem)->name = semName; \
 	(sem)->holderPC = (Address)NIL;\
-	(sem)->holderPCBPtr = (Address) NIL; \
+	(sem)->holderPCBPtr = (Proc_ControlBlock *) NIL; \
 }
 #endif /* LOCKDEP */
 #endif /* LOCKREG */
@@ -546,19 +546,19 @@ extern Sync_RegElement  *regQueuePtr;
 
 #define Sync_LockInitStatic(name) \
     {0,0,0,SYNC_LOCK, 0, SYNC_LISTINFO_INIT, 0, name, (Address) NIL, \
-     (Address) NIL}
+     (Proc_ControlBlock *) NIL}
 
 #else
 #ifdef LOCKDEP
 
 #define Sync_LockInitStatic(name) \
     {0,0,0,SYNC_LOCK, 0, SYNC_LISTINFO_INIT, 0, name, (Address) NIL, \
-     (Address) NIL,0}
+     (Proc_ControlBlock *) NIL,0}
 
 #else
 
 #define Sync_LockInitStatic(name) \
-    {0,0,name, (Address) NIL, (Address) NIL}
+    {0,0,name, (Address) NIL, (Proc_ControlBlock *) NIL}
 
 
 #endif /* LOCKDEP */
@@ -596,7 +596,7 @@ extern Sync_RegElement  *regQueuePtr;
     (lock)->inUse = (lock)->waiting = 0; (lock)->class = SYNC_LOCK;\
     (lock)->hit = (lock)->miss = 0; (lock)->name = lockName; \
     (lock)->holderPC = (Address) NIL; (lock)->type = 0; \
-    (lock)->holderPCBPtr  = (Address) NIL; \
+    (lock)->holderPCBPtr  = (Proc_ControlBlock *) NIL; \
 }
 
 #else
@@ -606,7 +606,7 @@ extern Sync_RegElement  *regQueuePtr;
     (lock)->inUse = (lock)->waiting = 0; (lock)->class = SYNC_LOCK;\
     (lock)->hit = (lock)->miss = 0; (lock)->name = lockName; \
     (lock)->holderPC = (Address) NIL; (lock)->type = 0; \
-    (lock)->holderPCBPtr  = (Address) NIL; \
+    (lock)->holderPCBPtr  = (Proc_ControlBlock *) NIL; \
     (lock)->priorCount = 0;\
 
 #else
@@ -614,7 +614,7 @@ extern Sync_RegElement  *regQueuePtr;
 #define Sync_LockInitDynamic(lock, lockName) { \
     (lock)->inUse = (lock)->waiting = 0;  (lock)->name = lockName; \
     (lock)->holderPC = (Address) NIL; \
-    (lock)->holderPCBPtr  = (Address) NIL; \
+    (lock)->holderPCBPtr  = (Proc_ControlBlock *) NIL; \
 }
 
 #endif /* LOCKDEP */
@@ -926,7 +926,7 @@ extern Sync_RegElement  *regQueuePtr;
     } else {								\
 	(semaphore)->holderPC = (Address) Mach_GetCallerPC(); 		\
     }									\
-    (semaphore)->holderPCBPtr = (Address) Proc_GetCurrentProc(); 	\
+    (semaphore)->holderPCBPtr = Proc_GetCurrentProc(); 	\
 }
 
 #endif /* CLEAN_LOCK */
