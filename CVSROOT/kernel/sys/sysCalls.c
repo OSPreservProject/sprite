@@ -215,7 +215,7 @@ Sys_Shutdown(flags, rebootString)
 	 * Turn ourselves into a kernel process since we no longer need
 	 * user process resources.
 	 */
-	procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+	procPtr = Proc_GetCurrentProc();
 	Proc_Lock(procPtr);
 	procPtr->genFlags &= ~PROC_USER;
 	procPtr->genFlags |= PROC_KERNEL;
