@@ -143,6 +143,8 @@ typedef struct FsCacheFileInfo {
     List_Links	   dirtyList;	   /* List of dirty blocks for this file.
 				    * THIS MUST BE SECOND, see the macro
 				    * in fsBlockCache.c that depends on it. */
+    List_Links	   blockList;      /* List of blocks for the file */
+    List_Links	   indList;	   /* List of indirect blocks for the file */
     Sync_Lock	   lock;	   /* This is used to serialize cache access */
     int		   flags;	   /* Flags to indicate the state of the
 				      file, defined in fsBlockCache.h */
