@@ -79,6 +79,7 @@ static ReturnStatus SendProcessState();
 static ReturnStatus SendSegment();
 static ReturnStatus SendFileState();
 static ReturnStatus ResumeExecution();
+static ReturnStatus KillRemoteCopy();
 static ReturnStatus InitiateMigration();
 static void	    LockAndSwitch();
 static ENTRY void   WakeupCallers();
@@ -441,6 +442,7 @@ Proc_MigrateTrap(procPtr)
  failure:
     procPtr->genFlags &= ~PROC_MIGRATING;
     Proc_Unlock(procPtr);
+    KillRemoteCopy(procPtr, nodeID, foreign);
     WakeupCallers();
     if (proc_DoTrace && proc_MigDebugLevel > 0 && !foreign) {
 	record.processID = procPtr->processID;
@@ -915,6 +917,85 @@ ResumeExecution(procPtr, nodeID, foreign)
 	return(status);
     } else {
 	return(returnInfo.status);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * KillRemoteCopy --
+ *
+ *	Inform the remote node that a failure occurred during migration,
+ * 	so the incomplete process on the remote node will kill the process.
+ *
+ * RPC: Input parameters:
+ *		remote process ID
+ *	Return parameters:
+ *		ReturnStatus (ignored)
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	A remote procedure call is performed and the migrated process
+ *	is killed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+KillRemoteCopy(procPtr, nodeID, foreign)
+    register Proc_ControlBlock 	*procPtr;    /* The process being migrated */
+    int nodeID;				     /* Node to which it migrates */
+    Boolean foreign;			     /* Is it migrating back home? */
+{
+    ReturnStatus status;
+    Proc_MigrateReply returnInfo;
+    Rpc_Storage storage;
+    Proc_MigrateCommand migrateCommand;
+    Proc_TraceRecord record;
+
+    if (proc_DoTrace && proc_MigDebugLevel > 2) {
+	record.processID = procPtr->processID;
+	record.flags = PROC_MIGTRACE_START;
+	if (!foreign) {
+	    record.flags |= PROC_MIGTRACE_HOME;
+	}
+	record.info.command.type = PROC_MIGRATE_DESTROY;
+	record.info.command.data = (ClientData) NIL;
+	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_TRANSFER,
+		     (ClientData) &record);
+    }
+   
+
+    /*
+     * Set up for the RPC.
+     */
+    migrateCommand.command = PROC_MIGRATE_DESTROY;
+    migrateCommand.remotePID = procPtr->peerProcessID;
+    storage.requestParamPtr = (Address) &migrateCommand;
+    storage.requestParamSize = sizeof(Proc_MigrateCommand);
+
+    storage.requestDataPtr = (Address) NIL;
+    storage.requestDataSize = 0;
+
+    storage.replyParamPtr = (Address) &returnInfo;
+    storage.replyParamSize = sizeof(Proc_MigrateReply);
+    storage.replyDataPtr = (Address) NIL;
+    storage.replyDataSize = 0;
+
+
+    status = Rpc_Call(nodeID, RPC_PROC_MIG_INFO, &storage);
+
+    if (proc_DoTrace && proc_MigDebugLevel > 2) {
+	record.flags = (foreign ? 0 : PROC_MIGTRACE_HOME);
+	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_TRANSFER,
+		     (ClientData) &record);
+    }
+   
+    if (status != SUCCESS && proc_MigDebugLevel > 2) {
+	printf("Warning: KillRemoteCopy: error returned by Rpc_Call: %s.\n",
+		Stat_GetMsg(status));
     }
 }
 

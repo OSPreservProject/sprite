@@ -124,7 +124,7 @@ Proc_MigReceiveInfo(hostID, commandPtr, bufferSize, buffer, returnInfoPtr)
 	    if (proc_MigDebugLevel > 3) {
 		panic("Invalid pid: %x.\n", pid);
 	    }
-	    returnInfoPtr->status = PROC_INVALID_PID;
+	    returnInfoPtr->status = PROC_NO_PEER;
 	} else {
 	    switch(commandPtr->command) {
 		case PROC_MIGRATE_VM:
@@ -163,6 +163,18 @@ Proc_MigReceiveInfo(hostID, commandPtr, bufferSize, buffer, returnInfoPtr)
 			printf("GetUserInfo returned status %x.\n",
 				   returnInfoPtr->status);
 		    }
+		    break;
+		case PROC_MIGRATE_DESTROY:
+		    /*
+		     * Kill the remote copy of a process whose migration
+		     * failed.
+		     */
+		     Proc_DestroyMigratedProc(pid);
+		    if (proc_MigDebugLevel > 6) {
+			printf("Attempted to destroyed process %x.\n",
+				   pid);
+		    }
+		    returnInfoPtr->status = SUCCESS;
 		    break;
 	        case PROC_MIGRATE_RESUME:
 		    /*

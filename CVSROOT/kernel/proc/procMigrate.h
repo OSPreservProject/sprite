@@ -68,9 +68,11 @@ typedef struct {
  * PROC_MIGRATE_USER_INFO 	- User information that may change, such as
  *		  		  priorities or IDs.
  *
- * Another command that may be sent via RPC:
+ * Other commands that may be sent via RPC:
  *
  * PROC_MIGRATE_RESUME	- Resume execution of a migrated process.
+ * PROC_MIGRATE_DESTROY	- Destroy a migrated process due to an error during
+ *			  migration.
  */
 
 typedef enum {
@@ -79,7 +81,8 @@ typedef enum {
     PROC_MIGRATE_FILES,
     PROC_MIGRATE_FS_STREAM,
     PROC_MIGRATE_USER_INFO,
-    PROC_MIGRATE_RESUME
+    PROC_MIGRATE_RESUME,
+    PROC_MIGRATE_DESTROY
 } Proc_MigrateCommandType;
     
 /* 
