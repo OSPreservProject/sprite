@@ -969,6 +969,45 @@ FsDeviceReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * FsVanillaDevReopen --
+ *
+ *	This is a simplified device driver re-open procedure.  It is called
+ *	from FsDeviceReopen via the device operation switch.  It, in turn,
+ *	calls back through the device switch to the regular device open
+ *	procedure.  Form many simple devices this is sufficient for a reopen.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *	
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+FsVanillaDevReopen(devicePtr, refs, writes, notifyToken)
+    Fs_Device *devicePtr;	/* Identifies the device */
+    int refs;			/* Number of streams to the device */
+    int writes;			/* Number of those that are for writing */
+    Fs_NotifyToken notifyToken;	/* Used with Fs_DevNotifyReader */
+{
+    int devIndex = DEV_TYPE_INDEX(devicePtr->type);
+    int useFlags = 0;
+
+    if (refs > 0) {
+	useFlags |= FS_READ;
+    }
+    if (writes > 0) {
+	useFlags |= FS_WRITE;
+    }
+    return((*devFsOpTable[devIndex].open)(devicePtr, useFlags, notifyToken));
+}
+
+/*
  * ----------------------------------------------------------------------------
  *
  * FsDeviceRelease --
