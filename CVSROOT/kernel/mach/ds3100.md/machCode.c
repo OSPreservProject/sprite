@@ -322,10 +322,10 @@ Mach_Init()
     if (F_TO_A VmMach_EndUTLBMiss - F_TO_A VmMach_UTLBMiss > 0x80) {
 	panic("Mach_Init: UTLB code too large\n");
     }
-    Byte_Copy(F_TO_A VmMach_EndUTLBMiss - F_TO_A VmMach_UTLBMiss,
-		F_TO_A VmMach_UTLBMiss, F_TO_A MACH_UTLB_MISS_EXC_VEC);
-    Byte_Copy(F_TO_A MachEndException - F_TO_A MachException,
-		F_TO_A MachException, (Address)MACH_GEN_EXC_VEC);
+    bcopy(F_TO_A VmMach_UTLBMiss, F_TO_A MACH_UTLB_MISS_EXC_VEC,
+		F_TO_A VmMach_EndUTLBMiss - F_TO_A VmMach_UTLBMiss);
+    bcopy(F_TO_A MachException, (Address)MACH_GEN_EXC_VEC,
+	      F_TO_A MachEndException - F_TO_A MachException);
 
     /*
      * Clear out the i and d caches.
@@ -830,7 +830,7 @@ MachUserExceptionHandler(statusReg, causeReg, badVaddr, pc)
 	    break;
 	case MACH_EXC_TLB_MOD:
 	    if (VmMach_TLBModFault(badVaddr) != SUCCESS) {
-		panic("Protection fault in process %x: pc=%x addr=%x\n",
+		printf("Protection fault in process %x: pc=%x addr=%x\n",
 			procPtr->processID, pc, badVaddr);
 		(void) Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL, 
 				procPtr->processID, FALSE);
@@ -839,7 +839,7 @@ MachUserExceptionHandler(statusReg, causeReg, badVaddr, pc)
 	case MACH_EXC_TLB_LD_MISS:
 	case MACH_EXC_TLB_ST_MISS:
 	    if (VmMach_TLBFault(badVaddr) != SUCCESS) {
-		panic("Bad user TLB fault in process %x: pc=%x addr=%x\n",
+		printf("Bad user TLB fault in process %x: pc=%x addr=%x\n",
 			procPtr->processID, pc, badVaddr);
 		(void) Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL, 
 				procPtr->processID, FALSE);
@@ -847,7 +847,7 @@ MachUserExceptionHandler(statusReg, causeReg, badVaddr, pc)
 	    break;
 	case MACH_EXC_ADDR_ERR_LD:
 	case MACH_EXC_ADDR_ERR_ST:
-	    panic("Address fault in process %x: pc=%x addr=%x\n",
+	    printf("Address fault in process %x: pc=%x addr=%x\n",
 			procPtr->processID, pc, badVaddr);
 	    (void) Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL, 
 			    procPtr->processID, FALSE);
@@ -857,7 +857,7 @@ MachUserExceptionHandler(statusReg, causeReg, badVaddr, pc)
 	case MACH_EXC_BUS_ERR_LD_ST:
 	    panic("MachExceptionHandler: User bus error on ld or st");
 	case MACH_EXC_SYSCALL:
-	    panic("MachExceptionHandler: Bad syscall magic for process %x\n",
+	    printf("MachExceptionHandler: Bad syscall magic for process %x\n",
 							procPtr->processID);
 	    (void) Sig_Send(SIG_ILL_INST, SIG_BAD_TRAP,
 			    procPtr->processID, FALSE);
@@ -912,7 +912,7 @@ MachUserExceptionHandler(statusReg, causeReg, badVaddr, pc)
 	    break;
 	}
 	case MACH_EXC_RES_INST:
-	    panic("Reserved instruction in process %x at pc=%x\n",
+	    printf("Reserved instruction in process %x at pc=%x\n",
 			procPtr->processID, pc);
 	    (void) Sig_Send(SIG_ILL_INST, SIG_ILL_INST_CODE,
 			    procPtr->processID, FALSE);
@@ -922,7 +922,7 @@ MachUserExceptionHandler(statusReg, causeReg, badVaddr, pc)
 	    machFPCurStatePtr = machCurStatePtr;
 	    break;
 	case MACH_EXC_OVFLOW:
-	    panic("Overflow exception in process %x at pc=%x\n",
+	    printf("Overflow exception in process %x at pc=%x\n",
 			procPtr->processID, pc);
 	    (void) Sig_Send(SIG_ARITH_FAULT, SIG_OVERFLOW,
 			    procPtr->processID, FALSE);
@@ -1288,7 +1288,7 @@ SetupSigHandler(procPtr, sigStackPtr, pc)
      */
     if (Vm_CopyOut(sizeof(Sig_Context), (Address)&sigStackPtr->sigContext,
 		    (Address)(usp + MACH_STAND_FRAME_SIZE)) != SUCCESS) {
-        panic("Warning: HandleSig: No room on stack for signal, PID=%x.\n",
+        printf("Warning: HandleSig: No room on stack for signal, PID=%x.\n",
                   procPtr->processID);
         Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
     }
@@ -1336,7 +1336,7 @@ ReturnFromSigHandler(procPtr)
 		  (Address)(statePtr->userState.regState.regs[SP] + 
 			    MACH_STAND_FRAME_SIZE),
 		  (Address) &sigStack.sigContext) != SUCCESS) {
-	panic("%s Mach_Code: Stack too small to extract trap info, PID=%x.\n",
+	printf("%s Mach_Code: Stack too small to extract trap info, PID=%x.\n",
 		"Warning:", procPtr->processID);
 	Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
     }
@@ -1411,7 +1411,7 @@ Mach_ProcessorState(processor)
 int
 Mach_GetMachineArch()
 {
-    return SYS_PMAX;
+    return SYS_DS3100;
 }
 
 
@@ -1646,7 +1646,7 @@ Mach_SendSignal(sigType)
 
     procPtr = Proc_GetActualProc();
 
-    panic("Mach_SendSignal: Sending signal\n");
+    printf("Mach_SendSignal: Sending signal\n");
 
     switch ((int)sigType) {
 	case MACH_SIGFPE:
