@@ -319,18 +319,6 @@ extern Boolean fsKeepTypeInfo;
 	    Vm_StringNCopy(numBytes, srcStr, destStr, strLengthPtr))
 
 /*
- *	The FS_NUM_GROUPS constant limits the number of group IDs that
- *	are used even though the proc table supports a variable number.
- */
-#define FS_NUM_GROUPS	8
-
-typedef struct FsUserIDs {
-    int user;			/* Indicates effective user ID */
-    int numGroupIDs;		/* Number of valid entries in groupIDs */
-    int group[FS_NUM_GROUPS];	/* The set of groups the user is in */
-} FsUserIDs;			/* 40 BYTES */
-
-/*
  * Writing policies.
  */
 extern	Boolean	fsDelayTmpFiles;
