@@ -15,6 +15,6 @@
 
 #include "sprite.h"
 
-extern ReturnStatus Dev_VidEnable(Boolean onOff);
+extern ReturnStatus Dev_VidEnable _ARGS_((Boolean onOff));
 
 #endif /* _DEVVID */
