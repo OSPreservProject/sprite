@@ -74,7 +74,7 @@ int proc_AllowMigrationState = PROC_MIG_ALLOW_DEFAULT;
  * machines of the same architecture and version number.
  */
 #ifndef PROC_MIGRATE_VERSION
-#define PROC_MIGRATE_VERSION 8
+#define PROC_MIGRATE_VERSION 9
 #endif /* PROC_MIGRATE_VERSION */
 
 int proc_MigrationVersion = PROC_MIGRATE_VERSION;
@@ -912,6 +912,7 @@ typedef struct {
     int 		numQuantumEnds;
     int			numWaitEvents;
     unsigned int 	schedQuantumTicks;
+    Proc_TimerInterval  timers[PROC_MAX_TIMER + 1];
     int			argStringLength;
 } EncapState;
 
@@ -929,6 +930,17 @@ typedef struct {
     int			effectiveUserID;
     int 		billingRate;
 } UpdateEncapState;
+
+/*
+ * Parameters for a remote Proc_Suspend or resume.
+ */
+
+typedef struct {
+    int		termReason; /* Reason why process went to this state.*/
+    int		termStatus; /* Termination status.*/
+    int		termCode;   /* Termination code. */
+    int		flags;	    /* Exit flags. */
+} SuspendInfo;
 
 /*
  *----------------------------------------------------------------------
@@ -1003,6 +1015,9 @@ EncapProcState(procPtr, hostID, infoPtr, bufPtr)
 {
     int argStringLength;
     EncapState *encapPtr = (EncapState *) bufPtr;
+    int i;
+    ReturnStatus status;
+    Proc_TimerInterval timer;
 
     COPY_STATE(procPtr, encapPtr, parentID);
     COPY_STATE(procPtr, encapPtr, familyID);
@@ -1023,6 +1038,46 @@ EncapProcState(procPtr, hostID, infoPtr, bufPtr)
     COPY_STATE(procPtr, encapPtr, numQuantumEnds);
     COPY_STATE(procPtr, encapPtr, numWaitEvents);
     COPY_STATE(procPtr, encapPtr, schedQuantumTicks);
+
+
+    /*
+     * Get the timer state in an easy-to-transfer form.  Unlock
+     * the process first since ProcChangeTimer will lock it.
+     */
+    timer.interval = time_ZeroSeconds;
+    timer.curValue = time_ZeroSeconds;
+    
+    Proc_Unlock(procPtr);
+    for (i = 0; i <= PROC_MAX_TIMER; i++) {
+	status = ProcChangeTimer(i, &timer, &encapPtr->timers[i], FALSE);
+#define DEBUG_TIMER
+#ifdef DEBUG_TIMER
+	if ((encapPtr->timers[i].curValue.seconds < 0) || 
+	    (encapPtr->timers[i].curValue.microseconds < 0) ||
+	    (encapPtr->timers[i].curValue.microseconds > ONE_SECOND) ||
+	    (encapPtr->timers[i].interval.seconds < 0) || 
+	    (encapPtr->timers[i].interval.microseconds < 0) ||
+	    (encapPtr->timers[i].interval.microseconds > ONE_SECOND)) {
+	    panic("Migration error: timer value (<%d,%d>@<%d,%d>)  is bad.\n",
+		  encapPtr->timers[i].curValue.seconds,
+		  encapPtr->timers[i].curValue.microseconds,
+		  encapPtr->timers[i].interval.seconds,
+		  encapPtr->timers[i].interval.microseconds);
+	    Proc_Lock(procPtr);
+	    return(FAILURE);
+	}
+#endif /* DEBUG_TIMER */
+
+	if (status != SUCCESS) {
+	    if (proc_MigDebugLevel > 0) {
+		printf("EncapProcState: error returned from ProcChangeTimer: %s.\n",
+		       Stat_GetMsg(status));
+	    }
+	    Proc_Lock(procPtr);
+	    return(status);
+	}
+    }
+    Proc_Lock(procPtr);
 
     bufPtr += sizeof(EncapState);
     argStringLength = Byte_AlignAddr(strlen(procPtr->argString) + 1);
@@ -1059,6 +1114,8 @@ DeencapProcState(procPtr, infoPtr, bufPtr)
 {
     Boolean 		home;
     EncapState *encapPtr = (EncapState *) bufPtr;
+    int i;
+    ReturnStatus status;
 
     if (infoPtr->data == 0) {
 	if (proc_MigDebugLevel > 4) {
@@ -1092,6 +1149,31 @@ DeencapProcState(procPtr, infoPtr, bufPtr)
     COPY_STATE(encapPtr, procPtr, numQuantumEnds);
     COPY_STATE(encapPtr, procPtr, numWaitEvents);
     COPY_STATE(encapPtr, procPtr, schedQuantumTicks);
+
+    /*
+     * Set the effective process for this processor while doing the
+     * ProcChangeTimer since we're doing it on behalf of another
+     * process.
+     */
+
+    Proc_SetEffectiveProc(procPtr);
+
+    Proc_Unlock(procPtr);
+    for (i = 0; i <= PROC_MAX_TIMER; i++) {
+	status = ProcChangeTimer(i, &encapPtr->timers[i],
+				 (Proc_TimerInterval *) USER_NIL, FALSE);
+	if (status != SUCCESS) {
+	    if (proc_MigDebugLevel > 0) {
+		printf("DeencapProcState: error returned from ProcChangeTimer: %s.\n",
+		       Stat_GetMsg(status));
+	    }
+	    Proc_Lock(procPtr);
+	    return(status);
+	}
+    }
+    Proc_Lock(procPtr);
+
+    Proc_SetEffectiveProc((Proc_ControlBlock *) NIL);
 
     bufPtr += sizeof(*encapPtr);
     if (procPtr->argString != (char *) NIL) {
@@ -1235,6 +1317,137 @@ ProcMigGetUpdate(cmdPtr, procPtr, inBufPtr, outBufPtr)
     COPY_STATE(statePtr, procPtr, userID);
     COPY_STATE(statePtr, procPtr, effectiveUserID);
     COPY_STATE(statePtr, procPtr, billingRate);
+    Proc_Unlock(procPtr);
+    return(SUCCESS);
+
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcRemoteSuspend --
+ *
+ *	Tell the home node of a process that it has been suspended or resumed.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	A remote procedure call is performed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+ProcRemoteSuspend(procPtr, exitFlags)
+    register Proc_ControlBlock 	*procPtr;  /* Process whose state is changing. */
+    int exitFlags;			   /* Flags to set for child. */
+{
+    ReturnStatus status;
+    int numTries;			/* number of times trying RPC */
+    SuspendInfo info;			/* information to be passed back */
+    register SuspendInfo *infoPtr = &info;
+    					/* information to be passed back */
+    ProcMigCmd cmd;
+    Proc_MigBuffer inBuf;
+
+    if (proc_MigDebugLevel > 4) {
+	printf("ProcRemoteSuspend(%x) called.\n", procPtr->processID);
+    }
+
+    status = Recov_IsHostDown(procPtr->peerHostID);
+    if (status != SUCCESS) {
+	if (proc_MigDebugLevel > 0) {
+	    printf("ProcRemoteSuspend: host %d is down; killing process %x.\n",
+		       procPtr->peerHostID, procPtr->processID);
+	}
+	Proc_Unlock(procPtr);
+	Proc_ExitInt(PROC_TERM_DESTROYED, (int) PROC_NO_PEER, 0);
+	/*
+	 * This point should not be reached, but the N-O-T-R-E-A-C-H-E-D
+	 * directive causes a complaint when there's code after it.
+	 */
+	panic("ProcRemoteSuspend: Proc_ExitInt returned.\n");
+	return;
+    }
+
+
+    COPY_STATE(procPtr, infoPtr, termReason);
+    COPY_STATE(procPtr, infoPtr, termStatus);
+    COPY_STATE(procPtr, infoPtr, termCode);
+    infoPtr->flags = exitFlags;
+
+    /*
+     * Unlock the process while we're doing the RPC.
+     */
+    Proc_Unlock(procPtr);
+
+    /*
+     * Set up for the RPC.
+     */
+    cmd.command = PROC_MIGRATE_CMD_SUSPEND;
+    cmd.remotePid = procPtr->peerProcessID;
+    inBuf.size = sizeof(SuspendInfo);
+    inBuf.ptr = (Address) infoPtr;
+
+    for (numTries = 0; numTries < PROC_MAX_RPC_RETRIES; numTries++) {
+	status = ProcMigCommand(procPtr->peerHostID, &cmd, &inBuf,
+				(Proc_MigBuffer *) NIL);
+	if (status != RPC_TIMEOUT) {
+	    break;
+	}
+	status = Proc_WaitForHost(procPtr->peerHostID);
+	if (status != SUCCESS) {
+	    break;
+	}
+    }
+
+    if (status != SUCCESS && proc_MigDebugLevel > 2) {
+	printf("Warning: Proc_MigUpdateInfo: error returned passing suspend to host %d:\n\t%s.\n",
+		procPtr->peerHostID,Stat_GetMsg(status));
+    }
+    
+    /*
+     * Give the process back the way it was handed to us (locked).
+     */
+    Proc_Lock(procPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcMigGetSuspend --
+ *
+ *	Receive the new exit status of a process from its remote node.
+ *
+ * Results:
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	The process's control block is locked and then updated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+ReturnStatus
+ProcMigGetSuspend(cmdPtr, procPtr, inBufPtr, outBufPtr)
+    ProcMigCmd *cmdPtr;/* contains ID of process on this host */
+    Proc_ControlBlock *procPtr; /* ptr to process control block */
+    Proc_MigBuffer *inBufPtr;	/* input buffer */
+    Proc_MigBuffer *outBufPtr;	/* output buffer (stays NIL) */
+{
+    register SuspendInfo *infoPtr = (SuspendInfo *) inBufPtr->ptr;
+
+    Proc_Lock(procPtr);
+
+    COPY_STATE(infoPtr, procPtr, termReason);
+    COPY_STATE(infoPtr, procPtr, termStatus);
+    COPY_STATE(infoPtr, procPtr, termCode);
+
+    Proc_InformParent(procPtr, infoPtr->flags, TRUE);
     Proc_Unlock(procPtr);
     return(SUCCESS);
 
