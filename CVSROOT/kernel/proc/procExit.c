@@ -136,7 +136,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "rpc.h"
 #include "sig.h"
 
-static	Sync_Lock	exitLock = {0, 0};
+static	Sync_Lock	exitLock = SYNC_LOCK_INIT_STATIC();
 #define	LOCKPTR &exitLock
 
 static INTERNAL void WakeupMigratedParent();
@@ -373,8 +373,8 @@ ExitProcessInt(exitProcPtr, migrated, contextSwitch)
 
     if (((exitProcPtr->exitFlags & PROC_DETACHED) &&
         (exitProcPtr->exitFlags & PROC_WAITED_ON)) || migrated) {
-	Proc_CallFunc(Proc_Reaper,  (ClientData) exitProcPtr, 0);
 	newState = PROC_DEAD;
+	Proc_CallFunc(Proc_Reaper,  (ClientData) exitProcPtr, 0);
     } else {
 	Proc_ControlBlock 	*parentProcPtr;
 
@@ -545,11 +545,40 @@ Proc_Reaper(procPtr, callInfoPtr)
     Proc_CallInfo			*callInfoPtr;
 {
     LOCK_MONITOR;
-
-    if (procPtr->state != PROC_DEAD) {
-	panic("Proc_Reaper: non-DEAD proc on dead list.\n");
+    /*
+     * On a multiprocess there are two cases where we can't reap the process
+     * right away.  1 - the dying process may not have context switched
+     * into the DEAD state.  2 - the dying process's kernel stack may
+     * be used by a processor in the IdleLoop().  In either of these
+     * cases we reschedule ourselves for a second later.
+     */
+    if ((procPtr->state != PROC_DEAD) ||
+	(procPtr->schedFlags & SCHED_STACK_IN_USE)) {
+	callInfoPtr->interval = timer_IntOneSecond;
+	UNLOCK_MONITOR;
+	return;
+    } else {
+	callInfoPtr->interval = 0;
     }
-
+#ifdef notdef
+    /*
+     * Next wait for the process's stack to become free.  On a multiprocessor
+     * a DEAD processes stack may be used to field interrupt by a processor
+     * until another process becomes ready.
+     */
+    while (procPtr->schedFlags & SCHED_STACK_IN_USE) {
+	UNLOCK_MONITOR;
+	Sync_WaitTime(time_OneSecond);
+	LOCK_MONITOR;
+    }
+    /*
+     * Since the SCHED_STACK_IN_USE is removed from a process before the
+     * context switch from that processor occurs we need to syncronize 
+     * with the scheduler.  Context switching on to the READY queue will
+     * cause such a syncronization.
+     */
+    Sched_ContextSwitch(PROC_READY);
+#endif
     /*
      * At this point a migrated process is not in the PROC_MIGRATED
      * state since it's been moved to the PROC_DEAD state.  
