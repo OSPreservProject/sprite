@@ -30,6 +30,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "stdlib.h"
 #include "fs.h"
 #include "exabyteTape.h"
+#include "string.h"
 
 /*
  * The Exabyte drives have 1K blocks.
