@@ -58,10 +58,8 @@ Boolean proc_DoCallTrace = FALSE;
 /*
  * Allocate variables and structures relating to statistics.
  */
-#ifndef CLEAN
 Boolean proc_MigDoStats = TRUE;
 Proc_MigStats proc_MigStats;
-#endif /* CLEAN */
 
 /*
  * True if we should convert a SIG_DEBUG into a SIG_KILL for migrated
