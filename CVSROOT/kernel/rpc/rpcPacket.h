@@ -76,6 +76,62 @@ typedef struct RpcHdr {
 					 * fragment of a group */
     int			dataOffset;	/* Offset for the data area. */
 } RpcHdr;				/* 64 BYTES */
+
+/*
+ * The following is the new format for rpc headers.  It has offsets for the
+ * start of the parameter and data areas, allowing the rpc packet to be
+ * padded.  This is useful if your network interface doesn't do 
+ * scatter/gather and you want to avoid copying the different rpc 
+ * pieces into contiguous memory.  Currently these new rpc headers
+ * are only used on the Ultranet.
+ */
+
+typedef struct RpcNewHdr {
+    unsigned int	version;	/* This is a combined version number
+					 * and byte-order indicator.  See
+					 * the defines below. */
+    unsigned int	flags;		/* Protocol flags, explained below */
+    int			clientID;	/* Client Sprite host id */
+    int			serverID;	/* Server Sprite host id */
+    int			channel;	/* The client channel number */
+    int			serverHint;	/* Server index hint. The server
+					 * machine updates this on every
+					 * packet it sends to a client.  The
+					 * channel being used for the RPC
+					 * should preserve the value sent
+					 * and return it (in this field) with
+					 * future messages to the server */
+    unsigned int	bootID;		/* Client boot timestamp.  This changes
+					 * each time a host reboots. */
+    unsigned int	ID;		/* ID/sequence number. This ID is the
+					 * same on all packets pertaining
+					 * to the same RPC. This increases
+					 * until the origniating host reboots */
+    unsigned int	delay;		/* Interfragment delay info */
+    unsigned int	numFrags;	/* Number of fragments in packet (<=16).
+					 * If the packet is complete, ie. no
+					 * fragmenting, then this field should
+					 * be ZERO */
+    unsigned int	fragMask;	/* Fragment bitmask ID. The I'th frag
+					 * has the I'th bit of this mask
+					 * set.  If no fragments then this
+					 * field should be ZERO.  On partial
+					 * acknowledgments this contains
+					 * the receiver's summary bitmask */
+    int			command;	/* Rpc command, see rpcCall.h */
+    int			paramSize;	/* Size of the parameter area */
+    int			dataSize;	/* Size of the data data area */
+    int			paramOffset;	/* This is the starting offset for the
+					 * block of parameter bytes sent in
+					 * this fragment.  This is zero for
+					 * unfragmented sends and for the first
+					 * fragment of a group */
+    int			dataOffset;	/* Offset for the data area. */
+    int			paramStart;	/* Start of param area in bytes from
+					 * start of the RpcHdr. */
+    int			dataStart;	/* Start of data area in bytes from
+					 * start of the RpcHdr. */
+} RpcHdrNew;				/* 72 BYTES */
 
 /*
  * Version number / byte-ordering word.
@@ -96,6 +152,8 @@ typedef struct RpcHdr {
  */
 #define	RPC_NATIVE_VERSION	0x0f0e0003
 #define RPC_SWAPPED_VERSION	0x03000e0f
+#define	RPC_NATIVE_VERSION_NEW	0xfeedface
+#define RPC_SWAPPED_VERSION_NEW	0xcefaedfe
 
 /*
  * These are the version variables actually used in the kernel. You can
@@ -104,6 +162,8 @@ typedef struct RpcHdr {
 
 extern int 	rpc_NativeVersion;
 extern int	rpc_SwappedVersion;
+extern int 	rpc_NativeVersionNew;
+extern int	rpc_SwappedVersionNew;
 
 /*
  * The flags field is used to type packets and for flags that
@@ -174,7 +234,7 @@ extern int	rpc_SwappedVersion;
  * 1k of parameters.  This large chunk is broken into fragments.
  * The maximum size of a datagram is dependent on the transport medium.
  */
-#define RPC_MAX_NUM_FRAGS	16
+#define RPC_MAX_NUM_FRAGS	31
 #define RPC_MAX_FRAG_SIZE	1024
 #define RPC_MAX_DATASIZE	(RPC_MAX_NUM_FRAGS * RPC_MAX_FRAG_SIZE)
 #define RPC_MAX_PARAMSIZE	(1 * RPC_MAX_FRAG_SIZE)
