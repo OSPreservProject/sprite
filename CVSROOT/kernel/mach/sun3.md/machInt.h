@@ -82,4 +82,4 @@ extern 	MachMonBootParam	machMonBootParam;
  */
 extern	void	MachUserReturn();
 
-#endif _MACHINT
+#endif /* _MACHINT */
