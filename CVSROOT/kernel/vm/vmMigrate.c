@@ -613,6 +613,9 @@ FlushSegment(segPtr)
     Vm_VirtAddr		virtAddr;
     int    		i;
     ReturnStatus	status;
+#ifndef CLEAN
+    int			pagesWritten = 0;
+#endif /* CLEAN */
 
     /*
      * Open the swap file unconditionally.
@@ -661,11 +664,16 @@ FlushSegment(segPtr)
 	 * for it to be written out.
 	 */
 #ifndef CLEAN
-	proc_MigStats.pagesWritten++;
+	pagesWritten++;
 #endif /* CLEAN */
 	
 	VmPutOnDirtyList(Vm_GetPageFrame(*ptePtr));
     }
+#ifndef CLEAN
+	if (proc_MigDoStats) {
+	    Proc_MigAddToCounter(&proc_MigStats.pagesWritten, pagesWritten);
+	}
+#endif /* CLEAN */
     return(SUCCESS);
 }
 
