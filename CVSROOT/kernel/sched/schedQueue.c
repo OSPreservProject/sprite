@@ -150,10 +150,8 @@ Sched_InsertInQueue(procPtr, runPtrPtr)
 		sched_OnDeck[processor].procPtr = tempPtr;
 	    }
 	}
-	if (procPtr != (Proc_ControlBlock *) NIL) {
-	    if (procPtr->schedFlags & SCHED_STACK_IN_USE) {
-		panic("Couldn't put stack_in_use process on deck.");
-	    }
+	if (procPtr != (Proc_ControlBlock *) NIL && 
+	    !(procPtr->schedFlags & SCHED_STACK_IN_USE)) {
 	    /*
 	     * Give the process to any idle processor. It's stack cannot
 	     * be in use (it can't be run anyway so don't bother trying).
