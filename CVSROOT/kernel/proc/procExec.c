@@ -739,10 +739,17 @@ execError:
     if (filePtr != (Fs_Stream *) NIL) {
 	if (codeSegPtr != (Vm_Segment *) NIL) {
 	    Vm_SegmentDelete(codeSegPtr, procPtr);
+	    if (!usedFile) {
+		/*
+		 * If usedFile is TRUE then the file has already been closed
+		 * by Vm_SegmentDelete.
+		 */
+		Fs_Close(filePtr);
+	    }
 	} else {
 	    Vm_InitCode(filePtr, (Vm_Segment *) NIL, (Vm_ExecInfo *) NIL);
+	    Fs_Close(filePtr);
 	}
-	Fs_Close(filePtr);
     }
     while (!List_IsEmpty(&argList)) {
 	argListPtr = (ArgListElement *) List_First(&argList);
