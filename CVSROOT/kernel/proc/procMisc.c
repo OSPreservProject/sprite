@@ -700,10 +700,10 @@ Proc_SetPriority(pid, priority, useFamily)
     int				userID;
     ReturnStatus		status;
 
-    if (priority > PROC_NO_INTR_PRIORITY) {
-	priority = PROC_NO_INTR_PRIORITY;
-    } else if (priority < PROC_VERY_LOW_PRIORITY) {
-	priority = PROC_VERY_LOW_PRIORITY;
+    if (priority > PROC_MAX_PRIORITY) {
+	priority = PROC_MAX_PRIORITY;
+    } else if (priority < PROC_MIN_PRIORITY) {
+	priority = PROC_MIN_PRIORITY;
     }
 
     if (useFamily) {
