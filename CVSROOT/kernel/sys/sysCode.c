@@ -96,7 +96,7 @@ Sys_GetHostId()
  *	None.
  *
  * Side effects:
- *	Sys_Printf.
+ *	printf.
  *
  *----------------------------------------------------------------------
  */
@@ -139,15 +139,15 @@ Sys_HostPrint(spriteID, string)
 	    }
 	}
     }
-    Sys_Printf("%d/%d/%d %d:%02d:%02d ", timeParts.month, timeParts.dayOfMonth,
+    printf("%d/%d/%d %d:%02d:%02d ", timeParts.month, timeParts.dayOfMonth,
 	    timeParts.year, timeParts.hours, timeParts.minutes,
 	    timeParts.seconds);
 
     Net_SpriteIDToName(spriteID, &hostName);
     if ((hostName == (char *)NIL) || (hostName == (char *)NULL)) {
-	Sys_Printf("Sprite Host <%d> %s", spriteID, string);
+	printf("Sprite Host <%d> %s", spriteID, string);
     } else {
-	Sys_Printf("%s (%d) %s", hostName, spriteID, string);
+	printf("%s (%d) %s", hostName, spriteID, string);
     }
 }
 

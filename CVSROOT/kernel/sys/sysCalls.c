@@ -201,7 +201,7 @@ Sys_Shutdown(flags, rebootString)
 	    if (status != SUCCESS) {
 		return(SYS_ARG_NOACCESS);
 	    }
-	    (void) String_Copy(rebootString, string);
+	    (void) strcpy(string, rebootString);
 	    Proc_MakeUnaccessible(rebootString, accLength);
 	}
     }
@@ -235,12 +235,12 @@ Sys_Shutdown(flags, rebootString)
 		    break;
 		}
 		if (timesWaited >= MAX_WAIT_INTERVALS) {
-		    Sys_Printf("%d %s processes still alive.\n", alive,
+		    printf("%d %s processes still alive.\n", alive,
 				userDead ? "kernel" : "user");
 		    break;
 		}
 		timesWaited++;
-		Sys_Printf("Waiting with %d %s processes still alive\n", alive,
+		printf("Waiting with %d %s processes still alive\n", alive,
 				userDead ? "kernel" : "user");
 		if (shutdownDebug) {
 		    DBG_CALL;
@@ -263,7 +263,7 @@ Sys_Shutdown(flags, rebootString)
      * Sync the disks.
      */
     if (flags & SYS_WRITE_BACK) {
-	Sys_Printf("Syncing disks\n");
+	printf("Syncing disks\n");
 	Fs_Sync(-1, flags & SYS_KILL_PROCESSES);
     }
 
@@ -309,7 +309,7 @@ SysErrorShutdown(trapType)
 	(void) Sys_Shutdown(SYS_KILL_PROCESSES);
     }
     if (sys_ShouldSyncDisks && sys_ShuttingDown) {
-	Sys_Printf("Error type %d while shutting down system. Exiting ...\n",
+	printf("Error type %d while shutting down system. Exiting ...\n",
 		   trapType);
 	Proc_Exit(trapType);
     }
@@ -343,7 +343,7 @@ Sys_SyncDisks(trapType)
     char	*SpriteVersion();
     
     if (errorSync) {
-	Sys_Printf("Error type %d while syncing disks.\n", trapType);
+	printf("Error type %d while syncing disks.\n", trapType);
 	sys_ShouldSyncDisks = FALSE;
 	errorSync = FALSE;
 	DBG_CALL;
@@ -351,7 +351,7 @@ Sys_SyncDisks(trapType)
     }
     if (sys_ShouldSyncDisks && !mach_AtInterruptLevel && !sys_ShuttingDown &&
         !dbg_BeingDebugged && (trapType != MACH_BRKPT_TRAP || sysPanicing)) {
-	Sys_Printf("Syncing disks.  Version: %s\n", SpriteVersion());
+	printf("Syncing disks.  Version: %s\n", SpriteVersion());
 	errorSync = TRUE;
 	Fs_Sync(-1, TRUE);
 	errorSync = FALSE;
@@ -448,7 +448,7 @@ Sys_StatsStub(command, option, argPtr)
 	    register int length;
 	    register char *version;
 	    version = (char *)SpriteVersion();
-	    length = String_Length(version) + 1;
+	    length = strlen(version) + 1;
 	    if (option <= 0) {
 		status = GEN_INVALID_ARG;
 		break;
@@ -578,8 +578,8 @@ Sys_StatsStub(command, option, argPtr)
 	case SYS_PROC_TRACE_STATS: {
 	    switch(option) {
 		case SYS_PROC_TRACING_PRINT:
-		    Sys_Panic(SYS_WARNING,
-		      "Printing of proc trace records not implemented.\n");
+		    printf("%s %s\n", "Warning:",
+			    "Printing of proc trace records not implemented.");
 		    break;
 		case SYS_PROC_TRACING_ON:
 		    Proc_MigrateStartTracing();
@@ -638,4 +638,3 @@ Sys_StatsStub(command, option, argPtr)
     }
     return(status);
 }
-

@@ -30,19 +30,31 @@
 #define	SYS_MAX_ARGS	10
 #define	SYS_ARG_SIZE	4
 
+#ifdef KERNEL
+
 extern	Boolean	sys_ShuttingDown;
 extern	Boolean	sys_ErrorShutdown;
 extern	int	sys_NumCalls[];
 
 extern	void	Sys_Init();
 extern	void	Sys_Printf();
-extern	void	Sys_SafePrintf();
+#define Sys_SafePrintf	Sys_Printf
+#ifdef NOTDEF
+/* No one calls this one anyway. */
 extern	void	Sys_UnSafePrintf();
+#endif /* NOTDEF */
 extern	void	Sys_HostPrint();
 extern	void	Sys_Panic();
+extern	void	printf();
+extern	void	panic();
+
+extern  ReturnStatus	Sys_OutputNumCalls();
+
+#endif KERNEL
 
 /*
- *  Declarations of system calls.
+ *  Declarations of system call stubs, which happen to have the
+ *  same name as the user-visible routines.
  */
 
 extern	ReturnStatus	Sys_GetTimeOfDay();
@@ -50,7 +62,5 @@ extern	ReturnStatus	Sys_SetTimeOfDay();
 extern	ReturnStatus	Sys_DoNothing();
 extern	ReturnStatus	Sys_Shutdown();
 extern	ReturnStatus	Sys_GetMachineInfo();
-
-extern  ReturnStatus	Sys_OutputNumCalls();
 
 #endif _SYS
