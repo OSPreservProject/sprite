@@ -21,7 +21,6 @@
 #define _FSSPRITEDOMAIN
 
 #include "fsNameOps.h"
-#include "fsIO.h"
 #include "proc.h"
 
 /*
