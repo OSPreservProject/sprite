@@ -669,6 +669,7 @@ SendRemoteSignal(hostID, sigNum, code, id, familyID)
  *
  *----------------------------------------------------------------------
  */
+/*ARGSUSED*/
 ReturnStatus	
 Sig_RpcSend(srvToken, clientID, command, storagePtr)
     ClientData 		 srvToken;	/* Handle on server process passed to
