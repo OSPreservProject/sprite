@@ -1254,9 +1254,33 @@ NON_LEAF(MachFPInterrupt,STAND_FRAME_SIZE,ra)
 	and	t1, t0, MACH_SR_KU_PREV
 	bne	t1, zero, 1f
 	/*
-	 * We got an FPU interrupt in kernel mode.  This is panic time.
+	 * We got an FPU interrupt in kernel mode.
+	 * At this point we should do something clever like
+	 * simulating the instruction that failed.  Instead
+	 * we just clear the FPU status register and let
+	 * the job die.
 	 */
-	PANIC("FPU Interrupt in Kernel mode\012")
+	PRINTF("FPU interrupt in Kernel mode\012")
+	/*
+	 * Turn on the floating point coprocessor.
+	 */
+	or	t1, t0, MACH_SR_COP_1_BIT
+	mtc0	t1, MACH_COP_0_STATUS_REG
+	/*
+	 * Some nops are needed here or else the coprocessor
+	 * won't be enabled by the time we try to clear the
+	 * status register and the kernel will panic with
+	 * "coprocessor unusable".
+	 */
+	nop
+	nop
+	nop
+	nop
+	/*
+	 * Clear the status register.
+	 */
+	ctc1	zero, MACH_FPC_CSR
+	j	FPReturn
 1:
 	/*
 	 * Turn on the floating point coprocessor.
