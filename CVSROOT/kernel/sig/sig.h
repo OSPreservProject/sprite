@@ -39,13 +39,16 @@ typedef struct {
 
 /*
  * Structure that user sees on stack when a signal is taken.
+ * Sig_Context+Sig_Stack must be double word aligned for the sun4.
+ * Thus there is 4 bytes of padding here.
  */
 typedef struct {
     int		sigNum;		/* The number of this signal. */
     int		sigCode;    	/* The code of this signal. */
     Sig_Context	*contextPtr;	/* Pointer to structure used to restore the
 				 * state before the signal. */
-    int		sigAddr;
+    int		sigAddr;	/* Address of fault. */
+    int		pad;		/* Explained above. */
 } Sig_Stack;
 
 /*
