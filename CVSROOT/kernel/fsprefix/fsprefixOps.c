@@ -32,11 +32,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 
 #include "sprite.h"
+#include "fsutil.h"
 #include "fs.h"
 #include "fsprefix.h"
 #include "prefixInt.h"
 #include "fsNameOps.h"
-#include "fsutil.h"
 #include "fsutilTrace.h"
 #include "fsStat.h"
 #include "fsio.h"
@@ -1497,12 +1497,13 @@ GetPrefix(fileName, follow, hdrPtrPtr, rootIDPtr, lookupNamePtr, domainTypePtr,
 	    status = LocatePrefix(*lookupNamePtr, serverID, domainTypePtr,
 						    hdrPtrPtr);
 	    if (status == FS_NEW_PREFIX) {
-		char *hostname;
+		char hostname[128];
 
 		fs_Stats.prefix.found++;
 
-		Net_SpriteIDToName((*hdrPtrPtr)->fileID.serverID, &hostname);
-		if (hostname != (char *)NIL) {
+		Net_SpriteIDToName((*hdrPtrPtr)->fileID.serverID, 128, 
+			hostname);
+		if (hostname[0] != '\0') {
 		    printf("Importing \"%s\" from %s\n", *lookupNamePtr,
 				hostname);
 		} else {
