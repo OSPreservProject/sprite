@@ -252,14 +252,6 @@ FspdevPseudoStreamIoOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
     Proc_PID 			procID;
     int				uid;
 
-    /*
-     * PATCH - should allow execution via pseudo-devices some day.
-     *	Need to fix Fs_CheckSetID, and the sticky segment stuff.
-     */
-    if (*flagsPtr & FS_EXECUTE) {
-	return(FS_WRONG_TYPE);
-    }
-
     pdevStatePtr = (Fspdev_State *)streamData;
     ctrlHandlePtr = Fsutil_HandleFetchType(FspdevControlIOHandle,
 				    &pdevStatePtr->ctrlFileID);

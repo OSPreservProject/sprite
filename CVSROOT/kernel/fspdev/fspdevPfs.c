@@ -683,6 +683,9 @@ FspdevPfsStreamIoOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 	cltHandlePtr->hdr.name = (char *)malloc(strlen(name) + 1);
 	(void)strcpy(cltHandlePtr->hdr.name, name);
 	*ioHandlePtrPtr = (Fs_HandleHeader *)cltHandlePtr;
+	if (*flagsPtr & FS_EXECUTE) {         /* Promote execute access to
+	    *flagsPtr |= FS_READ;	       * read access. JMS */
+	}
 	Fsutil_HandleUnlock(cltHandlePtr);
 	return(SUCCESS);
     }
@@ -719,6 +722,9 @@ FspdevRmtPfsStreamIoOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
     Fs_HandleHeader	**ioHandlePtrPtr;/* Return - FSIO_RMT_PFS_STREAM handle */
 {
     Fsrmt_IOHandleInit(ioFileIDPtr, *flagsPtr, name, ioHandlePtrPtr);
+    if (*flagsPtr & FS_EXECUTE) {         /* Promote execute access to
+	*flagsPtr |= FS_READ;              * read access. JMS */
+    }
     return(SUCCESS);
 }
 
