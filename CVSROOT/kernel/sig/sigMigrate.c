@@ -300,6 +300,17 @@ Sig_DeencapState(procPtr, infoPtr, bufPtr)
 {
     EncapState *encapPtr = (EncapState *) bufPtr;
 
+    MigratedState *migPtr = (MigratedState *) buffer;
+    ReturnStatus status;
+
+    if (infoPtr->size != sizeof(EncapState)) {
+	if (proc_MigDebugLevel > 0) {
+	    printf("Sig_DeencapState: warning: host %d tried to migrate onto this host with wrong structure size.  Ours is %d, theirs is %d.\n",
+		   procPtr->peerHostID, sizeof(EncapState),
+		   infoPtr->size);
+	}
+	return(PROC_MIGRATION_REFUSED);
+    }
     COPY_STATE(encapPtr, procPtr, sigHoldMask);
     COPY_STATE(encapPtr, procPtr, sigPendingMask);
     procPtr->sigPendingMask &=

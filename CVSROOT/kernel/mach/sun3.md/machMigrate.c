@@ -31,7 +31,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * The information that is transferred between two machines.
  */
 typedef struct {
-    Mach_UserState userState;		/* the contiguous machine-dependent
+    Mach_UserState userState;		/* The contiguous machine-dependent
 					 * user state. */
     int	pc;				/* PC at which to resume execution. */
 } MigratedState;
@@ -67,7 +67,7 @@ Mach_EncapState(procPtr, hostID, infoPtr, buffer)
 {
     Mach_State *machStatePtr = procPtr->machStatePtr;
     MigratedState *migPtr = (MigratedState *) buffer;
-    
+
     bcopy((Address) &machStatePtr->userState, (Address) &migPtr->userState,
 	    sizeof(Mach_UserState));
     migPtr->pc = machStatePtr->userState.excStackPtr->pc;
@@ -106,6 +106,14 @@ Mach_DeencapState(procPtr, infoPtr, buffer)
     MigratedState *migPtr = (MigratedState *) buffer;
     ReturnStatus status;
 
+    if (infoPtr->size != sizeof(MigratedState)) {
+	if (proc_MigDebugLevel > 0) {
+	    printf("Mach_DeencapState: warning: host %d tried to migrate onto this host with wrong structure size.  Ours is %d, theirs is %d.\n",
+		   procPtr->peerHostID, sizeof(MigratedState),
+		   infoPtr->size);
+	}
+	return(PROC_MIGRATION_REFUSED);
+    }
     /*
      * Get rid of the process's old machine-dependent state if it exists.
      */
