@@ -232,11 +232,14 @@ Exc_Trap(trapStack)
 		     * Is a page fault on a user process while executing in
 		     * the kernel.  This can happen on calls to 
 		     * Vm_Copy{In,Out} (indicated by the VM_COPY_IN_PROGRESS
-		     * flag) or after a pointer is made accessible by 
-		     * Vm_MakeAccessible (indicated by numMakeAcc > 0).
+		     * flag), after a pointer is made accessible by 
+		     * Vm_MakeAccessible (indicated by numMakeAcc > 0) or
+		     * after someone did a set jump in the kernel and tried
+		     * to access a user process.
 		     */
 		    if (!(procPtr->vmPtr->vmFlags & VM_COPY_IN_PROGRESS) &&
-			procPtr->vmPtr->numMakeAcc == 0) {
+			procPtr->vmPtr->numMakeAcc == 0 &&
+			procPtr->setJumpStatePtr == (Sys_SetJumpState *) NIL) {
 			return(EXC_KERN_ERROR);
 		    }
 		    protError = 
