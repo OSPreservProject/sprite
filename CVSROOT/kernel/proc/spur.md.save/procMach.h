@@ -58,7 +58,7 @@ typedef struct {
     (((x).magic)!=PROC_ZMAGIC)
 
 #define	PROC_CODE_FILE_OFFSET(x) \
-	((x).magic==PROC_ZMAGIC ? 0 : sizeof (Proc_AOUT))
+	((x).magic==PROC_ZMAGIC ? 0 : sizeof (ProcExecHeader))
 #define	PROC_DATA_FILE_OFFSET(x) \
 	(PROC_CODE_FILE_OFFSET(x) + (x).code)
 
