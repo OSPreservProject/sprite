@@ -184,10 +184,12 @@ FsUpdateAttrFromClient(cacheInfoPtr, attrPtr)
 	cacheInfoPtr->attr.accessTime = attrPtr->accessTime;
     }
     if (cacheInfoPtr->attr.lastByte > attrPtr->lastByte) {
-	Sys_Panic(SYS_WARNING, "FsUpdateAttrFromClient, <%d,%d> short size %d not %d\n",
-			       cacheInfoPtr->hdrPtr->fileID.major,
-			       cacheInfoPtr->hdrPtr->fileID.minor,
-	    attrPtr->lastByte, cacheInfoPtr->attr.lastByte);
+	Sys_Panic(SYS_WARNING,
+	"FsUpdateAttrFromClient, \"%s\" <%d,%d> short size %d not %d\n",
+		FsHandleName(cacheInfoPtr->hdrPtr),
+		cacheInfoPtr->hdrPtr->fileID.major,
+		cacheInfoPtr->hdrPtr->fileID.minor,
+		attrPtr->lastByte, cacheInfoPtr->attr.lastByte);
     } else {
 	cacheInfoPtr->attr.lastByte = attrPtr->lastByte;
     }
@@ -373,13 +375,45 @@ FsCacheCheckVersion(cacheInfoPtr, version, clientID)
     LOCK_MONITOR;
     if (version != cacheInfoPtr->version) {
 	Sys_Panic(SYS_WARNING,
-	    "Version mismatch: clt %d, srv %d, file <%d,%d>, from client %d\n",
-	    version, cacheInfoPtr->version, cacheInfoPtr->hdrPtr->fileID.major,
+    "Version mismatch: clt %d, srv %d, file \"%s\" <%d,%d>, from client %d\n",
+	    version, cacheInfoPtr->version, FsHandleName(cacheInfoPtr->hdrPtr),
+	    cacheInfoPtr->hdrPtr->fileID.major,
 	    cacheInfoPtr->hdrPtr->fileID.minor, clientID);
 	status = FS_VERSION_MISMATCH;
     }
     UNLOCK_MONITOR;
     return(status);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * FsCacheNumBlocks --
+ *
+ * 	This is called at handle scavenge time to see how many blocks
+ *	there are in the cache.  If there are no blocks it is ok to
+ *	remove the handle.  This calls a routine in fsBlockCache.c
+ *	which gets the global cache monitor lock because the blocksInCache
+ *	attribute is modified under that lock.
+ *
+ * Results:
+ *	The number of blocks in the cache for the file.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+ENTRY int
+FsCacheNumBlocks(cacheInfoPtr)
+    register FsCacheFileInfo	*cacheInfoPtr;	/* Cache state to check. */
+{
+    register int numBlocks;
+    LOCK_MONITOR;
+    numBlocks = FsCacheFileBlocks(cacheInfoPtr);
+    UNLOCK_MONITOR;
+    return(numBlocks);
 }
 
 /*
@@ -1078,21 +1112,25 @@ FsCacheTrunc(cacheInfoPtr, length, flags)
 		register FsCacheBlock *blockPtr;
 		register List_Links *listItem;
 		Sys_Panic(SYS_WARNING, 
-		    "File <%d,%d>: %d Extra cache blocks after delete %d-%d\n",
+    "File \"%s\" <%d,%d>: %d cache blocks left after delete of blocks %d->%d\n",
+		    FsHandleName(cacheInfoPtr->hdrPtr),
 		    cacheInfoPtr->hdrPtr->fileID.major,
 		    cacheInfoPtr->hdrPtr->fileID.minor,
 		    cacheInfoPtr->blocksInCache, firstBlock, lastBlock);
 		while (!List_IsEmpty(&cacheInfoPtr->blockList)) {
 		    listItem = List_First(&cacheInfoPtr->blockList);
 		    blockPtr = FILE_LINKS_TO_BLOCK(listItem);
-		    Sys_Printf("\tBlock %d ref %d\n", blockPtr->blockNum,
-			blockPtr->refCount);
+		    Sys_Printf("%d ", blockPtr->blockNum);
+		    if (blockPtr->refCount > 0) {
+			Sys_Printf("ref %d! ", blockPtr->refCount);
+		    }
 		    if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
 			Sys_Panic(SYS_FATAL, "Mistake in block list code\n");
 		    }
 		    FsCacheFileInvalidate(cacheInfoPtr, blockPtr->blockNum,
 			    blockPtr->blockNum);
 		}
+		Sys_Printf("\n");
 	    }
         }
 	cacheInfoPtr->attr.modifyTime = fsTimeInSeconds;

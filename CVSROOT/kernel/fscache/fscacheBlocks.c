@@ -2844,6 +2844,34 @@ FsAllInCache(cacheInfoPtr)
 /*
  * ----------------------------------------------------------------------------
  *
+ * FsCacheFileBlocks --
+ *
+ *	Return the number of blocks in the cache for the file.  This is
+ *	called from FsCacheNumBlocks (sigh, sorry for the names) which
+ *	has already grabbed the per-file cache lock.
+ *
+ * Results:
+ *	The number of blocks in the cache for the file.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+ENTRY int
+FsCacheFileBlocks(cacheInfoPtr)
+    register FsCacheFileInfo	*cacheInfoPtr;	/* Cache state to check. */
+{
+    register int numBlocks;
+    LOCK_MONITOR;
+    numBlocks = cacheInfoPtr->blocksInCache;
+    UNLOCK_MONITOR;
+    return(numBlocks);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
  * GetUnlockedBlock --
  *
  *	Retrieve a block from the hash table.  This routine will not return
