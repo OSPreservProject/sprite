@@ -266,7 +266,13 @@ Sig_SigvecStub(sig, newVectorPtr, oldVectorPtr)
 	   */
 	  if (sigBitMasks[spriteSignal] & sigCanHoldMask) {
 	      procPtr->sigActions[spriteSignal] = SIG_IGNORE_ACTION;
+	      Proc_Lock(procPtr);
 	      SigClearPendingMask(procPtr, spriteSignal);
+	      if (spriteSignal == SIG_SUSPEND) {
+		  procPtr->genFlags &= ~(PROC_PENDING_SUSPEND |
+					 PROC_RESUME_PROCESS);
+	      }
+	      Proc_Unlock(procPtr);
 	  } else {
 	      Mach_SetErrno(EINVAL);
 	      return -1;
