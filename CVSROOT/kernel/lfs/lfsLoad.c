@@ -282,7 +282,7 @@ LfsCheckPointFileSystem(lfsPtr, flags)
 
     status = LfsSegCheckPoint(lfsPtr, flags, (char *)(checkPointHdrPtr+1),
 				&size);
-    if (status != SUCCESS) {
+    if ((status != SUCCESS) || (size < 0)) {
 	if (bufferPtr != lfsPtr->checkPoint.buffer) {
 	    free(bufferPtr);
 	}
