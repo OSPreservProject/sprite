@@ -67,6 +67,15 @@ typedef struct Fsio_DeviceState {
 } Fsio_DeviceState;
 
 /*
+ * Paramters for a device reopen RPC used to reestablish state on the
+ * I/O server for a device.
+ */
+typedef struct Fsio_DeviceReopenParams {
+    Fs_FileID		fileID;	/* File ID of file to reopen.  MUST BE FIRST! */
+    Fsio_UseCounts	use;	/* Device usage information. */
+} Fsio_DeviceReopenParams;
+
+/*
  * Device support
  */
 extern void Fsio_DevNotifyException _ARGS_((Fs_NotifyToken notifyToken));
@@ -89,6 +98,9 @@ extern ReturnStatus Fsio_DeviceClose _ARGS_((Fs_Stream *streamPtr,
 extern ReturnStatus Fsio_DeviceIoOpen _ARGS_((Fs_FileID *ioFileIDPtr,
 		int *flagsPtr, int clientID, ClientData streamData, char *name,
 		Fs_HandleHeader **ioHandlePtrPtr));
+extern ReturnStatus Fsio_DeviceReopen _ARGS_((Fs_HandleHeader *hdrPtr,
+		int clientID, ClientData inData, int *outSizePtr,
+		ClientData *outDataPtr));
 extern ReturnStatus Fsio_DeviceRead _ARGS_((Fs_Stream *streamPtr, 
 		Fs_IOParam *readPtr, Sync_RemoteWaiter *remoteWaitPtr, 
 		Fs_IOReply *replyPtr));
