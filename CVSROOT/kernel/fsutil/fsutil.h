@@ -87,6 +87,7 @@ typedef	struct	Fsutil_FsRecovNamedStats {
 
 extern	int			fsutil_TimeInSeconds;
 extern	Timer_QueueElement	fsutil_TimeOfDayElement;
+extern	int			fsutil_NumRecovering;
 
 extern Boolean fsconsist_Debug;
 /*
