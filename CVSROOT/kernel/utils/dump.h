@@ -18,4 +18,4 @@ extern void		Dump_ProcessTable();
 extern void		Dump_ReadyQueue();
 extern void		Dump_TimerQueue();
 
-#endif _DUMP
+#endif /* _DUMP */

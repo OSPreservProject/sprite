@@ -97,4 +97,4 @@ extern void Timer_GetCurrentTicks();
 #define Timer_TickGT(a,b)	Time_GT(a,b)
 #endif /* lint */
 
-#endif _TIMERTICK
+#endif /* _TIMERTICK */

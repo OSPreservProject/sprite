@@ -32,4 +32,4 @@ extern void 		TimerTicksInit();
 extern void 		Timer_CounterInit();
 extern void		Timer_ClockInit();
 
-#endif _TIMERINT
+#endif /* _TIMERINT */

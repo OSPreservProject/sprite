@@ -273,9 +273,8 @@ typedef struct {
 /*
  * The state of all of the interfaces. 
  */
-  
-extern	NetLEState	netLEState;
 
+extern	NetLEState	netLEState;
 
 /*
  * General routines.
@@ -304,10 +303,5 @@ extern	void	NetLEXmitRestart();
 extern	void	NetLERecvInit();
 extern	ReturnStatus	NetLERecvProcess();
 
-
-
-#endif _NETLEINT
-
-
-
+#endif /* _NETLEINT */
 

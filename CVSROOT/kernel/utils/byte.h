@@ -42,4 +42,4 @@
 	((((unsigned int) address) + (sizeof(double) - 1)) & \
 	 ~(sizeof(double) - 1))
 
-#endif _BYTE
+#endif /* _BYTE */

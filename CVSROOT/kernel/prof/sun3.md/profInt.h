@@ -74,4 +74,4 @@ extern ProfRawArc	**profArcIndex;
 
 extern Boolean profEnabled;
 
-#endif _PROFINT
+#endif /* _PROFINT */

@@ -59,4 +59,4 @@ extern	NetEtherFuncs	netEtherFuncs;
  */
 extern	void	NetOutputWakeup();
 
-#endif _NETINT
+#endif /* _NETINT */
