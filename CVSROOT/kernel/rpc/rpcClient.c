@@ -415,42 +415,23 @@ RpcClientDispatch(chanPtr, rpcHdrPtr)
     }
     
     /*
-     * Verify the transaction Id.
-     */
-    if (rpcHdrPtr->ID != chanPtr->requestRpcHdr.ID) {
-	rpcCltStat.badId++;
-	goto unlock;
-    }
-    /*
      * Discover our own Sprite ID from the packet header.
      */
     if (rpc_SpriteID == 0) {
 	rpc_SpriteID = rpcHdrPtr->clientID;
-	Sys_Printf("Setting SpriteID to %d.\n", rpc_SpriteID);
+	Sys_Printf("RPC setting SpriteID to %d.\n", rpc_SpriteID);
     } else if (rpc_SpriteID != rpcHdrPtr->clientID) {
 	Sys_Printf("RpcClientDispatch: clientID changed from (%d) to (%d).\n",
 				       rpc_SpriteID, rpcHdrPtr->clientID);
     }
-    /*
-     * Filter out partial acks here. Rpc_Call could process them, but that
-     * might result in a lot of retransmissions - one for every partial
-     * ack that a server sends us.  It sends us one everytime it gets a
-     * duplicate fragment, for example.  Instead we just update
-     * fragsDelivered so the next resend is smarter.
-     */
-    if ((rpcHdrPtr->fragMask != 0) && 
-	(rpcHdrPtr->flags & RPC_ACK)) { 
-	chanPtr->fragsDelivered = rpcHdrPtr->fragMask;
-	rpcCltStat.recvPartial++;
-	goto unlock;
-    }
+
     /*
      * See if this is a close request from the server - the server host is
      * trying to recycle the server process that is bound to this
-     * channel.  If the channel is not busy now we return an ack to the
-     * server and unbind the server process from us.  Otherwise, the
-     * channel is marked busy, and no master lock is released by
-     * RpcOutput.  This ensures that, while we are returning the ack,
+     * channel.  If the channel is not busy now it implies we have completed
+     * the RPC the server is inquiring about.  We return an ack to the
+     * server and unbind the server process from us.  During this the
+     * channel is marked busy so that while we are returning the ack,
      * another process doesn't come along, allocate the channel, and try
      * to use the same buffers as us.
      */
@@ -478,6 +459,30 @@ RpcClientDispatch(chanPtr, rpcHdrPtr)
 
 	    chanPtr->state &= ~CHAN_BUSY;
 	}
+	goto unlock;
+    }
+
+    /*
+     * Verify the transaction Id.  Doing this now after checking for
+     * close messages means we still ack close requests even if
+     * we have already recycled the channel.
+     */
+    if (rpcHdrPtr->ID != chanPtr->requestRpcHdr.ID) {
+	rpcCltStat.badId++;
+	goto unlock;
+    }
+
+    /*
+     * Filter out partial acks here. Rpc_Call could process them, but that
+     * might result in a lot of retransmissions - one for every partial
+     * ack that a server sends us.  It sends us one everytime it gets a
+     * duplicate fragment, for example.  Instead we just update
+     * fragsDelivered so the next resend is smarter.
+     */
+    if ((rpcHdrPtr->fragMask != 0) && 
+	(rpcHdrPtr->flags & RPC_ACK)) { 
+	chanPtr->fragsDelivered = rpcHdrPtr->fragMask;
+	rpcCltStat.recvPartial++;
 	goto unlock;
     }
 
