@@ -1,4 +1,5 @@
-/* vmSysCall.c -
+/*
+ * vmSysCall.c -
  *
  * 	This file contains routines that handle virtual memory system
  *	calls.
@@ -560,12 +561,12 @@ Vm_MmapInt(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
 	return status;
     }
     if (debugVmStubs) {
-	printf("mmap: refCount = %d  ",
-		((Fs_HandleHeader *)streamPtr)->refCount);
+	printf("mmap: refCount = %d for stream %x ",
+		((Fs_HandleHeader *)streamPtr)->refCount, streamPtr);
     }
     Fsio_StreamCopy(streamPtr,&filePtr);
     if (debugVmStubs) {
-	printf(", refCount = %d\n", ((Fs_HandleHeader *)streamPtr)->refCount);
+	printf(", after copy refCount = %d\n", ((Fs_HandleHeader *)streamPtr)->refCount);
     }
 
     status = Fs_GetAttrStream(filePtr,&attr);
@@ -630,9 +631,6 @@ Vm_MmapInt(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
 	dprintf("Vm_Mmap: New proc list\n");
 	procPtr->vmPtr->sharedSegs = (List_Links *)
 		malloc(sizeof(Vm_SegProcList));
-	if (debugVmStubs) {
-	    printf("Malloc'd segProcList: %x\n", procPtr->vmPtr->sharedSegs);
-	}
 	VmMach_SharedProcStart(procPtr);
 	dprintf("Vm_Mmap: sharedStart: %x\n",procPtr->vmPtr->sharedStart);
 	List_Init((List_Links *)procPtr->vmPtr->sharedSegs);
@@ -692,9 +690,6 @@ Vm_MmapInt(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
 	    segTabPtr->segPtr->swapFilePtr = filePtr;
 	    segTabPtr->segPtr->flags |= VM_SWAP_FILE_OPENED;
 	}
-	if (debugVmStubs) {
-	    printf("Created new segment %x\n", segTabPtr->segPtr->segNum);
-	}
 	segTabPtr->serverID = attr.serverID;
 	segTabPtr->domain = attr.domain;
 	segTabPtr->fileNumber = attr.fileNumber;
@@ -746,6 +741,15 @@ Vm_MmapInt(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
 	     */
 	    dprintf("Vm_Mmap: Process is using segment.\n");
 	}
+	/*
+	 * We don't want to keep the file pointer around, since the
+	 * shared memory segment already exists.
+	 */
+	if (debugVmStubs) {
+	    printf("Closing filePtr, refCount = %d\n", 
+		((Fs_HandleHeader *)streamPtr)->refCount);
+	}
+	(void)Fs_Close(filePtr);
     }
 
     /*
@@ -775,9 +779,6 @@ Vm_MmapInt(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
      */
     dprintf("Vm_Mmap: Adding segment to list\n");
     sharedSeg = (Vm_SegProcList *)malloc(sizeof(Vm_SegProcList));
-    if (debugVmStubs) {
-	printf("Malloc'd segProcList: %x\n", sharedSeg);
-    }
     sharedSeg->fd = streamID;
     sharedSeg->stream = filePtr;
     sharedSeg->segTabPtr = segTabPtr;
@@ -801,6 +802,10 @@ Vm_MmapInt(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
     UNLOCK_SHM_MONITOR;
     dprintf("Vm_Mmap: Completed page mapping\n");
     *mappedAddr = startAddr;
+    if (debugVmStubs) {
+	printf("end of mmap: refCount = %d\n",
+		((Fs_HandleHeader *)streamPtr)->refCount);
+    }
     return SUCCESS;
 }
 
