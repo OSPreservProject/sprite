@@ -243,7 +243,7 @@ Net_Output(spriteID, gatherPtr, gatherLength, mutexPtr)
 
 		INC_BYTES_SENT(gatherPtr, gatherLength);
 		gatherPtr->done = FALSE;
-		gatherPtr->conditionPtr = (Sync_Condition *)mutexPtr;
+		gatherPtr->mutexPtr = mutexPtr;
 		(netEtherFuncs.output)((Net_EtherHdr *)routePtr->data, 
 					    gatherPtr, gatherLength);
 		while (!gatherPtr->done && mutexPtr != (Sync_Semaphore *)NIL) {
@@ -340,7 +340,7 @@ Net_EtherOutputSync(etherHdrPtr, gatherPtr, gatherLength)
 {
     Sync_Condition	condition;
 
-    gatherPtr->conditionPtr = (Sync_Condition *)&outputMutex;
+    gatherPtr->mutexPtr = &outputMutex;
     gatherPtr->done = FALSE;
 
     MASTER_LOCK(&outputMutex);
@@ -374,12 +374,12 @@ Net_EtherOutputSync(etherHdrPtr, gatherPtr, gatherLength)
  */
 
 void
-NetOutputWakeup(conditionPtr)
-    Sync_Condition	*conditionPtr;		/* not really! */
+NetOutputWakeup(mutexPtr)
+    Sync_Semaphore	*mutexPtr;	/* Mutex from scatter/gather struct */
 {
     int waiting;
 #if (MACH_MAX_NUM_PROCESSORS == 1) /* uniprocessor implementation */
-    Sync_SlowBroadcast((unsigned int)conditionPtr, &waiting);
+    Sync_SlowBroadcast((unsigned int)mutexPtr, &waiting);
 #else 	/* Mutiprocessor implementation */
    /*
     * Because the packet sent interrupt may come in before Net_Output
@@ -387,12 +387,9 @@ NetOutputWakeup(conditionPtr)
     * gatherPtr->done flag, the code should syncronize with the caller
     * by obtaining the master lock.
     */
-    {
-	Sync_Semaphore *mutexPtr = (Sync_Semaphore *) conditionPtr;
-	MASTER_LOCK(mutexPtr);
-        Sync_SlowBroadcast((unsigned int) mutexPtr, &waiting);	
-	MASTER_UNLOCK(mutexPtr);
-    }
+    MASTER_LOCK(mutexPtr);
+    Sync_SlowBroadcast((unsigned int) mutexPtr, &waiting);	
+    MASTER_UNLOCK(mutexPtr);
 #endif
 }
 
