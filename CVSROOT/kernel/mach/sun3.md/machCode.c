@@ -228,20 +228,34 @@ Exc_Trap(trapStack)
 
 		if (procPtr->genFlags & PROC_USER) {
 		    Boolean	protError;
+		    Boolean	copyInProgress = FALSE;
+		    extern	int Vm_CopyEnd();
+
 		    /*
-		     * Is a page fault on a user process while executing in
-		     * the kernel.  This can happen on calls to 
-		     * Vm_Copy{In,Out} (indicated by the VM_COPY_IN_PROGRESS
-		     * flag), after a pointer is made accessible by 
+		     * A page fault on a user process while executing in
+		     * the kernel.  This can happen when information is
+		     * being copied back and forth between kernel and
+		     * user state (indicated by particular values of the
+		     * program counter), after a pointer is made accessible by 
 		     * Vm_MakeAccessible (indicated by numMakeAcc > 0) or
 		     * after someone did a set jump in the kernel and tried
 		     * to access a user process.
 		     */
-		    if (!(procPtr->vmPtr->vmFlags & VM_COPY_IN_PROGRESS) &&
-			procPtr->vmPtr->numMakeAcc == 0 &&
-			procPtr->setJumpStatePtr == (Sys_SetJumpState *) NIL) {
+
+		    if ((((unsigned) trapStack.excStack.pc)
+				>= (unsigned) Vm_CopyIn)
+			    && (((unsigned) trapStack.excStack.pc)
+				< (unsigned) Vm_CopyEnd)) {
+			Sys_Printf("Page fault during copy\n");
+			copyInProgress = TRUE;
+		    } else if (procPtr->vmPtr->vmFlags & VM_COPY_IN_PROGRESS) {
+			copyInProgress = TRUE;
+		    } else if ((procPtr->vmPtr->numMakeAcc == 0)
+			&& (procPtr->setJumpStatePtr
+			== (Sys_SetJumpState *) NIL)) {
 			return(EXC_KERN_ERROR);
 		    }
+
 		    protError = 
 #ifdef SUN3
 				!trapStack.busErrorReg.pageInvalid;
@@ -255,12 +269,13 @@ Exc_Trap(trapStack)
 		      (Address)trapStack.excStack.tail.addrBusErr.faultAddr,
 				  protError);
 		    if (status != SUCCESS) {
-			if (procPtr->vmPtr->vmFlags & VM_COPY_IN_PROGRESS) {
+			if (copyInProgress) {
 			    /*
-			     * A Vm_Copy{In,Out} is in progress so return
-			     * an error to the copying process.  The size of the
-			     * trap stack is put into saved reg D0 so the trap
-			     * handler knows how much stack to blow away.
+			     * Info was being copied to/from user space.
+			     * Return an error to the copying process.  The
+			     * size of the trap stack is put into saved reg
+			     * D0 so the trap handler knows how much stack
+			     to blow away.
 			     */
 			    switch (trapStack.excStack.vor.stackFormat) {
 				case EXC_MC68010_BUS_FAULT:
