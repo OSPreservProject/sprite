@@ -193,32 +193,38 @@ static SysCallEntry sysCalls[] = {
     Fs_ChangeDirStub,	       Fs_ChangeDirStub,   TRUE,	1,   NILPARM,
     Proc_Wait,		       Proc_Wait,   	   TRUE,	8,   NILPARM,
     Proc_Detach,	       Proc_DoRemoteCall,  FALSE,	1,   NILPARM,
-    Proc_GetIDs,	       Proc_DoRemoteCall,  FALSE,	4,   NILPARM,
+    Proc_GetIDs,	       Proc_GetIDs,  	   TRUE,	4,   NILPARM,
     Proc_SetIDs,	       Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
     Proc_GetGroupIDs,	       Proc_GetGroupIDs,   TRUE,	3,   NILPARM,
+/*
+ * Need not be forwarded home because groups only used during FS operations.
+ */
     Proc_SetGroupIDs,	       Proc_SetGroupIDs,   TRUE,	2,   NILPARM,
+/*
+ * Must be forwarded home because can ask about arbitrary process on home node.
+ */
     Proc_GetFamilyID,	       Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
     Proc_SetFamilyID,	       Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
     Test_RpcStub,	       Test_RpcStub,   	   TRUE,	4,   NILPARM,
     Sys_StatsStub,	       Sys_StatsStub,      TRUE,	4,   NILPARM,
     Vm_CreateVA,	       Vm_CreateVA,	   TRUE, 	2,   NILPARM,
     Vm_DestroyVA,	       Vm_DestroyVA,	   TRUE, 	2,   NILPARM,
-    Sig_UserSend,	       Proc_DoRemoteCall,  FALSE,	3,   NILPARM,
+    Sig_UserSend,	       Sig_UserSend,  	   TRUE,	3,   NILPARM,
     Sig_Pause,		       Sig_Pause,          TRUE,	1,   NILPARM,
     Sig_SetHoldMask,	       Sig_SetHoldMask,    TRUE,	2,   NILPARM,
     Sig_SetAction,	       Sig_SetAction,      TRUE,	3,   NILPARM,
-    Prof_Start,		       Proc_DoRemoteCall,  TRUE,	0,   NILPARM,
-    Prof_End,		       Proc_DoRemoteCall,  TRUE,	0,   NILPARM,
-    Prof_DumpStub,	       Proc_DoRemoteCall,  FALSE,	1,   NILPARM,
+    Prof_Start,		       Prof_Start,  	   TRUE,	0,   NILPARM,
+    Prof_End,		       Prof_End,  	   TRUE,	0,   NILPARM,
+    Prof_DumpStub,	       Prof_DumpStub,  	   TRUE,	1,   NILPARM,
     Vm_Cmd,		       Vm_Cmd,  	   TRUE,	2,   NILPARM,
     Sys_GetTimeOfDay,	       Proc_DoRemoteCall,  FALSE,	3,   NILPARM,
     Sys_SetTimeOfDay,	       Proc_DoRemoteCall,  FALSE,	3,   NILPARM,
     Sys_DoNothing,	       Sys_DoNothing,      TRUE,	0,   NILPARM,
     Proc_GetPCBInfo,	       Proc_GetPCBInfo,    TRUE,	7,   NILPARM,
     Vm_GetSegInfo,	       Vm_GetSegInfo,      TRUE,	4,   NILPARM,
-    Proc_GetResUsage,	       Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
-    Proc_GetPriority,	       Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
-    CAST Proc_SetPriority,     Proc_DoRemoteCall,  FALSE,	3,   NILPARM,
+    Proc_GetResUsage,	       Proc_GetResUsage,   TRUE,	2,   NILPARM,
+    Proc_GetPriority,	       Proc_GetPriority,   TRUE,	2,   NILPARM,
+    Proc_SetPriority,          Proc_SetPriority,   TRUE,	3,   NILPARM,
     Proc_Debug,		       Proc_Debug,   	   TRUE,	5,   NILPARM,
     Proc_Profile,	       Proc_Profile,       TRUE,	6,   NILPARM,
     ErrorProc,		       ErrorProc,   	   TRUE,	2,   NILPARM,
@@ -257,9 +263,9 @@ static SysCallEntry sysCalls[] = {
     CAST Sys_Shutdown,		Sys_Shutdown, 	   TRUE,	2,   NILPARM,
     Proc_Migrate,		Proc_DoRemoteCall, FALSE,	2,   NILPARM,
     Fs_MakeDeviceStub,		Proc_DoRemoteCall, FALSE,	3,   NILPARM,
-    Fs_CommandStub,		Proc_DoRemoteCall, FALSE,	3,   NILPARM,
+    Fs_CommandStub,		Fs_CommandStub,    TRUE,	3,   NILPARM,
     ErrorProc,       		ErrorProc, 	   TRUE,	2,   NILPARM,
-    Sys_GetMachineInfo,       	Proc_DoRemoteCall, FALSE,	3,   NILPARM,
+    Sys_GetMachineInfo,       	Sys_GetMachineInfo,  TRUE,	3,   NILPARM,
     Net_InstallRouteStub, 	Net_InstallRouteStub, TRUE, 	6,   NILPARM,
     Fs_ReadVectorStub, 		Fs_ReadVectorStub, TRUE, 	4,   NILPARM,
     Fs_WriteVectorStub, 	Fs_WriteVectorStub, TRUE, 	4,   NILPARM,
@@ -359,10 +365,7 @@ static Sys_CallParam paramsArray[] = {
     /* local */					/* SYS_FS_CHANGE_DIR	14 */
     /* special */			     	/* SYS_PROC_WAIT	15 */
     SYS_PARAM_INT,	      PARM_I,		/* SYS_PROC_DETACH	16 */
-    SYS_PARAM_PROC_PID,	      PARM_OC,	     	/* SYS_PROC_GETIDS	17 */
-    SYS_PARAM_PROC_PID,	      PARM_OC,
-    SYS_PARAM_INT,	      PARM_OC,
-    SYS_PARAM_INT,	      PARM_OC,
+    /* local */				     	/* SYS_PROC_GETIDS	17 */
     SYS_PARAM_INT,	      PARM_I,		/* SYS_PROC_SETIDS	18 */
     SYS_PARAM_INT,	      PARM_I,
     /* local */				     	/* SYS_PROC_GETGROUPIDS 19 */
@@ -375,16 +378,14 @@ static Sys_CallParam paramsArray[] = {
     /* test */					/* SYS_SYS_STATS	24 */
     /* local */					/* SYS_VM_CREATEVA	25 */
     /* local */					/* SYS_VM_DESTROYVA	26 */
-    SYS_PARAM_INT,	      PARM_I,		/* SYS_SIG_SEND		27 */
-    SYS_PARAM_PROC_PID,	      PARM_I,
-    SYS_PARAM_INT,	      PARM_I,
+    /* local */					/* SYS_SIG_SEND		27 */
     /* local */ 				/* SYS_SIG_PAUSE	28 */
     /* local */ 				/* SYS_SIG_SETHOLDMASK	29 */
     /* local */				     	/* SYS_SIG_SETACTION	30 */
 
-    /* no args */			     	/* SYS_PROF_START	31 */
-    /* no args */			     	/* SYS_PROF_END		32 */
-    SYS_PARAM_FS_NAME,	      PARM_IA,		/* SYS_PROF_DUMP	33 */
+    /* local */				     	/* SYS_PROF_START	31 */
+    /* local */				     	/* SYS_PROF_END		32 */
+    /* local */				     	/* SYS_PROF_DUMP	33 */
     /* local */					/* SYS_VM_CMD		34 */
     SYS_PARAM_TIMEPTR,	      PARM_OC,		/* SYS_SYS_GETTIMEOFDAY 35 */
     SYS_PARAM_INT,	      PARM_OC,
@@ -395,13 +396,9 @@ static Sys_CallParam paramsArray[] = {
     /* local */				     	/* SYS_SYS_DONOTHING	37 */
     /* local */				     	/* SYS_PROC_GETPCBINFO	38 */
     /* local */					/* SYS_VM_GETSEGINFO	39 */
-    SYS_PARAM_PROC_PID,	      PARM_I,		/* SYS_PROC_GETRESUSAGE 40 */
-    SYS_PARAM_PROC_RES,	      PARM_OC,
-    SYS_PARAM_PROC_PID,	      PARM_I,		/* SYS_PROC_GETPRIORITY 41 */
-    SYS_PARAM_INT,	      PARM_OC,
-    SYS_PARAM_PROC_PID,	      PARM_I,		/* SYS_PROC_SETPRIORITY 42 */
-    SYS_PARAM_INT,	      PARM_I,
-    SYS_PARAM_INT,	      PARM_I,
+    /* local */					/* SYS_PROC_GETRESUSAGE 40 */
+    /* local */					/* SYS_PROC_GETPRIORITY 41 */
+    /* local */					/* SYS_PROC_SETPRIORITY 42 */
     /* special (don't migrate?) */	     	/* SYS_PROC_DEBUG	43 */
     /* local case not implemented */		/* SYS_PROC_PROFILE	44 */
     /* local */					/* SYS_FS_TRUNC		45 */
@@ -443,13 +440,9 @@ static Sys_CallParam paramsArray[] = {
     SYS_PARAM_FS_NAME, 	      PARM_IA,		/* SYS_FS_MAKE_DEVICE	75 */
     SYS_PARAM_FS_DEVICE,      PARM_IC,
     SYS_PARAM_INT,	      PARM_I,
-    SYS_PARAM_INT,	      PARM_I,		/* SYS_FS_COMMAND	76 */
-    SYS_PARAM_INT,	      PARM_I,
-    SYS_PARAM_CHAR,           PARM_ICR,
-    /* local */					/* SYS_FS_LOCK		77 */
-    SYS_PARAM_INT,	      PARM_OC,		/* SYS_GETMACHINEINFO	78 */
-    SYS_PARAM_INT,	      PARM_OC,
-    SYS_PARAM_INT,	      PARM_OC,
+    /* local */					/* SYS_FS_COMMAND	76 */
+    /* local */					/* -obsolete-		77 */
+    /* local */					/* SYS_GETMACHINEINFO	78 */
     /* special */				/* SYS_NET_INSTALL_ROUTE 79 */
     /* local */					/* SYS_FS_READVECTOR	80 */
     /* local */					/* SYS_FS_WRITEVECTOR	81 */
