@@ -663,7 +663,20 @@ Recov_HostDead(spriteID)
 		~(RECOV_HOST_ALIVE|RECOV_HOST_BOOTING);
 	    hostPtr->state |= RECOV_HOST_DYING;
 	    /*
-	     * After an RPC timeout (which is already logged by RPC)
+	     * Special handling if we abort during the recovery protocol.
+	     * In this case it is possible for the other host to go from
+	     * alive to dead and back to alive before the recovery protocol
+	     * finally terminates.  If that happens we could loose a reboot
+	     * event and fail to initiate recovery again.  We also have to
+	     * clear the file system's recovery bit so it doesn't defeat
+	     * our efforts to invoke the recovery protocol again.
+	     */
+	    if (hostPtr->state & RECOV_REBOOT_CALLBACKS) {
+		hostPtr->state &= ~RECOV_REBOOT_CALLBACKS;
+		hostPtr->clientState &= ~SRV_RECOV_IN_PROGRESS;
+	    }
+	    /*
+	     * After an RPC timeout (which is already logged by RPC to syslog)
 	     * make the crash call backs.  These are made after a delay
 	     * if dying_state is defined.  This helps smooth over temporary
 	     * communication failures.
@@ -1516,9 +1529,6 @@ CallBacksDone(spriteID)
 
     hashPtr = Hash_LookOnly(recovHashTable, (Address)spriteID);
     hostPtr = (RecovHostState *)hashPtr->value;
-    if ((hostPtr->state & RECOV_REBOOT_CALLBACKS) == 0) {
-	printf("Warning: RecovCallBacksDone found bad state\n");
-    }
     hostPtr->state &= ~RECOV_REBOOT_CALLBACKS;
     UNLOCK_MONITOR;
     return;
