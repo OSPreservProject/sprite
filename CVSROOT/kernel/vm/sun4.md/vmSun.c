@@ -3958,6 +3958,200 @@ VmMach_MapInDevice(devPhysAddr, type)
     }
 }
 
+/*
+ ----------------------------------------------------------------------
+ *
+ * VmMach_MapInBigDevice --
+ *
+ *	Map a device at some physical address into kernel virtual address.
+ *	This is for use by the controller initialization routines.
+ *	This is suitable for devices that need to map in more than
+ *	one page of contiguous memory.
+ *	The routine sets up the page table so that it references the device.
+ *
+ * Results:
+ *	The kernel virtual address needed to reference the device is returned.
+ *	NIL is returned upon failure.
+ *
+ * Side effects:
+ *	The hardware page table is modified.  This may steal
+ *	pages from kernel virtual space, unless pages can be cleverly re-used.
+ *
+ *----------------------------------------------------------------------
+ */
+Address
+VmMach_MapInBigDevice(devPhysAddr, numBytes, type)
+    Address	devPhysAddr;	/* Physical address of the device to map in. */
+    int		numBytes;	/* Bytes needed by device. */
+    int		type;		/* Value for the page table entry type field.
+				 * This depends on the address space that
+				 * the devices live in, ie. VME D16 or D32. */
+{
+    Address 		virtAddr;
+    Address		freeVirtAddr = (Address)0;
+    Address		freePMEGAddr = (Address)0;
+    int			page;
+    int			pageFrame;
+    VmMachPTE		pte;
+    int			numPages;
+    int			i;
+
+    /*
+     * Get the page frame for the physical device so we can
+     * compare it against existing pte's.
+     */
+    pageFrame = ((unsigned)devPhysAddr >> VMMACH_PAGE_SHIFT_INT)
+	& VMMACH_PAGE_FRAME_FIELD;
+
+    numPages = (numBytes / VMMACH_PAGE_SIZE_INT) + 1;
+    if (numPages > VMMACH_NUM_PAGES_PER_SEG_INT) {
+	printf("Can only map in one segment's worth of pages right now.\n");
+	return (Address) NIL;
+    }
+    /* For only one pages, just call the old routine. */
+    if (numPages <= 1) {
+	return VmMach_MapInDevice(devPhysAddr, type);
+    }
+
+    /*
+     * Spin through the segments and their pages looking for a free
+     * page or a virtual page that is already mapped to the physical page.
+     */
+    for (virtAddr = (Address)VMMACH_DEV_START_ADDR;
+         virtAddr < (Address)VMMACH_DEV_END_ADDR; ) {
+	if (VmMachGetSegMap(virtAddr) == VMMACH_INV_PMEG) {
+	    /* 
+	     * If we can't find any free mappings we can use this PMEG.
+	     */
+	    if (freePMEGAddr == 0) {
+		freePMEGAddr = virtAddr;
+	    }
+	    virtAddr += VMMACH_SEG_SIZE;
+	    continue;
+	}
+	/*
+	 * Careful, use the correct page size when incrementing virtAddr.
+	 * Use the real hardware size (ignore software klustering) because
+	 * we are at a low level munging page table entries ourselves here.
+	 */
+	for (page = 0;
+	     page < VMMACH_NUM_PAGES_PER_SEG_INT;
+	     page++, virtAddr += VMMACH_PAGE_SIZE_INT) {
+
+	    /* Are there enough pages left in the segment? */
+	    if (VMMACH_NUM_PAGES_PER_SEG_INT - page < numPages) {
+		/* If we just continue, virtAddr will be incremented okay. */
+		continue;
+	    }
+
+	    pte = VmMachGetPageMap(virtAddr);
+	    if ((pte & VMMACH_RESIDENT_BIT) &&
+		(pte & VMMACH_PAGE_FRAME_FIELD) == pageFrame &&
+		       VmMachGetPageType(pte) == type) {
+		/*
+		 * A page is already mapped for this physical address.
+		 */
+		printf("A page is already mapped for this device!\n");
+		return (Address) NIL;
+#ifdef NOTDEF
+		/*
+		 * Instead, we could loop through trying to find all
+		 * mapped pages, but I don't think we'll ever find any
+		 * for these devices.
+		 */
+		return (virtAddr + ((int)devPhysAddr & VMMACH_OFFSET_MASK_INT));
+#endif NOTDEF
+	    }
+
+	    if (!(pte & VMMACH_RESIDENT_BIT)) {
+		/*
+		 * Note the unused page in this special area of the
+		 * kernel virtual address space.
+		 */
+		freeVirtAddr = virtAddr;
+
+		/* See if we have enough other consecutive pages. */
+		for (i = 1; i < numPages; i++) {
+		    pte = VmMachGetPageMap(virtAddr +
+			    (i * VMMACH_PAGE_SIZE_INT));
+		    /* If this is already taken, give up and continue. */
+		    if (pte & VMMACH_RESIDENT_BIT) {
+			/* Maybe I should check if it's this device mapped? */
+			break;
+		    }
+		}
+		/* Did we find enough pages? */
+		if (i == numPages) {
+		    break;
+		}
+		/* The address wasn't good. */
+		freeVirtAddr = (Address) 0;
+
+		/* So that we'll test the right page next time around. */
+		page += i;
+		virtAddr += (i * VMMACH_PAGE_SIZE_INT);
+	    }
+	}
+    }
+
+    /* Did we find a set of pages? */
+    if (freeVirtAddr != 0) {
+	virtAddr = freeVirtAddr;
+	for (i = 0; i < numPages; i++) {
+	    pte = VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT | pageFrame;
+#if defined(sun3) || defined(sun4)
+	    pte |= VMMACH_DONT_CACHE_BIT;
+#endif
+	    VmMachSetPageType(pte, type);
+	    VmMachSetPageMap(virtAddr, pte);
+	    pageFrame++;
+	    virtAddr += VMMACH_PAGE_SIZE_INT;
+	}
+
+	/*
+	 * Return the kernel virtual address used to access it.
+	 */
+	return (freeVirtAddr + ((int)devPhysAddr & VMMACH_OFFSET_MASK_INT));
+
+    /* Or did we find a whole free pmeg? */
+    } else if (freePMEGAddr != 0) {
+	int oldContext;
+	int pmeg;
+
+	/*
+	 * Map in a new PMEG so we can use it for mapping.
+	 */
+	pmeg = PMEGGet(vm_SysSegPtr, 
+		       (int) ((unsigned)freePMEGAddr >> VMMACH_SEG_SHIFT),
+		       PMEG_DONT_ALLOC);
+	oldContext = VmMachGetContextReg();
+	for (i = 0; i < VMMACH_NUM_CONTEXTS; i++) {
+	    VmMachSetContextReg(i);
+	    VmMachSetSegMap(freePMEGAddr, pmeg);
+	}
+	VmMachSetContextReg(oldContext);
+
+	virtAddr = freePMEGAddr;
+	for (i = 0; i < numPages; i++) {
+	    pte = VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT | pageFrame;
+#if defined(sun3) || defined(sun4)
+	    pte |= VMMACH_DONT_CACHE_BIT;
+#endif
+	    VmMachSetPageType(pte, type);
+	    VmMachSetPageMap(virtAddr, pte);
+	    pageFrame++;
+	    virtAddr += VMMACH_PAGE_SIZE_INT;
+	}
+
+	return (freePMEGAddr + ((int)devPhysAddr & VMMACH_OFFSET_MASK_INT));
+
+    }
+
+    /* Nothing was found. */
+    return (Address) NIL;
+}
+
+
 /*----------------------------------------------------------------------
  *
  * DevBufferInit --
@@ -4605,6 +4799,7 @@ VmMachDoNothing(arg)
 int arg;
 {
 }
+
 
 /*
  *----------------------------------------------------------------------
