@@ -31,7 +31,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sched.h"
 #include "hash.h"
 
-static	Sync_Lock	familyLock;
+static	Sync_Lock	familyLock = {0, 0};
 #define	LOCKPTR &familyLock
 Sync_Condition	familyCondition;
 
