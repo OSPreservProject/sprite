@@ -374,7 +374,7 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
      * Open the file that is to be exec'd.
      */
     filePtr = (Fs_Stream *) NIL;
-    status =  Fs_Open(fileName, (FS_READ | FS_EXECUTE | FS_FOLLOW), FS_FILE, 0,
+    status =  Fs_Open(fileName, (FS_EXECUTE | FS_FOLLOW), FS_FILE, 0,
 		      &filePtr);
     if (status != SUCCESS) {
 	filePtr = (Fs_Stream *) NIL;
@@ -873,7 +873,7 @@ SetupInterpret(buffer, sizeRead, filePtrPtr, argPtrPtr,
      * Open the interpreter to exec and read the a.out header.
      */
 
-    status =  Fs_Open(shellNamePtr, (FS_READ | FS_EXECUTE | FS_FOLLOW), FS_FILE,
+    status =  Fs_Open(shellNamePtr, (FS_EXECUTE | FS_FOLLOW), FS_FILE,
 		      0, filePtrPtr);
     if (status != SUCCESS) {
 	return(status);
