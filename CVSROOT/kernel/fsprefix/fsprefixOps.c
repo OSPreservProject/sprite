@@ -849,9 +849,14 @@ PrefixInsert(prefix, serverID, hdrPtr, domainType, flags)
  *
  * PrefixUpdate --
  *
- *	Reset the hdrPtr for an existing prefix. If the hdtPtr is not
- *	NIL then the serverID it contains is used, otherwise the
- *	serverID parameter is used.
+ *	Update a prefix table entry.  This is called in several cases:
+ *	during lookup redirection (via Fs_PrefixLoad), when exporting
+ *	a local domain as part of bootstrap, and when setting up the
+ *	serverID for domains not reachable by broadcast.  Basically,
+ *	if there is no handle associated with the prefix then the
+ *	handled that was passed in is installed.  Otherwise, we let
+ *	the flags change in order to export an existing entry, and
+ *	we let the serverID field be set in order to by-pass broadcast.
  *
  * Results:
  *	None.
@@ -885,9 +890,19 @@ PrefixUpdate(prefixPtr, serverID, hdrPtr, domainType, flags)
     if (prefixPtr->hdrPtr == (FsHandleHeader *)NIL) {
 	prefixPtr->hdrPtr	= hdrPtr;
 	prefixPtr->domainType	= domainType;
-	prefixPtr->flags	= flags;
+	prefixPtr->flags	= flags & ~FS_OVERRIDE_PREFIX;
 	prefixPtr->delayOpens	= FALSE;
 	prefixPtr->activeOpens	= 0;
+    } else {
+	/*
+	 * Verify the new flags for the prefix table entry.
+	 */
+	if (flags & FS_EXPORTED_PREFIX) {
+	    /*
+	     * A local prefix is being exported.  This happens during bootstrap.
+	     */
+	    prefixPtr->flags	|= FS_EXPORTED_PREFIX;
+	}
     }
     return;
 }
