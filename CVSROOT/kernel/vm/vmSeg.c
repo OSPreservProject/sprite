@@ -1151,7 +1151,7 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
 	 i < destSegPtr->numPages; 
 	 i++, VmIncPTEPtr(srcPtePtr, 1), VmIncPTEPtr(destPtePtr, 1), 
 		destVirtAddr.page++) {
-	if (CopyPage(srcPtePtr, destPtePtr, &srcVirtAddr, &destVirtAddr)) {
+	if (CopyPage(srcPtePtr, destPtePtr)) {
 	    destPtePtr->pfNum = 
 		    VmVirtToPhysPage(VmPageAllocate(&destVirtAddr, TRUE));
 	    destSegPtr->resPages++;
@@ -1274,11 +1274,9 @@ CopyInfo(srcSegPtr, destSegPtr, srcPtePtrPtr, destPtePtrPtr,
  */
 
 ENTRY static Boolean
-CopyPage(srcPtePtr, destPtePtr, srcVirtAddrPtr, destVirtAddrPtr)
+CopyPage(srcPtePtr, destPtePtr)
     register	Vm_PTE		*srcPtePtr;
     register	Vm_PTE		*destPtePtr;
-    VmVirtAddr			*srcVirtAddrPtr;
-    VmVirtAddr			*destVirtAddrPtr;
 {
     Boolean	residentPage;
 
@@ -1410,10 +1408,9 @@ Vm_GetSegInfo(procPtr, segNum, segBufPtr)
 					 * is USER_NIL. */
     Vm_Segment		*segBufPtr;	/* Where to store segment information.*/
 {
-    int			residentPages;
     Proc_ControlBlock	pcb;
     Vm_Segment		*minSegAddr, *maxSegAddr, *segPtr;
-    int			i, j;
+    int			i;
 
     if (procPtr != (Proc_ControlBlock *)USER_NIL) {
 	if (Vm_CopyIn(sizeof(pcb), (Address) procPtr,

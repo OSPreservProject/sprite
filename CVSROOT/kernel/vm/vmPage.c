@@ -356,7 +356,6 @@ PutOnReserveList(corePtr)
     corePtr->flags = 0;
     corePtr->lockCount = 1;
     VmListInsert((List_Links *) corePtr, LIST_ATREAR(reservePageList));
-    Sys_Printf("Replenishing reserve list\n");
     vmStat.numReservePages++;
 }
 
@@ -1153,10 +1152,11 @@ Vm_PageIn(virtAddr)
 				
     vmStat.totalUserFaults++;
 
+    procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
     /*
      * Determine which segment that this virtual address falls into.
      */
-    VmVirtAddrParse(virtAddr, &transVirtAddr);
+    VmVirtAddrParse(procPtr, virtAddr, &transVirtAddr);
 
     if (transVirtAddr.segPtr == (Vm_Segment *) NIL) {
 	return(FAILURE);
@@ -1167,13 +1167,12 @@ Vm_PageIn(virtAddr)
      */
     status = VmDoPageIn(FALSE, &transVirtAddr);
 
-    /*
-     * If the segment that was faulted in was a stack or heap segment then the
-     * heap segment was prevented from being expanded.  Let it be expanded
-     * now.
-     */
-    if (transVirtAddr.segPtr->type != VM_CODE) {
-	procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+    if (transVirtAddr.flags & VM_HEAP_NOT_EXPANDABLE) {
+	/*
+	 * The heap segment has been made not expandable by VmVirtAddrParse
+	 * so that the address parse would remain valid.  Let it be expandable
+	 * now.
+	 */
 	VmDecExpandCount(procPtr->vmPtr->segPtrArray[VM_HEAP]);
     }
 
@@ -2066,7 +2065,6 @@ Vm_FsCacheSize(startAddrPtr, endAddrPtr)
     if (numPages > vmStat.numFreePages - vmStat.minVMPages) {
 	numPages = vmStat.numFreePages - vmStat.minVMPages;
     }
-    Sys_Printf("%d virtual pages for cache\n", numPages);
     *endAddrPtr = (Address) (VM_BLOCK_CACHE_BASE + numPages * VM_PAGE_SIZE - 1);
 }
 

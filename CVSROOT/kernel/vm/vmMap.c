@@ -369,14 +369,15 @@ Vm_MakeAccessible(accessType, numBytes, startAddr, retBytesPtr, retAddrPtr)
     int				lastPage;
     Proc_ControlBlock		*procPtr;
 
+    procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+
     /*
      * Parse the virtual address to determine which segment that this page
      * falls into and which page in the segment.  If it is a heap segment
      * or stack segment, then the current process's heap segment will
      * be prevented from being expanded.
      */
-
-    VmVirtAddrParse((int) startAddr, &virtAddr);
+    VmVirtAddrParse(procPtr, (int) startAddr, &virtAddr);
     
     segPtr = virtAddr.segPtr;
 
@@ -449,7 +450,6 @@ Vm_MakeAccessible(accessType, numBytes, startAddr, retBytesPtr, retAddrPtr)
      */
 
     if (virtAddr.page == firstPage) {
-	procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
         VmDecExpandCount(procPtr->vmPtr->segPtrArray[VM_HEAP]);
 	*retBytesPtr = 0;
 	*retAddrPtr = (Address) NIL;

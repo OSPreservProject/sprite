@@ -124,7 +124,7 @@ Vm_ProcInit(procPtr)
 	procPtr->vmPtr->segPtrArray[i] = (Vm_Segment *)NIL;
     }
     procPtr->vmPtr->vmFlags = 0;
-    procPtr->vmPtr->machPtr->context = VM_INV_CONTEXT;
+    VmMachProcInit(procPtr->vmPtr->machPtr);
 }
 
 

@@ -51,7 +51,18 @@ typedef struct {
     struct	Vm_Segment	*segPtr;
     int 			page;
     int 			offset;
+    int				flags;	/* Flags used after parsing a virtual
+					 * address. */
 } VmVirtAddr;
+
+/*
+ * Values for flags field.  Lower 8 bits are for our use, next 8 bits are 
+ * machine dependent and are defined in vmMachInt.h.
+ *
+ *	VM_HEAP_NOT_EXPANDABLE	The heap segment for the current process has
+ *				been made not expandable.
+ */
+#define	VM_HEAP_NOT_EXPANDABLE	0x1
 
 /*
  * Structure that contains file information that needs to be freed.
