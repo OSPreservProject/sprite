@@ -1243,7 +1243,10 @@ EncapProcState(procPtr, hostID, infoPtr, bufPtr)
  *	The process control block should be locked on entry and exit.
  *
  * Results:
- *	SUCCESS.
+ *	Usually SUCCESS.  Can propagate an error return from 
+ *	ProcChangeTimer.  Returns PROC_MIGRATION_REFUSED if the 
+ *	process has been flagged as unmigratable and this is not its
+ *	home node.
  *
  * Side effects:
  *	None.
@@ -1296,6 +1299,19 @@ DeencapProcState(procPtr, infoPtr, bufPtr)
     COPY_STATE(encapPtr, procPtr, numQuantumEnds);
     COPY_STATE(encapPtr, procPtr, numWaitEvents);
     COPY_STATE(encapPtr, procPtr, schedQuantumTicks);
+
+    /* 
+     * The process should never be flagged as unmigratable, so 
+     * complain if it is.  Allow "unmigratable" processes to migrate 
+     * back to the home node, but don't let them go anywhere else.
+     */
+    if (procPtr->genFlags & PROC_DONT_MIGRATE) {
+	Sys_HostPrint(procPtr->peerHostID,
+		      "wants to give us an unmigratable process.\n");
+	if (!home) {
+	    return PROC_MIGRATION_REFUSED;
+	}
+    }
 
     /*
      * Set the effective process for this processor while doing the
@@ -2522,7 +2538,7 @@ Proc_EvictForeignProcs()
 	 */
 	return(FAILURE);
     }
-    status = Proc_DoForEveryProc(Proc_IsMigratedProc, Proc_EvictProc, TRUE,
+    status = Proc_DoForEveryProc(Proc_IsEvictable, Proc_EvictProc, TRUE,
  				 &numEvicted);
     Proc_MigAddToCounter(numEvicted, &proc_MigStats.varStats.evictions,
 			 &proc_MigStats.squared.evictions);
@@ -2534,12 +2550,12 @@ Proc_EvictForeignProcs()
 /*
  *----------------------------------------------------------------------
  *
- * Proc_IsMigratedProc --
+ * Proc_IsEvictable --
  *
- *	Return whether the specified process is foreign (and is okay
- *      to migrate).  (This routine is
- * 	a callback procedure that may be passed as a parameter to routines
- *	requiring an arbitrary Boolean procedure operating on a PCB.)
+ *	Return whether the specified process is foreign and is okay
+ *	to migrate.  (This routine is a callback procedure that may be 
+ *	passed as a parameter to routines requiring an arbitrary
+ *	Boolean procedure operating on a PCB.)
  *
  * Results:
  *	Boolean result: TRUE if foreign, FALSE if not.
@@ -2551,7 +2567,7 @@ Proc_EvictForeignProcs()
  */
 
 Boolean
-Proc_IsMigratedProc(procPtr)
+Proc_IsEvictable(procPtr)
     Proc_ControlBlock *procPtr;
 {
     if ((procPtr->genFlags & PROC_FOREIGN) &&
