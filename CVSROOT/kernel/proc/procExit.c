@@ -536,6 +536,25 @@ ProcExitProcess(exitProcPtr, reason, status, code, thisProcess)
     Proc_Unlock(exitProcPtr);
 
     /*
+     * Note: the fs is closed before the vm, because there is
+     * a race involving data sent to a pseudo-device after its
+     * vm has been destroyed.  Closing the fs first prevents this.
+     * The old comments (below) imply closing the fs first will
+     * cause swap files to linger around, but this doesn't seem
+     * to happen. --Ken Shirriff 8/90
+     *
+     * |Clean up the filesystem state of the exiting process.
+     * |Do this after deleting VM segments so we can remove swap files.
+     * If the process is the home "surrogate" process for a migrated
+     * |process, don't clean up its state -- the state is on the foreign
+     * |node, not this one.
+     */
+
+    if (exitProcPtr->fsPtr != (struct Fs_ProcessState *) NIL) {
+	Fs_CloseState(exitProcPtr);
+    }
+
+    /*
      * Free up virtual memory resources, unless they were already freed.
      */
 
@@ -571,10 +590,6 @@ ProcExitProcess(exitProcPtr, reason, status, code, thisProcess)
   	    Vm_DeleteSharedSegment(exitProcPtr, (Vm_SegProcList *)
 		    List_First(exitProcPtr->vmPtr->sharedSegs));
   	}
-	if (i>0) {
-	    dprintf("ProcExitProcess: deleted shared segments\n");
-	    PrintSharedSegs(exitProcPtr);
-	}
 	for (i = VM_CODE; i <= VM_STACK; i++) {
 	    Vm_SegmentDelete(exitProcPtr->vmPtr->segPtrArray[i], exitProcPtr);
 	    exitProcPtr->vmPtr->segPtrArray[i] = (Vm_Segment *)NIL;
@@ -582,19 +597,9 @@ ProcExitProcess(exitProcPtr, reason, status, code, thisProcess)
     }
 
     /*
-     * Clean up the filesystem state of the exiting process.
-     * Do this after deleting VM segments so we can remove swap files.
-     * If the process is the home "surrogate" process for a migrated
-     * process, don't clean up its state -- the state is on the foreign
-     * node, not this one.
-     *
      * Remove the process from its process family.  (Note, 
      * migrated processes have family information on the home node.)
      */
-
-    if (exitProcPtr->fsPtr != (struct Fs_ProcessState *) NIL) {
-	Fs_CloseState(exitProcPtr);
-    }
     if (!migrated) {
 	ProcFamilyRemove(exitProcPtr);
     }
