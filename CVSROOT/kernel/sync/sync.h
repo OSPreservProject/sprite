@@ -900,7 +900,11 @@ extern Sync_RegElement  *regQueuePtr;
  * SyncStorDbgInfo --
  *
  *	If CLEAN_LOCK isn't defined then store debugging information
- *	in the lock.
+ *	in the lock.  If "lockedByMacro" is TRUE, the lock was obtained
+ *	via a macro, so we record the current PC, which is in the
+ *	function that invoked the macro.  If it's FALSE, the lock was
+ *	obtained by a function whose sole job is to obtain the lock,
+ *	so we want to record the PC of that function's caller.
  *
  * Results:
  *	None.
@@ -912,17 +916,17 @@ extern Sync_RegElement  *regQueuePtr;
  */
 #ifdef CLEAN_LOCK
 
-#define Sync_StoreDbgInfo(semaphore, macro) {}
+#define Sync_StoreDbgInfo(semaphore, lockedByMacro) {}
 
 #else /* CLEAN_LOCK */
 
-#define Sync_StoreDbgInfo(semaphore, macro) { 				\
-    if ((macro) == TRUE) {						\
-	(semaphore)->holderPC = (Address) Mach_GetPC(); 	\
+#define Sync_StoreDbgInfo(semaphore, lockedByMacro) { 			\
+    if ((lockedByMacro) == TRUE) {					\
+	(semaphore)->holderPC = (Address) Mach_GetPC(); 		\
     } else {								\
-	(semaphore)->holderPC = (Address) Mach_GetCallerPC(); \
+	(semaphore)->holderPC = (Address) Mach_GetCallerPC(); 		\
     }									\
-	(semaphore)->holderPCBPtr = (Address) Proc_GetCurrentProc(); 	\
+    (semaphore)->holderPCBPtr = (Address) Proc_GetCurrentProc(); 	\
 }
 
 #endif /* CLEAN_LOCK */
