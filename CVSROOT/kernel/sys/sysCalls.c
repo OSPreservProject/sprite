@@ -1164,6 +1164,17 @@ Sys_StatsStub(command, option, argPtr)
 	    break;
 	}
 #endif sun4c
+	case SYS_PROC_ADD_SERVERS: {
+	    if (option < 0) {
+		status = GEN_INVALID_ARG;
+	    } else {
+		int	numCreated;
+		numCreated = Proc_ServerProcCreate(option);
+		printf("Adding %d Proc_Servers to kernel\n", numCreated);
+		status = SUCCESS;
+	    }
+	    break;
+	}
 	default:
 	    status = GEN_INVALID_ARG;
 	    break;
