@@ -970,7 +970,7 @@ FsGetStreamPtr(procPtr, streamID, streamPtrPtr)
 	streamPtr = procPtr->fsPtr->streamList[streamID];
 	if (streamPtr == (Fs_Stream *)NIL) {
 	    return(FS_INVALID_ARG);
-	} else if ((int)streamPtr < 1024) {
+	} else if ((unsigned int)streamPtr < 1024) {
 	    /*
 	     * There was a time when control stream pointers were not
 	     * being passed right, or being passed a second time after
