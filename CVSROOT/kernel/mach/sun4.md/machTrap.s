@@ -332,7 +332,7 @@ _MachReturnFromTrap:
 	ld	[%VOL_TEMP1], %VOL_TEMP1
 	tst	%VOL_TEMP1
 	be	NormalReturn
-	call	_Mach_UserAction
+	call	_MachUserAction
 	nop
 	/* Must we handle a signal? */
 	tst	%RET_VAL_REG
@@ -346,16 +346,59 @@ NormalReturn:
 	 * Make sure stack is resident.  We don't want to get a page
 	 * fault in the underflow routine, because it moves into the window
 	 * to restore and so its calls to Vm code would move into this
-	 * window and overwrite it!
+	 * window and overwrite it!  First check if it's a user process, since
+	 * that should be the only case where the stack isn't resident.
 	 */
 	andcc	%CUR_PSR_REG, MACH_PS_BIT, %g0
 	bne	CallUnderflow
 	nop
 	/*
+	 * It's a user process, so check residence and protection fields of pte.
+	 * Before anything we check stack alignment.
+	 */
+	andcc	%fp, 0x7, %g0
+	bne	KillUserProc
+	nop
+	mov	%fp, %o0
+	call	_VmMachGetPageMap
+	nop
+	srl	%o0, VMMACH_PAGE_PROT_SHIFT, %o0
+	cmp	%o0, VMMACH_PTE_OKAY_VALUE
+	bne	CallPageIn
+	nop
+	/*
+	 * Check the other extreme of the area we'd be touching on the stack.
+	 */
+	mov	%fp, %o0
+	add	%o0, MACH_SAVED_WINDOW_SIZE, %o0
+	call	_VmMachGetPageMap
+	nop
+	srl	%o0, VMMACH_PAGE_PROT_SHIFT, %o0
+	cmp	%o0, VMMACH_PTE_OKAY_VALUE
+	be	CallUnderflow			/* both addrs okay */
+	nop
+	
+CallPageIn:
+	/*
 	 * Call VM Stuff with the %fp which will be stack pointer in
 	 * the window we restore..
 	 */
-	XXX Call vm code. XXX
+	mov	%fp, %o0
+	set	0x1, %o1		/* also check for protection????? */
+	call	_Vm_PageIn, 2
+	nop
+	tst	%RETURN_VAL_REG
+	be	CallUnderflow
+	nop
+KillUserProc:
+	/*
+	 * Kill user process!  Its stack is bad.
+	 */
+	set	PROC_TERM_DESTROYED, %o0
+	set	PROC_BAD_STACK, %o1
+	clr	%o2
+	call	_Proc_ExitInt, 3
+	nop
 CallUnderflow:
 	set	MachWindowUnderflow, %VOL_TEMP1
 	jmpl	%VOL_TEMP1, %RETURN_ADDR_REG
@@ -424,10 +467,10 @@ MachHandleWindowOverflowTrap:
 	/*
 	 * We need to save state and put space on the stack pointer, etc.
 	 * Run through regular trap preamble to do this.  The trap preamble
-	 * will then return us to here, where we'll call Mach_UserAction
+	 * will then return us to here, where we'll call MachUserAction
 	 * to take care of the special action.
 	 */
-	call	MachTrap
+	call	_MachTrap
 	nop
 	/*
 	 * Now we must restore state, take stuff off the stack, etc.
@@ -438,7 +481,7 @@ MachHandleWindowOverflowTrap:
 	 * here.  Maybe?
 	 */
 MachReturnFromOverflowWithSavedState:
-	call	MachReturnFromTrap
+	call	_MachReturnFromTrap
 	nop
 
 	/*
@@ -495,17 +538,57 @@ MachWindowOverflow:
 	save				/* move to the window to save */
 	MACH_ADVANCE_WIM(%g3, %g4)	/* reset %wim to current window */
 	/*
-	 * save this window to stack - save locals and ins to top 16 words
-	 * on the stack. (Since our stack grows down, the top word is %sp
-	 * and the bottom will be (%sp + offset).
-	 */
-	/*
 	 * If this is a user window, then see if stack space is resident.
 	 * If it is, go ahead, but if not, then set special handling and
 	 * save to buffers.
 	 */
-	XXX Do testing stuff XXX
+	set	MACH_KERN_START, %g3		/* %sp lower than kernel? */
+	subcc	%g3, %sp, %g0
+	bgu	UserStack
+	nop
+	set	MACH_KERN_END, %g3		/* %sp <= top kernel addr? */
+	subcc	%sp, %g3, %g0
+	bleu	NormalOverflow			/* is kernel sp */
+	nop
+UserStack:
+	/*
+	 * If alignment is bad, what should we do?
+	 * I just clear the last bits if it's a user stack pointer!
+	 */
+	cmp	%sp, 0x7, %g0
+	be	ContinueTesting
+	nop
+	and	%sp, ~(0x7), %sp
+
+	/*
+	 * I can't just call the Vm routine to test residence as I do
+	 * in the underflow stuff, 'cause it would user output registers
+	 * that aren't available here, so I have to do the same work in-line.
+	 * GROSS.
+	 */
+	set	VMMACH_PAGE_MAP_MASK, %g3
+	and	%sp, %g3, %g3
+	lda	[%g3] VMMACH_PAGE_MAP_SPACE, %g3
+	srl	%g3, VMMACH_PAGE_PROT_SHIFT, %g3
+	cmp	%g3, VMMACH_PTE_OKAY_VALUE
+	be	NormalOverflow
+	nop
+SaveToInternalBuffer:
+	/*
+	 * It wasn't resident, so we must save to internal buffer and set
+	 * special handling.
+	 */
+	XXXXX
+	jmp	ReturnFromOverflow
+	nop
+NormalOverflow:
+	/*
+	 * save this window to stack - save locals and ins to top 16 words
+	 * on the stack. (Since our stack grows down, the top word is %sp
+	 * and the bottom will be (%sp + offset).
+	 */
 	MACH_SAVE_WINDOW_TO_STACK()
+ReturnFromOverflow:
 	restore				/* move back to trap window */
 	mov	%VOL_TEMP1, %g3		/* restore global registers */
 	mov	%VOL_TEMP2, %g4
@@ -565,7 +648,7 @@ MachHandleWindowUnderflowTrap:
 	/*
 	 * We need to save state.  
 	 */
-	call	MachTrap
+	call	_MachTrap
 	nop
 MachReturnToUnderflowWithSavedState:
 	/*
@@ -603,7 +686,7 @@ NormalUnderflow:
 	/*
 	 * We had to save state, so now we have to restore it.
 	 */
-	call	MachReturnFromTrap
+	call	_MachReturnFromTrap
 	nop
 NormalUnderflowReturn:
 	MACH_RESTORE_PSR()			/* restore psr */
