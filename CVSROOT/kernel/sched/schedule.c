@@ -71,8 +71,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * The scheduler module mutex semaphore.  Used in sync module as well,
  * since synchronization involves mucking with the process queues.
  */
-int sched_Mutex = 0;
- 
+Sync_Semaphore sched_Mutex = SYNC_SEMAPHORE_STATIC("sched_Mutex");
+Sync_Semaphore *sched_MutexPtr = &sched_Mutex;
+
 /*
  * GATHER_INTERVAL is the amount of time in milliseconds between calls to
  * Sched_GatherProcInfo when it is called by the timer module. 
@@ -196,7 +197,7 @@ Sched_ForgetUsage(time)
     /*
      *  Gain exclusive access to usage fields in the process table.
      */
-    MASTER_LOCK(sched_Mutex);
+     MASTER_LOCK(sched_MutexPtr);
 
     /*
      *  Loop through all the processes on the system and
@@ -219,7 +220,7 @@ Sched_ForgetUsage(time)
      */
     Timer_RescheduleRoutine(&forgetUsageElement, TRUE);
 
-    MASTER_UNLOCK(sched_Mutex);
+    MASTER_UNLOCK(sched_MutexPtr);
 }
 
 
@@ -252,7 +253,7 @@ Sched_GatherProcessInfo()
 	return;
     }
 
-    MASTER_LOCK(sched_Mutex);
+    MASTER_LOCK(sched_MutexPtr);
 
     /*
      *  Get a pointer to the current process from the array that keeps
@@ -308,7 +309,7 @@ Sched_GatherProcessInfo()
 	}
     }
 
-    MASTER_UNLOCK(sched_Mutex);
+    MASTER_UNLOCK(sched_MutexPtr);
 }
 
 
@@ -520,7 +521,7 @@ IdleLoop()
 
     cpu = Mach_GetProcessorNumber();
     queuePtr = schedReadyQueueHdrPtr;
-    MASTER_UNLOCK(sched_Mutex);
+    MASTER_UNLOCK(sched_MutexPtr);
     while (1) {
 	Proc_SetCurrentProc((Proc_ControlBlock *) NIL);
 	/*
@@ -531,14 +532,14 @@ IdleLoop()
 	     * Looks like there might be something in the queue. We don't
 	     * have sched_Mutex down at this point, so this is only a hint.
 	     */
-	    MASTER_LOCK(sched_Mutex);
+	    MASTER_LOCK(sched_MutexPtr);
 	    /*
 	     * Make sure queue is not empty.
 	     */
 	    if (List_IsEmpty(queuePtr) == FALSE) {
 		break; 
 	    }
-	    MASTER_UNLOCK(sched_Mutex);
+	    MASTER_UNLOCK(sched_MutexPtr);
 	}
 	/*
 	 * Count Idle ticks.  
@@ -555,9 +556,9 @@ IdleLoop()
 	/*
 	 * Unlock sched_Mutex because panic tries to grab it somewhere.
 	 */
-     	MASTER_UNLOCK(sched_Mutex);
+	MASTER_UNLOCK(sched_MutexPtr);
 	panic("Non-ready process found in ready queue.\n");
-	MASTER_LOCK(sched_Mutex);
+	MASTER_LOCK(sched_MutexPtr);
     }
     ((List_Links *)procPtr)->prevPtr->nextPtr =
 					    ((List_Links *)procPtr)->nextPtr;
@@ -709,10 +710,10 @@ Sched_PrintStat()
 void
 Sched_LockAndSwitch()
 {
-    MASTER_LOCK(sched_Mutex);
+    MASTER_LOCK(sched_MutexPtr);
     sched_Instrument.numInvoluntarySwitches[Mach_GetProcessorNumber()]++;
     Sched_ContextSwitchInt(PROC_READY);
-    MASTER_UNLOCK(sched_Mutex);
+    MASTER_UNLOCK(sched_MutexPtr);
 }
 
 
@@ -736,9 +737,9 @@ void
 Sched_ContextSwitch(state)
     Proc_State	state;
 {
-    MASTER_LOCK(sched_Mutex);
+    MASTER_LOCK(sched_MutexPtr);
     Sched_ContextSwitchInt(state);
-    MASTER_UNLOCK(sched_Mutex);
+    MASTER_UNLOCK(sched_MutexPtr);
 }
 
 
@@ -765,7 +766,7 @@ void
 Sched_StartKernProc(func)
     void	(*func)();
 {
-    MASTER_UNLOCK(sched_Mutex);
+    MASTER_UNLOCK(sched_MutexPtr);
     func();
     Proc_Exit(0);
 }
@@ -791,10 +792,10 @@ void
 Sched_MakeReady(procPtr)
     register	Proc_ControlBlock	*procPtr;
 {
-    MASTER_LOCK(sched_Mutex);
+    MASTER_LOCK(sched_MutexPtr);
     procPtr->state = PROC_READY;
     Sched_MoveInQueue(procPtr);
-    MASTER_UNLOCK(sched_Mutex);
+    MASTER_UNLOCK(sched_MutexPtr);
 }
 
 
@@ -822,7 +823,7 @@ Sched_StartUserProc(pc)
 {
     register     	Proc_ControlBlock *procPtr;
 
-    MASTER_UNLOCK(sched_Mutex);
+    MASTER_UNLOCK(sched_MutexPtr);
     procPtr = Proc_GetCurrentProc();
 
     Proc_Lock(procPtr);
@@ -868,7 +869,7 @@ Sched_DumpReadyQueue()
 	    "ID", "wtd", "user", "kernel", "event", "state", "name");
 	overflow = FALSE;
 	snapshotCnt = 0;
-	MASTER_LOCK(sched_Mutex);
+	MASTER_LOCK(sched_MutexPtr);
 	LIST_FORALL(schedReadyQueueHdrPtr,itemPtr) {
 	    if (snapshotCnt >= SCHED_MAX_DUMP_SIZE) {
 		overflow = TRUE;
@@ -876,7 +877,7 @@ Sched_DumpReadyQueue()
 	    }
 	    snapshot[snapshotCnt++] = (Proc_ControlBlock *) itemPtr;
 	}
-	MASTER_UNLOCK(sched_Mutex);
+	MASTER_UNLOCK(sched_MutexPtr);
 	for (i = 0; i <snapshotCnt; i++) {
 	    Proc_DumpPCB(snapshot[i]);
 	}
