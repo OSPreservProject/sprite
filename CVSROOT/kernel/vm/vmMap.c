@@ -132,6 +132,7 @@ VmRemapPage(addr, pfNum)
     segPtr = vm_SysSegPtr;
     virtAddr.segPtr = segPtr;
     virtAddr.page = (unsigned int) (addr) >> vmPageShift;
+    virtAddr.sharedPtr = (Vm_SegProcList *) NIL;
     /*
      * Clean the old page from the cache.
      */
