@@ -124,7 +124,6 @@ FsOpenOps fsOpenOpTable[] = {
      */
     { FS_DEVICE, FsDeviceSrvOpen },
     { 0, NullProc },
-#ifdef not_done_yet
     /*
      * Local pipes.
      */
@@ -132,17 +131,16 @@ FsOpenOps fsOpenOpTable[] = {
     /*
      * Named pipes.
      */
-    { FS_NAMED_PIPE, FsNamedPipeSrvOpen },
+    { FS_NAMED_PIPE, NoProc },
     /*
      * Pseudo devices.
      */
     { FS_PSEUDO_DEV, FsPseudoDevSrvOpen},
-    { FS_PSEUDO_FS, NullProc},
+    { FS_PSEUDO_FS, NoProc},
     /*
      * Special file type for testing new kinds of files.
      */
-    { FS_XTRA_FILE, NullProc},
-#endif
+    { FS_XTRA_FILE, NoProc},
 };
 /*
  * Domain specific get/set attributes table.  These routines are used
@@ -251,6 +249,55 @@ FsStreamTypeOps fsStreamOpTable[] = {
 		FsRmtPipeMigrate, FsRmtPipeReopen,
 		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
 		FsRemoteHandleScavenge, NullClientKill, FsRemoteIOClose},
+    /*
+     * A control stream is what a server program gets when it opens a
+     * pseudo device file.  This stream is used to notify the server
+     * of new clients; the ID of the server stream set up for each
+     * new client is passed over this control stream.
+     */
+    { FS_CONTROL_STREAM, FsControlCltOpen, FsControlRead, NoProc,
+		FsControlIOControl, FsControlSelect,
+		NullProc, NullProc,		/* Get/Set IO Attr */
+		FsControlVerify, FsControlMigStart, FsControlMigEnd,
+		NoProc, NoProc,				/* migrate, reopen */
+		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
+		FsControlScavenge, NullClientKill, FsControlClose },
+    /*
+     * A server stream gets set up for the server whenever a client opens
+     * a pseudo device.  The server reads the stream the learn about new
+     * requests from the client.  IOControls on the stream are used
+     * to control the connection to the client.
+     */
+    { FS_SERVER_STREAM, NoProc, FsServerStreamRead, NoProc,
+		FsServerStreamIOControl, FsServerStreamSelect,
+		NullProc, NullProc,		/* Get/Set IO Attr */
+		NoHandle, FsServerStreamMigStart, FsServerStreamMigEnd,
+		NoProc, NoProc,				/* migrate, reopen */
+		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
+		FsHandleUnlockHdr, NullClientKill, FsServerStreamClose },
+    /*
+     * A pseudo stream with the server process running locally.  
+     */
+    { FS_LCL_PSEUDO_STREAM, FsPseudoStreamCltOpen, FsPseudoStreamRead,
+		FsPseudoStreamWrite, FsPseudoStreamIOControl,
+		FsPseudoStreamSelect,
+		NullProc, NullProc,		/* Get/Set IO Attr */
+		NoHandle, FsPseudoStreamMigStart, FsPseudoStreamMigEnd,
+		FsPseudoStreamMigrate, NoProc,		/* migrate, reopen */
+		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
+		FsHandleUnlockHdr, NullClientKill, FsPseudoStreamClose },
+    /*
+     * A pseudo stream with a remote server.  
+     */
+    { FS_RMT_PSEUDO_STREAM, FsRmtPseudoStreamCltOpen, FsSpriteRead,
+		FsSpriteWrite,
+		FsRemoteIOControl, FsSpriteSelect,
+		FsSpriteGetIOAttr, FsSpriteSetIOAttr,
+		FsRmtPseudoStreamVerify,
+		FsRemoteIOMigStart, FsRemoteIOMigEnd,
+		FsRmtPseudoStreamMigrate, NoProc,	/* migrate, reopen */
+		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
+		FsRemoteHandleScavenge, NullClientKill, FsRemoteIOClose },
 #ifdef not_done_yet
     /*
      * Locally cached named pipe stream.  
@@ -273,51 +320,6 @@ FsStreamTypeOps fsStreamOpTable[] = {
 		FsRmtNamedPipeVerify, FsRmtDeviceEncap, FsRmtDeviceDeencap,
 		NoProc, NoProc, NoProc, NoProc,
 		FsRmtDeviceClose, FsRmtDeviceDelete},
-    /*
-     * A control stream is what a server program gets when it opens a
-     * pseudo device file.  This stream is used to notify the server
-     * of new clients; the ID of the server stream set up for each
-     * new client is passed over this control stream.
-     */
-    { FS_CONTROL_STREAM, FsControlCltOpen, FsControlRead, NoProc,
-		FsControlIOControl, FsControlSelect,
-		FsControlGetIOAttr, FsControlSetIOAttr,
-		NoHandle, FsControlEncap, FsControlDeencap,
-		NoProc, NoProc, NoProc, NoProc,
-		FsControlClose, FsControlDelete },
-    /*
-     * A server stream gets set up for the server whenever a client opens
-     * a pseudo device.  The server reads the stream the learn about new
-     * requests from the client.  IOControls on the stream are used
-     * to control the connection to the client.
-     */
-    { FS_SERVER_STREAM, FsServerStreamCltOpen, FsServerStreamRead, NoProc,
-		FsServerStreamIOControl, FsServerStreamSelect,
-		FsServerStreamGetIOAttr, FsServerStreamSetIOAttr,
-		NoHandle, FsServerStreamEncap, FsServerStreamDeencap,
-		NoProc, NoProc, NoProc, NoProc,
-		FsServerStreamClose, FsServerStreamDelete },
-    /*
-     * A pseudo stream with the server process running locally.  
-     */
-    { FS_LCL_PSEUDO_STREAM, FsPseudoStreamCltOpen, FsPseudoStreamRead,
-		FsPseudoStreamWrite, FsPseudoStreamIOControl,
-		FsPseudoStreamSelect,
-		FsPseudoStreamGetIOAttr, FsPseudoStreamSetIOAttr,
-		NoHandle, FsPseudoStreamEncap, FsPseudoStreamDeencap,
-		NoProc, NoProc, NoProc, NoProc,
-		FsPseudoStreamClose, FsPseudoStreamDelete},
-    /*
-     * A pseudo stream with a remote server.  
-     */
-    { FS_RMT_PSEUDO_STREAM, FsRmtPseudoStreamCltOpen, FsRmtPseudoStreamRead,
-		FsRmtPseudoStreamWrite,
-		FsRmtPseudoStreamIOControl, FsRmtPseudoStreamSelect,
-		FsRmtPseudoStreamGetIOAttr, FsRmtPseudoStreamSetIOAttr,
-		FsRmtPseudoStreamVerify,
-		FsRmtPseudoStreamEncap, FsRmtPseudoStreamDeencap,
-		NoProc, NoProc, NoProc, NoProc,
-		FsRmtPseudoStreamClose, FsRmtPseudoStreamDelete},
     /*
      * A stream to the hybrid Sprite/Unix server.  
      */
