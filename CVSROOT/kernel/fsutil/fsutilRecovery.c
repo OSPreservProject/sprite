@@ -979,7 +979,7 @@ Fsutil_RpcRecovery(srvToken, clientID, command, storagePtr)
 {
     int *flagsPtr = (int *)storagePtr->requestParamPtr;
     if (*flagsPtr & CLT_RECOV_IN_PROGRESS) {
-	if (Recov_GetClientState(clientID, CLT_RECOV_IN_PROGRESS) == 0) {
+	if ((Recov_GetClientState(clientID) & CLT_RECOV_IN_PROGRESS) == 0) {
 	    fsutil_NumRecovering++;
 	    if (fsutil_NumRecovering == 1) {
 		Net_HostPrint(clientID, "initiated client recovery\n");
