@@ -129,7 +129,7 @@ typedef struct Fscache_FileInfo {
  *   FSCACHE_FILE_BEING_WRITTEN	There already is a block cleaner working on
  *				this process.
  *   FSCACHE_FILE_ON_DIRTY_LIST	This file is on the dirty list.
- *   FSCACHE_FILE_IS_WRITE_THRU	(unused?) Means that there is no delayed write.
+ *   FSCACHE_WRITE_TO_DISK	Want file forced to disk.
  *   FSCACHE_FILE_NOT_CACHEABLE	This is set when files served by remote hosts
  *				are no longer caching because of write sharing
  *   FSCACHE_LARGE_FILE_MODE		This file is large enough such that we limit it
@@ -141,18 +141,18 @@ typedef struct Fscache_FileInfo {
  *   FSCACHE_ALLOC_FAILED	Allocated failed due to disk full.  This
  *				is used to throttle error messages.
  */
-#define	FSCACHE_CLOSE_IN_PROGRESS		0x0001
+#define	FSCACHE_CLOSE_IN_PROGRESS	0x0001
 #define	FSCACHE_SERVER_DOWN		0x0002
 #define	FSCACHE_NO_DISK_SPACE		0x0004
 #define FSCACHE_DOMAIN_DOWN		0x0008
 #define FSCACHE_GENERIC_ERROR		0x0010
 #define	FSCACHE_SYNC_DONE		0x0020
-#define FSCACHE_FILE_BEING_WRITTEN		0x0040
-#define	FSCACHE_FILE_ON_DIRTY_LIST		0x0080
-#define FSCACHE_FILE_IS_WRITE_THRU		0x0100
-#define FSCACHE_FILE_NOT_CACHEABLE		0x0200
+#define FSCACHE_FILE_BEING_WRITTEN	0x0040
+#define	FSCACHE_FILE_ON_DIRTY_LIST	0x0080
+#define FSCACHE_WRITE_TO_DISK		0x0100
+#define FSCACHE_FILE_NOT_CACHEABLE	0x0200
 #define	FSCACHE_LARGE_FILE_MODE		0x0400
-#define FSCACHE_FILE_GONE			0x0800
+#define FSCACHE_FILE_GONE		0x0800
 #define	FSCACHE_WB_ON_LDB		0x1000
 #define FSCACHE_ALLOC_FAILED		0x2000
 
