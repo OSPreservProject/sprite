@@ -373,6 +373,16 @@ typedef	struct {
 } NetIEIASetupCB;
 
 /*
+ * The multicast address setup command block.
+ */
+
+typedef	struct {
+    NetIECommandBlock	cmdBlock;	/* The command block. */
+    short		count;		/* Number of ethernet addresses. */
+    Net_EtherAddress	etherAddress;	/* The ethernet address. */
+} NetIEMASetupCB;
+
+/*
  * The bits of the configure command block have the following format:
  *
  * typedef struct {
