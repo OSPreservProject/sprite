@@ -95,12 +95,10 @@ Sync_Semaphore	currentTicksMutex =
     Sync_SemInitStatic("Timer:currentTicksMutex");
 
 /*
- *  Time between callbacks. This is expressed as an integer and as a Time.
- *  One tick on the spur is one millesecond. The spur has settable counters
- *  so we can pick our interval and adjust the counters appropriately.
- */
+ *  Time between callbacks.  */
 
-static int interval = TIMER_CALLBACK_INTERVAL_APPROX / 1000;
+static int interval;
+
 static Time time = { 0, TIMER_CALLBACK_INTERVAL_APPROX};
 
 /*
@@ -140,8 +138,9 @@ Timer_TimerInit(timer)
      if (timer == TIMER_CALLBACK_TIMER) {
 	intrMaskBit = CALLBACK_TIMER_MASK_BIT;
 	modeRegBit = CALLBACK_TIMER_MODE_BIT;
-	callbackTicks = (int) (TIMER_FREQ/1000.0 * 
+	callbackTicks = (int) (TIMER_FREQ/1000000.0 * 
 		TIMER_CALLBACK_INTERVAL_APPROX); 
+	interval = callbackTicks >> TIMER_INTERVAL_SHIFT;
 	processor[CALLBACK_COUNTER] = Mach_GetProcessorNumber();
 #ifdef NO_PROFILE_TIMER
     } else if (timer == TIMER_PROFILE_TIMER) {
