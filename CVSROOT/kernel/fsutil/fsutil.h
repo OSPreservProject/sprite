@@ -65,6 +65,8 @@
  *	FS_RMT_PFS_STREAM	As above, but when the pfs server is remote.
  *	FS_RMT_CONTROL_STREAM	Needed only during get/set I/O attributes of
  *				a pseudo-device whose server is remote.
+ *	FS_PASSING_STREAM	Used to pass streams from a pseudo-device
+ *				server to its client in response to an open.
  *		Internet Protocols
  *	FS_RAW_IP_STREAM	Raw Internet Protocol stream.
  *	FS_UDP_STREAM		UDP protocol stream.
@@ -94,11 +96,12 @@
 #define FS_LCL_PFS_STREAM		13
 #define FS_RMT_PFS_STREAM		14
 #define FS_RMT_CONTROL_STREAM		15
-#define FS_RAW_IP_STREAM		16
-#define FS_UDP_STREAM			17
-#define FS_TCP_STREAM			18
+#define FS_PASSING_STREAM		16
+#define FS_RAW_IP_STREAM		17
+#define FS_UDP_STREAM			18
+#define FS_TCP_STREAM			19
 
-#define FS_NUM_STREAM_TYPES		19
+#define FS_NUM_STREAM_TYPES		20
 
 /*
  * Two arrays are used to map between local and remote types.  This has
