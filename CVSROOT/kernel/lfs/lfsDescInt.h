@@ -38,6 +38,7 @@ typedef struct LfsDescCache {
 /* procedures */
 
 extern void LfsDescCacheInit _ARGS_((struct Lfs *lfsPtr));
+extern void LfsDescCacheDestory _ARGS_((struct Lfs *lfsPtr));
 extern ClientData LfsDescCacheBlockInit _ARGS_((struct Lfs *lfsPtr, 
 		LfsDiskAddr diskBlockAddr, 
 		Boolean cantBlock, char **blockStartPtr));
