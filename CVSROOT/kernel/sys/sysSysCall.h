@@ -125,7 +125,8 @@
 #define SYS_PROC_VFORK  	106
 #define SYS_NET_GET_ROUTES 	107
 #define SYS_NET_DELETE_ROUTE 	108
+#define SYS_ZSS_CMD 		109
 
-#define SYS_NUM_SYSCALLS	109
+#define SYS_NUM_SYSCALLS	110
 
 #endif /* _SYSSYSCALL */

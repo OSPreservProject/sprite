@@ -294,6 +294,11 @@ static SysCallEntry sysCalls[] = {
     Proc_Vfork,	                Proc_Vfork,	        TRUE,	0,   NILPARM,
     Net_GetRoutes,		Net_GetRoutes,		TRUE,	5,   NILPARM,
     Net_DeleteRouteStub,	Net_DeleteRouteStub,	TRUE,	1,   NILPARM,
+    /*
+     * The following is a placeholder for a Zebra Storage Server system
+     * call which isn't in the standard kernel. 
+     */
+    ErrorProc,   		ErrorProc,   TRUE,	2,   NILPARM,
 };
 
 
