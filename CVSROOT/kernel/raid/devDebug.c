@@ -66,6 +66,7 @@ static char devDebugData[4][4][32] = {
  * Forward Declarations.
  */
 static ReturnStatus BlockIOProc();
+static ReturnStatus BlockIOProc1();
 static ReturnStatus ReleaseProc();
 static ReturnStatus IOControlProc();
 
@@ -93,7 +94,11 @@ DevDebugAttach(devicePtr)
     DebugHandle	*handlePtr;
 
     handlePtr = (DebugHandle *) malloc(sizeof(DebugHandle));
-    handlePtr->blockHandle.blockIOProc = BlockIOProc;
+    if (devicePtr->unit < 200) {
+        handlePtr->blockHandle.blockIOProc = BlockIOProc;
+    } else {
+        handlePtr->blockHandle.blockIOProc = BlockIOProc1;
+    }
     handlePtr->blockHandle.releaseProc = ReleaseProc;
     handlePtr->blockHandle.IOControlProc = IOControlProc;
     handlePtr->blockHandle.minTransferUnit = 1;
@@ -196,7 +201,7 @@ BlockIOProc(handlePtr, requestPtr)
      * that you can also read infinite amounts of garbage from it as well
      * as writing to it.
      */
-    if (debugHandlePtr->devPtr->unit != 101) {
+    if (debugHandlePtr->devPtr->unit < 100) {
 	printf("\nBlockIOProc\n");
 	PrintTime();
 	PrintHandle(handlePtr);
