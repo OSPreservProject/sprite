@@ -1440,8 +1440,10 @@ Fsio_FileIOControl(streamPtr, ioctlPtr, replyPtr)
 			status = Fsio_FileTrunc(handlePtr, arg, 0);
 		    }
 		} else {
+		    Fsutil_HandleUnlock(handlePtr);
 		    status = Fsconsist_MappedConsistency(handlePtr,
 			    ioctlPtr->uid, arg);
+		    Fsutil_HandleLock(handlePtr);
 		}
 	    }
 	    break;
