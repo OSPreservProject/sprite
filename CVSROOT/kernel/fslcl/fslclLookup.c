@@ -1786,16 +1786,14 @@ DeleteFileName(domainPtr, parentHandlePtr, curHandlePtrPtr, component,
 	     */
 	    curDescPtr->numLinks--;
 	    if (curDescPtr->numLinks > 0) {
-	    printf(
-		      "DeleteFileName: extra links on directory\n");
+	    printf("DeleteFileName: extra links on directory\n");
 	    }
 	}
 	curDescPtr->descModifyTime = fsTimeInSeconds;
 	status = FsStoreFileDesc(domainPtr, curHandlePtr->hdr.fileID.minor,
 				 curDescPtr);
 	if (status != SUCCESS) {
-	    printf(
-		      "DeleteFileName: (1) Couldn't store descriptor\n");
+	    printf("DeleteFileName: (1) Couldn't store descriptor\n");
 	    return(status);
 	}
 	if (type == FS_DIRECTORY) {
@@ -1809,8 +1807,7 @@ DeleteFileName(domainPtr, parentHandlePtr, curHandlePtrPtr, component,
 	    status = FsStoreFileDesc(domainPtr,
 			 parentHandlePtr->hdr.fileID.minor, parentDescPtr);
 	    if (status != SUCCESS) {
-		printf(
-			  "DeleteFileName: (2) Couldn't store descriptor\n");
+		printf("DeleteFileName: (2) Couldn't store descriptor\n");
 		return(status);
 	    }
 	}
@@ -1837,6 +1834,7 @@ DeleteFileName(domainPtr, parentHandlePtr, curHandlePtrPtr, component,
 		 */
 		FsHandleRelease(curHandlePtr, TRUE);
 		FsHandleRemove(curHandlePtr);
+		fsStats.object.files--;
 		*curHandlePtrPtr = (FsLocalFileIOHandle *)NIL;
 	    } else {
 		FsHandleRelease(curHandlePtr, TRUE);
