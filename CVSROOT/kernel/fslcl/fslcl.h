@@ -50,10 +50,9 @@ typedef struct Fslcl_DirEntry {
 /*
  * Misc. routines.
  */
-extern void	     Fslcl_DomainInit();
-extern ReturnStatus  Fslcl_DeleteFileDesc();
-extern void Fslcl_NameInitializeOps();
-
-
+extern void		Fslcl_DomainInit();
+extern ReturnStatus	Fslcl_DeleteFileDesc();
+extern void 		Fslcl_NameInitializeOps();
+extern void 		Fslcl_NameHashInit();
 
 #endif /* _FSLCL */

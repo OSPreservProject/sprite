@@ -577,9 +577,10 @@ extern	void		Fsdm_DomainRelease();
 extern  ReturnStatus	Fsdm_DomainInfo();
 extern void 	     Fsdm_DomainWriteBack();
 extern ReturnStatus	Fsdm_RereadSummaryInfo();
-
-
-
+/*
+ * Miscellaneous
+ */
+extern	void		Fsdm_RecordDeletionStats();
 extern  void		Fsdm_Init();
 
 #endif _FSDM
