@@ -251,7 +251,6 @@ Sig_SigvecStub(sig, newVectorPtr, oldVectorPtr)
       if (newAction.action == SIG_HANDLE_ACTION) {
 	  if (Vm_CopyIn(4, (Address) ((unsigned int) (newAction.handler)), 
 	      (Address) &dummy) != SUCCESS) {
-	      printf("Sig_SigvecStub: copy in fault\n");
 	      Mach_SetErrno(EFAULT);
 	      return -1;
 	  }
@@ -265,7 +264,6 @@ Sig_SigvecStub(sig, newVectorPtr, oldVectorPtr)
 	   * user from ignoring a signal such as a bus error which would cause
 	   * the process to take a bus error repeatedly.
 	   */
-	  printf("Sig_SigvecStub: ignore\n");
 	  if (sigBitMasks[spriteSignal] & sigCanHoldMask) {
 	      procPtr->sigActions[spriteSignal] = SIG_IGNORE_ACTION;
 	      SigClearPendingMask(procPtr, spriteSignal);
@@ -275,7 +273,6 @@ Sig_SigvecStub(sig, newVectorPtr, oldVectorPtr)
 	  }
 	  procPtr->sigMasks[spriteSignal] = 0;
       } else {
-	  printf("Sig_SigvecStub: default\n");
 	  procPtr->sigActions[spriteSignal] = newAction.action;
 	  procPtr->sigMasks[spriteSignal] = 0;
       }

@@ -84,6 +84,8 @@ char *mach_MachineType = "ds3100";
 char *mach_MachineType = "ds5000";
 #endif /* ds5000 */
 
+extern int debugProcStubs;
+
 /*
  * The byte ordering/alignment type used with Fmt_Convert and I/O control data
  */
@@ -396,7 +398,6 @@ MachStringTable	*boot_argv;	/* Boot sequence strings. */
     Mach_ArgParse(buf,&machMonBootParam);
 
 #ifdef ds5000
-    Mach_MonPrintf("Happy Birthday!!\n");
     /*
      * Get information on the memory bitmap.  This gets clobbered later.
      */
@@ -1624,9 +1625,6 @@ MachUserReturn(procPtr)
 			     machCurStatePtr->userState.regState.fpStatusReg,
 						 TRUE);
 	    Vm_MakeUnaccessible(newAddr, sizeof(Address));
-#ifdef notdef
-	    printf("breakPC=%x\n", (unsigned)breakPC);
-#endif
 	    if (Vm_CopyIn(4, breakPC,
 			  (Address)&machCurStatePtr->sstepInst) != SUCCESS) {
 		printf("Bad single-step address\n");
@@ -1658,18 +1656,22 @@ MachUserReturn(procPtr)
 		 * the kernel.
 		 */
 		restarted = 1;
-		printf("Restarting system call with progress %d\n",
-			procPtr->unixProgress);
-		printf("Our PC = %x\n",
-			machCurStatePtr->userState.regState.pc);
+		if (debugProcStubs) {
+		    printf("Restarting system call with progress %d\n",
+			    procPtr->unixProgress);
+		    printf("Our PC = %x\n",
+			    machCurStatePtr->userState.regState.pc);
+		}
 		machCurStatePtr->userState.regState.pc -= 4;
-		printf("Now our PC = %x\n",
-			machCurStatePtr->userState.regState.pc);
-		printf("V0 was %d and our call was %d\n", 
-			machCurStatePtr->userState.regState.regs[V0],
-			machCurStatePtr->userState.unixRetVal);
+		if (debugProcStubs) {
+		    printf("Now our PC = %x\n",
+			    machCurStatePtr->userState.regState.pc);
+		    printf("V0 was %d and our call was %d\n", 
+			    machCurStatePtr->userState.regState.regs[V0],
+			    machCurStatePtr->userState.unixRetVal);
+		}
 		machCurStatePtr->userState.regState.regs[V0] =
-			machCurStatePtr->userState.unixRetVal;
+		    machCurStatePtr->userState.unixRetVal;
 		procPtr->unixProgress = PROC_PROGRESS_UNIX;
 	    }
 	    /*
@@ -1688,7 +1690,7 @@ MachUserReturn(procPtr)
 		SetupSigHandler(procPtr, &sigStack, pc);
 		Mach_DisableIntr();
 		break;
-	    } else if (restarted) {
+	    } else if (restarted && debugProcStubs) {
 		printf("No signal, yet we restarted system call!!?!\n");
 	    }
 	}
@@ -1702,7 +1704,7 @@ MachUserReturn(procPtr)
     Sig_AllowMigration(procPtr);
 
     if (procPtr->unixProgress != PROC_PROGRESS_NOT_UNIX &&
-	    procPtr->unixProgress != PROC_PROGRESS_UNIX) {
+	    procPtr->unixProgress != PROC_PROGRESS_UNIX && debugProcStubs) {
 	printf("UnixProgress = %d leaving MachUserReturn\n", procPtr->unixProgress);
     }
 

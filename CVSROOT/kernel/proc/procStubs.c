@@ -658,16 +658,19 @@ Proc_Wait4Stub(pid, statusPtr, options, unixRusagePtr)
     }
 
     if (status == GEN_ABORTED_BY_SIGNAL) {
-	printf("Wait interrupted by signal\n");
+	if (debugProcStubs) {
+	    printf("Wait interrupted by signal\n");
+	}
 	curProcPtr->unixProgress = PROC_PROGRESS_RESTART;
 	return 0;
     } else if (status != SUCCESS) {
 	if (status == PROC_NO_EXITS && (options & WNOHANG)) {
-	    printf("Proc_Wait4Stub: exiting\n");
+	    if (debugProcStubs) {
+		printf("Proc_Wait4Stub: exiting\n");
+	    }
 	    return 0;
 	}
 	Mach_SetErrno(ECHILD);
-	printf("Proc_Wait4Stub: ECHILD\n");
 	return -1;
     }
     if (statusPtr != NULL)  {
@@ -690,7 +693,6 @@ Proc_Wait4Stub(pid, statusPtr, options, unixRusagePtr)
 			    (Address)statusPtr);
 	if (status != SUCCESS) {
 	    Mach_SetErrno(EFAULT);
-	    printf("Proc_Wait4Stub: EFAULT\n");
 	    return -1;
 	}
     }
@@ -728,11 +730,12 @@ Proc_Wait4Stub(pid, statusPtr, options, unixRusagePtr)
 			    (Address)unixRusagePtr);
 	if (status != SUCCESS) {
 	    Mach_SetErrno(EFAULT);
-	    printf("Proc_Wait4Stub: EFAULT\n");
 	    return -1;
 	}
     }
-    printf("Proc_Wait4Stub: returning %x\n", childInfo.processID);
+    if (debugProcStubs) {
+	printf("Proc_Wait4Stub: returning %x\n", childInfo.processID);
+    }
     Mach_Return2(*(int *)&waitStatus);
     return childInfo.processID;
 }
