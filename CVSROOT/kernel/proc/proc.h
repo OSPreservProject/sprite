@@ -296,6 +296,7 @@ extern	ReturnStatus	Proc_Wait _ARGS_((int numPids, Proc_PID pidArray[],
 extern	ReturnStatus	Proc_WaitForHost _ARGS_((int hostID));
 extern	ReturnStatus	Proc_WaitForMigration _ARGS_((Proc_PID processID));
 extern	void		Proc_WakeupAllProcesses _ARGS_((void));
+extern	int		Proc_ServerProcCreate _ARGS_((int numToCreate));
 extern	int		proc_NumServers;
 /*
  * The following are kernel stubs corresponding to system calls.  They
