@@ -5,10 +5,12 @@
  *	This interface is  found on 32-bit VME versions, i.e. some plug-in
  *	controllers, and the 3/50.  The associated paper reference is
  *	"Hardware Reference Manual for the Sun-3 SCSI Board".  This explains
- *	general behavior of the VME version of the SCSI-3 interface, but
- *	doesn't include detailed descriptions of the 5380 chip.  The
- *	UDC (Universal (sigh) DMA Controller) chip is the AMD 9516 and
- *	the AMD reference manual can be consulted for chip specifics.
+ *	general behavior of the VME version of the SCSI-3 interface.
+ *	The reference for the 5380 is the NCR Standard Products Data Book,
+ *	Micro-electronics Division.  Page number references refer to the
+ *	4/88 (April 88) edition.  The UDC (Universal DMA Controller) chip
+ *	is the AMD 9516 and the AMD reference manual can be consulted for chip
+ *	specifics.
  *
  *
  * Copyright 1986 Regents of the University of California
@@ -31,20 +33,24 @@
 #include "sync.h"
 
 /*
- *	The following constants borrowed from SMI "sireg.h" pending
- *	receipt of the NCR 5380 SBC (SCSI Bus Controller) chip documentation.  
+ *	The 5380 has 8 general registers.  They have different functions
+ *	when read and written.  See pp. 80-85 for register descriptions.
+ *	This chip allows direct control over the SCSI bus by the CPU,
+ *	so many bits correspond directly to SCSI bus signals.
  */
 typedef struct DevSBCReadRegs {
-    unsigned char data;		/* Data register.  Contains the ID of the
-				 * SCSI "target", or controller, for the 
-				 * SELECT phase. Also, leftover odd bytes
-				 * are left here after a read. */
+    unsigned char data;		/* Data register.  A direct connection to
+				 * the SCSI data bus.  This is read during
+				 * programmed I/O to get msgs, and during
+				 * arbitration. */
     unsigned char initCmd;	/* Initiator command register */
     unsigned char mode;		/* Mode register */
     unsigned char trgtCmd;	/* Target command register */
-    unsigned char curStatus;	/* Current bus status register */
-    unsigned char status;	/* Bus status register */
-    unsigned char inData;	/* Input data register */
+    unsigned char curStatus;	/* All SCSI signals except ATN and ACK */
+    unsigned char status;	/* ATN, ACK, plus DMA and interrupt signals */
+    unsigned char inData;	/* Input data register.  Used for "latched"
+				 * data on the SCSI bus during DMA.  This
+				 * is not accessed directly by the driver. */
     unsigned char clear;	/* Read this to clear the following bits
 				 * in the status register: parity error,
 				 * interrupt request, busy failure. */
@@ -62,53 +68,75 @@ typedef struct DevSBCWriteRegs {
     unsigned char mode;		/* Mode register */
     unsigned char trgtCmd;	/* Target command register */
     unsigned char select;	/* Select/reselect enable register */
-    unsigned char send;		/* DMA start for target-initiator send */
-    unsigned char trgtRecv;	/* DMA start for target receive */
-    unsigned char initRecv;	/* DMA start for initiator receive. */
+    /*
+     * DMA is initiated by writing to these registers.  The TARGET mode
+     * bit should be set right, i.e. cleared before writing to
+     * the send or initRecv registers, and the DMA mode bit should be set.
+     */
+    unsigned char send;		/* Start DMA from memory to SCSI bus */
+    unsigned char trgtRecv;	/* Start DMA from SCSI bus to target */
+    unsigned char initRecv;	/* Start DMA from SCSI bus to initiator */
 } DevSBCWriteRegs;
 
 /*
- * Control bits in the SBC initiator command register.
- *
+ * Control bits in the 5380 Initiator Command Register.
+ * RST, ACK, BSY, SEL, ATN are direct connections to SCSI control lines.
+ * Setting or clearing the bit raises or lowers the SCSI signal.
+ * Reading these bits indicates the current value of the control signal.
  */
-#define	SBC_ICR_RST	0x80	/* (r/w) assert reset */
+#define	SBC_ICR_RST	0x80	/* (r/w) SCSI RST (reset) signal */
 #define SBC_ICR_AIP	0x40	/* (r)   arbitration in progress */
 #define SBC_ICR_TEST	0x40	/* (w)   test mode, disables output */
 #define SBC_ICR_LA	0x20	/* (r)   lost arbitration */
-#define SBC_ICR_DE	0x20	/* (w)   differential enable */
-#define SBC_ICR_ACK	0x10	/* (r/w) assert acknowledge */
-#define SBC_ICR_BUSY	0x08	/* (r/w) assert busy */
-#define SBC_ICR_SEL	0x04	/* (r/w) assert select */
+#define SBC_ICR_DE	0x20	/* (w)   differential enable (5381 only) */
+#define SBC_ICR_ACK	0x10	/* (r/w) SCSI ACK (acknowledge) signal */
+#define SBC_ICR_BUSY	0x08	/* (r/w) SCSI BSY (busy) signal */
+#define SBC_ICR_SEL	0x04	/* (r/w) SCSI SEL (select) signal */
+#define SBC_ICR_ATN	0x02	/* (r/w) SCSI ATN (attention) signal */
+#define SBC_ICR_DATA	0x01	/* (r/w) assert data bus.  Enables the outData
+				 * contents to be output on the SCSi data lines.
+				 * This should be set during DMA send. */
 
-#define SBC_ICR_ATN	0x02	/* (r/w) assert attention */
-#define SBC_ICR_DATA	0x01	/* (r/w) assert data bus */
+/*
+ * Bits in the 5380 Mode Register (same on read or write).
+ * "This is used to control the operation of the chip."
+ * The mode controls DMA, target/initiator roles, parity, and interrupts.
+ */
+#define SBC_MR_BDMA	0x80	/* Enable block mode dma */
+#define SBC_MR_TRG	0x40	/* Target mode when set, else Initiator */
+#define SBC_MR_EPC	0x20	/* Enable parity check */
+#define SBC_MR_EPI	0x10	/* Enable parity interrupt */
+#define SBC_MR_EEI	0x08	/* Enable eop (end-of-process, dma) interrupt */
+#define SBC_MR_MBSY	0x04	/* Enable monitoring of BSY (busy) signal */
+#define SBC_MR_DMA	0x02	/* Enable DMA.  Used with other DMA regs. */
+#define SBC_MR_ARB	0x01	/* Set during SCSI bus arbitration */
 
-/* bits in the sbc mode register (same on read or write) */
-#define SBC_MR_BDMA	0x80	/* block mode dma */
-#define SBC_MR_TRG	0x40	/* target mode */
-#define SBC_MR_EPC	0x20	/* enable parity check */
-#define SBC_MR_EPI	0x10	/* enable parity interrupt */
-#define SBC_MR_EEI	0x08	/* enable eop interrupt */
-#define SBC_MR_MBSY	0x04	/* monitor busy */
-#define SBC_MR_DMA	0x02	/* dma mode */
-#define SBC_MR_ARB	0x01	/* arbitration mode */
+/*
+ * Bits in the 5380 Target Command Register.
+ * As an Initator, which we always are, this register must be set to
+ * match the current phase that's on the SCSI bus before sending data.
+ */
+#define SBC_TCR_REQ	0x08	/* assert request.  Only for targets. */
+#define SBC_TCR_MSG	0x04	/* message phase, if set */
+#define SBC_TCR_CD	0x02	/* command phase if set, else data phase */
+#define SBC_TCR_IO	0x01	/* input phase if set, else output */
 
-/* bits in the sbc target command register (tcr) */
-#define SBC_TCR_REQ	0x08	/* assert request */
-#define SBC_TCR_MSG	0x04	/* assert message */
-#define SBC_TCR_CD	0x02	/* assert command/data */
-#define SBC_TCR_IO	0x01	/* assert input/output */
-
-/* settings of tcr to reflect different information transfer phases */
+/*
+ * Combinations for different phases as represented in the target cmd. reg.
+ */
 #define TCR_COMMAND	(SBC_TCR_CD)
-#define TCR_MSG_OUT	(SBC_TCR_MSG | SBC_TCR_CD)
-#define TCR_DATA_OUT	0
 #define TCR_STATUS	(SBC_TCR_CD | SBC_TCR_IO)
+#define TCR_MSG_OUT	(SBC_TCR_MSG | SBC_TCR_CD)
 #define TCR_MSG_IN	(SBC_TCR_MSG | SBC_TCR_CD | SBC_TCR_IO)
+#define TCR_DATA_OUT	0
 #define TCR_DATA_IN	(SBC_TCR_IO)
 #define TCR_UNSPECIFIED	(SBC_TCR_MSG)
 
-/* bits in the sbc current bus status register */
+/*
+ * Bits in the 5380 Current SCSI Bus Status register (read only).
+ * This register is used to monitor the current state of all of
+ * the SCSI bus lines except ATN (attention) and ACK (acknowledge).
+ */
 #define SBC_CBSR_RST	0x80	/* reset */
 #define SBC_CBSR_BSY	0x40	/* busy */
 #define SBC_CBSR_REQ	0x20	/* request */
@@ -118,24 +146,35 @@ typedef struct DevSBCWriteRegs {
 #define SBC_CBSR_SEL	0x02	/* select */
 #define SBC_CBSR_DBP	0x01	/* data bus parity */
 
-/* scsi bus signals reflecting different information transfer phases */
+/*
+ * Combinations for different phases as represented on the SCSI bus.
+ * COMMAND phase is used to send a command block to a Target.
+ * STATUS phase is used to get status bytes from a Target.
+ * MSG_OUT phase is used to send message bytes to a Target.
+ * MSG_IN phase is used to get a message from a Target.
+ * DATA_OUT phase is used to send data to a Target.
+ * DATA_IN phase is used when receiving data from a Target.
+ */
 #define CBSR_PHASE_BITS	(SBC_CBSR_CD | SBC_CBSR_MSG | SBC_CBSR_IO)
 #define PHASE_COMMAND	(SBC_CBSR_CD)
-#define PHASE_MSG_OUT	(SBC_CBSR_MSG | SBC_CBSR_CD)
-#define PHASE_DATA_OUT	0
 #define PHASE_STATUS	(SBC_CBSR_CD | SBC_CBSR_IO)
+#define PHASE_MSG_OUT	(SBC_CBSR_MSG | SBC_CBSR_CD)
 #define PHASE_MSG_IN	(SBC_CBSR_MSG | SBC_CBSR_CD | SBC_CBSR_IO)
+#define PHASE_DATA_OUT	0
 #define PHASE_DATA_IN	(SBC_CBSR_IO)
 
-/* bits in the sbc bus and status register */
-#define SBC_BSR_EDMA	0x80	/* end of dma */
-#define SBC_BSR_RDMA	0x40	/* dma request */
-#define SBC_BSR_PERR	0x20	/* parity error */
-#define SBC_BSR_INTR	0x10	/* interrupt request */
-#define SBC_BSR_PMTCH	0x08	/* phase match */
-#define SBC_BSR_BERR	0x04	/* busy error */
-#define SBC_BSR_ATN	0x02	/* attention */
-#define SBC_BSR_ACK	0x01	/* acknowledge */
+/*
+ * Bits in the 5380 Bus and Status register.  This has the ATN and ACK
+ * SCSI lines, plus other status bits.
+ */
+#define SBC_BSR_EDMA	0x80	/* End of dma, almost, see p. 84 */
+#define SBC_BSR_RDMA	0x40	/* DRQ (dma request) signal, set during DMA */
+#define SBC_BSR_PERR	0x20	/* Parity error */
+#define SBC_BSR_INTR	0x10	/* IRQ (interrupt request) */
+#define SBC_BSR_PMTCH	0x08	/* Phase match indicates if trgtCmd is ok */
+#define SBC_BSR_BERR	0x04	/* Busy error set when BSY goes away */
+#define SBC_BSR_ATN	0x02	/* SCSI ATN (attention) signal */
+#define SBC_BSR_ACK	0x01	/* SCSI ACK (acknowledge)_signal */
 
 /*
  * AMD 9516 UDC (Universal DMA Controller) Registers.
