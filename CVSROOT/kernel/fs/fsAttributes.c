@@ -641,6 +641,7 @@ Fs_RpcGetAttrPath(srvToken, clientID, command, storagePtr)
 		    (ClientData)replyMemPtr);
         return(SUCCESS);
     } else {
+	Mem_Free((Address) getAttrResultsParamPtr);
         return(status);
     }
 }
