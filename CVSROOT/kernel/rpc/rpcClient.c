@@ -251,11 +251,18 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 		     * process is working on our request.  We increase
 		     * our waiting time to decrease the change that we'll
 		     * timeout again before receiving the reply.
+		     * NOTE: We don't pay attention to acks if we are
+		     * broadcasting.  This makes the broadcaster too vulnerable
+		     * to errant servers.  In particular, diskless clients
+		     * often wedge trying to handle a prefix request, send
+		     * the real server a lot of acks, and slow it's boot down.
 		     */
-		    numTries = 0;
-		    wait *= 2;
-		    if (wait > rpcMaxWait) {
-			wait = rpcMaxWait;
+		    if (serverID != RPC_BROADCAST_SERVER_ID) {
+			numTries = 0;
+			wait *= 2;
+			if (wait > rpcMaxWait) {
+			    wait = rpcMaxWait;
+			}
 		    }
 		} else {
 		    char *name;
