@@ -44,6 +44,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif sun4c
 #ifdef SOSP91
 #include <fsStat.h>
+#include <sospRecord.h>
 #endif SOSP91
 
 Boolean	sys_ErrorShutdown = FALSE;
@@ -234,6 +235,16 @@ Sys_Shutdown(flags, rebootString)
     }
 
     if (flags & SYS_KILL_PROCESSES) {
+	/*
+	 * Do a few initial syncs.
+	 * These are necessary because the cache isn't getting written
+	 * out properly with the new block cleaner.
+	 */
+	printf("Doing initial syncs\n");
+	Fsutil_Sync(-1, 0);
+	Fsutil_Sync(-1, 0);
+	Fsutil_Sync(-1, 0);
+	printf("Done initial syncs\n");
 	/*
 	 * Turn ourselves into a kernel process since we no longer need
 	 * user process resources.
@@ -583,6 +594,33 @@ Sys_StatsStub(command, option, argPtr)
 	    } else {
 		status = Vm_CopyOut(sizeof (Fs_SospMigStats),
 			(Address) &fs_SospMigStats, argPtr);
+	    }
+	    break;
+	}
+        case SYS_FS_SOSP_NAME_STATS: {
+	    Sys_SospNameStats	stats;
+
+	    if (argPtr == (Address)NIL ||
+		    argPtr == (Address) 0 ||
+		    argPtr == (Address) USER_NIL) {
+		status = GEN_INVALID_ARG;
+	    } else if (option < sizeof (Sys_SospNameStats)) {
+		status = GEN_INVALID_ARG;
+	    } else {
+		Time timeVal;
+		Timer_TicksToTime(totalNameTime,&timeVal);
+		stats.totalNameTime = timeVal;
+		Timer_TicksToTime(nameTime[1],&timeVal);
+		stats.nameTime = timeVal;
+		Timer_TicksToTime(nameTime[2],&timeVal);
+		stats.prefixTime = timeVal;
+		Timer_TicksToTime(nameTime[0],&timeVal);
+		stats.miscTime = timeVal;
+		stats.numPrefixLookups = SOSPLookupNum;
+		stats.numComponents = SOSPLookupComponent;
+		stats.numPrefixComponents = SOSPLookupComponent;
+		status = Vm_CopyOut(sizeof (Sys_SospNameStats),
+			(Address) &stats, argPtr);
 	    }
 	    break;
 	}
@@ -1053,9 +1091,10 @@ Sys_StatsStub(command, option, argPtr)
 			 * that we don't want to buffer data.
 			 */
 			TraceLog_Init(SOSP91TracePtr, -args[0], args[1],
-				TRACELOG_NO_BUF);
+				TRACELOG_NO_BUF, VERSIONLETTER);
 		    } else {
-			TraceLog_Init(SOSP91TracePtr, args[0], args[1], 0);
+			TraceLog_Init(SOSP91TracePtr, args[0], args[1], 0,
+				VERSIONLETTER);
 		    }
 		}
 		traceLog_Disable = FALSE;
@@ -1072,31 +1111,6 @@ Sys_StatsStub(command, option, argPtr)
 	    } else if (option == SYS_TRACELOG_DUMP) {
 		TraceLog_Dump(SOSP91TracePtr, argPtr+
 			sizeof(Sys_TracelogHeaderKern), argPtr);
-	    } else if (option == 1999) {
-		/*
-		 * I'll just sneak some random stats in here.
-		 * --Ken
-		 */
-		Time timeVal;
-		Timer_TicksToTime(totalNameTime,&timeVal);
-		printf("totalNameTime: %d,%d\n", timeVal.seconds,
-			timeVal.microseconds);
-		Timer_TicksToTime(nameTime[1],&timeVal);
-		printf("name: %d,%d\n", timeVal.seconds,
-			timeVal.microseconds);
-		Timer_TicksToTime(nameTime[2],&timeVal);
-		printf("prefix: %d,%d\n", timeVal.seconds,
-			timeVal.microseconds);
-		Timer_TicksToTime(nameTime[0],&timeVal);
-		printf("misc: %d,%d\n", timeVal.seconds,
-			timeVal.microseconds);
-		printf("Number of prefix lookups: %d\n", SOSPLookupNum);
-		printf("Total components: %d, avg: %d\n",
-			SOSPLookupComponent,
-			SOSPLookupComponent/SOSPLookupNum);
-		printf("Total prefix components: %d, avg: %d\n",
-			SOSPLookupPrefixComponent,
-			SOSPLookupPrefixComponent/SOSPLookupNum);
 	    }
 	    status = SUCCESS;
 	    break;
