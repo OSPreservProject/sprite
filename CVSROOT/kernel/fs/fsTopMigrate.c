@@ -795,8 +795,13 @@ Fs_DeencapFileState(procPtr, buffer)
     int cwdLength;
     Fs_Stream *prefixStreamPtr;
 
+    /*
+     * Set up an fsPtr for the process.  Initialize some fields so that
+     * at any point we can bail out on error by calling Fs_CloseState.  Some
+     * fields are initialized from the information from the other host.
+     */
     procPtr->fsPtr = fsPtr = mnew(Fs_ProcessState);
-    
+    fsPtr->cwdPtr = (Fs_Stream *) NIL;
 
     /*
      * Get group and permissions information.
@@ -827,6 +832,9 @@ Fs_DeencapFileState(procPtr, buffer)
 	fsPtr->streamFlags = (char *)malloc(numStreams * sizeof(char));
 	bcopy(buffer, (Address) fsPtr->streamFlags, numStreams * sizeof(char));
 	buffer += Byte_AlignAddr(numStreams * sizeof(char));
+	for (i = 0; i < fsPtr->numStreams; i++) {
+	    fsPtr->streamList[i] = (Fs_Stream *) NIL;
+	}
     } else {
 	fsPtr->streamList = (Fs_Stream **)NIL;
 	fsPtr->streamFlags = (char *)NIL;
@@ -848,7 +856,7 @@ Fs_DeencapFileState(procPtr, buffer)
 	    printf("%s unable to open prefix '%s' for migrated process.\n",
 		   "Warning: Fs_DeencapFileState:", cwdName);
 	}
-	return(status);
+	goto failure;
     } else {
 	(void) Fs_Close(prefixStreamPtr);
     }
@@ -862,7 +870,8 @@ Fs_DeencapFileState(procPtr, buffer)
 	    printf("%s Fs_DeencapStream returned %x for cwd.\n",
 		  "Warning: Fs_DeencapFileState:", status);
 	}
-	return(status);
+	fsPtr->cwdPtr = (Fs_Stream *) NIL;
+        goto failure;
     }
     buffer += sizeof(FsMigInfo);
 
@@ -873,25 +882,22 @@ Fs_DeencapFileState(procPtr, buffer)
      */
     for (i = 0; i < fsPtr->numStreams; i++) {
 	Byte_EmptyBuffer(buffer, int, index);
-	if (index != NIL) {
+	if ((status == SUCCESS) && (index != NIL)) {
 	    status = Fs_DeencapStream(buffer, &fsPtr->streamList[index]);
 	    if (status != SUCCESS) {
-#ifdef notdef
-		if (status != FAILURE) {
-#endif
 		    printf(
       "Fs_DeencapFileState: Fs_DeencapStream for file id %d returned %x.\n",
 			      index, status);
-		    return(status);
-#ifdef notdef
-		}
-		fsPtr->streamList[index] = (Fs_Stream *) NIL;
-#endif
+		    fsPtr->streamList[index] = (Fs_Stream *) NIL;
+		    goto failure;
 	    }
-	} else {
-	    fsPtr->streamList[i] = (Fs_Stream *) NIL;
 	}
 	buffer += sizeof(FsMigInfo);
     }
     return(SUCCESS);
+    
+failure:
+    Fs_CloseState(procPtr);
+    return(status);
+    
 }
