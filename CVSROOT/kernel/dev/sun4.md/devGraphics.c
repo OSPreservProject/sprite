@@ -391,8 +391,6 @@ DevFBOpen(devicePtr, useFlags, token, flagsPtr)
     typePtr = &fbarray[whichFb];
     devPtr->type.fb_type = typePtr->fb_type;
 
-    printf("Frame buffer type is %d.\n", whichFb);
-
     devicePtr->data = (ClientData) devPtr;
 
     return SUCCESS;
