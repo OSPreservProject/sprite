@@ -140,6 +140,8 @@ typedef struct Fscache_FileInfo {
  *				writes should be discarded.
  *   FSCACHE_WB_ON_LDB		Force this file to be written back to disk
  *				on the last dirty block.
+ *   FSCACHE_ALLOC_FAILED	Allocated failed due to disk full.  This
+ *				is used to throttle error messages.
  */
 #define	FSCACHE_CLOSE_IN_PROGRESS		0x0001
 #define	FSCACHE_SERVER_DOWN		0x0002
@@ -154,6 +156,7 @@ typedef struct Fscache_FileInfo {
 #define	FSCACHE_LARGE_FILE_MODE		0x0400
 #define FSCACHE_FILE_GONE			0x0800
 #define	FSCACHE_WB_ON_LDB		0x1000
+#define FSCACHE_ALLOC_FAILED		0x2000
 
 /*
  * Structure to represent a cache block in the fileservers cache block 
