@@ -181,8 +181,9 @@ DevRawBlockDevRead(devicePtr, readPtr, replyPtr)
 	amountRead += replyPtr->length;
 	readPtr->length -= replyPtr->length;
 	if ((error != SUCCESS) || (replyPtr->length != toRead)) {
-	    printf("DevRawBlockDevRead: error 0x%x short length %d\n",
-		    error, replyPtr->length);
+	    printf("DevRawBlockDevRead: error 0x%x inLength %d at offset 0x%x outLength %d\n",
+		    error, request.bufferLen, request.startAddress,
+		    replyPtr->length);
 	    return error;
 	}
     }
