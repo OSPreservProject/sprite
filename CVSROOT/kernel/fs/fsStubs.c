@@ -1032,6 +1032,7 @@ Fs_ReadvStub(streamID, iov, iovcnt)
     int amountRead;             /* place to hold number of bytes read */
     int totalRead = 0;          /* place to hold total # of bytes read */
     int i;
+    int status = SUCCESS;
     struct iovec iovCopy[MAX_IOV];      /* Kernel copy of iov */
 
     if (debugFsStubs) {
@@ -1050,11 +1051,34 @@ Fs_ReadvStub(streamID, iov, iovcnt)
         amountRead = Fs_NewReadStub(streamID, iovCopy[i].iov_base,
                 iovCopy[i].iov_len);
         if (amountRead == -1) {
-            return -1;
+	    if (debugFsStubs) {
+		printf("Readv subread failed\n");
+	    }
+	    status = FAILURE;
+	    break;
         }
         totalRead += amountRead;
+	if (amountRead < iovCopy[i].iov_len) {
+	    if (debugFsStubs) {
+		printf("Readv subread didn't do it all\n");
+	    }
+	    break;
+	}
     }
-    return totalRead;
+    /*
+     * If we read anything, it's a success.
+     */
+    if (status == FAILURE && totalRead == 0) {
+	if (debugFsStubs) {
+	    printf("Readv failed\n");
+	}
+	return -1;
+    } else {
+	if (debugFsStubs) {
+	    printf("Readv: returns %d\n", totalRead);
+	}
+	return totalRead;
+    }
 }
 
 /*
@@ -1082,6 +1106,7 @@ Fs_WritevStub(streamID, iov, iovcnt)
     int amountWritten;          /* place to hold number of bytes read */
     int totalWritten = 0;       /* place to hold total # of bytes written */
     int i;
+    int status = SUCCESS;
     struct iovec iovCopy[MAX_IOV];      /* Kernel copy of iov */
 
     if (debugFsStubs) {
@@ -1100,11 +1125,34 @@ Fs_WritevStub(streamID, iov, iovcnt)
         amountWritten = Fs_NewWriteStub(streamID, iovCopy[i].iov_base,
                 iovCopy[i].iov_len);
         if (amountWritten == -1) {
-            return -1;
+	    if (debugFsStubs) {
+		printf("Writev subwrite failed\n");
+	    }
+	    status = FAILURE;
+	    break;
         }
         totalWritten += amountWritten;
+	if (amountWritten < iovCopy[i].iov_len) {
+	    if (debugFsStubs) {
+		printf("Writev subwrite didn't do it all\n");
+	    }
+	    break;
+	}
     }
-    return totalWritten;
+    /*
+     * If we wrote anything, it's a success.
+     */
+    if (status == FAILURE && totalWritten == 0) {
+	if (debugFsStubs) {
+	    printf("Writev failed\n");
+	}
+	return -1;
+    } else {
+	if (debugFsStubs) {
+	    printf("Writev: returns %d\n", totalWritten);
+	}
+	return totalWritten;
+    }
 }
 
 /*
