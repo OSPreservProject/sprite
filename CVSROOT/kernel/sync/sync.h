@@ -239,6 +239,7 @@ extern Sync_RegElement  *regQueuePtr;
 	    SyncDeadlockPanic((semaphore)); \
 	} else { \
 	    (semaphore)->value++;\
+	    Sync_SemRegister(semaphore); \
 	    SyncRecordHit(semaphore); \
 	    SyncStoreDbgInfo(semaphore); \
 	    SyncAddPrior(semaphore); \
@@ -277,6 +278,7 @@ extern Sync_RegElement  *regQueuePtr;
 	if(missFlag == 1) { \
 	    SyncRecordMiss(semaphore); \
 	} \
+	Sync_SemRegister(semaphore); \
 	SyncRecordHit(semaphore) ; \
 	SyncStoreDbgInfo(semaphore); \
 	SyncAddPrior(semaphore);	\
