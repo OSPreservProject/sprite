@@ -360,6 +360,11 @@ Fsdm_AttachDisk(devicePtr, localName, flags)
     }
     Fsutil_HandleUnlock(handlePtr);
     /*
+     * The attach will succeed from this point, so print out info..
+     */
+    printf("%s: devType %#x devUnit %#x ", localName,
+	    devicePtr->type, devicePtr->unit);
+    /*
      * Install a prefix for the domain.  We always import it so that
      * we can get to the disk locally.  Then we either keep the domain
      * private or export it depending on the flags argument.
@@ -367,8 +372,10 @@ Fsdm_AttachDisk(devicePtr, localName, flags)
     prefixFlags = FSPREFIX_IMPORTED;
     if (flags & FS_ATTACH_LOCAL) {
 	prefixFlags |= FSPREFIX_LOCAL;
+	printf("local ");
     } else {
 	prefixFlags |= FSPREFIX_EXPORTED;
+	printf("exported ");
     }
     (void)Fsprefix_Install(localName, (Fs_HandleHeader *)handlePtr,
 			  FS_LOCAL_DOMAIN,  prefixFlags);
@@ -379,9 +386,10 @@ Fsdm_AttachDisk(devicePtr, localName, flags)
      */
     if ((domainPtr->summaryInfoPtr->flags & FSDM_DOMAIN_NOT_SAFE) == 0) {
 	domainPtr->summaryInfoPtr->flags |= FSDM_DOMAIN_ATTACHED_CLEAN;
+	printf("clean ");
     } else {
 	domainPtr->summaryInfoPtr->flags &= ~FSDM_DOMAIN_ATTACHED_CLEAN;
-	printf("Warning: Fsdm_AttachDisk: \"%s\" not clean\n", localName);
+	printf("NOT clean ");
     }
     domainPtr->summaryInfoPtr->flags |= FSDM_DOMAIN_NOT_SAFE |
 					FSDM_DOMAIN_TIMES_VALID;
@@ -391,9 +399,12 @@ Fsdm_AttachDisk(devicePtr, localName, flags)
 	if (status != SUCCESS) {
 	    panic( "Fsdm_AttachDisk: Summary write failed, status %x\n", status);
 	}
+    } else {
+	printf("read only ");
     }
     domainPtr->flags = 0;
 
+    printf(" %d kbytes free\n", domainPtr->summaryInfoPtr->numFreeKbytes);
     /*
      * Make sure a name hash table exists now that we have a disk attached.
      */
