@@ -93,7 +93,7 @@ Fsio_LocalFileHandleInit(fileIDPtr, name, newHandlePtrPtr)
     handlePtr = *newHandlePtrPtr;
     domainPtr = Fsdm_DomainFetch(fileIDPtr->major, FALSE);
     if (domainPtr == (Fsdm_Domain *)NIL) {
-	Fsutil_HandleRelease(handlePtr, TRUE);
+	Fsutil_HandleRelease(handlePtr, FALSE);
 	Fsutil_HandleRemove(handlePtr);
 	return(FS_DOMAIN_UNAVAILABLE);
     }
@@ -140,7 +140,7 @@ Fsio_LocalFileHandleInit(fileIDPtr, name, newHandlePtrPtr)
 	handlePtr->segPtr = (Vm_Segment *)NIL;
     }
     if (status != SUCCESS) {
-	Fsutil_HandleRelease(handlePtr, TRUE);
+	Fsutil_HandleRelease(handlePtr, FALSE);
 	Fsutil_HandleRemove(handlePtr);
 	free((Address)descPtr);
 	*newHandlePtrPtr = (Fsio_FileIOHandle *)NIL;
@@ -324,6 +324,12 @@ Fsio_FileNameOpen(handlePtr, openArgsPtr, openResultsPtr)
 	    handlePtr->use.ref   -= ref;
 	    handlePtr->use.write -= write;
 	    handlePtr->use.exec  -= exec;
+	    if ((handlePtr->use.ref < 0) || (handlePtr->use.write < 0) ||
+		    (handlePtr->use.exec < 0)) {
+		panic("Fsio_FileNameOpen: client %d ref %d write %d exec %d\n",
+		    clientID, handlePtr->use.ref,
+		    handlePtr->use.write, handlePtr->use.exec);
+	    }
 	    free((Address)fileStatePtr);
 	}
     }
@@ -426,6 +432,12 @@ Fsio_FileReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	handlePtr->use.ref   -= ref;
 	handlePtr->use.write -= write;
 	handlePtr->use.exec  -= exec;
+	if ((handlePtr->use.ref < 0) || (handlePtr->use.write < 0) ||
+		(handlePtr->use.exec < 0)) {
+	    panic("Fsio_FileReopen: client %d ref %d write %d exec %d\n",
+		clientID, handlePtr->use.ref,
+		handlePtr->use.write, handlePtr->use.exec);
+	}
 	Fsutil_HandleUnlock(handlePtr);
 	free((Address)fileStatePtr);
     } else {
@@ -663,7 +675,7 @@ Fsio_FileCloseInt(handlePtr, ref, write, exec, clientID, callback)
 	    (void)Fslcl_DeleteFileDesc(handlePtr);
 	    Fsio_FileSyncLockCleanup(handlePtr);
 	    if (callback) {
-		Fsutil_HandleRelease(handlePtr, TRUE);
+		Fsutil_HandleRelease(handlePtr, FALSE);
 	    }
 	    Fsutil_HandleRemove(handlePtr);
 	}
