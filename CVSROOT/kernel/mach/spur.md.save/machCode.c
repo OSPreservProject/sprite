@@ -115,6 +115,7 @@ int	mach_LastUserStackPage;
 unsigned int	mach_CycleTime = MACH_CYCLE_TIME;
 
 static int machDbgInterruptNumber;
+static int machCheckSpecialInterruptNum;
 /*
  * The variables and tables below are used by the assembler routine
  * in loMem.s that dispatches kernel calls.  All of this information
@@ -159,6 +160,7 @@ void	MachFetchArgEnd();
  * Foward routine declaration.
  */
 static void EnterDebugger();
+static void doNothing();
 
 #ifdef	PATCH_IBUFFER
 #endif
@@ -228,13 +230,18 @@ Mach_Init()
 	 * Initialized the debugStatePtrs. 
 	 */
 	machDebugStatePtrs[i] = &(machDebugState[i]);
+	/*
+  	 * Initialize the status. 
+	 */
 
+	 mach_ProcessorStatus[i] = MACH_UNINITIALIZED_STATUS;
     }
 
     /*
      * The processor that executes this code is the master processor.
      */
     machMasterProcessor = Mach_GetProcessorNumber();
+    mach_ProcessorStatus[Mach_GetProcessorNumber()] = MACH_ACTIVE_STATUS;
 
     /*
      * Initialize the interrupt handler table.
@@ -268,6 +275,12 @@ Mach_Init()
      * Initialize the cross processor communication.
      */
     Mach_CPC_Init();
+    /*
+     * Initialize the check special handling interrupt.
+     */
+    machCheckSpecialInterruptNum = MACH_EXT_INTERRUPT_ANY;
+    Mach_AllocExtIntrNumber(doNothing,&machCheckSpecialInterruptNum);
+    
 #define	CHECK_OFFSETS
 #ifdef CHECK_OFFSETS
     /* 
@@ -460,7 +473,7 @@ Mach_SetupNewState(procPtr, parStatePtr, startFunc, startPC, user)
     statePtr->switchRegState.curPC = (Address)((unsigned int)startFunc) - 8;
     /*
      * Start the cwp such that when MachContextSwitch returns it won't
-     * cause an overflow.  Note that we want the second window so we set
+     * cause an underflow.  Note that we want the second window so we set
      * the cwp to 8 since the window number is shifted over by 2 bits.
      */
     statePtr->switchRegState.cwp = 8;
@@ -982,7 +995,6 @@ MachInterrupt(intrStatusReg, kpsw)
 
     globStatusReg = intrStatusReg;
     mach_KernelMode[Mach_GetProcessorNumber()] = !(kpsw & MACH_KPSW_PREV_MODE);
-
     /*
      * Do any nonmaskable interrupts first.
      */ 
@@ -990,8 +1002,14 @@ MachInterrupt(intrStatusReg, kpsw)
 	if (intrStatusReg & machDbgInterruptMask) {
 	    EnterDebugger(&intrStatusReg);
 	}
-	Mach_RefreshInterrupt();
+	if (intrStatusReg & (1 << mach_CpcInterruptNumber)) {
+	    machExecuteCall(&intrStatusReg);
+	}
+	/* Mach_RefreshInterrupt(); */
 	intrStatusReg &= ~machNonmaskableIntrMask;
+    }
+    if (read_physical_word(0x40000) & 0x4) {
+	Mach_RefreshInterrupt();
     }
     if (intrStatusReg == 0) {
 	return;
@@ -1143,6 +1161,8 @@ MachVMDataFault(faultType, PC, destAddr, kpsw)
 		procPtr->machStatePtr->userState.faultAddr = destAddr;
 		(void)Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL,
 			       procPtr->processID, FALSE);
+		printf("Process 0x%x fault %d at 0x%x fault address 0x%x\n",
+			faultType,procPtr->processID, (unsigned)PC, destAddr);
 	    } else {
 		if (PC >= (Address)((unsigned int)((int (*)())MachFetchArgStart)) &&
 	            PC < (Address)((unsigned int)((int (*)())MachFetchArgEnd))) {
@@ -1213,6 +1233,8 @@ MachVMPCFault(faultType, PC, kpsw)
 		procPtr->machStatePtr->userState.faultAddr = PC;
 		(void)Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL,
 			       procPtr->processID, FALSE);
+		printf("Process 0x%x fault on PC at 0x%x\n",
+			procPtr->processID,(unsigned int)PC);
 		return(MACH_USER_ACCESS_VIOL);
 	    } else {
 		return(MACH_NORM_RETURN);
@@ -1524,8 +1546,9 @@ static	ReturnStatus	PinSWP();
  */
 int
 MachUserContextSwitch(specPageAddr, swpMaxAddr, newSWP)
-    register	Address	specPageAddr;	/* The new base of the saved window 
-					 * stack. */
+    register	Address	specPageAddr;	/* The address of the new special page.
+					 * The base of the saved window stack
+					 * is specPageAddr + VMMACH_PAGE_SIZE.*/
     Address		swpMaxAddr;	/* The new max address of the saved 
 					 * window stack. */
     Address		newSWP;		/* The value of the new swp. */
@@ -1570,7 +1593,7 @@ MachUserContextSwitch(specPageAddr, swpMaxAddr, newSWP)
      * to use copy-out here because we know that *specPagePtr points to a valid
      * page because otherwise we wouldn't have gotten this far.
      */
-    specPagePtr->switchState.swpBaseAddr = statePtr->userState.specPageAddr;
+    specPagePtr->switchState.specPageAddr = statePtr->userState.specPageAddr;
     specPagePtr->switchState.swpMaxAddr = statePtr->userState.swpMaxAddr;
 
     /*
@@ -1691,7 +1714,7 @@ MachSaveUserState()
      * to use copy-out here because we know that *specPagePtr points to a valid
      * page because otherwise we wouldn't have gotten this far.
      */
-    specPagePtr->savedState.swpBaseAddr = (Address)specPagePtr;
+    specPagePtr->savedState.specPageAddr = (Address)specPagePtr;
     specPagePtr->savedState.swpMaxAddr = statePtr->userState.swpMaxAddr;
 
     return(MACH_NORM_RETURN);
@@ -1739,7 +1762,7 @@ MachRestoreUserState()
 	panic( "MachRestoreUserState: Restore failed\n");
     }
     statePtr->userState.specPageAddr =
-		    (Address)((unsigned)specPagePtr->savedState.swpBaseAddr & 
+		    (Address)((unsigned)specPagePtr->savedState.specPageAddr & 
 					~(VMMACH_PAGE_SIZE - 1));
     statePtr->userState.swpBaseAddr = 
 			statePtr->userState.specPageAddr + VMMACH_PAGE_SIZE;
@@ -1796,6 +1819,7 @@ MachUserTestAndSet(tasAddr)
     }
     statePtr->userState.trapRegState.regs[28][0] = status;
     Vm_UnpinUserMem(4, tasAddr);
+    return(MACH_NORM_RETURN);
 }
 
 
@@ -2020,15 +2044,38 @@ Mach_SpinUpProcessor(pnum,procPtr)
      * Set up the first process for processor and assign processor number.
      */
     machFirstProcState[pnum] = procPtr->machStatePtr;
+    proc_RunningProcesses[pnum] = procPtr;
+    machCurStatePtrs[pnum] = procPtr->machStatePtr;
     /*
      * Wake up the processor. 
      */
-    status = Mach_SignalProcessor(pnum, MACH_SPINUP_INTERRUPT);
+    status = Mach_SignalProcessor(pnum, MACH_SPINUP_INTERRUPT_NUM);
     if (status != SUCCESS) {
 	printf("Warning: Can't signal to wake up processor %d\n",pnum);
 	return (status);
     }
     return (SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_GetNumProcessor() --
+ *
+ *	Return the number of processors in the system.
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Mach_GetNumProcessors()
+{
+	return (mach_NumProcessors);
 }
 
 
@@ -2066,12 +2113,21 @@ Mach_InitSlaveProcessor()
      * Set status to active.
      */
     mach_ProcessorStatus[Mach_GetProcessorNumber()] = MACH_ACTIVE_STATUS;
+    /*
+     * Increment the number of active processors.  This code assumes that
+     * processors are started one at a time so we don't need protection on
+     * the mach_NumProcessors variable.
+     */
+     /* mach_NumProcessors += 1; */
+    if (mach_NumProcessors < Mach_GetProcessorNumber()+1) {
+    	mach_NumProcessors = Mach_GetProcessorNumber()+1;
+    }
 
 }
 
-static ClientData doNothing()
+static void doNothing()
 {
-	return (ClientData) 0;
+	return;
 }
 
 /*
@@ -2092,17 +2148,10 @@ static ClientData doNothing()
 Mach_CheckSpecialHandling(processorNum)
     int	processorNum;	/* Processor number to act on. */
 { 
-	ReturnStatus status;
-	ClientData   returnValue;
+    Mach_SignalProcessor(processorNum, machCheckSpecialInterruptNum);
 
-	status = Mach_CallProcessor(processorNum, doNothing, (ClientData) 0,
-				    TRUE, &returnValue);
-	if (status != SUCCESS) {
-		printf(
-	"Warning: Can't perfom check of special handling flag for processor %d",
-		processorNum);
-	}
 }
+
 
 #ifdef PATCH_IBUFFER
 
