@@ -37,14 +37,14 @@
  *
  * When using this interface, only one device can be open at once.
  *
- * NOTE: I am not sure what arguments boot, open, close, and strategy take.  
- * What is here is just translated verbatim from the sun monitor code.  We 
+ * NOTE: I am not sure what arguments boot, open, close, and strategy take.
+ * What is here is just translated verbatim from the sun monitor code.  We
  * should figure this out eventually if we need it.
  */
 
 typedef struct {
 	char	devName[2];		/* The name of the device */
-	int	(*probe)();		/* probe() --> -1 or found controller 
+	int	(*probe)();		/* probe() --> -1 or found controller
 					   number */
 	int	(*boot)();		/* boot(bp) --> -1 or start address */
 	int	(*open)();		/* open(iobp) --> -1 or 0 */
@@ -80,21 +80,21 @@ typedef struct {
  */
 
 typedef struct {
-	char		*initSp;		/* Initial system stack ptr  
+	char		*initSp;		/* Initial system stack ptr
 						 * for hardware */
 	void		(*startMon)();		/* Initial PC for hardware */
 
 	int		*diagberr;		/* Bus err handler for diags */
 
-	/* 
+	/*
 	 * Monitor and hardware revision and identification
 	 */
 
 	MachMonBootParam **bootParam;		/* Info for bootstrapped pgm */
  	unsigned int	*memorySize;		/* Usable memory in bytes */
 
-	/* 
-	 * Single-character input and output 
+	/*
+	 * Single-character input and output
 	 */
 
 	unsigned char	(*getChar)();		/* Get char from input source */
@@ -105,14 +105,14 @@ typedef struct {
 	unsigned char	*inSource;		/* Input source selector */
 	unsigned char	*outSink;		/* Output sink selector */
 
-	/* 
-	 * Keyboard input (scanned by monitor nmi routine) 
+	/*
+	 * Keyboard input (scanned by monitor nmi routine)
 	 */
 
 	int		(*getKey)();		/* Get next key if one exists */
 	void		(*initGetKey)();	/* Initialize get key */
-	unsigned int	*translation;		/* Kbd translation selector 
-						   (see keyboard.h in sun 
+	unsigned int	*translation;		/* Kbd translation selector
+						   (see keyboard.h in sun
 						    monitor code) */
 	unsigned char	*keyBid;		/* Keyboard ID byte */
 	int		*screen_x;		/* V2: Screen x pos (R/O) */
@@ -125,8 +125,8 @@ typedef struct {
 
 	char		*monId;
 
-	/* 
-	 * Frame buffer output and terminal emulation 
+	/*
+	 * Frame buffer output and terminal emulation
 	 */
 
 	void		(*fbWriteChar)();	/* Write a character to FB */
@@ -134,14 +134,14 @@ typedef struct {
 	char		**font;			/* Font table for FB */
 	void		(*fbWriteStr)();	/* Quickly write string to FB */
 
-	/* 
-	 * Reboot interface routine -- resets and reboots system.  No return. 
+	/*
+	 * Reboot interface routine -- resets and reboots system.  No return.
 	 */
 
 	void		(*reBoot)();		/* e.g. reBoot("xy()vmunix") */
 
-	/* 
-	 * Line input and parsing 
+	/*
+	 * Line input and parsing
 	 */
 
 	unsigned char	*lineBuf;		/* The line input buffer */
@@ -153,23 +153,23 @@ typedef struct {
 	int		*fbThere;		/* =1 if frame buffer there */
 	int		(*getNum)();		/* Grab hex num from line */
 
-	/* 
-	 * Print formatted output to current output sink 
+	/*
+	 * Print formatted output to current output sink
 	 */
 
 	int		(*printf)();		/* Similar to "Kernel printf" */
 	void		(*printHex)();		/* Format N digits in hex */
 
 	/*
-	 * Led stuff 
+	 * Led stuff
 	 */
 
 	unsigned char	*leds;			/* RAM copy of LED register */
 	void		(*setLeds)();		/* Sets LED's and RAM copy */
 
-	/* 
+	/*
 	 * Non-maskable interrupt  (nmi) information
-	 */ 
+	 */
 
 	void		(*nmiAddr)();		/* Addr for level 7 vector */
 	void		(*abortEntry)();	/* Entry for keyboard abort */
@@ -181,11 +181,11 @@ typedef struct {
 
 	int		*fbType;
 
-	/* 
-	 * Assorted other things 
+	/*
+	 * Assorted other things
 	 */
 
-	unsigned int	romvecVersion;		/* Version # of Romvec */ 
+	unsigned int	romvecVersion;		/* Version # of Romvec */
 	struct globram  *globRam;		/* monitor global variables */
 	Dev_ZilogDevice *kbdZscc;		/* Addr of keyboard in use */
 
@@ -222,13 +222,13 @@ typedef struct {
  * putChar -- Write the given character to the output source.
  *
  *     void putChar(ch)
- *	   char ch;	
+ *	   char ch;
  *
- * mayGet -- Maybe get a character from the current input source.  Return -1 
+ * mayGet -- Maybe get a character from the current input source.  Return -1
  *           if don't return a character.
  *
  * 	int mayGet()
- *	
+ *
  * mayPut -- Maybe put a character to the current output source.   Return -1
  *           if no character output.
  *
@@ -240,7 +240,7 @@ typedef struct {
  * 	     NOKEY (if no key has been hit).
  *
  *	int getKey()
- *	
+ *
  * initGetKey --  Initialize things for get key.
  *
  *	void initGetKey()
@@ -317,9 +317,9 @@ extern	void	Mach_MonReboot();
 
 #ifdef NOTDEF
 extern	void	Mach_MonTrap();
-#endif NOTDEF
+#endif /* NOTDEF */
 /* Do these routines work with new virtual memory?  They were claimed not to. */
 extern	void	Mach_MonStopNmi();
 extern	void	Mach_MonStartNmi();
 
-#endif _MACHMON
+#endif /* _MACHMON */

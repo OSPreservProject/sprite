@@ -4,7 +4,7 @@
  *	Declarations of Mach_SigContext and Mach_RegState.  These should
  *	be in mach.h, but can't be, due to a circularity in include files
  *	caused by sig.h
- * 
+ *
  *
  * Copyright 1989 Regents of the University of California
  * Permission to use, copy, modify, and distribute this
@@ -86,7 +86,7 @@ typedef struct Mach_RegState {
     int		globals[MACH_NUM_GLOBALS];	/* globals */
 #ifdef FP_ENABLED
     int		floatPoints[MACH_NUM_FPS];
-#endif FP_ENABLED
+#endif /* FP_ENABLED */
 } Mach_RegState;
 
 typedef	Mach_RegState	Mach_DebugState;

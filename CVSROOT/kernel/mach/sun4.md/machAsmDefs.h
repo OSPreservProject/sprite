@@ -165,7 +165,7 @@ moduloOkay:							\
 	std	%g2, [%VOL_TEMP1 + 8];				\
 	std	%g4, [%VOL_TEMP1 + 16];				\
 	std	%g6, [%VOL_TEMP1 + 24]
-#endif FP_ENABLED
+#endif /* FP_ENABLED */
 
 /*
  * Restore the global registers.  We do load doubles here for speed
@@ -204,7 +204,7 @@ moduloOkay:							\
 	ldd	[%VOL_TEMP1 + 8], %g2;				\
 	ldd	[%VOL_TEMP1 + 16], %g4;				\
 	ldd	[%VOL_TEMP1 + 24], %g6
-#endif FP_ENABLED
+#endif /* FP_ENABLED */
 
 /*
  * Save r16 to r23 (locals) and r24 to r31 (ins) to 16 words at
@@ -388,7 +388,7 @@ NoEnableLabel:
  * This must be done in 2 steps - 1) leaving traps off, if they were off,
  * set new interrupt level.  2) Enable traps.  This keeps us from getting
  * an interrupt at the old level rather than the new right after enabling
- * traps.  
+ * traps.
  */
 #define	MACH_SR_HIGHPRIO()					\
 	mov	%psr, %VOL_TEMP1;				\

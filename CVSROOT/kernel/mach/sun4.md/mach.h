@@ -160,7 +160,7 @@ typedef struct Mach_State {
 						 * be restored to the stack from
 						 * the above buffer since the
 						 * stack wasn't resident. */
-    int			savedSps[MACH_NUM_WINDOWS];	
+    int			savedSps[MACH_NUM_WINDOWS];
 						/* sp for each saved window
 						 * stored here to make it easy
 						 * to copy the stuff back out
@@ -208,7 +208,7 @@ extern	char	*mach_MachineType;
 extern	int	mach_ByteOrder;
 
 /*
- * Routine to initialize mach module.  Must be called first as part of boot 
+ * Routine to initialize mach module.  Must be called first as part of boot
  * sequence.
  */
 extern void	Mach_Init();
@@ -227,7 +227,7 @@ extern	void		Mach_CopyState();
 extern	void		Mach_GetDebugState();
 extern	void		Mach_SetDebugState();
 extern	Address		Mach_GetUserStackPtr();
-#endif NOTDEF
+#endif /* NOTDEF */
 
 /*
  * Migration routines.
@@ -235,7 +235,7 @@ extern	Address		Mach_GetUserStackPtr();
 extern ReturnStatus		Mach_EncapState();
 extern ReturnStatus		Mach_DeencapState();
 extern ReturnStatus		Mach_GetEncapSize();
-extern Boolean			Mach_CanMigrate();			
+extern Boolean			Mach_CanMigrate();
 
 extern void			Mach_SetHandler();
 extern void			Mach_InitSyscall();
