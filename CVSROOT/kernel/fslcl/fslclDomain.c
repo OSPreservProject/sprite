@@ -83,11 +83,13 @@ FsLocalDomainInit()
  *
  * FsLocalPrefix --
  *
- *	Establish a handle for a local prefix.  Currently this is done
- *	by FsAttachDisk, not by this routine.
+ *	This is a stub called from LocatePrefix.  Local domains are
+ *	hooked to the prefix table via Fs_AttachDisk, so any valid
+ *	local prefixes are already in the prefix table, so this
+ *	returns a failure code.
  *
  * Results:
- *	FAILURE
+ *	FS_FILE_NOT_FOUND
  *
  * Side effects:
  *	None.
@@ -107,11 +109,7 @@ FsLocalPrefix(token, relativeName, argsPtr, resultsPtr, newNameInfoPtrPtr)
 					 * leaves its domain during the 
 					 * lookup. */
 {
-    /*
-     * Now all local prefixes are installed with a valid handle so this
-     * routine doesn't try to look for local domains.
-     */
-    return(FAILURE);
+    return(FS_FILE_NOT_FOUND);
 }
 
 /*
