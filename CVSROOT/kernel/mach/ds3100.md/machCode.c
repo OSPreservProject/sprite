@@ -1121,8 +1121,9 @@ MachKernelExceptionHandler(statusReg, causeReg, badVaddr, pc)
 			procPtr == (Proc_ControlBlock *)NIL ||
 			procPtr->vmPtr->numMakeAcc == 0)) {
 		if (procPtr != (Proc_ControlBlock *)NIL) {
-		    printf("procPtr->vmPtr->numMakeAcc = %d\n", 
-			procPtr->vmPtr->numMakeAcc);
+		    printf("%s: note: procPtr->vmPtr->numMakeAcc = %d\n", 
+			   "MachKernelExceptionHandler",
+			   procPtr->vmPtr->numMakeAcc);
 		}
 		return(MACH_KERN_ERROR);
 	    }
