@@ -751,6 +751,16 @@ Fs_FileWriteBackStub(streamID, firstByte, lastByte, shouldBlock)
     Boolean	shouldBlock;	/* TRUE if should wait for the blocks to go
 				 * to disk. */
 {
+#ifdef new_way
+    Ioc_WriteBackArgs args;
+
+    args.firstByte = firstByte;
+    args.lastByte = lastByte;
+    args.shouldBlock = shouldBlock;
+
+    return( Fs_IOControlStub(streamID, IOC_WRITE_BACK, (Address)&args,
+				    sizeof(args), (Address)0, 0));
+#else
     ReturnStatus	status;
     Fs_Stream		*streamPtr;
     Fscache_FileInfo	*cacheInfoPtr;
@@ -797,8 +807,8 @@ Fs_FileWriteBackStub(streamID, firstByte, lastByte, shouldBlock)
     cacheInfoPtr->flags |= FSCACHE_WB_ON_LDB;
     status = Fscache_FileWriteBack(cacheInfoPtr, firstBlock, lastBlock,
 		    flags, &blocksSkipped);
-
     return(status);
+#endif
 }
 
 /*
