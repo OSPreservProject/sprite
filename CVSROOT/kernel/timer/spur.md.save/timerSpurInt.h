@@ -47,7 +47,9 @@
  */
 
 /* #define	TIMER_FREQ	((unsigned int) 5813953) */
-#define	TIMER_FREQ	((unsigned int) 6944444) 
+/* #define	TIMER_FREQ	((unsigned int) 6944444) */
+
+#define		TIMER_FREQ	((unsigned int) 6666667) 
 
 
 /*
