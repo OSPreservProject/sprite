@@ -798,6 +798,11 @@ Dbg_Main(trapType, trapStatePtr)
 			procPtr = (Proc_ControlBlock *) NIL;
 		    } else {
 			curContext = VmMach_GetContext(procPtr);
+			if (curContext == -1) {
+			    printf("No user context loaded for pid 0x%x\n", 
+				   pid);
+			    curContext = VMMACH_KERN_CONTEXT;
+			}
 		    }
 		}
 		break;
