@@ -88,6 +88,7 @@ _Mach_Read32bitCCReg:
 	wr_insert	$3
 	insert		VALUE, VALUE, TEMP
 	add_nt		RESULT, r0, VALUE
+	invalidate_ib
 	return		r10,$8
 	nop
 
@@ -154,6 +155,7 @@ _Mach_Write32bitCCReg:
 	extract		TEMP, VALUE, $3
 	st_external	TEMP, ADDR,  $BYTE31_24
 	wr_kpsw		r14,$0
+	invalidate_ib
 	return		r10,$8
 	nop
 
@@ -207,6 +209,7 @@ _Mach_Read8bitCCReg:
 	ld_external	RESULT, ADDR, $BYTE7_0
 	Nop
 	and		RESULT, RESULT, $0xff
+	invalidate_ib
 	return		r10,$8
 	nop
 
@@ -260,6 +263,7 @@ _Mach_Write8bitCCReg:
 	wr_kpsw		r15, $0
 	st_external	VALUE, ADDR, $BYTE7_0
 	wr_kpsw		r14,$0
+	invalidate_ib
 	return		r10,$8
 	nop
 #undef ADDR

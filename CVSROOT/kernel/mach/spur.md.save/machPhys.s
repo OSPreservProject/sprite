@@ -75,6 +75,7 @@ _Mach_ReadPhysicalWord:
 	 */
 	ld_32   RESULT,ADDR,$0
 	wr_kpsw  KPSW_REG,r0 
+	invalidate_ib
 	return	r10, $8
 	nop				
 
@@ -137,6 +138,7 @@ _Mach_WritePhysicalWord:
 	 */
 	st_32   DATA,ADDR,$0
 	wr_kpsw KPSW_REG,r0 
+	invalidate_ib
 	return	r10, $8
 	nop				
 

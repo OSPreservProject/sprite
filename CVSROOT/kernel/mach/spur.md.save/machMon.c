@@ -50,9 +50,51 @@ static	char *monBufStart = machMonBuffer;
 
 static void MonPrintfWriteProc();
 
+/*
+ * TRUE => send characters to the uart.
+ */
+static Boolean monUseUart;
+
 
 #include "varargs.h"
 #include "stdio.h"
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_MonInit --
+ *
+ *	Initialized the monitor. All this does is check if we are using
+ *	serial line debugging, and if we are don't send stuff to the
+ *	uart. The uart has two channels, but the current uart implementation
+ *	doesn't use channel B.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Sets the monUseUart flag.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Mach_MonInit()
+{
+    int switches;
+
+    switches = read_physical_word(0x40000);
+    if ((switches & 0x80) == 0) {
+	monUseUart = TRUE;
+    } else {
+	monUseUart = FALSE;
+    }
+    if (monUseUart) {
+	uart_init(1200);
+    } else {
+	uart_init(9600);
+    }
+}
 
 /*
  * ----------------------------------------------------------------------------
@@ -120,6 +162,9 @@ Mach_MonPutChar(ch)
 	     machMonBufferPtr = machMonBuffer;
     }
     *machMonBufferPtr = ch;
+    if (monUseUart) {
+	writeUart(ch);
+    }
     machMonBufferPtr++;
 
 }

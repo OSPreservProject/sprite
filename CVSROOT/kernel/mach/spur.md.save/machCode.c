@@ -280,7 +280,8 @@ Mach_Init()
      */
     machCheckSpecialInterruptNum = MACH_EXT_INTERRUPT_ANY;
     Mach_AllocExtIntrNumber(doNothing,&machCheckSpecialInterruptNum);
-    
+
+    Mach_MonInit();
 #define	CHECK_OFFSETS
 #ifdef CHECK_OFFSETS
     /* 
@@ -1005,7 +1006,9 @@ MachInterrupt(intrStatusReg, kpsw)
 	if (intrStatusReg & (1 << mach_CpcInterruptNumber)) {
 	    machExecuteCall(&intrStatusReg);
 	}
-	/* Mach_RefreshInterrupt(); */
+#ifndef FAST_REFRESH
+	Mach_RefreshInterrupt(); 
+#endif
 	intrStatusReg &= ~machNonmaskableIntrMask;
     }
     if (read_physical_word(0x40000) & 0x4) {
@@ -1910,7 +1913,7 @@ MachEnterKernelDebugger(signal, statePtr)
 		}
 	    }
 	}
-	kdb(signal,statePtr);
+	Dbg_Main(signal,statePtr);
 	/*
 	 * Clear the debugger semaphore.
 	 */
@@ -2178,13 +2181,15 @@ struct ipatch_stats {
     int		numR10zero;		/* Number r10 == zero. */
     int		numR26zero;		/* Number r26 == zero. */
     int		numR10fault;		/* Number r10 not valid. */
+    int		numR16fault;		/* Number r16 not valid. */
     int		numR26fault;		/* Number r26 not valid. */
     int		numGoodInst;		/* Number of harmless inst. */
+    int		numSeq;			/* Number r10 and r16 sequential. */
     int		numR10notCall;		/* Number of r10 not call inst. */
     int		numR26notCall;		/* Number of r26 not call inst. */
 } ipatch_stats;
 
-
+int	ipatch_last = 0;
 
 /*
  *----------------------------------------------------------------------
@@ -2218,6 +2223,7 @@ MachPatchIbuffer(kpsw,r10,r16,r26)
      * R10.
      */
     if (!(kpsw & MACH_KPSW_IBUFFER_ENA)) {
+	ipatch_last = 1;
 	return r10;
     }
     ipatch_stats.numCallsWithIbuffer++;
@@ -2232,6 +2238,7 @@ MachPatchIbuffer(kpsw,r10,r16,r26)
 	    panic("No current pc in MachPatchIbuffer.");
 	} else {
 	    ipatch_stats.numR10zero++;
+	    ipatch_last = 2;
 	    return r26;
 	}
     }
@@ -2240,6 +2247,7 @@ MachPatchIbuffer(kpsw,r10,r16,r26)
      */
     if (r26 == 0) {
 	ipatch_stats.numR26zero++;
+	ipatch_last =  3;
 	return r10;
     }
     /*
@@ -2258,6 +2266,8 @@ MachPatchIbuffer(kpsw,r10,r16,r26)
 	 * correct place.
 	 */
     if (!Vm_ValidateRange(r16,4)) {
+	ipatch_stats.numR16fault++;
+	ipatch_last = 4;
 	return r10;
     }
     /*
@@ -2276,6 +2286,7 @@ MachPatchIbuffer(kpsw,r10,r16,r26)
 	(nextOPCode == 0x59)				/* A return_trap */
 		)) {		/* Should also check wr_special cwp. */
 	ipatch_stats.numGoodInst++;
+	ipatch_last = 5;
 	return r10;
     }
     /*
@@ -2283,9 +2294,12 @@ MachPatchIbuffer(kpsw,r10,r16,r26)
      */
     if (!Vm_ValidateRange(r26,4)) {
 	ipatch_stats.numR26fault++;
+	ipatch_last = 6;
 	return r10;
     }
     if ((r10&~3)+4 == (r16&~3)) {
+	ipatch_stats.numSeq;
+	ipatch_last = 7;
 	return r10;
     }
     /*
@@ -2300,6 +2314,7 @@ MachPatchIbuffer(kpsw,r10,r16,r26)
 	    if (!((curOPCode >= 0x70) && (curOPCode <= 0x77))) { 
 		/* Not a call inst. */
 		ipatch_stats.numR10notCall++;
+		ipatch_last = 8;
 		return r10;
 	    }
      }
@@ -2309,6 +2324,7 @@ MachPatchIbuffer(kpsw,r10,r16,r26)
 	panic("Both current PCs are calls in  MachPatchIbuffer.");
     }
     ipatch_stats.numR26notCall++;
+    ipatch_last = 9;
     return r26;
 }
 
@@ -2508,4 +2524,31 @@ MachPatchUserModeIbufferOnFault(kpsw)
 
 }
 #endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_GetDebugStateInfo --
+ *
+ *	Returns a pointer to the debug state for the given processor.
+ *
+ * Results:
+ *	If processor number is valid returns pointer to debug state.
+ *	Returns NIL otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Mach_RegState *
+Mach_GetDebugStateInfo(pNum)
+    int		pNum;		/* processor number */
+{
+    if (pNum < 0 || pNum >= Mach_GetNumProcessors()) {
+	return (Mach_RegState *) NIL;
+    } 
+    return &machDebugState[pNum];
+}
 

@@ -665,6 +665,7 @@ winOvFlow_SaveWindow:
 	add_nt		CUR_PC_REG, r0, $0
 #endif
 	add_nt		NON_INTR_TEMP2, NEXT_PC_REG, $0
+	invalidate_ib
 	rd_special	VOL_TEMP1, pc
 	return_trap	VOL_TEMP1, $12
 	Nop
@@ -681,7 +682,6 @@ winOvFlow_Return:
 	 */
 	add_nt		SAFE_TEMP1, CUR_PC_REG, $0
 	add_nt		CUR_PC_REG, r0, $0
-	invalidate_ib
 	jump_reg	SAFE_TEMP1, $0
 #else
 	jump_reg	CUR_PC_REG, $0
@@ -777,6 +777,7 @@ winUnFlow_RestoreWindow:
 	add_nt		CUR_PC_REG, r0, $0
 #endif
 	add_nt		NON_INTR_TEMP2, NEXT_PC_REG, $0
+	invalidate_ib
 	rd_special	VOL_TEMP1, pc	/* Return from traps and then */
 	return_trap	VOL_TEMP1, $12	/*   take the compare trap to */
 	Nop				/*   get back in in kernel mode. */
@@ -1197,12 +1198,16 @@ interrupt_GoodSWP:
 	SAVE_USER_STATE()
 	SWITCH_TO_KERNEL_STACKS()
 	wr_kpsw		KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
+	invalidate_ib
 	call		_MachInterrupt
 	Nop
 #ifdef PATCH_IBUFFER
+#if 0
 	add_nt		OUTPUT_REG1,KPSW_REG,$0
+	invalidate_ib
 	call		_MachPatchUserModeIbuffer
 	Nop
+#endif
 #endif
 	/*
 	 * Restore the insert register and the kpsw, enable interrupts and 
@@ -1240,16 +1245,20 @@ interrupt_KernMode:
 	add_nt		VOL_TEMP1, r26, $0
 #endif
 	wr_kpsw		KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
+	invalidate_ib
 	call 		_MachInterrupt
 	Nop
 #ifdef PATCH_IBUFFER
+#if 0
 	add_nt		OUTPUT_REG1,KPSW_REG,$0
 	add_nt		OUTPUT_REG2,CUR_PC_REG,$0
 	add_nt		OUTPUT_REG3,NEXT_PC_REG,$0
 	add_nt		OUTPUT_REG4,VOL_TEMP1,$0
+	invalidate_ib
 	call		_MachPatchIbuffer
 	Nop
 	add_nt		CUR_PC_REG,r27,$0
+#endif
 #endif
 	/*
 	 * Restore the globals and the spill sp.
@@ -1296,6 +1305,7 @@ interrupt_BadSWP:
 	 */
 	SWITCH_TO_KERNEL_STACKS()
 	wr_kpsw		KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
+	invalidate_ib
 	call		_MachInterrupt
 	Nop
 	WRITE_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP3)
@@ -1308,6 +1318,7 @@ interrupt_BadSWP:
 	add_nt		CUR_PC_REG,r0,$0
 #endif
         add_nt          OUTPUT_REG1, r0, $MACH_USER_BAD_SWP
+	invalidate_ib
 	call		_MachUserError
 	Nop
 	/* DOESN'T RETURN */
@@ -1340,6 +1351,15 @@ VMFault:
 vmFault_GoodSWP:
 	SAVE_USER_STATE()
 	SWITCH_TO_KERNEL_STACKS()
+#ifdef PATCH_IBUFFER
+#if 0
+	add_nt		OUTPUT_REG1,KPSW_REG,$0
+	invalidate_ib
+	call		_MachPatchUserModeIbufferOnFault
+	Nop
+	add_nt		CUR_PC_REG, r27,$0
+#endif
+#endif
 	jump		vmFault_PC
 	nop
 
@@ -1358,6 +1378,19 @@ vmFault_KernMode:
 	st_40		r8, SPILL_SP, $48
 	st_40		r9, SPILL_SP, $56
 
+#ifdef PATCH_IBUFFER
+#if 0
+	add_nt		OUTPUT_REG1,KPSW_REG,$0
+	add_nt		OUTPUT_REG2,CUR_PC_REG,$0
+	add_nt		OUTPUT_REG3,NEXT_PC_REG,$0
+	add_nt		OUTPUT_REG4,r26,$0
+	invalidate_ib
+	call		_MachPatchIbufferOnFault
+	Nop
+	add_nt		CUR_PC_REG,r27,$0
+#endif
+#endif
+
 vmFault_PC:
 	/*
 	 * Enable all traps.
@@ -1374,6 +1407,7 @@ vmFault_PC:
 	add_nt		OUTPUT_REG2, CUR_PC_REG, $0
 	add_nt		OUTPUT_REG3, KPSW_REG, $0
 	rd_insert	VOL_TEMP1
+	invalidate_ib
 	call		_MachVMPCFault
 	nop
 	wr_insert	VOL_TEMP1
@@ -1486,6 +1520,7 @@ vmFault_CallDataFault:
 	add_nt		OUTPUT_REG3, VOL_TEMP2, $0
 	add_nt		OUTPUT_REG4, KPSW_REG, $0
 	rd_insert	VOL_TEMP1
+	invalidate_ib
 	call		_MachVMDataFault
 	Nop
 	wr_insert	VOL_TEMP1
@@ -1676,6 +1711,7 @@ cmpTrap_UserCSTrap:
 	add_nt		OUTPUT_REG1, INPUT_REG1, $0
 	add_nt		OUTPUT_REG2, INPUT_REG2, $0
 	add_nt		OUTPUT_REG3, INPUT_REG3, $0
+	invalidate_ib
 	call		_MachUserContextSwitch
 	nop
 	jump		ReturnTrap
@@ -1687,6 +1723,7 @@ cmpTrap_UserCSTrap:
 cmpTrap_SaveStateTrap:
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
 	wr_kpsw		VOL_TEMP1, $0
+	invalidate_ib
 	call		_MachSaveUserState
 	nop
 	jump		ReturnTrap
@@ -1698,6 +1735,7 @@ cmpTrap_SaveStateTrap:
 cmpTrap_RestoreStateTrap:
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
 	wr_kpsw		VOL_TEMP1, $0
+	invalidate_ib
 	call		_MachRestoreUserState
 	nop
 	jump		ReturnTrap
@@ -1710,6 +1748,7 @@ cmpTrap_TestAndSetTrap:
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
 	wr_kpsw		VOL_TEMP1, $0
 	add_nt		OUTPUT_REG1, INPUT_REG1, $0
+	invalidate_ib
 	call		_MachUserTestAndSet
 	nop
 	jump		ReturnTrap
@@ -1735,6 +1774,7 @@ cmpTrap_RefreshTrap:
 		GET_PNUM_FROM_BOARD(VOL_TEMP2)
 		cmp_trap  ne,VOL_TEMP2,VOL_TEMP1,$2
 	wr_kpsw		KPSW_REG, $0
+	invalidate_ib
 	return_trap	NEXT_PC_REG, $0
 	Nop
 
@@ -1758,6 +1798,7 @@ cmpTrap_BadTrapType:
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
 	wr_kpsw		VOL_TEMP1, $0
 	add_nt		OUTPUT_REG1, r0, $MACH_BAD_TRAP_TYPE
+	invalidate_ib
 	call		_MachUserError
 	Nop
 	jump		ReturnTrap
@@ -1790,6 +1831,7 @@ BreakpointTrap:
 	wr_kpsw		VOL_TEMP1, $0
 	add_nt		OUTPUT_REG1, r0, $MACH_BREAKPOINT
 	rd_insert	VOL_TEMP1
+	invalidate_ib
 	call		_MachUserError
 	Nop
 	wr_insert	VOL_TEMP1
@@ -1826,6 +1868,7 @@ SingleStepTrap:
 	wr_kpsw		VOL_TEMP1, $0
 	add_nt		OUTPUT_REG1, r0, $MACH_SINGLE_STEP
 	rd_insert	VOL_TEMP1
+	invalidate_ib
 	call		_MachUserError
 	Nop
 	wr_insert	VOL_TEMP1
@@ -1862,6 +1905,7 @@ CallDebuggerTrap:
 	wr_kpsw		VOL_TEMP1, $0
 	add_nt		OUTPUT_REG1, r0, $MACH_CALL_DEBUGGER
 	rd_insert	VOL_TEMP1
+	invalidate_ib
 	call		_MachUserError
 	Nop
 	wr_insert	VOL_TEMP1
@@ -1910,6 +1954,7 @@ SysCallTrap:
 	 * from trap.
 	 */
 	add_nt		OUTPUT_REG1, r0, $MACH_BAD_SYS_CALL
+	invalidate_ib
 	call		_MachUserError
 	Nop
 	jump		ReturnTrap
@@ -2056,6 +2101,7 @@ sysCallTrap_CallRoutine:
 	sll		VOL_TEMP3, SAFE_TEMP2, $2
 	ld_32		r9, VOL_TEMP2, VOL_TEMP3
 	Nop
+	invalidate_ib
 	call		1f
 	Nop
 1:
@@ -2105,6 +2151,7 @@ UserErrorTrap:
 	 * Call the user error handler.
 	 */
 	rd_insert	VOL_TEMP1
+	invalidate_ib
 	call		_MachUserError
 	Nop
 	wr_insert	VOL_TEMP1
@@ -2147,6 +2194,7 @@ SigReturnTrap:
 	 */
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
 	wr_kpsw		VOL_TEMP1, $0
+	invalidate_ib
 	call		_MachSigReturn
 	Nop
 
@@ -2176,6 +2224,7 @@ GetWinMemTrap:
 	/*
 	 * Call _MachGetWinMem()
 	 */
+	 invalidate_ib
 	call		_MachGetWinMem
 	Nop
 	/*
@@ -2333,6 +2382,7 @@ SpecialUserTraps:
 	add_nt		OUTPUT_REG4, OUTPUT_REG2,$0  /* destReg */
 	add_nt		OUTPUT_REG1, CUR_PC_REG, $0
 	add_nt		OUTPUT_REG2, NEXT_PC_REG, $0
+	invalidate_ib
 	call		@touserf
 	nop
 @touser: 
@@ -2354,6 +2404,7 @@ specialUserTraps_Error:
 	st_32		SAFE_TEMP2, SPILL_SP, $0   /* Save the trap type */
 	add_nt		NON_INTR_TEMP1, CUR_PC_REG, $0
 	add_nt		NON_INTR_TEMP2, NEXT_PC_REG, $0
+	invalidate_ib
 	rd_special	VOL_TEMP1, pc
 	return		VOL_TEMP1, $12
 	nop
@@ -2419,6 +2470,7 @@ UserRetTrapTrap:
 	 * Pop the first window.  This will get us back into the window that
 	 * the trap handler was executing in.
 	 */
+	invalidate_ib
 	rd_special	VOL_TEMP1, pc
 	return		VOL_TEMP1, $12
 	nop
@@ -2452,6 +2504,7 @@ UserRetTrapTrap:
 	/*
 	 * Go back to the current next window.
 	 */
+	 invalidate_ib
 	call		1f
 	nop
 1:
@@ -2465,7 +2518,7 @@ UserRetTrapTrap:
 	or		VOL_TEMP1, VOL_TEMP1, $(MACH_KPSW_INTR_TRAP_ENA|MACH_KPSW_CUR_MODE)
 	wr_kpsw		VOL_TEMP1, $0
 	cmp_br_delayed	eq, OUTPUT_REG3, $0, 1f
-	nop
+	invalidate_ib
 	jump_reg	OUTPUT_REG2, $0
 	return		OUTPUT_REG3, $0
 1:
@@ -2547,6 +2600,7 @@ returnTrap_NormReturn:
          */
 	or              VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
 	wr_kpsw         VOL_TEMP1, $0
+	invalidate_ib
 	call		_MachGetWinMem
 	nop
 	add_nt		RETURN_VAL_REG, r0, $MACH_NORM_RETURN
@@ -2598,8 +2652,10 @@ returnTrap_No2ndPC:
 #ifdef PATCH_IBUFFER
 	add_nt		SAFE_TEMP1, CUR_PC_REG, $0
 	add_nt		CUR_PC_REG, r0, $0
+	invalidate_ib
 	return		SAFE_TEMP1, $0
 #else
+	invalidate_ib
 	return		CUR_PC_REG, $0
 #endif
 	Nop
@@ -2619,6 +2675,7 @@ returnTrap_FailedCopy:
 #endif
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
 	wr_kpsw		VOL_TEMP1, $0
+	invalidate_ib
 	rd_special	VOL_TEMP1, pc
 	return		VOL_TEMP1, $12
 	Nop
@@ -2636,6 +2693,7 @@ returnTrap_FailedCopy:
 	 * spill SP and then do a normal return.
 	 */
 	add_nt		SPILL_SP, r25, $0
+	invalidate_ib
 	return		RETURN_ADDR_REG, $8
 	Nop
 
@@ -2653,6 +2711,7 @@ returnTrap_FailedArgFetch:
 #endif
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
 	wr_kpsw		VOL_TEMP1, $0
+	invalidate_ib
 	rd_special	VOL_TEMP1, pc
 	return		VOL_TEMP1, $12
 	Nop
@@ -2684,6 +2743,7 @@ returnTrap_SpecialAction:
 	 */
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
 	wr_kpsw		VOL_TEMP1, $0
+	invalidate_ib
 	call		_MachUserAction
 	Nop
 	/*
@@ -2725,6 +2785,7 @@ returnTrap_CallSigHandler:
         /*
          * Allocate more memory.
          */
+	 invalidate_ib
 	call		_MachGetWinMem
 	nop
 1:
@@ -2815,6 +2876,7 @@ SaveState:
 	or		VOL_TEMP3, r5, $MACH_KPSW_ALL_TRAPS_ENA
 	and		VOL_TEMP3, VOL_TEMP3, $(~MACH_KPSW_INTR_TRAP_ENA)
 	wr_kpsw		VOL_TEMP3, $0
+	invalidate_ib
 	rd_special	VOL_TEMP3, pc
 	return		VOL_TEMP3, $12
 	Nop
@@ -3058,6 +3120,7 @@ RestoreState:
 	.globl _MachRefreshCCWells
 _MachRefreshCCWells:
 	cmp_trap	always,r0,r0,$MACH_REFRESH_TRAP
+	invalidate_ib
 	return		RETURN_ADDR_REG, $8
 	nop
 
@@ -3102,6 +3165,7 @@ _Mach_ContextSwitch:
 	 * Setup the virtual memory context for the process.
 	 */
 	add_nt		OUTPUT_REG1, INPUT_REG2, $0
+	invalidate_ib
 	call		_VmMach_SetupContext
 	Nop
 	invalidate_ib
@@ -3148,6 +3212,7 @@ _Mach_ContextSwitch:
 	/*
 	 * We are now in the new process so return.
 	 */
+	invalidate_ib
 	return		RETURN_ADDR_REG, $8
 	Nop
 
@@ -3173,6 +3238,11 @@ _Mach_DisableNonmaskableIntr:
 	rd_kpsw		VOL_TEMP1
 	and		VOL_TEMP1, VOL_TEMP1, $(~MACH_KPSW_INTR_TRAP_ENA)
 	wr_kpsw		VOL_TEMP1, $0
+#ifdef PATCH_IBUFFER
+	nop
+	nop
+#endif
+	invalidate_ib
 	return		RETURN_ADDR_REG, $8
 	Nop
 
@@ -3205,6 +3275,11 @@ _Mach_EnableNonmaskableIntr:
 	WRITE_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP1)
 	or		VOL_TEMP1, SAFE_TEMP2, $MACH_KPSW_INTR_TRAP_ENA
 	wr_kpsw		VOL_TEMP1, $0
+#ifdef PATCH_IBUFFER
+	nop
+	nop
+#endif
+	invalidate_ib
 	return		RETURN_ADDR_REG, $8
 	Nop
 
@@ -3234,6 +3309,11 @@ _Mach_DisableIntr:
 	nop
 	WRITE_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP1)
 	wr_kpsw		SAFE_TEMP2, $0
+#ifdef PATCH_IBUFFER
+	nop
+	nop
+#endif
+	invalidate_ib
 	return		RETURN_ADDR_REG, $8
 	Nop
 
@@ -3263,6 +3343,11 @@ _Mach_EnableIntr:
 	nop
 	WRITE_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP1)
 	wr_kpsw		SAFE_TEMP2, $0
+#ifdef PATCH_IBUFFER
+	nop
+	nop
+#endif
+	invalidate_ib
 	return		RETURN_ADDR_REG, $8
 	Nop
 
@@ -3305,6 +3390,7 @@ _Mach_TestAndSet:
 	wr_kpsw		SAFE_TEMP1, $0
 
 	add_nt		RETURN_VAL_REG_CHILD, VOL_TEMP1, $0
+	invalidate_ib
 	return		RETURN_ADDR_REG, $8
 	Nop
 
@@ -3335,6 +3421,7 @@ _Mach_SetProcessorNumber:
 	wr_insert	$3
 	insert		SAFE_TEMP1,SAFE_TEMP1,INPUT_REG1
 	wr_kpsw		SAFE_TEMP1, $0
+	invalidate_ib
 	return		RETURN_ADDR_REG, $8
 	Nop
 
@@ -3413,6 +3500,7 @@ ParseInstruction:
  * move table is executed in the delay slot of the jump.  Got it?
  */
 @get:
+	invalidate_ib
 	rd_special	PARSE_TEMP1, pc         /* Back up one window */
 	return		PARSE_TEMP1, $12
 	Nop
@@ -3421,6 +3509,7 @@ ParseInstruction:
 	jump	        @nextf  /* The instruction in table will be
 				 * executed in the delay slot of this jump. */
 @next:
+	invalidate_ib
 	call 	       	@endf			/* Get back to trap window.  */
 	Nop
 
@@ -3501,6 +3590,7 @@ parse_op:
 	jump	        @nextf  /* The instruction in table will be
 			      /* executed in the delay slot of this jump. */
 @next:
+	invalidate_ib
 	call 	       	@endf			/* Get back to trap window.  */
 	Nop
 
@@ -3541,6 +3631,7 @@ parse_cmp:
 	add_nt		SRC_REG, SAVED_R15, $0   /* get r31 directly */
 @get:
 
+	invalidate_ib
 	rd_special	PARSE_TEMP1, pc         /* Back up one window */
 	return		PARSE_TEMP1, $12
 	Nop
@@ -3549,6 +3640,7 @@ parse_cmp:
 	jump	        @nextf   /* The instruction in table will be
          		          * executed in the delay slot of this jump. */
 @next:
+	invalidate_ib
 	call 	       	@endf			/* Get back to trap window.  */
 	Nop
 
@@ -3615,6 +3707,7 @@ parse_store:
 	jump	        @nextf  /* The instruction in table will be
 			      /* executed in the delay slot of this jump. */
 @next:
+	invalidate_ib
 	call 	       	@endf			/* Get back to trap window.  */
 	Nop
 

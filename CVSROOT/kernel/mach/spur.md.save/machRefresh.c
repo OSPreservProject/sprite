@@ -37,8 +37,11 @@ static int RefreshCount[MACH_MAX_NUM_PROCESSORS];
  * Cycles between refreshes. Around 100ms at 5.814 Mhz.
  */
 
-/* #define	MACH_REFRESH_TIMER_TICKS	581395	 */
+#if 0
+#define	MACH_REFRESH_TIMER_TICKS	581395	 
+#endif
 #define	MACH_REFRESH_TIMER_TICKS	40000	
+
 
 /*
  * Cycles between profile pc sample. Around 20ms at 5.814 Mhz.
@@ -48,6 +51,8 @@ static int RefreshCount[MACH_MAX_NUM_PROCESSORS];
 
 extern Boolean profEnabled;
 extern unsigned int machInterruptAddr;
+extern   unsigned int *machIdleCountPtr[MACH_MAX_NUM_PROCESSORS];
+extern int 	machLEDValues[MACH_MAX_NUM_PROCESSORS];
 
 /*
  * Value to stick into counter.
@@ -77,7 +82,6 @@ void
 Mach_RefreshStart()
 {
      unsigned int modeRegister;		/* Local copy of CC mode register */
-     extern   unsigned int *machIdleCountPtr[MACH_MAX_NUM_PROCESSORS];
      int      i;
 
      for (i = 0; i < MACH_MAX_NUM_PROCESSORS; i++) {
@@ -145,6 +149,7 @@ Mach_RefreshInterrupt()
      unsigned int modeRegister;		/* Local copy of CC mode register */
      int	switches;
      int	count;
+     int	cpu;
 
     /*
      * Stop the timer in case it is ticking.
@@ -156,7 +161,8 @@ Mach_RefreshInterrupt()
     }
 
 
-    count = RefreshCount[Mach_GetProcessorNumber()]++;
+    cpu = Mach_GetProcessorNumber();
+    count = RefreshCount[cpu]++;
     asm("cmp_trap	always,r0,r0,$3");
     /*
      * If switch 3 set then interrupt.
@@ -194,14 +200,14 @@ Mach_RefreshInterrupt()
      */
     {
 	    extern Boolean rpcServiceEnabled;
-	    static int refresh_leds[] = { 0x1042, 0x7042, 0x1042, 0x7042 };
-	    static int idle_leds[] = { 0x0e00, 0x0d00, 0x0b00, 0x0700 };
+	    static int refresh_leds[] = { 0x1000, 0x7000, 0x1000, 0x7000 };
+	    static int idle_leds[] = { 0x0e00, 0x0d00, 0x0b00, 0x0700,
+	    			       0xb00, 0xd00, 0xe00, 0xf00};
 	    if (rpcServiceEnabled) { 
 		    write_physical_word(0x20000,
 			refresh_leds[(count>>6)&0x3] |
-			idle_leds[(sched_Instrument.
-				processor[Mach_GetProcessorNumber()].
-			   idleTicksLow>>16)&0x3]);
+			machLEDValues[cpu] |
+			idle_leds[(*machIdleCountPtr[cpu]>>16)&0x7]);
 	    }
     }
 

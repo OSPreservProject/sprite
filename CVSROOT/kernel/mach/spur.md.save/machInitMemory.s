@@ -90,6 +90,7 @@ lbase:	rd_special CONSTANT_REG, pc
 unknown:		   
 	add_nt 	INPUT_REG1,r0,$-1
 ret:
+	invalidate_ib
 	return	r10, $8
 	Nop
 
@@ -115,5 +116,6 @@ _MachZeroMemBoard:
 	add_nt	VOL_TEMP3, VOL_TEMP3, $32
 	cmp_br_delayed	ult, VOL_TEMP3, VOL_TEMP2, @loopb
 	nop
+	invalidate_ib
 	return	r10, $8
 	Nop

@@ -409,6 +409,7 @@
 	add_nt		NON_INTR_TEMP1, CUR_PC_REG, $0; \
 	add_nt		CUR_PC_REG, r0, $0; \
 	add_nt		NON_INTR_TEMP2, NEXT_PC_REG, $0; \
+	invalidate_ib; \
 	rd_special	VOL_TEMP1, pc; \
 	return_trap	VOL_TEMP1, $12; \
 	Nop; \
@@ -419,6 +420,7 @@
 #define USER_ERROR(userError) \
 	add_nt		NON_INTR_TEMP1, CUR_PC_REG, $0; \
 	add_nt		NON_INTR_TEMP2, NEXT_PC_REG, $0; \
+	invalidate_ib; \
 	rd_special	VOL_TEMP1, pc; \
 	return_trap	VOL_TEMP1, $12; \
 	Nop; \
@@ -445,6 +447,7 @@
 	wr_kpsw		VOL_TEMP1, $0; \
 	add_nt		CUR_PC_REG, r0,$0; \
 	add_nt		OUTPUT_REG1, r0, $MACH_USER_BAD_SWP; \
+	invalidate_ib; \
 	call		_MachUserError; \
 	Nop
 #else
@@ -454,6 +457,7 @@
 	or		VOL_TEMP1, VOL_TEMP1, $MACH_KPSW_ALL_TRAPS_ENA; \
 	wr_kpsw		VOL_TEMP1, $0; \
 	add_nt		OUTPUT_REG1, r0, $MACH_USER_BAD_SWP; \
+	invalidate_ib; \
 	call		_MachUserError; \
 	Nop
 #endif
@@ -547,10 +551,12 @@
 	sll		OUTPUT_REG2, OUTPUT_REG2,$2; \
 	ld_32		OUTPUT_REG2, OUTPUT_REG2, $_machDebugStatePtrs; \
 	Nop; \
+	invalidate_ib; \
 	call		_MachEnterKernelDebugger; \
 	Nop; \
 	ld_32		OUTPUT_REG2, r0, $_machDbgInterruptMask;\
         WRITE_STATUS_REGS(MACH_FE_STATUS_0, OUTPUT_REG2); \
+	invalidate_ib; \
 	call		_MachContinueProcessors; \
 	Nop; \
 	GET_PNUM_FROM_BOARD(VOL_TEMP1); \

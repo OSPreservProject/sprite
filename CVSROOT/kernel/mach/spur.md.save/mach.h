@@ -96,6 +96,8 @@ typedef struct {
     int		cwp;				/* Current window pointer. */
 } Mach_RegState;
 
+#define MACH_REGSTATE_CNTS "{dw71}"
+
 /*
  * The user state for a process.
  */
@@ -277,6 +279,18 @@ extern Mach_ProcessorStatus mach_ProcessorStatus[];
     })
 #endif
 
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_GetBootArgs --
+ *
+ * Spur doesn't implement parameters to the prom, so just return 0.
+ *
+ * ----------------------------------------------------------------------------
+ */
+#define Mach_GetBootArgs(argc, bufferSize, argv, buffer) (0)
+
+
 extern	Boolean	mach_KernelMode[];
 extern	int	mach_NumProcessors;
 extern	Boolean	mach_AtInterruptLevel[];
@@ -341,6 +355,7 @@ extern  ReturnStatus Mach_AllocExtIntrNumber();
 extern	void	Mach_SetNonmaskableIntr();
 extern  ReturnStatus Mach_CallProcessor();
 extern int	Mach_GetNumProcessors();
+extern Mach_RegState *Mach_GetDebugStateInfo();
 /*
  * Routines to read and write physical memory.
  */
