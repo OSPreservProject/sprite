@@ -485,7 +485,7 @@ Dbg_InputPacket(packetPtr, packetLength)
     etherHdrPtr = (Net_EtherHdr *)packetPtr;
     if (etherHdrPtr->type != NET_ETHER_IP) {
 	if (dbgTraceLevel >= 5) {
-	    Sys_Printf("Got Non-IP ");
+	    Sys_Printf("Non-IP (Type=0x%x) ", (int)etherHdrPtr->type);
 	}
 	return;
     }
