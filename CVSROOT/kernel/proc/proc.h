@@ -145,10 +145,11 @@ typedef struct Proc_ControlBlock {
 				 * available.  */
 
     Proc_State	state;		/* Describes a process's current running state.
-				 * >>> See Proc_State definitions above. */ 
+				 * >>> See Proc_State definitions in
+				 * >>> user/proc.h. */ 
 
     int		genFlags;	/* Flags to describe a processes overall state.
-				 * >>> See definitions below */ 
+				 * >>> See definitions in user/proc.h. */ 
     int		syncFlags;	/* Flags used by the sync module. */
     int		schedFlags;	/* Flags used by the sched module. */
     int		exitFlags;	/* Flags used by the exit-detach-
