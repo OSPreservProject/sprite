@@ -115,6 +115,15 @@ DevTtyOpen(devicePtr, useFlags, notifyToken)
 	ttyPtr->notifyToken = notifyToken;
 	ttyPtr->openCount = 0;
 	(*ttyPtr->activateProc)(ttyPtr->rawData);
+    } else if (ttyPtr->notifyToken != notifyToken) {
+	/*
+	 * The console device is opened during boot time, at which
+	 * time the proper notifyToken (i.e., a file system handle)
+	 * is not available.  Here we reset the notifyToken to ensure
+	 * proper communication between the device driver and the
+	 * higher-level FS code.  See Fsio_BootTimeTtyOpen.
+	 */
+	ttyPtr->notifyToken = notifyToken;
     }
 
     /*
