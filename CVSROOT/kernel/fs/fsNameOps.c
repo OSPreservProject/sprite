@@ -119,10 +119,10 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
 
     nameInfoPtr = Mem_New(FsNameInfo);
 
-    FS_TRACE_NAME(FS_TRACE_2, name);
+    FS_TRACE_NAME(FS_TRACE_OPEN_START, name);
     status = FsLookupOperation(name, FS_DOMAIN_OPEN, (Address)&openArgs,
 				(Address)&openResults, nameInfoPtr);
-    FS_TRACE_NAME(FS_TRACE_5, name);
+    FS_TRACE_NAME(FS_TRACE_OPEN_DONE, name);
     /*
      * Call the stream type open routine to set up the I/O handle.
      */
