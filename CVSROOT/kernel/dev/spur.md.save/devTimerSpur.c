@@ -61,6 +61,11 @@ static  unsigned int profileTicks;
 static	DevCounter	zeroCount = {0,0};
 
 /*
+ * Time per tick of high 32bits of counter.
+ */
+static Time		timeHigh;		
+
+/*
  * The largest interval value.
  */
 #define	MAXINT	((unsigned int ) 0xffffffff)
@@ -484,6 +489,15 @@ Dev_CounterInit()
 {
     unsigned int modeRegister;	/* Local copy of CC mode register */
 
+    /*
+     * Initialized the number of seconds per tick of high word of 
+     * counter.
+     */
+
+    timeHigh.seconds =  (int) (0xffffffff / TIMER_FREQ);
+    timeHigh.microseconds = (int) (((0xffffffff % TIMER_FREQ) * SCALE_FACTOR) /
+				((TIMER_FREQ * SCALE_FACTOR) / ONE_SECOND));
+
     DISABLE_INTR();
     /*
      * Make sure the timer is not ticking.
@@ -508,6 +522,7 @@ Dev_CounterInit()
     Mach_Write8bitCCReg(MACH_MODE_REG,modeRegister);
     Mach_EnableNonmaskableIntr();
     ENABLE_INTR();
+
 }
 
 
@@ -600,12 +615,15 @@ Dev_CounterCountToTime(count, resultPtr)
     Time *resultPtr;
 {
     unsigned int leftOver;
+    Time	tmp;
 
     resultPtr->seconds = (int) (count.low / TIMER_FREQ);
     leftOver = (unsigned int) (count.low - (resultPtr->seconds * TIMER_FREQ));
     resultPtr->microseconds = (int) ((leftOver * SCALE_FACTOR) /
 				((TIMER_FREQ * SCALE_FACTOR) / ONE_SECOND));
-    Time_Multiply(*resultPtr,count.high,resultPtr);
+
+    Time_Multiply(timeHigh,count.high,&tmp);
+    Time_Add(*resultPtr, tmp, resultPtr);
 
 }
 
