@@ -24,4 +24,7 @@ extern void		(*memPrintProc)();
 extern ClientData	memPrintData;
 extern Boolean		memAllowFreeingFree;
 
+extern int	mem_NumAllocs;
+extern int	mem_NumFrees;
+
 #endif /* _MEMINT */

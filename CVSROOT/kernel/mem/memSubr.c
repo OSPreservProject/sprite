@@ -16,7 +16,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 #include "sprite.h"
-#include "sys.h"
 #include "vm.h"
 #include "mem.h"
 
@@ -27,8 +26,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 
 static  void	PrintProc();
-void		(*memPrintProc)();
-ClientData	memPrintData;
+void		(*memPrintProc)() = PrintProc;
+ClientData	memPrintData = (ClientData) 0;
 
 /*
  * Flag to determine whether to panic when freeing free blocks. This
@@ -61,7 +60,7 @@ void
 MemPanic(message)
     char *message;
 {
-    Sys_Panic(SYS_FATAL, message);
+    panic(message);
 }
 
 
@@ -144,7 +143,7 @@ PrintProc(clientData, format, args)
     char	*format;
     int		args;
 {
-    (void) Sys_DoPrintf(format, (char *) &args);
+    printf(format, (char *) &args);
 }
 
 
