@@ -614,9 +614,8 @@ Recov_RebootRegister(spriteID, rebootCallBackProc, rebootData)
 			LIST_ATFRONT(&hostPtr->rebootList));
 	}
 	/*
-	 * Mark the host as being one we want to watch.
+	 * Start a perpetual call back so we note crashes.
 	 */
-	hostPtr->state |= RECOV_WANT_RECOVERY;
 	if ((hostPtr->state & RECOV_PINGING_HOST) == 0) {
 	    hostPtr->state |= RECOV_PINGING_HOST;
 	    Proc_CallFunc(CheckHost, spriteID, 0);
@@ -624,175 +623,6 @@ Recov_RebootRegister(spriteID, rebootCallBackProc, rebootData)
     }
     UNLOCK_MONITOR;
 }
-#ifdef notdef
-
-/*
- *----------------------------------------------------------------------
- *
- * Recov_RebootCallback --
- *
- *	Schedule a callback for when a host reboots.  If the host is
- *	already alive, the reboot callback is called right away.  If
- *	the host isn't yet up, this routine makes sure that a background
- *	pinging process will notice when the host does boot.  The calling
- *	module needs a token obtained from Recov_Register;  we use this
- *	to ensure only one callback per module.
- *	
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	This will initiate pinging on the target host; it will recieve
- *	at least on ping RPC before we invoke the reboot callbacks.
- *
- *----------------------------------------------------------------------
- */
-
-ENTRY void
-Recov_RebootCallBack(spriteID, rebootCallBackProc, rebootData)
-    int spriteID;
-    void (*rebootCallBackProc)();
-    ClientData rebootData;
-{
-    Hash_Entry *hashPtr;
-    RecovHostState *hostPtr;
-    register NotifyElement *notifyPtr;
-    Boolean found = FALSE;
-
-    LOCK_MONITOR;
-
-    if (spriteID <= 0 || spriteID == rpc_SpriteID) {
-	Sys_Panic(SYS_FATAL, "Recov_RebootCallBack, bad hostID %d\n", spriteID);
-    } else {
-	hashPtr = Hash_Find(recovHashTable, spriteID);
-	if (hashPtr->value == (Address)NIL) {
-	    RECOV_INIT_HOST(hostPtr, spriteID, RECOV_STATE_UNKNOWN, 0);
-	    hashPtr->value = (Address)hostPtr;
-	} else {
-	    hostPtr = (RecovHostState *)hashPtr->value;
-	}
-	/*
-	 * Save the callback while avoiding duplications.
-	 */
-	LIST_FORALL(&hostPtr->rebootList, (List_Links *)notifyPtr) {
-	    if (notifyPtr->proc == rebootCallBackProc &&
-		notifyPtr->data == rebootData) {
-		found = TRUE;
-		break;
-	    }
-	}
-	if (!found) {
-	    notifyPtr = Mem_New(NotifyElement);
-	    notifyPtr->proc = rebootCallBackProc;
-	    notifyPtr->data = rebootData;
-	    List_Insert((List_Links *)notifyPtr,
-			LIST_ATFRONT(&hostPtr->rebootList));
-	}
-	/*
-	 * Initiate pinging so we find out when the host reboots.  Setting
-	 * the 'want recovery' bit means the reboot callbacks will get
-	 * called the next time the host becomes fully active.
-	 */
-	hostPtr->state |= RECOV_WANT_RECOVERY;
-	if ((hostPtr->state & RECOV_PINGING_HOST) == 0) {
-	    hostPtr->state |= RECOV_PINGING_HOST;
-	    Proc_CallFunc(CheckHost, spriteID, 0);
-	}
-    }
-    UNLOCK_MONITOR;
-}
-#endif notdef
-#ifdef notdef
-
-/*
- *----------------------------------------------------------------------
- *
- * Recov_WaitForHost --
- *
- *	Block the current process (at an interruptable priority) until
- *	the given host comes back up.  This is used when retrying
- *	filesystem operations when a fileserver goes down, for example.
- *
- * Results:
- *	TRUE if the wait was interrupted.
- *
- * Side effects:
- *	The current process is blocked
- *	until messages from the host indicate it is up.
- *
- *----------------------------------------------------------------------
- */
-Boolean
-Recov_WaitForHost(spriteID)
-    int spriteID;			/* Host to monitor */
-{
-    /*
-     * Set up the hosts state (dead or alive) by pinging it.
-     * If it's down we drop into a monitored routine to do 
-     * the actual waiting.  It will check again to make sure
-     * we don't sleep on an alive host.
-     */
-    if (Recov_IsHostDown(spriteID, TRUE) == FAILURE) {
-	RECOV_TRACE(spriteID, RECOV_STATE_UNKNOWN, RECOV_CUZ_WAIT);
-	return(WaitForHostInt(spriteID));
-    } else {
-	return(FALSE);
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * WaitForHostInt --
- *
- *	Block the current process (at an interruptable priority) until
- *	the given host comes back up.  Our caller should have already
- *	probed to host with Recov_IsHostDown so that pinging is already
- *	initiated.
- *
- * Results:
- *	TRUE is the wait was interrupted by a signal.
- *
- * Side effects:
- *	If the host is thought down, the current process is blocked
- *	until messages from the host indicate it is up.
- *
- *----------------------------------------------------------------------
- */
-static ENTRY Boolean
-WaitForHostInt(spriteID)
-    int spriteID;			/* Host to monitor */
-{
-    Hash_Entry *hashPtr;
-    RecovHostState *hostPtr;
-    Boolean sigPending = FALSE;
-
-    LOCK_MONITOR;
-
-    if (spriteID <= 0 || spriteID == rpc_SpriteID) {
-	Sys_Panic(SYS_FATAL, "WaitForHostInt, bad hostID %d\n", spriteID);
-	UNLOCK_MONITOR;
-	return(FALSE);
-    }
-
-    hashPtr = Hash_Find(recovHashTable, spriteID);
-    if (hashPtr->value == (Address)NIL) {
-	Sys_Panic(SYS_FATAL, "WaitForHostInt, no host state\n");
-	UNLOCK_MONITOR;
-	return(FALSE);
-    } else {
-	hostPtr = (RecovHostState *)hashPtr->value;
-    }
-    while (!sigPending && (hostPtr->state & RECOV_HOST_DEAD)) {
-	sigPending = Sync_Wait(&hostPtr->alive, TRUE);
-    }
-    RECOV_TRACE(hostPtr->spriteID, hostPtr->state, RECOV_CUZ_WAKEUP);
-
-    UNLOCK_MONITOR;
-    return(sigPending);
-}
-#endif notdef
 
 /*
  *----------------------------------------------------------------------
