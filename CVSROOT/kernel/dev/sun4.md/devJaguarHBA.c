@@ -70,7 +70,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * struct JaguarMem. Some of the members of this structure like 
  * the mcsb, mce, cmdQueue,and css must occur at fixed offsets from the start
  * of the 2K region. The other items in JaguarMem are placed at fixed offsets
- * to simply the driver and may be moved around.
+ * to simplify the driver and may be moved around.
  */
 
 /*
@@ -80,13 +80,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  *		     host.
  * NUM_CQE 	  -  Number of entries in the command queue. This limits
  * 	             the number of unacknowledged commands that we can submit
- *	             to the Jaguar. For a lack of a better number, 16.
+ *	             to the Jaguar. For a lack of a better number, 8.
  *
  * NUM_SG_ELEMENTS - Number of scatter/gather elements allocated in the 
  *		     juguar memory.  Scatter/gather elements don't needed
  *		     to be allocated in Jaguar memory but it is convenient
- *		     to do so.  Otherwise the would have to be allocated
- *		     or mapped into DVMA.
+ *		     to do so.  Otherwise they would have to be allocated
+ *		     or mapped into DVMA space.
  *
  * MEM_PAD           Number of bytes of free space not allocated in the
  * 	             structure JaguarMem. Note that MEM_PAD is a function 
@@ -155,14 +155,13 @@ typedef struct Device {
     ScsiDevice handle;	/* Scsi Device handle. This is the only part
 			 * of this structure visible to higher 
 			 * level software. MUST BE FIRST FIELD IN STRUCTURE. */
+    int	bus;		/* Bus number of device. */
     int	targetID;	/* TargetID of device. */
     int	unitAddress;	/* Jaguar address of this device.  */
     int	workQueue;	/* Jaguar workqueue allocated for this device. */
     int	numActiveCmds;	/* Number of commands enqueued on the HBA for this
 			 * command. */
-    DevQueue	queue;	/* Queue for the device. */
     Controller  *ctrlPtr; /* Controller to which device is attached. */
-    Address	dmaBuffer; /* DMA buffer for device. */
 		   /*
 		    * The following part of this structure is 
 		    * used to handle SCSI commands that return 
@@ -170,6 +169,7 @@ typedef struct Device {
 		    * command we must: 1) Save the state of the current
 		    * command into the "struct FrozenCommand". 2) Submit
 		    * a request sense command  */
+
     struct FrozenCommand {		       
 	ScsiCmd	*scsiCmdPtr;	   /* The frozen command. */
 	unsigned char statusByte; /* It's SCSI status byte, Will always have
@@ -182,16 +182,32 @@ typedef struct Device {
 typedef struct CmdAction {
     int	action;		/* Action to be performed when command completes. 
 			 * See below for list of actions. */
+    int		dmaBufferLen;	/* DMA buffer length. */
+    Address	dmaBuffer; /* DMA buffer for device. */
     ClientData	actionArg;	/* Argument for action. */
 } CmdAction;
 
 /*
- * Possibly action values.
+ * Upon command termination. The interrupt handler can be instructed to
+ * perform serveral possible actions.
+ *
+ * UNUSED_ACTION - 	This action buffer is used.
+ * FILL_IN_CRB_ACTION - Fill in the specified pointer with the completion
+ *			CRB.
+ * SCSI_CMD_ACTION -	This command is a SCSI command. Invoke RequestDone
+ *			function.
+ * IS_WAIT_ACTION() -   TRUE if the action requires the command to be
+ *			executed synchronously.
+ * NUM_ACTIONS	    -   Number of action buffers to allocate per controller.
+ *			This number must be creater than the number of 
+ *			devices * the number of queued commands.
  */
+#define	UNUSED_ACTION		0x0
 #define	FILL_IN_CRB_ACTION	0x1
 #define	SCSI_CMD_ACTION		0x2
-#define	IS_WAIT_ACTION(action)	((action)== FILL_IN_CRB_ACTION)
 
+#define	IS_WAIT_ACTION(action)	((action)== FILL_IN_CRB_ACTION)
+#define	NUM_ACTIONS		64
 /*
  * Controller - The Data structure describing a Jaguar controller. One
  * of these structures exists for each active Jaguar HBA on the system. Each
@@ -203,17 +219,19 @@ struct Controller {
     volatile JaguarCQE *nextCQE; /* Next available CQE. */
     Boolean workQueue0Busy; /* Work Queue 0 is being used. */
     char    *name;	/* String for error message for this controller.  */
+    Sync_Semaphore mutex; /* Lock protecting controller's data structures. */
     DevCtrlQueues devQueues;    /* Device queues for devices attached to this
 				 * controller.	 */
-    Sync_Semaphore mutex; /* Lock protecting controller's data structures. */
     Sync_Condition ctrlCmdWait; /* Wait condition for syncronous command
 				 * to finish. */
     Sync_Condition ctrlQueue0Wait; /* Wait condition for exclustive access
 				    * to workqueue 0. */
     int		intrLevel;	/* VME interrupt level for controller. */
-    int		intrVector;	/* VME interrupt vector for controller. */
-    CmdAction	cmdAction[NUM_CQE]; /* Action to be performed when command 
-				     * completes. */
+    int		intrVector;	/* VME interrupt vector for controller in
+				 * the format expected by the Jaguar. */
+    int		nextActionBuffer; /* Next cmdAction buffer to allocated. */
+    CmdAction	cmdAction[NUM_ACTIONS]; /* Action to be performed when command 
+				         * completes. */
     Device  *devices[NUM_WORK_QUEUES];   /* Pointers to the device attached. The
 					 * index is the workQueue number - 1. */
 };
@@ -221,7 +239,14 @@ struct Controller {
 #define MAX_JAGUAR_CTRLS	16
 static Controller	*Controllers[MAX_JAGUAR_CTRLS];
 
+
 static int	devJaguarDebug = 0;
+
+/*
+ * The follow data structure is used by the Sprite kernel debugger to 
+ * examine Jaguar memory. See routine GetJaguarMem.
+ */
+static JaguarMem DebugJaguarMem;
 
 /*
  * Constants for the sun implementation.
@@ -244,7 +269,7 @@ static int	devJaguarDebug = 0;
 #define	DMA_BURST_COUNT		0
 #define	JAGUAR_ADDRESS_MODIFIER  (JAGUAR_32BIT_MEM_TYPE | \
 				  JAGUAR_NORMAL_MODE_XFER | 0x3D)
-#define	MAX_CMDS_QUEUED		1
+#define	MAX_CMDS_QUEUED		2
 #define	SELECTION_TIMEOUT	1000
 #define	RESELECTION_TIMEOUT	0
 #define	VME_TIMEOUT		0
@@ -258,7 +283,7 @@ static int	devJaguarDebug = 0;
 
 #define	READ_LONG(var)	(((var)[0]<<16)|((var)[1]))
 #define	SET_LONG(var,value) \
-		(((var)[0] = ((value)>>16)),((var)[1]=(0xff&(value))))
+		(((var)[0] = ((value)>>16)),((var)[1]=(0xffff&(value))))
 
 static void LockWorkq0();
 static void UnLockWorkq0();
@@ -271,7 +296,32 @@ static void RequestDone();
 static void StartNextRequest();
 static char *ErrorString();
 static Boolean SendJaguarCmd();
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetJaguarMem --
+ *
+ *	Make a copy of the Jaguar's memory image in DebugJaguarMem. This
+ *	routine is used because the Sprite debugger can't read data
+ *	in short VME space. It is only called by the debugger.
+ *
+ * Results:
+ *	The address of the Jaguar memory copied.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
+static unsigned int
+GetJaguarMem(ctrlNum)
+    int	ctrlNum;	/* Controller to number to act upon. */
+{
+    CopyFromJaguarMem(Controllers[ctrlNum]->memPtr, &DebugJaguarMem, 2048);
+    return (unsigned int) Controllers[ctrlNum]->memPtr;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -293,8 +343,7 @@ WaitForResponseBlock(ctrlPtr,crbPtr)
     Controller	*ctrlPtr;         /* Controller to which command 
 				   * was submitted. */
     volatile JaguarCRB *crbPtr;   /* Command Response Block to be filled in by
-				   * interrupt handler. 
-				   */
+				   * interrupt handler.    */
 {
     while (!(crbPtr->status & JAGUAR_CRB_BLOCK_VALID)) {
 	Sync_MasterWait(&(ctrlPtr->ctrlCmdWait), &ctrlPtr->mutex,FALSE);
@@ -335,6 +384,11 @@ InitializeWorkq(ctrlPtr,workqNum, parity, priority)
     JaguarIOPB		inMemIOPB;
     volatile register JaguarIOPB	*iopb = &inMemIOPB;
     JaguarCRB		crb;
+    Boolean		good;
+
+    if (devJaguarDebug > 3) {
+	printf("%s: Initializing workQueue %d ...\n", ctrlPtr->name, workqNum);
+    }
 
     /*
      * Build the appropriate Initialized Work Queue Command IOPB
@@ -344,13 +398,21 @@ InitializeWorkq(ctrlPtr,workqNum, parity, priority)
     bzero((char *) iopb, sizeof(*iopb));
     iopb->command = JAGUAR_INIT_WORK_QUEUE_CMD;
     iopb->options = JAGUAR_IOPB_INTR_ENA;
-    iopb->intrLevel = ctrlPtr->intrLevel;
     iopb->intrVector = ctrlPtr->intrVector;
+    iopb->intrLevel = ctrlPtr->intrLevel;
     iopb->cmd.workQueueArg.number = workqNum;
     iopb->cmd.workQueueArg.options =
 		     JAGUAR_WQ_INIT_QUEUE | 
 		     JAGUAR_WQ_FREEZE_QUEUE | 
+#ifdef youWantItNotToWork
+    /*
+     * Setting the JAGUAR_WQ_PARITY_ENABLE bit in the workQueue options
+     * causes the HBA to quit working.
+     */
 		     (parity ? JAGUAR_WQ_PARITY_ENABLE : 0);
+#else
+			0;
+#endif
 
     iopb->cmd.workQueueArg.slots = NUM_CQE;
     iopb->cmd.workQueueArg.priority = priority;
@@ -358,8 +420,10 @@ InitializeWorkq(ctrlPtr,workqNum, parity, priority)
      * Send the command into work queue zero. SendJaguarCmd will do the
      * waiting for us and return 
      */
-    if (!SendJaguarCmd(ctrlPtr, 0, iopb, FILL_IN_CRB_ACTION, 
-			(ClientData)&crb)) {
+    MASTER_LOCK(&ctrlPtr->mutex);
+    good = SendJaguarCmd(ctrlPtr, 0, iopb, FILL_IN_CRB_ACTION,(ClientData)&crb);
+    MASTER_UNLOCK(&ctrlPtr->mutex);
+    if (!good) {
 	panic("%s: Initialize WorkQ %d did not finished.\n",ctrlPtr->name,
 	       workqNum);
 	return (FALSE);
@@ -371,7 +435,112 @@ InitializeWorkq(ctrlPtr,workqNum, parity, priority)
 	return (FALSE);
 
     }
+    if (devJaguarDebug > 3) {
+	printf("%s: WorkQueue %d initialized\n", ctrlPtr->name, workqNum);
+    }
     return (TRUE);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PerformDiagnostics --
+ *
+ *	Perform an extensive diagnostics test of the JaguarHBA.
+ *
+ *
+ * Results:
+ *	TRUE if the controller passes the test. FALSE if controller is broken.
+ *
+ * Side effects:
+ *	The docuementation says the JAGUAR_DIAG_CMD can take several
+ *	minutes to execute. I let it run for 45 mins and it still didn't
+ *	finish.  
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Boolean
+PerformDiagnostics(memPtr, name)
+    volatile JaguarMem *memPtr;	/* Pointer to VME Short IO space of HBA. */
+    char	*name;		/* Name of the controller for error messges. */
+{
+     register volatile JaguarMCSB *mcsb = &(memPtr->mcsb);
+     register volatile JaguarCQE  *cqe;
+     register volatile JaguarIOPB *iopb;
+     register volatile JaguarCRB  *crb;
+     Boolean good = TRUE;
+
+    cqe  = &(memPtr->mce);
+    iopb = &(memPtr->masterIOPB);
+    crb = &(memPtr->crb);
+    /*
+     * The command we send is the Perform Diagnostics command.
+     */
+    ZeroJaguarMem((short *)iopb, sizeof(iopb));
+    iopb->command = JAGUAR_DIAG_CMD;
+    {
+	register unsigned int status;
+	/*
+	 * Send the command off and wait for response.
+	 */
+	cqe->controlReg = JAGUAR_CQE_GO_BUSY;
+	if (!WaitForBitSet(&(crb->status),JAGUAR_CRB_BLOCK_VALID,10000000)) {
+	     panic("%s diag timeout. status = 0x%x\n", name, 
+		   crb->status);
+	     return FALSE;
+	}
+	/*
+	 * Check for happy completion status.
+	 */
+	status = crb->status;
+	if (!(status & JAGUAR_CRB_COMMAND_COMPLETE)) {
+	     panic("%s diag cmd didn't complete, status 0x%x\n",
+		    name, status);
+	     return FALSE;
+	}
+	if (status & (JAGUAR_CRB_ERROR|JAGUAR_CRB_EXCEPTION)) {
+	     printf("%s diag cmd error 0x%x, status 0x%x\n",
+		    name, crb->iopb.returnStatus, status);
+	    good = FALSE;
+	}
+	if (crb->iopb.cmd.diagArg.romTest != 0xffff) {
+	    printf("%s failed ROM test, result = 0x%x\n", name ,
+				crb->iopb.cmd.diagArg.romTest);
+	    good = FALSE;
+	}
+	if (crb->iopb.cmd.diagArg.scrRamTest != 0xffff) {
+	    printf("%s failed Scratch pad RAM test, result = 0x%x\n", name ,
+				crb->iopb.cmd.diagArg.scrRamTest);
+	    good = FALSE;
+	}
+	if (crb->iopb.cmd.diagArg.bufRamTest != 0xffff) {
+	    printf("%s failed Buffer RAM test, result = 0x%x\n", name ,
+				crb->iopb.cmd.diagArg.bufRamTest);
+	    good = FALSE;
+	}
+	if (crb->iopb.cmd.diagArg.eventRamTest != 0xffff) {
+	    printf("%s failed Evant RAM test, result = 0x%x\n", name ,
+				crb->iopb.cmd.diagArg.eventRamTest);
+	    good = FALSE;
+	}
+	if (crb->iopb.cmd.diagArg.priPort != 0xffff) {
+	    printf("%s failed Primary SCSI port test, result = 0x%x\n", name ,
+				crb->iopb.cmd.diagArg.priPort);
+	    good = FALSE;
+	}
+	if (crb->iopb.cmd.diagArg.secPort != 0xffff) {
+	    printf("%s failed Secondary SCSI port test, result = 0x%x\n", name ,
+				crb->iopb.cmd.diagArg.secPort);
+	    good = FALSE;
+	}
+	/*
+	 * If we got here the controller init cmd successfully completed.
+	 * Acknowledge the command to release the CRB.
+	 */
+	crb->status = 0;
+    }
+    return good;
 }
 
 
@@ -409,7 +578,7 @@ InitializeJaguar(memPtr, name, intrLevel, intrVector)
     /*
      * Start off with a clean slate by reseting the board. Documentation
      * says must keep reset bit set at least 50 microseconds.
-     * We give it 1 millesecond of reset in case 
+     * We give it 1 millesecond of reset .
      */
 
     mcsb->control = JAGUAR_MCR_RESET;
@@ -417,11 +586,15 @@ InitializeJaguar(memPtr, name, intrLevel, intrVector)
     mcsb->control = 0;
     /*
      * Wait for the Jaugar to signal Board OK. Board OK not valid for
-     * 100 microseconds after reset. We give it 1 millesecond to be happy.
+     * 100 microseconds after reset. We give it 1 millisecond to be happy.
+     *
+     * One millisecond does not appear to be long enough because the
+     * OK bit is still not set. We increase the amount to 1 second to 
+     * make sure.
      */
-    MACH_DELAY(1000);
+    MACH_DELAY(1000*1000);
     if (!(mcsb->status & JAGUAR_MSR_BOARD_OK)) {
-	printf("Warning: %s board not OK\n", name);
+	panic("Warning: %s board not OK, status = 0x%x\n", name, mcsb->status);
 	return (FALSE);
     }
 
@@ -436,8 +609,6 @@ InitializeJaguar(memPtr, name, intrLevel, intrVector)
     /*
      * Initialize the Command Queue (CQ). To do this we clear out the 
      * CQE's and point them at their IOPBs. Clear out the IOPBs too.
-     * The commandTag the the CQE's is given an unique number equal
-     * to it's index plus one.  (Tag 0 is the MCE. )
      */
      {
 	 int	i;
@@ -447,7 +618,7 @@ InitializeJaguar(memPtr, name, intrLevel, intrVector)
 	     cqe->controlReg = 0;
 	     cqe->iopbOffset = POINTER_TO_OFFSET(iopb,memPtr);
 	     cqe->iopbLength = sizeof(JaguarIOPB)/4;
-	     cqe->commandTag[0] = (i+1);
+	     cqe->commandTag[0] = 0;
 	     cqe->commandTag[1] = 0;
 	     cqe->workQueue = 0;
 	     cqe->reserved = 0;
@@ -474,6 +645,12 @@ InitializeJaguar(memPtr, name, intrLevel, intrVector)
     cqe->commandTag[0] = 0;
     cqe->commandTag[1] = 0;
     ZeroJaguarMem((short *)iopb , sizeof(JaguarIOPB));
+
+    if (devJaguarDebug > 9) {
+	if (!PerformDiagnostics(memPtr, name)) {
+	    printf("Warning: %s failed diagnostics\n");
+	}
+    }
     /*
      * The first command we send is the Initialize controller command.
      * In order to send this command we must build a Controller
@@ -508,7 +685,8 @@ InitializeJaguar(memPtr, name, intrLevel, intrVector)
 	 */
 	cqe->controlReg = JAGUAR_CQE_GO_BUSY;
 	if (!WaitForBitSet(&(crb->status),JAGUAR_CRB_BLOCK_VALID,10000)) {
-	     panic("%s init controller timeout.\n", name);
+	     panic("%s init controller timeout. status = 0x%x\n", name, 
+		   crb->status);
 	     return FALSE;
 	}
 	/*
@@ -565,10 +743,12 @@ InitializeJaguar(memPtr, name, intrLevel, intrVector)
 	 * printf.
 	 */
 	CopyFromJaguarMem((short *)&(memPtr->css),(short *)&css, sizeof(css));
-	printf("%s product %3s/%c firmware %3s %2s/%2s/%4s ",
+	printf("%s firmware (%3s-%c-%3s) %c%c/%c%c/%c%c ",
 		name, css.code, css.variation, css.firmwareLevel,
-		css.firmwareDate, css.firmwareDate+2, css.firmwareDate+4);
-	printf("%dK RAM bus0 ID %d bus1 ID %d\n", css.bufferRAMsize,
+		css.firmwareDate[0], css.firmwareDate[1],
+		css.firmwareDate[2], css.firmwareDate[3], 
+		css.firmwareDate[6], css.firmwareDate[7]);
+	printf("%dK RAM bus0ID %d bus1ID %d\n", css.bufferRAMsize,
 		css.primaryID, css.secondaryID);
     }
     return TRUE;
@@ -637,7 +817,10 @@ MapJaguarToSpriteErrorCode(status)
     if (code == 0) {
 	return SUCCESS;
     }
-    if (code <= 0x20 && code < 0x30) {
+    /*
+     * Error codes between 0x20 and 0x30 are VME bus type errors.
+     */
+    if (code >= 0x20 && code < 0x30) {
 	return DEV_DMA_FAULT;
     }
     return DEV_HARD_ERROR;
@@ -769,6 +952,12 @@ DevJaguarIntr(clientData)
      * return status from the IOPB returned.
      */
     actionPtr = &(ctrlPtr->cmdAction[crb->commandTag[0]]);
+    /*
+     * Release the device's DMA space.
+     */
+    if (actionPtr->dmaBufferLen > 0) {
+	VmMach_DMAFree(actionPtr->dmaBufferLen, actionPtr->dmaBuffer);
+    }
     returnStatus = crb->iopb.returnStatus;
     /*
      * Check to see an error.
@@ -781,7 +970,7 @@ DevJaguarIntr(clientData)
 	ScsiCmd	*scsiCmdPtr = (ScsiCmd *) actionPtr->actionArg;
 	Device	*devPtr = (Device *) (ctrlPtr->devices[crb->workQueue-1]);
 	ReturnStatus	spriteStatus = SUCCESS;
-	int	transferCount = 0;
+	int	transferCount = READ_LONG(crb->iopb.maxXferLen);
 	if (returnStatus & 0xff) {
 	    /*
 	     * Error code 0x34 means that the transfer count didn't match
@@ -790,15 +979,14 @@ DevJaguarIntr(clientData)
 	     */
 	    if ((returnStatus & 0xff) != 0x34)  {
 		spriteStatus = MapJaguarToSpriteErrorCode(returnStatus);
-	    }
+		transferCount = 0;
+	    } 
 	    if (spriteStatus != SUCCESS) {
 		printf("Warning: Device %s HBA error 0x%x: %s\n",
 			devPtr->handle.locationName, returnStatus,
 			ErrorString(returnStatus));
 	    }
-	    transferCount = (spriteStatus == SUCCESS) ? 
-				READ_LONG(crb->iopb.maxXferLen) : 0;
-	}
+	}  
 	devPtr->numActiveCmds--;
 	RequestDone(devPtr, scsiCmdPtr, spriteStatus,
 			(returnStatus >> 8) & 0xff, transferCount);
@@ -808,6 +996,7 @@ DevJaguarIntr(clientData)
     if (IS_WAIT_ACTION(actionPtr->action)) {
 	Sync_MasterBroadcast(&(ctrlPtr->ctrlCmdWait));
     }
+    actionPtr->action = UNUSED_ACTION;
     crb->status = 0;
     return (TRUE);
 
@@ -822,10 +1011,10 @@ DevJaguarIntr(clientData)
  *	Enter a Jaguar command into the specified Jaguar work Queue.
  *
  * Results:
- *	None.
+ *	TRUE if the command was started. FALSE otherwise.
  *
  * Side effects:
- *	None.
+ *	Those of Jaguar commands.
  *
  *----------------------------------------------------------------------
  */
@@ -842,7 +1031,6 @@ SendJaguarCmd(ctrlPtr, workQueue, iopbPtr, action, actionArg)
     volatile JaguarCQE	*cqe;
     volatile JaguarIOPB	*iopb;
 
-    MASTER_LOCK(&ctrlPtr->mutex);
     /*
      * Work queue is special because it has only one entry. To keep from
      * overrunning it we must observe a locking protocol.
@@ -855,7 +1043,7 @@ SendJaguarCmd(ctrlPtr, workQueue, iopbPtr, action, actionArg)
      * entry pointer around the circular queue.
      */
     cqe = ctrlPtr->nextCQE++;
-    if ((memPtr->cmdQueue - ctrlPtr->nextCQE) >= NUM_CQE) {
+    if ((ctrlPtr->nextCQE - memPtr->cmdQueue) >= NUM_CQE) {
 	ctrlPtr->nextCQE = memPtr->cmdQueue;
     }
     if (cqe->controlReg & JAGUAR_CQE_GO_BUSY) {
@@ -872,12 +1060,32 @@ SendJaguarCmd(ctrlPtr, workQueue, iopbPtr, action, actionArg)
     cqe->workQueue = workQueue;
      /*
      * Inform interrupt handler of the action we want on completion.
+     * To do this we must allocate a cmdAction buffer. We store the 
+     * index into cmdAction in the cqe's commandTag to allow the 
+     * interrupt handler to associated the command wil 
      */
     {
-	CmdAction *actionPtr = &(ctrlPtr->cmdAction[cqe->commandTag[0]]);
+	CmdAction *actionPtr;
+	while (ctrlPtr->cmdAction[ctrlPtr->nextActionBuffer].action
+					!= UNUSED_ACTION) {
+	    ctrlPtr->nextActionBuffer++;
+	    if (ctrlPtr->nextActionBuffer >= NUM_ACTIONS) {
+		ctrlPtr->nextActionBuffer = 0;
+	    }
+	}
+	actionPtr = &(ctrlPtr->cmdAction[ctrlPtr->nextActionBuffer]);
 	actionPtr->action = action;
+	actionPtr->dmaBuffer = (Address) (READ_LONG(iopbPtr->bufferAddr) + 
+					VMMACH_DMA_START_ADDR);
+	actionPtr->dmaBufferLen = READ_LONG(iopbPtr->maxXferLen);
 	actionPtr->actionArg = actionArg;
+        cqe->commandTag[0] = ctrlPtr->nextActionBuffer;
+
     }
+    /*
+     * Inform the controller that the command is ready.
+     */
+    cqe->controlReg = JAGUAR_CQE_GO_BUSY;
     /*
      * If the caller specified a CRB we wait for the response.
      */
@@ -887,7 +1095,6 @@ SendJaguarCmd(ctrlPtr, workQueue, iopbPtr, action, actionArg)
     if (workQueue == 0) {
 	UnLockWorkq0(ctrlPtr);	
     }
-    MASTER_UNLOCK(&ctrlPtr->mutex);
     return (TRUE);
 }
 
@@ -1075,8 +1282,7 @@ WaitForBitSet(wordPtr, bit, maxCount)
     register volatile unsigned short *wordPtr;	/* Word to check. */
     register unsigned short bit;	/* Bit to check for. */
     int	     maxCount;			/* Number of 100 microseconds to check 
-					 * before giving up.
-					 */
+					 * before giving up. */
 {
     /*
      * Timeout after waiting one second, poll every 100 microseconds.
@@ -1150,20 +1356,22 @@ FillInScsiIOPB(devPtr, scsiCmdPtr, iopbPtr)
     volatile JaguarIOPB	*iopbPtr;	/* IOPB to be filled in . */
 {
     Address	addr;
+
+    bzero((char *)iopbPtr, sizeof(JaguarIOPB));
     iopbPtr->command = JAGUAR_PASS_THRU_CMD;
     iopbPtr->options = JAGUAR_IOPB_INTR_ENA | 
-		    (scsiCmdPtr->dataToDevice ? 0 : JAGUAR_IOPB_TO_HBA);
+		    (scsiCmdPtr->dataToDevice ? JAGUAR_IOPB_TO_HBA : 0);
+    iopbPtr->intrVector =  devPtr->ctrlPtr->intrVector;
+    iopbPtr->intrLevel = devPtr->ctrlPtr->intrLevel;
     iopbPtr->addrModifier = JAGUAR_ADDRESS_MODIFIER;
-    SET_LONG(iopbPtr->maxXferLen, scsiCmdPtr->bufferLen);
     if (scsiCmdPtr->bufferLen > 0) {
-	devPtr->dmaBuffer = addr = (Address) 
-		VmMach_DMAAlloc(scsiCmdPtr->bufferLen, scsiCmdPtr->buffer);
+	addr = (Address) VmMach_DMAAlloc(scsiCmdPtr->bufferLen, 
+					 scsiCmdPtr->buffer);
     } else {
-	devPtr->dmaBuffer = (Address) NIL;
 	addr = (Address) VMMACH_DMA_START_ADDR;
     }
     SET_LONG(iopbPtr->bufferAddr, (unsigned)addr - VMMACH_DMA_START_ADDR);
-    iopbPtr->cmd.scsiArg.length = scsiCmdPtr->commandBlockLen;
+    SET_LONG(iopbPtr->maxXferLen, scsiCmdPtr->bufferLen);
     iopbPtr->cmd.scsiArg.unitAddress = devPtr->unitAddress;
     bcopy(scsiCmdPtr->commandBlock, (char *) iopbPtr->cmd.scsiArg.cmd, 
 			    scsiCmdPtr->commandBlockLen);
@@ -1182,7 +1390,8 @@ FillInScsiIOPB(devPtr, scsiCmdPtr, iopbPtr)
  *	None.
  *
  * Side effects:
- *	None.
+ *	A REQUEST SENSE command is sent to the device and the requesting
+ *	call back function called.
  *
  *----------------------------------------------------------------------
  */
@@ -1201,8 +1410,10 @@ ScsiErrorProc(data, callInfoPtr)
     DevScsiSenseCmd((ScsiDevice *)devPtr, DEV_MAX_SENSE_BYTES, senseBuffer, 
 			&senseCmd);
     FillInScsiIOPB(devPtr, &senseCmd, &iopbMem);
+    MASTER_LOCK(&devPtr->ctrlPtr->mutex);
     (void) SendJaguarCmd(devPtr->ctrlPtr, 0, &iopbMem, FILL_IN_CRB_ACTION, 
 			  (ClientData) &crb);
+    MASTER_UNLOCK(&devPtr->ctrlPtr->mutex);
     /*
      * Ignore the 0x34 ( transfer length mismatch) we're likely to get.
      */
@@ -1224,9 +1435,11 @@ ScsiErrorProc(data, callInfoPtr)
     /*
      * Unfreze the workqueue for this device. 
      */
+    MASTER_LOCK(&devPtr->ctrlPtr->mutex);
     devPtr->ctrlPtr->memPtr->mcsb.thawQueue = 
 			THAW_WORK_QUEUE(devPtr->workQueue);
     MACH_DELAY(100);
+    MASTER_UNLOCK(&devPtr->ctrlPtr->mutex);
 }
 
 
@@ -1261,9 +1474,6 @@ RequestDone(devPtr,scsiCmdPtr,status,scsiStatusByte,amountTransferred)
 	printf("RequestDone for %s status 0x%x scsistatus 0x%x count %d\n",
 	    devPtr->handle.locationName, status,scsiStatusByte,
 	    amountTransferred);
-    }
-    if (devPtr->dmaBuffer != (Address) NIL) {
-	VmMach_DMAFree(scsiCmdPtr->bufferLen, devPtr->dmaBuffer);
     }
     /*
      * If the request 
@@ -1323,8 +1533,6 @@ ReleaseProc(scsiDevicePtr)
  *	is called whenever work becomes available for this controller. 
  *	If the controller is not already busy we dequeue and start the
  *	request.
- *	NOTE: This routine is also called from DevSCSI3Intr to start the
- *	next request after the previously one finishes.
  *
  * Results:
  *	None.
@@ -1344,21 +1552,21 @@ entryAvailProc(clientData, newRequestPtr)
     register Device *devPtr = (Device *) clientData;
     register Controller *ctrlPtr = devPtr->ctrlPtr;
     register ScsiCmd	*scsiCmdPtr = (ScsiCmd *) newRequestPtr;
-    ReturnStatus	status;
+    Boolean	good;
 
 
     if (devPtr->numActiveCmds >= MAX_CMDS_QUEUED) { 
 	return FALSE;
     }
     devPtr->numActiveCmds++;
-    status = SendScsiCommand(devPtr, scsiCmdPtr);
+    good = SendScsiCommand(devPtr, scsiCmdPtr);
     /*	
      * If the command couldn't be started do the callback function.
      */
-    if (status != SUCCESS) {
+    if (!good) {
 	 devPtr->numActiveCmds--;
 	 MASTER_UNLOCK(&(ctrlPtr->mutex));
-	 RequestDone(devPtr,scsiCmdPtr,status,0,0);
+	 RequestDone(devPtr,scsiCmdPtr,DEV_HARD_ERROR,0,0);
 	 MASTER_LOCK(&(ctrlPtr->mutex));
     }
     return TRUE;
@@ -1388,7 +1596,7 @@ StartNextRequest(devPtr)
     List_Links	*newRequest;
 
     while (devPtr->numActiveCmds < MAX_CMDS_QUEUED) { 
-	newRequest = Dev_QueueGetNext(devPtr->queue);
+	newRequest = Dev_QueueGetNext(devPtr->handle.devQueue);
 	if (newRequest == (List_Links *) NIL) {
 	    break;
 	}
@@ -1463,6 +1671,8 @@ DevJaguarInit(ctrlLocPtr)
     ctrlPtr = Controllers[ctrlNum] = (Controller *) malloc(sizeof(*ctrlPtr));
     bzero((char *) ctrlPtr, sizeof(Controller));
     ctrlPtr->memPtr = (JaguarMem *) address;
+    ctrlPtr->nextCQE = ctrlPtr->memPtr->cmdQueue;
+    ctrlPtr->workQueue0Busy = FALSE;
     ctrlPtr->name = ctrlLocPtr->name;
     Sync_SemInitDynamic(&(ctrlPtr->mutex),ctrlPtr->name);
     /* 
@@ -1471,11 +1681,16 @@ DevJaguarInit(ctrlLocPtr)
      * attached.  
      */
     ctrlPtr->devQueues = Dev_CtrlQueuesCreate(&(ctrlPtr->mutex),entryAvailProc);
+    ctrlPtr->intrLevel = VME_INTERRUPT_PRIORITY;
+    /*
+     * Use the same vector for both error and normal completion.
+     */
+    ctrlPtr->intrVector = 
+	JAGUAR_IOPB_INTR_VECTOR(ctrlLocPtr->vectorNumber,
+				ctrlLocPtr->vectorNumber);
     for (i = 0; i < NUM_WORK_QUEUES; i++) {
 	ctrlPtr->devices[i] = (Device *) NIL;
     }
-    ctrlPtr->intrLevel = VME_INTERRUPT_PRIORITY;
-    ctrlPtr->intrVector = ctrlLocPtr->vectorNumber;
 
     return (ClientData) ctrlPtr;
 }
@@ -1529,12 +1744,14 @@ DevJaguarAttachDevice(devicePtr, insertProc)
     bus = SCSI_HBA_NUMBER(devicePtr) & 0x1;
     MASTER_LOCK(&(ctrlPtr->mutex));
     /*
-     * See if we already have a work queue setup for this device. 
+     * See if we already have a work queue setup for this device. Also,
+     * find a unsed workQueue to allocate for this device.
      */
     workQueue = -1;
     for (i = 0; i < NUM_WORK_QUEUES; i++) {
 	if (ctrlPtr->devices[i] != (Device *) NIL) {
-	    if (ctrlPtr->devices[i]->targetID == targetID) {
+	    if ((ctrlPtr->devices[i]->targetID == targetID) &&
+	        (ctrlPtr->devices[i]->bus == bus)) {
 		if (ctrlPtr->devices[i]->handle.LUN == lun) {
 		    MASTER_UNLOCK(&(ctrlPtr->mutex));
 		    return (ScsiDevice  *) (ctrlPtr->devices[i]);
@@ -1542,37 +1759,52 @@ DevJaguarAttachDevice(devicePtr, insertProc)
 		/*
 		 * The same targetID and a different LUN doesn't work.
 		 */
-		 MASTER_UNLOCK(&(ctrlPtr->mutex));
+		MASTER_UNLOCK(&(ctrlPtr->mutex));
+		printf("Warning: %s: 4210 only supports one LUN per target.\n",
+		       ctrlPtr->name);
+		printf("%s: Target %d LUN %d is already present.\n", 
+		      ctrlPtr->name,
+		      ctrlPtr->devices[i]->targetID, 
+		      ctrlPtr->devices[i]->handle.LUN);
 		return (ScsiDevice *) NIL;
 	    }
 	} else {
-	    workQueue = i+1;
+	    /*
+	     * Record the first unsed workQueue.
+	     */
+	    if (workQueue == -1) {
+		workQueue = i+1;
+	    }
 	}
     }
+    MASTER_UNLOCK(&(ctrlPtr->mutex));
     if (workQueue == -1) {
+	printf("%s: Too many devices attached.\n", ctrlPtr->name);
 	return (ScsiDevice *) NIL;
     }
 
-    MASTER_UNLOCK(&(ctrlPtr->mutex));
-    if (!InitializeWorkq(ctrlPtr, workQueue, TRUE, 1)) {
+    if (!InitializeWorkq(ctrlPtr, workQueue, FALSE, 1)) {
 	return (ScsiDevice *) NIL;
     }
 
     ctrlPtr->devices[workQueue-1] = devPtr =
 					(Device *) malloc(sizeof(Device));
     bzero((char *) devPtr, sizeof(Device));
+    devPtr->handle.devQueue = Dev_QueueCreate(ctrlPtr->devQueues,
+				0, insertProc, (ClientData) devPtr);
+    (void) sprintf(tmpBuffer, "%s#%d Bus %d Target %d LUN %d", ctrlPtr->name, 
+			ctrlNum, bus, targetID, lun);
+    devPtr->handle.locationName = 
+		(char *) strcpy(malloc(strlen(tmpBuffer)+1),tmpBuffer);
+    devPtr->handle.LUN = lun;
+    devPtr->handle.releaseProc = ReleaseProc;
+    devPtr->handle.maxTransferSize = DEV_MAX_DMA_SIZE;
+
+    devPtr->bus = bus;
+    devPtr->targetID = targetID;
     devPtr->unitAddress = JAGUAR_UNIT_ADDRESS(bus, targetID, lun);
     devPtr->workQueue = workQueue;
     devPtr->ctrlPtr = ctrlPtr;
-    devPtr->handle.devQueue = Dev_QueueCreate(ctrlPtr->devQueues,
-				0, insertProc, (ClientData) devPtr);
-    devPtr->handle.releaseProc = ReleaseProc;
-    devPtr->handle.LUN = lun;
-    devPtr->handle.maxTransferSize = DEV_MAX_DMA_SIZE;
-    (void) sprintf(tmpBuffer, "%s#%d Target %d LUN %d", ctrlPtr->name, ctrlNum,
-			devPtr->targetID, devPtr->handle.LUN);
-    length = strlen(tmpBuffer);
-    devPtr->handle.locationName = (char *) strcpy(malloc(length+1),tmpBuffer);
     return (ScsiDevice *) devPtr;
 }
 
