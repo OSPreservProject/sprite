@@ -349,6 +349,13 @@ Fs_RpcOpen(srvToken, clientID, command, storagePtr)
     }
     openArgsPtr = (FsOpenArgs *) storagePtr->requestParamPtr;
 
+    if (openArgsPtr->prefixID.serverID != rpc_SpriteID) {
+	/*
+	 * Filesystem mis-match.
+	 */
+	return(GEN_INVALID_ARG);
+    }
+
     /*
      * Get a handle on the prefix.  We need to have it unlocked in case
      * we do I/O on the directory.
@@ -489,6 +496,12 @@ Fs_RpcReopen(srvToken, clientID, command, storagePtr)
     }
 
     fileIDPtr = (FsFileID *)storagePtr->requestParamPtr;
+    if (fileIDPtr->serverID != rpc_SpriteID) {
+	/*
+	 * Filesystem version mis-match.
+	 */
+	return(GEN_INVALID_ARG);
+    }
     status = (*fsStreamOpTable[fileIDPtr->type].reopen)((FsHandleHeader *)NIL,
 		clientID, storagePtr->requestParamPtr,
 		&storagePtr->replyParamSize,
@@ -622,6 +635,7 @@ Fs_RpcClose(srvToken, clientID, command, storagePtr)
 	 * and clean up.  This call unlocks and decrements the reference
 	 * count on the handle.
 	 */
+	FS_TRACE_HANDLE(FS_TRACE_CLOSE, hdrPtr);
 	status = (*fsStreamOpTable[hdrPtr->fileID.type].close)(hdrPtr,
 		clientID, paramsPtr->flags, storagePtr->requestDataSize,
 		(ClientData)storagePtr->requestDataPtr);
@@ -908,6 +922,9 @@ Fs_RpcMakeDir(srvToken, clientID, command, storagePtr)
     FsOpenArgs		*openArgsPtr;
 
     openArgsPtr = (FsOpenArgs *) storagePtr->requestParamPtr;
+    if (openArgsPtr->prefixID.serverID != rpc_SpriteID) {
+	return(GEN_INVALID_ARG);
+    }
 
     prefixHandlePtr =
 	(*fsStreamOpTable[openArgsPtr->prefixID.type].clientVerify)
