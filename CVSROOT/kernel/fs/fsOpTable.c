@@ -27,11 +27,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsutil.h"
-#include "fsNameOps.h"
-#include "fsdm.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsNameOps.h>
+#include <fsdm.h>
+
+#include <stdio.h>
 
 static ReturnStatus NoProc();
 
@@ -113,10 +115,10 @@ NoProc()
  */
 
 void
-Fs_InstallDomainLookupOps(domainType, lookupTablePtr, attrOpTablePtr)
+Fs_InstallDomainLookupOps(domainType, lookupOpsPtr, attrOpTablePtr)
     int		domainType;	/* Domain type - FS_LOCAL_DOMAIN, 
 				 * FS_REMOTE_SPRITE_DOMAIN, etc. */
-    ReturnStatus  (*(*lookupTablePtr)[FS_NUM_NAME_OPS])(); 
+    Fs_DomainLookupOps *lookupOpsPtr;
 				/* Name operation routines for the domain. */
     Fs_AttrOps	   *attrOpTablePtr; /* Domain specific get/set attributes table.
 				     * entry for the domain. */
@@ -127,9 +129,24 @@ Fs_InstallDomainLookupOps(domainType, lookupTablePtr, attrOpTablePtr)
 	printf("Bad domain type %d in Fs_InstallDomainLookupOps\n", domainType);
 	return;
     }
-
+    fs_DomainLookup[domainType][FS_DOMAIN_IMPORT] = lookupOpsPtr->import;
+    fs_DomainLookup[domainType][FS_DOMAIN_EXPORT] = lookupOpsPtr->export;
+    fs_DomainLookup[domainType][FS_DOMAIN_OPEN] = lookupOpsPtr->open;
+    fs_DomainLookup[domainType][FS_DOMAIN_GET_ATTR] = lookupOpsPtr->getAttrPath;
+    fs_DomainLookup[domainType][FS_DOMAIN_SET_ATTR] = lookupOpsPtr->setAttrPath;
+    fs_DomainLookup[domainType][FS_DOMAIN_MAKE_DEVICE] = 
+						lookupOpsPtr->makeDevice;
+    fs_DomainLookup[domainType][FS_DOMAIN_MAKE_DIR] = lookupOpsPtr->makeDir;
+    fs_DomainLookup[domainType][FS_DOMAIN_REMOVE] = lookupOpsPtr->remove;
+    fs_DomainLookup[domainType][FS_DOMAIN_REMOVE_DIR] = lookupOpsPtr->removeDir;
+    fs_DomainLookup[domainType][FS_DOMAIN_RENAME] = lookupOpsPtr->rename;
+    fs_DomainLookup[domainType][FS_DOMAIN_HARD_LINK] = lookupOpsPtr->hardLink;
     for (i = 0; i < FS_NUM_NAME_OPS; i++) { 
-	fs_DomainLookup[domainType][i] = (*lookupTablePtr)[i];
+	if ((char *)(fs_DomainLookup[domainType][i]) == (char *) 0) {
+		panic(
+	"Fs_InstallDomainLookupOps missing routine for domainType %d\n", 
+			domainType);
+	}
     }
     fs_AttrOpTable[domainType] = *attrOpTablePtr;
 }
