@@ -24,23 +24,25 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsio.h"
-#include "fsutil.h"
-#include "fsNameOps.h"
-#include "fsNameOpsInt.h"
-#include "fsprefix.h"
-#include "fsrmtInt.h"
-#include "fslcl.h"
-#include "fsutilTrace.h"
-#include "fsStat.h"
-#include "recov.h"
-#include "proc.h"
-#include "rpc.h"
-#include "vm.h"
-#include "dbg.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsconsist.h>
+#include <fsio.h>
+#include <fsutil.h>
+#include <fsNameOps.h>
+#include <fsrmtNameOpsInt.h>
+#include <fsprefix.h>
+#include <fsrmtInt.h>
+#include <fslcl.h>
+#include <fsutilTrace.h>
+#include <fsStat.h>
+#include <recov.h>
+#include <proc.h>
+#include <rpc.h>
+#include <vm.h>
+#include <dbg.h>
 
+#include <string.h>
 
 /*
  * Used to contain fileID and stream data results from open calls.
@@ -50,6 +52,11 @@ typedef	struct	FsPrefixReplyParam {
     Fs_FileID	fileID;
 } FsPrefixReplyParam;
 
+static ReturnStatus TwoNameOperation _ARGS_((int command, 
+	Fs_HandleHeader *prefixHandle1, char *relativeName1, 
+	Fs_HandleHeader *prefixHandle2, char *relativeName2, 
+	Fs_LookupArgs *lookupArgsPtr, Fs_RedirectInfo **newNameInfoPtrPtr, 
+	Boolean *name1ErrorPtr));
 
 /*
  *----------------------------------------------------------------------
@@ -538,9 +545,9 @@ Fsrmt_RpcReopen(srvToken, clientID, command, storagePtr)
 	return(GEN_INVALID_ARG);
     }
     status = (*fsio_StreamOpTable[fileIDPtr->type].reopen)((Fs_HandleHeader *)NIL,
-		clientID, storagePtr->requestParamPtr,
+		clientID, (ClientData) storagePtr->requestParamPtr,
 		&storagePtr->replyParamSize,
-		&storagePtr->replyParamPtr);
+		(ClientData *)&storagePtr->replyParamPtr);
 
     Recov_AddHandleCountToClientState(fileIDPtr->type, clientID, status);
 
