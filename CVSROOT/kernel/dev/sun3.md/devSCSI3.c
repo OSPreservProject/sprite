@@ -277,12 +277,13 @@ DevSCSI3Command(targetID, scsiPtr, size, addr, interrupt)
     int i;
     unsigned char initCmd;		/* holder for initCmd value during
 					   wait */
-    unsigned char *initCmdPtr;		/* pointer to initCmd register */
-    unsigned char *modePtr;		/* pointer to mode register */
+    volatile unsigned char *initCmdPtr;	/* pointer to initCmd register */
+    volatile unsigned char *modePtr;	/* pointer to mode register */
     char command;			/* holder for command field of
 					 * command block, when checking
 					 * for send/receive of data */
     unsigned char phase;
+    unsigned char data;
 
     /*
      * Save some state needed by the interrupt handler to check errors.
@@ -319,6 +320,9 @@ DevSCSI3Command(targetID, scsiPtr, size, addr, interrupt)
     regsPtr = (DevSCSI3Regs *)scsiPtr->regsPtr;
     initCmdPtr = &regsPtr->sbc.write.initCmd;
     modePtr = &regsPtr->sbc.write.mode;
+    /*
+     * Clear all control lines.
+     */
     if (!scsiPtr->onBoard) {
 	/*
 	 * For VME interface dis-allow DMA interrupts from reconnect attempts.
@@ -328,53 +332,44 @@ DevSCSI3Command(targetID, scsiPtr, size, addr, interrupt)
     }
     regsPtr->sbc.write.select = 0;
     regsPtr->sbc.write.trgtCmd = 0;
+    regsPtr->sbc.write.initCmd = 0;
     *modePtr &= ~SBC_MR_DMA;
 
     /*
-     * Check against a continuously busy bus.  This stupid condition would
-     * fool the code below that tries to select a device.
+     * SCSI ARBITRATION.
      *
-     * FIXME: change to use WaitReg routine.
+     * Arbitrate for the SCSI bus by putting our SCSI ID on the data
+     * bus and asserting the BUSY signal.  After an arbitration delay
+     * we look for other, higher priority IDs on the bus. (We won't find
+     * any because the Host Adaptor is wired in to be the highest.)
+     * Arbitration is completed by asserting the SELECT line.
      */
-    for (i=0 ; i < SCSI_WAIT_LENGTH ; i++) {
-	if ((regsPtr->sbc.read.curStatus & SBC_CBSR_BSY) == 0) {
-	    break;
-	} else {
-	    MACH_DELAY(10);
-	}
-    }
-    if (i == SCSI_WAIT_LENGTH) {
-	if (devSCSI3Debug > 0) {
-	    PrintRegs(regsPtr);
-	    panic("SCSI3Command: bus stuck busy\n");
-	} else {
-	    printf("SCSI3Command: bus stuck busy\n");
-	}
-	DevSCSI3Reset(scsiPtr);
-	return(FAILURE);
-    }
 
-    /*
-     * check for target attempting a reselection -- which shouldn't happen!
-     */
-    if ((regsPtr->sbc.read.curStatus & SBC_CBSR_SEL) && 
-	(regsPtr->sbc.read.curStatus & SBC_CBSR_IO) &&
-	(regsPtr->sbc.read.data & SI_HOST_ID)) {
-	panic("SCSI3Command: someone attempted to reselect.\n");
-    }
-    
-    /*
-     * Select the device.  We output the ID of the host, then then ID
-     * of the target (unlike the "standard" SCSI interface).
-     * In each case, the ID is put in the data register,
-     * the SELECT bit is set, and we wait until the device responds
-     * by setting the BUSY bit.
-     * The outer loop is to keep turning on the SBC_MR_ARB bit; don't
-     * yet know if that's important.
-     */
     regsPtr->sbc.write.data = SI_HOST_ID;
-
     for (i = 0; i < SBC_NUM_RETRIES; i++) {
+	/*
+	 * Wait for the bus to go to BUS FREE - busy line not held.
+	 */
+	for (i=0 ; i < SCSI_WAIT_LENGTH ; i++) {
+	    if ((regsPtr->sbc.read.curStatus & SBC_CBSR_BSY) == 0) {
+		break;
+	    } else {
+		MACH_DELAY(10);
+	    }
+	}
+	if (i == SCSI_WAIT_LENGTH) {
+	    if (devSCSI3Debug > 0) {
+		PrintRegs(regsPtr);
+		panic("SCSI3Command: bus stuck busy\n");
+	    } else {
+		printf("SCSI3Command: bus stuck busy\n");
+	    }
+	    DevSCSI3Reset(scsiPtr);
+	    return(FAILURE);
+	}
+	/*
+	 * Enter Arbitration mode on the chip.
+	 */
 	*modePtr |= SBC_MR_ARB;
 	status = DevSCSI3WaitReg(regsPtr,
 			       (Address) &regsPtr->sbc.read.initCmd,
@@ -384,30 +379,34 @@ DevSCSI3Command(targetID, scsiPtr, size, addr, interrupt)
 	}
 	if (status != SUCCESS) {
 	    regsPtr->sbc.write.data = 0;
+	    *modePtr &= ~SBC_MR_ARB;
 	    if (command != SCSI_TEST_UNIT_READY) {
-		printf("SCSI-%d: can't select slave %d\n", 
+		printf("SCSI-%d: arbitration failed on target %d\n", 
 				     scsiPtr->number, targetID);
 	    }
 	    return(status);
 	}
-	/*
-	 * Confirm that we "won" arbitration.
-	 */
 	MACH_DELAY(SI_ARBITRATION_DELAY);
 	if (((regsPtr->sbc.read.initCmd & SBC_ICR_LA) == 0) &&
 	    ((regsPtr->sbc.read.data & ~SI_HOST_ID)  < SI_HOST_ID)) {
-	    initCmd = regsPtr->sbc.read.initCmd & ~SBC_ICR_AIP;
-	    regsPtr->sbc.write.initCmd = initCmd | SBC_ICR_ATN;
-	    initCmd = regsPtr->sbc.read.initCmd & ~SBC_ICR_AIP;
-	    regsPtr->sbc.write.initCmd = initCmd | SBC_ICR_SEL;
-	    MACH_DELAY(SI_BUS_CLEAR_DELAY + SI_BUS_SETTLE_DELAY);
 	    break;
 	}
 	/*
-	 * Lost arbitration.  (Should this ever happen??)
+	 * Lost arbitration due to reselection attempt by a target.
 	 */
-	printf("SCSI3Command: lost arbitration");
 	*modePtr &= ~SBC_MR_ARB;
+	printf("SCSI3Command: lost arbitration");
+	/*
+	 * A target may have tried to select us during arbitration phase.
+	 * At this point we should save the current command and
+	 * respond to the reconnection interrupt.
+	 */
+	if ((regsPtr->sbc.read.curStatus & SBC_CBSR_SEL) && 
+	    (regsPtr->sbc.read.curStatus & SBC_CBSR_IO) &&
+	    (regsPtr->sbc.read.data & SI_HOST_ID)) {
+	    printf("SCSI3Command: someone attempted to reselect.\n");
+	    return(FAILURE);
+	}
     }
     if (i == SBC_NUM_RETRIES) {
 	DevSCSI3Reset(scsiPtr);
@@ -416,20 +415,24 @@ DevSCSI3Command(targetID, scsiPtr, size, addr, interrupt)
     }
 
     /*
+     * Arbitration complete.  Confirm by setting SELECT and BUSY.
+     * The ATN (attention) line would be set here if we want allow
+     * disconnection by the target.
+     */
+    *initCmdPtr = SBC_ICR_SEL | SBC_ICR_BUSY;
+    *modePtr &= ~SBC_MR_ARB;
+    MACH_DELAY(SI_BUS_CLEAR_DELAY + SI_BUS_SETTLE_DELAY);
+    /*
+     * SCSI SELECTION.
+     *
      * Select the target by putting its ID plus our own on the bus
-     * and waiting for the busy signal.
+     * and waiting for the target to assert the BUSY signal.  We
+     * drop SEL and DATA after the target responds.
      */
     regsPtr->sbc.write.data = (1 << targetID) | SI_HOST_ID;
-    initCmd = regsPtr->sbc.read.initCmd   & ~SBC_ICR_AIP;
+    *initCmdPtr = SBC_ICR_SEL | SBC_ICR_DATA | SBC_ICR_BUSY;
     MACH_DELAY(1);
-    regsPtr->sbc.write.initCmd = initCmd | SBC_ICR_DATA | SBC_ICR_BUSY;
-    *modePtr &= ~SBC_MR_ARB;
-
-#ifdef notdef
-	regsPtr->sbc.write.initCmd &= ~SBC_ICR_BUSY;
-#else notdef
-        *initCmdPtr  &= ~SBC_ICR_BUSY;
-#endif notdef	
+    *initCmdPtr  &= ~SBC_ICR_BUSY;
     status = DevSCSI3WaitReg(regsPtr,
 			   (Address) &regsPtr->sbc.read.curStatus,
 			   REG_BYTE, SBC_CBSR_BSY, RESET, ACTIVE_HIGH);
@@ -441,47 +444,25 @@ DevSCSI3Command(targetID, scsiPtr, size, addr, interrupt)
 	regsPtr->sbc.write.data = 0;
 	return(status);
     }
-        
-    regsPtr->sbc.write.initCmd &= ~(SBC_ICR_SEL | SBC_ICR_DATA);
-
+    *initCmdPtr &= ~(SBC_ICR_SEL | SBC_ICR_DATA);
     /*
-     * Wait for the target to REQUEST a command.
+     * Clear selection and DMA interrupts.
      */
+    regsPtr->sbc.write.select = 0;
+    *modePtr &= ~SBC_MR_DMA;
 
-    regsPtr->sbc.write.trgtCmd = PHASE_MSG_OUT;
-    status = DevSCSI3WaitPhase(regsPtr, PHASE_MSG_OUT, RESET);
+#ifdef reselection
+    /*
+     * After target selection there is an optional message phase where
+     * we send an IDENTIFY message to indicate dis-connect capability.
+     */
+    data = SCSI_IDENDIFY | scsiPtr->devPtr->LUN;
+    status = PutByte(regsPtr, &data);
     if (status != SUCCESS) {
-	if (devSCSI3Debug > 3) {
-	    printf("SCSI3Command: wait on PHASE_MSG_OUT failed.\n");
-	}
 	return(status);
     }
-    regsPtr->sbc.write.trgtCmd = TCR_MSG_OUT;
-    status = DevSCSI3WaitReg(regsPtr, (Address) &regsPtr->sbc.read.curStatus,
-			    REG_BYTE, SBC_CBSR_REQ, RESET, ACTIVE_HIGH);
-    if (status != SUCCESS) {
-	if (devSCSI3Debug > 1) {
-	    printf("SCSI3: wait on request prior to ID failed.\n");
-	}
-	return(status);
-    }
-
-    regsPtr->sbc.write.data = SCSI_IDENTIFY | scsiPtr->devPtr->LUN;
-    regsPtr->sbc.write.initCmd = SBC_ICR_DATA;
-    regsPtr->sbc.write.initCmd |= SBC_ICR_ACK;
-    status =  DevSCSI3WaitReg(regsPtr, (Address) &regsPtr->sbc.read.curStatus,
-			    REG_BYTE, SBC_CBSR_REQ, RESET, ACTIVE_LOW);
-    if (status != SUCCESS) {
-	if (devSCSI3Debug > 1) {
-	    printf("SCSI3: wait on REQ line to go low failed.\n");
-	}
-	return(status);
-    }	
-
-    regsPtr->sbc.write.initCmd = 0;
-    regsPtr->sbc.write.trgtCmd = TCR_UNSPECIFIED;
-
-
+#endif reselection
+#ifdef notdef
     if (regsPtr->control & SI_CSR_DMA_BUS_ERR) {
 	if (devSCSI3Debug > 0) {
 	    panic("SCSI3Command: bus error");
@@ -491,6 +472,7 @@ DevSCSI3Command(targetID, scsiPtr, size, addr, interrupt)
 	DevSCSI3Reset(scsiPtr);
 	return(DEV_DMA_FAULT);
     }
+#endif notdef
     if (scsiPtr->devPtr->dmaState != SBC_DMA_INACTIVE) {
 	/*
 	 * If the DMA is still active we have to reset it before
@@ -782,8 +764,8 @@ StartDMA(scsiPtr)
  *	Complete an SCSI command by getting the status bytes from
  *	the device and waiting for the ``command complete''
  *	message that follows the status bytes.  If the command has
- *	additional ``sense data'' then this routine issues the
- *	SCSI_REQUEST_SENSE command to get the sense data.
+ *	additional ``sense data'' then this routine issues calls
+ *	DevSCSIRequestSense to get it.
  *
  * Results:
  *	An error code if the status didn't come through or it
@@ -805,19 +787,16 @@ DevSCSI3Status(scsiPtr)
     char *statusBytePtr;
     int numStatusBytes = 0;
 
-    if (devSCSI3Debug > 3) {
-	printf("SCSI3: DevSCSI3Status called.\n");
+    if (devSCSI3Debug > 4) {
+	printf("DevSCSI3Status called.\n");
     }
     regsPtr = (DevSCSI3Regs *)scsiPtr->regsPtr;
     statusBytePtr = (char *)&scsiPtr->statusBlock;
     bzero((Address)statusBytePtr,sizeof(DevSCSIStatusBlock));
 
     /*
-     * The SCSI-3 interface is more explicit (and more complicated)
-     * than the old SCSI interface.  It requires that we wait on the
-     * STATUS phase, then keep waiting for STATUS phases to get data,
-     * and finally get the MSG_IN phase and SCSI_COMMAND_COMPLETE message
-     * to complete the transfer.
+     * After the DATA_IN/OUT phase we enter the STATUS phase for
+     * 1 byte (usually) of status.  This is followed by the MESSAGE phase
      */
     status = DevSCSI3WaitPhase(regsPtr, PHASE_STATUS, RESET);
     if (status != SUCCESS) {
@@ -826,10 +805,13 @@ DevSCSI3Status(scsiPtr)
 	}
 	return(status);
     }
+    /*
+     * Get 1 to 4 status bytes.
+     */
     for ( ; ; ) {
 	status = GetByte(scsiPtr, PHASE_STATUS, &statusByte);
 	if (status != SUCCESS) {
-	    if (devSCSI3Debug > 4) {
+	    if (devSCSI3Debug > 4 && (numStatusBytes == 0)) {
 	        printf("SCSI3-%d: got error %x after %d status bytes\n",
 				 scsiPtr->number, status, numStatusBytes);
 	    }
@@ -857,19 +839,15 @@ DevSCSI3Status(scsiPtr)
 	    return(status);
 	}
 	if (message != SCSI_COMMAND_COMPLETE) {
-	    panic("Message from SCSI3 is not command complete.\n");
+	    printf("Message from SCSI3 is not command complete.\n");
 	    return(FAILURE);
 	}
 	regsPtr->sbc.write.trgtCmd = TCR_UNSPECIFIED;
 	/*
-	 * Other status information may be available.  It is obtained by
-	 * another SCSI3 command that uses DMA to transfer the sense data.
+	 * Other status information may be available via the REQUEST_SENSE
+	 * SCSI command that uses DMA to transfer a block of sense data.
 	 */
 	if (scsiPtr->statusBlock.check) {
-	    if (devSCSI3Debug > 7) {
-		PrintRegs(regsPtr);
-		panic("Entering breakpoint prior to DevSCSIRequestSense.\n");
-	    }
 	    status = DevSCSIRequestSense(scsiPtr, scsiPtr->devPtr);
 	}
 	if (scsiPtr->statusBlock.error) {
@@ -1246,7 +1224,7 @@ DevSCSI3WaitPhase(regsPtr, phase, reset)
 	}
 	MACH_DELAY(10);
     }
-    if (devSCSI3Debug > 4) {
+    if (devSCSI3Debug > 5) {
 	printf("DevSCSI3WaitPhase: timed out.\n");
 	PrintRegs(regsPtr);
 	printf("DevSCSI3WaitPhase: was checking for phase %x.\n",
@@ -1258,6 +1236,71 @@ DevSCSI3WaitPhase(regsPtr, phase, reset)
     }
 #endif
     return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PutByte --
+ *
+ *	Put a byte onto the SCSI bus.  This always goes into the MSG_OUT
+ *	phase.  This handles the standard REQ/ACK handshake to put
+ *	the bytes on the SCSI bus.
+  *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Yanks control lines in order to put a byte on the bus.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+PutByte(regsPtr, dataPtr)
+    volatile register DevSCSI3Regs *regsPtr;
+    char *dataPtr;    
+{
+    volatile unsigned char *initCmdPtr = &regsPtr->sbc.write.initCmd;
+    register ReturnStatus status;
+    unsigned char junk;
+
+    /*
+     * Enter MESSAGE OUT phase and wait for REQ to be set by the target.
+     */
+    regsPtr->sbc.write.trgtCmd = TCR_MSG_OUT;
+    *initCmdPtr = 0;
+    status = DevSCSI3WaitReg(regsPtr, (Address) &regsPtr->sbc.read.curStatus,
+			    REG_BYTE, SBC_CBSR_REQ, RESET, ACTIVE_HIGH);
+    if (status != SUCCESS) {
+	if (devSCSI3Debug > 1) {
+	    printf("PutByte couldn't wait for REQ.\n");
+	}
+	return(status);
+    }
+    /*
+     * Put the data on and then ACK the target's REQ.
+     */
+    regsPtr->sbc.write.data = *dataPtr;
+    regsPtr->sbc.write.initCmd = SBC_ICR_DATA;
+    regsPtr->sbc.write.initCmd |= SBC_ICR_ACK;
+    status =  DevSCSI3WaitReg(regsPtr, (Address) &regsPtr->sbc.read.curStatus,
+			    REG_BYTE, SBC_CBSR_REQ, RESET, ACTIVE_LOW);
+    if (status != SUCCESS) {
+	if (devSCSI3Debug > 1) {
+	    printf("SCSI3: wait on REQ line to go low failed.\n");
+	}
+	return(status);
+    }	
+
+    regsPtr->sbc.write.trgtCmd = TCR_UNSPECIFIED;
+    junk = regsPtr->sbc.read.clear;
+#ifdef lint
+    regsPtr->sbc.read.clear = junk;
+#endif
+    regsPtr->sbc.write.initCmd = 0;
+    return(SUCCESS);
 }
 
 
@@ -1294,7 +1337,7 @@ GetByte(scsiPtr, phase, charPtr)
 	return(status);
     }
     if ((regsPtr->sbc.read.curStatus & CBSR_PHASE_BITS) != phase) {
-	if (devSCSI3Debug > 4) {
+	if (devSCSI3Debug > 5) {
 	    printf("SCSI3: GetByte: wanted phase %x, got phase %x in curStatus %x.\n",
 		       phase, regsPtr->sbc.read.curStatus & CBSR_PHASE_BITS,
 		       regsPtr->sbc.read.curStatus);
@@ -1396,8 +1439,8 @@ DevSCSI3Intr(scsiPtr)
     unsigned char phase;
     unsigned char message;
 
-    if (devSCSI3Debug > 6) {
-	printf("Entering DevSCSI3Intr.\n");
+    if (devSCSI3Debug > 4) {
+	printf("DevSCSI3Intr: ");
     }
     
     /*
@@ -1490,6 +1533,9 @@ DevSCSI3Intr(scsiPtr)
 		case PHASE_MSG_IN: {
 		    status = GetByte(scsiPtr, PHASE_MSG_IN,
 				     (char *)&message);
+		    if (devSCSI3Debug > 4) {
+			printf("DevSCSI3Intr: Msg Phase Interrupt\n");
+		    }
 		    if (status != SUCCESS) {
 			if (devSCSI3Debug > 0) {
 			    panic("SCSI3Intr: couldn't get message.\n");
