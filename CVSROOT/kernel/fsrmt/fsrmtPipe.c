@@ -20,20 +20,20 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
+#include <sprite.h>
 
-#include "fs.h"
-#include "fsutil.h"
-#include "fsio.h"
-#include "fsNameOps.h"
-#include "fsconsist.h"
-#include "fsStat.h"
-#include "fsrmt.h"
-#include "vm.h"
-#include "proc.h"
-#include "rpc.h"
-#include "fsioPipe.h"
-
+#include <fs.h>
+#include <fsutil.h>
+#include <fsconsist.h>
+#include <fsio.h>
+#include <fsNameOps.h>
+#include <fsStat.h>
+#include <fsrmt.h>
+#include <vm.h>
+#include <proc.h>
+#include <rpc.h>
+#include <fsioPipe.h>
+#include <stdio.h>
 /*
  * Migration debugging.
  */
@@ -115,7 +115,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 /*ARGSUSED*/
 ReturnStatus
 FsrmtPipeMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
-    FsMigInfo	*migInfoPtr;	/* Migration state */
+    Fsio_MigInfo	*migInfoPtr;	/* Migration state */
     int		dstClientID;	/* ID of target client */
     int		*flagsPtr;	/* In/Out Stream usage flags */
     int		*offsetPtr;	/* Return - new stream offset (not needed) */
