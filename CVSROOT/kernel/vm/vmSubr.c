@@ -755,8 +755,6 @@ VmCheckBounds(virtAddrPtr)
 {
     register	Vm_Segment	*segPtr;
 
-    if (vmShmDebug) printf("VmCheckBounds: %x, %x\n", virtAddrPtr,
-	    virtAddrPtr->sharedPtr);
     segPtr = virtAddrPtr->segPtr;
     if (segPtr == (Vm_Segment *) NIL) {
 	dprintf("VmCheckBounds: NIL failure\n");
