@@ -27,6 +27,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "machMon.h"
 #include "sched.h"
 #include "procMigrate.h"
+#include "byte.h"
 
 /*
  * The information that is transferred between two machines.
@@ -107,7 +108,7 @@ Mach_DeencapState(procPtr, buffer)
      */
 
     status = Mach_SetupNewState(procPtr, (Mach_State *) &migPtr->userState,
-				Proc_ResumeMigProc, migPtr->pc, TRUE);
+				Proc_ResumeMigProc, (Address)migPtr->pc, TRUE);
     return(status);
 }    
     

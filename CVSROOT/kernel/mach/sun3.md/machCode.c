@@ -26,6 +26,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sig.h"
 #include "mem.h"
 #include "machMon.h"
+#include "byte.h"
 
 int	machLastSP, machPOP;
 
@@ -513,8 +514,8 @@ Mach_CopyState(statePtr, destProcPtr)
     destStatePtr->userState.userStackPtr =
 				statePtr->userState.userStackPtr;
     Byte_Copy(sizeof(int) * (MACH_NUM_GPRS - 1),
-	      statePtr->userState.trapRegs,
-	      destStatePtr->userState.trapRegs);
+	      (Address)statePtr->userState.trapRegs,
+	      (Address)destStatePtr->userState.trapRegs);
     destStatePtr->userState.excStackPtr->pc = 
 				    statePtr->userState.excStackPtr->pc;
     destStatePtr->userState.excStackPtr->statusReg = 

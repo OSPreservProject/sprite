@@ -21,7 +21,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "mach.h"
 #include "sys.h"
 
+#ifdef SUN2
 static	int	(*savedNmiVec)() = (int (*)()) 0;
+#endif
 extern	int	MachMonNmiNop();
 static	Boolean	stoppedNMI = FALSE;
 
