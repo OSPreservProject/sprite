@@ -29,6 +29,8 @@
  */
 extern void MachFetchArgs _ARGS_((void));
 extern void MachFetchArgsEnd _ARGS_((void));
+extern void MachFetchArgs2 _ARGS_((void));
+extern void MachFetchArgsEnd2 _ARGS_((void));
 extern void MachProbeStart _ARGS_((void));
 extern void MachProbeEnd _ARGS_((void));
 
