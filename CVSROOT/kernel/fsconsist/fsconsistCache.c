@@ -765,6 +765,15 @@ FsMigrateConsistency(handlePtr, srcClientID, dstClientID, useFlags,
 		FsHandleName(handlePtr),
 		handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor);
 	}
+    } else if (useFlags & FS_LAST_WRITER) {
+	Boolean found;
+	
+	found = FsIOClientRemoveWriter(&consistPtr->clientList, srcClientID);
+	if (!found) {
+	    Sys_Panic(SYS_WARNING,
+		"FsMigrateConsistency, IO Client %d not found\n",
+		srcClientID);
+	}
     }
     /*
      * The rest of this is like regular cache consistency.
