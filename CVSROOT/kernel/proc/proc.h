@@ -447,7 +447,9 @@ typedef struct Proc_ControlBlock {
 					  * also require a world recompile.) */
     Proc_Time   preEvictionUsage; 	 /* CPU usage (user + kernel)
 					  * as of the start of eviction. */
-
+    int         unixErrno;               /* Errno for unix system call. */
+    int         unixProgress;            /* Progress indicator for restarting
+                                            unix system calls. */
     int		extraField[10];		/* Extra fields for later use. */
 
 } Proc_ControlBlock;
