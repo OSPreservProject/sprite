@@ -2157,6 +2157,7 @@ DumpExportList(prefixPtr, size, buffer)
 	    iPtr++;
 	}
 	status = Vm_CopyOut(size, (Address)exportList, (Address)buffer);
+	free((char *) exportList);
     }
     UNLOCK_MONITOR;
     return(status);

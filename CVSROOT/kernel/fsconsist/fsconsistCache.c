@@ -1935,6 +1935,7 @@ ProcessConsist(data, callInfoPtr)
 		    consistPtr->args.fileID.serverID,
 		    consistPtr->args.fileID.major,
 		    consistPtr->args.fileID.minor);
+	free((char *) consistPtr);
 	return;
     }
     Fsutil_HandleUnlock(handlePtr);
