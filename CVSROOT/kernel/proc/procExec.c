@@ -383,17 +383,11 @@ Proc_Exec(fileName, argPtrArray, envPtrArray, debugMe, host)
     }
     status = DoExec(execFileName, &userArgs, encapPtrPtr, debugMe);
     if (status == SUCCESS) {
-	/* If this is a vfork process, wake the parent now */
-	procPtr = Proc_GetCurrentProc();
-	Proc_Lock(procPtr);
-	if (procPtr->genFlags & PROC_VFORKCHILD) {
-	    Proc_VforkWakeup(procPtr);
-	}
-	Proc_Unlock(procPtr);
 	if (host != 0) {
 	    /*
 	     * Set up the process to migrate.
 	     */
+	    procPtr = Proc_GetCurrentProc();
 	    Proc_Lock(procPtr);
 	    status = ProcInitiateMigration(procPtr, host);
 	    if (status == SUCCESS) {
@@ -1234,6 +1228,12 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
     if (!importing && (procPtr->genFlags & PROC_FOREIGN)) {
 	ProcRemoteExec(procPtr, uid);
     }
+
+    /* If this is a vfork process, wake the parent now */
+    if (procPtr->genFlags & PROC_VFORKCHILD) {
+	Proc_VforkWakeup(procPtr);
+    }
+
     Proc_Unlock(procPtr);
 
     free(argBuffer);
