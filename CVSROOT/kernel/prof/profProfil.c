@@ -46,7 +46,11 @@ extern void Prof_Enable();
 /*
  * Monitor lock for this module.
  */
+#ifndef lint
 static Sync_Lock profilLock = Sync_LockInitStatic("Prof:profilLock");
+#else
+static Sync_Lock profilLock;
+#endif
 #define LOCKPTR &profilLock
 
 /*
@@ -130,17 +134,19 @@ Prof_Enable(procPtr, buffer, bufSize, offset, scale)
 	* If the profile routine has not already been scheduled for invocation
 	* by the call back timer, then schedule it.
 	*/
-	if (profCount++ == 0) {
+	if (profCount == 0) {
 	    profTimer_QueueElement.interval = 20 * timer_IntOneMillisecond;
 	    Timer_ScheduleRoutine(&profTimer_QueueElement, TRUE);
 	}
+	++profCount;
     } else if (scale == 0 && procPtr->Prof_Scale != 0) {
 	assert(profCount > 0);
 	/*
 	 * Disable profiling.  If there are no other processes being profiled,
 	 * then remove Prof_Tick from the call back queue.
 	 */
-	if (--profCount == 0) {
+	--profCount;
+	if (profCount == 0) {
 	    Timer_DescheduleRoutine(&profTimer_QueueElement);
 	}
     }
@@ -173,13 +179,16 @@ Prof_Enable(procPtr, buffer, bufSize, offset, scale)
  *----------------------------------------------------------------------
  */ 
 
+/*ARGSUSED*/
 void
 Prof_Tick(time, clientData)
     Timer_Ticks time;
     ClientData clientData;
 {
     Proc_ControlBlock *curProcPtr;
+
     assert(clientData == profTimer_QueueElement.clientData);
+    time = time;
     if (!mach_KernelMode) {
 	curProcPtr = Proc_GetCurrentProc();
 	assert(curProcPtr !=  (Proc_ControlBlock *) NIL);
@@ -231,12 +240,12 @@ Prof_RecordPC(procPtr)
     /*
      * Copy the counter in, increment it, and copy it back out.
      */
-    if (Vm_CopyInProc(sizeof(short), procPtr, ptr, &(u.c), 1) != SUCCESS) {
+    if (Vm_CopyInProc(sizeof(short), procPtr, ptr, u.c, 1) != SUCCESS) {
 	Prof_Disable(procPtr);
 	return;
     }
     ++u.shrt;
-    if (Vm_CopyOutProc(sizeof(short), &(u.c), 1, procPtr, ptr) != SUCCESS){
+    if (Vm_CopyOutProc(sizeof(short), u.c, 1, procPtr, ptr) != SUCCESS){
 	Prof_Disable(procPtr);
 	return;
     }
@@ -272,7 +281,8 @@ Prof_Disable(procPtr)
 	assert(profCount > 0);
 	procPtr->Prof_Scale = 0;
 	procPtr->Prof_PC = 0;
-	if (--profCount == 0) {
+	--profCount;
+	if (profCount == 0) {
 	    Timer_DescheduleRoutine(&profTimer_QueueElement);
 	}
     }
@@ -344,8 +354,9 @@ Prof_EncapState(procPtr, ptr)
     encap->Prof_BufferSize = procPtr->Prof_BufferSize;
     encap->Prof_Offset = procPtr->Prof_Offset;
     encap->Prof_Scale = procPtr->Prof_Scale;
-    if (procPtr->Prof_Scale)
+    if (procPtr->Prof_Scale) {
 	Prof_Disable(procPtr);
+    }
 }
 
 
