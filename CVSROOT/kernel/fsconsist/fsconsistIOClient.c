@@ -223,6 +223,13 @@ Fsconsist_IOClientClose(clientList, clientID, flags, cachePtr)
 	}
     }
     if (found) {
+	if ((clientPtr->use.ref < 0) || (clientPtr->use.write < 0) ||
+	    (clientPtr->use.exec < 0)) {
+	    printf("Fsconsist_IOClientClose: Values are bad at start:\n");
+	    panic("Fsconsist_IOClientClose: client %d ref %d write %d exec %d\n",
+		clientPtr->clientID,
+		clientPtr->use.ref, clientPtr->use.write, clientPtr->use.exec);
+	}
 	clientPtr->use.ref--;
 	if (flags & FS_WRITE) {
 	    clientPtr->use.write--;
