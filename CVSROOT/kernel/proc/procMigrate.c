@@ -423,7 +423,12 @@ SendProcessState(procPtr, nodeID, trapStackPtr, foreign)
 		     (ClientData *) &record);
     }
    
+#ifdef notdef
+/* FIXME */
     codeNameLength = Byte_AlignAddr(String_Length(procPtr->codeFileName) + 1);
+#else notdef
+    codeNameLength = 0;
+#endif notdef
     trapStackSize = Exc_GetTrapStackSize(trapStackPtr);
     procBufferSize = (3 + PROC_NUM_FLAGS + PROC_NUM_BILLING_FIELDS +
 		      PROC_NUM_ID_FIELDS + procPtr->numGroupIDs) *
@@ -468,8 +473,11 @@ SendProcessState(procPtr, nodeID, trapStackPtr, foreign)
     ptr += trapStackSize;
 
     Byte_FillBuffer(ptr, int, codeNameLength);
+#ifdef notdef
+/* FIXME */
     Byte_Copy(codeNameLength, (Address) procPtr->codeFileName, ptr);
     ptr += codeNameLength;
+#endif notdef
 
     /*
      * Set up for the RPC.
