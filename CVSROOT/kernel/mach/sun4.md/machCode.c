@@ -1265,7 +1265,7 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
 #endif
 	/* Kill user process */
 	Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL, procPtr->processID, FALSE,
-	       (Address)busErrorReg);
+	       (Address)addrErrorReg);
 	return;
     }
     return;
