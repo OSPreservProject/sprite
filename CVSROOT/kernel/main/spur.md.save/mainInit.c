@@ -424,17 +424,6 @@ main()
     printf("%d bytes of memory allocated for kernel\n", 
 		vmMemEnd - mach_KernStart);
 
-    /*
-     * Start up the slave processors.
-     */
-
-    if (main_PrintInitRoutines) {
-	Mach_MonPrintf("Starting slave processors.\n");
-    }
-    bootProgress = 25;
-    led_display(bootProgress,0,0);
-    StartSlaveProcessors();
-
     bootProgress = 26;
     led_display(bootProgress,0,0);
     if (main_PrintInitRoutines) {
@@ -487,82 +476,11 @@ Init()
 	Mach_MonPrintf("In Init\n");
     }
     Rpc_GetStats(SYS_RPC_ENABLE_SERVICE,1,0);
+    led_display(0x50,0,0);
     status = Proc_KernExec(initArgs[0], initArgs);
     printf("Warning: Init: Could not exec %s.\n", initArgs[0]);
 
     Proc_Exit(1);
-}
-
-
-static Proc_ControlBlock *startupProcess; /* Used in RecordProcessAndWait. */
-
-
-/*
- *----------------------------------------------------------------------
- *
- *  RecordProcessAndWait --
- *
- *	This routine records the current process and exits.
- *
- * Results:
- *	None.
- * Side effects:
- *	startupProcess is set to point at the current process. 
- *
- *----------------------------------------------------------------------
- */
-static void
-RecordProcessAndWait() 
-{
-	startupProcess = Proc_GetCurrentProc();
-	Sched_ContextSwitch(PROC_WAITING);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- *  StartSlaveProcessors --
- *
- *	This routine starts all the configured slave processors.
- *
- * Results:
- *	None.
- * Side effects:
- *	Initial processes for each slave processors are started and the
- *	processors Spun Up.
- *
- *----------------------------------------------------------------------
- */
-static void
-StartSlaveProcessors()
-{
-
-    int		pnum;
-    Proc_PID	pid;
-    char	procName[128];
-    ReturnStatus status;
-
-    for (pnum = 1; pnum < MACH_MAX_NUM_PROCESSORS; pnum++) {
-	/*
-	 * Fork a new process process and wait for it notify us. 
-	 * This new process will be the first process of the
-	 * processor pnum.
-         */
-	sprintf(procName,"Processor%d",pid);
-	startupProcess = (Proc_ControlBlock *) NIL;
-	Proc_NewProc((Address)RecordProcessAndWait, PROC_KERNEL, FALSE, &pid,
-					procName);
-	while (startupProcess == (Proc_ControlBlock *) NIL) {
-	    (void) Sync_WaitTimeInterval(10 * timer_IntOneMillisecond);
-	}
-
-	printf("Starting processor %d with pid 0x%x\n",pnum,pid);
-	status = Mach_SpinUpProcessor(pnum,startupProcess);
-	if (status != SUCCESS) { 
-	    printf("Warning: Processor %d not started.\n");
-	}
-    }
 }
 
 
@@ -584,12 +502,22 @@ void
 mainSlaveStart()
 {
 
+    Proc_ControlBlock *procPtr;
     /*
      * Initialize the machine state of the processor. 
      */
     Mach_InitSlaveProcessor();
 
     printf("Slave processor %d started\n",Mach_GetProcessorNumber());
+    led_display(0x50 + Mach_GetProcessorNumber(),1,0);
+    procPtr = Proc_GetCurrentProc();
+    procPtr->schedFlags |= SCHED_STACK_IN_USE; 
+    procPtr->processor = Mach_GetProcessorNumber(); 
+    Sched_TimeTicks();
+    /* 
+     * Enable interrupts.
+     */
+    ENABLE_INTR();
     /*
      * Enter the scheduler by calling Proc_Exit.
      */
