@@ -919,6 +919,7 @@ MachUNIXSyscall()
     return(TRUE);
 }
 
+extern int sysCallNum;
 
 
 /*
@@ -955,6 +956,7 @@ MachUNIXSyscallNew()
      * in v0.
      */
     type = machCurStatePtr->userState.regState.regs[V0];
+    sysCallNum = type;
     machCurStatePtr->userState.savedV0 = type;
     machCurStatePtr->userState.savedA3 =
 	    machCurStatePtr->userState.regState.regs[A3];
