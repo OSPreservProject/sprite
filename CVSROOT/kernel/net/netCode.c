@@ -209,6 +209,8 @@ Net_Output(spriteID, gatherPtr, gatherLength, mutexPtr)
     if (routePtr == (Net_Route *)NIL) {
 	routePtr = NetArp(spriteID, mutexPtr);
 	if (routePtr == (Net_Route *)NIL) {
+	    Sys_Panic(SYS_WARNING, "Net_Output: ARP failed for spriteID %d\n",
+				    spriteID);
 	    return(NET_UNREACHABLE_NET);
 	}
     }
