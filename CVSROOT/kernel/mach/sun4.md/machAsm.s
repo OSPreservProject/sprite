@@ -1087,3 +1087,33 @@ _MachHandleBadProbe:
 	SET_INTRS_TO(%o1, %OUT_TEMP1, %OUT_TEMP2)
 	retl		/* return from leaf routine */
 	nop
+
+/*
+ *---------------------------------------------------------------------
+ *
+ * MachHandleBadQuickCopy -
+ *
+ *	A page fault occured during a quick copy operation, which isn't
+ *	allowed.  So we want to return FAILURE to the caller of the copy
+ *	operation.  This means we must return this value from the routine
+ *	doing the copy.
+ *
+ * Results:
+ *	FAILURE returned to caller of copy operation.
+ *
+ * Side effects:
+ *	We cause the routine that was doing the copy to return FAILURE.
+ *
+ *---------------------------------------------------------------------
+ */
+.globl	_MachHandleBadQuickCopy
+_MachHandleBadQuickCopy:
+	restore		/* back to page fault trap window */
+	mov	%CUR_PSR_REG, %i1	/* get trap psr */
+	restore		/* back to copy routine window */
+	/* VmMachQuickNDirtyCopy is NOT a leaf routine - return stuff in %i0 */
+	set	FAILURE, %i0	/* return FAILURE */
+	/* Set interrupts to what they were when trap occured. */
+	SET_INTRS_TO(%o1, %OUT_TEMP1, %OUT_TEMP2)
+	ret		/* return from non-leaf routine */
+	restore

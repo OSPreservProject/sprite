@@ -1167,36 +1167,222 @@ FlushingPage:
     ret
     restore
 
-#ifdef NOTDEF
+
 /*
- * ----------------------------------------------------------------------------
+ * ----------------------------------------------------------------------
  *
- *  VmMachContextForCachedAddr --
+ * VmMachQuickNDirtyCopy --
  *
- *     	Read the context for which a virtual address is cached from out of
- *	the cache tags.
+ *	Copy numBytes from *sourcePtr in to *destPtr, with accesses to sourcePtr
+ *	in sourceContext and accesses to destPtr in destContext.
+ *	This routine is optimized to do transfers when sourcePtr and 
+ *	destPtr are both double-word aligned.
  *
- *	unsigned int VmMachContextForCachedAddr(virtualAddr)
- *	Address	virtualAddr;
+ *	void
+ *	VmMachQuickNDirtyCopy(numBytes, sourcePtr, destPtr, sourceContext,
+ *							    destContext)
+ *	    register int numBytes;      The number of bytes to copy
+ *	    Address sourcePtr;          Where to copy from.
+ *	    Address destPtr;            Where to copy to.
+ *	    unsigned int sourceContext;	Context to access source in.
+ *	    unsigned int destContext;	Context to access dest in.
  *
  * Results:
- *     The context.
+ *	Returns SUCCESS if the copy went OK (which should be often).  If
+ *	a bus error (INCLUDING a page fault) occurred while reading or
+ *	writing user memory, then FAILURE is returned (this return
+ *	occurs from the trap handler, rather than from this procedure).
  *
  * Side effects:
- *     None.
+ *	The area that destPtr points to is modified.
  *
- * ----------------------------------------------------------------------------
+ * ----------------------------------------------------------------------
  */
-.globl	_VmMachContextForCachedAddr
-_VmMachContextForCachedAddr:
-    set		VMMACH_CACHE_TAGS_ADDR, %OUT_TEMP1
-    ldua	[%OUT_TEMP1] VMMACH_CONTROL_SPACE, %RETURN_VAL_REG
-    /* context is in bits 22 through 29 */
-/* How do I find correct cache block? */
-    srl		%RETURN_VAL_REG, 22, %RETURN_VAL_REG
-    retl
+.globl _VmMachQuickNDirtyCopy
+_VmMachQuickNDirtyCopy:
+    /* Start prologue */
+    set		(-MACH_SAVED_WINDOW_SIZE), %OUT_TEMP2
+    save	%sp, %OUT_TEMP2, %sp
+    /* end prologue */
+						/* numBytes in i0 */
+						/* sourcePtr in i1 */
+						/* destPtr in i2 */
+						/* sourceContext in i3 */
+						/* destContext in i4 */
+
+    /* use %i5 for context reg offset */
+    set		VMMACH_CONTEXT_OFF, %i5
+
+/*
+ * If the source or dest are not double-word aligned then everything must be
+ * done as word or byte copies.
+ */
+    or		%i1, %i2, %OUT_TEMP1
+    andcc	%OUT_TEMP1, 7, %g0
+    be		QDoubleWordCopy
     nop
-#endif NOTDEF
+    andcc	%OUT_TEMP1, 3, %g0
+    be		QWordCopy
+    nop
+    ba		QByteCopyIt
+    nop
+
+    /*
+     * Do as many 64-byte copies as possible.
+     */
+
+QDoubleWordCopy:
+    cmp    	%i0, 64
+    bl     	QFinishWord
+    nop
+
+    /* set context to sourceContext */
+    stba	%i3, [%i5] VMMACH_CONTROL_SPACE
+
+    ldd		[%i1], %l0
+    ldd		[%i1 + 8], %l2
+    ldd		[%i1 + 16], %l4
+    ldd		[%i1 + 24], %l6
+    ldd		[%i1 + 32], %o0
+    ldd		[%i1 + 40], %o2
+    ldd		[%i1 + 48], %o4
+    ldd		[%i1 + 56], %g6
+    
+    /* set context to destContext */
+    stba	%i4, [%i5] VMMACH_CONTROL_SPACE
+
+    std		%l0, [%i2]
+    std		%l2, [%i2 + 8]
+    std		%l4, [%i2 + 16]
+    std		%l6, [%i2 + 24]
+    std		%o0, [%i2 + 32]
+    std		%o2, [%i2 + 40]
+    std		%o4, [%i2 + 48]
+    std		%g6, [%i2 + 56]
+
+    sub   	%i0, 64, %i0
+    add		%i1, 64, %i1
+    add		%i2, 64, %i2
+    ba     	QDoubleWordCopy
+    nop
+QWordCopy:
+    cmp		%i0, 64
+    bl		QFinishWord
+    nop
+
+    /* from context */
+    stba	%i3, [%i5] VMMACH_CONTROL_SPACE
+
+    ld		[%i1], %l0
+    ld		[%i1 + 4], %l1
+    ld		[%i1 + 8], %l2
+    ld		[%i1 + 12], %l3
+    ld		[%i1 + 16], %l4
+    ld		[%i1 + 20], %l5
+    ld		[%i1 + 24], %l6
+    ld		[%i1 + 28], %l7
+
+    /* to context */
+    stba	%i4, [%i5] VMMACH_CONTROL_SPACE
+
+    st		%l0, [%i2]
+    st		%l1, [%i2 + 4]
+    st		%l2, [%i2 + 8]
+    st		%l3, [%i2 + 12]
+    st		%l4, [%i2 + 16]
+    st		%l5, [%i2 + 20]
+    st		%l6, [%i2 + 24]
+    st		%l7, [%i2 + 28]
+
+    /* from context */
+    stba	%i3, [%i5] VMMACH_CONTROL_SPACE
+
+    ld		[%i1 + 32], %l0
+    ld		[%i1 + 36], %l1
+    ld		[%i1 + 40], %l2
+    ld		[%i1 + 44], %l3
+    ld		[%i1 + 48], %l4
+    ld		[%i1 + 52], %l5
+    ld		[%i1 + 56], %l6
+    ld		[%i1 + 60], %l7
+    
+    /* to context */
+    stba	%i4, [%i5] VMMACH_CONTROL_SPACE
+
+    st		%l0, [%i2 + 32]
+    st		%l1, [%i2 + 36]
+    st		%l2, [%i2 + 40]
+    st		%l3, [%i2 + 44]
+    st		%l4, [%i2 + 48]
+    st		%l5, [%i2 + 52]
+    st		%l6, [%i2 + 56]
+    st		%l7, [%i2 + 60]
+
+    sub   	%i0, 64, %i0
+    add		%i1, 64, %i1
+    add		%i2, 64, %i2
+    ba     	QWordCopy
+    nop
+
+    /*
+     * Copy up to 64 bytes of remainder, in 4-byte chunks.  I SHOULD do this
+     * quickly by dispatching into the middle of a sequence of move
+     * instructions, but I don't yet.
+     */
+
+QFinishWord:
+    cmp		%i0, 4
+    bl		QByteCopyIt
+    nop
+    /* from context */
+    stba	%i3, [%i5] VMMACH_CONTROL_SPACE
+
+    ld		[%i1], %l0
+
+    /* to context */
+    stba	%i4, [%i5] VMMACH_CONTROL_SPACE
+
+    st		%l0, [%i2]
+    sub		%i0, 4, %i0
+    add		%i1, 4, %i1
+    add		%i2, 4, %i2
+    ba		QFinishWord
+    nop
+    
+    /*
+     * Do one byte copies until done.
+     */
+QByteCopyIt:
+    tst    	%i0
+    ble     	QDoneCopying
+    nop
+
+    /* from context */
+    stba	%i3, [%i5] VMMACH_CONTROL_SPACE
+
+    ldub	[%i1], %l0
+
+    /* to context */
+    stba	%i4, [%i5] VMMACH_CONTROL_SPACE
+
+    stb		%l0, [%i2]
+    sub		%i0, 1, %i0
+    add		%i1, 1, %i1
+    add		%i2, 1, %i2
+    ba     	QByteCopyIt
+    nop
+
+    /* 
+     * Return.
+     */
+
+QDoneCopying: 
+    clr		%i0	/* SUCCESS */
+    ret
+    restore
+
+.globl _VmMachEndQuickCopy
+_VmMachEndQuickCopy:
 
 
 
@@ -1404,8 +1590,7 @@ BadAddress:
     retl
     nop
 BadAddressTruly:
-				/* Mike, what is this magic number?! */
-    set		0x20000, %RETURN_VAL_REG
+    set		SYS_ARG_NOACCESS, %RETURN_VAL_REG
     retl
     nop
 

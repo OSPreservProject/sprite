@@ -1150,7 +1150,25 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
     Boolean		protError;
     Boolean		copyInProgress = FALSE;
     ReturnStatus	status;
+    extern		int	VmMachQuickNDirtyCopy();
+    extern		int	VmMachEndQuickCopy();
 
+    /*
+     * Are we in quick cross-context copy routine?  If so, we can't page fault
+     * in it.
+     */
+    if ((pcValue >= (Address) &VmMachQuickNDirtyCopy) &&
+	    (pcValue < (Address) &VmMachEndQuickCopy)) {
+	/*
+	 * This doesn't return to here.  It erases the fact that the
+	 * page fault happened and makes the copy routine that
+	 * got the page fault return FAILURE to its caller.  We must turn off
+	 * interrupts before calling MachHandleBadQuickCopy().
+	 */
+	Mach_DisableIntr();
+	MachHandleBadQuickCopy();
+	Mach_EnableIntr();
+    }
     /*
      * Are we poking at or peeking into memory-mapped devices?
      * We must check this before looking for the current process, since this
@@ -1208,9 +1226,6 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
 	protError = (busErrorReg & MACH_PROT_ERROR);
 	/*
 	 * Try to fault in the page.
-	 *
-	 * Since this is called from trap handlers only, we know interrupts
-	 * are off here.  The Vm system needs them on?
 	 */
 	status = Vm_PageIn(addrErrorReg, protError);
 	if (status != SUCCESS) {

@@ -2501,7 +2501,7 @@ VmMach_CopyInProc(numBytes, fromProcPtr, fromAddr, virtAddrPtr,
     /*
      * Since this is a cross-address-space copy, we must make sure everything
      * has been flushed to the stack from our windows so that we don't
-     * allow windows to be flushed after the copy and overwrite stuff?
+     * miss stuff on the stack not yet flushed. 
      */
     MachFlushWindowsToStack();
 #endif
@@ -2527,6 +2527,8 @@ VmMach_CopyInProc(numBytes, fromProcPtr, fromAddr, virtAddrPtr,
 
 	    status = VmMachQuickNDirtyCopy(bytesToCopy, fromAddr, toAddr,
 		fromContext, toContext);
+	    VmMachSetContextReg(toContext);
+
 	    if (status == SUCCESS) {
 		numBytes -= bytesToCopy;
 		fromAddr += bytesToCopy;
@@ -2621,6 +2623,17 @@ VmMach_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr,
     machPtr = fromProcPtr->vmPtr->machPtr;
     machPtr->mapSegPtr = virtAddrPtr->segPtr;
     machPtr->mapHardSeg = (unsigned int) (toAddr) >> VMMACH_SEG_SHIFT;
+
+#ifdef sun4
+    /*
+     * Since this is a cross-address-space copy, we must make sure everything
+     * has been flushed to the stack from our windows so that we don't
+     * get stuff from windows overwriting stuff we copy to the stack later
+     * when they're flushed.
+     */
+    MachFlushWindowsToStack();
+#endif
+
     /*
      * Do a hardware segment's worth at a time until done.
      */
@@ -2642,6 +2655,8 @@ VmMach_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr,
 
 	    status = VmMachQuickNDirtyCopy(bytesToCopy, fromAddr, toAddr,
 		    fromContext, toContext);
+	    VmMachSetContextReg(fromContext);
+
 	    if (status == SUCCESS) {
 		numBytes -= bytesToCopy;
 		fromAddr += bytesToCopy;
@@ -3832,19 +3847,26 @@ VmMach_DMAAlloc(numBytes, srcAddr)
 		((unsigned int) beginAddr & (VMMACH_CACHE_SIZE - 1))) {
 	    continue;
 	}
-	for (j = 1; j < numPages; j++) {
+	for (j = 1; j < numPages &&
+		((i + j) < (VMMACH_DMA_SIZE / VMMACH_PAGE_SIZE_INT)); j++) {
 	    if (dmaPageBitMap[i + j] == 1) {
 		break;
 	    }
 	}
-	if (j == numPages) {
+	if (j == numPages &&
+		((i + j) < (VMMACH_DMA_SIZE / VMMACH_PAGE_SIZE_INT))) {
 	    foundIt = TRUE;
 	    break;
 	}
     }
     if (!foundIt) {
 	MASTER_UNLOCK(vmMachMutexPtr);
+	panic(
+	    "VmMach_DMAAlloc: unable to satisfy request for %d bytes at 0x%x\n",
+		numBytes, srcAddr);
+#ifdef NOTDEF
 	return (Address) NIL;
+#endif NOTDEF
     }
     for (j = 0; j < numPages; j++) {
 	dmaPageBitMap[i + j] = 1;	/* allocate page */
