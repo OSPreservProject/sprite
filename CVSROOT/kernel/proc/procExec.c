@@ -217,6 +217,9 @@ Proc_KernExec(fileName, argPtrArray)
     ReturnStatus			status;
 
     procPtr = Proc_GetCurrentProc();
+#ifdef sun4
+    printf("Turning proc 0x%x into a user process.\n", procPtr);
+#endif sun4
 
     /*
      * Set up dummy segments so that DoExec can work properly.
@@ -976,6 +979,11 @@ SetupVM(procPtr, aoutPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr,
     Vm_ExecInfo			execInfo;
     Fs_Stream			*heapFilePtr;
 
+#ifdef sun4
+    printf("SetupVM for procPtr 0x%x\n", procPtr);
+    printf("aoutPtr->data = %d, bss = %d, code = %d\n", aoutPtr->data,
+	    aoutPtr->bss, aoutPtr->code);
+#endif sun4
     if (*codeSegPtrPtr == (Vm_Segment *) NIL) {
 	execInfoPtr = &execInfo;
 	execInfoPtr->entry = aoutPtr->entry;
@@ -1029,6 +1037,11 @@ SetupVM(procPtr, aoutPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr,
     /* 
      * Set up the heap image.
      */
+#ifdef sun4
+	printf("execInfoPtr->heapPages = %d\n", execInfoPtr->heapPages);
+	printf("execInfoPtr->heapPageOffset = %d\n",
+		execInfoPtr->heapPageOffset);
+#endif sun4
     segPtr = Vm_SegmentNew(VM_HEAP, heapFilePtr, execInfoPtr->heapFileOffset,
 			       execInfoPtr->heapPages, 
 			       execInfoPtr->heapPageOffset, procPtr);
