@@ -447,8 +447,6 @@ extern void Fsio_StreamCreateID _ARGS_((int serverID, Fs_FileID *streamIDPtr));
 extern void Fsio_StreamCopy _ARGS_((Fs_Stream *oldStreamPtr,
 			Fs_Stream **newStreamPtrPtr));
 extern void Fsio_StreamDestroy _ARGS_((Fs_Stream *streamPtr));
-extern ReturnStatus Fsio_StreamMigClose _ARGS_((Fs_Stream *streamPtr, 
-			Boolean *inUsePtr));
 extern ReturnStatus Fsio_StreamMigCloseNew _ARGS_((Fs_Stream *streamPtr, 
 			Boolean *inUsePtr, int *offsetPtr));
 extern ReturnStatus Fsio_StreamReopen _ARGS_((Fs_HandleHeader *hdrPtr, 

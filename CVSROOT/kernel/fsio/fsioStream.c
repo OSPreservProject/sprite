@@ -1076,7 +1076,6 @@ FsioSetupStreamReopen(hdrPtr, paramsPtr)
 {
     register Fs_Stream	*streamPtr = (Fs_Stream *)hdrPtr;
     StreamReopenParams	*reopenParamsPtr = (StreamReopenParams *)paramsPtr;
-    ReturnStatus status;
 
     /*
      * Called on the client side.  We contact the server to invoke
@@ -1115,6 +1114,7 @@ FsioSetupStreamReopen(hdrPtr, paramsPtr)
  *
  *----------------------------------------------------------------------
  */
+/*ARGSUSED*/
 void
 FsioFinishStreamReopen(hdrPtr, statePtr, status)
     Fs_HandleHeader	*hdrPtr;
@@ -1124,32 +1124,3 @@ FsioFinishStreamReopen(hdrPtr, statePtr, status)
     /* Nothing to do for streams. */
     return;
 }
-
-
-/*
- * There are stubs for old routines.  When we are sure this has run on clients
- * and the file server for a while, then we can remove these stubs and
- * their corresponding declarations in the .h files.  -- 11/5/91 Mary
- */
-ReturnStatus
-Fsio_StreamMigClose(streamPtr, inUsePtr)
-    Fs_Stream   *streamPtr;
-    Boolean     *inUsePtr;
-{
-    panic("Fsio_StreamMigClose is old and shouldn't be called.");
-
-    return FAILURE;
-}
-
-ReturnStatus
-Fsio_RpcStreamMigClose(srvToken, clientID, command, storagePtr)
-    ClientData  srvToken;
-    int         clientID;
-    int         command;
-    Rpc_Storage *storagePtr;
-{
-    panic("Fsio_RpcStreamMigClose is old and shouldn't be called.");
-
-    return FAILURE;
-}
-

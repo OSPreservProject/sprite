@@ -22,8 +22,6 @@
 
 /* procedures */
 
-extern ReturnStatus Fsio_RpcStreamMigClose _ARGS_((ClientData srvToken, 
-		int clientID, int command, Rpc_Storage *storagePtr));
 extern ReturnStatus Fsio_RpcStreamMigCloseNew _ARGS_((ClientData srvToken, 
 		int clientID, int command, Rpc_Storage *storagePtr));
 
