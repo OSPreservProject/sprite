@@ -25,13 +25,13 @@
 
 typedef struct TimerRegs  {
     unsigned char control; /* TOD chip control registers. Defined below. */
-    unsigned char second; /* TOD second of minute 0 to 59. */
+    unsigned char second;  /* TOD second of minute 0 to 59. */
     unsigned char minutes; /* TOD minute of hour 0 to 59. */
-    unsigned char hour;   /* TOD hour of day 0 to 23. */
-    unsigned char day;    /* TOD day of month 1 to 31. */
-    unsigned char month; /* TOD month of year 1 to 12. */
-    unsigned char year;  /* TOD year 0 to 99. */
-
+    unsigned char hour;    /* TOD hour of day 0 to 23. */
+    unsigned char weekday; /* TOD day of week 1 to 7. */
+    unsigned char day;     /* TOD day of month 1 to 31. */
+    unsigned char month;   /* TOD month of year 1 to 12. */
+    unsigned char year;    /* TOD year 0 to 99. */
 } TimerRegs;
 
 
