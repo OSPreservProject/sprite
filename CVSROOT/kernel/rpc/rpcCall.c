@@ -116,24 +116,18 @@ Rpc_Call(serverID, command, storagePtr)
 					 * track server reboots */
     Boolean notActive = 0;		/* Not active flag from server */
 
-    if (serverID < 0) {
-	panic("Rpc_Call, bad serverID");
+    if (serverID < 0 || serverID >= NET_NUM_SPRITE_HOSTS) {
+	printf("Rpc_Call, bad serverID <%d>\n", serverID);
 	return(GEN_INVALID_ARG);
     } else if (serverID != RPC_BROADCAST_SERVER_ID &&
 	       serverID == rpc_SpriteID) {
-	if (command != RPC_ECHO) {
-	    panic("Trying to RPC to myself");
-	} else {
-	    printf("Warning: Trying to RPC to myself");
-	}
+	printf("Rpc_Call: Trying RPC #%d to myself\n", command);
 	return(GEN_INVALID_ARG);
     } else if ((serverID == RPC_BROADCAST_SERVER_ID) &&
 	       ! (command == RPC_FS_PREFIX ||
 		  command == RPC_GETTIME)) {
 	panic("Trying to broadcast a non-prefix RPC");
 	return(GEN_INVALID_ARG);
-    } else if (serverID >= NET_NUM_SPRITE_HOSTS) {
-	panic("Rpc_Call, server ID too large");
     }
 #ifdef TIMESTAMP
     RPC_NIL_TRACE(RPC_CLIENT_A, "Rpc_Call");
