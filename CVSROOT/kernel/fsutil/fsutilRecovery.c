@@ -39,10 +39,20 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "rpc.h"
 #include "vm.h"
 
+#ifndef sun4
 static void		ReopenHandles();
 static void		RecoveryDone();
 static Boolean		RecoveryFailed();
 static void		RecoveryNotify();
+#else
+/*
+ * The sun4 compiler doesn't seem to allow this sort of redeclaration.
+ */
+extern void		ReopenHandles();
+extern void		RecoveryDone();
+extern Boolean		RecoveryFailed();
+extern void		RecoveryNotify();
+#endif sun4
 static void		RecoveryComplete();
 static Boolean		OkToScavenge();
 
