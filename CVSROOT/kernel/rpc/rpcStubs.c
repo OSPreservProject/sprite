@@ -76,6 +76,8 @@ RpcService rpcService[RPC_LAST_COMMAND+1] = {
 	Fs_RpcMakeDev, "make dev",		/* 44 - FS_MKDEV */
 	Fs_RpcGetAttrPath, "stat",		/* 45 - FS_GET_ATTR_PATH */
 	Sig_RpcSend, "send signal",		/* 46 - SIG_SEND */
+	Fs_RpcReopen, "reopen",			/* 47 - FS_RPC_REOPEN */
+	Fs_RpcDomainInfo, "get domain info",	/* 48 - FS_RPC_DOMAIN_INFO */
 };
 
 
