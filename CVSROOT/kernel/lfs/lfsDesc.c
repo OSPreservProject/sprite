@@ -66,7 +66,7 @@ Lfs_FileDescFetch(domainPtr, fileNumber, fileDescPtr)
     Fscache_Block	    *blockPtr;
     ReturnStatus	status;
     LfsDiskAddr	       diskAddr;
-    int		i;
+    int		i, cacheFlags;
     Boolean	found;
 
     LFS_STATS_INC(lfsPtr->stats.desc.fetches);
@@ -74,13 +74,17 @@ Lfs_FileDescFetch(domainPtr, fileNumber, fileDescPtr)
     if (status != SUCCESS) {
 	return status;
     }
+    cacheFlags = FSCACHE_DESC_BLOCK;
+    if (LfsIsCleanerProcess(lfsPtr)) {
+	cacheFlags |= FSCACHE_CANT_BLOCK;
+    }
     /*
      * See if the value is in the descriptor block cache. If it is not 
      * then read it in.
      */
     Fscache_FetchBlock(&lfsPtr->descCache.handle.cacheInfo, 
-		      LfsDiskAddrToOffset(diskAddr), 
-		      FSCACHE_DESC_BLOCK, &blockPtr, &found);
+		      LfsDiskAddrToOffset(diskAddr), cacheFlags,
+		       &blockPtr, &found);
     if (!found) {
 	LFS_STATS_INC(lfsPtr->stats.desc.fetchCacheMiss);
 	status = LfsReadBytes(lfsPtr, diskAddr, 
