@@ -53,14 +53,13 @@ static void	VidEnable _ARGS_((ClientData));
  * Table of routines and their arguments to be called on dump events.
  * Only machine independent dump events should be added to this table.
  * Machine dependent event should be added to the Local event table.
+ *
+ * These events are registered in the machine dependent dumpEvents.c
+ * This does Dev_RegisterConsoleCmd.  They are called in devConsoleCmds.c.
  */
 static EventTableType eventTable[] = {
     {'/', PrintL1Menu, (ClientData)0, "Print Dump Event Menu"},
     {'a', RESERVED_EVENT, NULL_ARG, "Abort to PROM monitor" }, 
-#ifdef notdef
-    {'b', RESERVED_EVENT, NULL_ARG, 
-				"Put machine into (old) serial line debugger"},
-#endif
     {'c', Fscache_DumpStats, (ClientData)0, "Dump cache stats"},
     {'d', RESERVED_EVENT, NULL_ARG, "Put machine into the kernel debugger"},
     {'e', Timer_DumpStats, (ClientData) 'e', "Dump timer stats"},
