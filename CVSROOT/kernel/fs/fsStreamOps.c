@@ -27,6 +27,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsFile.h"
 #include "fsStream.h"
 #include "fsOpTable.h"
+#include "fsBlockCache.h"
 #include "fsStat.h"
 #include "fsDisk.h"
 #include "mem.h"
@@ -249,11 +250,12 @@ Fs_Write(streamPtr, buffer, offset, lenPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-Fs_PageRead(streamPtr, pageAddr, offset, numBytes)
+Fs_PageRead(streamPtr, pageAddr, offset, numBytes, pageType)
     Fs_Stream	*streamPtr;	/* Swap file stream. */
     Address	pageAddr;	/* Pointer to page. */
     int		offset;		/* Offset in file. */
     int		numBytes;	/* Number of bytes in page. */
+    Fs_PageType	pageType;	/* CODE HEAP or SWAP */
 {
     ReturnStatus		status = SUCCESS;
 
@@ -277,14 +279,40 @@ Fs_PageRead(streamPtr, pageAddr, offset, numBytes)
     } else {
 	int	lastBlock;
 	int	bytesRead;
-	int	i;
+	int	i, cacheFlags;
 	int	streamType = streamPtr->ioHandlePtr->fileID.type;
+	register FsRmtFileIOHandle *handlePtr = 
+		(FsRmtFileIOHandle *)streamPtr->ioHandlePtr;
 	Boolean retry;
+	FsCacheBlock *blockPtr;
+	Boolean found;
 
 	lastBlock = (unsigned int) (offset + numBytes - 1) / FS_BLOCK_SIZE;
 
+	if (pageType == FS_CODE_PAGE) {
+	    cacheFlags = FS_CLEAR_READ_AHEAD | FS_BLOCK_UNNEEDED;
+	} else {
+	    cacheFlags = FS_CLEAR_READ_AHEAD;
+	}
 	for (i = (unsigned int) offset / FS_BLOCK_SIZE; i <= lastBlock; i++) {
 	    do {
+		if ((streamPtr->flags & FS_SWAP) == 0) {
+
+		    FsCacheFetchBlock(&handlePtr->cacheInfo, i,
+			    FS_DATA_CACHE_BLOCK, &blockPtr, &found);
+		    if (found) {
+			Byte_Copy(FS_BLOCK_SIZE, blockPtr->blockAddr, pageAddr);
+			if (blockPtr->flags & FS_READ_AHEAD_BLOCK) {
+			    fsStats.blockCache.readAheadHits++;
+			}
+			FsCacheUnlockBlock(blockPtr, 0, -1, 0, cacheFlags);
+			offset += FS_BLOCK_SIZE;
+			break;	/* do-while, go to next for loop iteration */
+		    } else if (pageType == FS_CODE_PAGE) {
+			FsCacheUnlockBlock(blockPtr, 0, -1, 0, FS_DELETE_BLOCK);
+		    }
+		}
+
 		retry = FALSE;
 		bytesRead = FS_BLOCK_SIZE;
 		status = (*fsStreamOpTable[streamType].blockRead)
@@ -317,6 +345,14 @@ Fs_PageRead(streamPtr, pageAddr, offset, numBytes)
 		    Sys_Panic(SYS_WARNING,
 			    "FsPageRead: Short read of length %d\n", bytesRead);
 		    return(VM_SHORT_READ);
+		}
+		if (!retry && pageType == FS_HEAP_PAGE) {
+		    /*
+		     * We read the data into the page, now copy it into the
+		     * cache since initialized heap pages live in the cache.
+		     */
+		    Byte_Copy(FS_BLOCK_SIZE, pageAddr, blockPtr->blockAddr);
+		    FsCacheUnlockBlock(blockPtr, 0, -1, 0, 0);
 		}
 	    } while (retry);
 	    pageAddr += FS_BLOCK_SIZE;
