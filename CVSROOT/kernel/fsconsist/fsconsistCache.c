@@ -1768,7 +1768,8 @@ ProcessConsist(data, callInfoPtr)
 
     status = Rpc_Call(consistPtr->serverID, RPC_FS_CONSIST_REPLY, &storage);
     if (status != SUCCESS) {
-	printf( "Got error (%x) from consist reply\n", status);
+	printf("Got error (%x) from consist reply on <%d,%d>\n", status,
+	    reply.fileID.major, reply.fileID.minor);
     }
     free((Address)consistPtr);
 }
@@ -1814,7 +1815,9 @@ Fs_RpcConsistReply(srvToken, clientID, command, storagePtr)
     }
     handlePtr = FsHandleFetchType(FsLocalFileIOHandle, &(replyPtr->fileID));
     if (handlePtr == (FsLocalFileIOHandle *) NIL) {
-	panic( "Fs_RpcConsistReply: no handle\n");
+	printf("Fs_RpcConsistReply: no handle <%d,%d> for client %d\n",
+	    replyPtr->fileID.major, replyPtr->fileID.minor, clientID);
+	return(FS_STALE_HANDLE);
     }
     ProcessConsistReply(&handlePtr->consist, clientID, replyPtr);
     FsHandleRelease(handlePtr, TRUE);
