@@ -298,6 +298,7 @@ static SysCallEntry sysCalls[] = {
     Sync_SemctlStub,		Sync_SemctlStub,	TRUE,	5,   NILPARM,
     Sync_SemgetStub,		Sync_SemgetStub,	TRUE,	4,   NILPARM,
     Sync_SemopStub,		Sync_SemopStub,		TRUE,	4,   NILPARM,
+    Vm_Mprotect,		Vm_Mprotect,		TRUE,   3,   NILPARM,
 };
 
 
@@ -478,6 +479,7 @@ static Sys_CallParam paramsArray[] = {
     /* local */                         /* SYS_SYNC_SEMCTL		102 */
     /* local */                         /* SYS_SYNC_SEMGET		103 */
     /* local */                         /* SYS_SYNC_SEMOP		104 */
+    /* local */                         /* VM_MPROTECT			105 */
     /*
      * Insert new system call information above this line.
      */
