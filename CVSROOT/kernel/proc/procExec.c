@@ -186,12 +186,6 @@ Proc_ExecEnv(fileName, argPtrArray, envPtrArray, debugMe)
     if (status == SUCCESS) {
 	Sys_Panic(SYS_FATAL, "Proc_ExecEnv: DoExec returned SUCCESS!!!\n");
     }
-    if (newArgPtrArray != (char **) NIL) {
-	Vm_MakeUnaccessible((Address) newArgPtrArray, newArgPtrArrayLength);
-    }
-    if (newEnvPtrArray != (char **) NIL) {
-	Vm_MakeUnaccessible((Address) newEnvPtrArray, newEnvPtrArrayLength);
-    }
 
     return(status);
 }
@@ -309,7 +303,9 @@ Boolean		CopyInArgs();
  *	error code is returned.
  *
  * Side effects:
- *	The state of the calling process is modified for the new image.
+ *	The state of the calling process is modified for the new image and
+ *	the argPtrArray and envPtrArray are made unaccessible if they this
+ *	is a user process.
  *
  *----------------------------------------------------------------------
  */
@@ -382,7 +378,8 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
     status =  Fs_Open(fileName, (FS_READ | FS_EXECUTE | FS_FOLLOW), FS_FILE, 0,
 		      &filePtr);
     if (status != SUCCESS) {
-	return(status);
+	filePtr = (Fs_Stream *) NIL;
+	goto execError;
     }
 
     /*
@@ -413,7 +410,8 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
 	    status = SetupInterpret(buffer, sizeRead, &filePtr, 
 				    &shellArgPtr, &extraArgs, &aout); 
 	    if (status != SUCCESS) {
-		return(status);
+		filePtr = (Fs_Stream *)NIL;
+		goto execError;
 	    }
 	    sizeRead = sizeof(Proc_AOUT);
 	    aoutPtr = &aout;
@@ -528,13 +526,6 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
     }
 
     /*
-     * We no longer need access to the old arguments. 
-     */
-    if (userProc && argPtrArray != (char **) NIL) {
-	Vm_MakeUnaccessible((Address) argPtrArray, origNumArgs * 4);
-    }
-
-    /*
      * Copy in the environment.
      */
     for (envNumber = 0, envPtr = envPtrArray; 
@@ -600,11 +591,19 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
     }
 
     /*
-     * We no longer need access to the old environment variables. 
+     * We no longer need access to the old arguments or the environment. 
      */
-    if (userProc && envPtrArray != (char **) NIL) {
-	Vm_MakeUnaccessible((Address) envPtrArray, origNumEnvs * 4);
+    if (userProc) {
+	if (argPtrArray != (char **) NIL) {
+	    Vm_MakeUnaccessible((Address) argPtrArray, origNumArgs * 4);
+	    argPtrArray = (char **)NIL;
+	}
+	if (envPtrArray != (char **) NIL) {
+	    Vm_MakeUnaccessible((Address) envPtrArray, origNumEnvs * 4);
+	    envPtrArray = (char **)NIL;
+	}
     }
+
     /*
      * Set up virtual memory for the new image.
      */
@@ -761,6 +760,14 @@ execError:
 	} else {
 	    Vm_InitCode(filePtr, (Vm_Segment *) NIL, (Vm_ExecInfo *) NIL);
 	    Fs_Close(filePtr);
+	}
+    }
+    if (userProc) {
+	if (argPtrArray != (char **) NIL) {
+	    Vm_MakeUnaccessible((Address) argPtrArray, origNumArgs * 4);
+	}
+	if (envPtrArray != (char **) NIL) {
+	    Vm_MakeUnaccessible((Address) envPtrArray, origNumEnvs * 4);
 	}
     }
     while (!List_IsEmpty(&argList)) {
