@@ -1125,9 +1125,11 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	    status = GEN_NOT_IMPLEMENTED;
 	    break;
     }
+#ifdef notdef
     if (status != SUCCESS) {
 	printf("PdevServer IOControl #%x returning %x\n", command, status);
     }
+#endif notdef
     UNLOCK_MONITOR;
     return(status);
 }
