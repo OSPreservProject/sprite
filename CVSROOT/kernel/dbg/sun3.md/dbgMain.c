@@ -19,9 +19,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <mach.h>
 #include <proc.h>
 #include <vm.h>
-#include <vmInt.h>
 #include <vmMach.h>
-#include <vmMachInt.h>
 #include <machMon.h>
 #include <net.h>
 #include <netEther.h>
@@ -31,6 +29,19 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <bstring.h>
 #include <string.h>
 #include <stdio.h>
+
+/*
+ * This violates Sprite coding conventions and should be fixed.
+ */
+
+extern Address vmStackBaseAddr;
+extern Address vmStackEndAddr;
+extern Address vmBlockCacheBaseAddr;
+extern Address vmBlockCacheEndAddr;
+extern int VmMachGetKernelContext();
+extern void VmMachSetKernelContext();
+extern VmMachPTE VmMachGetPageMap();
+
 
 Boolean	dbg_BeingDebugged = FALSE;		/* TRUE if are under control
 						 * of kdbx.*/
