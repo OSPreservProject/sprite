@@ -97,6 +97,8 @@ typedef struct Fsconsist_ClientInfo {
     Boolean	locked;		/* TRUE when a pointer is held to this client
 				 * list element.  It is not appropriate to
 				 * garbage collect the element when set. */
+    Boolean	mapped;		/* TRUE if the client is mapping the
+				 * file into memory. */
 } Fsconsist_ClientInfo;
 
 /*
@@ -112,6 +114,7 @@ typedef struct Fsconsist_ClientInfo {
     clientPtr->openTimeStamp = 0;		\
     clientPtr->cached = FALSE;			\
     clientPtr->locked = FALSE;			\
+    clientPtr->mapped = FALSE;			\
     List_InitElement((List_Links *)clientPtr);	\
     List_Insert((List_Links *) clientPtr, LIST_ATFRONT(clientList));
 

@@ -192,7 +192,7 @@ Fsconsist_SyncLockCleanup(consistPtr)
  *
  * Fsconsist_FileConsistency --
  *
- *	Take action to ensure that the caches are consistency for this
+ *	Take action to ensure that the caches are consistent for this
  *	file.  This checks against use conflicts and will return an
  *	non-SUCCESS status if the open should fail.  Otherwise this
  *	makes call-backs to other clients to keep caches consistent.
@@ -315,6 +315,10 @@ StartConsistency(consistPtr, clientID, useFlags, cacheablePtr)
     }
     if (cacheable) {
 	LIST_FORALL(&consistPtr->clientList, (List_Links *)clientPtr) {
+	    if (clientPtr->mapped) {
+		cacheable = FALSE;
+		goto done;
+	    }
 	    if (clientPtr->clientID != clientID) {
 		if ((clientPtr->use.write > 0) ||
 		    ((clientPtr->use.ref > 0) && openForWriting)) {
@@ -841,13 +845,13 @@ Fsconsist_ReopenConsistency(handlePtr, clientID, use, swap, cacheablePtr,
  * Fsconsist_MigrateConsistency --
  *
  *	Shift the references on a file from one client to another.  If
- *	the stream to this handle is not shared accross network this
+ *	the stream to this handle is not shared across network this
  *	is done by first removing the useCounts due to the srcClient,
  *	and them performing the regular cache consistency algorithm as
  *	if the dstClient is opening the file.  If the stream is shared
  *	things are more complicated.  We must not close the original
  *	client until all stream references to its I/O handle have migrated,
- *	and we must be careful to not add too many refererences to the
+ *	and we must be careful to not add too many references to the
  *	new client.
  *
  * Results:
@@ -995,7 +999,7 @@ Fsconsist_GetClientAttrs(handlePtr, clientID, isExecedPtr)
 	nextClientPtr = (Fsconsist_ClientInfo *)List_Next((List_Links *)clientPtr);
 	/*
 	 * Hang onto the next client list element across calls to ClientCommand,
-	 * which releases the consistency lock and allows list deletetions.
+	 * which releases the consistency lock and allows list deletions.
 	 */
 	if (!List_IsAtEnd(&consistPtr->clientList,(List_Links *)nextClientPtr)){
 	    nextClientPtr->locked = TRUE;
@@ -1436,7 +1440,7 @@ Fsconsist_FetchDirtyBlocks(consistPtr, invalidate)
     Fsutil_HandleUnlock(consistPtr->hdrPtr);
 
     /*
-     * Make sure that noone else is in the middle of performing cache
+     * Make sure that no one else is in the middle of performing cache
      * consistency on this handle.  If so wait until they are done.
      */
     while (consistPtr->flags & FS_CONSIST_IN_PROGRESS) {
