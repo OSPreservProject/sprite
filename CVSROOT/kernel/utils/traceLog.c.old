@@ -34,6 +34,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <stdio.h>
 #include <main.h>
 #include <string.h>
+#include <status.h>
 
 static Sync_Lock traceLogLock = Sync_LockInitStatic("Utils:traceLog_Mutex");
 #define LOCKPTR &traceLogLock
@@ -244,6 +245,7 @@ TraceLog_Dump(tracePtr, dataAddr, hdrAddr)
     Address hdrAddr;
 {
     ReturnStatus status = SUCCESS;
+    Boolean	abortedBySignal = FALSE;
 
     if (tracePtr == (TraceLog_Header *) NIL) {
 	printf("TraceLog_Dump: traceLog buffer not initialized.\n");
@@ -261,10 +263,16 @@ TraceLog_Dump(tracePtr, dataAddr, hdrAddr)
      */
     while (!tracePtr->blocked &&
 	    tracePtr->firstNewBuffer==tracePtr->currentBuffer) {
-	if (Sync_Wait(&bufferFullCondition,TRUE)) {
-	    UNLOCK_MONITOR;
-	    return FAILURE;
+	if (Sync_Wait(&bufferFullCondition,TRUE) == TRUE) {
+	    abortedBySignal = TRUE;
+	    break;
 	}
+    }
+    if (tracePtr->firstNewBuffer==tracePtr->currentBuffer) {
+	tracePtr->buffers[tracePtr->currentBuffer].size =
+		tracePtr->currentOffset;
+	INC_BUFNUM(tracePtr->currentBuffer);
+	tracePtr->currentOffset = 0;
     }
 
     tracePtr->hdr.numBytes = tracePtr->buffers[tracePtr->firstNewBuffer].size;
@@ -306,6 +314,9 @@ TraceLog_Dump(tracePtr, dataAddr, hdrAddr)
 	    (Address)hdrAddr);
 
     UNLOCK_MONITOR;
+    if ((status == SUCCESS) && (abortedBySignal)) {
+	status = GEN_ABORTED_BY_SIGNAL;
+    }
     return status;
 }
 
