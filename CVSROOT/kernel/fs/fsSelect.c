@@ -318,7 +318,7 @@ Fs_SelectStub(numStreams, userTimeoutPtr, userReadMaskPtr, userWriteMaskPtr,
 	 * 63, etc. Within a row, the low-order bit corresponds to the
 	 * smallest stream number.
 	 */
-	s = numStreams;
+	s = numStreams + 1;
 	for (row = 0; row < intsInMask; row++) {
 	    int	outReadMask = 0;
 	    int	outWriteMask = 0;
