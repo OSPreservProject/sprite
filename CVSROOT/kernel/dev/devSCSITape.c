@@ -457,14 +457,20 @@ rewind:		    /*
  */
 /*ARGSUSED*/
 ReturnStatus
-Dev_SCSITapeClose(devicePtr, useFlags)
-    Fs_Device *devicePtr;
-    int useFlags;
+Dev_SCSITapeClose(devicePtr, useFlags, openCount, writerCount)
+    Fs_Device	*devicePtr;
+    int		useFlags;	/* FS_READ | FS_WRITE */
+    int		openCount;	/* Number of times device open. */
+    int		writerCount;	/* Number of times device open for writing. */
 {
-    register ReturnStatus status;
-    DevSCSIDevice *devPtr;
-    DevSCSITape *tapePtr;
-    int count = 0;
+    register ReturnStatus	status;
+    DevSCSIDevice		*devPtr;
+    DevSCSITape			*tapePtr;
+    int 			count = 0;
+
+    if (openCount > 0) {
+	return(SUCCESS);
+    }
 
     devPtr = scsiTape[devicePtr->unit / DEV_TAPES_PER_CNTRLR];
     if (devPtr == (DevSCSIDevice *)0 || devPtr == (DevSCSIDevice *)NIL) {

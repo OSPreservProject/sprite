@@ -41,7 +41,8 @@ static	char	syslogBuffer[SYSLOG_BUF_SIZE];
 static	int	firstIndex = -1;
 static	int	lastIndex = -1;
 
-static	Boolean	deviceOpen = FALSE;	/* TRUE if the device has been opened.*/
+static	Boolean	openForReading = FALSE;	/* TRUE if the device is open for
+					 * reading. */
 static	ClientData notifyToken;	/* Used for Fs call-back to notify waiting
 				 * processes that the syslog device is ready.*/
 static	Boolean	   overflow = FALSE;
@@ -73,15 +74,14 @@ Dev_SyslogOpen(devicePtr, useFlags, token)
 				 * processes that the syslog device is ready.*/
 {
     MASTER_LOCK(syslogMutex);
-    if (deviceOpen) {
-	MASTER_UNLOCK(syslogMutex);
-	return(FAILURE);
+    if (useFlags & FS_READ) {
+	if (openForReading) {
+	    MASTER_UNLOCK(syslogMutex);
+	    return(FAILURE);
+	}
+	openForReading = TRUE;
     }
     notifyToken = token;
-    firstIndex = -1;
-    lastIndex = -1;
-    deviceOpen = TRUE;
-    overflow = FALSE;
     MASTER_UNLOCK(syslogMutex);
     return(SUCCESS);
 }
@@ -192,7 +192,7 @@ Dev_SyslogWrite(devicePtr, offset, bufSize, bufPtr, bytesWrittenPtr)
     origSize = bufSize;
 
     MASTER_LOCK(syslogMutex);
-    if (!deviceOpen) {
+    if (!openForReading) {
 	for (i = 0; i < bufSize; i++, bufPtr++) {
 	    Mon_PutChar(*bufPtr);
 	}
@@ -297,29 +297,33 @@ Dev_SyslogPutChar(ch)
  */
 /* ARGSUSED */
 ReturnStatus
-Dev_SyslogClose(devicePtr, useFlags)
-    Fs_Device *devicePtr;
-    int useFlags;
+Dev_SyslogClose(devicePtr, useFlags, openCount, writerCount)
+    Fs_Device	*devicePtr;
+    int		useFlags;
+    int		openCount;
+    int		writerCount;
 {
     int	i;
 
     MASTER_LOCK(syslogMutex);
-    deviceOpen = FALSE;
-    if (firstIndex != -1) {
-	if (firstIndex <= lastIndex) {
-	    for (i = firstIndex; i <= lastIndex; i++) {
-		Mon_PutChar(syslogBuffer[i]);
+    if (useFlags & FS_READ) {
+	openForReading = FALSE;
+	if (firstIndex != -1) {
+	    if (firstIndex <= lastIndex) {
+		for (i = firstIndex; i <= lastIndex; i++) {
+		    Mon_PutChar(syslogBuffer[i]);
+		}
+	    } else {
+		for (i = firstIndex; i < SYSLOG_BUF_SIZE; i++) {
+		    Mon_PutChar(syslogBuffer[i]);
+		}
+		for (i = 0; i <= lastIndex; i++)  {
+		    Mon_PutChar(syslogBuffer[i]);
+		}
 	    }
-	} else {
-	    for (i = firstIndex; i < SYSLOG_BUF_SIZE; i++) {
-		Mon_PutChar(syslogBuffer[i]);
-	    }
-	    for (i = 0; i <= lastIndex; i++)  {
-		Mon_PutChar(syslogBuffer[i]);
-	    }
+	    firstIndex = -1;
+	    lastIndex = -1;
 	}
-	firstIndex = -1;
-	lastIndex = -1;
     }
     MASTER_UNLOCK(syslogMutex);
 }
@@ -418,7 +422,7 @@ Dev_SyslogSelect(devicePtr, inFlags, outFlagsPtr)
     return(SUCCESS);
 }
 
-static	Boolean	savedDeviceOpen;
+static	Boolean	savedOpenForReading;
 static	int	syslogDebugCount = 0;
 
 
@@ -447,14 +451,14 @@ Dev_SyslogDebug(stopLog)
 {
     if (stopLog) {
 	if (syslogDebugCount == 0) {
-	    savedDeviceOpen = deviceOpen;
-	    deviceOpen = FALSE;
+	    savedOpenForReading = openForReading;
+	    openForReading = FALSE;
 	}
 	syslogDebugCount++;
     } else {
 	syslogDebugCount--;
 	if (syslogDebugCount == 0) {
-	    deviceOpen = savedDeviceOpen;
+	    openForReading = savedOpenForReading;
 	}
     }
 }

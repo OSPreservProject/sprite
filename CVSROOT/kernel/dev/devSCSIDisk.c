@@ -254,9 +254,11 @@ Dev_SCSIDiskIOControl(devicePtr, command, inBufSize, inBuffer,
  */
 /*ARGSUSED*/
 ReturnStatus
-Dev_SCSIDiskClose(devicePtr, useFlags)
-    Fs_Device *devicePtr;
-    int useFlags;
+Dev_SCSIDiskClose(devicePtr, useFlags, openCount, writerCount)
+    Fs_Device	*devicePtr;
+    int 	useFlags;
+    int		openCount;
+    int		writerCount;
 {
     return(SUCCESS);
 }
