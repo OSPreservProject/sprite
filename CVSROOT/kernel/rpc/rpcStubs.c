@@ -102,9 +102,10 @@ RpcService rpcService[RPC_LAST_COMMAND+1] = {
  *----------------------------------------------------------------------
  */
 int
-Rpc_FreeMem(replyMemPtr)
-    Rpc_ReplyMem	*replyMemPtr;
+Rpc_FreeMem(freeReplyData)
+    ClientData		freeReplyData;
 {
+    Rpc_ReplyMem	*replyMemPtr = (Rpc_ReplyMem *) freeReplyData;
     if (replyMemPtr->paramPtr != (Address) NIL) {
 	free(replyMemPtr->paramPtr);
     }

@@ -524,7 +524,8 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 		rpcNack.numFree--;
 		rpcNack.hdrState[i] = RPC_NACK_WAITING;
 		foundSpot = i;
-		RpcSrvInitHdr(NIL, &(rpcNack.rpcHdrArray[i]), rpcHdrPtr);
+		RpcSrvInitHdr((RpcServerState *) NIL, 
+				&(rpcNack.rpcHdrArray[i]), rpcHdrPtr);
 	    /*
 	     * If we've found evidence that there's already a CallFunc for
 	     * the NegAckFunc, then record the first buffer it will be dealing
@@ -1330,7 +1331,8 @@ Rpc_DumpServerTraces(length, resultPtr, lengthNeededPtr)
 	infoPtr->channel = itemPtr->channel;
 	infoPtr->state = itemPtr->state;
 	infoPtr->num = itemPtr->num;
-	Timer_GetRealTimeFromTicks(itemPtr->time, &(infoPtr->time), NIL, NIL);
+	Timer_GetRealTimeFromTicks(itemPtr->time, &(infoPtr->time), 
+				(int *) NIL, (Boolean *) NIL);
 	infoPtr++;
     }
     *lengthNeededPtr = numNeeded * sizeof (RpcServerUserStateInfo);

@@ -96,7 +96,7 @@ extern Boolean rpc_NoTimeouts;
 extern ReturnStatus Rpc_Call _ARGS_((int serverID, int command, Rpc_Storage *storagePtr));
 extern void Rpc_Reply _ARGS_((ClientData srvToken, int error, register Rpc_Storage *storagePtr, int (*freeReplyProc)(ClientData freeReplyData), ClientData freeReplyData));
 extern void Rpc_ErrorReply _ARGS_((ClientData srvToken, int error));
-extern int Rpc_FreeMem _ARGS_((Rpc_ReplyMem *replyMemPtr));
+extern int Rpc_FreeMem _ARGS_((ClientData freeReplyData));
 extern ReturnStatus Rpc_CreateServer _ARGS_((int *pidPtr));
 extern ReturnStatus Rpc_Echo _ARGS_((int serverId, Address inputPtr, Address returnPtr, int size));
 extern ReturnStatus Rpc_Ping _ARGS_((int serverId));

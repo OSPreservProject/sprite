@@ -268,7 +268,7 @@ RpcServerAlloc(rpcHdrPtr)
 	 * No available server process yet.
 	 */
 	srvPtr = (RpcServerState *)NIL;
-	RpcAddServerTrace(NIL, (RpcHdr *) rpcHdrPtr, TRUE, 15);
+	RpcAddServerTrace((RpcServerState *)NIL, (RpcHdr *) rpcHdrPtr, TRUE,15);
 	if (rpcNoServers >= 0) {
 #ifdef BAD
 	    /*
