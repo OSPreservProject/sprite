@@ -430,19 +430,19 @@ EncapSegment(segPtr, procPtr, bufPtrPtr)
 	return(status);
     }
     *bufPtrPtr = ptr + Fs_GetEncapSize();
-#define EARLY_DELETE
-#ifdef EARLY_DELETE
+
     if (proc_MigDebugLevel > 4) {
 	printf("Deleting segment %d from encapsulation routine.\n",
 	       segPtr->type);
     }
     Proc_Unlock(procPtr);
+    VmMach_HandleSegMigration(segPtr);
     Vm_SegmentDelete(segPtr, procPtr);
     Proc_Lock(procPtr);
     if (proc_MigDebugLevel > 4) {
 	printf("Deleted segment.\n");
     }
-#endif
+
     return(SUCCESS);
 }
 
