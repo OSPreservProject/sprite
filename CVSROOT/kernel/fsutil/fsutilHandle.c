@@ -362,7 +362,7 @@ FsHandleIncRefCount(hdrPtr, amount)
  *	Decrement the reference count on the handle.
  *	This is like releasing a handle but the locks on the handle
  *	are not disturbed.  This is used when removing entries from
- *	the name component hash table.
+ *	the name component hash table and during migration.
  *
  * Results:
  *	None.
