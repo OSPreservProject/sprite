@@ -93,7 +93,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sys.h"
 #include "stdlib.h"
 
+#ifdef sun4
+Boolean	vm_CanCOW = FALSE;
+#else
 Boolean	vm_CanCOW = TRUE;
+#endif sun4
 
 void		DoFork();
 void		GiveAwayPage();
