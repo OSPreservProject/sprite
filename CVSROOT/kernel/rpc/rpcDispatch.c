@@ -117,7 +117,7 @@ Rpc_Dispatch(interPtr, protocol, headerPtr, rpcHdrAddr, packetLength)
     if (packetLength < sizeof(RpcHdr)) {
 	rpcCltStat.shorts++;
 	printf("Rpc_Dispatch: SHORT packet, (%d) not (%d) ",
-				  packetLength, expectedLength);
+				  packetLength, sizeof(RpcHdr));
 	printf("srv %d clt %d rpc %d\n", rpcHdrPtr->serverID,
 		    rpcHdrPtr->clientID, rpcHdrPtr->command);
 	printf("Resetting network interface %s\n",
@@ -214,6 +214,7 @@ Rpc_Dispatch(interPtr, protocol, headerPtr, rpcHdrAddr, packetLength)
 	}
 
 	rpcSrvStat.toServer++;
+
 	/*
 	 * Verify or initialize the sprite host id for the client
 	 * (clientID) from the transport level source address.
@@ -223,6 +224,7 @@ Rpc_Dispatch(interPtr, protocol, headerPtr, rpcHdrAddr, packetLength)
 	    rpcSrvStat.invClient++;
 	    return;
 	}
+
 	/*
 	 * Save sender's requested interfragment delay.
 	 */
