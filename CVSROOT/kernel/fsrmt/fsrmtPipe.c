@@ -1083,8 +1083,12 @@ FsPipeReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
     if (handlePtr == (FsPipeIOHandle *)NIL) {
 	status = FAILURE;
     } else {
+	FsIOClientStatus(&handlePtr->clientList, clientID,
+				 &reopenParamsPtr->use);
 	(void)FsIOClientReopen(&handlePtr->clientList, clientID,
 				 &reopenParamsPtr->use);
+	handlePtr->use.ref += reopenParamsPtr->use.ref;
+	handlePtr->use.write += reopenParamsPtr->use.write;
 	FsHandleRelease(handlePtr, TRUE);
 	status = SUCCESS;
     }
