@@ -174,7 +174,7 @@ Dbg_InputPacket(packetPtr, packetLength)
      * Sanity check to make sure the compiler is not padding structures.
      */
     if (sizeof(Net_EtherHdr) != 14) {
-	Sys_Panic(SYS_FATAL, "Ethernet header wrong size!!\n");
+	panic( "Ethernet header wrong size!!\n");
     }
     /*
      * Toss random non IP packets.
@@ -183,12 +183,12 @@ Dbg_InputPacket(packetPtr, packetLength)
     type = Net_HostToNetShort(NET_ETHER_HDR_TYPE(*etherHdrPtr));
     if (type != NET_ETHER_IP) {
         if (dbgTraceLevel >= 5) {
-            Sys_Printf("Non-IP (Type=0x%x) ", type);
+            printf("Non-IP (Type=0x%x) ", type);
         }
         return;
     }
     if (dbgTraceLevel >= 4) {
-        Sys_Printf("Validating packet\n");
+        printf("Validating packet\n");
     }
     /*
      * Check to see if the packet is for us. If it is then Valiadate_Packet
@@ -215,7 +215,7 @@ Dbg_InputPacket(packetPtr, packetLength)
 	 * an address to send the reply too.
 	 */
         if (dbgTraceLevel >= 4) {
-            Sys_Printf("Got a packet: length=%d\n", dataLength);
+            printf("Got a packet: length=%d\n", dataLength);
         }
 	NET_ETHER_HDR_COPY(*etherHdrPtr, packet.etherHdr);
 	/*
@@ -264,7 +264,7 @@ Dbg_IPgetpkt (buf)
 	 * Spin polling for a packet. Debugger is repondsible for timing out.
 	 */
 	if (dbgTraceLevel >= 1) {
-	    Sys_Printf("getpkt: Waiting for a packet of seq number %d\n",
+	    printf("getpkt: Waiting for a packet of seq number %d\n",
 					nextSeqNum);
 	}
 	while (!packetIsAvailable) {
@@ -272,7 +272,7 @@ Dbg_IPgetpkt (buf)
 		asm("cmp_trap always, r0, r0, $3");
 	}
 	if (dbgTraceLevel >= 1) {
-	    Sys_Printf("getpkt: Got a packet of seq number %d and type %d\n",
+	    printf("getpkt: Got a packet of seq number %d and type %d\n",
 				packet.seqNumber, packet.type);
 	}
 	/*
@@ -295,11 +295,11 @@ Dbg_IPgetpkt (buf)
 	     if (packet.type == DBG_DATA_PACKET) {
 		 Ack_Packet();
 	     } else if (packet.type == DBG_ACK_PACKET) {
-		Sys_Panic(SYS_WARNING,
+		printf(
 			  "getpkt: Ack with sequence number %d ignored\n",
 			   packet.seqNumber);
 	    } else {
-		Sys_Panic(SYS_WARNING, 
+		printf( 
 			"getpkt: Got packet with bogus type field (%d)\n",
 		        packet.type);
 	    }
@@ -321,7 +321,7 @@ Dbg_IPgetpkt (buf)
 	     * We got a packet with a bugs type field or an ACK with too 
 	     * large of sequnce number.
 	     */
-	    Sys_Panic(SYS_WARNING, "getpkt: Bad packet seq = %d type = %d\n",
+	    printf( "getpkt: Bad packet seq = %d type = %d\n",
 			packet.seqNumber, packet.type);
 	}
     }
@@ -365,7 +365,7 @@ Dbg_IPputpkt (buf)
     length = strlen(buf) + 1;	/* Include null terminator. */
 
     if (length > DBG_MAX_BUFFER_SIZE) {
-	Sys_Panic(SYS_FATAL, "dbg putpkt: buffer too large (%d)\n",length);
+	panic( "dbg putpkt: buffer too large (%d)\n",length);
     }
 
     /*
@@ -373,7 +373,7 @@ Dbg_IPputpkt (buf)
      */
     while (!gotAck) { 
 	if (dbgTraceLevel >= 1) {
-	    Sys_Printf("putpkt: Putting packet with seq number %d\n",seqNum);
+	    printf("putpkt: Putting packet with seq number %d\n",seqNum);
 	}
 
 	Send_Packet(buf, length, DBG_DATA_PACKET, seqNum);
@@ -390,7 +390,7 @@ Dbg_IPputpkt (buf)
 	}
 	if (!packetIsAvailable) {
 	    if (dbgTraceLevel >= 1) {
-		Sys_Printf("putpkt: Timeout - resending packet.\n");
+		printf("putpkt: Timeout - resending packet.\n");
 	    }
 	    continue;	/* Resend the packet. */
 	}
@@ -398,7 +398,7 @@ Dbg_IPputpkt (buf)
 	 * If we have already seen the packet - toss it.
 	 */
 	if (dbgTraceLevel >= 1) {
-	    Sys_Printf("putpkt: Got a packet of seq number %d and type %d\n",
+	    printf("putpkt: Got a packet of seq number %d and type %d\n",
 				packet.seqNumber, packet.type);
 	}
 
@@ -415,10 +415,10 @@ Dbg_IPputpkt (buf)
 		 * It's safe to throw away old ack packets.
 		 */
 	    } else if (packet.type == DBG_DOWNLOAD_PACKET) {
-		Sys_Panic(SYS_FATAL,"putpkt: Bad packet type = %d\n",
+		panic("putpkt: Bad packet type = %d\n",
 				packet.type);
 	    } else {
-		Sys_Panic(SYS_WARNING,"putpkt: Bad packet type = %d\n",
+		printf("putpkt: Bad packet type = %d\n",
 				packet.type);
 	    }
 
@@ -433,7 +433,7 @@ Dbg_IPputpkt (buf)
 		    /*
 		     * Sequence numbering is messed up.
 		     */
-		    Sys_Panic(SYS_FATAL, "putptk: Bad packet type %d seq %d\n",
+		    panic( "putptk: Bad packet type %d seq %d\n",
 				packet.seqNumber, packet.type);
 		} 
 	}
@@ -480,7 +480,7 @@ Extract_Packet(dataPtr)
      * We want the packet. Extract its header info and (data if any).
      */
     if (Net_NetToHostInt(header->magic) != DBG_HEADER_MAGIC) {
-	Sys_Panic(SYS_WARNING,
+	printf(
 		"Extract_Packet: Got packet with bad magic number (0x%x)\n",
 		Net_NetToHostInt(header->magic));
 	return(FALSE);
@@ -501,7 +501,7 @@ Extract_Packet(dataPtr)
 		 * Ping request - do nothing.
 		 */
 #ifdef		DEBUG_DOWNLOAD
-		 Sys_Printf("Download command PING\n");
+		 printf("Download command PING\n");
 #endif		DEBUG_DOWNLOAD
 		 break;
 	case DBG_DOWNLOAD_DATA_XFER:
@@ -509,7 +509,7 @@ Extract_Packet(dataPtr)
 		 * Data transfer request. 
 		 */
 #ifdef		DEBUG_DOWNLOAD
-		 Sys_Printf("Download command DATA_XFER start 0x%x length %d\n",			startAddress,length);
+		 printf("Download command DATA_XFER start 0x%x length %d\n",			startAddress,length);
 #else
 		bcopy(dataPtr + sizeof(Dbg_PacketHeader), startAddress,length);
 #endif		DEBUG_DOWNLOAD
@@ -519,7 +519,7 @@ Extract_Packet(dataPtr)
 		 * Zero memory request.
 		 */
 #ifdef		DEBUG_DOWNLOAD
-		 Sys_Printf("Download command ZERO_MEM start 0x%x length %d\n",			startAddress,length);
+		 printf("Download command ZERO_MEM start 0x%x length %d\n",			startAddress,length);
 #else
 		 bzero(startAddress,length);
 #endif		DEBUG_DOWNLOAD
@@ -531,7 +531,7 @@ Extract_Packet(dataPtr)
 		 Dbg_Start_Execution(startAddress);
 		 break;
 	default:
-		Sys_Panic(SYS_WARNING, "Unknown DOWNLOAD command recieved\n");
+		printf( "Unknown DOWNLOAD command recieved\n");
 	}
     } else {
 	packet.overflow = FALSE;
@@ -680,7 +680,7 @@ Validate_Packet(size, ipPtr, lenPtr, dataPtrPtr,
 
     if (size < sizeof(Net_IPHeader)) {
 	if (dbgTraceLevel >= 4) {
-	    Sys_Printf("Validate_Packet: Bad size %d\n", size);
+	    printf("Validate_Packet: Bad size %d\n", size);
 	}
 	return(FALSE);
     }
@@ -705,40 +705,40 @@ Validate_Packet(size, ipPtr, lenPtr, dataPtrPtr,
      */
     if (headerLenInBytes < sizeof(Net_IPHeader)) {
 	if (dbgTraceLevel >= 5) {
-	    Sys_Printf("Failed case 1: %d\n", headerLenInBytes);
+	    printf("Failed case 1: %d\n", headerLenInBytes);
 	}
 	return(FALSE);
     } else if (Net_NetToHostShort(ipPtr->totalLen) < ipPtr->headerLen) {
 	if (dbgTraceLevel >= 5) {
-	    Sys_Printf("Failed case 2: %d, %d\n", 
+	    printf("Failed case 2: %d, %d\n", 
 			Net_NetToHostShort(ipPtr->totalLen), ipPtr->headerLen);
 	}
 	return(FALSE);
     } else if (Net_InetChecksum(headerLenInBytes, (Address) ipPtr) != 0) {
 	if (dbgTraceLevel >= 5) {
-	    Sys_Printf("Failed case 3 (IP checksum: %x)\n", ipPtr->checksum);
+	    printf("Failed case 3 (IP checksum: %x)\n", ipPtr->checksum);
 	}
 	return(FALSE);
     } else if (ipPtr->protocol != NET_IP_PROTOCOL_UDP) {
 	if (dbgTraceLevel >= 5) {
-	    Sys_Printf("Failed case 4: %d\n", ipPtr->protocol);
+	    printf("Failed case 4: %d\n", ipPtr->protocol);
 	}
 	return(FALSE);
     } else if (Net_NetToHostShort(udpPtr->len) < sizeof(Net_UDPHeader)) {
 	if (dbgTraceLevel >= 5) {
-	    Sys_Printf("Failed case 5: %d, %d\n",
+	    printf("Failed case 5: %d, %d\n",
 		    Net_NetToHostShort(udpPtr->len), sizeof(Net_UDPHeader));
 	}
 	return(FALSE);
     } else if (Net_NetToHostShort(udpPtr->destPort) != DBG_UDP_PORT) {
 	if (dbgTraceLevel >= 5) {
-	    Sys_Printf("Failed case 6: %d, %d\n", 
+	    printf("Failed case 6: %d, %d\n", 
 		    Net_NetToHostShort(udpPtr->destPort), DBG_UDP_PORT);
 	}
 	return(FALSE);
     } else if ((ipPtr->flags & NET_IP_MORE_FRAGS) || (ipPtr->fragOffset != 0)) {
 	if (dbgTraceLevel >= 5) {
-	    Sys_Printf("Failed case 7: %d, %d\n",
+	    printf("Failed case 7: %d, %d\n",
 		(ipPtr->flags & NET_IP_MORE_FRAGS), (ipPtr->fragOffset != 0));
 	}
 	return(FALSE);
@@ -767,7 +767,7 @@ Validate_Packet(size, ipPtr, lenPtr, dataPtrPtr,
 		&pseudoHdr) != 0) {
 
 	    if (dbgTraceLevel >= 4) {
-		Sys_Printf("Validate_Packet: Bad UDP checksum: %x\n", 
+		printf("Validate_Packet: Bad UDP checksum: %x\n", 
 				udpPtr->checksum);
 	    }
 	    return(FALSE);
@@ -781,7 +781,7 @@ Validate_Packet(size, ipPtr, lenPtr, dataPtrPtr,
     *srcPortPtr	   = Net_NetToHostShort(udpPtr->srcPort);
 
     if (dbgTraceLevel >= 4) {
-	Sys_Printf("Validate_Packet: Good packet\n");
+	printf("Validate_Packet: Good packet\n");
     }
     return(TRUE);
 }
@@ -902,23 +902,23 @@ TestInputProc(size, headerPtr)
     (void) Net_InetAddrToString(&(headerPtr->source), srcAddr);
     (void) Net_InetAddrToString(&(headerPtr->dest), destAddr);
 
-    Sys_Printf("IP Packet: size = %d\n", size);
-    Sys_Printf("Protocol, version:	%s, %d\n", 
+    printf("IP Packet: size = %d\n", size);
+    printf("Protocol, version:	%s, %d\n", 
 		    ProtNumToName(headerPtr->protocol),
 		    headerPtr->version);
-    Sys_Printf("Src, dest addrs:	%s, %s\n", srcAddr, destAddr);
-    Sys_Printf("Header, total len:	%d, %d\n", 
+    printf("Src, dest addrs:	%s, %s\n", srcAddr, destAddr);
+    printf("Header, total len:	%d, %d\n", 
 		    headerPtr->headerLen, headerPtr->totalLen);
 
     checksum = headerPtr->checksum, 
     headerPtr->checksum = 0;
-    Sys_Printf("checksum, recomp:	%x, %x\n", checksum, 
+    printf("checksum, recomp:	%x, %x\n", checksum, 
 		Net_InetChecksum((int)headerPtr->headerLen*4, 
 					(Address)headerPtr));
-    Sys_Printf("Frag flags, offset, ID:	%x, %d, %x\n", 
+    printf("Frag flags, offset, ID:	%x, %d, %x\n", 
 		    headerPtr->flags, headerPtr->fragOffset, 
 		    headerPtr->ident);
-    Sys_Printf("\n");
+    printf("\n");
 
     return;
 }

@@ -141,7 +141,7 @@ Timer_TimerInit(timer)
 	processor[PROFILE_COUNTER] = Mach_GetProcessorNumber();
 #endif
     } else {
-	Sys_Panic(SYS_FATAL,"Timer_TimerInit: unknown timer %d\n", timer);
+	panic("Timer_TimerInit: unknown timer %d\n", timer);
     }
     /*
      * Stop the timer in case it is ticking.
@@ -211,10 +211,10 @@ Timer_TimerStart(timer)
 	counter	= PROFILE_COUNTER;
 #endif
     } else {
-	Sys_Panic(SYS_FATAL,"Timer_TimerStart: unknown timer %d\n", timer);
+	panic("Timer_TimerStart: unknown timer %d\n", timer);
     }
     if (processor[counter] != Mach_GetProcessorNumber()) {
-	Sys_Panic(SYS_FATAL,
+	panic(
 	    "Timer_TimerStart: timer %d started on wrong processor.\n", timer);
     }
 
@@ -302,10 +302,10 @@ RestartTimer(timer)
 	counter	= PROFILE_COUNTER;
 #endif
     } else {
-	Sys_Panic(SYS_FATAL,"RestartTimer: unknown timer %d\n", timer);
+	panic("RestartTimer: unknown timer %d\n", timer);
     }
     if (processor[counter] != Mach_GetProcessorNumber()) {
-	Sys_Panic(SYS_FATAL,
+	panic(
 	    "RestartTimer: timer %d restarted on wrong processor.\n", timer);
     }
     /*
@@ -367,10 +367,10 @@ Timer_TimerInactivate(timer)
 	counter	= PROFILE_COUNTER;
 #endif
     } else {
-	Sys_Panic(SYS_FATAL,"Timer_TimerStart: unknown timer %d\n", timer);
+	panic("Timer_TimerStart: unknown timer %d\n", timer);
     }
     if (processor[counter] != Mach_GetProcessorNumber()) {
-	Sys_Panic(SYS_FATAL,
+	panic(
 	    "Timer_TimerInactivate: timer %d stopped on wrong processor.\n",
 	    timer);
     }
@@ -611,15 +611,15 @@ Timer_TimerGetInfo(data)
     imaskRegister = Mach_Read32bitCCReg(MACH_INTR_MASK_0);
     ENABLE_INTR();
 
-    Sys_Printf("CounterT0 0x%x 0x%x\n",timer.high, timer.low);
-    Sys_Printf("Mode Reg:\n");
-    Sys_Printf("TIMER ENABLE %d\tCALLBACK ENABLE %d\tPROFILE ENABLE %d\n",
+    printf("CounterT0 0x%x 0x%x\n",timer.high, timer.low);
+    printf("Mode Reg:\n");
+    printf("TIMER ENABLE %d\tCALLBACK ENABLE %d\tPROFILE ENABLE %d\n",
 		((modeRegister & FREERUNNING_TIMER_MODE_BIT) != 0),
 		((modeRegister & CALLBACK_TIMER_MODE_BIT) != 0),
 		((modeRegister & PROFILE_TIMER_MODE_BIT) != 0));
 
-    Sys_Printf("Mask Reg:\n");
-    Sys_Printf("CALLBACK MASK %d PROFILE MASK %d\n",
+    printf("Mask Reg:\n");
+    printf("CALLBACK MASK %d PROFILE MASK %d\n",
 		((imaskRegister & CALLBACK_TIMER_MASK_BIT) != 0),
 		((imaskRegister & PROFILE_TIMER_MASK_BIT) != 0));
 }

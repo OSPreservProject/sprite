@@ -274,7 +274,7 @@ ConvertTimeToInt(time, resultPtr)
 	*resultPtr = (time.seconds * ONE_SEC_INTERVAL) + 
 		 ((time.microseconds * ONE_SEC_INTERVAL) / ONE_SECOND);
     } else {
-	Sys_Panic(SYS_WARNING, "ConvertTimeToInt: time value too large\n");
+	printf( "ConvertTimeToInt: time value too large\n");
 	*resultPtr = 0xFFFFFFFF;
     }
 }

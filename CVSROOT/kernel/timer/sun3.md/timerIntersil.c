@@ -238,7 +238,7 @@ Timer_TimerStart(timer)
     } else if (timer == TIMER_PROFILE_TIMER) {
 	profileIntrsWanted = TRUE;
     } else {
-	Sys_Panic(SYS_FATAL,"Timer_TimerStart: unknown timer %d\n", timer);
+	panic("Timer_TimerStart: unknown timer %d\n", timer);
     }
 
     /*
@@ -280,7 +280,7 @@ Timer_TimerInactivate(timer)
     } else if (timer == TIMER_PROFILE_TIMER) {
 	profileIntrsWanted = FALSE;
     } else {
-	Sys_Panic(SYS_FATAL,"Timer_TimerInactivate: unknown timer %d\n", timer);
+	panic("Timer_TimerInactivate: unknown timer %d\n", timer);
     }
 
     /*
@@ -395,7 +395,7 @@ Timer_TimerExamineStatus(statusReg, timer, spuriousPtr)
 	    return(FALSE);
 	}
     } else {
-	Sys_Panic(SYS_WARNING,"Timer_TimerExamineStatus: unknown timer %d\n", 
+	printf("Timer_TimerExamineStatus: unknown timer %d\n", 
 				timer);
 	return(FALSE);
     }
@@ -465,7 +465,7 @@ Timer_TimerServiceInterrupt(stack)
 	     timer_Statistics.spurious++;
 #endif
 
-	    Sys_Printf("%c", 7);	/* ring the bell */
+	    printf("%c", 7);	/* ring the bell */
 
 	}
     }
@@ -619,17 +619,17 @@ Timer_TimerGetInfo(data)
     counter = timerRegsPtr->counter;
     ENABLE_INTR();
 
-    Sys_Printf("Hundredths	%d\n", counter.hundredths);
-    Sys_Printf("Seconds		%d\n", counter.seconds);
-    Sys_Printf("Minutes		%d\n", counter.minutes);
-    Sys_Printf("Hours		%d\n", counter.hours);
-    Sys_Printf("Day		%d\n", counter.day);
-    Sys_Printf("Month		%d\n", counter.month);
-    Sys_Printf("Year		%d\n", counter.year);
-    Sys_Printf("Day of Week	%d\n", counter.dayOfWeek);
+    printf("Hundredths	%d\n", counter.hundredths);
+    printf("Seconds		%d\n", counter.seconds);
+    printf("Minutes		%d\n", counter.minutes);
+    printf("Hours		%d\n", counter.hours);
+    printf("Day		%d\n", counter.day);
+    printf("Month		%d\n", counter.month);
+    printf("Year		%d\n", counter.year);
+    printf("Day of Week	%d\n", counter.dayOfWeek);
 
     CountersToTime(&counter, &time);
-    Sys_Printf("Time:	%d.%06u\n", time.seconds, time.microseconds);
+    printf("Time:	%d.%06u\n", time.seconds, time.microseconds);
 }
 
 #ifdef NOT_USED
@@ -648,7 +648,7 @@ TimeToCounters(time, counterPtr)
     seconds = time.seconds - SECS_SINCE_1970_FOR(1984);
 
     if (seconds < 0) {
-	Sys_Panic(SYS_WARNING, "Tried to set time before 1984\n");
+	printf( "Tried to set time before 1984\n");
 	return;
     }
 

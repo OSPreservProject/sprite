@@ -273,7 +273,7 @@ Timer_AddIntervalToTicks(absolute, interval, resultPtr)
 	 resultPtr->high++;
     } 
     if (resultPtr->high < intervalHigh) {
-	Sys_Panic(SYS_WARNING,"Timer_AddIntervalToTicks: overflow\n");
+	printf("Timer_AddIntervalToTicks: overflow\n");
     }
 
 }
@@ -446,7 +446,7 @@ ConvertTimeToInt(time, resultPtr)
     if (tmp.high > INTERVAL_HIGH(MAXINT) || 
        ((tmp.high == INTERVAL_HIGH(MAXINT)) && 
 	(tmp.low > INTERVAL_LOW(MAXINT)))) {
-	Sys_Panic(SYS_WARNING, "ConvertTimeToInt: time value too large\n");
+	printf( "ConvertTimeToInt: time value too large\n");
 	*resultPtr = MAXINT;
     } else {
         *resultPtr = COUNTER_TO_INTERVAL(tmp);
