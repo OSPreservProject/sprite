@@ -1520,8 +1520,11 @@ SetupVM(procPtr, objInfoPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr)
 	if (objInfoPtr->codeSize == 0) {
 	    /*
 	     * Things work better if we have a code segment.
+	     * I'm not sure setting realCode=1 is the right thing, but
+	     * I'll try it.  If realCode=0 we may have problems when we
+	     * try to clean up the file handle.
 	     */
-	    realCode = 0;
+	    realCode = 1;
 	    objInfoPtr->codeSize = vm_PageSize;
 	}
 	numPages = (objInfoPtr->codeSize - 1) / vm_PageSize + 1;
