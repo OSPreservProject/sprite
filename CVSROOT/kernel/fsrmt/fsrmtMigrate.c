@@ -63,6 +63,8 @@ typedef struct  FsMigParam {
     MigrateReply        migReply;
 } FsMigParam;
 
+static void LocalToRemoteDomain();
+static void RemoteToLocalDomain();
 
 
 /*
@@ -249,14 +251,20 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
 	     * to the server to trap "..", domainType is used to index the
 	     * name lookup operation switch, and prefixPtr is used for
 	     * efficient handling of lookup redirections.
+	     * Convert from remote to local file types, and vice-versa,
+	     * as needed.
 	     */
 	    streamPtr->nameInfoPtr = nameInfoPtr = Mem_New(FsNameInfo);
 	    nameInfoPtr->fileID = migInfoPtr->nameID;
 	    nameInfoPtr->rootID = migInfoPtr->rootID;
 	    if (nameInfoPtr->fileID.serverID != rpc_SpriteID) {
 		nameInfoPtr->domainType = FS_REMOTE_SPRITE_DOMAIN;
+		LocalToRemoteDomain(&nameInfoPtr->fileID);
+		LocalToRemoteDomain(&nameInfoPtr->rootID);
 	    } else {
 		nameInfoPtr->domainType = FS_LOCAL_DOMAIN;
+		RemoteToLocalDomain(&nameInfoPtr->fileID);
+		RemoteToLocalDomain(&nameInfoPtr->rootID);
 	    }
 	    nameInfoPtr->prefixPtr = FsPrefixFromFileID(&migInfoPtr->rootID);
 	    if (nameInfoPtr->prefixPtr == (struct FsPrefix *)NIL) {
@@ -744,3 +752,70 @@ Fs_DeencapFileState(procPtr, buffer)
     }
     return(SUCCESS);
 }
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * LocalToRemoteDomain --
+ *
+ *	Convert a file ID from a local file type to a remote file type.
+ *	This is used only for naming and root information, so types
+ *	are presumably FS_LCL_FILE_STREAM or FS_RMT_FILE_STREAM.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	If the file ID references a local type, it is changed to remote.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+
+static void
+LocalToRemoteDomain(fileIDPtr)
+    FsFileID *fileIDPtr;
+{
+    if (fileIDPtr->type == FS_LCL_FILE_STREAM) {
+	fileIDPtr->type = FS_RMT_FILE_STREAM;
+    } else if (fileIDPtr->type != FS_RMT_FILE_STREAM) {
+	Sys_Panic(SYS_WARNING,
+		  "LocalToRemoteDomain: <%d,%d,%d> is %d, not a file stream.\n",
+		  fileIDPtr->serverID,  fileIDPtr->major,
+		  fileIDPtr->minor, fileIDPtr->type);
+    }
+}    
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * RemoteToLocalDomain --
+ *
+ *	Convert a file ID from a local file type to a remote file type.
+ *	This is used only for naming and root information, so types
+ *	are presumably FS_LCL_FILE_STREAM or FS_RMT_FILE_STREAM.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	If the file ID references a local type, it is changed to remote.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+
+static void
+RemoteToLocalDomain(fileIDPtr)
+    FsFileID *fileIDPtr;
+{
+    if (fileIDPtr->type == FS_RMT_FILE_STREAM) {
+	fileIDPtr->type = FS_LCL_FILE_STREAM;
+    } else if (fileIDPtr->type != FS_LCL_FILE_STREAM) {
+	Sys_Panic(SYS_WARNING,
+		  "RemoteToLocalDomain: <%d,%d,%d> is %d, not a file stream.\n",
+		  fileIDPtr->serverID,  fileIDPtr->major,
+		  fileIDPtr->minor, fileIDPtr->type);
+    }
+}    
