@@ -538,7 +538,6 @@ Fscache_Read(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
     int			lastBlock;	/* Last block of the read */
     Boolean		found;		/* For fetching blocks from cache */
     Fscache_Block	*blockPtr;	/* For fetching blocks from cache */
-    int			amountRead;	/* Amount that was read each time */
     int			dontBlock;	/* FSCACHE_DONT_BLOCK */
 
     /*
@@ -619,7 +618,6 @@ Fscache_Read(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	}
 	fs_Stats.blockCache.readAccesses++;
 	if (found) {
-	    amountRead = 0;
 	    if (blockPtr->timeDirtied != 0) {
 		fs_Stats.blockCache.readHitsOnDirtyBlock++;
 	    } else {
@@ -631,43 +629,22 @@ Fscache_Read(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	} else {
 	    /*
 	     * We didn't find the block in the cache so we have to read it in.
+	     * Fscache_FetchBlock has set the blockNum and blockAddr (buffer).
+	     * blockSize gets set as a side-effect of the block read routine.
 	     */
-	    int blockOffset = blockNum * FS_BLOCK_SIZE;
-	    amountRead = FS_BLOCK_SIZE;
 	    status = (cacheInfoPtr->ioProcsPtr->blockRead)
-			(cacheInfoPtr->hdrPtr, 0, blockPtr->blockAddr,
-				&blockOffset, &amountRead, remoteWaitPtr);
+			(cacheInfoPtr->hdrPtr, blockPtr, remoteWaitPtr);
 #ifdef lint
-	    status = Fsio_FileBlockRead(cacheInfoPtr->hdrPtr, 0,
-			blockPtr->blockAddr, &blockOffset, &amountRead,
-			remoteWaitPtr);
-	    status = FsrmtFileBlockRead(cacheInfoPtr->hdrPtr, 0,
-			blockPtr->blockAddr, &blockOffset, &amountRead,
-			remoteWaitPtr);
+	    status = Fsio_FileBlockRead(cacheInfoPtr->hdrPtr,
+			blockPtr, remoteWaitPtr);
+	    status = FsrmtFileBlockRead(cacheInfoPtr->hdrPtr,
+			blockPtr, remoteWaitPtr);
 #endif /* lint */
 	    if (status != SUCCESS) {
 		fs_Stats.blockCache.domainReadFails++;
 		Fscache_UnlockBlock(blockPtr, 0, -1, 0, FSCACHE_DELETE_BLOCK);
 		break;
 	    }
-	    if (cacheInfoPtr->hdrPtr->fileID.type == FSIO_RMT_FILE_STREAM) {
-		/*
-		 * Sorry for this explicit check against the stream type.
-		 * We want to know the the effectiveness of the cache
-		 * on the remote client is.
-		 */
-		fs_Stats.rmtIO.bytesReadForCache += amountRead;
-	    }
-	    if (amountRead < FS_BLOCK_SIZE) {
-                /*
-                 * We always must make sure that every cache block is filled
-		 * with zeroes so reads in holes or just past eof do not
-		 * return garbage.
-                 */
-		fs_Stats.blockCache.readZeroFills++;
-                bzero(blockPtr->blockAddr + amountRead,
-			FS_BLOCK_SIZE - amountRead);
-            }
         }
 
 	/*
@@ -678,7 +655,7 @@ Fscache_Read(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 		          blockPtr->blockAddr + (offset & FS_BLOCK_OFFSET_MASK),
 			  buffer) != SUCCESS) {
 		status = SYS_ARG_NOACCESS;
-		Fscache_UnlockBlock(blockPtr, 0, -1, amountRead,
+		Fscache_UnlockBlock(blockPtr, 0, -1, 0,
 			FSCACHE_CLEAR_READ_AHEAD);
 		break;
 	    }
@@ -686,8 +663,7 @@ Fscache_Read(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	    bcopy(blockPtr->blockAddr + (offset & FS_BLOCK_OFFSET_MASK),
 		      buffer, toRead);
 	}
-	Fscache_UnlockBlock(blockPtr, 0, -1, amountRead,
-		    FSCACHE_CLEAR_READ_AHEAD);
+	Fscache_UnlockBlock(blockPtr, 0, -1, 0, FSCACHE_CLEAR_READ_AHEAD);
     }
     *lenPtr -= size;
     Fs_StatAdd(*lenPtr, fs_Stats.blockCache.bytesRead,
@@ -935,33 +911,20 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 		    }
 		    bytesToFree += toWrite;
 		} else {
-		    int blockOffset = blockNum * FS_BLOCK_SIZE;
-
-		    numBytes = FS_BLOCK_SIZE;
 		    fs_Stats.blockCache.partialWriteMisses++;
 		    status = (cacheInfoPtr->ioProcsPtr->blockRead)
-			(cacheInfoPtr->hdrPtr, 0, blockPtr->blockAddr,
-				&blockOffset, &numBytes, remoteWaitPtr);
+			(cacheInfoPtr->hdrPtr, blockPtr, remoteWaitPtr);
 #ifdef lint
-		    status = Fsio_FileBlockRead(cacheInfoPtr->hdrPtr, 0,
-				blockPtr->blockAddr, &blockOffset, &numBytes,
-				remoteWaitPtr);
-		    status = FsrmtFileBlockRead(cacheInfoPtr->hdrPtr, 0,
-				blockPtr->blockAddr, &blockOffset, &numBytes,
-				remoteWaitPtr);
+		    status = Fsio_FileBlockRead(cacheInfoPtr->hdrPtr, 
+				blockPtr, remoteWaitPtr);
+		    status = FsrmtFileBlockRead(cacheInfoPtr->hdrPtr,
+				blockPtr, remoteWaitPtr);
 #endif /* lint */
 		    if (status != SUCCESS) {
 			fs_Stats.blockCache.domainReadFails++;
 			Fscache_UnlockBlock(blockPtr, 0, -1, 0,
 			    FSCACHE_DELETE_BLOCK);
 			break;
-		    }  else if (numBytes < FS_BLOCK_SIZE) {
-			/*
-			 * We always want cache blocks to be zero filled.
-			 */
-			fs_Stats.blockCache.writeZeroFills1++;
-			bzero(blockPtr->blockAddr + numBytes,
-				FS_BLOCK_SIZE - numBytes);
 		    }
 		    bytesToFree += numBytes;
 		}
@@ -995,6 +958,8 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	/*
 	 * If the block is write-thru then write the data through to the 
 	 * server and then check the block back in as clean.
+	 * THIS IS A GORY HACK that limits the use of FS_SERVER_WRITE_THRU
+	 * to the client side of things.
 	 */
 	if (flags & FS_SERVER_WRITE_THRU) {
 	    Fs_Stream	dummyStream;
@@ -1007,6 +972,7 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	    io.flags = flags | FS_CLIENT_CACHE_WRITE;
 	    io.flags &= ~(FS_USER | FS_SERVER_WRITE_THRU);
 
+	    dummyStream.hdr.fileID.type = -1;
 	    dummyStream.ioHandlePtr = cacheInfoPtr->hdrPtr;
 	    status = Fsrmt_Write(&dummyStream, &io,
 			 (Sync_RemoteWaiter *)NIL, &reply);
@@ -1020,7 +986,8 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	}
 
 	/*
-	 * Return the block to the cache.
+	 * Return the block to the cache.  At this time the block
+	 * size is changed (by UnlockBlock). 
 	 */
 	if (offset + toWrite - 1 > cacheInfoPtr->attr.lastByte) {
 	    cacheInfoPtr->attr.lastByte = offset + toWrite - 1;
@@ -1118,19 +1085,21 @@ Fscache_BlockRead(cacheInfoPtr, blockNum, blockPtrPtr, numBytesPtr, blockType,
     Boolean		found;
     ReturnStatus	status = SUCCESS;
     int			offset;
+    Fscache_Block	*blockPtr;
 
     LOCK_MONITOR;
 
     *blockPtrPtr = (Fscache_Block *)NIL;
-    if (cacheInfoPtr->flags & FSCACHE_FILE_NOT_CACHEABLE) {
+    *numBytesPtr = 0;
+
+   if (cacheInfoPtr->flags & FSCACHE_FILE_NOT_CACHEABLE) {
 	panic( "Fscache_BlockRead, file not cacheable!\n");
 	status = FS_NOT_CACHEABLE;
 	goto exit;
     }
     offset = blockNum * FS_BLOCK_SIZE;
     if (offset > cacheInfoPtr->attr.lastByte) {
-	*numBytesPtr = 0;
-	status =SUCCESS;
+	status = SUCCESS;
 	goto exit;
     }
     fs_Stats.blockCache.readAccesses++;
@@ -1140,86 +1109,77 @@ Fscache_BlockRead(cacheInfoPtr, blockNum, blockPtrPtr, numBytesPtr, blockType,
     Fscache_FetchBlock(cacheInfoPtr, blockNum, blockType,
 			blockPtrPtr, &found);
     if (*blockPtrPtr == (Fscache_Block *)NIL) {
-	*numBytesPtr = 0;
 	status = FS_WOULD_BLOCK;
 	goto exit;
     }
+    blockPtr = *blockPtrPtr;
 
     if (!found) {
 	/*
-	 * Set up the stream needed to get the data if its not in the cache.
+	 * Read in the cache block.  If the block isn't full (includes EOF)
+	 * then blockSize is set and the rest of the cache block has
+	 * been zero filled.
 	 */
-	*numBytesPtr = FS_BLOCK_SIZE;
 	status = (cacheInfoPtr->ioProcsPtr->blockRead)
-		    (cacheInfoPtr->hdrPtr, 0, (*blockPtrPtr)->blockAddr,
-		     &offset, numBytesPtr, (Sync_RemoteWaiter *) NIL);
+		    (cacheInfoPtr->hdrPtr, blockPtr, (Sync_RemoteWaiter *) NIL);
 #ifdef lint
-	status = Fsio_FileBlockRead(cacheInfoPtr->hdrPtr, 0,
-		(*blockPtrPtr)->blockAddr, &offset, numBytesPtr,
-		(Sync_RemoteWaiter *) NIL);
-	status = FsrmtFileBlockRead(cacheInfoPtr->hdrPtr, 0,
-		(*blockPtrPtr)->blockAddr, &offset, numBytesPtr,
-		(Sync_RemoteWaiter *) NIL);
+	status = Fsio_FileBlockRead(cacheInfoPtr->hdrPtr,
+		blockPtr, (Sync_RemoteWaiter *) NIL);
+	status = FsrmtFileBlockRead(cacheInfoPtr->hdrPtr,
+		blockPtr, (Sync_RemoteWaiter *) NIL);
 #endif /* lint */
-	if (status == SUCCESS && *numBytesPtr == 0 &&
+	if (status == SUCCESS && blockPtr->blockSize == 0 &&
 	    offset < cacheInfoPtr->attr.lastByte + 1) {
 	    /*
 	     * Due to delayed writes the disk descriptor has no space allocated
 	     * and the file block read routine thinks we've read past eof.
 	     * Actually were in a hole in the file and should return zeros.
+	     * The blockRead routine always zero fills for us.
 	     */
-	    bzero((*blockPtrPtr)->blockAddr, FS_BLOCK_SIZE);
-	    *numBytesPtr = FS_BLOCK_SIZE;
+	    printf("Fscache_BlockRead: Giving zeros to \"%s\" <%d,%d> block %d amount %d\n",
+		    Fsutil_HandleName(cacheInfoPtr->hdrPtr),
+		    cacheInfoPtr->hdrPtr->fileID.major,
+		    cacheInfoPtr->hdrPtr->fileID.minor,
+		    blockPtr->blockNum,
+		    cacheInfoPtr->attr.lastByte - offset);
+	    blockPtr->blockSize = cacheInfoPtr->attr.lastByte - offset;
 	}
-	if (status != SUCCESS || (*numBytesPtr == 0 && !allocate)) {
+	if ((status != SUCCESS) ||
+	    (blockPtr->blockSize == 0 && !allocate)) {
 	    /*
 	     * We hit a disk error or are really past the end-of-file.
-	     * Note that if allocate is TRUE well return a cache block
-	     * to our caller with *numBytesPtr == 0.
 	     */
-	    Fscache_UnlockBlock(*blockPtrPtr, 0, -1, 0, FSCACHE_DELETE_BLOCK);
+	    Fscache_UnlockBlock(blockPtr, 0, -1, 0, FSCACHE_DELETE_BLOCK);
 	    *blockPtrPtr = (Fscache_Block *)NIL;
-	    *numBytesPtr = 0;
-	}
-	if ((*numBytesPtr > 0) && (*numBytesPtr < FS_BLOCK_SIZE) && 
-	    (blockType & FSCACHE_DATA_BLOCK)) {
-	    /*
-	     * If did not read a full data block then zero fill the rest
-	     * because we can't have any partial data blocks in the cache.
-	     */
-	    fs_Stats.blockCache.readZeroFills++;
-	    bzero((*blockPtrPtr)->blockAddr + *numBytesPtr, FS_BLOCK_SIZE - *numBytesPtr);
 	}
     } else {
 	if (blockType & FSCACHE_DIR_BLOCK) {
 	    fs_Stats.blockCache.dirBlockHits++;
 	}
-	if ((*blockPtrPtr)->flags & FSCACHE_READ_AHEAD_BLOCK) {
+	if (blockPtr->flags & FSCACHE_READ_AHEAD_BLOCK) {
 	    fs_Stats.blockCache.readAheadHits++;
 	}
-	if ((*blockPtrPtr)->timeDirtied != 0) {
+	if (blockPtr->timeDirtied != 0) {
 	    fs_Stats.blockCache.readHitsOnDirtyBlock++;
 	} else {
 	    fs_Stats.blockCache.readHitsOnCleanBlock++;
 	}
-
-	if (cacheInfoPtr->attr.lastByte > offset + FS_BLOCK_SIZE) {
-	    *numBytesPtr = FS_BLOCK_SIZE;
-	} else {
-	    *numBytesPtr = cacheInfoPtr->attr.lastByte - offset + 1;
-	}
     }
+    if (status == SUCCESS) {
+	*numBytesPtr = blockPtr->blockSize;
+    }
+
     if (blockType & FSCACHE_DIR_BLOCK) {
-	fs_Stats.blockCache.dirBytesRead += *numBytesPtr;
+	fs_Stats.blockCache.dirBytesRead += blockPtr->blockSize;
     } else {
-	Fs_StatAdd(*numBytesPtr, fs_Stats.blockCache.bytesRead,
+	Fs_StatAdd(blockPtr->blockSize, fs_Stats.blockCache.bytesRead,
 		   fs_Stats.blockCache.bytesReadOverflow);
 #ifndef CLEAN
 	if (fsdmKeepTypeInfo) {
 	    int fileType;
 
 	    fileType = Fsdm_FindFileType(cacheInfoPtr);
-	    fs_TypeStats.cacheBytes[FS_STAT_READ][fileType] += *numBytesPtr;
+	    fs_TypeStats.cacheBytes[FS_STAT_READ][fileType] += blockPtr->blockSize;
 	}
 #endif CLEAN
     }
