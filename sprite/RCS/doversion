@@ -1,0 +1,44 @@
+#! /sprite/cmds/csh -f
+#
+#	Usage: doversion releaseNumber versionInfo
+#	releaseNumber is the major number for the version (currently 1)
+#	versionInfo controls the minor number of the version. If it is
+#	TRUE then the version is incremented from the last build, if
+#	it is FALSE it is not incremented, and any other value is taken
+#	to be the version number to use.
+#
+# $Header$ SPRITE (Berkeley)
+#
+# Copyright 1989 Regents of the University of California
+# Permission to use, copy, modify, and distribute this
+# software and its documentation for any purpose and without
+# fee is hereby granted, provided that the above copyright
+# notice appear in all copies.  The University of California
+# makes no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without
+# express or implied warranty.
+#
+
+set release = $1
+set versionInfo = $2
+set version = `cat version`
+switch($versionInfo) 
+    case "TRUE":
+	@ version++
+	echo $version > version
+	breaksw
+    case "FALSE":
+	breaksw
+    default:
+	set version = $versionInfo
+	breaksw
+endsw
+echo $version > version
+if ($version < 10 ) then
+    set version = "00"$version
+else if ($version < 100) then
+    set version = "0"$version
+endif
+
+mkversion -p "SPRITE VERSION $release.$version (MACHINE)" 
+
