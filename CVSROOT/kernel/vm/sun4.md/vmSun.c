@@ -72,9 +72,12 @@ extern	Address	vmStackEndAddr;
 
 static void SegDelete();
 static void WriteHardMapSeg();
+#ifdef NOTDEF
+/* This is broken for now */
 #ifdef sun4c
 static	void	MapColorMapAndIdRomAddr();
 #endif
+#endif NOTDEF
 
 /*----------------------------------------------------------------------
  * 
@@ -798,9 +801,12 @@ VmMach_Init(firstFreePage)
 	copyMap[i] = VMMACH_INV_PMEG;
     }
 #endif NOTDEF
+#ifdef NOTDEF
+/* This is broken for now */
 #ifdef sun4c
     MapColorMapAndIdRomAddr();
-#endif
+#endif sun4c
+#endif NOTDEF
 
 }
 
@@ -1030,11 +1036,13 @@ MMUInit(firstFreeSegment)
     }
 }
 
+#ifdef NOTDEF
+/* This is broken for now */
 #ifdef sun4c
 static char	colorArray[3 * 0x1000];
 #ifdef ID
 static char	idArray[2 * 0x1000];
-#endif NOTDEF
+#endif ID
 
 /*
  * ----------------------------------------------------------------------------
@@ -1091,11 +1099,11 @@ MapColorMapAndIdRomAddr()
     /* and another 2 pages */
 #ifdef NOTDEF
     idVirtAddr = (Address) malloc(3 * 0x1000);
-#else
+#else NOTDEF
 #ifdef ID
     idVirtAddr = idArray;
-#endif
-#endif
+#endif ID
+#endif NOTDEF
 #ifdef ID
     ((unsigned int)idVirtAddr) &= 0xfffff000;
 #endif
@@ -1118,6 +1126,7 @@ MapColorMapAndIdRomAddr()
     return;
 }
 #endif sun4c
+#endif NOTDEF
 
 
 
