@@ -174,4 +174,7 @@ Sig:
 Added a new routine, Sig_CheckForKill() that lets you check for a kill
 signal without handling any signals that might take you out to user mode.
 This is for the Mach change for the sun4 and sun4c, above.
+-------------------------------------------------------------------------
+Dev:
+You can now skip backwards over files on tape.
     New files linked in from the net library.
