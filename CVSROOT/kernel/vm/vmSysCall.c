@@ -173,7 +173,10 @@ Vm_DestroyVA(address, size)
 }
 
 static int	copySize = 4096;
+
+#ifndef CLEAN
 static char	buffer[8192];
+#endif CLEAN
 
 void	SetVal();
 
@@ -264,6 +267,7 @@ Vm_Cmd(command, arg)
 	case VM_SET_COPY_SIZE:
 	    SETVAR(copySize, arg);
 	    break;
+#ifndef CLEAN
 	case VM_DO_COPY_IN:
 	    (void)Vm_CopyIn(copySize, (Address) arg, buffer);
 	    break;
@@ -282,6 +286,7 @@ Vm_Cmd(command, arg)
 	    Byte_Copy(copySize, buffer, (Address) arg);
 	    Vm_MakeUnaccessible((Address) arg, numBytes);
 	    break;
+#endif CLEAN
 	case VM_GET_STATS:
 	    vmStat.kernMemPages = 
 		    (unsigned int)(vmMemEnd - mach_KernStart) / vm_PageSize;
@@ -337,6 +342,7 @@ Vm_Cmd(command, arg)
 	    break;
         default:
             Sys_Panic(SYS_WARNING, "Vm_Cmd: Unknown command.\n");
+	    status = GEN_INVALID_ARG;
             break;
     }
  
