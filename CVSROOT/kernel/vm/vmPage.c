@@ -152,6 +152,7 @@ VmCoreMapAlloc()
     }
     printf("Available memory %d\n", vmStat.numPhysPages * vm_PageSize);
     coreMap = (VmCore *) Vm_BootAlloc(sizeof(VmCore) * vmStat.numPhysPages);
+    bzero((char *) coreMap, sizeof(VmCore) * vmStat.numPhysPages);
 }
 
 
