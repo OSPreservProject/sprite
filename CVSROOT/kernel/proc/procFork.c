@@ -131,7 +131,7 @@ Proc_NewProc(PC, procType, shareHeap, pidPtr, procName, vforkFlag)
 {
 
 
-    procPtr->genFlags 		= procType | PROC_DONT_MIGRATE;
+    if (parentProcPtr->genFlags & PROC_FOREIGN) {
     procPtr = ProcGetUnusedPCB();
     if (pidPtr != (Proc_PID *) NIL) {
 	*pidPtr		= procPtr->processID;
