@@ -478,8 +478,8 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 {
     register int size;		/* The amount of the data in the message */
     int		i;
-    Boolean	foundSpot;
-    Boolean	alreadyFunc;
+    int		foundSpot;	/* Neg ack buf to use. */
+    int		alreadyFunc;	/* What buf neg ack function is dealing with. */
 
 
     /*
@@ -509,27 +509,49 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 	 * Copy rpc header info to safe place that won't be freed when
 	 * we return.
 	 */
-	alreadyFunc = FALSE;
-	foundSpot = FALSE;
+	alreadyFunc = -1;
+	foundSpot = -1;
 	for (i = 0; i < rpc_NumNackBuffers; i++) {
-	    if (!foundSpot && rpcNack.hdrState[i] == RPC_NACK_FREE) {
+	    /*
+	     * If we haven't already found a buffer to use and this one is
+	     * free, use it.
+	     */
+	    if (foundSpot == -1 && rpcNack.hdrState[i] == RPC_NACK_FREE) {
 		rpcNack.numFree--;
 		rpcNack.hdrState[i] = RPC_NACK_WAITING;
-		foundSpot = TRUE;
+		foundSpot = i;
 		RpcSrvInitHdr(NIL, &(rpcNack.rpcHdrArray[i]), rpcHdrPtr);
-	    } else if (rpcNack.hdrState[i] == RPC_NACK_WAITING) {
-		alreadyFunc = TRUE;
+	    /*
+	     * If we've found evidence that there's already a CallFunc for
+	     * the NegAckFunc, then record the first buffer it will be dealing
+	     * with next.
+	     */
+	    } else if (alreadyFunc == -1 &&
+		    rpcNack.hdrState[i] == RPC_NACK_WAITING) {
+		alreadyFunc = i;
 	    }
 	}
-	if (foundSpot && !alreadyFunc) {
+	/*
+	 * If we've found a buffer and either there's no CallFunc or else it
+	 * is already past the buffer we've grabbed, then start another
+	 * CallFunc.
+	 */
+	if (foundSpot != -1 &&
+		(alreadyFunc == -1 || alreadyFunc >= foundSpot)) {
 	    MASTER_UNLOCK(&(rpcNack.mutex));
 	    Proc_CallFunc(NegAckFunc, (ClientData) NIL, 0);
 	    return;
-	} else if (foundSpot) {
+	/*
+	 * Otherwise if we've found a buffer, there's already a CallFunc.
+	 */
+	} else if (foundSpot != -1) {
 	    MASTER_UNLOCK(&(rpcNack.mutex));
 	    return;
 	}
 	MASTER_UNLOCK(&(rpcNack.mutex));
+	/*
+	 * If we haven't found a free buffer, something is wrong.
+	 */
 	panic("RpcServerDispatch: couldn't find free rpcHdr.\n");
     }
 
