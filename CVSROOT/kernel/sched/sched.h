@@ -83,6 +83,8 @@ typedef struct Sched_Instrument {
 	 * Make the counter into 64 bits 
 	 */
 	unsigned int idleTicksOverflow;
+    	unsigned int idleTicksPerSecond;	/* Calibrated value */
+
 #if 	(MACH_MAX_NUM_PROCESSORS != 1) 
 	/*
 	 * Pad the structure to insure that two structure occur in the
@@ -93,8 +95,6 @@ typedef struct Sched_Instrument {
 	 Mach_CacheBlockSizeType	pad;
 #endif
     } processor[MACH_MAX_NUM_PROCESSORS];
-
-    unsigned int idleTicksPerSecond;	/* Calibrated value */
 
     int numReadyProcesses;		/* Number of ready processes at time
 					 * of call to copy information */
@@ -128,5 +128,7 @@ extern void 			Sched_PrintStat();
 extern void 			Sched_StartProcess();
 extern void			Sched_SetClearUsageFlag();
 extern void			Sched_DumpReadyQueue();
+extern ReturnStatus		Sched_StartProcessor();
+extern ReturnStatus		Sched_IdleProcessor();
 
 #endif /* _SCHED */
