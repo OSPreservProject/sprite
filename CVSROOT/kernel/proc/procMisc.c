@@ -91,6 +91,20 @@ Proc_Init()
  *----------------------------------------------------------------------
  */
 
+/*
+ * Macro to fix up ticks for a process control block.
+ */
+#define TICKS_TO_TIME(pcbEntry) \
+	Timer_TicksToTime(pcbEntry.kernelCpuUsage.ticks,  \
+			  &pcbEntry.kernelCpuUsage.time); \
+	Timer_TicksToTime(pcbEntry.userCpuUsage.ticks,  \
+			  &pcbEntry.userCpuUsage.time); \
+	Timer_TicksToTime(pcbEntry.childKernelCpuUsage.ticks,  \
+			  &pcbEntry.childKernelCpuUsage.time); \
+	Timer_TicksToTime(pcbEntry.childUserCpuUsage.ticks,  \
+			  &pcbEntry.childUserCpuUsage.time);
+
+
 ReturnStatus
 Proc_GetPCBInfo(firstPid, lastPid, hostID, infoSize, bufferPtr, 
 		argsPtr, trueNumBuffersPtr)
@@ -168,15 +182,7 @@ Proc_GetPCBInfo(firstPid, lastPid, hostID, infoSize, bufferPtr,
 		return(status);
 	    }
 	}
-	Timer_TicksToTime(pcbEntry.kernelCpuUsage.ticks, 
-			  &pcbEntry.kernelCpuUsage.time);
-	Timer_TicksToTime(pcbEntry.userCpuUsage.ticks, 
-			  &pcbEntry.userCpuUsage.time);
-	Timer_TicksToTime(pcbEntry.childKernelCpuUsage.ticks, 
-			  &pcbEntry.childKernelCpuUsage.time);
-	Timer_TicksToTime(pcbEntry.childUserCpuUsage.ticks, 
-			  &pcbEntry.childUserCpuUsage.time);
-
+	TICKS_TO_TIME(pcbEntry);
 	FillPCBInfo(&pcbEntry, &statusInfo);
 	if (Proc_ByteCopy(FALSE, bytesToCopy,
 		(Address)&statusInfo, (Address) bufferPtr) != SUCCESS) {
@@ -220,8 +226,11 @@ Proc_GetPCBInfo(firstPid, lastPid, hostID, infoSize, bufferPtr,
 		}
 		bcopy((Address)procPtr, (Address)&pcbEntry,
 			sizeof (Proc_ControlBlock));
+
+		TICKS_TO_TIME(pcbEntry);
+		FillPCBInfo(&pcbEntry, &statusInfo);
 	    } else {
-		status = GetRemotePCB(hostID, (Proc_PID) i, &pcbEntry,
+		status = GetRemotePCB(hostID, (Proc_PID) i, &statusInfo,
 					   argString);
 		if (status != SUCCESS) {
 		    /*
@@ -237,21 +246,11 @@ Proc_GetPCBInfo(firstPid, lastPid, hostID, infoSize, bufferPtr,
 		    break;
 		}
 	    }
-	    Timer_TicksToTime(pcbEntry.kernelCpuUsage.ticks, 
-			      &pcbEntry.kernelCpuUsage.time);
-	    Timer_TicksToTime(pcbEntry.userCpuUsage.ticks, 
-			      &pcbEntry.userCpuUsage.time);
-	    Timer_TicksToTime(pcbEntry.childKernelCpuUsage.ticks, 
-			      &pcbEntry.childKernelCpuUsage.time);
-	    Timer_TicksToTime(pcbEntry.childUserCpuUsage.ticks, 
-			      &pcbEntry.childUserCpuUsage.time);
-
-	    FillPCBInfo(&pcbEntry, &statusInfo);
 	    if (Proc_ByteCopy(FALSE, bytesToCopy,
 		    (Address)&statusInfo, (Address) bufferPtr) != SUCCESS) {
 		return(SYS_ARG_NOACCESS);
 	    }
-	    if (argsPtr != (Proc_PCBArgString *) NIL) {
+	    if (argsPtr != (Proc_PCBArgString *) USER_NIL) {
 		if (!remote) {
 		    if (procPtr->argString != (Address) NIL) {
 			strncpy(argString, procPtr->argString,
@@ -282,6 +281,12 @@ Proc_GetPCBInfo(firstPid, lastPid, hostID, infoSize, bufferPtr,
 
 
 /*
+ * Define some constants used to distinguish RPC sub-commands.
+ */
+#define GET_PCB 1
+#define GET_SEG_INFO 2
+
+/*
  *----------------------------------------------------------------------
  *
  * GetRemotePCB --
@@ -301,18 +306,20 @@ static ReturnStatus
 GetRemotePCB(hostID, pid, pcbPtr, argString)
     int		hostID;		/* Host to send RPC to. */
     Proc_PID	pid;		/* index of PCB to obtain. */
-    Proc_ControlBlock *pcbPtr;	/* Place to return PCB data. */
+    Proc_PCBInfo *pcbPtr;	/* Place to return PCB data. */
     char	*argString;	/* Place to return argument string. */
 {
     Rpc_Storage		storage;
     ReturnStatus 	status;
+    int			request;
 
-    storage.requestParamPtr = (Address)&pid;
-    storage.requestParamSize = sizeof(Proc_PID);
-    storage.requestDataPtr = (Address)NIL;
-    storage.requestDataSize = 0;
+    request = GET_PCB;
+    storage.requestParamPtr = (Address)&request;
+    storage.requestParamSize = sizeof(request);
+    storage.requestDataPtr = (Address)&pid;
+    storage.requestDataSize = sizeof(Proc_PID);
     storage.replyParamPtr = (Address)pcbPtr;
-    storage.replyParamSize = sizeof(Proc_ControlBlock);
+    storage.replyParamSize = sizeof(Proc_PCBInfo);
     storage.replyDataPtr = (Address)argString;
     storage.replyDataSize = PROC_PCB_ARG_LENGTH;
 
@@ -320,6 +327,46 @@ GetRemotePCB(hostID, pid, pcbPtr, argString)
     if (status == SUCCESS && storage.replyDataSize == 0) {
 	argString[0] = '\0';
     }
+    return(status);
+
+}
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_GetRemoteSegInfo --
+ *
+ *	Perform an RPC to get info for a VM segment control from another host.
+ *
+ * Results:
+ *	The return status from the RPC is returned.  
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus	
+Proc_GetRemoteSegInfo(hostID, segNum, segInfoPtr)
+    int		hostID;		/* Host to send RPC to. */
+    int		segNum;		/* index of segment to obtain. */
+    Vm_SegmentInfo *segInfoPtr;	/* Place to return segment data. */
+{
+    Rpc_Storage		storage;
+    ReturnStatus 	status;
+    int			request;
+
+    request = GET_SEG_INFO;
+    storage.requestParamPtr = (Address)&request;
+    storage.requestParamSize = sizeof(request);
+    storage.requestDataPtr = (Address)&segNum;
+    storage.requestDataSize = sizeof(int);
+    storage.replyParamPtr = (Address)segInfoPtr;
+    storage.replyParamSize = sizeof(Vm_SegmentInfo);
+    storage.replyDataPtr = (Address)NIL;
+    storage.replyDataSize = 0;
+
+    status = Rpc_Call(hostID, RPC_PROC_GETPCB, &storage);
     return(status);
 
 }
@@ -392,12 +439,12 @@ FillPCBInfo(pcbPtr, statusInfoPtr)
  *
  * Proc_RpcGetPCB --
  *
- *	Stub to handle a remote request for a PCB.
+ *	Stub to handle a remote request for a PCB or Vm_Segment.
  *
  * Results:
  *	Status of reply:
  *	GEN_INVALID_ARG - index into table of process control blocks is
- *			  invalid.
+ *			  invalid, or segment is invalid.
  *	SUCCESS 	- information is returned.
  *
  *	SUCCESS is passed to the caller on this machine.
@@ -425,38 +472,55 @@ Proc_RpcGetPCB(srvToken, clientID, command, storagePtr)
     ReturnStatus	status = SUCCESS;
     Proc_PID		*pidPtr;
     Rpc_ReplyMem	*replyMemPtr;
-    Proc_ControlBlock   *pcbPtr;
+    Proc_PCBInfo	*pcbPtr;
     Proc_ControlBlock   *procPtr;
+    Proc_ControlBlock   pcb;
+    int			*segNumPtr;
+    Vm_SegmentInfo	*segInfoPtr;
+    int			*requestPtr;
 
-    pidPtr = (Proc_PID *) storagePtr->requestParamPtr;
-    if (*pidPtr >= proc_MaxNumProcesses) {
-	status = GEN_INVALID_ARG;
-    } else {
-	procPtr = Proc_GetPCB(*pidPtr);
-	if (procPtr == (Proc_ControlBlock *) NIL) {
-	    panic("Proc_RpcGetPCB: found nil PCB!");
-	    status = FAILURE;
+    requestPtr = (int *) storagePtr->requestParamPtr;
+    if (*requestPtr == GET_SEG_INFO) {
+	segNumPtr = (int *) storagePtr->requestDataPtr;
+	segInfoPtr = (Vm_SegmentInfo *) malloc(sizeof (Vm_SegmentInfo));
+	status = Vm_EncapSegInfo(*segNumPtr, segInfoPtr);
+	storagePtr->replyParamPtr = (Address) segInfoPtr;
+	storagePtr->replyParamSize = sizeof(Vm_SegmentInfo);
+	goto done;
+    } else if (*requestPtr == GET_PCB) {
+	pidPtr = (Proc_PID *) storagePtr->requestDataPtr;
+	if (*pidPtr >= proc_MaxNumProcesses) {
+	    status = GEN_INVALID_ARG;
+	} else {
+	    procPtr = Proc_GetPCB(*pidPtr);
+	    if (procPtr == (Proc_ControlBlock *) NIL) {
+		panic("Proc_RpcGetPCB: found nil PCB!");
+		status = FAILURE;
+	    }
+	}
+	if (status != SUCCESS) {
+	    Rpc_Reply(srvToken, status, storagePtr,
+		      (int(*)())NIL, (ClientData)NIL);
+	    return(SUCCESS);
+	}
+
+	bcopy((Address) procPtr, (Address) &pcb, sizeof (Proc_ControlBlock));
+	TICKS_TO_TIME(pcb);
+	pcbPtr = (Proc_PCBInfo *) malloc(sizeof (Proc_PCBInfo));
+	storagePtr->replyParamPtr = (Address) pcbPtr;
+	storagePtr->replyParamSize = sizeof(Proc_PCBInfo);
+	FillPCBInfo(&pcb, pcbPtr);
+
+	if (procPtr->argString != (Address) NIL) {
+	    storagePtr->replyDataSize = strlen(procPtr->argString) + 1;
+	    storagePtr->replyDataPtr = (Address) malloc(storagePtr->replyDataSize);
+	    strcpy(storagePtr->replyDataPtr, procPtr->argString);
+	} else {
+	    storagePtr->replyDataSize = 0;
+	    storagePtr->replyDataPtr = (Address) NIL;
 	}
     }
-    if (status != SUCCESS) {
-    	Rpc_Reply(srvToken, status, storagePtr,
-		  (int(*)())NIL, (ClientData)NIL);
-	return(SUCCESS);
-    }
-
-    pcbPtr = (Proc_ControlBlock *) malloc(sizeof (Proc_ControlBlock));
-    storagePtr->replyParamPtr = (Address) pcbPtr;
-    storagePtr->replyParamSize = sizeof(Proc_ControlBlock);
-    bcopy((Address) procPtr, (Address) pcbPtr, sizeof (Proc_ControlBlock));
-    
-    if (procPtr->argString != (Address) NIL) {
-	storagePtr->replyDataSize = strlen(procPtr->argString + 1);
-	storagePtr->replyDataPtr = (Address) malloc(storagePtr->replyDataSize);
-	strcpy(storagePtr->replyDataPtr, procPtr->argString);
-    } else {
-	storagePtr->replyDataSize = 0;
-	storagePtr->replyDataPtr = (Address) NIL;
-    }
+    done:
     replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
     replyMemPtr->paramPtr = storagePtr->replyParamPtr;
     replyMemPtr->dataPtr = storagePtr->replyDataPtr;
