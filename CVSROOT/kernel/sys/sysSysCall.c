@@ -252,7 +252,7 @@ static SysCallEntry sysCalls[] = {
     Fs_CommandStub,		Proc_DoRemoteCall, FALSE,	3,   NILPARM,
     ErrorProc,       		ErrorProc, 	   TRUE,	2,   NILPARM,
     Sys_GetMachineInfo,       	Proc_DoRemoteCall, FALSE,	3,   NILPARM,
-    Net_InstallRouteStub, 	Net_InstallRouteStub, TRUE, 	5,   NILPARM,
+    Net_InstallRouteStub, 	Net_InstallRouteStub, TRUE, 	6,   NILPARM,
     Fs_ReadVectorStub, 		Fs_ReadVectorStub, TRUE, 	4,   NILPARM,
     Fs_WriteVectorStub, 	Fs_WriteVectorStub, TRUE, 	4,   NILPARM,
     Fs_CheckAccess,     	Fs_CheckAccess, 	TRUE,	3,   NILPARM,
