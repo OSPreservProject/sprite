@@ -59,5 +59,10 @@ extern	ReturnStatus		ProcFamilyInsert();
 
 extern	int			ProcTableMatch();
 extern	void			ProcAddToGroupList();
+
+extern	ReturnStatus		ProcExecGetEncapSize();
+extern	ReturnStatus		ProcExecEncapState();
+extern	ReturnStatus		ProcExecDeencapState();
+extern	ReturnStatus		ProcExecFinishMigration();
 	  
 #endif /* _PROCINT */
