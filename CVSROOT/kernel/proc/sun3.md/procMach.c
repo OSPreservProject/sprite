@@ -180,7 +180,7 @@ ProcGetObjInfo(filePtr, execPtr, objInfoPtr)
 	objInfoPtr->heapFileOffset -= excess;
 	objInfoPtr->heapSize += excess;
 	objInfoPtr->codeSize -= excess;
-	objInfoPtr->bssLoadAddr = objInfoPtr->heapLoadAddr + execPtr->code +
+	objInfoPtr->bssLoadAddr = objInfoPtr->codeLoadAddr + execPtr->code +
 		execPtr->data;
 #endif
 
@@ -192,6 +192,7 @@ ProcGetObjInfo(filePtr, execPtr, objInfoPtr)
 		    objInfoPtr->codeLoadAddr, objInfoPtr->codeSize,
 		    objInfoPtr->heapLoadAddr, objInfoPtr->heapSize,
 		    objInfoPtr->bssLoadAddr, objInfoPtr->bssSize);
+	    printf("excess = %x\n", excess);
 	}
 	break;
 
@@ -244,6 +245,14 @@ ProcGetObjInfo(filePtr, execPtr, objInfoPtr)
 
     default:
 	return(PROC_BAD_AOUT_FORMAT);
+    }
+    if (debugProcStubs && type==TYPE_UNIX) {
+	printf("Code: %x bytes, file %x, mem %x, heap: %x bytes, file %x\n",
+		objInfoPtr->codeSize, objInfoPtr->codeFileOffset,
+		objInfoPtr->codeLoadAddr, objInfoPtr->heapSize,
+		objInfoPtr->heapFileOffset, objInfoPtr->heapLoadAddr);
+	printf("bss: %x bytes, mem %x\n", objInfoPtr->bssSize,
+		objInfoPtr->bssLoadAddr);
     }
     return(SUCCESS);
 }
