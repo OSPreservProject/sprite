@@ -13,7 +13,7 @@
  * software for any purpose.  It is provided "as is" without
  * express or implied warranty.
  *
- * $ $ SPRITE (Berkeley)
+ * $Header$ SPRITE (Berkeley)
  */
 
 #ifndef _SCSIEXBROBOT

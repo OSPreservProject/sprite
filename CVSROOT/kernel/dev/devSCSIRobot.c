@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char rcsid[] = "$ $ SPRITE (Berkeley)";
+static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 #include <sprite.h>
