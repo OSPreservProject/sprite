@@ -1463,11 +1463,18 @@ NON_LEAF(MachFPInterrupt,STAND_FRAME_SIZE,ra)
 	j	FPReturn
 
 5:
+#ifndef NO_FLOATING_POINT
 	/*
 	 * Finally we can call softfp() where a1 has the instruction to
 	 * emulate.
 	 */
 	jal	softfp
+#else /* NO_FLOATING_POINT */
+	li	a0, MACH_SIGILL
+	jal	Mach_SendSignal
+	j	FPReturn
+	nop
+#endif /* NO_FLOATING_POINT */
 
 FPReturn:
 	/*
