@@ -51,7 +51,7 @@ Fs_RpcRequest()
 static Sync_Lock scavengeLock = Sync_LockInitStatic("Fs:scavengeLock");
 #define LOCKPTR (&scavengeLock)
 
-Boolean OkToScavenge();
+static Boolean OkToScavenge();
 void DoneScavenge();
 
 
@@ -517,11 +517,9 @@ Fs_CheckSetID(streamPtr, uidPtr, gidPtr)
  *
  *	Return info about the given domain.
  *	FIX ME FIX ME FIX ME
- *	This should be fixed so there is a standard interface,
- *	perhaps fileIDPtr, and domainInoPtr, to the various kinds
- *	of domains.  This should be called though the domain operation
- *	switch table.  The worst problem is that the RPC interface is
- *	wrong, only the domain number is passed.
+ *	This should be replaced by a call through the domain switch.
+ *	The prefix table module has the domain type, so can do this.
+ *	For now, we infer the domain type from the stream type.
  *
  * Results:
  *	A return status.
@@ -545,59 +543,21 @@ FsDomainInfo(fileIDPtr, domainInfoPtr)
 
     switch (fileIDPtr->type) {
 	case FS_LCL_FILE_STREAM:
-	    status = FsLocalDomainInfo(fileIDPtr->major, domainInfoPtr);
+	    status = FsLocalDomainInfo(fileIDPtr, domainInfoPtr);
 	    break;
+	case FS_PFS_NAMING_STREAM:
 	case FS_RMT_FILE_STREAM:
 	    status = FsRemoteDomainInfo(fileIDPtr, domainInfoPtr);
 	    break;
-	case FS_PFS_NAMING_STREAM:	/* This should be remote case */
-	case FS_LCL_PSEUDO_STREAM: {
-	    Fs_Attributes attr;
-	    /*
-	     * This is a sort-of-in-lined Fs_GetAttributes that bypasses
-	     * the prefix table.
-	     * Should call FsPseudoDomainInfo(fileIDPtr, domainInfoPtr);
-	     */
-	    FsOpenArgs openArgs;
-	    FsGetAttrResults getAttrResults;
-	    FsRedirectInfo *redirectPtr;
-	    register FsHandleHeader *hdrPtr;
-
-	    openArgs.useFlags = FS_FOLLOW;
-	    openArgs.permissions = 0;
-	    openArgs.type = FS_FILE;
-	    openArgs.clientID = rpc_SpriteID;
-	    FsSetIDs((Proc_ControlBlock *)NIL, &openArgs.id);
-
-	    openArgs.rootID = *fileIDPtr;
-	    openArgs.prefixID = *fileIDPtr;
-	
-	    getAttrResults.attrPtr = &attr;
-	    getAttrResults.fileIDPtr = fileIDPtr;
-
-	    hdrPtr = FsHandleFetch(fileIDPtr);
-	    if (hdrPtr == (FsHandleHeader *)NIL) {
-		break;
-	    } else {
-		FsHandleRelease(hdrPtr, TRUE);
-	    }
-	    if (fileIDPtr->type == FS_LCL_PSEUDO_STREAM) {
-		status = FsPfsGetAttrPath(hdrPtr, ".", &openArgs,
-			    &getAttrResults, &redirectPtr);
-	    } else {
-		status = FsRemoteGetAttrPath(hdrPtr, ".", &openArgs,
-			    &getAttrResults, &redirectPtr);
-	    }
-	    if (status == FS_LOOKUP_REDIRECT) {
-		free((Address) redirectPtr);
-	    }
+	case FS_LCL_PSEUDO_STREAM:
+	    status = FsPseudoDomainInfo(fileIDPtr, domainInfoPtr);
 	    break;
-	}
 	default:
 	    domainInfoPtr->maxKbytes = -1;
 	    domainInfoPtr->freeKbytes = -1;
 	    domainInfoPtr->maxFileDesc = -1;
 	    domainInfoPtr->freeFileDesc = -1;
+	    domainInfoPtr->blockSize = -1;
 	    status = FS_DOMAIN_UNAVAILABLE;
     }
     return(status);
