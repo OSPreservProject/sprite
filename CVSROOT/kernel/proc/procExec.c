@@ -1054,6 +1054,7 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
 	 * its former host.
 	 */
 	argBuffer = procPtr->remoteExecBuffer;
+	procPtr->remoteExecBuffer = (Address) NIL;
 	encapPtr = (ExecEncapState *) argBuffer;
 	argString = encapPtr->hdr.argString;
     }
