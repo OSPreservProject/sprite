@@ -275,6 +275,38 @@
 #define	MACH_CO_FLUSH		0x10
 
 /*
+ * Cache Controller Mode register (MACH_MODE_REG) bits.
+ * (see SPUR-MSA page 24-25)
+ *
+ * RACE CONDITION WARNING: Code that changes the MODE register should keep
+ * in mind the following race condition.  When performing and read/modify/write
+ * to change a bit in the register, timer T1 or T2 turns off and resets its
+ * mode bit. Writing the modified mode register out will turn the timer back
+ * on.  To get around this problem, the mode register should be read/modify/
+ * written with interrupts disabled.  Furthermore, the DevTimer code insures
+ * that the timer is off when the interrupt is processed.
+ */
+
+#define	MACH_MODE_PERF_COUNTER_MASK	0x07
+#define	MACH_MODE_GARTH			0x08
+#define	MACH_MODE_T0_ENABLE		0x10
+#define MACH_MODE_T1_ENABLE		0x20
+#define	MACH_MODE_T2_ENABLE		0x40
+#define	MACH_MODE_DAVID			0x80
+
+/*
+ * Mode register performance counters mode bits.
+ *	(MACH_MODE_REG & MACH_MODE_PERF_COUNTER_MASK)
+ * (See SPUR-MSA page 25)
+ */
+
+#define	MACH_MODE_PERF_COUNTER_OFF	0x00
+#define	MACH_MODE_PERF_COUNTER_SNOOP	0x01
+#define MACH_MODE_PERF_COUNTER_USER	0x05
+#define MACH_MODE_PERF_COUNTER_SYS	0x06
+#define	MACH_MODE_PERF_COUNTER_BOTH	0x07
+
+/*
  * Offset into the register state struct.
  */
 #define	MACH_REG_STATE_REGS_OFFSET	0
