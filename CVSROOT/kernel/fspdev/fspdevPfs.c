@@ -33,23 +33,26 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsutil.h"
-#include "fsNameOps.h"
-#include "fsio.h"
-#include "fsconsist.h"
-#include "fsdm.h"
-#include "fsioLock.h"
-#include "fsprefix.h"
-#include "fsStat.h"
-#include "proc.h"
-#include "rpc.h"
-#include "fspdev.h"
-#include "fspdevInt.h"
-#include "dev/pfs.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsNameOps.h>
+#include <fsio.h>
+#include <fsconsist.h>
+#include <fsdm.h>
+#include <fsioLock.h>
+#include <fsprefix.h>
+#include <fsStat.h>
+#include <proc.h>
+#include <rpc.h>
+#include <fspdev.h>
+#include <fspdevInt.h>
+#include <dev/pfs.h>
+#include <string.h>
 
-static FspdevServerIOHandle *PfsGetUserLevelIDs();
+static FspdevServerIOHandle *PfsGetUserLevelIDs _ARGS_((
+	FspdevServerIOHandle *pdevHandlePtr, Fs_FileID *prefixIDPtr, 
+	Fs_FileID *rootIDPtr));
 
 /*
  *----------------------------------------------------------------------------
@@ -366,7 +369,7 @@ FspdevPfsNamingIoOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
     Fsrmt_IOHandle *rmtHandlePtr;
 
     found = Fsutil_HandleInstall(ioFileIDPtr, sizeof(Fsrmt_IOHandle), name,
-	    (Fs_HandleHeader **)&rmtHandlePtr);
+			FALSE, (Fs_HandleHeader **)&rmtHandlePtr);
     if (!found) {
 	Fsutil_RecoveryInit(&rmtHandlePtr->recovery);
 	fs_Stats.object.remote++;
@@ -404,7 +407,7 @@ FspdevPfsDomainInfo(fileIDPtr, domainInfoPtr)
     FspdevClientIOHandle		*cltHandlePtr;
     int				resultSize;
 
-
+    status = FS_FILE_NOT_FOUND;
     cltHandlePtr = Fsutil_HandleFetchType(FspdevClientIOHandle, fileIDPtr);
     if (cltHandlePtr != (FspdevClientIOHandle *)NIL) {
 	Fsutil_HandleUnlock(cltHandlePtr);
