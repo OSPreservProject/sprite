@@ -573,8 +573,7 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
 	    if (rpcNotActive) {
 		state |= RECOV_HOST_BOOTING;
 	    } else {
-		hostPtr->state |= RECOV_HOST_ALIVE;
-		state |= RECOV_WANT_RECOVERY;
+		state |= (RECOV_HOST_ALIVE|RECOV_WANT_RECOVERY);
 	    }
 	    state &= ~(RECOV_HOST_DEAD|RECOV_HOST_DYING);
 	    break;
@@ -587,8 +586,7 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
      * After a host comes up enough to support RPC service, we
      * initiate reboot recovery if needed.
      */
-    if ((state & RECOV_HOST_ALIVE) &&
-	(state & RECOV_WANT_RECOVERY) &&
+    if ((state & RECOV_WANT_RECOVERY) &&
 	(state & RECOV_REBOOT_CALLBACKS) == 0) {
 	state &= ~RECOV_WANT_RECOVERY;
 	state |= RECOV_REBOOT_CALLBACKS;
