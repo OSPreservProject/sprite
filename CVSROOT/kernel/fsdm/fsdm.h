@@ -259,6 +259,12 @@ typedef struct FsSummaryInfo {
 					 * marked NOT_SAFE then this field
 					 * is undefined, but attachTime is ok
 					 * as long as TIMES_VALID is set. */
+    int		fixCount;		/* Number of consecutive times that 
+					 * fscheck has found an error in this
+					 * domain. Used to prevent infinite
+					 * looping.
+					 */
+
 } FsSummaryInfo;
 
 /*
