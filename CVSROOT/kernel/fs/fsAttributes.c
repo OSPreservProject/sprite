@@ -231,12 +231,18 @@ FsAssignAttrs(handlePtr, isExeced, attrPtr)
     attrPtr->devType			= descPtr->devType;
     attrPtr->devUnit			= descPtr->devUnit;
     /*
-     * Take creation and descriptor modify time from disk descriptor.
+     * Take creation and descriptor modify time from disk descriptor,
+     * except that the descModifyTime is >= dataModifyTime.  This
+     * constraint is enforced later when the descriptor is written back,
+     * so the descriptor may still be out-of-date at this point.
      */
     attrPtr->createTime.seconds		= descPtr->createTime;
     attrPtr->createTime.microseconds	= 0;
     attrPtr->descModifyTime.seconds	= descPtr->descModifyTime;
     attrPtr->descModifyTime.microseconds= 0;
+    if (cacheInfoPtr->attr.modifyTime > attrPtr->descModifyTime.seconds) {
+	attrPtr->descModifyTime.seconds = cacheInfoPtr->attr.modifyTime;
+    }
     /*
      * Take size, access time, and modify time from cache info because
      * remote caching means the disk descriptor attributes can be out-of-date.
