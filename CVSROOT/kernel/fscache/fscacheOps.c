@@ -923,8 +923,8 @@ FsCacheWrite(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	    tOffset = offset;
 	    dummyStream.ioHandlePtr = cacheInfoPtr->hdrPtr;
 	    status = FsSpriteWrite(&dummyStream, 
-			(flags | FS_CLIENT_CACHE_WRITE) & 
-					~(FS_USER | FS_SERVER_WRITE_THRU),
+			(int)((flags | FS_CLIENT_CACHE_WRITE) & 
+					~(FS_USER | FS_SERVER_WRITE_THRU)),
 			blockPtr->blockAddr + (offset & FS_BLOCK_OFFSET_MASK),
 			&tOffset, &tLen, (Sync_RemoteWaiter *)NIL);
 	    if (status != SUCCESS) {
