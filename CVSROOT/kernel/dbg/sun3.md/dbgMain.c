@@ -631,6 +631,10 @@ SendReply()
 }
 
 /*
+ * Whether syslog should remain diverted on continue or not.
+ */
+static Boolean	syslogDiverted = FALSE;
+/*
  * This is a typedef which is used to take care of the hole that is put in
  * the stack when we are called.
  */
@@ -712,7 +716,9 @@ Dbg_Main(stackHole, trapStack)
     /*
      * Force system log output to the console.
      */
-    Dev_SyslogDebug(TRUE);
+    if (!syslogDiverted) {
+	Dev_SyslogDebug(TRUE);
+    }
 
     /*
      * We want to inform the user what caused the problem.  However we only
@@ -944,6 +950,12 @@ Dbg_Main(stackHole, trapStack)
 		Proc_PID	pid;
 
 		GetRequestBytes(sizeof(pid), (Address) &pid);
+		if (!dbg_Rs232Debug) {
+		    int	dummy;
+
+		    PutReplyBytes(4, (Address) &dummy);
+		    SendReply();
+		}
 		if (dbgTraceLevel >= 2) {
 		    Sys_Printf("pid %x ", pid);
 		}
@@ -1010,6 +1022,12 @@ Dbg_Main(stackHole, trapStack)
 		 * then read the value.
 		 */
 		GetRequestBytes(sizeof(writeGPR), (Address)&writeGPR);
+		if (!dbg_Rs232Debug) {
+		    int	dummy;
+
+		    PutReplyBytes(4, (Address) &dummy);
+		    SendReply();
+		}
 		if (dbgTraceLevel >= 2) {
 		    Sys_Printf("register %d data %x ", writeGPR.regNum, 
 				writeGPR.regVal);
@@ -1018,7 +1036,17 @@ Dbg_Main(stackHole, trapStack)
 		break;
 	    }
 
-	    case CONTINUE:
+	    case DIVERT_SYSLOG:
+		GetRequestBytes(sizeof(Boolean), (Address)&syslogDiverted);
+		if (!dbg_Rs232Debug) {
+		    int	dummy;
+
+		    PutReplyBytes(4, (Address) &dummy);
+		    SendReply();
+		}
+		break;
+
+	    case CONTINUE: 
 		/*
 		 * The client wants to continue execution.
 		 */
@@ -1115,7 +1143,9 @@ Dbg_Main(stackHole, trapStack)
     /*
      * Don't force system log output to the console.
      */
-    Dev_SyslogDebug(FALSE);
+    if (!syslogDiverted) {
+	Dev_SyslogDebug(FALSE);
+    }
 #ifdef SUN3
     /*
      * Turn off non-maskable interrupts.

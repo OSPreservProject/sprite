@@ -54,6 +54,7 @@ typedef enum {
 				 * back trace is to be done. */
     GETSTOPINFO,		/* Get all info needed by dbx after it stops. */
     GET_VERSION_STRING,		/* Return the version string. */
+    DIVERT_SYSLOG,		/* Divert syslog output to the console. */
     UNKNOWN			/* used for error checking */
 } Dbg_Opcode;
 
@@ -84,6 +85,7 @@ typedef struct {
 	Dbg_WriteMem	writeMem;
 	Dbg_ReadMem	readMem;
 	int		pc;
+	int		divertSyslog;
     } data;
 } Dbg_Msg;
 
