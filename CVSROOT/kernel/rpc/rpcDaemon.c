@@ -68,6 +68,8 @@ void RpcReclaim();
 void RpcDaemonWakeup();
 void RpcDaemonWait();
 void RpcResetNoServers();
+void RpcCrashCallBack();
+
 
 /*
  *----------------------------------------------------------------------
@@ -80,8 +82,8 @@ void RpcResetNoServers();
  *	reclaimed by tidying up their connection with their old client
  *	and making them available to handle RPC requests from other clients.
  *	The other chore of the daemon is to create more RPC server processes
- *	if the demand for them is high.  Initially a few server processes
- *	are created and the rest are created via this daemon.
+ *	if the demand for them is high.  (Initially a few server processes
+ *	are created and the rest are created via this daemon.)
  *
  * Results:
  *	This never returns.
@@ -101,7 +103,7 @@ Rpc_Daemon()
     queueEntry.interval = 2 * timer_IntOneSecond;
     queueEntry.clientData = (ClientData)NIL;
 
-    printf("Rpc_Daemon alive\n");
+    Recov_CrashRegister(RpcCrashCallBack, (ClientData)NIL);
 
     while (TRUE) {
 	RpcDaemonWait(&queueEntry);
@@ -228,7 +230,9 @@ RpcServerAlloc(rpcHdrPtr)
     do {
 	srvPtr = rpcServerPtrPtr[srvIndex];
 	if (srvPtr != (RpcServerState *)NIL) {
-	    if (srvPtr->clientID == rpcHdrPtr->clientID &&
+	    if (srvPtr->state & SRV_STUCK) {
+		/* skip this process */;
+	    } else if (srvPtr->clientID == rpcHdrPtr->clientID &&
 		srvPtr->channel == rpcHdrPtr->channel) {
 		srvPtr->state &= ~SRV_FREE;
 		goto unlock;
@@ -306,6 +310,54 @@ RpcServerInstall()
 unlock:
     MASTER_UNLOCK(&serverMutex);
     return(srvPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcCrashCallBack --
+ *
+ *	This is called when a remote client has crashed or rebooted.
+ *	If we have any RPC servers assigned to channels from that client
+ *	we have to mark them as unusable so we don't erroneously discard
+ *	client requests.  Otherwise the server allocation routine will
+ *	see new requests directed to a busy server process and discard them.
+ *	This is only needed if Rpc_Server processes can hang up on something,
+ *	which does happen from time to time.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Marks any servers that are busy with this client as unusable
+ *	until their current RPC service procedure completes.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ENTRY void
+RpcCrashCallBack(clientID, data)
+    int clientID;		/* Host ID of crashed client */
+    ClientData data;		/* IGNORED */
+{
+    register RpcServerState *srvPtr;
+    register int i;
+
+    MASTER_LOCK(&serverMutex);
+
+    for (i=0 ; i<rpcNumServers ; i++) {
+	srvPtr = rpcServerPtrPtr[i];
+	if (srvPtr->state & SRV_BUSY) {
+	    /*
+	     * Mark the server as stuck if it is working for the dead client.
+	     * It becomes unstuck upon completion of its current RPC.
+	     */
+	    if (srvPtr->clientID == clientID) {
+		srvPtr->state |= SRV_STUCK;
+	    }
+	}
+    }
+    MASTER_UNLOCK(&serverMutex);
 }
 
 /*
