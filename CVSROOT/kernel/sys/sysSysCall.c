@@ -64,10 +64,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sysTestCall.h"
 
 extern	ReturnStatus	Sys_StatsStub();
-/*
- * The following is a temporary replacement for the Proc_Exec system call.
- */
-extern	ReturnStatus	Proc_ExecEnv();
 
 #ifndef CLEAN
 Boolean sysTraceSysCalls = FALSE;
@@ -133,6 +129,7 @@ int sys_ParamSizesDecl[] = {
     sizeof(int),			/* SYS_PARAM_RANGE2		*/
     sizeof(Proc_ControlBlock),		/* SYS_PARAM_PCB		*/
     sizeof(Fs_Device),			/* SYS_PARAM_FS_DEVICE		*/
+    sizeof(Proc_PCBArgString),		/* SYS_PARAM_PCBARG		*/
 
 };
 
@@ -205,7 +202,7 @@ static SysCallEntry sysCalls[] = {
     Sys_GetTimeOfDay,	       Proc_DoRemoteCall,  FALSE,	3,   NILPARM,
     Sys_SetTimeOfDay,	       Proc_DoRemoteCall,  FALSE,	3,   NILPARM,
     Sys_DoNothing,	       Sys_DoNothing,      TRUE,	0,   NILPARM,
-    Proc_GetPCBInfo,	       Proc_DoRemoteCall,  FALSE,	4,   NILPARM,
+    Proc_GetPCBInfo,	       Proc_DoRemoteCall,  FALSE,	5,   NILPARM,
     Vm_GetSegInfo,	       Proc_RemoteDummy,   TRUE,	3,   NILPARM,
     Proc_GetResUsage,	       Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
     Proc_GetPriority,	       Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
@@ -222,12 +219,12 @@ static SysCallEntry sysCalls[] = {
     Fs_SetDefPermStub,	       Fs_SetDefPermStub,  TRUE,	2,   NILPARM,
     Fs_IOControlStub,	       Fs_IOControlStub,   TRUE,	6,   NILPARM,
     Dev_VidEnable,	       Proc_DoRemoteCall,  FALSE,	1,   NILPARM,
-    Proc_SetEnviron,	       Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
-    Proc_UnsetEnviron,	       Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
-    Proc_GetEnvironVar,	       Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
-    Proc_GetEnvironRange,      Proc_RemoteDummy,   TRUE,	4,   NILPARM,
-    Proc_InstallEnviron,       Proc_RemoteDummy,   TRUE,	2,   NILPARM,
-    Proc_CopyEnviron,	       Proc_DoRemoteCall,  FALSE,	0,   NILPARM,
+    Proc_SetEnvironStub,       Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
+    Proc_UnsetEnvironStub,     Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
+    Proc_GetEnvironVarStub,    Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
+    Proc_GetEnvironRangeStub,  Proc_RemoteDummy,   TRUE,	4,   NILPARM,
+    Proc_InstallEnvironStub,   Proc_RemoteDummy,   TRUE,	2,   NILPARM,
+    Proc_CopyEnvironStub,      Proc_DoRemoteCall,  FALSE,	0,   NILPARM,
     Sync_SlowLockStub,	       Sync_SlowLockStub,  TRUE,	1,   NILPARM,
     Sync_SlowWaitStub,	       Sync_SlowWaitStub,  TRUE,	3,   NILPARM,
     Sync_SlowBroadcastStub,    Sync_SlowBroadcastStub,  TRUE,	2,   NILPARM,
@@ -368,6 +365,7 @@ static Sys_CallParam paramsArray[] = {
     SYS_PARAM_RANGE1,	      PARM_I,		/* SYS_PROC_GETPCBINFO	38 */
     SYS_PARAM_RANGE2,	      PARM_I,
     SYS_PARAM_PCB,	      PARM_OCR,
+    SYS_PARAM_PCBARG,         PARM_OCR,
     SYS_PARAM_INT,            PARM_OC,
     /* special (don't migrate?) */		/* SYS_VM_GETSEGINFO	39 */
     SYS_PARAM_PROC_PID,	      PARM_I,		/* SYS_PROC_GETRESUSAGE 40 */
