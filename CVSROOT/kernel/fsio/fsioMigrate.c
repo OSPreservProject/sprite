@@ -38,6 +38,16 @@ Boolean fsMigDebug = TRUE;
 #define DEBUG( format ) \
 	if (fsMigDebug) { Sys_Printf format ; }
 
+/*
+ * The following record defines what parameters the I/O server returns
+ * after being told about a migration.  (Note, it will also return
+ * data that is specific to the type of the I/O handle.)
+ */
+typedef struct MigrateReply {
+    int flags;		/* New stream flags, the FS_RMT_SHARED bit is modified*/
+    int offset;		/* New stream offset */
+} MigrateReply;
+
 
 /*
  * ----------------------------------------------------------------------------
@@ -156,7 +166,6 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
     register	Fs_Stream	*streamPtr;
     register	FsMigInfo	*migInfoPtr;
     ReturnStatus		status = SUCCESS;
-    FsHandleHeader		*hdrPtr;
     Boolean			found;
     int				size;
     ClientData			data;
@@ -173,51 +182,41 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
 			     migInfoPtr->flags, &found);
 
     if (!found) {
-	streamPtr->offset = migInfoPtr->offset;
 	migInfoPtr->flags |= FS_NEW_STREAM;
 	DEBUG( ("Deenncap stream %d, offset %d, new",
 		streamPtr->hdr.fileID.minor, migInfoPtr->offset) );
     } else {
-    	/*
-	 * BRENT Frankly, we don't quite know what to do with the offset
-	 * if the stream is already here.
-	 */
 	migInfoPtr->flags &= ~FS_NEW_STREAM;
 	DEBUG( ("Deencap stream %d, offset %d, found %d",
 		streamPtr->hdr.fileID.minor,
 		migInfoPtr->offset, streamPtr->offset) );
-#ifdef notdef
-	if (streamPtr->offset != migInfoPtr->offset) {
-	    Sys_Panic(SYS_WARNING,
-		"Fs_DeencapStream, using existing offset %d (mig offset %d)\n",
-		streamPtr->offset, migInfoPtr->offset);
-	}
-#endif notdef
     }
     if (streamPtr->nameInfoPtr == (FsNameInfo *)NIL) {
 	/*
 	 * We are not setting up the nameInfo exactly as it comes out of
 	 * Fs_Open.  The important part is the fileID, which is used
 	 * when getting/setting attributes.  Also, for remote files the
-	 * fileID of the prefix is important.  This is handled by the
-	 * file-specific migStart and migEnd routines.
+	 * fileID of the prefix is important, but that is handled by the
+	 * remote-file-specific migStart and migEnd routines.
 	 */
 	streamPtr->nameInfoPtr = Mem_New(FsNameInfo);
 	streamPtr->nameInfoPtr->fileID = migInfoPtr->nameID;
 	streamPtr->nameInfoPtr->prefixPtr = (struct FsPrefix *)NIL;
 	streamPtr->nameInfoPtr->name = (char *)NIL;
     }
-    FsHandleUnlock(streamPtr);
     /*
      * Contact the I/O server to tell it that the client moved.  The I/O
      * server checks for cross-network stream sharing and sets the
-     * FS_RMT_SHARED flag if it is shared.
+     * FS_RMT_SHARED flag if it is shared.  It also looks at the
+     * FS_NEW_STREAM flag which we've set/unset above.
      */
     DEBUG( (" Type %d <%d,%d> ", migInfoPtr->ioFileID.type,
 		migInfoPtr->ioFileID.major, migInfoPtr->ioFileID.minor) );
 
     status = (*fsStreamOpTable[migInfoPtr->ioFileID.type].migrate)
-		(migInfoPtr, rpc_SpriteID, &streamPtr->flags, &size, &data);
+		(migInfoPtr, rpc_SpriteID, &streamPtr->flags,
+		 &streamPtr->offset, &size, &data);
+    FsHandleUnlock(streamPtr);
     if (status == SUCCESS && !found) {
 	/*
 	 * Complete the setup of the stream with local book-keeping.  The
@@ -261,25 +260,34 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsNotifyOfMigration(migInfoPtr, flagsPtr, outSize, outData)
+FsNotifyOfMigration(migInfoPtr, flagsPtr, offsetPtr, outSize, outData)
     FsMigInfo	*migInfoPtr;	/* Encapsulated information */
     int		*flagsPtr;	/* New flags, may have FS_RMT_SHARED bit set */
+    int		*offsetPtr;	/* New stream offset */
     int		outSize;	/* Size of returned data, outData */
     Address	outData;	/* Returned data from server */
 {
+    register ReturnStatus	status;
     Rpc_Storage 	storage;
+    MigrateReply	migReply;
 
     storage.requestParamPtr = (Address) migInfoPtr;
     storage.requestParamSize = sizeof(FsMigInfo);
     storage.requestDataPtr = (Address)NIL;
     storage.requestDataSize = 0;
-    storage.replyParamPtr = (Address)flagsPtr;
-    storage.replyParamSize = sizeof(int);
+
+    storage.replyParamPtr = (Address)&migReply;
+    storage.replyParamSize = sizeof(MigrateReply);
     storage.replyDataPtr = outData;
     storage.replyDataSize = outSize;
 
-    return(Rpc_Call(migInfoPtr->ioFileID.serverID, RPC_FS_START_MIGRATION,
-		&storage));
+    status = Rpc_Call(migInfoPtr->ioFileID.serverID, RPC_FS_START_MIGRATION,
+		&storage);
+    if (status == SUCCESS) {
+	*flagsPtr = migReply.flags;
+	*offsetPtr = migReply.offset;
+    }
+    return(status);
 }
 
 /*
@@ -314,11 +322,11 @@ Fs_RpcStartMigration(srvToken, clientID, command, storagePtr)
 				 * pointers and 0 for the lengths.  This can
 				 * be passed to Rpc_Reply */
 {
-    FsMigInfo			*migInfoPtr;
-    FsHandleHeader		*hdrPtr;
-    ReturnStatus		status;
-    int				*flagsPtr;
-    Rpc_ReplyMem	*replyMemPtr;
+    register FsMigInfo		*migInfoPtr;
+    register FsHandleHeader	*hdrPtr;
+    register ReturnStatus	status;
+    register MigrateReply	*migReplyPtr;
+    register Rpc_ReplyMem	*replyMemPtr;
 
     migInfoPtr = (FsMigInfo *) storagePtr->requestParamPtr;
 
@@ -331,13 +339,13 @@ Fs_RpcStartMigration(srvToken, clientID, command, storagePtr)
 	return(FS_STALE_HANDLE);
     }
     FsHandleUnlock(hdrPtr);
-    flagsPtr = Mem_New(int);
-    *flagsPtr = migInfoPtr->flags;
-    storagePtr->replyParamPtr = (Address)flagsPtr;
+    migReplyPtr = Mem_New(MigrateReply);
+    migReplyPtr->flags = migInfoPtr->flags;
+    storagePtr->replyParamPtr = (Address)migReplyPtr;
     storagePtr->replyParamSize = sizeof(int);
     status = (*fsStreamOpTable[hdrPtr->fileID.type].migrate) (migInfoPtr,
-		clientID, flagsPtr, &storagePtr->replyDataSize,
-		&storagePtr->replyDataPtr);
+		clientID, &migReplyPtr->flags, &migReplyPtr->offset,
+		&storagePtr->replyDataSize, &storagePtr->replyDataPtr);
     FsHandleRelease(hdrPtr, FALSE);
 
     replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
@@ -354,7 +362,7 @@ Fs_RpcStartMigration(srvToken, clientID, command, storagePtr)
  *
  * Fs_RpcFinishMigration --
  *
- *	Server stub for RemoteFinishMigration.
+ *	Server stub for RemoteFinishMigration.  NOT USED.
  *
  * Results:
  *	A return status.
