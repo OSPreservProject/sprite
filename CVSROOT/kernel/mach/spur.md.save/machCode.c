@@ -26,7 +26,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sig.h"
 #include "sigMach.h"
 #include "mem.h"
-#include "byte.h"
 #include "swapBuffer.h"
 
 /*
@@ -36,19 +35,37 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #define NUM_PROCESSORS		1
 #endif NUM_PROCESSORS
 
+int mach_NumProcessors = NUM_PROCESSORS;
+
+/*
+ * Master control processor.
+ */
+
+int mach_MasterProcessor = 0;
+
+/*
+ * Start per processor data. 
+ */
+
 /*
  * TRUE if cpu was in kernel mode before the interrupt, FALSE if was in 
  * user mode.
  */
-Boolean	mach_KernelMode;
+Boolean	mach_KernelMode[NUM_PROCESSORS];
 
-int mach_NumProcessors = NUM_PROCESSORS;
 
 /*
  *  Flag used by routines to determine if they are running at
  *  interrupt level.
  */
-Boolean mach_AtInterruptLevel = FALSE;
+Boolean mach_AtInterruptLevel[NUM_PROCESSORS];
+
+/*
+ *  Count of number of ``calls'' to enable interrupts minus number of calls
+ *  to disable interrupts.  Kept on a per-processor basis.
+ */
+int mach_NumDisableInterrupts[NUM_PROCESSORS];
+int *mach_NumDisableIntrsPtr = mach_NumDisableInterrupts;
 
 /*
  * The machine type string is imported by the file system and
@@ -61,12 +78,29 @@ char *mach_MachineType = "spur";
  */
 int mach_ByteOrder = SWAP_SPUR_TYPE;
 
-/*
- *  Count of number of ``calls'' to enable interrupts minus number of calls
- *  to disable interrupts.  Kept on a per-processor basis.
+
+/* 
+ * Pointer to the state structure for the current process.
+ * Allocated in low memory. This structure is indexed by NuBus slot id so
+ * there is current process for each board in the system.
  */
-int mach_NumDisableInterrupts[NUM_PROCESSORS];
-int *mach_NumDisableIntrsPtr = mach_NumDisableInterrupts;
+extern Mach_State	*machCurStatePtrs[];
+
+/*
+ * Debugger state.
+ */
+Mach_RegState	machDebugState[NUM_PROCESSORS];
+
+/*
+ * Cache controller state.
+ */
+int	machCCState[64][NUM_PROCESSORS];
+
+/*
+ * Map NuBus slot ID to a processor number.
+ */
+
+int	mach_SlotIdMap[16];
 
 /*
  * Machine dependent variables.
@@ -113,20 +147,6 @@ extern int machSpecialHandlingOffset;	/* Byte offset of the special handling
 					 * flag in the proc table. */
 extern int machTrapTableOffset;		/* The offset of the trap table
 					 * within the special user page. */
-/* 
- * Pointer to the state structure for the current process.
- */
-extern Mach_State	*machCurStatePtr;
-
-/*
- * Debugger state.
- */
-Mach_RegState	machDebugState;
-
-/*
- * Cache controller state.
- */
-int	machCCState[64];
 
 /*
  * Interrupt table struct.
@@ -184,9 +204,25 @@ Mach_Init()
     machStatePtrOffset = (int) &((Proc_ControlBlock *) 0)->machStatePtr;
     machSpecialHandlingOffset = (int) &((Proc_ControlBlock *) 0)->specialHandling;
     /*
-     * We start off with interrupts disabled.
+     * For each processor
      */
-    mach_NumDisableInterrupts[0] = 1;
+    for (i = 0; i < NUM_PROCESSORS; i++) { 
+	/*
+	 * We start off with interrupts disabled.
+	 */
+	mach_NumDisableInterrupts[i] = 1;
+	/*
+	 * But not at interrupt level.
+	 */
+	mach_AtInterruptLevel[i] = 0;
+
+    }
+
+    /*
+     * The processor that executes this code is the master processor.
+     */
+    mach_MasterProcessor = Mach_GetProcessorNumber();
+
     /*
      * Initialize the interrupt handler table.
      */
@@ -307,7 +343,7 @@ Mach_InitFirstProc(procPtr)
     procPtr->machStatePtr = (struct Mach_State *)Mem_Alloc(sizeof(Mach_State));
     procPtr->machStatePtr->kernStackStart = mach_StackBottom;
     procPtr->machStatePtr->kernStackEnd = mach_StackBottom + mach_KernStackSize;
-    machCurStatePtr = procPtr->machStatePtr;
+    machCurStatePtrs[Mach_GetProcessorNumber()] = procPtr->machStatePtr;
 }
 
 
@@ -662,9 +698,8 @@ Mach_GetDebugState(procPtr, debugStatePtr)
     Proc_ControlBlock	*procPtr;
     Proc_DebugState	*debugStatePtr;
 {
-    Byte_Copy(sizeof(Mach_RegState), 
-	      (Address)&procPtr->machStatePtr->userState.trapRegState,
-	      (Address)&debugStatePtr->regState);
+    bcopy((Address)&procPtr->machStatePtr->userState.trapRegState,
+	  (Address)&debugStatePtr->regState, sizeof(Mach_RegState));
 }
 
 
@@ -701,9 +736,8 @@ Mach_SetDebugState(procPtr, debugStatePtr)
     statePtr = procPtr->machStatePtr;
     origKpsw = (statePtr->userState.trapRegState.kpsw & ~USER_KPSW_BITS) | 
 			(debugStatePtr->regState.kpsw & USER_KPSW_BITS);
-    Byte_Copy(sizeof(Mach_RegState), 
-	      (Address)&debugStatePtr->regState,
-	      (Address)&statePtr->userState.trapRegState);
+    bcopy((Address)&debugStatePtr->regState,
+	 (Address)&statePtr->userState.trapRegState, sizeof(Mach_RegState));
     statePtr->userState.trapRegState.kpsw = origKpsw;
 }
 
@@ -874,7 +908,7 @@ Mach_AllocExtIntrNumber(handler,intrNumberPtr)
  *
  * Mach_SetNonmaskableIntr --
  *
- *      Set the non-maskable interrupt mask to the given value.  This will
+ *      Add the non-maskable interrupt mask to the given value.  This will
  *	define which interrupts are non-maskable.
  *
  * Results:
@@ -889,7 +923,7 @@ void
 Mach_SetNonmaskableIntr(mask)
     unsigned 	int	mask;
 {
-    machNonmaskableIntrMask = mask;
+    machNonmaskableIntrMask |= mask;
     machIntrMask |= mask;
 }
 
@@ -920,7 +954,7 @@ MachInterrupt(intrStatusReg, kpsw)
     unsigned	int	statusReg;
 
     globStatusReg = intrStatusReg;
-    mach_KernelMode = !(kpsw & MACH_KPSW_PREV_MODE);
+    mach_KernelMode[Mach_GetProcessorNumber()] = !(kpsw & MACH_KPSW_PREV_MODE);
 
     /*
      * Do any nonmaskable interrupts first.
@@ -932,10 +966,11 @@ MachInterrupt(intrStatusReg, kpsw)
     if (intrStatusReg == 0) {
 	return;
     }	
-    if (mach_AtInterruptLevel || mach_NumDisableInterrupts[0] > 0) {
+    if (Mach_AtInterruptLevel() || 
+	mach_NumDisableInterrupts[Mach_GetProcessorNumber()] > 0) {
 	Sys_Panic(SYS_FATAL, "Non-maskable interrupt while interrupts disabled\n");
     }
-    mach_AtInterruptLevel = TRUE;
+    mach_AtInterruptLevel[Mach_GetProcessorNumber()] = TRUE;
     intrType = 0;
     intrMask = 1;
     statusReg = intrStatusReg;
@@ -947,7 +982,7 @@ MachInterrupt(intrStatusReg, kpsw)
 	intrMask = intrMask << 1;
 	intrType++;
     }
-    mach_AtInterruptLevel = FALSE;
+    mach_AtInterruptLevel[Mach_GetProcessorNumber()] = FALSE;
 }
 
 
@@ -1390,33 +1425,11 @@ Mach_ProcessorStates
 Mach_ProcessorState(processor)
     int processor;	/* processor number for which info is requested */
 {
-    if (mach_KernelMode) {
+    if (mach_KernelMode[processor]) {
 	return(MACH_KERNEL);
     } else {
 	return(MACH_USER);
     }
-}
-
-
-/*
- * ----------------------------------------------------------------------------
- *
- * Mach_GetSlotId --
- *
- * Return the NuBus slot id of the processor.
- *
- * Results:
- *     The slot id.
- *
- * Side effects:
- *     None.
- *
- * ----------------------------------------------------------------------------
- */
-unsigned int
-Mach_GetSlotId()
-{
-    return (Mach_Read8bitCCReg(MACH_SLOT_ID_REG));
 }
 
 

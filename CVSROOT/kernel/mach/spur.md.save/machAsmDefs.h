@@ -129,7 +129,8 @@
  */
 #define LD_SLOT_ID(rx)	\
 		ld_external rx, r0, $MACH_SLOT_ID_REG|MACH_CO_RD_REG;\
-		Nop
+		Nop;	\
+		and		rx,rx,$0xff
 
 /*
  * ST_RPTM(rx, rptm) --
@@ -313,7 +314,7 @@
  *	overflows will work.
  */
 #define	VERIFY_SWP(label) \
-	ld_32		VOL_TEMP1, r0, $_machCurStatePtr; \
+	LD_MACH_CUR_STATE_PTR(VOL_TEMP1); \
 	rd_special	VOL_TEMP2, swp; \
 	ld_32		VOL_TEMP3, VOL_TEMP1, $MACH_MIN_SWP_OFFSET; \
 	Nop; \
@@ -344,7 +345,7 @@
  *		5) swp <= VOL_TEMP3
  */
 #define	SWITCH_TO_KERNEL_STACKS() \
-	ld_32		VOL_TEMP1, r0, $_machCurStatePtr; \
+	LD_MACH_CUR_STATE_PTR(VOL_TEMP1); \
 	Nop; \
 	ld_32		SPILL_SP, VOL_TEMP1, $MACH_KERN_STACK_END_OFFSET; \
 	ld_32		VOL_TEMP2, VOL_TEMP1, $MACH_KERN_STACK_START_OFFSET; \
@@ -363,7 +364,7 @@
  *	and into the machine state struct.
  */
 #define	SAVE_USER_STATE() \
-	ld_32		VOL_TEMP1, r0, $_machCurStatePtr; \
+	LD_MACH_CUR_STATE_PTR(VOL_TEMP1); \
 	Nop; \
 	add_nt		VOL_TEMP1, VOL_TEMP1, $MACH_TRAP_REG_STATE_OFFSET; \
 	rd_special	VOL_TEMP2, pc; \
@@ -378,7 +379,7 @@
  *	Restore the state of the user process from the machine state struct.
  */
 #define	RESTORE_USER_STATE() \
-	ld_32		VOL_TEMP1, r0, $_machCurStatePtr; \
+	LD_MACH_CUR_STATE_PTR(VOL_TEMP1); \
 	Nop; \
 	add_nt		VOL_TEMP1, VOL_TEMP1, $MACH_TRAP_REG_STATE_OFFSET; \
 	rd_special	VOL_TEMP2, pc; \
@@ -580,5 +581,53 @@
  *	Take the given unsigned mask and extend the sign bit.
  */
 #define	EXT_MASK(mask) (-((~(mask))+1))
+
+/*
+ * LD_MACH_CUR_STATE_PTR(destReg)
+ * Load a pointer to the Mach_State structure of the currently executing 
+ * process on the current processor. The pointer can be found by indexing
+ * into _machCurStatePtrs using the pnum read from the kpsw.
+ */
+
+#define	LD_MACH_CUR_STATE_PTR(destReg) \
+	rd_kpsw		destReg; \
+	extract		destReg, destReg, $3; \
+	sll		destReg,destReg,$2; \
+	add_nt		destReg, r0, $0 ; \
+	ld_32	destReg, destReg, $_machCurStatePtrs
+
+/*
+ * LD_MACH_CUR_STATE_PTR(srcReg)
+ * Store a pointer to the Mach_State structure of the currently executing 
+ * process on the current processor. The pointer is store at the location
+ * fromed by indexing  into _machCurStatePtrs using the pnum read 
+ * from the kpsw.
+ *
+ * The macro should use the addressing mode of the st_32 instruction 
+ * (ie st_32	srcReg, tempReg, $_machCurStatePtr) but this doesn't work
+ * the current version of sas.  
+ * 
+ */
+
+#define	ST_MACH_CUR_STATE_PTR(srcReg, tempReg) \
+	rd_kpsw		tempReg; \
+	extract		tempReg, tempReg, $3; \
+	sll		tempReg,tempReg,$2; \
+	add_nt		tempReg, r0, $0 ; \
+	add_nt		tempReg,tempReg,$_machCurStatePtrs ; \
+	st_32		srcReg,tempReg,$0
+
+
+/*
+ * GET_PNUM_FROM_BOARD(pnumReg) 
+ * Compute the processor number by reading the slot id from the cache controler
+ * and doing the mapping.
+ */
+
+#define	GET_PNUM_FROM_BOARD(pnumReg) \
+	LD_SLOT_ID(pnumReg); \
+	sll		pnumReg,pnumReg,$2; \
+	ld_32	pnumReg, pnumReg, $_machMapSlotToPnum
+
 
 #endif _MACHASMDEFS

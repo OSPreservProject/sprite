@@ -117,7 +117,7 @@
  * C structures and routines that are called from here.
  */
 	.globl _proc_RunningProcesses
-	.globl _machCurStatePtr
+	.globl _machCurStatePtrs
 	.globl _machStatePtrOffset
 	.globl _machSpecialHandlingOffset
 	.globl _machMaxSysCall
@@ -206,10 +206,10 @@ _debugger_active_address:
 /*
  * Store addresses of things that need to be loaded into registers through
  * the use of immediate constants.  For example if we want to get a hold
- * of what _machCurStatePtr points to we can't do it normally by the 
+ * of what _machCurStatePtrs points to we can't do it normally by the 
  * instruction
  *
- * 	ld_32	rt1, r0, $_machCurStatePtr
+ * 	ld_32	rt1, r0, $_machCurStatePtrs
  *
  * because the address of _machCurStatePtr will be longer than 13 bits.  
  * However if we put _machCurStatePtr in low memory then we can get to
@@ -218,7 +218,44 @@ _debugger_active_address:
  * Other options are LD_PC_RELATIVE or LD_CONSTANT.
  */
 runningProcesses: 		.long _proc_RunningProcesses
-_machCurStatePtr: 		.long 0
+/*
+ * _machCurStatePtrs is index by processor number.
+ */
+_machCurStatePtrs: 		.long 0
+				.long 0
+				.long 0
+				.long 0
+				.long 0
+				.long 0
+				.long 0
+				.long 0
+				.long 0
+				.long 0
+				.long 0
+				.long 0
+				.long 0
+				.long 0
+				.long 0
+				.long 0
+/*
+ * _machCurStatePtrs is index by slot ID.
+ */
+_machMapSlotToPnum: 		.long 0
+				.long 0
+				.long 0
+				.long 0
+				.long 0
+				.long 0
+				.long 0
+				.long 0
+				.long 0
+				.long 0
+				.long 0
+				.long 0
+				.long 0
+				.long 0
+				.long 0
+				.long 0
 _machStatePtrOffset:		.long 0
 _machSpecialHandlingOffset:	.long 0
 _machMaxSysCall	:		.long 0
@@ -486,11 +523,6 @@ add_nt		r1, r0, $(MACH_KPSW_VIRT_DFETCH_ENA | MACH_KPSW_VIRT_IFETCH_ENA | MACH_K
 	wr_kpsw		r1, $0
 	jump		ErrorTrap
 	Nop
-#else
-	call		_main
-	Nop
-#endif
-
 mainAddr:	.long	_main
 /*
  *---------------------------------------------------------------------------
@@ -502,9 +534,6 @@ mainAddr:	.long	_main
  *	killed.  Also if in user mode more memory will be wired down if not
  * 	enough is wired already.
  */
-winOvFlow_Const1:
-	.long 0x8387
-
 WinOvFlow:
 	rd_kpsw		SAFE_TEMP1			
 	and		SAFE_TEMP1, SAFE_TEMP1, $MACH_KPSW_CUR_MODE
@@ -564,10 +593,9 @@ winOvFlow_SaveWindow:
 	cmp_br_delayed	eq, SAFE_TEMP1, r0, winOvFlow_Return	/* No need to */
 	Nop							/* check from */
 								/* kernel mode*/
-	ld_32		VOL_TEMP1, r0, $_machCurStatePtr
-	Nop
-	ld_32		VOL_TEMP1, VOL_TEMP1, $MACH_MAX_SWP_OFFSET
+	LD_MACH_CUR_STATE_PTR(VOL_TEMP1)
 	rd_special	VOL_TEMP2, swp
+	ld_32		VOL_TEMP1, VOL_TEMP1, $MACH_MAX_SWP_OFFSET
 	sub		VOL_TEMP1, VOL_TEMP1, $(2 * MACH_SAVED_REG_SET_SIZE)
 	cmp_br_delayed	ule, VOL_TEMP2, VOL_TEMP1, winOvFlow_Return
 	Nop
@@ -654,9 +682,9 @@ winUnFlow_RestoreWindow:
 	 * 	swp <= min_swp + MACH_SAVED_WINDOW_SIZE
 	 */
 	cmp_br_delayed	eq, SAFE_TEMP1, $0, winUnFlow_Return	/* No need to */
-	Nop							/*   check from */
-								/*   kernel mode */
-	ld_32		VOL_TEMP1, r0, $_machCurStatePtr
+	Nop							/* check from */
+								/* kernel mode*/
+	LD_MACH_CUR_STATE_PTR(VOL_TEMP1)
 	rd_special	VOL_TEMP2, swp
 	ld_32		VOL_TEMP1, VOL_TEMP1, $MACH_MIN_SWP_OFFSET
 	Nop
@@ -829,8 +857,11 @@ faultIntr_NormFault:
 	/*
 	 * If no bits are set then it must be an interrupt.
 	 */
-	cmp_br_delayed	eq, SAFE_TEMP1, r0, Interrupt
+	cmp_br_delayed	ne, SAFE_TEMP1, r0, noInterrupt
 	Nop
+	jump 	Interrupt
+	Nop
+noInterrupt:
 	/*
 	 * If any of the bits FEStatus<19:16> are set then is one of the
 	 * four VM faults.  Store the fault type in a safe temporary and
@@ -838,9 +869,11 @@ faultIntr_NormFault:
 	 */
 	extract		VOL_TEMP1, SAFE_TEMP1, $2
 	and		VOL_TEMP1, VOL_TEMP1, $0xf
-	cmp_br_delayed	ne, VOL_TEMP1, r0, VMFault
+	cmp_br_delayed	eq, VOL_TEMP1, r0, noFault
 	Nop
-
+	jump		VMFault
+	Nop
+noFault:
 	/*
 	 * Handle the bus retry error.
 	 */
@@ -952,20 +985,8 @@ interrupt_OK:
 	 * We took the interrupt from user mode.
 	 */
 	VERIFY_SWP(interrupt_GoodSWP)
-	/*
-	 * We have a bogus user swp.  Switch over to the kernel's stacks
-	 * and take the interrupt.  After taking the interrupt kill the user
-	 * process.
-	 */
-	SWITCH_TO_KERNEL_STACKS()
-	wr_kpsw		KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
-	call		_MachInterrupt
+	jump	interrupt_BadSWP
 	Nop
-	WRITE_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP3)
-	add_nt		OUTPUT_REG1, r0, $MACH_USER_BAD_SWP
-	call		_MachUserError
-	Nop
-	/* DOESN'T RETURN */
 
 interrupt_GoodSWP:
 	SAVE_USER_STATE()
@@ -1033,6 +1054,22 @@ interrupt_KernMode:
 	wr_kpsw		KPSW_REG, $0
 	jump_reg	CUR_PC_REG, $0
 	return		NEXT_PC_REG, $0
+
+interrupt_BadSWP:
+	/*
+	 * We have a bogus user swp.  Switch over to the kernel's stacks
+	 * and take the interrupt.  After taking the interrupt kill the user
+	 * process.
+	 */
+	SWITCH_TO_KERNEL_STACKS()
+	wr_kpsw		KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
+	call		_MachInterrupt
+	Nop
+	WRITE_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP3)
+	add_nt		OUTPUT_REG1, r0, $MACH_USER_BAD_SWP
+	call		_MachUserError
+	Nop
+	/* DOESN'T RETURN */
 
 /*
  *---------------------------------------------------------------------------
@@ -1149,8 +1186,8 @@ vmFault_IsData:
 	and		VOL_TEMP1, KPSW_REG, $MACH_KPSW_PREV_MODE
 	cmp_br_delayed	eq, VOL_TEMP1, r0, vmFault_KernParse
 	nop
-	ld_32		VOL_TEMP1, r0, $_machCurStatePtr
-	Nop
+	LD_MACH_CUR_STATE_PTR(VOL_TEMP1)
+	nop
 	ld_40		r1, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + 8)
 	ld_40		r2, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + 16)
 	ld_40		r3, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + 24)
@@ -1167,7 +1204,7 @@ vmFault_IsData:
 	jump		ParseInstruction
 	Nop
 
-	ld_32		VOL_TEMP1, r0, $_machCurStatePtr
+	LD_MACH_CUR_STATE_PTR(VOL_TEMP1)
 	add_nt		VOL_TEMP2,OUTPUT_REG3,OUTPUT_REG4
 
 	ld_32		SPILL_SP, VOL_TEMP1, $MACH_KERN_STACK_END_OFFSET
@@ -1254,6 +1291,12 @@ CmpTrap:
 	LD_PC_RELATIVE(SAFE_TEMP1, cmpTrap_Const1)
 	and		KPSW_REG, KPSW_REG, SAFE_TEMP1
 
+	/*
+ 	 * Clear the FE_STATUS registers incase there is a fault pending
+	 * causes by the fetch of the instuction after the cmp_trap.
+	 */
+	add_nt		SAFE_TEMP1,r0,$-1	
+	WRITE_STATUS_REGS(MACH_FE_STATUS_0, SAFE_TEMP1)
 	/*
 	 * Get the trap number.
 	 */
@@ -1593,10 +1636,9 @@ SysCallTrap:
 	 * Get the type of system call.  It was stored in the callers 
 	 * r16 before they trapped.
 	 */
-	ld_32		SAFE_TEMP1, r0, $_machCurStatePtr
+	LD_MACH_CUR_STATE_PTR(SAFE_TEMP1)
 	Nop
 	ld_32		SAFE_TEMP2, SAFE_TEMP1, $(MACH_TRAP_REGS_OFFSET + (8 * 16))
-	Nop
 	/*
 	 * Check number of kernel call for validity.
 	 */
@@ -1796,8 +1838,8 @@ SysCall_Return:
 UserErrorTrap:
 	add_nt		CUR_PC_REG, NON_INTR_TEMP1, $0
 	add_nt		NEXT_PC_REG, NON_INTR_TEMP2, $0
-	ld_32           VOL_TEMP1, r0, $_machCurStatePtr
-        Nop
+	LD_MACH_CUR_STATE_PTR(VOL_TEMP1)
+	Nop
 	st_32		CUR_PC_REG, VOL_TEMP1, $MACH_TRAP_CUR_PC_OFFSET
 	st_32		NEXT_PC_REG, VOL_TEMP1, $MACH_TRAP_NEXT_PC_OFFSET
 	/*
@@ -1839,8 +1881,8 @@ SigReturnTrap:
 	 * will restore it from off of the user's spill stack.  We save the
 	 * kpsw because we can't trust the kpsw on the user's stack.
 	 */
-	ld_32		VOL_TEMP1, r0, $_machCurStatePtr
-	nop
+	LD_MACH_CUR_STATE_PTR(VOL_TEMP1)
+	Nop
 	st_32		SPILL_SP, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + (8 * 4))
 	st_32		KPSW_REG, VOL_TEMP1, $MACH_TRAP_KPSW_OFFSET
 	SWITCH_TO_KERNEL_STACKS()
@@ -1887,8 +1929,9 @@ GetWinMemTrap:
 	 * Also store the kpsw that indicates that we should
 	 * return to the current PC instead of the next one.
 	 */
-	ld_32           SAFE_TEMP1, r0, $_machCurStatePtr
-        Nop
+
+	LD_MACH_CUR_STATE_PTR(SAFE_TEMP1)
+	Nop
 	st_32		NON_INTR_TEMP1, SAFE_TEMP1, $MACH_TRAP_CUR_PC_OFFSET
 	st_32		NON_INTR_TEMP2, SAFE_TEMP1, $MACH_TRAP_NEXT_PC_OFFSET
 	LD_PC_RELATIVE(SAFE_TEMP2, getWinMemTrap_Const1)
@@ -1999,7 +2042,7 @@ SpecialUserTraps:
 	 * If the handler is non-zero then it is a valid handler.  Otherwise
 	 * we have a bad user trap type.
 	 */
-	ld_32		VOL_TEMP1, r0, $_machCurStatePtr
+	LD_MACH_CUR_STATE_PTR(VOL_TEMP1)
 	ld_32		VOL_TEMP2, r0, $_machTrapTableOffset
 	ld_32		VOL_TEMP1, VOL_TEMP1, $MACH_SPEC_PAGE_ADDR_OFFSET
 	nop
@@ -2237,8 +2280,8 @@ returnTrap_NormReturn:
 	 * See if we have to allocate more memory on the saved window
 	 * stack.
 	 */
-	ld_32           VOL_TEMP1, r0, $_machCurStatePtr
-        Nop
+	LD_MACH_CUR_STATE_PTR(VOL_TEMP1)
+	Nop
         ld_32           VOL_TEMP2, VOL_TEMP1, $MACH_MAX_SWP_OFFSET
 	ld_32		VOL_TEMP3, VOL_TEMP1, $MACH_TRAP_SWP_OFFSET
         sub             VOL_TEMP2, VOL_TEMP2, $(2 * MACH_SAVED_REG_SET_SIZE)
@@ -2390,8 +2433,8 @@ returnTrap_CallSigHandler:
 	 * See if we have to allocate more memory on the saved window
 	 * stack.
 	 */
-	ld_32		SAFE_TEMP1, r0, $_machCurStatePtr
-        Nop
+	LD_MACH_CUR_STATE_PTR(SAFE_TEMP1)
+	Nop
         ld_32           VOL_TEMP1, SAFE_TEMP1, $MACH_MAX_SWP_OFFSET
 	ld_32		VOL_TEMP2, SAFE_TEMP1, $MACH_TRAP_SWP_OFFSET
         sub             VOL_TEMP1, VOL_TEMP1, $(2 * MACH_SAVED_REG_SET_SIZE)
@@ -2652,9 +2695,17 @@ RestoreState:
 	add_nt		VOL_TEMP1, r1, $0
 	add_nt		VOL_TEMP2, r9, $0
 	/*
-	 * Restore the current PC, next PC, insert register, kpsw.
+	 * Restore the current PC, next PC, insert register, kpsw. 
 	 */
 	ld_32		KPSW_REG, VOL_TEMP1, $MACH_REG_STATE_KPSW_OFFSET
+	/*
+	 * Insert the current processor number into the KPSW_REG.
+	 */
+#ifdef notdef
+	GET_PNUM_FROM_BOARD(r1)
+	wr_insert	$3
+	insert		KPSW_REG, KPSW_REG, r1
+#endif
 	ld_32		r1, VOL_TEMP1, $MACH_REG_STATE_UPSW_OFFSET
 	ld_32		r2, VOL_TEMP1, $MACH_REG_STATE_INSERT_OFFSET
 	ld_32		CUR_PC_REG, VOL_TEMP1, $MACH_REG_STATE_CUR_PC_OFFSET
@@ -2813,7 +2864,7 @@ _Mach_ContextSwitch:
 	/*
 	 * This is now our current state structure address.
 	 */
-	st_32		VOL_TEMP1, r0, $_machCurStatePtr
+	ST_MACH_CUR_STATE_PTR(VOL_TEMP1, VOL_TEMP2)
 	/*
 	 * Now compute where to restore the registers from and call the routine
 	 * to restore state.

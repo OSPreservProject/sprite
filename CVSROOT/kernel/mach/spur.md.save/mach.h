@@ -31,23 +31,27 @@ typedef enum {
 /*
  * Macros to disable and enable interrupts.
  */
-#define DISABLE_INTR() \
-    if (!mach_AtInterruptLevel) { \
+#define DISABLE_INTR() {\
+    register int pnum = Mach_GetProcessorNumber();\
+    if (!mach_AtInterruptLevel[pnum]) { \
 	Mach_DisableIntr(); \
-	if (mach_NumDisableIntrsPtr[0] < 0) { \
+	if (mach_NumDisableIntrsPtr[pnum] < 0) { \
 	    Sys_Panic(SYS_FATAL, "Negative interrupt count.\n"); \
 	} \
-	mach_NumDisableIntrsPtr[0]++; \
+	mach_NumDisableIntrsPtr[pnum]++; \
+    } \
     }
-#define ENABLE_INTR() \
-    if (!mach_AtInterruptLevel) { \
-	mach_NumDisableIntrsPtr[0]--; \
-	if (mach_NumDisableIntrsPtr[0] < 0) { \
+#define ENABLE_INTR() {\
+    register int pnum = Mach_GetProcessorNumber();\
+    if (!mach_AtInterruptLevel[pnum]) { \
+	mach_NumDisableIntrsPtr[pnum]--; \
+	if (mach_NumDisableIntrsPtr[pnum] < 0) { \
 	    Sys_Panic(SYS_FATAL, "Negative interrupt count.\n"); \
 	} \
-	if (mach_NumDisableIntrsPtr[0] == 0) { \
+	if (mach_NumDisableIntrsPtr[pnum] == 0) { \
 	    Mach_EnableIntr(); \
 	} \
+    } \
     }
 
 /*
@@ -176,13 +180,48 @@ typedef struct Mach_SpecPage {
 } Mach_SpecPage;
 
 /*
- * Macro to get processor number
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_GetSlotId --
+ *
+ * Return the NuBus slot id of the processor. This is coded as a macro for
+ * speed.
+ *
+ * ----------------------------------------------------------------------------
  */
-#define	Mach_GetProcessorNumber() 	0
+#define	Mach_GetSlotId() ({\
+	register unsigned int	__slot_id; \
+	asm volatile ("ld_external %1,r0,$0xf08\n\tNop\n ":" =r" (__slot_id) \
+				: "r" (__slot_id)); \
+	(__slot_id & 0xff); })
 
-extern	Boolean	mach_KernelMode;
+/*
+ * Macro to get processor number. The processor number is stored in the top
+ * eight bits of the kpsw.
+ * For testing uniprocessor, always return zero.
+ */
+#define	Mach_GetProcessorNumber() ({ \
+	register unsigned int	__pnum; \
+	asm volatile ("rd_kpsw	 %1\n\textract %1,%1,$3\n ":" =r" (__pnum) \
+				: "r" (__pnum)); \
+	(__pnum = 0); })
+
+/*
+ * A macro to test if the current processor is at interrupt level.
+ */
+
+#define	Mach_AtInterruptLevel()	\
+			(mach_AtInterruptLevel[Mach_GetProcessorNumber()])
+
+/*
+ * A macro to test if the current processor is in kernel mode.
+ */
+
+#define	Mach_KernelMode() (mach_KernelMode[Mach_GetProcessorNumber()])
+
+extern	Boolean	mach_KernelMode[];
 extern	int	mach_NumProcessors;
-extern	Boolean	mach_AtInterruptLevel;
+extern	Boolean	mach_AtInterruptLevel[];
 extern	int	*mach_NumDisableIntrsPtr;
 /*
  * mach_MachineType is a string used to expand $MACHINE in pathnames.
@@ -241,7 +280,6 @@ extern	int	Mach_GetMachineArch();
 extern	Address	Mach_GetStackPointer();
 extern	void	Mach_DisableIntr();
 extern	void	Mach_EnableIntr();
-extern	unsigned int Mach_GetSlotId();
 extern  ReturnStatus Mach_AllocExtIntrNumber();
 extern	void	Mach_RefreshStart();
 extern	void	Mach_RefreshInterrupt();
