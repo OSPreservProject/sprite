@@ -129,13 +129,18 @@ typedef struct FsCachedAttributes {
     int		lastByte;	/* Cached version of desc. lastByte */
     int		accessTime;	/* Cached version of access time */
     int		modifyTime;	/* Cached version of modify time */
+    int		createTime;	/* Create time (won't change, but passed
+				 * to clients for use in
+				 * statistics-gathering) */
+    int		userType;	/* user advisory file type, defined in
+				 * user/fs.h */
     /*
      * The following fields are needed by Proc_Exec.
      */
     int		permissions;	/* File permissions */
     int		uid;		/* User ID of owner */
     int		gid;		/* Group Owner ID */
-} FsCachedAttributes;		/* 28 BYTES */
+} FsCachedAttributes;		/* 36 BYTES */
 
 typedef struct FsCacheFileInfo {
     List_Links	   links;	   /* Links for the list of dirty files.
@@ -216,7 +221,7 @@ typedef struct FsRemoteIOHandle {
 
 
 /*
- * The current time in seconds and the element used to schedule the update to 
+ * The current time in seconds and the element used to schedule the update to
  * it.
  */
 
@@ -240,6 +245,28 @@ extern Boolean fsShouldSyncDisks;
  * know we can sync the disks safely.
  */
 extern  Boolean fsInitialized;		
+
+
+/*
+ * Define the types of files that we care about in the kernel, for such
+ * things as statistics gathering, write-through policy, etc.  There is not
+ * necessarily a one-to-one mapping between these and the types defined
+ * in user/fs.h as FS_USER_TYPE_*; for example, FS_USER_TYPE_BINARY and
+ * FS_USER_TYPE_OBJECT were mapped into FS_FILE_TYPE_DERIVED before they
+ * were separated into two categories.  It would be possible to flag other
+ * derived files (text formatting output, for example) to be in the DERIVED
+ * category as well.  
+ */
+#define FS_FILE_TYPE_TMP 0
+#define FS_FILE_TYPE_SWAP 1
+#define FS_FILE_TYPE_DERIVED 2
+#define FS_FILE_TYPE_BINARY 3
+#define FS_FILE_TYPE_OTHER 4
+
+/*
+ * Whether or not to keep information about file I/O by user file type.
+ */
+extern Boolean fsKeepTypeInfo;
 
 /*
  * Fs_StringNCopy
@@ -345,5 +372,7 @@ extern	void		FsFileError();
 extern	void		FsUpdateTimeOfDay();
 extern	void		FsClearStreamID();
 extern	void		FsAssignAttrs();
+extern  int	 	FsFindFileType();
+extern  void	 	FsRecordDeletionStats();
 
 #endif _FSINT
