@@ -427,6 +427,74 @@ DiskError(diskPtr, statusByte, senseLength, senseDataPtr)
     }
     return status;
 }
+#if defined(sun4) || defined(sun3)
+    /*
+     * This code is for the raid people to test out HBA/disks pairs 
+     * by bypassing most of Sprite.
+     * Mendel 9/12/89
+     */
+
+#include <dev/hbatest.h>
+
+static int
+DiskHBATestDoneProc(scsiCmdPtr, status, statusByte, byteCount, senseLength, 
+	     senseDataPtr)
+    ScsiCmd	*scsiCmdPtr;	/* Request that finished. */
+    ReturnStatus  status;	/* Error of request. */
+    unsigned char statusByte;	/* SCSI status byte of request. */
+    int		byteCount;	/* Number of bytes transferred. */
+    int		senseLength;	/* Length of sense data returned. */
+    Address	senseDataPtr;	/* Sense data. */
+{
+    ReturnStatus *errorStatusPtr = (ReturnStatus *) (scsiCmdPtr->clientData);
+    ScsiStatus *statusPtr = (ScsiStatus *) &statusByte;
+    char	errorString[MAX_SCSI_ERROR_STRING];
+    ScsiClass0Sense *sensePtr = (ScsiClass0Sense *) senseDataPtr;
+    /*
+     * Check for status byte to see if the command returned sense
+     * data. If no sense data exists then we only have the status
+     * byte to look at.
+     */
+    if ((status == SUCCESS) && !statusPtr->check) {
+	return 0;
+    }
+    if (senseLength == 0) {
+	 printf("Warning: SCSI Disk error: no sense data\n");
+	 *errorStatusPtr = DEV_NO_SENSE;
+	 return DEV_NO_SENSE;
+    }
+    if (DevScsiMapClass7Sense(senseLength, senseDataPtr,&status, errorString)) {
+	if (errorString[0]) {
+	     printf("Warning: SCSI Disk  error: %s\n", errorString);
+	}
+        *errorStatusPtr = status;
+	return status;
+    }
+
+    /*
+     * If its not a class 7 error it must be Old style sense data..
+     */
+    if (sensePtr->error == SCSI_NO_SENSE_DATA) {	    
+	status = SUCCESS;
+    } else {
+	int class = (sensePtr->error & 0x70) >> 4;
+	int code = sensePtr->error & 0xF;
+	int addr;
+	addr = (sensePtr->highAddr << 16) |
+		(sensePtr->midAddr << 8) |
+		sensePtr->lowAddr;
+	printf("Warning: SCSI disk sense error (%d-%d) at <%x> ",
+			class, code, addr);
+	if (devScsiNumErrors[class] > code) {
+		printf("%s", devScsiErrors[class][code]);
+	 }
+	 printf("\n");
+	 status = DEV_HARD_ERROR;
+    }
+    *errorStatusPtr = status;
+    return 0;
+}
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -490,7 +558,106 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 
 	case	IOC_MAP:
 	    return(GEN_NOT_IMPLEMENTED);
-	    
+
+#if defined(sun4) || defined(sun3)
+    /*
+     * This code is for the raid people to test out HBA/disks pairs 
+     * by bypassing most of Sprite.
+     * Mendel 9/12/89
+     */
+	case   IOC_HBA_DISK_IO_TEST: {
+	    register int count, i;
+	    int	     max = 0;
+	    register DevHBADiskTest  *cmds;
+	    ScsiCmd	*scsiCmds;
+	    Address    mem, dmaMem;
+	    ReturnStatus       errorStatus;
+
+	    if ((ioctlPtr->inBufSize % sizeof(DevHBADiskTest)) || 
+		!ioctlPtr->inBufSize) {
+		return(GEN_INVALID_ARG);
+	    }
+	    count = ioctlPtr->inBufSize / sizeof(DevHBADiskTest);
+	    cmds = (DevHBADiskTest  * ) ioctlPtr->inBuffer;
+	    for (i = 0; i < count; i++) {
+		if (max < cmds[i].lengthInSectors) {
+		    max = cmds[i].lengthInSectors;
+	        }
+	    }
+	    if (max == 0) {
+		return(GEN_INVALID_ARG);
+	    }
+	    mem = malloc(DEV_BYTES_PER_SECTOR * max + sizeof(ScsiCmd)*count);
+	    scsiCmds = (ScsiCmd *) (mem + DEV_BYTES_PER_SECTOR * max);
+	    dmaMem = VmMach_DMAAlloc(DEV_BYTES_PER_SECTOR * max, mem);
+	    errorStatus = 0;
+	    for (i = 0; i < count; i++) {
+		DevScsiGroup0Cmd(diskPtr->devPtr, 
+			    cmds[i].writeOperation ? SCSI_WRITE : SCSI_READ,
+			    cmds[i].firstSector, cmds[i].lengthInSectors,
+			    &(scsiCmds[i]));
+		scsiCmds[i].buffer = dmaMem;
+		scsiCmds[i].bufferLen = cmds[i].lengthInSectors * 
+							SCSI_DISK_SECTOR_SIZE;
+	        scsiCmds[i].dataToDevice = cmds[i].writeOperation;
+		scsiCmds[i].clientData = (ClientData) &errorStatus;
+	        scsiCmds[i].doneProc = DiskHBATestDoneProc;
+		if (i < count - 1) {
+		    DevScsiSendCmd(diskPtr->devPtr, &(scsiCmds[i]));
+		} else {
+		    unsigned char statusByte;
+		    int	byteCount;
+		    status = DevScsiSendCmdSync(diskPtr->devPtr,
+			    &(scsiCmds[i]),&statusByte,&byteCount,
+				 (int *) NIL, (char *) NIL);
+		}
+	   }
+	   VmMach_DMAFree(DEV_BYTES_PER_SECTOR * max, dmaMem);
+	   free(mem);
+	   if (status)
+	       return status;
+	   return errorStatus;
+
+	}
+	case   IOC_HBA_DISK_UNIT_TEST: {
+	    register int count, i;
+	    register ScsiCmd	*scsiCmds;
+	    ReturnStatus       errorStatus;
+
+	    if (ioctlPtr->inBufSize != sizeof(int)) {
+		return(GEN_INVALID_ARG);
+	    }
+	    count = *(int *) ioctlPtr->inBuffer;
+	    if ((count < 0) || (count > MAX_HBA_UNIT_TESTS)) {
+		return(GEN_INVALID_ARG);
+	    }
+	    scsiCmds = (ScsiCmd *) malloc(sizeof(ScsiCmd)*count);
+	    errorStatus = 0;
+	    for (i = 0; i < count; i++) {
+		DevScsiGroup0Cmd(diskPtr->devPtr, SCSI_TEST_UNIT_READY,
+			    0, 0, scsiCmds + i);
+		scsiCmds[i].buffer = (char *) NIL;
+		scsiCmds[i].bufferLen = 0;
+	        scsiCmds[i].dataToDevice = 0;
+		scsiCmds[i].clientData = (ClientData) &errorStatus;
+	        scsiCmds[i].doneProc = DiskHBATestDoneProc;
+		if (i < count - 1) {
+		    DevScsiSendCmd(diskPtr->devPtr, &(scsiCmds[i]));
+		} else {
+		    unsigned char statusByte;
+		    int	byteCount;
+		    status = DevScsiSendCmdSync(diskPtr->devPtr,
+			    &(scsiCmds[i]),&statusByte,&byteCount,
+				 (int *) NIL, (char *) NIL);
+		}
+	   }
+	   free((char *) scsiCmds);
+	   if (status)
+	       return status;
+	   return errorStatus;
+
+	}
+#endif
 	default:
 	    return(GEN_INVALID_ARG);
     }
