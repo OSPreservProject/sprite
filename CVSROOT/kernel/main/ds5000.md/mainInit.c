@@ -103,6 +103,12 @@ MachStringTable *argv;
     if (main_PrintInitRoutines) {
 	Mach_MonPrintf("Calling Sync_Init().\n");
     }
+
+    /*
+     * Initialize variables again, since Mach_Init trashes them.
+     */
+    Main_InitVars();
+
     Sync_Init();
 
     /*
