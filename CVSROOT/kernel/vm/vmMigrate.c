@@ -432,7 +432,7 @@ FlushSegment(segPtr)
 	 * The page is dirty so put it on the dirty list.  Wait later on
 	 * for it to be written out.
 	 */
-	VmPutOnDirtyList(VmGetPageFrame(*ptePtr));
+	VmPutOnDirtyList(Vm_GetPageFrame(*ptePtr));
     }
     ptePtr = firstPTEPtr;
     virtAddr.page = firstPage;
@@ -445,7 +445,7 @@ FlushSegment(segPtr)
 	if (!(*ptePtr & VM_PHYS_RES_BIT)) {
 	    continue;
 	}
-	VmPageFree(VmGetPageFrame(*ptePtr));
+	VmPageFree(Vm_GetPageFrame(*ptePtr));
 	segPtr->resPages--;
 	*ptePtr = VM_VIRT_RES_BIT | VM_ON_SWAP_BIT;
     }
@@ -512,13 +512,13 @@ PrepareFlush(segPtr, numPagesPtr)
 	 * The page is resident so lock it if it needs to be written, or else
 	 * free the page frame.
 	 */
-	VmMach_GetRefModBits(&virtAddr, VmGetPageFrame(*ptePtr), &referenced,
+	VmMach_GetRefModBits(&virtAddr, Vm_GetPageFrame(*ptePtr), &referenced,
 			     &modified);
 	if (modified) {
-	    VmLockPageInt(VmGetPageFrame(*ptePtr));
+	    VmLockPageInt(Vm_GetPageFrame(*ptePtr));
 	    *numPagesPtr += 1;
 	} else {
-	    VmPageFreeInt(VmGetPageFrame(*ptePtr));
+	    VmPageFreeInt(Vm_GetPageFrame(*ptePtr));
 	    *ptePtr &= ~(VM_PHYS_RES_BIT | VM_PAGE_FRAME_FIELD);
 	    segPtr->resPages--;
 	}
@@ -552,21 +552,19 @@ static void
 FreeSegment(segPtr)
     register	Vm_Segment      *segPtr;
 {
-    VmSpace	space;
-    VmFileInfo	fileInfo;
-    VmDeleteStatus status;
+    VmProcLink		*procLinkPtr;
+    Fs_Stream		*objStreamPtr;
+    VmDeleteStatus	status;
 
-    status = VmSegmentDeleteInt(segPtr, (Proc_ControlBlock *) NIL, &space, 
-				&fileInfo, TRUE);
+    status = VmSegmentDeleteInt(segPtr, (Proc_ControlBlock *) NIL,
+				&procLinkPtr, &objStreamPtr, TRUE);
     if (status == VM_DELETE_SEG) {
 	if (vm_CanCOW) {
 	    VmCOWDeleteFromSeg(segPtr, -1, -1);
 	}
 	VmMach_SegDelete(segPtr);
-	VmCleanSegment(segPtr, &space, TRUE, &fileInfo);
-	if (space.spaceToFree && space.ptPtr != (Vm_PTE *)NIL) {
-	    Mem_Free((Address)space.ptPtr);
-	}
+	Mem_Free((Address)segPtr->ptPtr);
+	segPtr->ptPtr = (Vm_PTE *)NIL;
 	VmPutOnFreeSegList(segPtr);
     }
 }

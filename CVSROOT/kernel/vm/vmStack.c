@@ -200,7 +200,7 @@ Vm_FreeKernelStack(stackBase)
 	 i < numStackPages; 
 	 i++, VmIncPTEPtr(ptePtr, 1), virtAddr.page++) {
 	vmStat.kernStackPages--;
-	VmPageFree(VmGetPageFrame(*ptePtr));
+	VmPageFree(Vm_GetPageFrame(*ptePtr));
 	VmPageInvalidate(&virtAddr);
     }
 

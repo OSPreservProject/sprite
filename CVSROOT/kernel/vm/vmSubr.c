@@ -143,16 +143,21 @@ void
 Vm_ProcInit(procPtr)
     Proc_ControlBlock	*procPtr;
 {
-    int			i;
+    int				i;
+    register	Vm_ProcInfo	*vmPtr;
 
     if (procPtr->vmPtr == (Vm_ProcInfo *)NIL) {
-	procPtr->vmPtr = (Vm_ProcInfo *)Mem_Alloc(sizeof(Vm_ProcInfo));
+	vmPtr = (Vm_ProcInfo *)Mem_Alloc(sizeof(Vm_ProcInfo));
+	procPtr->vmPtr = vmPtr;
+    } else {
+	vmPtr = procPtr->vmPtr;
     }
     for (i = 0; i < VM_NUM_SEGMENTS; i++) {
-	procPtr->vmPtr->segPtrArray[i] = (Vm_Segment *)NIL;
+	vmPtr->segPtrArray[i] = (Vm_Segment *)NIL;
     }
-    procPtr->vmPtr->vmFlags = 0;
-    VmMach_ProcInit(procPtr->vmPtr);
+    vmPtr->vmFlags = 0;
+    vmPtr->numMakeAcc = 0;
+    VmMach_ProcInit(vmPtr);
 }
 
 
@@ -900,7 +905,7 @@ Vm_GetKernPageFrame(pageFrame)
 {
     Vm_PTE	*ptePtr;
     ptePtr = VmGetPTEPtr(vm_SysSegPtr, pageFrame);
-    return(VmGetPageFrame(*ptePtr));
+    return(Vm_GetPageFrame(*ptePtr));
 }
 
 
@@ -952,6 +957,7 @@ Vm_KernPageFree(pfNum)
 {
     VmPageFree(pfNum);
 }
+#ifdef notdef
 
 Address
 Vm_MapInDevice(devPhysAddr, type)
@@ -994,3 +1000,5 @@ Vm_GetDevicePage(virtAddr)
 {
     VmMach_GetDevicePage(virtAddr);
 }
+
+#endif

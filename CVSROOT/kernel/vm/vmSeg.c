@@ -66,7 +66,8 @@ static	Sync_Condition	codeSegCondition;
 
 extern	Vm_Segment	**Fs_RetSegPtr();
 
-void	VmCleanSegment();
+void	DeleteSeg();
+void	CleanSegment();
 
 
 /*
@@ -147,6 +148,8 @@ VmSegTableInit()
 	segPtr->procList = (List_Links *) &(segPtr->procListHdr);
 	List_Init(segPtr->procList);
 	if (i != VM_SYSTEM_SEGMENT) {
+	    segPtr->ptPtr = (Vm_PTE *)NIL;
+	    segPtr->machPtr = (VmMach_SegData *)NIL;
 	    segPtr->flags = VM_SEG_FREE;
 	    segPtr->refCount = 0;
 	    segPtr->notExpandCount = 0;
@@ -155,229 +158,48 @@ VmSegTableInit()
     }
 }
 
-
-/*
- * ----------------------------------------------------------------------------
- *
- * CleanSegment --
- *
- *     Clean up the state information for a segment.  This involves freeing 
- *     all allocated pages.  This is called when a segment is deleted.
- *
- * Results:
- *     None.
- *
- * Side effects:
- *     All pages allocated to the segment are freed.
- *     
- * ----------------------------------------------------------------------------
- */
-INTERNAL static void
-CleanSegment(segPtr, spacePtr, fileInfoPtr)
-    register Vm_Segment *segPtr;	/* Pointer to the segment to be 
-					 * cleaned */
-    register VmSpace	*spacePtr;	/* Pointer to structure that contains 
-				   	 * space that has to be deallocated. */
-    register VmFileInfo	*fileInfoPtr;	/* Pointer where to store stream to 
-					 * close. */
-{
-    register	Vm_PTE	*ptePtr;
-    register	int    	i;
-    Vm_VirtAddr		virtAddr;
-    Vm_Segment		**segPtrPtr;
-
-    segPtr->flags |= VM_SEG_DEAD;
-
-    virtAddr.segPtr = segPtr;
-    if (segPtr->type == VM_STACK) {
-	virtAddr.page = mach_LastUserStackPage - segPtr->numPages + 1;
-    } else {
-	virtAddr.page = segPtr->offset;
-    }
-    ptePtr = VmGetPTEPtr(segPtr, virtAddr.page);
-
-    if (segPtr->filePtr != (Fs_Stream *) NIL) {
-	/*
-	 * Need to close the file descriptor for this segment.  Don't close it 
-	 * here because we don't want to do a file system operation with the 
-	 * VM monitor lock down.  It will be closed at a higher level.
-	 */
-	if (!vm_NoStickySegments && segPtr->type == VM_CODE) {
-	    Sys_Panic(SYS_FATAL, "CleanSegment: Non-nil file pointer\n");
-	}
-	fileInfoPtr->objStreamPtr = segPtr->filePtr;
-	segPtr->filePtr = (Fs_Stream *) NIL;
-    }
-    if (segPtr->fileHandle != (ClientData) NIL) {
-	/*
-	 * This segment is associated with a file.  Find out which one and
-	 * break the connection.
-	 */
-	segPtrPtr = Fs_RetSegPtr(segPtr->fileHandle);
-	*segPtrPtr = (Vm_Segment *) NIL;
-	segPtr->fileHandle = (ClientData) NIL;
-    }
-
-    /*
-     * Free all pages that this segment has in real memory.
-     */
-    for (i = segPtr->numPages; 
-         i > 0; 
-	 i--, VmIncPTEPtr(ptePtr, 1), virtAddr.page++) {
-	if (*ptePtr & VM_PHYS_RES_BIT) {
-	    VmMach_PageInvalidate(&virtAddr, VmGetPageFrame(*ptePtr),
-				  TRUE);
-	    VmPageFreeInt(VmGetPageFrame(*ptePtr));
-	}
-    }
-
-    segPtr->resPages = 0;
-
-    spacePtr->spaceToFree = TRUE;
-    spacePtr->ptPtr = segPtr->ptPtr;
-    segPtr->ptPtr = (Vm_PTE *) NIL;
-}
+Vm_Segment	*FindCode();
 
 
 /*
  * ----------------------------------------------------------------------------
  *
- * GetNewSegment --
+ * Vm_FindCode --
  *
- *     	Allocate a new segment from the segment table.  If the segment is
- *	of type VM_CODE then it will have a flag set that indicates that
- *	its page tables have not been initialized.  It can be cleared by
- *	calling Vm_InitPageTable.
+ *     	Search the segment table for a code segment that has a matching 
+ *	filePtr.  Call internal routine to do the work.
  *
  * Results:
- *      A pointer to the new segment is returned if a dead, free, or inactive 
- *	segment is available.  If no segments are available, then 
- *	NIL is returned.   If a dead or inactive segment is used here then
- *	*spacePtr is filled in with the space that was allocated
- *	to the segment.
+ *     	A pointer to the matching segment if one is found, NIL if none found. 
  *
  * Side effects:
- *     A new segment out of the segment table is allocated.  Also if no
- *     free segments can be found, an inactive segment will be freed.
+ *     	Memory allocated.
  *
  * ----------------------------------------------------------------------------
  */
 ENTRY Vm_Segment *
-GetNewSegment(type, filePtr, fileAddr, numPages, offset, procPtr,
-	      spacePtr, fileInfoPtr)
-    int			type;		/* The type of segment that this is */
+Vm_FindCode(filePtr, procPtr, execInfoPtrPtr, usedFilePtr)
     Fs_Stream		*filePtr;	/* The unique identifier for this file
 					   (if any) */
-    int			fileAddr;	/* The address where the segments image
-					   begins in the object file. */
-    int			numPages;	/* The number of pages that this segment
-					   initially has. */
-    int			offset;		/* At which page from the beginning of
-					   the VAS that this segment begins */
-    Proc_ControlBlock	*procPtr;	/* Process for which the segment is
-					   being allocated. */
-	    /* IN/OUT parameter:  Passes in memory that has been allocated for
-	       this segment and passes out any memory that has to be freed
-	       either because we are out of segments or an inactive segment
-	       was used. */
-    VmSpace		*spacePtr;	
-    VmFileInfo		*fileInfoPtr;	/* Where to return pointers to streams
-					 * opened by a segment that is being
-					 * reused. */
+    Proc_ControlBlock	*procPtr;	/* Process for which segment is being
+					   allocated. */
+    Vm_ExecInfo		**execInfoPtrPtr;/* Where to return relevant info from
+					 * the a.out header. */
+    Boolean		*usedFilePtr;	/* TRUE => Had to use the file pointer.
+					 * FALSE => didn't have to use it. */
 {
     register	Vm_Segment	*segPtr;
-    register	VmProcLink	*procLinkPtr;
-    Boolean			recycled;
-    VmSpace			oldSpace;
+    VmProcLink			*procLinkPtr;
 
-    LOCK_MONITOR;
-
-    if (!List_IsEmpty(deadSegList)) {
-	/*
-	 * If there is a dead code segment then use it so that we can free
-	 * up things.
-	 */
-	segPtr = (Vm_Segment *) List_First(deadSegList);
-	recycled = TRUE;
-    } else if (!List_IsEmpty(freeSegList)) {
-	/*
-	 * If there is a free segment then use it.
-	 */
-	segPtr = (Vm_Segment *) List_First(freeSegList);
-	spacePtr->spaceToFree = FALSE;
-	recycled = FALSE;
-    } else if (!List_IsEmpty(inactiveSegList)) {
-	/*
-	 * Inactive segment is available so use it.
-	 */
-	segPtr = (Vm_Segment *) List_First(inactiveSegList);
-	recycled = TRUE;
-    } else {
-	/*
-	 * No segments are available so return a NIL pointer in *segPtrPtr 
-	 * and make sure that the caller frees the space that he sent in.
-	 */
-	spacePtr->spaceToFree = TRUE;
-	UNLOCK_MONITOR;
-	return((Vm_Segment *) NIL);
-    }
-
-    List_Remove((List_Links *) segPtr);
-    if (recycled) {
-	/*
-	 * Cleanup the state of the dead or inactive segment. Any space used 
-	 * by the segment will be stored in oldSpace.
-	 */
-	CleanSegment(segPtr, &oldSpace, fileInfoPtr);
-	if (segPtr->flags & VM_SWAP_FILE_OPENED) {
-	    fileInfoPtr->swapStreamPtr = segPtr->swapFilePtr;
-	    fileInfoPtr->swapFileName = segPtr->swapFileName;
-	    fileInfoPtr->segNum = segPtr->segNum;
-	}
-    }
-
-    /*
-     * Initialize the new segment.
-     */
-    segPtr->fileHandle = (ClientData) NIL;
-    segPtr->flags = 0;
-    segPtr->refCount = 1;
-    segPtr->filePtr = filePtr;
-    segPtr->fileAddr = fileAddr;
-    segPtr->numPages = numPages;
-    segPtr->numCORPages = 0;
-    segPtr->numCOWPages = 0;
-    segPtr->type = type;
-    segPtr->offset = offset;
-    segPtr->swapFileName = (char *) NIL;
-    segPtr->ptPtr = spacePtr->ptPtr;
-    segPtr->ptSize = spacePtr->ptSize;
-    Byte_Zero(segPtr->ptSize * sizeof(Vm_PTE), (Address)segPtr->ptPtr);
-    /*
-     * If this is a stack segment, the page table grows backwards.  Therefore
-     * all of the extra page table that we allocated must be taken off of the
-     * offset where the stack was supposed to begin.
-     */
-    if (segPtr->type == VM_STACK) {
-	segPtr->offset = mach_LastUserStackPage - segPtr->ptSize + 1;
-    }
-    /*
-     * Put the process into the list of processes sharing this segment.
-     */
-    procLinkPtr = spacePtr->procLinkPtr;
+    procLinkPtr = (VmProcLink *) Mem_Alloc(sizeof(VmProcLink));
     procLinkPtr->procPtr = procPtr;
-    List_Insert((List_Links *) procLinkPtr, LIST_ATFRONT(segPtr->procList));
-    /*
-     * If a dead or inactive segment was used then return the space that it 
-     * used in *spacePtr.
-     */
-    if (recycled) {
-	*spacePtr = oldSpace;
-	spacePtr->procLinkPtr = (VmProcLink *) NIL;
-	spacePtr->spaceToFree = TRUE;
+    segPtr = FindCode(filePtr, procLinkPtr, usedFilePtr);
+    if (segPtr == (Vm_Segment *) NIL) {
+	Mem_Free((Address) procLinkPtr);
+    } else {
+	*execInfoPtrPtr = &segPtr->execInfo;
     }
-	
-    UNLOCK_MONITOR;
+
     return(segPtr);
 }
 
@@ -456,49 +278,6 @@ again:
     }
 
     UNLOCK_MONITOR;
-
-    return(segPtr);
-}
-
-
-/*
- * ----------------------------------------------------------------------------
- *
- * Vm_FindCode --
- *
- *     	Search the segment table for a code segment that has a matching 
- *	filePtr.  Call internal routine to do the work.
- *
- * Results:
- *     	A pointer to the matching segment if one is found, NIL if none found. 
- *
- * Side effects:
- *     	Memory allocated.
- *
- * ----------------------------------------------------------------------------
- */
-ENTRY Vm_Segment *
-Vm_FindCode(filePtr, procPtr, execInfoPtrPtr, usedFilePtr)
-    Fs_Stream		*filePtr;	/* The unique identifier for this file
-					   (if any) */
-    Proc_ControlBlock	*procPtr;	/* Process for which segment is being
-					   allocated. */
-    Vm_ExecInfo		**execInfoPtrPtr;/* Where to return relevant info from
-					 * the a.out header. */
-    Boolean		*usedFilePtr;	/* TRUE => Had to use the file pointer.
-					 * FALSE => didn't have to use it. */
-{
-    register	Vm_Segment	*segPtr;
-    VmProcLink			*procLinkPtr;
-
-    procLinkPtr = (VmProcLink *) Mem_Alloc(sizeof(VmProcLink));
-    procLinkPtr->procPtr = procPtr;
-    segPtr = FindCode(filePtr, procLinkPtr, usedFilePtr);
-    if (segPtr == (Vm_Segment *) NIL) {
-	Mem_Free((Address) procLinkPtr);
-    } else {
-	*execInfoPtrPtr = &segPtr->execInfo;
-    }
 
     return(segPtr);
 }
@@ -608,6 +387,7 @@ Vm_FileChanged(segPtrPtr)
     UNLOCK_MONITOR;
 }
 
+void	GetNewSegment();
 
 
 /*
@@ -641,9 +421,9 @@ Vm_SegmentNew(type, filePtr, fileAddr, numPages, offset, procPtr)
 					   being allocated. */
 
 {
-    Vm_Segment         	  	*segPtr;
-    VmSpace			space;
-    VmFileInfo			fileInfo;
+    Vm_Segment		*segPtr;
+    VmSpace		space;
+    Boolean		deleteSeg;
 
     space.procLinkPtr = (VmProcLink *) Mem_Alloc(sizeof(VmProcLink));
     if (type == VM_CODE) {
@@ -653,31 +433,144 @@ Vm_SegmentNew(type, filePtr, fileAddr, numPages, offset, procPtr)
 	space.ptSize = ((numPages - 1) / vmPageTableInc + 1) * vmPageTableInc;
 	space.ptPtr = (Vm_PTE *) Mem_Alloc(sizeof(Vm_PTE) * space.ptSize);
     }
-    fileInfo.objStreamPtr = (Fs_Stream *) NIL;
-    fileInfo.swapStreamPtr = (Fs_Stream *) NIL;
-    segPtr = GetNewSegment(type, filePtr, fileAddr, numPages, offset, procPtr,
-			   &space, &fileInfo);
+    segPtr = (Vm_Segment *)NIL;
+    GetNewSegment(type, filePtr, fileAddr, numPages, offset,
+		  procPtr, &space, &segPtr, &deleteSeg);
     if (segPtr != (Vm_Segment *)NIL) {
+	if (deleteSeg) {
+	    /*
+	     * We have to recycle a code segment before we can allocate a new
+	     * segment.
+	     */
+	    DeleteSeg(segPtr);
+	    GetNewSegment(type, filePtr, fileAddr, numPages, offset,
+			  procPtr, &space, &segPtr, &deleteSeg);
+	}
 	VmMach_SegInit(segPtr);
+    } else {
+	Mem_Free((Address)space.procLinkPtr);
+	Mem_Free((Address)space.ptPtr);
     }
-    if (space.spaceToFree) {
-	if (space.procLinkPtr != (VmProcLink *) NIL) {
-	    Mem_Free((Address) space.procLinkPtr);
-	}
-	if (space.ptPtr != (Vm_PTE *)NIL) {
-	    Mem_Free((Address)space.ptPtr);
-	}
-    }
-    if (fileInfo.objStreamPtr != (Fs_Stream *) NIL) {
-	Fs_Close(fileInfo.objStreamPtr);
-    }
-    if (fileInfo.swapStreamPtr != (Fs_Stream *) NIL) {
-	VmSwapFileRemove(fileInfo.swapStreamPtr, fileInfo.swapFileName);
-    }
-
     return(segPtr);
 }
 
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * GetNewSegment --
+ *
+ *     	Allocate a new segment from the segment table.  If the segment is
+ *	of type VM_CODE then it will have a flag set that indicates that
+ *	its page tables have not been initialized.  It can be cleared by
+ *	calling Vm_InitPageTable.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *     A new segment out of the segment table is allocated.  Also if no
+ *     free segments can be found, an inactive segment will be freed.
+ *
+ * ----------------------------------------------------------------------------
+ */
+ENTRY void
+GetNewSegment(type, filePtr, fileAddr, numPages, offset, procPtr,
+	      spacePtr, segPtrPtr, deletePtr)
+    int			type;		/* The type of segment that this is */
+    Fs_Stream		*filePtr;	/* The unique identifier for this file
+					   (if any) */
+    int			fileAddr;	/* The address where the segments image
+					   begins in the object file. */
+    int			numPages;	/* The number of pages that this segment
+					   initially has. */
+    int			offset;		/* At which page from the beginning of
+					   the VAS that this segment begins */
+    Proc_ControlBlock	*procPtr;	/* Process for which the segment is
+					   being allocated. */
+    VmSpace		*spacePtr;	/* Memory to be used for this segment.*/    Boolean		*deletePtr;	/* TRUE if have to delete a segment*/
+    Vm_Segment		**segPtrPtr;	/* IN/OUT parameter: On input if 
+					 * non-nil then this segment should
+					 * be used.  On output is the segment
+					 * to use. */
+{
+    register	Vm_Segment	*segPtr;
+    register	VmProcLink	*procLinkPtr;
+
+    LOCK_MONITOR;
+
+    if (*segPtrPtr == (Vm_Segment *)NIL) {
+	if (!List_IsEmpty(deadSegList)) {
+	    /*
+	     * If there is a dead code segment then use it so that we can free
+	     * up things.
+	     */
+	    segPtr = (Vm_Segment *) List_First(deadSegList);
+	    *deletePtr = TRUE;
+	} else if (!List_IsEmpty(freeSegList)) {
+	    /*
+	     * If there is a free segment then use it.
+	     */
+	    segPtr = (Vm_Segment *) List_First(freeSegList);
+	    *deletePtr = FALSE;
+	} else if (!List_IsEmpty(inactiveSegList)) {
+	    /*
+	     * Inactive segment is available so use it.
+	     */
+	    segPtr = (Vm_Segment *) List_First(inactiveSegList);
+	    *deletePtr = TRUE;
+	} else {
+	    /*
+	     * No segments are available so return a NIL pointer in *segPtrPtr 
+	     * and make sure that the caller frees the space that he sent in.
+	     */
+	    *segPtrPtr = (Vm_Segment *)NIL;
+	    UNLOCK_MONITOR;
+	    return;
+	}
+	List_Remove((List_Links *) segPtr);
+	*segPtrPtr = segPtr;
+    } else {
+	segPtr = *segPtrPtr;
+	*deletePtr = FALSE;
+    }
+
+    if (!*deletePtr) {
+	/*
+	 * Initialize the new segment.
+	 */
+	segPtr->fileHandle = (ClientData) NIL;
+	segPtr->flags = 0;
+	segPtr->refCount = 1;
+	segPtr->filePtr = filePtr;
+	segPtr->fileAddr = fileAddr;
+	segPtr->numPages = numPages;
+	segPtr->numCORPages = 0;
+	segPtr->numCOWPages = 0;
+	segPtr->type = type;
+	segPtr->offset = offset;
+	segPtr->swapFileName = (char *) NIL;
+	segPtr->ptPtr = spacePtr->ptPtr;
+	segPtr->ptSize = spacePtr->ptSize;
+	Byte_Zero(segPtr->ptSize * sizeof(Vm_PTE), (Address)segPtr->ptPtr);
+	/*
+	 * If this is a stack segment, the page table grows backwards.  
+	 * Therefore all of the extra page table that we allocated must be
+	 * taken off of the offset where the stack was supposed to begin.
+	 */
+	if (segPtr->type == VM_STACK) {
+	    segPtr->offset = mach_LastUserStackPage - segPtr->ptSize + 1;
+	}
+	/*
+	 * Put the process into the list of processes sharing this segment.
+	 */
+	procLinkPtr = spacePtr->procLinkPtr;
+	procLinkPtr->procPtr = procPtr;
+	List_Insert((List_Links *) procLinkPtr, LIST_ATFRONT(segPtr->procList));
+    }
+
+    UNLOCK_MONITOR;
+}
 
 /*
  * ----------------------------------------------------------------------------
@@ -705,17 +598,15 @@ Vm_SegmentNew(type, filePtr, fileAddr, numPages, offset, procPtr)
  *	sharing this segment is modified.
  */
 ENTRY VmDeleteStatus
-VmSegmentDeleteInt(segPtr, procPtr, spacePtr, fileInfoPtr, migFlag)
+VmSegmentDeleteInt(segPtr, procPtr, procLinkPtrPtr, objStreamPtrPtr, migFlag)
     register Vm_Segment 	*segPtr;	/* Pointer to segment to 
 						   delete. */
     register Proc_ControlBlock	*procPtr;	/* Process that was using
 						   this segment. */
-    VmSpace			*spacePtr;	/* Used to return memory to
-						   free to caller. */
-    VmFileInfo			*fileInfoPtr;	/* Pointer to object and swap
-						 * file information for the
-						 * segment that is being
-						 * deleted. */
+    VmProcLink			**procLinkPtrPtr;/* Pointer to proc link info
+						  * to free. */
+    Fs_Stream			**objStreamPtrPtr;/* Pointer to object file
+						   * stream to close. */
     Boolean			migFlag;	/* TRUE if segment is being
 						   migrated. */
 {
@@ -742,8 +633,9 @@ VmSegmentDeleteInt(segPtr, procPtr, spacePtr, fileInfoPtr, migFlag)
 	    procLinkPtr = (VmProcLink *) List_Next((List_Links *) procLinkPtr);
 	}
 	List_Remove((List_Links *) procLinkPtr);
-
-	spacePtr->procLinkPtr = procLinkPtr;
+	*procLinkPtrPtr = procLinkPtr;
+    } else {
+	*procLinkPtrPtr = (VmProcLink *)NIL;
     }
 
     /*
@@ -760,7 +652,7 @@ VmSegmentDeleteInt(segPtr, procPtr, spacePtr, fileInfoPtr, migFlag)
      */
     if (!vm_NoStickySegments && segPtr->type == VM_CODE) {
 	segPtr->flags |= VM_SEG_INACTIVE;
-	fileInfoPtr->objStreamPtr = segPtr->filePtr;
+	*objStreamPtrPtr = segPtr->filePtr;
 	segPtr->filePtr = (Fs_Stream *) NIL;
 	List_Insert((List_Links *) segPtr, LIST_ATREAR(inactiveSegList));
 	UNLOCK_MONITOR;
@@ -826,71 +718,125 @@ VmPutOnFreeSegList(segPtr)
 void
 Vm_SegmentDelete(segPtr, procPtr)
     register	Vm_Segment	*segPtr;
-    Proc_ControlBlock	*procPtr;
+    Proc_ControlBlock		*procPtr;
 {
-    VmSpace		space;
-    VmFileInfo		fileInfo;
     VmDeleteStatus	status;
+    VmProcLink		*procLinkPtr;
+    Fs_Stream		*objStreamPtr;
 
-    fileInfo.objStreamPtr = (Fs_Stream *) NIL;
-    status = VmSegmentDeleteInt(segPtr, procPtr, &space, &fileInfo, FALSE);
+    status = VmSegmentDeleteInt(segPtr, procPtr, &procLinkPtr, &objStreamPtr,
+				FALSE);
     if (status == VM_DELETE_SEG) {
-	if (vm_CanCOW) {
-	    VmCOWDeleteFromSeg(segPtr, -1, -1);
-	}
-	VmCleanSegment(segPtr, &space, FALSE, &fileInfo);
-	VmMach_SegDelete(segPtr);
-	if (space.ptPtr != (Vm_PTE *) NIL) {
-	    Mem_Free((Address) space.ptPtr);
-	}
-	if (segPtr->flags & VM_SWAP_FILE_OPENED) {
-	    VmSwapFileRemove(segPtr->swapFilePtr, segPtr->swapFileName);
-	}
-	if (fileInfo.objStreamPtr != (Fs_Stream *) NIL) {
-	    Fs_Close(fileInfo.objStreamPtr);
-	}
+	DeleteSeg(segPtr);
 	VmPutOnFreeSegList(segPtr);
     } else if (status == VM_CLOSE_OBJ_FILE) {
-	Fs_Close(fileInfo.objStreamPtr);
+	Fs_Close(objStreamPtr);
     }
 
-    Mem_Free((Address) space.procLinkPtr);
+    Mem_Free((Address)procLinkPtr);
 }
 
 
 /*
- *----------------------------------------------------------------------
+ * ----------------------------------------------------------------------------
  *
- * VmCleanSegment --
+ * DeleteSeg --
  *
- *	Do monitor level cleanup for this deleted segment.
+ *     	Actually delete a segment.  This includes freeing all memory 
+ *	resources for the segment and calling machine dependent cleanup.
  *
  * Results:
- *	None.
+ *     None.
  *
  * Side effects:
- *	None.
+ *     None.
  *
- *----------------------------------------------------------------------
+ * ----------------------------------------------------------------------------
  */
-ENTRY void
-VmCleanSegment(segPtr, spacePtr, migrating, fileInfoPtr)
-    Vm_Segment	*segPtr;
-    VmSpace	*spacePtr;
-    Boolean	migrating;
-    VmFileInfo	*fileInfoPtr;
+void
+DeleteSeg(segPtr)
+    register	Vm_Segment	*segPtr;
 {
-    LOCK_MONITOR;
+    if (vm_CanCOW) {
+	VmCOWDeleteFromSeg(segPtr, -1, -1);
+    }
+    CleanSegment(segPtr);
+    VmMach_SegDelete(segPtr);
 
-    if (!migrating) {
-	CleanSegment(segPtr, spacePtr, fileInfoPtr);
+    Mem_Free((Address)segPtr->ptPtr);
+    segPtr->ptPtr = (Vm_PTE *)NIL;
+    if (segPtr->filePtr != (Fs_Stream *)NIL) {
+	Fs_Close(segPtr->filePtr);
+	segPtr->filePtr = (Fs_Stream *)NIL;
+    }
+    if (segPtr->flags & VM_SWAP_FILE_OPENED) {
+	VmSwapFileRemove(segPtr->swapFilePtr, segPtr->swapFileName);
+	segPtr->swapFilePtr = (Fs_Stream *)NIL;
+	segPtr->swapFileName = (char *)NIL;
+    }
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * CleanSegment --
+ *
+ *     Clean up the state information for a segment.  This involves freeing 
+ *     all allocated pages.  This is called when a segment is deleted.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     All pages allocated to the segment are freed.
+ *     
+ * ----------------------------------------------------------------------------
+ */
+INTERNAL static void
+CleanSegment(segPtr)
+    register Vm_Segment *segPtr;	/* Pointer to the segment to be 
+					 * cleaned */
+{
+    register	Vm_PTE	*ptePtr;
+    register	int    	i;
+    Vm_VirtAddr		virtAddr;
+    Vm_Segment		**segPtrPtr;
+
+    segPtr->flags |= VM_SEG_DEAD;
+
+    virtAddr.segPtr = segPtr;
+    if (segPtr->type == VM_STACK) {
+	virtAddr.page = mach_LastUserStackPage - segPtr->numPages + 1;
     } else {
-	spacePtr->spaceToFree = TRUE;
-	spacePtr->ptPtr = segPtr->ptPtr;
-	segPtr->ptPtr = (Vm_PTE *) NIL;
+	virtAddr.page = segPtr->offset;
+    }
+    ptePtr = VmGetPTEPtr(segPtr, virtAddr.page);
+
+    if (segPtr->fileHandle != (ClientData) NIL) {
+	/*
+	 * This segment is associated with a file.  Find out which one and
+	 * break the connection.
+	 */
+	segPtrPtr = Fs_RetSegPtr(segPtr->fileHandle);
+	*segPtrPtr = (Vm_Segment *) NIL;
+	segPtr->fileHandle = (ClientData) NIL;
     }
 
-    UNLOCK_MONITOR;
+    /*
+     * Free all pages that this segment has in real memory.
+     */
+    for (i = segPtr->numPages; 
+         i > 0; 
+	 i--, VmIncPTEPtr(ptePtr, 1), virtAddr.page++) {
+	if (*ptePtr & VM_PHYS_RES_BIT) {
+	    VmMach_PageInvalidate(&virtAddr, Vm_GetPageFrame(*ptePtr),
+				  TRUE);
+	    VmPageFreeInt(Vm_GetPageFrame(*ptePtr));
+	}
+    }
+
+    segPtr->resPages = 0;
 }
 
 Boolean	StartDelete();
@@ -1044,9 +990,9 @@ EndDelete(segPtr, firstPage, lastPage)
 	 virtAddr.page <= lastPage;
 	 virtAddr.page++, VmIncPTEPtr(ptePtr, 1)) {
 	if (*ptePtr & VM_PHYS_RES_BIT) {
-	    VmMach_PageInvalidate(&virtAddr, VmGetPageFrame(*ptePtr), FALSE);
+	    VmMach_PageInvalidate(&virtAddr, Vm_GetPageFrame(*ptePtr), FALSE);
 	    segPtr->resPages--;
-	    pfNum = VmGetPageFrame(*ptePtr);
+	    pfNum = Vm_GetPageFrame(*ptePtr);
 	    *ptePtr = 0;
 	    VmPageFreeInt(pfNum);
 	}
@@ -1481,15 +1427,15 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
 	                   VmPageAllocate(&destVirtAddr, TRUE);
 	    destSegPtr->resPages++;
 	    if (srcAddr == (Address) NIL) {
-		srcAddr = VmMapPage(VmGetPageFrame(*srcPTEPtr));
-		destAddr = VmMapPage(VmGetPageFrame(*destPTEPtr));
+		srcAddr = VmMapPage(Vm_GetPageFrame(*srcPTEPtr));
+		destAddr = VmMapPage(Vm_GetPageFrame(*destPTEPtr));
 	    } else {
-		VmRemapPage(srcAddr, VmGetPageFrame(*srcPTEPtr));
-		VmRemapPage(destAddr, VmGetPageFrame(*destPTEPtr));
+		VmRemapPage(srcAddr, Vm_GetPageFrame(*srcPTEPtr));
+		VmRemapPage(destAddr, Vm_GetPageFrame(*destPTEPtr));
 	    }
 	    Byte_Copy(vm_PageSize, srcAddr, destAddr);
-	    VmUnlockPage(VmGetPageFrame(*srcPTEPtr));
-	    VmUnlockPage(VmGetPageFrame(*destPTEPtr));
+	    VmUnlockPage(Vm_GetPageFrame(*srcPTEPtr));
+	    VmUnlockPage(Vm_GetPageFrame(*destPTEPtr));
 	}
     }
     /*
@@ -1638,7 +1584,7 @@ CopyPage(srcSegPtr, srcPTEPtr, destPTEPtr)
 	 * lot cheaper to do a memory-to-memory copy than send an RPC to the
 	 * server to copy the page on swap space.  
 	 */
-	VmLockPageInt(VmGetPageFrame(*srcPTEPtr));
+	VmLockPageInt(Vm_GetPageFrame(*srcPTEPtr));
 	*destPTEPtr &= ~(VM_ON_SWAP_BIT | VM_PAGE_FRAME_FIELD);
     } else {
 	*destPTEPtr &= ~VM_PAGE_FRAME_FIELD;

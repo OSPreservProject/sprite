@@ -679,7 +679,7 @@ VmPageInvalidateInt(virtAddrPtr, ptePtr)
 {
     if (*ptePtr & VM_PHYS_RES_BIT) {
 	virtAddrPtr->segPtr->resPages--;
-	VmMach_PageInvalidate(virtAddrPtr, VmGetPageFrame(*ptePtr), FALSE);
+	VmMach_PageInvalidate(virtAddrPtr, Vm_GetPageFrame(*ptePtr), FALSE);
 	*ptePtr &= ~(VM_PHYS_RES_BIT | VM_PAGE_FRAME_FIELD);
     }
 }
@@ -1094,7 +1094,7 @@ again:
 
 	    ptePtr = VmGetPTEPtr(corePtr->virtPage.segPtr, 
 				 corePtr->virtPage.page);
-	    VmMach_GetRefModBits(&corePtr->virtPage, VmGetPageFrame(*ptePtr),
+	    VmMach_GetRefModBits(&corePtr->virtPage, Vm_GetPageFrame(*ptePtr),
 				 &referenced, &modified);
 	    /*
 	     * Now make sure that the page has not been referenced.  It it has
@@ -1104,7 +1104,7 @@ again:
 	    if ((*ptePtr & VM_REFERENCED_BIT) || referenced) {
 		vmStat.refSearched++;
 		corePtr->lastRef = curTime.seconds;
-		VmMach_ClearRefBit(&corePtr->virtPage, VmGetPageFrame(*ptePtr));
+		VmMach_ClearRefBit(&corePtr->virtPage, Vm_GetPageFrame(*ptePtr));
 		*ptePtr &= ~VM_REFERENCED_BIT;
 		VmListMove((List_Links *) corePtr, LIST_ATREAR(allocPageList));
 		/*
@@ -1443,7 +1443,7 @@ FinishPage(transVirtAddrPtr, ptePtr)
      * Make the page accessible to the user.
      */
     VmPageValidateInt(transVirtAddrPtr, ptePtr);
-    coreMap[VmGetPageFrame(*ptePtr)].lockCount--;
+    coreMap[Vm_GetPageFrame(*ptePtr)].lockCount--;
     *ptePtr &= ~(VM_ZERO_FILL_BIT | VM_IN_PROGRESS_BIT);
     /*
      * Wakeup processes waiting for this pagein to complete.
@@ -1778,7 +1778,7 @@ PageOutPutAndGet(corePtrPtr, status, recStreamPtrPtr)
 	ptePtr = VmGetPTEPtr(corePtr->virtPage.segPtr, corePtr->virtPage.page);
 	*ptePtr |= VM_ON_SWAP_BIT;
 	*ptePtr &= ~VM_MODIFIED_BIT;
-	VmMach_ClearModBit(&corePtr->virtPage, VmGetPageFrame(*ptePtr));
+	VmMach_ClearModBit(&corePtr->virtPage, Vm_GetPageFrame(*ptePtr));
 	corePtr->flags |= VM_PAGE_BEING_CLEANED;
     } else {
 	/*
@@ -1971,13 +1971,13 @@ Vm_Clock(data, callInfoPtr)
 	 *
 	 * NOTE: vmForceRef is for instrumenting the virtual memory system.
 	 */
-	VmMach_GetRefModBits(&corePtr->virtPage, VmGetPageFrame(*ptePtr),
+	VmMach_GetRefModBits(&corePtr->virtPage, Vm_GetPageFrame(*ptePtr),
 			     &referenced, &modified);
 	if ((*ptePtr & VM_REFERENCED_BIT) || referenced) {
 	    VmListMove((List_Links *) corePtr, LIST_ATREAR(allocPageList));
 	    corePtr->lastRef = curTime.seconds;
 	    *ptePtr &= ~VM_REFERENCED_BIT;
-	    VmMach_ClearRefBit(&corePtr->virtPage, VmGetPageFrame(*ptePtr));
+	    VmMach_ClearRefBit(&corePtr->virtPage, Vm_GetPageFrame(*ptePtr));
 	}
     }
 
@@ -2098,12 +2098,12 @@ Vm_UnmapBlock(addr, retOnePage, pageNumPtr)
     ptePtr = VmGetPTEPtr(vm_SysSegPtr, virtAddr.page);
 
     if (retOnePage) {
-	*pageNumPtr = VmGetPageFrame(*ptePtr);
+	*pageNumPtr = Vm_GetPageFrame(*ptePtr);
     } else {
 	/*
 	 * If we aren't supposed to return the page, then free it.
 	 */
-	VmPageFree(VmGetPageFrame(*ptePtr));
+	VmPageFree(Vm_GetPageFrame(*ptePtr));
     }
     VmPageInvalidate(&virtAddr);
 

@@ -97,7 +97,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "mem.h"
 #include "machine.h"
 
-Boolean	vm_CanCOW = FALSE;
+Boolean	vm_CanCOW = TRUE;
 
 void		DoFork();
 void		GiveAwayPage();
@@ -488,7 +488,7 @@ FindNewMasterSeg(segPtr, page, othersPtr)
     while (!List_IsAtEnd(cowList, (List_Links *)newSegPtr)) {
 	ptePtr = VmGetPTEPtr(newSegPtr, page);
 	if ((*ptePtr & VM_COR_BIT) &&
-	    VmGetPageFrame(*ptePtr) == segPtr->segNum) {
+	    Vm_GetPageFrame(*ptePtr) == segPtr->segNum) {
 	    if (mastSegPtr != (Vm_Segment *)NIL) {
 		*ptePtr &= ~VM_PAGE_FRAME_FIELD;
 		*ptePtr |= mastSegPtr->segNum;
@@ -527,7 +527,7 @@ IsResident(ptePtr)
     LOCK_MONITOR;
 
     if (*ptePtr & VM_PHYS_RES_BIT) {
-	VmLockPageInt(VmGetPageFrame(*ptePtr));
+	VmLockPageInt(Vm_GetPageFrame(*ptePtr));
 	retVal = TRUE;
     } else {
 	retVal = FALSE;
@@ -693,7 +693,7 @@ COR(virtAddrPtr, ptePtr)
 	virtAddrPtr->segPtr->offset + virtAddrPtr->segPtr->numPages - 1) {
 	Sys_Panic(SYS_FATAL, "COR stop\n");
     }
-    mastSegPtr = VmGetSegPtr((int) (VmGetPageFrame(*ptePtr)));
+    mastSegPtr = VmGetSegPtr((int) (Vm_GetPageFrame(*ptePtr)));
     virtFrameNum = VmPageAllocate(virtAddrPtr, TRUE);
     mastVirtPF = GetMasterPF(mastSegPtr, virtAddrPtr->page);
     if (mastVirtPF != 0) {
@@ -760,7 +760,7 @@ GetMasterPF(mastSegPtr, virtPage)
 
     mastPTEPtr = VmGetPTEPtr(mastSegPtr, virtPage);
     if (*mastPTEPtr & VM_PHYS_RES_BIT) {
-	pf = VmGetPageFrame(*mastPTEPtr);
+	pf = Vm_GetPageFrame(*mastPTEPtr);
 	VmLockPageInt(pf);
     } else {
 	pf = 0;
@@ -887,7 +887,7 @@ COW(virtAddrPtr, ptePtr, isResident, deletePage)
 		 * Copy the page.
 		 */
 		virtFrameNum = VmPageAllocate(&virtAddr, TRUE);
-		CopyPage(VmGetPageFrame(*ptePtr), virtFrameNum);
+		CopyPage(Vm_GetPageFrame(*ptePtr), virtFrameNum);
 		pte = VM_VIRT_RES_BIT | VM_PHYS_RES_BIT | 
 		      VM_REFERENCED_BIT | VM_MODIFIED_BIT | virtFrameNum;
 		if (others) {
@@ -896,7 +896,7 @@ COW(virtAddrPtr, ptePtr, isResident, deletePage)
 		mastSegPtr->resPages++;
 		SetPTE(&virtAddr, pte);
 		VmUnlockPage(virtFrameNum);
-		VmUnlockPage(VmGetPageFrame(*ptePtr));
+		VmUnlockPage(Vm_GetPageFrame(*ptePtr));
 	    }
 	} else {
 	    /*
@@ -971,9 +971,9 @@ GiveAwayPage(srcSegPtr, virtPage, srcPTEPtr, destSegPtr, others)
     virtAddr.segPtr = srcSegPtr;
     virtAddr.page = virtPage;
     virtAddr.flags = 0;
-    pageFrame = VmGetPageFrame(*srcPTEPtr);
+    pageFrame = Vm_GetPageFrame(*srcPTEPtr);
     destPTEPtr = VmGetPTEPtr(destSegPtr, virtPage);
-    *destPTEPtr = *srcPTEPtr;
+    *destPTEPtr = *srcPTEPtr & ~VM_COW_BIT;
     *srcPTEPtr = 0;
     VmMach_GetRefModBits(&virtAddr, pageFrame, &referenced, &modified);
     if (referenced) {
@@ -986,7 +986,7 @@ GiveAwayPage(srcSegPtr, virtPage, srcPTEPtr, destSegPtr, others)
     if (others) {
 	*destPTEPtr |= VM_COW_BIT;
     }
-    VmPageSwitch(VmGetPageFrame(*destPTEPtr), destSegPtr);
+    VmPageSwitch(Vm_GetPageFrame(*destPTEPtr), destSegPtr);
 
     UNLOCK_MONITOR;
 }

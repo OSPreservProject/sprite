@@ -161,7 +161,7 @@ VmUnmapPage(mappedAddr)
 
     ptePtr = VmGetPTEPtr(vm_SysSegPtr, virtAddr.page);
     *ptePtr &= ~(VM_PHYS_RES_BIT | VM_PAGE_FRAME_FIELD);
-    VmMach_PageInvalidate(&virtAddr, VmGetPageFrame(*ptePtr), FALSE);
+    VmMach_PageInvalidate(&virtAddr, Vm_GetPageFrame(*ptePtr), FALSE);
 
     Sync_Broadcast(&mappingCondition);
 
@@ -192,16 +192,16 @@ VmUnmapPage(mappedAddr)
 void
 Vm_MakeAccessible(accessType, numBytes, startAddr, retBytesPtr, retAddrPtr)
     int			accessType;	/* One of VM_READONLY_ACCESS, 
-					   VM_OVERWRITE_ACCESS, 
-					   VM_READWRITE_ACCESS. */
+					 * VM_OVERWRITE_ACCESS, 
+					 * VM_READWRITE_ACCESS. */
     int			numBytes;	/* The maximum number of bytes to make 
-					   accessible. */
+					 * accessible. */
     Address		startAddr;	/* The address in the user's address
-					   space to start at. */
+					 * space to start at. */
     register	int	*retBytesPtr;	/* The actual number of bytes 
-					   made accessible. */
+					 * made accessible. */
     register	Address	*retAddrPtr;	/* The kernel virtual address that
-					   can be used to access the bytes. */
+					 * can be used to access the bytes. */
 {
     register	Vm_Segment	*segPtr;
     register	Vm_PTE		*ptePtr;
@@ -230,6 +230,7 @@ Vm_MakeAccessible(accessType, numBytes, startAddr, retBytesPtr, retAddrPtr)
 	return;
     }
 
+    procPtr->vmPtr->numMakeAcc++;
     *retBytesPtr = numBytes;
     *retAddrPtr = startAddr;
     firstPage = virtAddr.page;
@@ -282,6 +283,7 @@ Vm_MakeAccessible(accessType, numBytes, startAddr, retBytesPtr, retAddrPtr)
      */
     if (virtAddr.page == firstPage) {
         VmDecExpandCount(procPtr->vmPtr->segPtrArray[VM_HEAP]);
+	procPtr->vmPtr->numMakeAcc--;
 	*retBytesPtr = 0;
 	*retAddrPtr = (Address) NIL;
 	return;
@@ -328,6 +330,7 @@ Vm_MakeUnaccessible(addr, numBytes)
 
     procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
     segPtr = procPtr->vmPtr->segPtrArray[VM_HEAP];
+    procPtr->vmPtr->numMakeAcc--;
 
     if (((unsigned int) (addr) >> vmPageShift) >= segPtr->offset) {
 	/*
