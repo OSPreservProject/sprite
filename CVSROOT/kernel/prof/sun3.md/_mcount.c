@@ -25,13 +25,12 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "dbg.h"
 
 /*
- * Boolean to prevent recursion in mcount.  This would only work
- * on a uniprocessor, and can be eliminated if you never compile
- * this file with -p.
- *
-static Boolean inMcount = FALSE;
- *  
+ * Boolean to prevent recursion in mcount.  This only works
+ * on a uniprocessor.  This is needed in case we call printf
+ * or a Sync_ routine from within mcount and those routines
+ * have been instrumented with calls to mcount.
  */
+static Boolean inMcount = FALSE;
 
 /*
  * There is a critical section when mcount does a pseudo-alloc
@@ -76,13 +75,11 @@ mcount()
 	return;
     }
 
-/*
     if (inMcount) {
 	return;
     } else {
 	inMcount = TRUE;
     }
-*/
 
     /*
      * Get the PC that was saved after the jsr mcount instruction.
@@ -123,9 +120,8 @@ mcount()
     instructionNumber = 
 	    (callerPC - (unsigned int) &spriteStart) >> PROF_ARC_SHIFT;
     if (instructionNumber > profArcIndexSize) {
-	printf(
-		  "_mcount: Index (%d) exceeds bounds (%d) of index array.\n",
-		  instructionNumber, profArcIndexSize);
+	printf("_mcount: PC %x: Index (%d) exceeds bounds (%d)\n",
+		  callerPC, instructionNumber, profArcIndexSize);
 	goto exit;
     }
 
@@ -138,7 +134,7 @@ mcount()
     if (arcPtr == (ProfRawArc *) 0) {
 
 #ifdef DEBUG
-	printf( "mcount: 1 callerPC = %x(%d), calleePC = %x\n",
+	printf("mcount: 1 callerPC = %x(%d), calleePC = %x\n",
 			    callerPC, instructionNumber, calleePC);
 	/* DBG_CALL; */
 #endif DEBUG
@@ -152,8 +148,7 @@ mcount()
 
 	if (profArcListFreePtr >= profArcListEndPtr) {
 	    profEnabled = FALSE;
-	    printf( 
-			"_mcount: No more arcs, stopping profiling\n");
+	    printf("_mcount: No more arcs, stopping profiling\n");
 	} else {
 
 	    MASTER_LOCK(&mcountMutex);
@@ -182,14 +177,13 @@ mcount()
 	     *  Allocate, link, and initialize another arc storage unit.
 	     */
 #ifdef DEBUG
-	    printf( 
-			"mcount 2 callerPC = %x(%d), calleePC = %x\n",
+	    printf("mcount 2 callerPC = %x(%d), calleePC = %x\n",
 			callerPC, instructionNumber, calleePC);
 	/* DBG_CALL; */
 #endif DEBUG
 
 	    if (profArcListFreePtr >= profArcListEndPtr) {
-		printf( "_mcount: No more arcs\n");
+		printf("_mcount: No more arcs\n");
 	    } else {
 		MASTER_LOCK(&mcountMutex);
 
@@ -211,6 +205,6 @@ mcount()
 
 exit:
 
-    /* inMcount = FALSE; */
+    inMcount = FALSE;
     return;
 }
