@@ -46,6 +46,7 @@ extern TraceLog_Header *SOSP91TracePtr;
 #define	SOSP_READ		12
 #define	SOSP_LOOKUP		13
 #define	SOSP_CONSIST_ACTION	14
+#define SOSP_PREFIX		15
 
 #ifdef KERNEL
 /*
@@ -60,30 +61,32 @@ extern TraceLog_Header *SOSP91TracePtr;
  * homeHostID:		HostID of process requesting open before migration
  * fileID		The file ID for the file being opened
  * streamID		Fs_FileID in the header of stream returned for this open
- * userID:		User id associated with process doing the open
+ * effID:		Effective user id doing the open
+ * realID:		Real user id doing the open
  * mode			Mode flags of the open command
  * numNowReading	Number of clients with file open for reading after open
  * numNowWriting	Number of clients with file open for writing
  * fileAge		The create time for the file
  * fileSize		Size in bytes of the file
  */
-#define	SOSP_ADD_OPEN_TRACE(currentHostID, homeHostID, fileID, streamID, userID, mode, numNowReading, numNowWriting, fileAge, fileSize) \
+#define	SOSP_ADD_OPEN_TRACE(currentHostID, homeHostID, fileID, streamID, effID, realID, mode, numNowReading, numNowWriting, fileAge, fileSize) \
 {\
-	unsigned int	sospBuffer[68];\
+	unsigned int	sospBuffer[72];\
 \
 	sospBuffer[0] = SOSP_OPEN;\
 	sospBuffer[1] = currentHostID;\
 	sospBuffer[2] = homeHostID;\
 	*((Fs_FileID *) &(sospBuffer[3])) = fileID;\
 	*((Fs_FileID *) &(sospBuffer[7])) = streamID;\
-	sospBuffer[11] = userID;\
-	sospBuffer[12] = mode;\
-	sospBuffer[13] = numNowReading;\
-	sospBuffer[14] = numNowWriting;\
-	sospBuffer[15] = fileAge;\
-	sospBuffer[16] = fileSize;\
+	sospBuffer[11] = effID;\
+	sospBuffer[12] = realID;\
+	sospBuffer[13] = mode;\
+	sospBuffer[14] = numNowReading;\
+	sospBuffer[15] = numNowWriting;\
+	sospBuffer[16] = fileAge;\
+	sospBuffer[17] = fileSize;\
 	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
-		(17 * sizeof (int)), SOSP_OPEN);\
+		(18 * sizeof (int)), SOSP_OPEN);\
 }
 
 /*
@@ -213,16 +216,17 @@ extern TraceLog_Header *SOSP91TracePtr;
  * currentOffset	Offset of stream
  * fileSize		Size of file being closed
  */ 
-#define	SOSP_ADD_CLOSE_TRACE(streamID, currentOffset, fileSize)\
+#define	SOSP_ADD_CLOSE_TRACE(streamID, currentOffset, fileSize, flags)\
 {\
-	unsigned int	sospBuffer[7];\
+	unsigned int	sospBuffer[8];\
 \
 	sospBuffer[0] = SOSP_CLOSE;\
 	*((Fs_FileID *) &(sospBuffer[1])) = streamID;\
 	sospBuffer[5] = currentOffset;\
 	sospBuffer[6] = fileSize;\
+	sospBuffer[7] = flags;\
 	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
-		(7 * sizeof (int)),SOSP_CLOSE);\
+		(8 * sizeof (int)),SOSP_CLOSE);\
 }
 
 /*
@@ -362,6 +366,24 @@ extern TraceLog_Header *SOSP91TracePtr;
 	sospBuffer[8] = op;\
 	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
 		(SOSP_LOOKUP_OFFSET + numIDs*sizeof(Fs_FileID)),SOSP_LOOKUP);\
+}
+
+/*
+ * Trace a prefix operation.  The fields are
+ * 
+ * sospBuffer		Our buffer.
+ * clientID		ID of host.
+ * rpcID		Rpc sequence number.
+ */ 
+#define	SOSP_ADD_PREFIX_TRACE(clientID, rpcID)\
+{\
+	unsigned int	sospBuffer[3];\
+\
+	sospBuffer[0] = SOSP_PREFIX;\
+	sospBuffer[1] = clientID;\
+	sospBuffer[2] = rpcID;\
+	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
+		(3 * sizeof(int)), SOSP_PREFIX);\
 }
 
 #endif /* KERNEL */
