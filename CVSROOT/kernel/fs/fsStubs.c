@@ -26,6 +26,7 @@ static char rcsid[] = "$Header$";
 #include <status.h>
 #include <errno.h>
 #include <assert.h>
+#include <fsprefix.h>
 #include <user/sys/types.h>
 #include <user/sys/wait.h>
 #include <user/sys/time.h>
@@ -37,10 +38,14 @@ static char rcsid[] = "$Header$";
 #include <user/sys/termio.h>
 #include <user/sys/termios.h>
 #include <user/sys/socket.h>
+#include <user/sys/dir.h>
+#include <user/sys/dirent.h>
 #include <user/dev/tty.h>
 #include <user/dev/net.h>
 #include <user/dev/graphics.h>
 #include <user/net/if.h>
+#include <user/sys/termios.h>
+#include <user/fcntl.h>
 #include <mach.h>
 #include <proc.h>
 #include <vm.h>
@@ -49,6 +54,51 @@ static char rcsid[] = "$Header$";
 #include <fsutilTrace.h>
 #include <fsio.h>
 #include <fslcl.h>
+
+char *errs[] = {"ENOERR", "EPERM", "ENOENT", "ESRCH", "EINTR", "EIO",
+	"ENXIO", "E2BIG", "ENOEXEC", "EBADF", "ECHILD", "EAGAIN", "ENOMEM",
+	"EACCES", "EFAULT", "ENOTBLK", "EBUSY", "EEXIST", "EXDEV", "ENODEV",
+	"ENOTDIR", "EISDIR", "EINVAL", "ENFILE", "EMFILE", "ENOTTY",
+	"ETXTBSY", "EFBIG", "ENOSPC", "ESPIPE", "EROFS", "EMLINK", "EPIPE",
+	"EDOM", "ERANGE", "EWOULDBLOCK", "EINPROGRESS", "EALREADY", "ENOTSOCK",
+	"EDESTADDRREQ", "EMSGSIZE", "EPROTOTYPE", "ENOPROTOOPT",
+	"EPROTONOSUPPORT", "ESOCKTNOSUPPORT", "EOPNOTSUPP", "EPFNOSUPPORT",
+	"EAFNOSUPPORT", "EADDRINUSE", "EADDRNOTAVAIL", "ENETDOWN",
+	"ENETUNREACH", "ENETRESET", "ECONNABORTED", "ECONNRESET", "ENOBUFS",
+	"EISCONN", "ENOTCONN", "ESHUTDOWN", "ETIMEDOUT", "ECONNREFUSED",
+	"ELOOP", "ENAMETOOLONG", "EHOSTDOWN", "EHOSTUNREACH", "ENOTEMPTY",
+	"EPROCLIM", "EUSERS", "EDQUOT", "ESTALE", "EREMOTE"};
+
+#undef Mach_SetErrno
+#define Mach_SetErrno(err) printf("Error %d (%s) at %d in %s\n", err,\
+	err<sizeof(errs)/sizeof(char *)?errs[err]:"",\
+	__LINE__, __FILE__); Proc_GetActualProc()->unixErrno = (err)
+
+/*
+ * The following defines are flags that are defined differently in
+ * termios.h (T_) and ioctl.h (I_).
+ * We define them uniquely here, so we don't get messed up.
+ */
+#define T_NL1	0x00000100
+#define I_NL1	0x00000100
+#define I_NL2	0x00000200
+#define I_CR0	0x00000000
+#define T_CR1	0x00000200
+#define I_CR1	0x00001000
+#define T_CR2	0x00000400
+#define I_CR2	0x00002000
+#define T_CR3	0x00000600
+#define I_CR3	0x00003000
+#define T_TAB1	0x00000800
+#define I_TAB1	0x00000400
+#define T_TAB2	0x00001000
+#define I_TAB2	0x00000800
+#define T_NOFLSH	0x00000080
+#define I_NOFLSH	0x80000000
+#define T_TOSTOP	0x00000100
+#define I_TOSTOP	0x00400000
+#define T_FLUSHO	0x00002000
+#define I_FLUSHO	0x00800000
 
 #ifndef Mach_SetErrno
 #define Mach_SetErrno(err)
@@ -145,13 +195,384 @@ CvtSpriteToUnixAtts(spriteAttsPtr, unixAttsPtr)
     unixAttsPtr->st_spare2	= 0;
     unixAttsPtr->st_ctime	= spriteAttsPtr->descModifyTime.seconds;
     unixAttsPtr->st_spare3	= 0;
+    /*
+     * The Unix stat structure is 8 bytes shorter than we declare it in
+     * sys/stat.h.  The Unix stat structure has 2 unused words on the
+     * end.
+     */
+    unixAttsPtr->st_serverID	= 0;
+    unixAttsPtr->st_version	= 0;
+    /*
     unixAttsPtr->st_serverID	= spriteAttsPtr->serverID;
     unixAttsPtr->st_version	= spriteAttsPtr->version;
     unixAttsPtr->st_userType	= spriteAttsPtr->userType;
     unixAttsPtr->st_devServerID = spriteAttsPtr->devServerID;
+    */
     return;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CvtTermiosToSgttyb --
+ *
+ *	Convert from termios structure to sgttyb structure.
+ *	Note: ttyb and lmode must be initialized on entry.
+ *	This routine is carefully set up to match the behavior
+ *	of SunOS for all input combinations.  As a result, this
+ *	routine is not intuitive.  It's probably best not to
+ *	change this routine unless you have a good reason.
+ *	Then again, there's a good chance I got something wrong.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Changes ttyb, lmode, tc, ltc.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+CvtTermiosToSgttyb(termiosFlag, ts, ttyb, lmode, tc, ltc)
+    int termiosFlag;		/* 1 if termios, 0 if termio. */
+    struct termios *ts;		/* In */
+    struct sgttyb *ttyb;	/* In, out */
+    unsigned int *lmode;	/* In, out */
+    struct tchars *tc;		/* In, out */
+    struct ltchars *ltc;	/* In, out */
+{
+    unsigned int flag, iflag, oflag, lflag, cflag;
+
+    iflag = ts->c_iflag;
+    oflag = ts->c_oflag;
+    lflag = ts->c_lflag;
+    cflag = ts->c_cflag;
+
+    flag = EVENP|ODDP|CBREAK;
+
+    if (!(cflag&PARENB)&&(cflag&CSIZE)==CS8) {
+	flag &= ~(ODDP|EVENP|PASS8);
+	flag |= ttyb->sg_flags & (ODDP|EVENP);
+	if (*lmode&(PASS8>>16)) flag |= PASS8;
+	if (!(oflag&OPOST)) flag |= LITOUT;
+	if (!(iflag&ISTRIP)&&(oflag&OPOST)) flag |= PASS8;
+    } else {
+	if (cflag&PARODD) flag &= ~EVENP;
+	if ((iflag&INPCK)&&!(cflag&PARODD)) flag &= ~ODDP;
+    }
+
+    if (!(iflag&IXANY)) flag |= DECCTQ;
+    if (iflag&IXOFF) flag |= TANDEM;
+
+
+    if (oflag&OLCUC) flag |= LCASE;
+    if (oflag&ONLCR) {
+	flag |= CRMOD;
+	if ((oflag&CRDLY)==T_CR2) {
+	    flag |= I_CR1;
+	} else if ((oflag&CRDLY)==T_CR3) {
+	    flag |= I_CR2;
+	}
+    }
+    if (oflag&ONLRET) {
+	if ((oflag&NLDLY)==T_NL1) flag |= I_NL2;
+	if (!(oflag&ONLCR) && (oflag&T_CR1)) {
+	    flag |= I_NL1;
+	}
+    }
+    if (oflag&T_TAB1) flag |= I_TAB1;
+    if (oflag&T_TAB2) flag |= I_TAB2;
+    if (oflag&BSDLY) flag |= BSDELAY;
+    if (oflag&FFDLY) flag |= VTDELAY;
+
+    if (cflag&CLOCAL) flag |= NOHANG;
+
+    if (lflag&ICANON) flag &= ~CBREAK;
+    if (lflag&ECHOE) flag |= CRTERA|CRTBS;
+    if (lflag&T_NOFLSH) flag |= I_NOFLSH;
+    if (lflag&T_TOSTOP) flag |= I_TOSTOP;
+    if (lflag&ECHOCTL) flag |= CTLECH;
+    if (lflag&ECHOPRT) flag |= PRTERA;
+    if (lflag&ECHOKE) flag |= CRTKIL;
+    if (lflag&ECHO) flag |= ECHO;
+    if (lflag&T_FLUSHO) flag |= I_FLUSHO;
+
+    ttyb->sg_flags = flag&0xffff;
+    *lmode = flag>>16;
+    ttyb->sg_ispeed = cflag&CBAUD;
+    ttyb->sg_ospeed = cflag&CBAUD;
+    tc->t_intrc = ts->c_cc[VINTR];
+    tc->t_quitc = ts->c_cc[VQUIT];
+    ttyb->sg_erase = ts->c_cc[VERASE];
+    ttyb->sg_kill = ts->c_cc[VKILL];
+    tc->t_eofc = ts->c_cc[VEOF];
+    if (termiosFlag) {
+	tc->t_startc = ts->c_cc[VSTART];
+	tc->t_stopc = ts->c_cc[VSTOP];
+	ltc->t_suspc = ts->c_cc[VSUSP];
+	ltc->t_rprntc = ts->c_cc[VREPRINT];
+	ltc->t_flushc = ts->c_cc[VDISCARD];
+	ltc->t_werasc = ts->c_cc[VWERASE];
+	ltc->t_lnextc = ts->c_cc[VLNEXT];
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CvtSgttybToTermios --
+ *
+ *	Convert from termios structure to sgttyb structure.
+ *	Note: ttyb and lmode must be initialized on entry.
+ *
+ * Results:
+ *	Changes ts.
+ *
+ * Side effects:
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+CvtSgttybToTermios(ttyb, lmode, tc, ltc, ts)
+    struct sgttyb *ttyb;
+    unsigned int *lmode;
+    struct tchars *tc;
+    struct ltchars *ltc;
+    struct termios *ts;
+{
+    unsigned int flag;
+    unsigned int iflag, oflag, cflag, lflag;
+
+    flag = ttyb->sg_flags | (*lmode<<16);
+    iflag = IMAXBEL|IXON|ISTRIP|IGNPAR|BRKINT|IXANY;
+    oflag = ONLRET|OPOST;
+    cflag = CREAD|CS8|B9600;
+    lflag = ICANON|ISIG|IEXTEN|ECHOK;
+    if (flag&CBREAK) lflag &= ~ICANON;
+    if (flag&TANDEM) iflag |= IXOFF;
+    if (flag&LCASE) {
+	iflag |= IUCLC;
+	oflag |= OLCUC;
+	lflag |= XCASE;
+    }
+    if (flag&ECHO) lflag |= ECHO;
+    if (flag&EVENP) {
+	iflag |= INPCK;
+	cflag |= PARENB;
+	cflag &= ~CS6;
+	if (flag&ODDP) {
+	    iflag &= ~INPCK;
+	}
+    } else if (flag&ODDP) {
+	iflag |= INPCK;
+	cflag |= PARODD|PARENB;
+	cflag &= ~CS6;
+    }
+    if ((flag&NLDELAY)==I_NL2) {
+	oflag |= T_NL1;
+    }
+    if (flag&CRMOD) {
+	iflag |= ICRNL;
+	oflag |= ONLCR;
+	oflag &= ~CRDLY;
+    } else {
+	oflag &= ~CRDLY;
+    }
+    if (flag&I_TAB1) oflag |= T_TAB1;
+    if (flag&I_TAB2) oflag |= T_TAB2;
+    if ((flag&CRDELAY)==I_CR0 || (flag&CRDELAY)==I_CR3) {
+	if (!(flag&CRMOD) && (flag&NLDELAY)==I_NL1) {
+	    oflag |= T_CR1;
+	}
+    } else if ((flag&CRDELAY)==I_CR1) {
+	if (flag&CRMOD) {
+	    oflag |= T_CR2;
+	} else if ((flag&NLDELAY)==I_NL1) {
+	    oflag |= T_CR1;
+	}
+    } else if ((flag&CRDELAY)==I_CR2) {
+	if (flag&CRMOD) {
+	    oflag |= T_CR3;
+	} else if ((flag&NLDELAY)==I_NL1) {
+	    oflag |= T_CR1;
+	}
+    }
+    if (flag&VTDELAY) oflag |= FFDLY;
+    if (flag&BSDELAY) oflag |= BSDLY;
+    if (flag&PRTERA) lflag |= ECHOPRT;
+    if (flag&CRTERA) lflag |= ECHOE;
+    if (flag&I_TOSTOP) lflag |= TOSTOP;
+    if (flag&I_FLUSHO) lflag |= FLUSHO;
+    if (flag&NOHANG) cflag |= CLOCAL;
+    if (flag&CRTKIL) lflag |= ECHOKE;
+    if (flag&CTLECH) lflag |= ECHOCTL;
+    if (flag&DECCTQ) iflag &= ~IXANY;
+    if (flag&I_NOFLSH) lflag |= T_NOFLSH;
+    if (flag&LITOUT) {
+	iflag &= ~(ISTRIP|INPCK);
+	oflag &= ~OPOST;
+	cflag &= CLOCAL;
+	cflag |= CREAD|CS8|B9600;
+    }
+    if (flag&PASS8) {
+	iflag &= ~(ISTRIP|INPCK);
+	cflag &= CLOCAL;
+	cflag |= CREAD|CS8|B9600;
+    }
+    if (flag&RAW) {
+	iflag &= IXOFF|IXANY;
+	oflag &= ~OPOST;
+	oflag |= ONLRET;
+	lflag &= ~(IEXTEN|ISIG|ICANON|ECHOCTL|XCASE);
+	cflag &= ~(PARODD|PARENB);
+	cflag |= CREAD|CS8|B9600;
+	if ((flag&BSDELAY) && ((flag&CRDELAY==I_CR1))) {
+	    oflag |= T_CR2;
+	}
+    }
+    cflag |= ttyb->sg_ospeed&CBAUD;
+    ts->c_iflag = iflag;
+    ts->c_oflag = oflag;
+    ts->c_cflag = cflag;
+    ts->c_lflag = lflag;
+    ts->c_line = 0;
+    ts->c_cc[VINTR] = tc->t_intrc;
+    ts->c_cc[VQUIT] = tc->t_quitc;
+    ts->c_cc[VERASE] = ttyb->sg_erase;
+    ts->c_cc[VKILL] = ttyb->sg_kill;
+    ts->c_cc[VEOF] = tc->t_eofc;
+    ts->c_cc[VEOL] = 0;
+    ts->c_cc[VEOL2] = 0;
+    ts->c_cc[VSWTCH] = 0;
+    ts->c_cc[VSTART] = tc->t_startc;
+    ts->c_cc[VSTOP] = tc->t_stopc;
+    ts->c_cc[VSUSP] = ltc->t_suspc;
+    ts->c_cc[VREPRINT] = ltc->t_rprntc;
+    ts->c_cc[VDISCARD] = ltc->t_flushc;
+    ts->c_cc[VWERASE] = ltc->t_werasc;
+    ts->c_cc[VLNEXT] = ltc->t_lnextc;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CheckIfPresent --
+ *
+ *	Check if a prefix is in the prefix table.  This is so we don't
+ *	have to do pointless broadcasts for getwd's.
+ *
+ * Results:
+ *	SUCCESS or FAILURE
+ *
+ * Side effects:
+ *	 none.
+ *
+ *----------------------------------------------------------------------
+ */
+extern int fsprefix_FileNameTrace;
+static ReturnStatus
+CheckIfPresent(name)
+    char *name;
+{
+    ReturnStatus	status;
+    Fs_HandleHeader	*hdrPtr;
+    Fs_FileID		rootID;
+    char		*lookupName;
+    int			serverID=123;
+    int			domainType;
+    Fsprefix		*prefixPtr;
+    Fs_RedirectInfo	*oldInfoPtr = (Fs_RedirectInfo *)NIL;
+    Fs_RedirectInfo	*redirectInfoPtr = (Fs_RedirectInfo *)NIL;
+    Fs_OpenArgs		openArgs;
+    Fs_GetAttrResults	getAttrResults;
+    Proc_ControlBlock	*procPtr = Proc_GetEffectiveProc();
+    Fs_FileID		ioFileID;
+    Fs_Attributes	attrs;
+    int			numRedirects=0;
+
+    /*
+     * This code if from Fs_GetAttributes);
+     */
+    openArgs.useFlags = FS_FOLLOW;
+    openArgs.permissions = 0;
+    openArgs.type = FS_FILE;
+    openArgs.clientID = rpc_SpriteID;
+    Fs_SetIDs(procPtr, &openArgs.id);
+    if (procPtr->genFlags & PROC_FOREIGN) {
+	openArgs.migClientID = procPtr->peerHostID;
+    } else {
+	openArgs.migClientID = rpc_SpriteID;
+    }
+    getAttrResults.attrPtr = &attrs;
+    getAttrResults.fileIDPtr = &ioFileID;
+
+    /*
+     * This loop is out of Fsprefix_LookupOperation
+     */
+    while (1) {
+#if 1
+	/*
+	 * The next loop is from GetPrefix.
+	 */
+	do {
+	    status = Fsprefix_Lookup(name, FSPREFIX_IMPORTED, FS_LOCALHOST_ID,
+		    &hdrPtr, &rootID, &lookupName, &serverID, &domainType,
+		    &prefixPtr);
+	    if (status == FS_NO_HANDLE) {
+		return FAILURE;
+	    }
+	} while (status == FS_NEW_PREFIX);
+#else
+	status = GetPrefix(name, FS_FOLLOW, &hdrPtr, &rootID, &lookupName,
+		&domainType, &prefixPtr);
+#endif
+	{
+	    register Fs_LookupArgs *lookupArgsPtr = (Fs_LookupArgs *)&openArgs;
+	    lookupArgsPtr->prefixID = hdrPtr->fileID;
+	    lookupArgsPtr->rootID = rootID;
+	}
+	status = (*fs_DomainLookup[domainType][FS_DOMAIN_GET_ATTR])
+	    (hdrPtr, lookupName, &openArgs, &getAttrResults, &redirectInfoPtr);
+	if (status==SUCCESS) {
+	    return SUCCESS;
+	} else if (status == FS_LOOKUP_REDIRECT) {
+	    numRedirects++;
+	    if (numRedirects > FS_MAX_LINKS) {
+		printf("Loop\n");
+		return FAILURE;
+	    }
+	    status = FsprefixLookupRedirect(redirectInfoPtr, prefixPtr,
+		    &name);
+	    if (oldInfoPtr != (Fs_RedirectInfo *)NIL) {
+		free((Address)oldInfoPtr);
+	    }
+	    oldInfoPtr = redirectInfoPtr;
+	    redirectInfoPtr = (Fs_RedirectInfo *)NIL;
+	} else {
+	    return FAILURE;
+	}
+    }
+
+    return FAILURE;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * copyin --
+ *
+ *	Copy a string from user space to a static buffer.
+ *
+ * Results:
+ *	The string.
+ *
+ * Side effects:
+ *	 none.
+ *
+ *----------------------------------------------------------------------
+ */
 static char *
 copyin(string)
     char *string;
@@ -164,6 +585,22 @@ copyin(string)
     return buf;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_NewReadStub --
+ *
+ *	The stub for the "read" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_NewReadStub(streamID, buffer, numBytes)
     int 	streamID;	/* descriptor for stream to read */
@@ -188,6 +625,8 @@ Fs_NewReadStub(streamID, buffer, numBytes)
     }
     for (;;) {
 	amountRead = numBytes - totalAmountRead;
+	printf("Fs_Read(%x, %x, %x, %x(%d)\n", streamPtr, buffer,
+		streamPtr->offset, &amountRead, amountRead);
 	status = Fs_Read(streamPtr, buffer, streamPtr->offset, &amountRead);
 	totalAmountRead += amountRead;
 	if (status != SUCCESS) {
@@ -210,6 +649,22 @@ Fs_NewReadStub(streamID, buffer, numBytes)
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_NewWriteStub --
+ *
+ *	The stub for the "write" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_NewWriteStub(streamID, buffer, numBytes)
     int 	streamID;	/* descriptor for stream to read */
@@ -221,9 +676,11 @@ Fs_NewWriteStub(streamID, buffer, numBytes)
     int                 writeLength;
     int                 totalAmountWritten;
 
+#if 0
     if (debugFsStubs) {
 	printf("Fs_NewWriteStub(%d, %d)\n", streamID, numBytes);
     }
+#endif
     totalAmountWritten = 0;
     status = Fs_GetStreamPtr(Proc_GetEffectiveProc(), streamID, &streamPtr);
     if (status != SUCCESS) {
@@ -253,6 +710,22 @@ Fs_NewWriteStub(streamID, buffer, numBytes)
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_NewOpenStub --
+ *
+ *	The stub for the "open" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_NewOpenStub(pathName, unixFlags, permissions)
     char	*pathName;	/* The name of the file to open */
@@ -330,10 +803,13 @@ Fs_NewOpenStub(pathName, unixFlags, permissions)
     useFlags &= ~FS_KERNEL_FLAGS;
     useFlags |= (FS_USER | FS_FOLLOW);
 
+    printf("Fs_NewOpen: Fs_Open(%s, %x, %x, %x, %x\n", newName, useFlags,
+	    FS_FILE, permissions&0777, &streamPtr);
     status = Fs_Open(newName, useFlags, FS_FILE,
 	permissions & 0777, &streamPtr);
 
     if (status != SUCCESS) {
+	printf("Fs_Open: error %x\n", status);
 	Mach_SetErrno(Compat_MapCode(status));
 	return -1;
     }
@@ -352,6 +828,22 @@ Fs_NewOpenStub(pathName, unixFlags, permissions)
     return streamID;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_NewCloseStub --
+ *
+ *	The stub for the "close" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_NewCloseStub(streamID)
     int streamID;
@@ -369,6 +861,22 @@ Fs_NewCloseStub(streamID)
     return 0;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_CreatStub --
+ *
+ *	The stub for the "creat" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_CreatStub(pathName, permissions)
     char *pathName;		/* The name of the file to create */
@@ -381,6 +889,22 @@ Fs_CreatStub(pathName, permissions)
     return (Fs_NewOpenStub(pathName, FS_CREATE|FS_TRUNC|FS_WRITE, permissions));
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_ReadvStub --
+ *
+ *	The stub for the "readv" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_ReadvStub(streamID, iov, iovcnt)
     int streamID;		/* descriptor for stream to read. */
@@ -405,6 +929,22 @@ Fs_ReadvStub(streamID, iov, iovcnt)
 }
 
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_WritevStub --
+ *
+ *	The stub for the "writev" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_WritevStub(streamID, iov, iovcnt)
 
@@ -416,9 +956,11 @@ Fs_WritevStub(streamID, iov, iovcnt)
     int totalWritten = 0;	/* place to hold total # of bytes written */
     int i;
 
+#if 0
     if (debugFsStubs) {
 	printf("Fs_WritevStub\n");
     }
+#endif
     for (i=0; i < iovcnt; i++, iov++) {
 	amountWritten = Fs_NewWriteStub(streamID, iov->iov_base, iov->iov_len);
 	if (amountWritten == -1) {
@@ -430,6 +972,22 @@ Fs_WritevStub(streamID, iov, iovcnt)
 }
 
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_LinkStub --
+ *
+ *	The stub for the "link" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_LinkStub(fileName, linkName)
     char *fileName;
@@ -482,6 +1040,22 @@ Fs_LinkStub(fileName, linkName)
     return 0;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_UnlinkStub --
+ *
+ *	The stub for the "unlink" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_UnlinkStub(pathName)
     char *pathName;
@@ -511,6 +1085,22 @@ Fs_UnlinkStub(pathName)
     return 0;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_ChdirStub --
+ *
+ *	The stub for the "chdir" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_ChdirStub(pathName)
     char	*pathName;
@@ -541,6 +1131,22 @@ Fs_ChdirStub(pathName)
     return 0;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_ChmodStub --
+ *
+ *	The stub for the "chmod" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_ChmodStub(path, mode)
     char	*path;
@@ -573,6 +1179,22 @@ Fs_ChmodStub(path, mode)
     return 0;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_FchmodStub --
+ *
+ *	The stub for the "fchmod" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_FchmodStub(fd, mode)
     int		fd;
@@ -605,6 +1227,22 @@ Fs_FchmodStub(fd, mode)
     return 0;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_ChownStub --
+ *
+ *	The stub for the "chown" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_ChownStub(path, owner, group)
     char *path;
@@ -641,6 +1279,22 @@ Fs_ChownStub(path, owner, group)
     return 0;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_FchownStub --
+ *
+ *	The stub for the "fchown" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_FchownStub(fd, owner, group)
     int fd;
@@ -675,6 +1329,22 @@ Fs_FchownStub(fd, owner, group)
     return 0;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_LseekStub --
+ *
+ *	The stub for the "lseek" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_LseekStub(streamID, offset, whence)
     int streamID;			/* array of stream identifiers */
@@ -733,6 +1403,22 @@ Fs_LseekStub(streamID, offset, whence)
     return retVal;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_AccessStub --
+ *
+ *	The stub for the "access" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_AccessStub(pathName, mode)
     char *pathName;		/* The name of the file to open */
@@ -759,6 +1445,22 @@ Fs_AccessStub(pathName, mode)
 }
 
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_FsyncStub --
+ *
+ *	The stub for the "fsync" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_FsyncStub(fd)
     int fd;
@@ -779,6 +1481,22 @@ Fs_FsyncStub(fd)
 
 
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_StatStub --
+ *
+ *	The stub for the "stat" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_StatStub(pathName, attrsBufPtr)
     char *pathName;		/* The name of the file to stat */
@@ -788,6 +1506,7 @@ Fs_StatStub(pathName, attrsBufPtr)
     ReturnStatus 	status;	/* status returned by Fs_GetAttributes */
     Fs_Attributes	spriteAttrs;	/* buffer for attributes using
 					   Sprite format. */
+    struct stat		tmpAttrsBuf;
     int			pathNameLength;
     char		newName[FS_MAX_PATH_NAME_LENGTH];
 
@@ -800,22 +1519,51 @@ Fs_StatStub(pathName, attrsBufPtr)
     if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
 		       &pathNameLength) != SUCCESS) {
 	status = SYS_ARG_NOACCESS;
+	printf("Fs_StatStub: arg no access\n");
     } else if (pathNameLength == FS_MAX_PATH_NAME_LENGTH) {
 	status = FS_INVALID_ARG;
+	printf("Fs_StatStub: len\n");
     } else {
+	if (CheckIfPresent(newName) != SUCCESS) {
+	    Mach_SetErrno(ENOENT);
+	    return -1;
+	}
 	status = Fs_GetAttributes(newName, FS_ATTRIB_FILE, &spriteAttrs);
 	if (status == SUCCESS) {
-	    CvtSpriteToUnixAtts(&spriteAttrs, attrsBufPtr);
+	    CvtSpriteToUnixAtts(&spriteAttrs, &tmpAttrsBuf);
+	    /*
+	     * The Unix stat structure is 8 bytes shorter than in stat.h
+	     */
+	    status = Vm_CopyOut(sizeof(struct stat)-8, (Address) &tmpAttrsBuf,
+		    (Address) attrsBufPtr);
 	}
     }
     if (status != SUCCESS) {
+	printf("Fs_StatStub: failure\n");
 	Mach_SetErrno(Compat_MapCode(status));
 	return -1;
     }
+    printf("Fs_StatStub: success\n");
     return 0;
 }
 
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_LstatStub --
+ *
+ *	The stub for the "lstat" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_LstatStub(pathName, attrsBufPtr)
     char *pathName;		/* The name of the file to stat */
@@ -825,6 +1573,7 @@ Fs_LstatStub(pathName, attrsBufPtr)
     ReturnStatus 	status;	/* status returned by Fs_GetAttributes */
     Fs_Attributes	spriteAttrs;	/* buffer for attributes using
 					   Sprite format. */
+    struct stat		*tmpAttrsBuf;
     int			pathNameLength;
     char		newName[FS_MAX_PATH_NAME_LENGTH];
 
@@ -840,6 +1589,10 @@ Fs_LstatStub(pathName, attrsBufPtr)
     } else if (pathNameLength == FS_MAX_PATH_NAME_LENGTH) {
 	status = FS_INVALID_ARG;
     } else {
+	if (CheckIfPresent(newName) != SUCCESS) {
+	    Mach_SetErrno(ENOENT);
+	    return -1;
+	}
 	status = Fs_GetAttributes(newName, FS_ATTRIB_LINK, &spriteAttrs);
 	/*
 	 * See if we just got a remote link.  If so turn around and do a normal
@@ -849,7 +1602,12 @@ Fs_LstatStub(pathName, attrsBufPtr)
 	   status = Fs_GetAttributes(newName,FS_ATTRIB_FILE,&spriteAttrs);
 	}
 	if (status == SUCCESS) {
-	    CvtSpriteToUnixAtts(&spriteAttrs, attrsBufPtr);
+	    CvtSpriteToUnixAtts(&spriteAttrs, &tmpAttrsBuf);
+	    /*
+	     * The Unix stat structure is 8 bytes shorter than in stat.h
+	     */
+	    status = Vm_CopyOut(sizeof(struct stat)-8, (Address) &tmpAttrsBuf,
+		    (Address) attrsBufPtr);
 	}
     }
     if (status != SUCCESS) {
@@ -859,15 +1617,32 @@ Fs_LstatStub(pathName, attrsBufPtr)
     return 0;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_FstatStub --
+ *
+ *	The stub for the "fstat" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
-Fs_FstatStub(streamID, attsBufPtr)
+Fs_FstatStub(streamID, attrsBufPtr)
     int	streamID;		/* The name of the file to stat */
-    struct stat *attsBufPtr;	/* ptr to buffer to hold attributes in 
+    struct stat *attrsBufPtr;	/* ptr to user buffer to hold attributes in 
 				   Unix format */
 {
     ReturnStatus 	status;	/* status returned by Fs_GetAttributes */
     Fs_Attributes	spriteAttrs;	/* buffer for attributes using
 					   Sprite format. */
+    struct stat		tmpAttrsBuf;
     Fs_Stream		*streamPtr;
 
     if (debugFsStubs) {
@@ -877,7 +1652,12 @@ Fs_FstatStub(streamID, attsBufPtr)
     if (status == SUCCESS) {
 	status = Fs_GetAttrStream(streamPtr, &spriteAttrs);
 	if (status == SUCCESS) {
-	    CvtSpriteToUnixAtts(&spriteAttrs, attsBufPtr);
+	    CvtSpriteToUnixAtts(&spriteAttrs, &tmpAttrsBuf);
+	    /*
+	     * The Unix stat structure is 8 bytes shorter than in stat.h
+	     */
+	    status = Vm_CopyOut(sizeof(struct stat)-8, (Address) &tmpAttrsBuf,
+		    (Address) attrsBufPtr);
 	}
     }
     if (status != SUCCESS) {
@@ -887,6 +1667,22 @@ Fs_FstatStub(streamID, attsBufPtr)
     return 0;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_DupStub --
+ *
+ *	The stub for the "dup" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_DupStub(oldStreamID)
     int oldStreamID;
@@ -906,6 +1702,22 @@ Fs_DupStub(oldStreamID)
     return newStreamID;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_Dup2Stub --
+ *
+ *	The stub for the "dup2" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_Dup2Stub(oldStreamID, newStreamID)
     int oldStreamID;		/* original stream identifier */
@@ -924,24 +1736,80 @@ Fs_Dup2Stub(oldStreamID, newStreamID)
     return newStreamID;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_PipeStub --
+ *
+ *	The stub for the "pipe" Unix system call.
+ *	This code is ripped off from Fs_CreatePipeStub.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Creates a pipe.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
-Fs_PipeStub(filedes)
-    int	filedes[2];
+Fs_PipeStub()
 {
     ReturnStatus	status;
+    Fs_Stream		*inStreamPtr, *outStreamPtr;
+    int			inStreamID, outStreamID;
 
     if (debugFsStubs) {
 	printf("Fs_PipeStub\n");
     }
-    status = Fs_CreatePipeStub(&(filedes[0]), &(filedes[1]));
+    status = Fsio_CreatePipe(&inStreamPtr, &outStreamPtr);
     if (status != SUCCESS) {
 	Mach_SetErrno(Compat_MapCode(status));
 	return -1;
     }
-    return 0;
+    inStreamPtr->flags |= FS_USER;
+    outStreamPtr->flags |= FS_USER;
+
+    /*
+     * Get stream ids for the two streams.
+     */
+    status = Fs_GetStreamID(inStreamPtr, &inStreamID);
+    if (status != SUCCESS) {
+        (void) Fs_Close(inStreamPtr);
+        (void) Fs_Close(outStreamPtr);
+	Mach_SetErrno(Compat_MapCode(status));
+	return -1;
+    }
+    status = Fs_GetStreamID(outStreamPtr, &outStreamID);
+    if (status != SUCCESS) {
+        Fs_ClearStreamID(inStreamID, (Proc_ControlBlock *)NIL);
+        (void) Fs_Close(inStreamPtr);
+        (void) Fs_Close(outStreamPtr);
+	Mach_SetErrno(Compat_MapCode(status));
+	return -1;
+    }
+    printf("Fs_PipeStub: return %d, %d\n", inStreamID, outStreamID);
+    Mach_Return2(outStreamID);
+    return inStreamID;
 }
 
-
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_SymlinkStub --
+ *
+ *	The stub for the "symlink" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_SymlinkStub(target, link) 
     char *target;
@@ -960,6 +1828,22 @@ Fs_SymlinkStub(target, link)
     return 0;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_ReadlinkStub --
+ *
+ *	The stub for the "readlink" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_ReadlinkStub(linkName, buffer, bufSize)
     char *linkName;		/* name of link file to read */
@@ -1010,6 +1894,22 @@ Fs_ReadlinkStub(linkName, buffer, bufSize)
     return bufSize;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_IoctlStub --
+ *
+ *	The stub for the "ioctl" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_IoctlStub(streamID, request, buf)
     int  streamID;
@@ -1585,106 +2485,115 @@ Fs_IoctlStub(streamID, request, buf)
         }
 	break;
 
+     case TCGETA:
      case TCGETS: {
-	    struct termios temp;
+	    struct sgttyb ttyb;
+	    unsigned int lmode;
+	    struct tchars tc;
+	    struct ltchars ltc;
+	    struct termios ts;
+	    struct termio tio;
+#if 1
 
 	    if (debugFsStubs) {
                 printf("ioctl: TCGETS\n");
             }
-	    ioctl.command = IOC_TTY_GET_TERMIO;
-	    ioctl.outBufSize = sizeof(struct termios);
-	    if (streamPtr->ioHandlePtr->fileID.type == FSIO_LCL_PSEUDO_STREAM){
-		ioctl.outBuffer = buf;
-		ioctl.flags = FS_USER_IN|FS_USER_OUT;
+
+	    ioctl.command = IOC_TTY_GET_PARAMS;
+	    ioctl.outBufSize = sizeof(struct sgttyb);
+	    ioctl.outBuffer = (Address) &ttyb;
+	    status = Fs_IOControl(streamPtr, &ioctl, &reply);
+	    if (status == SUCCESS) {
+		ioctl.command = IOC_TTY_GET_LM;
+		ioctl.outBufSize = sizeof(int);
+		ioctl.outBuffer = (Address) &lmode;
 		status = Fs_IOControl(streamPtr, &ioctl, &reply);
-	    } else {
-		ioctl.outBuffer = (Address) &temp;
+	    }
+	    if (status == SUCCESS) {
+		ioctl.command = IOC_TTY_GET_TCHARS;
+		ioctl.outBufSize = sizeof(struct tchars);
+		ioctl.outBuffer = (Address) &tc;
 		status = Fs_IOControl(streamPtr, &ioctl, &reply);
-		if (status == SUCCESS) {
+	    }
+	    if (status == SUCCESS) {
+		ioctl.command = IOC_TTY_GET_LTCHARS;
+		ioctl.outBufSize = sizeof(struct ltchars);
+		ioctl.outBuffer = (Address) &ltc;
+		status = Fs_IOControl(streamPtr, &ioctl, &reply);
+	    }
+	    if (status == SUCCESS) {
+		CvtSgttybToTermios(&ttyb, &lmode, &tc, &ltc, &ts);
+		if (request==TCGETS) {
 		    status = Vm_CopyOut(sizeof(struct termios),
-			(Address) &temp, buf);
+			(Address) &ts, buf);
+		} else {
+		    tio.c_iflag = ts.c_iflag;
+		    tio.c_oflag = ts.c_oflag;
+		    tio.c_cflag = ts.c_cflag;
+		    tio.c_lflag = ts.c_lflag;
+		    tio.c_line = ts.c_line;
+		    bcopy((Address) ts.c_cc, (Address) tio.c_cc, NCC);
+		    status = Vm_CopyOut(sizeof(struct termio),
+			(Address) &tio, buf);
 		}
 	    }
+#else
+	printf("ioctl: fake TCGETS\n");
+	return -1;
+#endif
         }
 	break;
 
+     case TCSETA:
      case TCSETS: {
-	    struct termios temp;
+	    struct sgttyb ttyb;
+	    unsigned int lmode;
+	    struct tchars tc;
+	    struct ltchars ltc;
+	    struct termio tio;
+	    struct termios ts;
 
 	    if (debugFsStubs) {
                 printf("ioctl: TCSETS\n");
             }
-	    ioctl.command = IOC_TTY_SET_TERMIO;
-	    ioctl.inBufSize = sizeof(struct termios);
-	    if (streamPtr->ioHandlePtr->fileID.type == FSIO_LCL_PSEUDO_STREAM){
-		ioctl.inBuffer = buf;
-		ioctl.flags = FS_USER_IN|FS_USER_OUT;
-		status = Fs_IOControl(streamPtr, &ioctl, &reply);
+	    if (request==TCSETS) {
+	        status = Vm_CopyIn(sizeof(struct winsize),
+		    buf, (Address) &ts);
 	    } else {
-		ioctl.inBuffer = (Address) &temp;
-		status = Vm_CopyIn(sizeof(struct termios), buf,
-			(Address) &temp);
-		if (status == SUCCESS) {
-		    status = Fs_IOControl(streamPtr, &ioctl, &reply);
-		}
+	        status = Vm_CopyIn(sizeof(struct winsize),
+		    buf, (Address) &tio);
+		ts.c_iflag = tio.c_iflag;
+		ts.c_oflag = tio.c_oflag;
+		ts.c_cflag = tio.c_cflag;
+		ts.c_lflag = tio.c_lflag;
+		ts.c_line = tio.c_line;
+		bzero((Address) ts.c_cc, NCCS);
+		bcopy((Address) tio.c_cc, (Address) ts.c_cc, NCC);
 	    }
-        }
-	break;
-
-     case TCGETA: {
-	    struct termios temp;
-	    struct termio temp2;
-
-	    if (debugFsStubs) {
-                printf("ioctl: TCGETA\n");
-            }
-	    ioctl.command = IOC_TTY_GET_TERMIO;
-	    ioctl.outBufSize = sizeof(struct termios);
-	    ioctl.outBuffer = (Address) &temp;
-	    status = Fs_IOControl(streamPtr, &ioctl, &reply);
-	    if (status != SUCCESS) {
-		if (debugFsStubs) {
-                printf("IOCTL failed on %s\n",
-                }
-			Fsutil_HandleName(streamPtr->ioHandlePtr));
-		status = SUCCESS;
-	    } else {
-		temp2.c_iflag = temp.c_iflag;
-		temp2.c_oflag = temp.c_oflag;
-		temp2.c_cflag = temp.c_cflag;
-		temp2.c_lflag = temp.c_lflag;
-		temp2.c_line = temp.c_line;
-		bcopy((Address) temp.c_cc, (Address) temp2.c_cc, NCC);
-		status = Vm_CopyOut(sizeof(struct termio),
-		    (Address) &temp2, buf);
-		if (status != SUCCESS) {
-		    if (debugFsStubs) {
-			printf("copy out failed\n");
-		    }
-		}
-	    }
-        }
-	break;
-
-     case TCSETA: {
-	    struct termios temp;
-	    struct termio temp2;
-	    status = Vm_CopyIn(sizeof(struct termio), buf, (Address) &temp);
-
-	    if (debugFsStubs) {
-                printf("ioctl: TCSETA\n");
-	    }
-	    temp.c_iflag = temp2.c_iflag;
-	    temp.c_oflag = temp2.c_oflag;
-	    temp.c_cflag = temp2.c_cflag;
-	    temp.c_lflag = temp2.c_lflag;
-	    temp.c_line = temp2.c_line;
-	    bzero((Address) temp.c_cc, NCCS);
-	    bcopy((Address) temp2.c_cc, (Address) temp.c_cc, NCC);
-	    ioctl.command = IOC_TTY_SET_TERMIO;
-	    ioctl.inBufSize = sizeof(struct termios);
-	    ioctl.inBuffer = (Address) &temp;
 	    if (status == SUCCESS) {
+		CvtTermiosToSgttyb((request==TCSETS)?1:0, &ts, &ttyb,
+			&lmode, &tc, &ltc);
+		ioctl.command = IOC_TTY_SET_PARAMS;
+		ioctl.outBufSize = sizeof(struct sgttyb);
+		ioctl.outBuffer = (Address) &ttyb;
+		status = Fs_IOControl(streamPtr, &ioctl, &reply);
+	    }
+	    if (status == SUCCESS) {
+		ioctl.command = IOC_TTY_SET_LM;
+		ioctl.inBufSize = sizeof(int);
+		ioctl.inBuffer = (Address) &lmode;
+		status = Fs_IOControl(streamPtr, &ioctl, &reply);
+	    }
+	    if (status == SUCCESS) {
+		ioctl.command = IOC_TTY_SET_TCHARS;
+		ioctl.inBufSize = sizeof(struct tchars);
+		ioctl.inBuffer = (Address) &tc;
+		status = Fs_IOControl(streamPtr, &ioctl, &reply);
+	    }
+	    if (status == SUCCESS) {
+		ioctl.command = IOC_TTY_GET_LTCHARS;
+		ioctl.outBufSize = sizeof(struct ltchars);
+		ioctl.outBuffer = (Address) &ltc;
 		status = Fs_IOControl(streamPtr, &ioctl, &reply);
 	    }
         }
@@ -2015,6 +2924,22 @@ Fs_IoctlStub(streamID, request, buf)
 
 
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_NewRenameStub --
+ *
+ *	The stub for the "newrename" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_NewRenameStub(pathName, newName)
     char *pathName;
@@ -2067,6 +2992,22 @@ Fs_NewRenameStub(pathName, newName)
 }
 
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_FtruncateStub --
+ *
+ *	The stub for the "ftruncate" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_FtruncateStub(streamID, length)
     int streamID;
@@ -2101,6 +3042,22 @@ Fs_FtruncateStub(streamID, length)
     return 0;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_TruncateStub --
+ *
+ *	The stub for the "truncate" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_TruncateStub(path, length)
     char *path;
@@ -2121,6 +3078,22 @@ Fs_TruncateStub(path, length)
     return status;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_FlockStub --
+ *
+ *	The stub for the "flock" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_FlockStub(streamID, operation)
     int	streamID;
@@ -2170,6 +3143,22 @@ Fs_FlockStub(streamID, operation)
 }
 
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_MkdirStub --
+ *
+ *	The stub for the "mkdir" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_MkdirStub(pathName, permissions)
     char *pathName;		/* The name of the directory to create */
@@ -2202,6 +3191,22 @@ Fs_MkdirStub(pathName, permissions)
     return 0;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_RmdirStub --
+ *
+ *	The stub for the "rmdir" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_RmdirStub(pathName)
     char *pathName;		/* The name of the directory to create */
@@ -2233,6 +3238,22 @@ Fs_RmdirStub(pathName)
     return 0;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_UtimesStub --
+ *
+ *	The stub for the "utimes" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_UtimesStub(pathName, tvp)
     char	*pathName;
@@ -2278,6 +3299,22 @@ Fs_UtimesStub(pathName, tvp)
     return 0;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_SyncStub --
+ *
+ *	The stub for the "sync" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_SyncStub()
 {
@@ -2287,6 +3324,22 @@ Fs_SyncStub()
     return -1;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_GetdtablesizeStub --
+ *
+ *	The stub for the "getdtablesize" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int 
 Fs_GetdtablesizeStub()
 {
@@ -2297,6 +3350,22 @@ Fs_GetdtablesizeStub()
     return 100;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_GetdoptStub --
+ *
+ *	The stub for the "getdopt" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_GetdoptStub()
 
@@ -2307,6 +3376,22 @@ Fs_GetdoptStub()
     return -1;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_SetdoptStub --
+ *
+ *	The stub for the "setdopt" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_SetdoptStub()
 {
@@ -2316,15 +3401,82 @@ Fs_SetdoptStub()
     return -1;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_FcntlStub --
+ *
+ *	The stub for the "fcntl" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
-Fs_FcntlStub()
+Fs_FcntlStub(fd, cmd, arg)
+int fd, cmd, arg;
 {
 
-    printf("fcntl is not implemented\n");
-    Mach_SetErrno(EINVAL);
-    return -1;
+    Proc_ControlBlock *procPtr=Proc_GetEffectiveProc();
+    Fs_Stream *streamPtr;
+    ReturnStatus status;
+
+    status = Fs_GetStreamPtr(procPtr, fd, &streamPtr);
+    if (status != SUCCESS) {
+	Mach_SetErrno(EBADF);
+	return -1;
+    }
+
+    switch (cmd) {
+	case F_SETFD:
+	    /*
+	     * SunOS uses this function.  To prevent excess error messages,
+	     * we'll just silently ignore it.
+	     */
+	    break;
+	case F_DUPFD:
+	case F_GETFD:
+	case F_GETFL:
+	case F_SETFL:
+	case F_GETLK:
+	case F_SETLK:
+	case F_SETLKW:
+	case F_GETOWN:
+	case F_SETOWN:
+	case F_RSETLK:
+	case F_RSETLKW:
+	case F_RGETLK:
+	default:
+	    printf("Unimplemented fcntl function %d\n", cmd);
+	    Mach_SetErrno(EINVAL);
+	    return -1;
+	    break;
+    }
+
+    return 0;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_SocketStub --
+ *
+ *	The stub for the "socket" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_SocketStub()
 {
@@ -2334,6 +3486,22 @@ Fs_SocketStub()
     return -1;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_ConnectStub --
+ *
+ *	The stub for the "connect" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_ConnectStub()
 {
@@ -2343,6 +3511,22 @@ Fs_ConnectStub()
     return -1;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_AcceptStub --
+ *
+ *	The stub for the "accept" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_AcceptStub()
 {
@@ -2351,6 +3535,22 @@ Fs_AcceptStub()
     return -1;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_SendStub --
+ *
+ *	The stub for the "send" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_SendStub()
 {
@@ -2359,6 +3559,22 @@ Fs_SendStub()
     return -1;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_RecvStub --
+ *
+ *	The stub for the "recv" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_RecvStub()
 {
@@ -2367,6 +3583,22 @@ Fs_RecvStub()
     return -1;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_SendmsgStub --
+ *
+ *	The stub for the "sendmsg" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_SendmsgStub()
 {
@@ -2375,6 +3607,22 @@ Fs_SendmsgStub()
     return -1;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_RecvmsgStub --
+ *
+ *	The stub for the "recvmsg" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_RecvmsgStub()
 {
@@ -2383,6 +3631,22 @@ Fs_RecvmsgStub()
     return -1;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_BindStub --
+ *
+ *	The stub for the "bind" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_BindStub()
 {
@@ -2391,6 +3655,22 @@ Fs_BindStub()
     return -1;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_SetsockoptStub --
+ *
+ *	The stub for the "setsockopt" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_SetsockoptStub()
 {
@@ -2399,6 +3679,22 @@ Fs_SetsockoptStub()
     return -1;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_ListenStub --
+ *
+ *	The stub for the "listen" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_ListenStub()
 {
@@ -2408,6 +3704,22 @@ Fs_ListenStub()
 }
 
 /*ARGSUSED*/
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_SocketpairStub --
+ *
+ *	The stub for the "socketpair" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_SocketpairStub(d, type, protocol, sv)
     int d, type, protocol;
@@ -2418,6 +3730,22 @@ Fs_SocketpairStub(d, type, protocol, sv)
     return -1;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_GetsockoptStub --
+ *
+ *	The stub for the "getsockopt" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_GetsockoptStub()
 {
@@ -2426,6 +3754,22 @@ Fs_GetsockoptStub()
     return -1;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_SendtoStub --
+ *
+ *	The stub for the "sendto" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_SendtoStub()
 {
@@ -2434,6 +3778,22 @@ Fs_SendtoStub()
     return -1;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_RecvfromStub --
+ *
+ *	The stub for the "recvform" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_RecvfromStub()
 {
@@ -2442,6 +3802,22 @@ Fs_RecvfromStub()
     return -1;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_GetsocknameStub --
+ *
+ *	The stub for the "getsockname" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_GetsocknameStub()
 {
@@ -2450,78 +3826,275 @@ Fs_GetsocknameStub()
     return -1;
 }
 
-
+#define SWAP2(val) ((char *)&tmp)[0] = ((char *)&val)[1];\
+	((char *)&tmp)[1] = ((char *)&val)[0]; val = tmp
+#define SWAP4(val) ((char *)&tmp)[0] = ((char *)&val)[3]; \
+	((char *)&tmp)[1] = ((char *)&val)[2]; \
+	((char *)&tmp)[2] = ((char *)&val)[1]; \
+	((char *)&tmp)[3] = ((char *)&val)[0]; val = tmp
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_GetdirInt --
+ *
+ *	This is an internal routine to get a directory entry from a file.
+ *
+ * Results:
+ *	Returns 0 if successful.
+ *	Returns EISDIR if we reach end of directory.
+ *	Returns other Unix errors for other error conditions.
+ *
+ * Side effects:
+ *	Reads from the file.
+ *	Puts return value in variables.
+ *
+ *----------------------------------------------------------------------
+ */
 /*ARGSUSED*/
+static int
+Fs_GetdirInt(streamPtr, inDir, oldOff, newOff, kernDir)
+    Fs_Stream		*streamPtr;
+    struct direct *inDir;	/* This buffer must be kernel accessible.  */
+    int *oldOff;
+    int *newOff;
+    struct direct	*kernDir;
+{
+    ReturnStatus	status;
+    int                 amountRead;
+    int			amountToRead;
+    int			tmp;
+
+    /*
+     * If Fslcl_DirEntry and struct direct are not the same, we'll
+     * have to do yet another layer of translation.
+     */
+    assert(sizeof(Fslcl_DirEntry)==sizeof(struct direct));
+
+#define HDR_SIZE sizeof(u_long)+2*sizeof(u_short)
+    *oldOff = streamPtr->offset;
+    while (1) {
+	amountRead = HDR_SIZE;
+	status = Fs_Read(streamPtr, (Address)inDir, streamPtr->offset,
+		&amountRead);
+	if (status != SUCCESS) {
+	    printf("Fs_GetdirInt: Read failed: %x\n", status);
+	    return Compat_MapCode(status);
+	}
+	if (amountRead < HDR_SIZE) {
+	    return EISDIR;
+	}
+	if (Vm_CopyIn(HDR_SIZE, (Address)inDir, (Address)kernDir) != SUCCESS) {
+	    printf("Copy in failure\n");
+	    Mach_SetErrno(EINVAL);
+	    return -1;
+	}
+
+	/*
+	 * Check against big-endian/little-endian conflict.
+	 * The max record length is 512, which is 02 when byteswapped.
+	 * The min record length is 8, which is > 512 when byteswapped.
+	 * All other values fall outside the range 8-512 when byteswapped.
+	 */
+	if (kernDir->d_reclen > FSLCL_DIR_BLOCK_SIZE ||
+		kernDir->d_reclen < 2 * sizeof(int)) {
+	    SWAP4(kernDir->d_ino);
+	    SWAP2(kernDir->d_reclen);
+	    SWAP2(kernDir->d_namlen);
+	    if (Vm_CopyOut(HDR_SIZE, (Address)kernDir, (Address) inDir)
+		    != SUCCESS) {
+		printf("Copy out failure\n");
+		Mach_SetErrno(EINVAL);
+		return -1;
+	    }
+	}
+
+		
+	amountToRead = kernDir->d_reclen - amountRead;
+	if (amountToRead<0 || kernDir->d_reclen < kernDir->d_namlen ||
+		kernDir->d_namlen>255) {
+	    Mach_SetErrno(EINVAL);
+	    return -1;
+	}
+	amountRead = amountToRead;
+	status = Fs_Read(streamPtr, ((Address)(inDir))+HDR_SIZE,
+		streamPtr->offset, &amountRead);
+	*newOff = streamPtr->offset;
+	if (status != SUCCESS) {
+	    return Compat_MapCode(status);
+	}
+	if (amountRead < amountToRead) {
+	    /*
+	     * Directory is truncated?
+	     */
+	    printf("Fs_GetdirInt: directory truncated\n");
+	    return ENOTDIR;
+	}
+	if (kernDir->d_ino != 0) break;
+    }
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_GetdentsStub --
+ *
+ *	The stub for the "getdents" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
 int
+Fs_GetdentsStub(fd, buf, nbytes)
+    int  fd;
+    char *buf;
+    int nbytes;
+{
+    Fs_Stream		*streamPtr;
+    Proc_ControlBlock	*procPtr;
+    struct dirent	tmpBuf;
+    int			status;
+    ReturnStatus	returnStatus;
+    int			oldOff;	/* dummy */
+    int			totalBytes = 0;
+    Fs_Attributes	spriteAttrs;
+
+    if (debugFsStubs) {
+	printf("Fs_Getdents(%d, %x, %d)\n", fd, buf, nbytes);
+    }
+    assert(sizeof(struct dirent) == sizeof(struct direct)+4);
+
+    if (nbytes<sizeof(struct dirent)) {
+	Mach_SetErrno(EINVAL);
+	return -1;
+    }
+
+    procPtr = Proc_GetEffectiveProc();
+    status = Fs_GetStreamPtr(procPtr, fd, &streamPtr);
+    if (status == SUCCESS) {
+	status = Fs_GetAttrStream(streamPtr, &spriteAttrs);
+    }
+    if (status != SUCCESS) {
+	Mach_SetErrno(EBADF);
+	return -1;
+    }
+
+    if (spriteAttrs.type != FS_DIRECTORY) {
+	Mach_SetErrno(ENOTDIR);
+	return -1;
+    }
+
+    /*
+     * We do something tricky here.  The dirent structure has an extra
+     * byte at the beginning for the offset.  So we offset tmpBuf
+     * appropriately.
+     */
+    while (nbytes-totalBytes>=sizeof(struct dirent)) {
+	status = Fs_GetdirInt(streamPtr,
+		(struct direct *)(buf+sizeof(off_t)),
+		&oldOff, &tmpBuf.d_off, (struct direct *)(&tmpBuf.d_fileno));
+	if (status == EISDIR) {
+	    break;
+	} else if (status != 0) {
+	    printf("GetdirInt failure: %d\n", status);
+	    Mach_SetErrno(status);
+	    return -1;
+	}
+	tmpBuf.d_reclen += sizeof(off_t);
+
+	returnStatus = Vm_CopyOut(HDR_SIZE+sizeof(off_t), (Address) &tmpBuf,
+		buf);
+	if (returnStatus != SUCCESS) {
+	    Mach_SetErrno(EFAULT);
+	    return -1;
+	}
+	buf += tmpBuf.d_reclen;
+	totalBytes += tmpBuf.d_reclen;
+    }
+    return totalBytes;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_GetdirentriesStub --
+ *
+ *	The stub for the "getdirentries" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
+int 
 Fs_GetdirentriesStub(fd, buf, nbytes, basep)
     int  fd;
     char *buf;
     int nbytes;
     long *basep;
 {
-    int		        bytesAcc;
-    Fslcl_DirEntry	*dirPtr;
-    Address	        addr;
-    int		        i;
-    int                 amountRead;
+    Fs_Stream		*streamPtr;
+    Proc_ControlBlock	*procPtr;
+    struct direct	tmpBuf;
+    int			status;
+    Fs_Attributes	spriteAttrs;
+    int			oldOff = -1;
+    int			newOff;
+    int			totalBytes = 0;
 
-    amountRead = Fs_NewReadStub(fd, buf, nbytes);
     if (debugFsStubs) {
-	printf("Fs_Getdirentries nbytes = %d, amountRead = %d\n",
-	    nbytes, amountRead);
+	printf("Fs_GetdirentriesStub(%d, %x, %d, %x\n", fd, buf, nbytes,
+		basep);
     }
-    if (amountRead <= 0) {
-	return amountRead;
+
+    if (nbytes<sizeof(struct direct)) {
+	printf("nbytes too small\n");
+	Mach_SetErrno(EINVAL);
+	return -1;
     }
-    Vm_MakeAccessible(VM_OVERWRITE_ACCESS, amountRead, buf, &bytesAcc, &addr);
-    if (bytesAcc != amountRead) {
-	panic("User buffer not accessible, but we just wrote to it !!!\n");
+
+    procPtr = Proc_GetEffectiveProc();
+    status = Fs_GetStreamPtr(procPtr, fd, &streamPtr);
+    if (status == SUCCESS) {
+	status = Fs_GetAttrStream(streamPtr, &spriteAttrs);
     }
-    /*
-     * Check against big-endian/little-endian conflict.
-     * The max record length is 512, which is 02 when byteswapped.
-     * The min record length is 8, which is > 512 when byteswapped.
-     * All other values fall outside the range 8-512 when byteswapped.
-     */
-    dirPtr = (Fslcl_DirEntry *)addr;
-    if (dirPtr->recordLength > FSLCL_DIR_BLOCK_SIZE ||
-	dirPtr->recordLength < 2 * sizeof(int)) {
-	i = bytesAcc;
-	while (i > 0) {
-	    union {
-		short	s;
-		char    c[2];
-	    } shortIn, shortOut;
-	    union {
-		int	i;
-		char    c[4];
-	    } intIn, intOut;
+    if (status != SUCCESS) {
+	printf("Bad stream\n");
+	Mach_SetErrno(EBADF);
+	return -1;
+    }
 
-	    if (dirPtr->nameLength <= FS_MAX_NAME_LENGTH) {
-		printf("sysUnixGetDirEntries: Bad directory format\n");
-	    }
-	    intIn.i = dirPtr->fileNumber;
-	    intOut.c[0] = intIn.c[3];
-	    intOut.c[1] = intIn.c[2];
-	    intOut.c[2] = intIn.c[1];
-	    intOut.c[3] = intIn.c[0];
-	    dirPtr->fileNumber = intOut.i;
+    if (spriteAttrs.type != FS_DIRECTORY) {
+	printf("Not directory; type = %d\n", spriteAttrs.type);
+	Mach_SetErrno(ENOTDIR);
+	return -1;
+    }
 
-	    shortIn.s = dirPtr->recordLength;
-	    shortOut.c[0] = shortIn.c[1];
-	    shortOut.c[1] = shortIn.c[0];
-	    dirPtr->recordLength = shortOut.s;
+    *basep = streamPtr->offset;
 
-	    shortIn.s = dirPtr->nameLength;
-	    shortOut.c[0] = shortIn.c[1];
-	    shortOut.c[1] = shortIn.c[0];
-	    dirPtr->nameLength = shortOut.s;
-
-	    i -= dirPtr->recordLength;
-	    dirPtr = (Fslcl_DirEntry *)((Address)dirPtr + dirPtr->recordLength);
+    while (nbytes-totalBytes>=sizeof(struct direct)) {
+	status = Fs_GetdirInt(streamPtr, (struct direct *)buf, &oldOff,
+		&newOff, &tmpBuf);
+	if (status == EISDIR) {
+	    break;
+	} else if (status != 0) {
+	    printf("GetdirInt Error: %x\n", status);
+	    Mach_SetErrno(status);
+	    return -1;
 	}
-    }
-    Vm_MakeUnaccessible(addr, bytesAcc);
-    return amountRead;
-}
 
+	buf += tmpBuf.d_reclen;
+	totalBytes += tmpBuf.d_reclen;
+    }
+    return totalBytes;
+}
