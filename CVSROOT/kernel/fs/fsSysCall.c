@@ -1686,6 +1686,8 @@ Fs_IOControlStub(streamID, command, inBufSize, inBuffer,
     Fs_ProcessState *fsPtr;
     Fs_Stream 	 *streamPtr;
     register ReturnStatus status = SUCCESS;
+    Address	localInBuffer = (Address)NIL;
+    Address	localOutBuffer = (Address)NIL;
     Fs_IOCParam ioctl;
     Fs_IOReply reply;
 
@@ -1737,15 +1739,15 @@ Fs_IOControlStub(streamID, command, inBufSize, inBuffer,
      */
     if ((outBufSize > 0) && (outBuffer != (Address)0) &&
 			    (outBuffer != (Address)NIL)){
-	ioctl.outBuffer = (Address) malloc(outBufSize);
+	ioctl.outBuffer = localOutBuffer = (Address) malloc(outBufSize);
 	ioctl.outBufSize = outBufSize;
     } else {
 	ioctl.outBuffer = (Address)NIL;
-	ioctl.outBufSize = 0;
+	ioctl.outBufSize = outBufSize = 0;
     }
     if ((inBufSize > 0) && (inBuffer != (Address)0) &&
 			   (inBuffer != (Address)NIL)) {
-	ioctl.inBuffer  = (Address) malloc(inBufSize);
+	ioctl.inBuffer  = localInBuffer = (Address) malloc(inBufSize);
 	ioctl.inBufSize = inBufSize;
     } else {
 	ioctl.inBuffer = (Address)NIL;
@@ -1792,17 +1794,17 @@ Fs_IOControlStub(streamID, command, inBufSize, inBuffer,
 		    break;
 		}
 	    }
-	    if (ioctl.outBufSize) {
+	    if (outBufSize) {
 		status = Vm_CopyOut(reply.length, ioctl.outBuffer,
 				    outBuffer);
 	    }
 	}
     }
-    if (ioctl.inBuffer != (Address)NIL) {
-	free(ioctl.inBuffer);
+    if (localInBuffer != (Address)NIL) {
+	free(localInBuffer);
     }
-    if (ioctl.outBuffer != (Address)NIL) {
-	free(ioctl.outBuffer);
+    if (localOutBuffer != (Address)NIL) {
+	free(localOutBuffer);
     }
     return(status);
 }
