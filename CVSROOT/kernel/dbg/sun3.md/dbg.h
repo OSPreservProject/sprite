@@ -13,6 +13,9 @@
 #ifndef _DBG
 #define _DBG
 
+#ifndef _SPRITE
+#include "sprite.h"
+#endif
 #include "dbgRs232.h"
 /*
  * Variable to indicate if are using the rs232 debugger or the network debugger.
