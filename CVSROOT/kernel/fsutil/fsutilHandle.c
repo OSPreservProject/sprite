@@ -338,10 +338,20 @@ Fsutil_HandleInstall(fileIDPtr, size, name, hdrPtrPtr)
 	    }
 	    free((Address)newHdrPtr);
 	}
+#ifdef sun4c
+	if (name != (char *)NIL) {
+	    if (hdrPtr->name != (char *) NIL) {
+		free(hdrPtr->name);
+	    }
+	    hdrPtr->name = (char *)malloc(strlen(name) + 1);
+	    (void)strcpy(hdrPtr->name, name);
+	}
+#else
 	if ((hdrPtr->name == (char *)NIL) && (name != (char *)NIL)) {
 	    hdrPtr->name = (char *)malloc(strlen(name) + 1);
 	    (void)strcpy(hdrPtr->name, name);
 	}
+#endif /* sun4c */
     }
     *hdrPtrPtr = hdrPtr;
     return(found);

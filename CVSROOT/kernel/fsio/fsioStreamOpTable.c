@@ -109,6 +109,7 @@ int fsio_LclToRmtType[FSIO_NUM_STREAM_TYPES] = {
  * This array contains type-specific functions for the recovery test
  * statistics syscall.
  */
+extern	int	Fsrmt_FileRecovTestUseCount();
 extern	int	Fsrmt_FileRecovTestNumCacheBlocks();
 extern	int	Fsrmt_FileRecovTestNumDirtyCacheBlocks();
 Fsio_RecovTestInfo	fsio_StreamRecovTestFuncs[FSIO_NUM_STREAM_TYPES] = {
@@ -118,7 +119,7 @@ Fsio_RecovTestInfo	fsio_StreamRecovTestFuncs[FSIO_NUM_STREAM_TYPES] = {
     { Fsio_FileRecovTestUseCount, Fsio_FileRecovTestNumCacheBlocks,
       Fsio_FileRecovTestNumDirtyCacheBlocks },
     /* FSIO_RMT_FILE_STREAM */
-    { (int (*)()) NIL, Fsrmt_FileRecovTestNumCacheBlocks,
+    { Fsrmt_FileRecovTestUseCount, Fsrmt_FileRecovTestNumCacheBlocks,
       Fsrmt_FileRecovTestNumDirtyCacheBlocks},
     /* FSIO_LCL_DEVICE_STREAM */
     { Fsio_DeviceRecovTestUseCount, (int (*)()) NIL, (int (*)()) NIL },

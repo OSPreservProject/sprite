@@ -1050,9 +1050,11 @@ Fsutil_FsRecovInfo(length, resultPtr, lengthNeededPtr)
 
 	    infoPtr->streamRefCount = hdrPtr->refCount;
 	    infoPtr->mode = streamPtr->flags;
+	    infoPtr->streamHandle = TRUE;
 
 	    testHandlePtr = streamPtr->ioHandlePtr;
 	} else {
+	    infoPtr->streamHandle = FALSE;
 	    testHandlePtr = hdrPtr;
 	}
 
@@ -1081,10 +1083,8 @@ Fsutil_FsRecovInfo(length, resultPtr, lengthNeededPtr)
 			testHandlePtr->fileID.type]).numDirtyBlocksFunc)
 			(testHandlePtr);
 	    }
-	    /*
-	     * For devices, I'll want name info from name server instead?
-	     */
 	    strncpy(infoPtr->name, Fsutil_HandleName(testHandlePtr), 49);
+	    infoPtr->name[50] = '\0';
 	}
 	infoPtr++;
 	Fsutil_HandleUnlock(hdrPtr);

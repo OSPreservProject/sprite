@@ -69,13 +69,14 @@ typedef struct Fsutil_RecoveryInfo {
  * Statistics for testing recovery.
  */
 typedef	struct	Fsutil_FsRecovNamedStats {
-    Fs_FileID		fileID;
-    int			mode;
-    int			refCount;
-    int			streamRefCount;
-    int			numBlocks;
-    int			numDirtyBlocks;
-    char		name[50];
+    Fs_FileID		fileID;			/* Unique id for object. */
+    Boolean		streamHandle;		/* Is this a stream handle? */
+    int			mode;			/* Mode of stream. */
+    int			refCount;		/* Ref count on IO handle. */
+    int			streamRefCount;		/* Ref count on stream. */
+    int			numBlocks;		/* Number of blocks in cache. */
+    int			numDirtyBlocks;		/* Number dirty cache blocks. */
+    char		name[50];		/* Name of object. */
 } Fsutil_FsRecovNamedStats;
 
 

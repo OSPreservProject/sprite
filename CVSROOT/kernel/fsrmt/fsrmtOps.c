@@ -140,7 +140,6 @@ Fsrmt_Bin()
     Mem_Bin(sizeof(Fsrmt_FileIOHandle));
 }
 
-#ifdef NOTDEF
 
 /*
  *----------------------------------------------------------------------
@@ -161,9 +160,8 @@ int
 Fsrmt_FileRecovTestUseCount(handlePtr)
     Fsrmt_FileIOHandle   *handlePtr;
 {
-    return handlePtr->use.ref;
+    return handlePtr->rmt.recovery.use.ref;
 }
-#endif NOTDEF
 
 
 /*
