@@ -441,6 +441,7 @@ typedef struct Proc_ControlBlock {
  *				  its PROC_MIGRATION_DONE flag is set.
  *  PROC_MIGRATION_DONE		- indicates successful completion of a
  *				  migration trap.
+ *  PROC_ON_DEBUG_LIST		- the process is on the debug list.
  */
 
 #define PROC_KERNEL			0x00001
@@ -457,6 +458,7 @@ typedef struct Proc_ControlBlock {
 #define PROC_NO_VM			0x00800
 #define PROC_MIGRATING			0x01000
 #define PROC_MIGRATION_DONE		0x02000
+#define PROC_ON_DEBUG_LIST		0x04000
 
 
 /*
