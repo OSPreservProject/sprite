@@ -1,7 +1,16 @@
 /* 
  * fsRecovery.c
  *
- *	Routines for filesytem recovery.
+ *	Routines for filesytem recovery.  A file server keeps state about
+ *	client use, and this needs to be recovered after the server reboots.
+ *	The first routine, FsReopen, goes through a sequence of steps that
+ *	a client makes in order to help the server in this way.  Other
+ *	routines are used by other parts of the filesystem to wait for
+ *	recovery to happen, and are typically invoked after a remote
+ *	operation fails due to a communication failure.  These are
+ *	FsWantRecovery, and FsWaitForRecovery.  The routine Fs_WaitForHost
+ *	is combines these two calls and is used by routines outside
+ *	the filesystem, i.e. when vm waits on swap files.
  *
  * Copyright 1987 Regents of the University of California.
  * All rights reserved.
@@ -52,9 +61,8 @@ void FsHandleReopen();
  *	None.
  *
  * Side effects:
- *	Does recovery RPCs to the file server.  When successful, recovering
- *	a handle unblocks processes that are blocked on it waiting for
- *	recovery to complete.
+ *	None by this routine itself, but when this returns the routines
+ *	it has called will have reestablished state with the server.
  *
  *----------------------------------------------------------------------
  */
@@ -99,22 +107,22 @@ FsReopen(serverID, clientData)
  *
  * FsHandleReopen --
  *
- *	Called when a server reboots.  This scans the handle table twice
+ *	Called after the prefix table handles for the given server
+ *	have been recovered.  This scans the handle table twice
  *	to recover I/O handles and streams.  The first pass re-opens
- *	the I/O handles, and then streams are done.  When this completes
- *	the recovery condition in the handle is notified to unblock
- *	waiting processes. If the recovery fails this logs a warning
- *	message and marks the handle as invalid.
+ *	the I/O handles, and then streams are done.  A file-type specific
+ *	routine is called to do the reopen.  If the recovery fails this
+ *	logs a warning message and marks the handle as invalid.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	A re-open transaction with the server.  Notifies the recovery
- *	condition in the handle, see FsHandleWait.
+ *	This will invalidate handles for which recovery fails.  Invalid
+ *	I/O handles are removed from the handle table, while invalid
+ *	streams are left around because they get removed at close-time.
  *
  *----------------------------------------------------------------------------
- *
  */
 
 void
@@ -124,7 +132,6 @@ FsHandleReopen(serverID)
     Hash_Search			hashSearch;
     register	FsHandleHeader	*hdrPtr;
     ReturnStatus		status = SUCCESS;
-    Boolean			invalid;
 
     Net_HostPrint(serverID, "- recovering handles\n");
 
@@ -132,14 +139,15 @@ FsHandleReopen(serverID)
     for (hdrPtr = FsGetNextHandle(&hashSearch);
 	 hdrPtr != (FsHandleHeader *) NIL;
          hdrPtr = FsGetNextHandle(&hashSearch)) {
-	 invalid = FALSE;
 	 if ((hdrPtr->fileID.type != FS_STREAM) &&
 		 (hdrPtr->fileID.serverID == serverID)) {
 	    status = (*fsStreamOpTable[hdrPtr->fileID.type].reopen)(hdrPtr,
 		rpc_SpriteID, (ClientData)NIL, (int *)NIL, (ClientData *)NIL);
 	    switch (status) {
 		case SUCCESS:
+		    FsHandleUnlock(hdrPtr);
 		    break;
+		case RPC_SERVICE_DISABLED:
 		case RPC_TIMEOUT:
 		    FsHandleUnlock(hdrPtr);
 		    goto reopenReturn;
@@ -150,11 +158,9 @@ FsHandleReopen(serverID)
 		case FS_FILE_REMOVED:
 		    FsHandleInvalidate(hdrPtr);
 		    FsHandleRemove(hdrPtr);
-		    invalid = TRUE;
 		    break;
 	    }
-	}
-	if (!invalid) {
+	} else {
 	    FsHandleUnlock(hdrPtr);
 	}
     }
@@ -172,8 +178,11 @@ FsHandleReopen(serverID)
 	    status = (*fsStreamOpTable[hdrPtr->fileID.type].reopen)(hdrPtr,
 		rpc_SpriteID, (ClientData)NIL, (int *)NIL, (ClientData *)NIL);
 	    if (status != SUCCESS) {
-		FsFileError(hdrPtr, "Reopen failed ", status);
-		if (status == RPC_TIMEOUT) {
+		FsFileError(hdrPtr, "Reopen failed", status);
+		FsFileError(((Fs_Stream *)hdrPtr)->ioHandlePtr, "I/O handle",
+			    status);
+		if ((status == RPC_TIMEOUT) ||
+		    (status == RPC_SERVICE_DISABLED)) {
 		    FsHandleUnlock(hdrPtr);
 		    goto reopenReturn;
 		}
@@ -186,9 +195,7 @@ FsHandleReopen(serverID)
 	}
 	FsHandleUnlock(hdrPtr);
     }
-
 reopenReturn:
-
     if (status != SUCCESS) {
 	Sys_Printf("Recovery failed <%x>\n", status);
     } else {
@@ -269,9 +276,10 @@ FsWantRecovery(hdrPtr)
  *
  *	Wait until recovery actions have completed for the stream.
  *	This will return failure codes if the recovery aborts.
+ *	The wait is interruptable by a signal so the user can abort.
  *
  * Results:
- *	SUCCESS unless there was a recovery error.
+ *	SUCCESS unless there was a recovery error or a signal came in.
  *
  * Side effects:
  *	Block the process.
@@ -299,25 +307,16 @@ FsWaitForRecovery(hdrPtr, rpcStatus)
 	    return(FS_STALE_HANDLE);
     }
     /*
-     * If our caller got a stale handle (the server is probably up)
-     * we want to re-establish state with the server now.  There is
-     * already a reboot call-back registered with the recovery module
-     * so if the server is down the re-open procedure gets called that way.
+     * If our caller got a stale handle then the server is probably up
+     * we try to re-establish state with the server now.  Otherwise
+     * we depend on a reboot callback to invoke FsReopen.
      */
     if (rpcStatus == FS_STALE_HANDLE) {
-	Sys_Panic(SYS_WARNING, "Stale handle <%d,%d,%d> type %d\n",
-		hdrPtr->fileID.serverID,
-		hdrPtr->fileID.major,
-		hdrPtr->fileID.minor,
-		hdrPtr->fileID.type);
+	FsFileError(hdrPtr, "", rpcStatus);
 	if (!Recov_IsHostDown(hdrPtr->fileID.serverID)) {
 	    FsReopen(hdrPtr->fileID.serverID, (ClientData)NIL);
 	}
     }
-
-    /*
-     * Wait for the server to reboot.
-     */
     status = RecoveryWait(&((FsRemoteIOHandle *)hdrPtr)->recovery);
     return(status);
 }
@@ -329,6 +328,8 @@ FsWaitForRecovery(hdrPtr, rpcStatus)
  *
  *	Wait until recovery actions have completed for the stream.
  *	This will return failure codes if the recovery aborts.
+ *	If the non-blocking flag is passed in this just marks the
+ *	handle as needing recovery and returns SUCCESS.
  *
  * Results:
  *	SUCCESS unless there was a recovery error.
@@ -341,15 +342,14 @@ FsWaitForRecovery(hdrPtr, rpcStatus)
 ReturnStatus
 Fs_WaitForHost(streamPtr, flags, rpcStatus)
     Fs_Stream	*streamPtr;
-    int		flags;
-    ReturnStatus rpcStatus;	/* Status that caused us to
-						 * need recovery. */
+    int		flags;		/* 0 or FS_NON_BLOCKING */
+    ReturnStatus rpcStatus;	/* Status that caused us to need recovery. */
 {
     register FsHandleHeader *hdrPtr = streamPtr->ioHandlePtr;
-    ReturnStatus status;
+    register ReturnStatus status;
 
+    FsWantRecovery(hdrPtr);
     if (flags & FS_NON_BLOCKING) {
-	FsWantRecovery(hdrPtr);
 	status = SUCCESS;
     } else {
 	status = FsWaitForRecovery(hdrPtr, rpcStatus);
@@ -398,26 +398,42 @@ RecoveryWait(recovPtr)
  *
  * FsRecoveryWakeup --
  *
- *	Wakeup processes waiting on recovery for a handle.
+ *	Wakeup processes waiting on recovery for a handle, if appropriate.
+ *	This examines the status before doing the wakeup so it is ok
+ *	to call this routine after a re-open gets a timeout, for example.
  *
  * Results:
  *	None.
  *
  * Side effects:
  *	Processes waiting on the handle are awakened and the FS_HANDLE_RECOVERY
- *	flags is cleared from the recovery flags.
+ *	flags is cleared from the recovery flags.  The FS_RECOVERY_FAILED
+ *	flag gets set if status is non-SUCCESS.
  *
  *----------------------------------------------------------------------------
  *
  */
 ENTRY void
-FsRecoveryWakeup(recovPtr)
+FsRecoveryWakeup(recovPtr, status)
     FsRecoveryInfo *recovPtr;
+    ReturnStatus status;
 {
     LOCK_MONITOR;
 
-    recovPtr->flags &= ~FS_WANT_RECOVERY;
-    Sync_Broadcast(&recovPtr->reopenComplete);
+    switch(status) {
+	case RPC_TIMEOUT:
+	case RPC_SERVICE_DISABLED:
+	    break;
+	default:
+	    recovPtr->flags |= FS_RECOVERY_FAILED;
+	    /*
+	     * FALL THROUGH to wakeup.
+	     */
+	 case SUCCESS:
+	    recovPtr->flags &= ~FS_WANT_RECOVERY;
+	    Sync_Broadcast(&recovPtr->reopenComplete);
+	    break;
+    }
 
     UNLOCK_MONITOR;
 }
@@ -427,7 +443,9 @@ FsRecoveryWakeup(recovPtr)
  *
  * FsRecoveryNeeded --
  *
- *	Returns TRUE if recovery is pending for the handle.
+ *	Returns TRUE if recovery is pending for the handle.  This is
+ *	called when scavenging a remote file handle to make sure noone
+ *	is waiting for recovery on the handle.
  *
  * Results:
  *	TRUE or FALSE.
@@ -453,8 +471,9 @@ FsRecoveryNeeded(recovPtr)
  *
  * FsRemoteHandleScavange --
  *
- *	All purpose scavenging routine for remote handles.  This nukes
- *	the handle if there are no uses of it and it doesn't need recovery.
+ *	Scavenging routine for remote handles, not including remote
+ *	file handles. This nukes the handle if there are no uses of
+ *	it and it doesn't need recovery.
  *
  * Results:
  *	None.
@@ -465,27 +484,47 @@ FsRecoveryNeeded(recovPtr)
  *----------------------------------------------------------------------------
  *
  */
-ENTRY void
+void
 FsRemoteHandleScavenge(hdrPtr)
     FsHandleHeader *hdrPtr;
 {
-    FsRemoteIOHandle *handlePtr = (FsRemoteIOHandle *)hdrPtr;
-    register FsRecoveryInfo *recovPtr = &handlePtr->recovery;
-
-    LOCK_MONITOR;
-    if (recovPtr->use.ref == 0 &&
-	(recovPtr->flags & FS_WANT_RECOVERY) == 0) {
-	/*
-	 * This strange unlocking sequence is because the unlock monitor
-	 * references the recovery structure inside the handle, and it
-	 * wouldn't be safe to touch that after the handle is deallocated.
-	 */
-	UNLOCK_MONITOR;
+    if (OkToScavenge(&((FsRemoteIOHandle *)hdrPtr)->recovery)) {
 	FsHandleRemove(hdrPtr);
     } else {
 	FsHandleUnlock(hdrPtr);
-	UNLOCK_MONITOR;
     }
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * OkToScavenge --
+ *
+ *	Internal routine to check monitored state.  This returns TRUE if
+ *	the handle should be scavenged, in which case our caller can
+ *	remove the handle, or FALSE, in which our caller should just
+ *	unlock it.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------------
+ *
+ */
+static ENTRY Boolean
+OkToScavenge(recovPtr)
+    register FsRecoveryInfo *recovPtr;
+{
+    register Boolean okToScavenge = FALSE;
+    LOCK_MONITOR;
+    if (recovPtr->use.ref == 0 &&
+	(recovPtr->flags & FS_WANT_RECOVERY) == 0) {
+	okToScavenge = TRUE;
+    }
+    UNLOCK_MONITOR;
 }
 
 /*
