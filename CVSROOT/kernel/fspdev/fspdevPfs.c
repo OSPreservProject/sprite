@@ -204,6 +204,7 @@ FsPfsCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
     FsHandleHeader		*prefixHdrPtr;
     Fs_FileID			rootID;
     int				domain;
+    int				id;
     char			*ignoredName;
     FsPrefix			*prefixPtr;
     int				prefixFlags;
@@ -219,7 +220,7 @@ FsPfsCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
     }
     status = FsPrefixLookup(name,
 		FS_IMPORTED_PREFIX|FS_EXPORTED_PREFIX|FS_EXACT_PREFIX, -1,
-		&prefixHdrPtr, &rootID, &ignoredName, &domain, &prefixPtr);
+		&prefixHdrPtr, &rootID, &ignoredName, &id, &domain, &prefixPtr);
     if (status == SUCCESS) {
 	printf( "Prefix \"%s\" already serviced\n", name);
 	return(FS_FILE_BUSY);
