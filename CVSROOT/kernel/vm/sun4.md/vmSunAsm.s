@@ -582,7 +582,7 @@ _VmMachSetSegMap:
  *	set to the context for which the segment map entries are to be set.
  *	
  *	void VmMachCopyUserSegMap(tablePtr)
- *	    short *tablePtr;
+ *	    unsigned short *tablePtr;
  *
  * Results:
  *     None.
@@ -1336,7 +1336,7 @@ _VmMachSetup32BitDVMA:
  *	This routine is optimized to do transfers when sourcePtr and 
  *	destPtr are both double-word aligned.
  *
- *	void
+ *	ReturnStatus
  *	VmMachQuickNDirtyCopy(numBytes, sourcePtr, destPtr, sourceContext,
  *							    destContext)
  *	    register int numBytes;      The number of bytes to copy
@@ -1553,7 +1553,7 @@ _VmMachEndQuickCopy:
  *	This routine is optimized to do transfers when sourcePtr and 
  *	destPtr are both double-word aligned.
  *
- *	void
+ *	ReturnStatus
  *	Vm_Copy{In,Out}(numBytes, sourcePtr, destPtr)
  *	    register int numBytes;      The number of bytes to copy
  *	    Address sourcePtr;          Where to copy from.
@@ -1820,7 +1820,7 @@ NullChar:
  *
  *	Touch the range of pages.
  *
- *	void
+ *	ReturnStatus
  *	Vm_TouchPages(firstPage, numPages)
  *	    int	firstPage;	First page to touch.
  *	    int	numPages;	Number of pages to touch.
