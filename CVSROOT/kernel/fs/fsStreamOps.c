@@ -437,13 +437,19 @@ Fs_IOControl(streamPtr, ioctlPtr, replyPtr)
 	    (streamType == FSIO_RMT_FILE_STREAM)) {
 	    int		*ptr;
 	    Fs_Attributes attrs;
+	    Ioc_RepositionArgs *iocArgsPtr;
+	    iocArgsPtr = (Ioc_RepositionArgs *) ioctlPtr->inBuffer;
 
 	    ptr = (int *) (ioctlPtr->inBuffer + 
 				    sizeof(Ioc_RepositionArgs));
 	    *ptr++ = streamPtr->offset;
-	    status = Fs_GetAttrStream(streamPtr, &attrs);
-	    if (status == SUCCESS) {
-		*ptr++ = attrs.size;
+	    if (iocArgsPtr->base == IOC_BASE_EOF) {
+		status = Fs_GetAttrStream(streamPtr, &attrs);
+		if (status == SUCCESS) {
+		    *ptr++ = attrs.size;
+		} else {
+		    *ptr++ = -1;
+		}
 	    } else {
 		*ptr++ = -1;
 	    }
