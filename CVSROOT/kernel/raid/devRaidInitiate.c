@@ -32,6 +32,7 @@
 #include "devRaidUtil.h"
 #include "devRaidIOC.h"
 #include "debugMem.h"
+#include "schedule.h"
 
 
 /*
@@ -52,10 +53,10 @@
  *----------------------------------------------------------------------
  */
 
-static void blockIODoneProc();
-static void nonInterruptLevelCallBackProc();
+void blockIODoneProc();
+void nonInterruptLevelCallBackProc();
 
-static void 
+void 
 InitiateIORequests(reqControlPtr, doneProc, clientData)
     RaidRequestControl	*reqControlPtr;
     void	       (*doneProc)();
@@ -116,7 +117,7 @@ InitiateIORequests(reqControlPtr, doneProc, clientData)
  *----------------------------------------------------------------------
  */
 
-static void
+void
 blockIODoneProc(reqPtr, status, amountTransferred)
     RaidBlockRequest	*reqPtr;
     ReturnStatus	 status;
@@ -128,7 +129,7 @@ blockIODoneProc(reqPtr, status, amountTransferred)
     /*
      * Check to see if disk has failed since request was initiated.
      */
-    if (!IsInRange(reqPtr->diskPtr,
+    if (!IsValid(reqPtr->diskPtr,
 	    ByteToSector(reqPtr->raidPtr, reqPtr->devReq.startAddress),
 	    ByteToSector(reqPtr->raidPtr, reqPtr->devReq.bufferLen))) {
 	status = FAILURE;
@@ -189,7 +190,7 @@ blockIODoneProc(reqPtr, status, amountTransferred)
  *----------------------------------------------------------------------
  */
 
-static void
+void
 nonInterruptLevelCallBackProc(IOControlPtr)
     RaidIOControl	*IOControlPtr;
 {
@@ -585,8 +586,10 @@ oldInfoReadDoneProc(stripeIOControlPtr, numFailed, failedReqPtr)
     if (numFailed == 0) {
 	char			*parityBuf;
 
+#ifndef NODATA
         parityBuf = Malloc((unsigned) raidPtr->bytesPerStripeUnit);
 	bzero(parityBuf, raidPtr->bytesPerStripeUnit);
+#endif
 
 	XorRaidRangeRequests(stripeIOControlPtr->reqControlPtr,
 		raidPtr, parityBuf,
@@ -601,7 +604,9 @@ oldInfoReadDoneProc(stripeIOControlPtr, numFailed, failedReqPtr)
 	XorRaidRangeRequests(stripeIOControlPtr->reqControlPtr,
 		raidPtr, parityBuf,
 		stripeIOControlPtr->rangeOff, stripeIOControlPtr->rangeLen);
+#ifndef NODATA
 	Free(stripeIOControlPtr->parityBuf);
+#endif
 	stripeIOControlPtr->parityBuf = parityBuf;
         AddRaidParityRangeRequest(stripeIOControlPtr->reqControlPtr,
 		raidPtr, FS_WRITE,
@@ -856,7 +861,9 @@ reconstructStripeReadDoneProc(stripeIOControlPtr, numFailed)
 
     switch (numFailed) {
     case 0:
+#ifndef NODATA
 	bzero(failedReqPtr->devReq.buffer, failedReqPtr->devReq.bufferLen);
+#endif
 	XorRaidRangeRequests(stripeIOControlPtr->reqControlPtr,
 		stripeIOControlPtr->raidPtr, failedReqPtr->devReq.buffer,
 		(int) failedReqPtr->devReq.startAddress,
@@ -994,7 +1001,9 @@ InitiateStripeIOs(raidPtr, operation, firstSector, nthSector,
     /*
      * Break up IO request into stripe requests.
      */
+    BeginRaidUse(raidPtr);
     IOControlPtr = MakeIOControl(doneProc, clientData);
+    IOControlPtr->raidPtr = raidPtr;
     IOControlPtr->numIO++;
     currentSector = firstSector;
     while ( currentSector < nthSector ) {
@@ -1070,6 +1079,7 @@ singleStripeIODoneProc(IOControlPtr, status, amountTransferred)
         IOControlPtr->doneProc(IOControlPtr->clientData,
 		IOControlPtr->status, IOControlPtr->amountTransferred);
 	FreeIOControl(IOControlPtr);
+	EndRaidUse(IOControlPtr->raidPtr);
     } else {
         MASTER_UNLOCK(&IOControlPtr->mutex);
     }
@@ -1111,6 +1121,7 @@ InitiateHardInit(raidPtr, startStripe, numStripe, ctrlData)
 		    (RaidDisk *) NIL, ctrlData);
     reconstructionControlPtr->stripeID = startStripe;
     reconstructionControlPtr->numStripe = numStripe;
+    printf("RAID:MSG:Initiating reconstruction\n");
     InitiateStripeHardInit(reconstructionControlPtr);
 }
 
@@ -1248,7 +1259,9 @@ hardInitReadDoneProc(reconstructionControlPtr, numFailed)
     if (numFailed > 0) {
 	InitiateHardInitFailure(reconstructionControlPtr);
     } else {
+#ifndef NODATA
 	bzero(parityBuf, raidPtr->bytesPerStripeUnit);
+#endif
 	XorRaidRequests(reqControlPtr, raidPtr, parityBuf);
 	AddRaidParityRequest(reqControlPtr, raidPtr, FS_WRITE,
 		(unsigned) StripeIDToSector(raidPtr, stripeID),
@@ -1284,258 +1297,13 @@ hardInitWriteDoneProc(reconstructionControlPtr, numFailed)
     if (numFailed > 0) {
 	ReportHardInitFailure(reconstructionControlPtr->stripeID);
     }
+    if (reconstructionControlPtr->stripeID % 100 == 0) {
+	printf("RAID:MSG: %d", reconstructionControlPtr->stripeID);
+    }
     UnlockStripe(reconstructionControlPtr->stripeID);
     reconstructionControlPtr->stripeID++;
     reconstructionControlPtr->numStripe--;
     InitiateStripeHardInit(reconstructionControlPtr);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * InitiateReconstruction --
- *
- *	Reconstruct the contents of the failed disk.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Reconstructs the contents of the failed disk.
- *
- *----------------------------------------------------------------------
- */
-
-static void InitiateStripeReconstruction();
-
-void
-InitiateReconstruction(raidPtr, col, row, version, numSector, uSec, ctrlData)
-    Raid	*raidPtr;
-    int		 col, row, version;
-    int		 numSector;
-    int		 uSec;
-    int		 ctrlData;
-{
-    RaidReconstructionControl	*reconstructionControlPtr;
-    RaidDisk			*diskPtr = raidPtr->disk[col][row];
-
-    MASTER_LOCK(&diskPtr->mutex);
-    if (version == diskPtr->version && diskPtr->state == RAID_DISK_READY) {
-        diskPtr->state = RAID_DISK_RECONSTRUCT;
-        MASTER_UNLOCK(&diskPtr->mutex);
-    } else {
-        MASTER_UNLOCK(&diskPtr->mutex);
-	return;
-    }
-    reconstructionControlPtr =
-	    MakeReconstructionControl(raidPtr, col, row, diskPtr, ctrlData);
-    InitiateStripeReconstruction(reconstructionControlPtr);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * reconstructionDoneProc --
- *
- *	Callback procedure for InitiateReconstruction.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-reconstructionDoneProc(reconstructionControlPtr)
-    RaidReconstructionControl	*reconstructionControlPtr;
-{
-    RaidDisk	*diskPtr = reconstructionControlPtr->diskPtr;
-
-    MASTER_LOCK(&diskPtr->mutex);
-    if (diskPtr->state == RAID_DISK_RECONSTRUCT) {
-	diskPtr->state = RAID_DISK_READY;
-    }
-    MASTER_UNLOCK(&diskPtr->mutex);
-    FreeReconstructionControl(reconstructionControlPtr);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * InitiateReconstructionFailure --
- *
- *	Causes the reconstruction to fail.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-InitiateReconstructionFailure(reconstructionControlPtr)
-    RaidReconstructionControl	*reconstructionControlPtr;
-{
-    int	         stripeID = reconstructionControlPtr->stripeID;
-
-    UnlockStripe(stripeID);
-    ReportReconstructionFailure(reconstructionControlPtr->col,
-    	    reconstructionControlPtr->row);
-    reconstructionDoneProc(reconstructionControlPtr);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * InitiateStripeReconstruction --
- *
- *	Reconstructs a single stripe.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static void reconstructionReadDoneProc();
-static void reconstructionWriteDoneProc();
-
-static void
-InitiateStripeReconstruction(reconstructionControlPtr)
-    RaidReconstructionControl	*reconstructionControlPtr;
-{
-    Raid	       *raidPtr       = reconstructionControlPtr->raidPtr;
-    int		        col           = reconstructionControlPtr->col;
-    int		        row           = reconstructionControlPtr->row;
-    RaidDisk	       *diskPtr       = reconstructionControlPtr->diskPtr;
-    int	       		ctrlData      = reconstructionControlPtr->ctrlData;
-    RaidRequestControl *reqControlPtr = reconstructionControlPtr->reqControlPtr;
-    char	       *readBuf       = reconstructionControlPtr->readBuf;
-    char	       *parityBuf     = reconstructionControlPtr->parityBuf;
-    int		        stripeID;
-    unsigned	        firstSector;
-    unsigned	        nthSector;
-
-    if (diskPtr->numValidSector == raidPtr->sectorsPerDisk) {
-        printf("RAID:MSG:Reconstruction completed.\n");
-	reconstructionDoneProc(reconstructionControlPtr);
-	return;
-    }
-    if (diskPtr->state != RAID_DISK_RECONSTRUCT) {
-        printf("RAID:MSG:Reconctruction aborted.\n");
-	reconstructionDoneProc(reconstructionControlPtr);
-	return;
-    }
-    MapPhysicalToStripeID(raidPtr, col,row, diskPtr->numValidSector, &stripeID);
-    reconstructionControlPtr->stripeID = stripeID;
-    firstSector = StripeIDToSector(raidPtr, stripeID);
-    nthSector   = NthSectorOfStripe(raidPtr, firstSector);
-    LockStripe(stripeID);
-    reqControlPtr->numReq = reqControlPtr->numFailed = 0;
-    AddRaidDataRequests(reqControlPtr, raidPtr, FS_READ,
-	    firstSector, nthSector, readBuf, ctrlData);
-    AddRaidParityRequest(reqControlPtr, raidPtr, FS_READ,
-	    firstSector, parityBuf, ctrlData);
-    if (reqControlPtr->numFailed == 1) {
-	InitiateIORequests(reqControlPtr,
-		reconstructionReadDoneProc,
-		(ClientData) reconstructionControlPtr);
-    } else {
-	InitiateReconstructionFailure(reconstructionControlPtr);
-    }
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * reconstructionReadDoneProc --
- *
- *	Callback procedure for InitiateStripeReconstruction.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Computes and writes the reconstructed information.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-reconstructionReadDoneProc(reconstructionControlPtr, numFailed)
-    RaidReconstructionControl	*reconstructionControlPtr;
-    int			 	 numFailed;
-{
-    Raid	       *raidPtr       = reconstructionControlPtr->raidPtr;
-    RaidDisk	       *diskPtr       = reconstructionControlPtr->diskPtr;
-    RaidRequestControl *reqControlPtr = reconstructionControlPtr->reqControlPtr;
-    RaidBlockRequest   *failedReqPtr  =
-	    	          reconstructionControlPtr->reqControlPtr->failedReqPtr;
-
-    if (numFailed > 0) {
-	InitiateReconstructionFailure(reconstructionControlPtr);
-    } else {
-	bzero(failedReqPtr->devReq.buffer, failedReqPtr->devReq.bufferLen);
-	XorRaidRangeRequests(reqControlPtr, raidPtr,
-		failedReqPtr->devReq.buffer,
-		(int) failedReqPtr->devReq.startAddress,
-		failedReqPtr->devReq.bufferLen);
-	reqControlPtr->failedReqPtr->devReq.operation = FS_WRITE;
-	reqControlPtr->failedReqPtr->state = REQ_READY;
-	diskPtr->numValidSector =
-		NthSectorOfStripeUnit(raidPtr, diskPtr->numValidSector);
-	InitiateIORequests(reqControlPtr,
-		reconstructionWriteDoneProc,
-		(ClientData) reconstructionControlPtr);
-    }
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * reconstructionWriteDoneProc --
- *
- *	Callback procedure for reconstructionReadDoneProc.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Initiates the reconstruction of the next sector on the failed device.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-reconstructionWriteDoneProc(reconstructionControlPtr, numFailed)
-    RaidReconstructionControl	*reconstructionControlPtr;
-    int				 numFailed;
-{
-    Raid	       *raidPtr       = reconstructionControlPtr->raidPtr;
-    RaidDisk	       *diskPtr       = reconstructionControlPtr->diskPtr;
-    int		        stripeID      = reconstructionControlPtr->stripeID;
-
-    if (numFailed > 0) {
-        diskPtr->numValidSector -= raidPtr->sectorsPerStripeUnit;
-	InitiateReconstructionFailure(reconstructionControlPtr);
-    } else {
-	UnlockStripe(stripeID);
-	InitiateStripeReconstruction(reconstructionControlPtr);
-    }
 }
 
 
@@ -1578,7 +1346,7 @@ InitiateSimpleStripeIOs(raidPtr, operation, firstSector, nthSector,
     int			   col, row;
 
     /*
-     * Break up IO request into stripe requests.
+     * Break up entire IO request into stripe units.
      */
     IOControlPtr = MakeIOControl(doneProc, clientData);
     IOControlPtr->numIO++;
