@@ -20,22 +20,30 @@
 #ifndef _MIGRATE
 #define _MIGRATE
 
-/*
- * Define the number of 4-byte fields transferred in a shot when updating user
- * information.  Note: Timer_Ticks count as multiple fields.  See the
- * comments in SendProcessState for a list of fields that are transferred.
+/* 
+ * Define the number of 4-byte fields transferred in a shot when
+ * updating user information.  Note: Timer_Ticks count as multiple
+ * fields.  Proc_PIDs are 4-byte fields just like ints. See the
+ * comments in SendProcessState for a list of fields that are
+ * transferred.
  */
 
 #define PROC_NUM_FLAGS 4
-#define PROC_NUM_ID_FIELDS 5
-#define PROC_NUM_BILLING_FIELDS (7 + 4 * (sizeof(Timer_Ticks) / sizeof(int)))
+#define PROC_NUM_ID_FIELDS 4
+#define PROC_NUM_SCHED_FIELDS (7 + 4 * (sizeof(Timer_Ticks) / sizeof(int)))
+
+/*
+ * A process is allowed to update its userID, effectiveUserID, or billingRate.
+ * If any of these fields is modified, all of them are transferred to
+ * the remote node.
+ */
 #define PROC_NUM_USER_INFO_FIELDS 3
 
 /*
  * Size of various fields of the PCB structure copied upon migration.
  */
 
-#define SIG_INFO_SIZE (((3 * SIG_NUM_SIGNALS) + 3) * sizeof(int))
+#define SIG_INFO_SIZE (((3 * SIG_NUM_SIGNALS) + 4) * sizeof(int))
 
 /*
  * Parameters for a remote Proc_Wait.
