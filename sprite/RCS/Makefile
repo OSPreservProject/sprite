@@ -267,7 +267,7 @@ sun4: ${OBJS_SUN4} Makefile .PRECIOUS .NOEXPORT
 	@ls -l $@
 	@size $@
 	update -f -s sun4 /sprite/boot/sun4.md/new
-	rcp /sprite/boot/sun3.md/new ${GINGER}:/tftpboot/sun4.md/new
+	rcp /sprite/boot/sun4.md/new ${GINGER}:/tftpboot/sun4.md/new
 	rcp sun4 ginger:/home/ginger/sprite/kernels/sun4.sprite
 	rsh ginger -n "(cd /home/ginger/sprite/kernels ; ./Save sun4.sprite)"
 	nm -n sun4 > sun4.nm
