@@ -44,6 +44,13 @@
 #define RECOV_HOST_DEAD		0x4
 #define RECOV_HOST_BOOTING	0x10
 
+/*
+ * If dying_state is not defined then crash callbacks are made
+ * immidiately after a timeout.  Otherwise the host lingers in
+ * the RECOV_HOST_DYING state for recov_CrashDelay seconds.
+ */
+#define dying_state
+
 #define RECOV_CRASH_CALLBACKS	0x0100
 #define RECOV_WANT_RECOVERY	0x0200
 #define RECOV_PINGING_HOST	0x0400
