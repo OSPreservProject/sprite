@@ -30,11 +30,17 @@ Sync_Lock	tableLock = {0, 0};
 
 Proc_ControlBlock **proc_PCBTable;
 Proc_ControlBlock  **proc_RunningProcesses;
-#define PROC_MAX_PROCESSES 128
+#define PROC_MAX_PROCESSES 256
+#define PROC_PCB_NUM_ALLOC 16
 int proc_MaxNumProcesses;
 int proc_MaxRunningProcesses;
 
 int procLastSlot = 0;	/* Circular index into proctable for choosing slots */
+static int realMaxProcesses;	/* The absolute number of process table
+				 * entries, not necessarily allocated yet. */
+static int entriesInUse = 0;	/* Number of PCB's in use. */
+
+static void InitPCB();
 
 
 /*
@@ -43,7 +49,9 @@ int procLastSlot = 0;	/* Circular index into proctable for choosing slots */
  * Proc_InitTable --
  *
  *	Initializes the PCB table and running process table.  Must be called
- *	at initialization time with interrupts off.
+ *	at initialization time with interrupts off.  Initializes an array
+ *	of PROC_MAX_PROCESSES pointers to PCB's but only allocates
+ *	PROC_PCB_NUM_ALLOC entries at first.  The rest are done dynamically.
  *
  * Results:
  *	None.
@@ -61,54 +69,25 @@ Proc_InitTable()
     register	Proc_ControlBlock *pcbPtr;
 
     proc_MaxRunningProcesses = sys_NumProcessors;
-    proc_MaxNumProcesses     = PROC_MAX_PROCESSES;
+    proc_MaxNumProcesses     = PROC_PCB_NUM_ALLOC;
+    realMaxProcesses         = PROC_MAX_PROCESSES;
 
     proc_PCBTable = (Proc_ControlBlock **)
-        Vm_BootAlloc(proc_MaxNumProcesses * sizeof(pcbPtr));
+        Vm_BootAlloc(realMaxProcesses * sizeof(pcbPtr));
 
     for (i = 0; i < proc_MaxNumProcesses; i++) {
 	pcbPtr = (Proc_ControlBlock *) Vm_BootAlloc(sizeof(Proc_ControlBlock));
-	proc_PCBTable[i] = pcbPtr; 
+	proc_PCBTable[i] = pcbPtr;
+	InitPCB(pcbPtr, i);
+    }
 
-	List_InitElement((List_Links *)pcbPtr);
-        pcbPtr->state		= PROC_UNUSED;
-	pcbPtr->processID	= i;
-	pcbPtr->genFlags	= 0;
+    /*
+     * Set the rest of the proc table to catch any misuse of nonexistent
+     * entries.
+     */
 
-	/*
-	 *  Initialize the pointers to the list headers and the
-	 *  PCB entry. These values do not change when the PCB
-	 *  entry is re-used.
-	 */
-	pcbPtr->childList	= &(pcbPtr->childListHdr);
-        pcbPtr->siblingElement.procPtr	= pcbPtr;
-        pcbPtr->familyElement.procPtr	= pcbPtr;
-
-	/*
-	 *  Set the links to NIL to catch any invalid uses of
-	 *  the lists before they are properly initialized.
-	 *  These pointers change whenever the PCB entry is re-used.
-	 */
-        pcbPtr->childListHdr.nextPtr	= (List_Links *) NIL;
-        pcbPtr->childListHdr.prevPtr	= (List_Links *) NIL;
-
-	List_InitElement((List_Links *)&pcbPtr->siblingElement);
-	List_InitElement((List_Links *)&pcbPtr->familyElement);
-
-	pcbPtr->numGroupIDs	= 0;
-	pcbPtr->groupIDs	= (int *) NIL;
-	pcbPtr->eventHashChain.procPtr = pcbPtr;
-	List_InitElement((List_Links *)&pcbPtr->eventHashChain);
-
-	pcbPtr->peerHostID = NIL;
-	pcbPtr->peerProcessID = (Proc_PID) NIL;
-	pcbPtr->argString = (char *) NIL;
-	pcbPtr->vmPtr = (Vm_ProcInfo *)NIL;
-	pcbPtr->trapStackPtr = (Exc_TrapStack *) NIL;
-	pcbPtr->rpcClientProcess = (Proc_ControlBlock *) NIL;
-
-	pcbPtr->waitToken = 0;
-	pcbPtr->timerArray = (struct ProcIntTimerInfo *) NIL;
+    for (i = proc_MaxNumProcesses; i < realMaxProcesses; i++) {
+	proc_PCBTable[i] = (Proc_ControlBlock *) NIL;
     }
     
     proc_RunningProcesses = (Proc_ControlBlock **)
@@ -125,6 +104,109 @@ Proc_InitTable()
 /*
  * ----------------------------------------------------------------------------
  *
+ * InitPCB --
+ *
+ *	Initializes a process control block.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static void
+InitPCB(pcbPtr, i)
+    Proc_ControlBlock *pcbPtr;
+    int i;
+{
+    List_InitElement((List_Links *)pcbPtr);
+    pcbPtr->state		= PROC_UNUSED;
+    pcbPtr->processID	= i;
+    pcbPtr->genFlags	= 0;
+
+    /*
+     *  Initialize the pointers to the list headers and the
+     *  PCB entry. These values do not change when the PCB
+     *  entry is re-used.
+     */
+    pcbPtr->childList	= &(pcbPtr->childListHdr);
+    pcbPtr->siblingElement.procPtr	= pcbPtr;
+    pcbPtr->familyElement.procPtr	= pcbPtr;
+
+    /*
+     *  Set the links to NIL to catch any invalid uses of
+     *  the lists before they are properly initialized.
+     *  These pointers change whenever the PCB entry is re-used.
+     */
+    pcbPtr->childListHdr.nextPtr	= (List_Links *) NIL;
+    pcbPtr->childListHdr.prevPtr	= (List_Links *) NIL;
+
+    List_InitElement((List_Links *)&pcbPtr->siblingElement);
+    List_InitElement((List_Links *)&pcbPtr->familyElement);
+
+    pcbPtr->numGroupIDs	= 0;
+    pcbPtr->groupIDs	= (int *) NIL;
+    pcbPtr->eventHashChain.procPtr = pcbPtr;
+    List_InitElement((List_Links *)&pcbPtr->eventHashChain);
+
+    pcbPtr->peerHostID = NIL;
+    pcbPtr->peerProcessID = (Proc_PID) NIL;
+    pcbPtr->argString = (char *) NIL;
+    pcbPtr->vmPtr = (Vm_ProcInfo *)NIL;
+    pcbPtr->trapStackPtr = (Exc_TrapStack *) NIL;
+    pcbPtr->rpcClientProcess = (Proc_ControlBlock *) NIL;
+
+    pcbPtr->waitToken = 0;
+    pcbPtr->timerArray = (struct ProcIntTimerInfo *) NIL;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ *  AddPCBs --
+ *
+ *	Add new proc_ControlBlocks with sched_Mutex locked.  This avoids
+ *	conflicts accessing the proc_MaxNumProcesses variable, such as in
+ *	the Sched_ForgetUsage routine.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The global array of process control blocks is updated to point
+ *	to the PCB's pointed to by procPtrPtr, and the count of useable entries
+ *	is updated.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+void
+AddPCBs(procPtrPtr)
+    Proc_ControlBlock **procPtrPtr;
+{
+    register int i;
+    
+    /*
+     *  Gain exclusive access to the process table.
+     */
+    MASTER_LOCK(sched_Mutex);
+
+    for (i = 0; i < PROC_PCB_NUM_ALLOC; i++) {
+	proc_PCBTable[proc_MaxNumProcesses] = *procPtrPtr;
+	procPtrPtr++;
+	proc_MaxNumProcesses++;
+    }
+
+    MASTER_UNLOCK(sched_Mutex);
+}
+    
+
+/*
+ * ----------------------------------------------------------------------------
+ *
  * Proc_InitMainProc --
  *
  *	Finish initializing the process table by making a proc table entry
@@ -134,7 +216,8 @@ Proc_InitTable()
  *	None.
  *
  * Side effects:
- *	The first element of the proc table is modified.
+ *	The first element of the proc table is modified, and the count of
+ *	used entries is set to 1.
  *
  * ----------------------------------------------------------------------------
  */
@@ -146,6 +229,8 @@ Proc_InitMainProc()
 
 #define MAIN_PID 0
 
+    entriesInUse = 1;
+    
     procPtr = proc_PCBTable[MAIN_PID];
 
     /*
@@ -334,11 +419,30 @@ ProcGetUnusedPCB()
 {
     register	Proc_ControlBlock 	**procPtrPtr;
     register	Proc_ControlBlock 	*procPtr;
+    Proc_ControlBlock 			*pcbArray[PROC_PCB_NUM_ALLOC];
     register	int 			i;
     int					generation;
 
     LOCK_MONITOR;
 
+
+    /* 
+     * See if we need to allocate more process table entries.
+     */
+    if (entriesInUse == proc_MaxNumProcesses) {
+	if (proc_MaxNumProcesses > realMaxProcesses - PROC_PCB_NUM_ALLOC) {
+	    Sys_Panic(SYS_FATAL, "ProcGetUnusedPCB: PCB table full!!\n");
+	}
+	for (i = 0; i < PROC_PCB_NUM_ALLOC; i++) {
+	    pcbArray[i] = (Proc_ControlBlock *)
+		    Vm_RawAlloc(sizeof(Proc_ControlBlock));
+	    InitPCB(pcbArray[i], proc_MaxNumProcesses + i);
+	}
+	AddPCBs(pcbArray);
+    }
+
+	
+	
     /*
      * Scan the proc table looking for an unused slot.  The search is
      * circular, starting just after the last slot chosen.  This is done
@@ -355,6 +459,9 @@ ProcGetUnusedPCB()
 	    i = 0;
 	    procPtrPtr = &proc_PCBTable[0];
 	}
+	/*
+	 * Shouldn't hit this, but check to avoid infinite loop.
+	 */
 	if (i == procLastSlot) {
 	    Sys_Panic(SYS_FATAL, "ProcGetUnusedPCB: PCB table full!!\n");
 	}
@@ -376,6 +483,8 @@ ProcGetUnusedPCB()
     generation += 1;
     generation = (generation << PROC_GEN_NUM_SHIFT) & PROC_GEN_NUM_MASK;
     procPtr->processID = i | generation | (rpc_SpriteID << PROC_ID_NUM_SHIFT);
+
+    entriesInUse++;
 
     UNLOCK_MONITOR;
 
@@ -410,6 +519,7 @@ ProcFreePCB(procPtr)
     }
     procPtr->state = PROC_UNUSED;
     procPtr->genFlags = 0;
+    entriesInUse--;
 
     UNLOCK_MONITOR;
 }
