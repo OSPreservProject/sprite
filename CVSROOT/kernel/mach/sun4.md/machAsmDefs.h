@@ -433,7 +433,7 @@ TestAgainLabel:						\
 	cmp	reg1, VMMACH_PTE_OKAY_VALUE;		\
 	be	LastOKLabel;				\
 	nop;						\
-	or	0x4, ansReg, ansReg;			\
+	or	ansReg, 0x4, ansReg;			\
 LastOKLabel:						\
 	tst	ansReg
 	

@@ -864,7 +864,7 @@ MachReturnToUnderflowWithSavedState:
 	cmp	%g3, 0x1
 	be	KillTheProc
 	nop
-	and	%g3, 0x2, %g0
+	andcc	%g3, 0x2, %g0
 	be	CheckNextUnderflow	/* It wasn't first possible fault */
 	nop
 
@@ -914,7 +914,7 @@ KeepFromContinuing:
 	nop
 
 CheckNextUnderflow:
-	and	%g3, 0x4, %g0		/* See if second address would fault */
+	andcc	%g3, 0x4, %g0		/* See if second address would fault */
 	be	BackAgain
 	nop
 	QUICK_ENABLE_INTR(%VOL_TEMP1)
