@@ -107,6 +107,7 @@ LfsLoadFileSystem(lfsPtr, flags)
 				(lfsPtr->superBlock.hdr.maxCheckPointBlocks));
     checkPointPtr = malloc(maxSize);
 
+again:
     LfsOffsetToDiskAddr(lfsPtr->superBlock.hdr.checkPointOffset[choosenOne],
 		&diskAddr);
     status = LfsReadBytes(lfsPtr, diskAddr,  maxSize, checkPointPtr);
@@ -125,6 +126,8 @@ LfsLoadFileSystem(lfsPtr, flags)
 
     if (checkPointHdrPtr->timestamp != trailerPtr->timestamp) {
 	LfsError(lfsPtr, SUCCESS, "Bad checkpoint timestamps");
+	choosenOne = !choosenOne;
+	goto again;
     }
     printf("LfsLoad using checkpoint area %d with timestamp %d\n",
 	choosenOne, checkPointHdrPtr->timestamp);
@@ -255,7 +258,7 @@ LfsCheckPointFileSystem(lfsPtr, flags)
     int flags;		/* Flags for checkpoint. */
 {
     LfsCheckPointHdr	*checkPointHdrPtr;
-    int			size, blocks;
+    int			size, blocks, bytes;
     LfsCheckPointTrailer *trailerPtr;
     LfsDiskAddr		diskAddr;
     ReturnStatus	status;
@@ -302,11 +305,10 @@ LfsCheckPointFileSystem(lfsPtr, flags)
     /*
      * Append the stats to the checkpoint regions.
      */
-    blocks = LfsBytesToBlocks(lfsPtr, checkPointHdrPtr->size + 
-					LFS_STATS_MAX_SIZE);
+    bytes = checkPointHdrPtr->size + sizeof(Lfs_Stats);
+    blocks = LfsBytesToBlocks(lfsPtr, bytes);
     LFS_STATS_ADD(lfsPtr->stats.checkpoint.totalBlocks, blocks);
-    LFS_STATS_ADD(lfsPtr->stats.checkpoint.totalBytes,
-				checkPointHdrPtr->size+LFS_STATS_MAX_SIZE);
+    LFS_STATS_ADD(lfsPtr->stats.checkpoint.totalBytes, bytes);
     bcopy ((char *) &lfsPtr->stats, (char *) (trailerPtr + 1), 
 		sizeof(lfsPtr->stats));
     LfsOffsetToDiskAddr(
