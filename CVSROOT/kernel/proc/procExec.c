@@ -32,6 +32,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vm.h"
 #include "sys.h"
 #include "procAOUT.h"
+#include "procMigrate.h"
 #include "status.h"
 #include "string.h"
 #include "byte.h"
@@ -78,11 +79,18 @@ typedef struct {
  * put on the stack given to the exec'ed process.  The size of the structure
  * to be copied onto the user's stack is the size in the 'size' field
  * minus the size of the header.
+ *
+ * The fileName and argString fields are used only when doing a remote exec.
  */
 typedef struct {
     Address base;		/* base of the structure in user space */
     int size;			/* size of the entire structure */
-    int debug;			/* whether to debug on startup */
+    char *fileName;		/* pointer to buffer containing name of file
+				 * to exec */
+    int fileNameLength;		/* length of file name buffer */
+    char *argString;		/* pointer to buffer containing full list of
+				 * arguments, for ps listing */
+    int argLength;		/* length of argString buffer */
 } ExecEncapHeader;
 
 typedef struct {
@@ -176,12 +184,13 @@ Proc_RemoteExec(fileName, argPtrArray, envPtrArray, host)
 {
     int status;
     
+    /*
+     * XXX need to check permission to migrate.
+     */
     status = Proc_Exec(fileName, argPtrArray, envPtrArray, FALSE, host);
-    if (status == SUCCESS) {
-	/*
-	 * Do something here to cause migration.
-	 */
-    }
+    /*
+     * XXX on failure, need to clean up.
+     */
     return(status);
 }
 
@@ -240,8 +249,11 @@ Proc_ExecEnv(fileName, argPtrArray, envPtrArray, debugMe)
  *	the process to hit a migration signal before continuing.
  *
  * Side effects:
- *	The argument & environment arrays are made accessible.
- *	The setup routine makes them unaccessible.
+ *	The argument & environment arrays are made accessible.  Memory
+ *	is allocated for the file name.  
+ *	The DoExec routine makes the arrays unaccessible.  It frees the
+ *	space for the file name, unless the name is used for a remote
+ *	exec, in which case it is left around until after migration.
  *
  *----------------------------------------------------------------------
  */
@@ -267,9 +279,10 @@ Proc_Exec(fileName, argPtrArray, envPtrArray, debugMe, host)
     int			strLength;
     int			accessLength;
     ReturnStatus	status;
-    char 		execFileName[FS_MAX_PATH_NAME_LENGTH];
+    char 		*execFileName;
     ExecEncapState	*encapPtr;
     ExecEncapState	**encapPtrPtr;
+    Proc_ControlBlock 	*procPtr;
     
 
 
@@ -283,7 +296,8 @@ Proc_Exec(fileName, argPtrArray, envPtrArray, debugMe, host)
 	return(status);
     }
 
-    strncpy(execFileName, fileName, FS_MAX_PATH_NAME_LENGTH);
+    execFileName = malloc(accessLength);
+    strncpy(execFileName, fileName, accessLength);
     Proc_MakeUnaccessible((Address) fileName, accessLength);
 
     /*
@@ -333,13 +347,25 @@ Proc_Exec(fileName, argPtrArray, envPtrArray, debugMe, host)
 	encapPtrPtr = (ExecEncapState **) NIL;
     }
     status = DoExec(execFileName, &userArgs, encapPtrPtr, debugMe);
-    if (status != SUCCESS || host != 0) {
-	return(status);
-    }
     if (status == SUCCESS) {
-	panic("Proc_Exec: DoExec returned SUCCESS!!!\n");
+	if (host != 0) {
+	    /*
+	     * Set up the process to migrate.
+	     */
+	    procPtr = Proc_GetCurrentProc();
+	    Proc_Lock(procPtr);
+	    status = ProcInitiateMigration(procPtr, host);
+	    if (status == SUCCESS) {
+		procPtr->remoteExecBuffer = (Address) encapPtr;
+		Proc_FlagMigration(procPtr, host, TRUE);
+	    } else {
+		free((Address) encapPtr);
+	    }
+	    Proc_Unlock(procPtr);
+	} else {
+	    panic("Proc_Exec: DoExec returned SUCCESS!!!\n");
+	}
     }
-
     return(status);
 }
 
@@ -877,11 +903,25 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
     int					uid = -1;
     int					gid = -1;
     ExecEncapState			*encapPtr;
+    int					importing = 0;
+    int					exporting = 0;
 
 #ifdef notdef
     DBG_CALL;
 #endif
 
+    /*
+     * Use the encapsulation buffer and arguments arrays to determine
+     * whether everything is local, or we're starting a remote exec,
+     * or finishing one from another host.
+     */
+    if (encapPtrPtr != (ExecEncapState **) NIL) {
+	if (userArgsPtr != (UserArgs *) NIL) {
+	    exporting = TRUE;
+	} else {
+	    importing = TRUE;
+	}
+    }
     procPtr = Proc_GetActualProc();
 
     /* Turn off profiling */
@@ -949,72 +989,107 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
 #endif sun4
     }
 
-    /*
-     * Set up whatever special arguments we might have due to an
-     * interpreter file.  If the
-     */
-    if (extraArgs > 0) {
-	int i;
-	int index;
-	
-	if (userArgsPtr->argPtrArray == (char **) NIL) {
-	    extraArgsArray[0] = fileName;
-	    index = 1;
-	} else {
-	    index = 0;
-	}
-	for (i = index; extraArgs > 0; i++, extraArgs--) {
-	    if (extraArgs == 2) {
-		extraArgsArray[i] = shellArgPtr;
+    if (!importing) {
+	/*
+	 * Set up whatever special arguments we might have due to an
+	 * interpreter file.  If the
+	 */
+	if (extraArgs > 0) {
+	    int i;
+	    int index;
+
+	    if (userArgsPtr->argPtrArray == (char **) NIL) {
+		extraArgsArray[0] = fileName;
+		index = 1;
 	    } else {
-		extraArgsArray[i] = fileName;
+		index = 0;
+	    }
+	    for (i = index; extraArgs > 0; i++, extraArgs--) {
+		if (extraArgs == 2) {
+		    extraArgsArray[i] = shellArgPtr;
+		} else {
+		    extraArgsArray[i] = fileName;
+		}
+	    }
+	    extraArgsArray[i] = (char *) NIL;
+	    extraArgsPtrPtr = extraArgsArray;
+	} else {
+	    extraArgsPtrPtr = (char **) NIL;
+	}
+	/*
+	 * Copy in the argument list and environment into a single contiguous
+	 * buffer.
+	 */
+	status = SetupArgs(userArgsPtr, extraArgsPtrPtr,
+			   &argBuffer, &argString);
+
+	if (status != SUCCESS) {
+	    goto execError;
+	}
+
+	/*
+	 * We no longer need access to the old arguments or the environment. 
+	 */
+	if (userArgsPtr->userMode) {
+	    if (userArgsPtr->argPtrArray != (char **) NIL) {
+		Vm_MakeUnaccessible((Address) userArgsPtr->argPtrArray,
+				    userArgsPtr->numArgs * 4);
+		userArgsPtr->argPtrArray = (char **)NIL;
+	    }
+	    if (userArgsPtr->envPtrArray != (char **) NIL) {
+		Vm_MakeUnaccessible((Address) userArgsPtr->envPtrArray,
+				    userArgsPtr->numEnvs * 4);
+		userArgsPtr->envPtrArray = (char **)NIL;
 	    }
 	}
-	extraArgsArray[i] = (char *) NIL;
-	extraArgsPtrPtr = extraArgsArray;
+
+	/*
+	 * Close any streams that have been marked close-on-exec.
+	 */
+	Fs_CloseOnExec(procPtr);
     } else {
-	extraArgsPtrPtr = (char **) NIL;
+	/*
+	 * We're "importing" this process.  Use the stack copied over from
+	 * its former host.
+	 */
+	argBuffer = procPtr->remoteExecBuffer;
+	encapPtr = (ExecEncapState *) argBuffer;
+	argString = encapPtr->hdr.argString;
     }
-    /*
-     * Copy in the argument list and environment into a single contiguous
-     * buffer.
-     */
-    status = SetupArgs(userArgsPtr, extraArgsPtrPtr,
-		       &argBuffer, &argString);
     
-    if (status != SUCCESS) {
-	goto execError;
+    /*
+     * Change the argument string.
+     */
+    if (procPtr->argString != (char *) NIL) {
+	free(procPtr->argString);
     }
+    procPtr->argString = argString;
 
     /*
-     * We no longer need access to the old arguments or the environment. 
+     * Do set uid here.  This way, the uid will be set before a remote
+     * exec.
      */
-    if (userArgsPtr->userMode) {
-	if (userArgsPtr->argPtrArray != (char **) NIL) {
-	    Vm_MakeUnaccessible((Address) userArgsPtr->argPtrArray,
-				userArgsPtr->numArgs * 4);
-	    userArgsPtr->argPtrArray = (char **)NIL;
-	}
-	if (userArgsPtr->envPtrArray != (char **) NIL) {
-	    Vm_MakeUnaccessible((Address) userArgsPtr->envPtrArray,
-				userArgsPtr->numEnvs * 4);
-	    userArgsPtr->envPtrArray = (char **)NIL;
-	}
+    if (uid != -1) {
+	procPtr->effectiveUserID = uid;
     }
-
-    /*
-     * Close any streams that have been marked close-on-exec.
-     */
-    Fs_CloseOnExec(procPtr);
-
     /*
      * If we're doing the initial part of a remote exec, time to
      * return to our caller.
      */
-    if ((encapPtrPtr != (ExecEncapState **) NIL) &&
-	(userArgsPtr != (UserArgs *) NIL)) {
-	*encapPtrPtr = (ExecEncapState *) argBuffer;
+    encapPtr = (ExecEncapState *) argBuffer;
+    if (exporting) {
+	*encapPtrPtr = encapPtr;
+	encapPtr->hdr.fileName = fileName;
+	encapPtr->hdr.argString = argString;
 	return(SUCCESS);
+    }
+    /*
+     * The file name has been dynamically allocated if it was copied in
+     * on this host from user space.
+     */
+    if (!importing && userArgsPtr->userMode) {
+	free(fileName);
+	fileName = (char *) NIL;
     }
     /*
      * Set up virtual memory for the new image.
@@ -1033,7 +1108,6 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
     /*
      * Now copy all of the arguments and environment variables onto the stack.
      */
-    encapPtr = (ExecEncapState *) argBuffer;
     argBytes = encapPtr->hdr.size - sizeof(ExecEncapHeader);
     userStackPointer = encapPtr->hdr.base;
     status = Vm_CopyOut(argBytes, (Address) &encapPtr->argc,
@@ -1042,13 +1116,10 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
     if (status != SUCCESS) {
 	goto execError;
     }
-    
+
     /*
-     * Do set uid and set gid here.
+     * Set-gid only needs to be done on the host running the process.
      */
-    if (uid != -1) {
-	procPtr->effectiveUserID = uid;
-    }
     if (gid != -1) {
 	ProcAddToGroupList(procPtr, gid);
     }
@@ -1063,13 +1134,9 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
 	 */
 	Sig_SendProc(procPtr, SIG_DEBUG, SIG_NO_CODE);
     }
-    if (procPtr->genFlags & PROC_FOREIGN) {
+    if (!importing && (procPtr->genFlags & PROC_FOREIGN)) {
 	ProcRemoteExec(procPtr, uid);
     }
-    if (procPtr->argString != (char *) NIL) {
-	free(procPtr->argString);
-    }
-    procPtr->argString = argString;
     Proc_Unlock(procPtr);
 
     free(argBuffer);
@@ -1104,7 +1171,7 @@ execError:
 	    (void) Fs_Close(filePtr);
 	}
     }
-    if (userArgsPtr->userMode) {
+    if (userArgsPtr != (UserArgs *) NIL && userArgsPtr->userMode) {
 	if (userArgsPtr->argPtrArray != (char **) NIL) {
 	    Vm_MakeUnaccessible((Address) userArgsPtr->argPtrArray,
 				userArgsPtr->numArgs * 4);
@@ -1121,6 +1188,10 @@ execError:
     }
     if (argString != (Address) NIL) {
 	free(argString);
+    }
+    if (!importing && (fileName != (char *) NIL)) {
+	free(fileName);
+	fileName = (char *) NIL;
     }
     return(status);
 }
@@ -1367,3 +1438,248 @@ SetupVM(procPtr, aoutPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr,
 
     return(TRUE);
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcExecGetEncapSize --
+ *
+ *	Return the size of the encapsulated exec state.
+ *
+ * Results:
+ *	SUCCESS is returned directly; the size of the encapsulated state
+ *	is returned in infoPtr->size.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+ReturnStatus
+ProcExecGetEncapSize(procPtr, hostID, infoPtr)
+    Proc_ControlBlock *procPtr;			/* process being migrated */
+    int hostID;					/* host to which it migrates */
+    Proc_EncapInfo *infoPtr;			/* area w/ information about
+						 * encapsulated state */
+{
+    ExecEncapState *encapPtr;
+
+    encapPtr = (ExecEncapState *) procPtr->remoteExecBuffer;
+    encapPtr->hdr.fileNameLength =
+	Byte_AlignAddr(strlen(encapPtr->hdr.fileName) + 1);
+    encapPtr->hdr.argLength =
+	Byte_AlignAddr(strlen(encapPtr->hdr.argString) + 1);
+    infoPtr->size = encapPtr->hdr.size + encapPtr->hdr.fileNameLength +
+	encapPtr->hdr.argLength;
+    return(SUCCESS);	
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcExecEncapState --
+ *
+ *	Encapsulate the information needed to perform a remote exec,
+ *	and return it in the buffer provided.
+ *
+ * Results:
+ *	SUCCESS.  The buffer is filled.
+ *
+ * Side effects:
+ *	None.
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+ReturnStatus
+ProcExecEncapState(procPtr, hostID, infoPtr, bufPtr)
+    register Proc_ControlBlock 	*procPtr;  /* The process being migrated */
+    int hostID;				   /* host to which it migrates */
+    Proc_EncapInfo *infoPtr;		   /* area w/ information about
+					    * encapsulated state */
+    Address bufPtr;			   /* Pointer to allocated buffer */
+{
+    ExecEncapState *encapPtr;
+
+    encapPtr = (ExecEncapState *) procPtr->remoteExecBuffer;
+
+    bcopy((Address) encapPtr, bufPtr, encapPtr->hdr.size);
+    bufPtr += encapPtr->hdr.size;
+    strncpy(bufPtr, encapPtr->hdr.fileName, encapPtr->hdr.fileNameLength);
+    bufPtr += encapPtr->hdr.fileNameLength;
+    strncpy(bufPtr, encapPtr->hdr.argString, encapPtr->hdr.argLength);
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcExecDeencapState --
+ *
+ *	Get remote exec information from a Proc_ControlBlock from another host.
+ *	The information is contained in the parameter ``buffer''.
+ *
+ * Results:
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	Memory is allocated for argString, which is kept around while the
+ *	process is alive.
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+ReturnStatus
+ProcExecDeencapState(procPtr, infoPtr, bufPtr)
+    register Proc_ControlBlock 	*procPtr; /* The process being migrated */
+    Proc_EncapInfo *infoPtr;		  /* information about the buffer */
+    Address bufPtr;			  /* buffer containing data */
+{
+    ExecEncapState *encapPtr;
+    char *argString;
+
+    procPtr->remoteExecBuffer = malloc(infoPtr->size);
+    bcopy(bufPtr, procPtr->remoteExecBuffer, infoPtr->size);
+
+    encapPtr = (ExecEncapState *) procPtr->remoteExecBuffer;
+    encapPtr->hdr.fileName = procPtr->remoteExecBuffer + encapPtr->hdr.size;
+    argString = encapPtr->hdr.fileName + encapPtr->hdr.fileNameLength;
+    encapPtr->hdr.argString = malloc(encapPtr->hdr.argLength);
+    strncpy(encapPtr->hdr.argString, argString, encapPtr->hdr.argLength);
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcExecFinishMigration --
+ *
+ *	Free up resources after a remote exec.  This includes buffers
+ *      used to store information about a remote exec
+ *	between the time of the system call and the time the migration
+ *	completes: namely, the buffer containing the user's stack,
+ *	and the file name to exec (reached via that buffer).  Also,
+ *	free the virtual memory segments used by the process. 
+ *
+ * Results:
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	Memory is freed. The segments are freed.
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+ReturnStatus
+ProcExecFinishMigration(procPtr, hostID, infoPtr, bufPtr, failure)
+    register Proc_ControlBlock 	*procPtr; /* The process being migrated */
+    int hostID;				  /* Host to which it migrated */
+    Proc_EncapInfo *infoPtr;		  /* Information about the buffer */
+    Address bufPtr;			  /* Buffer containing data */
+    Boolean failure;			  /* Whether a failure occurred */
+{
+    ExecEncapState *encapPtr;
+    int i;
+
+    encapPtr = (ExecEncapState *) procPtr->remoteExecBuffer;
+    free(encapPtr->hdr.fileName);
+    free(procPtr->remoteExecBuffer);
+    Proc_Lock(procPtr);
+    procPtr->remoteExecBuffer = (Address) NIL;
+    procPtr->genFlags |= PROC_NO_VM;
+    Proc_Unlock(procPtr);
+    for (i = VM_CODE; i <= VM_STACK; i++) {
+	Vm_SegmentDelete(procPtr->vmPtr->segPtrArray[i], procPtr);
+    }
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcDoRemoteExec --
+ *
+ *	Do an exec of a process that's come to this machine from another
+ *	one.  This is the PC at which the process resumes after migration,
+ *	at which point it has no VM set up.
+ *
+ * Results:
+ *	None.  This routine doesn't return, since upon error the process
+ *	exits.
+ *
+ * Side effects:
+ *	An exec is performed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+ProcDoRemoteExec(procPtr)
+    register Proc_ControlBlock *procPtr; /* Process control block, locked
+					  * on entry */
+{
+    char *fileName;
+    ReturnStatus status;
+    ExecEncapState *encapPtr;
+
+    /*
+     * Set up dummy segments so that DoExec can work properly.
+     */
+
+    procPtr->genFlags &= ~PROC_REMOTE_EXEC_PENDING;
+    procPtr->vmPtr->segPtrArray[VM_CODE] = 
+				Vm_SegmentNew(VM_CODE, (Fs_Stream *) NIL, 0,
+					          1, 0, procPtr);
+    if (procPtr->vmPtr->segPtrArray[VM_CODE] == (Vm_Segment *) NIL) {
+	status = PROC_NO_SEGMENTS;
+	Proc_Unlock(procPtr);
+	goto failure;
+    }
+
+    procPtr->vmPtr->segPtrArray[VM_HEAP] =
+		    Vm_SegmentNew(VM_HEAP, (Fs_Stream *) NIL, 0, 1, 1, procPtr);
+    if (procPtr->vmPtr->segPtrArray[VM_HEAP] == (Vm_Segment *) NIL) {
+	Vm_SegmentDelete(procPtr->vmPtr->segPtrArray[VM_CODE], procPtr);
+	status = PROC_NO_SEGMENTS;
+	Proc_Unlock(procPtr);
+	goto failure;
+    }
+
+    procPtr->vmPtr->segPtrArray[VM_STACK] =
+		    Vm_SegmentNew(VM_STACK, (Fs_Stream *) NIL, 
+				   0 , 1, mach_LastUserStackPage, procPtr);
+    if (procPtr->vmPtr->segPtrArray[VM_STACK] == (Vm_Segment *) NIL) {
+	Vm_SegmentDelete(procPtr->vmPtr->segPtrArray[VM_CODE], procPtr);
+	Vm_SegmentDelete(procPtr->vmPtr->segPtrArray[VM_HEAP], procPtr);
+	status = PROC_NO_SEGMENTS;
+	Proc_Unlock(procPtr);
+	goto failure;
+    }
+
+    VmMach_ReinitContext(procPtr);
+
+    encapPtr = (ExecEncapState *) procPtr->remoteExecBuffer;
+    fileName = encapPtr->hdr.fileName;
+    Proc_Unlock(procPtr);
+    status = DoExec(fileName, (UserArgs *) NIL, &encapPtr, FALSE);
+    /*
+     * If the exec failed, then exit.  
+     */
+    failure:
+    if (proc_MigDebugLevel > 0) {
+	printf("Remote exec of %s failed: %s\n", fileName,
+	       Stat_GetMsg(status));
+    }
+    Proc_ExitInt(PROC_TERM_DESTROYED, SIG_KILL, 0);
+    /*
+     * NOTREACHED
+     */
+}
+
