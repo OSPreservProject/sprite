@@ -91,6 +91,16 @@ extern ReturnStatus Fsio_VanillaDevReopen _ARGS_((Fs_Device *devicePtr,
 extern ReturnStatus Fsio_DeviceClose _ARGS_((Fs_Stream *streamPtr, 
 				int clientID, Proc_PID procID, int flags, 
 				int size, ClientData data));
+/*
+ * Recovery testing operations.
+ */
+extern int Fsio_DeviceRecovTestUseCount _ARGS_((Fsio_DeviceIOHandle *handlePtr));
+/*
+ * Fast recov stuff.
+ */
+#include <fsrecovTypes.h>
+extern ReturnStatus Fsio_DeviceSetupHandle _ARGS_((Fsrecov_HandleState *recovInfoPtr));
+
 
 /*
  * Stream operations.

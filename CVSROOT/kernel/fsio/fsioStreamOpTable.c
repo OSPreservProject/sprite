@@ -26,6 +26,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <fsio.h>
 #include <fsutil.h>
 #include <fsioFile.h>
+#include <fsioDevice.h>
+#include <fsioPipe.h>
+#include <fspdev.h>
 
 
 /*
@@ -132,7 +135,7 @@ Fsio_RecovTestInfo	fsio_StreamRecovTestFuncs[FSIO_NUM_STREAM_TYPES] = {
     /* FSIO_RMT_PIPE_STREAM */
     { (int (*)()) NIL, (int (*)()) NIL, (int (*)()) NIL },
     /* FSIO_CONTROL_STREAM */
-    { (int (*)()) NIL, (int (*)()) NIL, (int (*)()) NIL },
+    { Fspdev_ControlRecovTestUseCount, (int (*)()) NIL, (int (*)()) NIL },
     /* FSIO_SERVER_STREAM */
     { (int (*)()) NIL, (int (*)()) NIL, (int (*)()) NIL },
     /* FSIO_LCL_PSEUDO_STREAM */
@@ -148,7 +151,7 @@ Fsio_RecovTestInfo	fsio_StreamRecovTestFuncs[FSIO_NUM_STREAM_TYPES] = {
     /* FSIO_RMT_PFS_STREAM */
     { (int (*)()) NIL, (int (*)()) NIL, (int (*)()) NIL },
     /* FSIO_RMT_CONTROL_STREAM */
-    { (int (*)()) NIL, (int (*)()) NIL, (int (*)()) NIL },
+    { Fspdev_ControlRecovTestUseCount, (int (*)()) NIL, (int (*)()) NIL },
     /* FSIO_PASSING_STREAM */
     { (int (*)()) NIL, (int (*)()) NIL, (int (*)()) NIL },
 #ifdef INET

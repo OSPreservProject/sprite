@@ -44,6 +44,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <rpc.h>
 #include <fsioRpc.h>
 #include <stdio.h>
+#include <fsrecov.h>
+#include <recov.h>
 
 /*
  * Monitor to synchronize access to the streamCount variable.
@@ -272,6 +274,7 @@ Fsio_StreamMigClient(migInfoPtr, dstClientID, ioHandlePtr, closeSrcClientPtr)
 	     * grab the offset from the client.
 	     */
 	    streamPtr->offset = offset;
+	    /* XXX Record new offset? */
 	}
     } else {
 	/*
@@ -280,6 +283,7 @@ Fsio_StreamMigClient(migInfoPtr, dstClientID, ioHandlePtr, closeSrcClientPtr)
 	 * are left alone here on the I/O server.
 	 */
 	Fsutil_HandleDecRefCount((Fs_HandleHeader *)streamPtr);
+	/* XXX Ignore this since we don't include our own streams in box? */
 	shared = (streamPtr->hdr.refCount > 1);
 	status = SUCCESS;
     }
@@ -292,6 +296,16 @@ Fsio_StreamMigClient(migInfoPtr, dstClientID, ioHandlePtr, closeSrcClientPtr)
 	*closeSrcClientPtr = TRUE;
 	(void)Fsio_StreamClientClose(&streamPtr->clientList,
 				  migInfoPtr->srcClientID);
+	/* Remove from recov box if the ioHandle is of right type too. */
+	if (recov_Transparent && migInfoPtr->srcClientID != rpc_SpriteID &&
+		Fsrecov_ThisType((Fs_HandleHeader *) ioHandlePtr,
+		migInfoPtr->srcClientID) &&
+		Fsrecov_DeleteHandle((Fs_HandleHeader *) streamPtr,
+		migInfoPtr->srcClientID, streamPtr->flags) != SUCCESS) {
+	    /* We'll have to do better than this! */
+	    panic(
+		"Fsio_StreamMigClient: couldn't remove handle from recov box.");
+	}
     } else {
 	*closeSrcClientPtr = FALSE;
     }
@@ -305,6 +319,20 @@ Fsio_StreamMigClient(migInfoPtr, dstClientID, ioHandlePtr, closeSrcClientPtr)
 	streamPtr->flags |= FS_RMT_SHARED;
     } else {
 	streamPtr->flags &= ~FS_RMT_SHARED;
+    }
+    /* Add handle to recov box if it's of right type. */
+    if (recov_Transparent && ioHandlePtr != (Fs_HandleHeader *) NIL &&
+	    dstClientID != rpc_SpriteID
+	    && Fsrecov_ThisType((Fs_HandleHeader *) ioHandlePtr, dstClientID)) {
+	status = Fsrecov_AddHandle((Fs_HandleHeader *) streamPtr,
+		&(ioHandlePtr->fileID), dstClientID, streamPtr->flags,
+		streamPtr->offset, TRUE);
+    } else if (ioHandlePtr == (Fs_HandleHeader *) NIL) {
+	panic("Fsio_StreamMigClient: ioHandlePtr was NIL");
+    }
+    /* We'll have to do better than this! */
+    if (recov_Transparent && status != SUCCESS) {
+	panic("Fsio_StreamMigClient: couldn't add handle to recov box.");
     }
     migInfoPtr->flags = streamPtr->flags | newClientStream;
     migInfoPtr->offset = streamPtr->offset;
@@ -494,6 +522,7 @@ Fsio_StreamMigCloseNew(streamPtr, inUsePtr, offsetPtr)
     if (streamPtr->hdr.refCount <= 1) {
 	(*fsio_StreamOpTable[streamPtr->ioHandlePtr->fileID.type].release)
 		(streamPtr->ioHandlePtr, streamPtr->flags);
+	/* XXX This is on client here, what should I do about recov box? */
 	if (Fsio_StreamClientClose(&streamPtr->clientList, rpc_SpriteID)) {
 	    /*
 	     * No references, no other clients, nuke it.
@@ -841,8 +870,8 @@ Fsio_StreamReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
     Fs_HandleHeader	*hdrPtr;	/* Stream's handle header */
     int			clientID;
     ClientData		inData;		/* Non-NIL on the server */
-    int			*outSizePtr;	/* Non-NIL on the server */
-    ClientData		*outDataPtr;	/* Non-NIL on the server */
+    int			*outSizePtr;	/* Unused. */
+    ClientData		*outDataPtr;	/* Unused. */
 {
     register Fs_Stream	*streamPtr = (Fs_Stream *)hdrPtr;
     ReturnStatus status;
@@ -900,6 +929,49 @@ Fsio_StreamReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 
 	reopenParamsPtr = (StreamReopenParams *)inData;
 	fileIDPtr = &reopenParamsPtr->ioFileID;
+
+	/* If this is a fast restart, we can look at recov box contents. */
+	if (recov_Transparent && fsrecov_AlreadyInit) {
+	    Fs_FileID       	streamID;
+	    Fsrecov_HandleState	recovInfo;
+
+	    streamID = reopenParamsPtr->streamID;
+	    printf("Reopen, looking for stream %d.%d.%d.%d\n", streamID.type,
+		    streamID.serverID, streamID.major, streamID.minor);
+	    /* Get info from recov box. */
+	    status = Fsrecov_GetHandle(streamID, clientID, &recovInfo, TRUE);
+	    if (status != SUCCESS) {
+		panic("Fsio_StreamReopen: couldn't get recov info for handle.");
+	    }
+	    /* Test it for sameness. */
+	    if ((recovInfo.fileID.major != streamID.major) ||
+		    (recovInfo.fileID.minor != streamID.minor)) {
+		panic("Fsio_StreamReopen: major or minor numbers disagree.");
+	    }
+	    if ((recovInfo.otherID.major != fileIDPtr->major) ||
+		    (recovInfo.otherID.minor != fileIDPtr->minor)) {
+		panic(
+		"Fsio_StreamReopen: ioHandle major or minor numbers disagree.");
+	    }
+	    if (((unsigned int) recovInfo.info & FS_RMT_SHARED) !=
+		    (reopenParamsPtr->useFlags & FS_RMT_SHARED)) {
+		panic("Fsio_StreamReopen: flags disagree.");
+	    }
+	    /*
+	     * Offsets don't seem to matter on pdev control streams.
+	     * I assume they only matter if the stream is shared, but
+	     * how do I detect that here? XXX
+	     */
+	    if (recovInfo.otherID.type != FSIO_CONTROL_STREAM &&
+		    recovInfo.clientData != reopenParamsPtr->offset) {
+		panic("Fsio_StreamReopen: offsets disagree.");
+	    }
+	    if (fsrecov_FromBox) {
+		/* Just use stream info that was recovered from recov box. */
+		return SUCCESS;
+	    }
+	}
+
 	ioHandlePtr = (*fsio_StreamOpTable[fileIDPtr->type].clientVerify)
 			(fileIDPtr, clientID, (int *)NIL);
 	if (ioHandlePtr != (Fs_HandleHeader *)NIL) {
@@ -957,6 +1029,16 @@ Fsio_StreamReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 		 */
 		if (patchOffset) {
 		    streamPtr->offset = reopenParamsPtr->offset;
+		}
+		if (recov_Transparent && status == SUCCESS &&
+			!fsrecov_AlreadyInit) {
+		    status = Fsrecov_AddHandle((Fs_HandleHeader *) streamPtr,
+			    (Fs_FileID *) &(ioHandlePtr->fileID), clientID,
+			    streamPtr->flags, streamPtr->offset, TRUE);
+		    if (status != SUCCESS) {
+			/* We'll have to do better than this! */
+			panic("Fsio_StreamReopen: couldn't add stream to box.");
+		    }
 		}
 		Fsutil_HandleRelease(streamPtr, TRUE);
 	    }

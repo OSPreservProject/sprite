@@ -29,6 +29,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <fsioPipe.h>
 
 #include <stdio.h>
+#include <recov.h>
 
 /*
  * Monitor to synchronize access to the openInstance in GetFileID.
@@ -930,6 +931,11 @@ Fsio_PipeMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
      */
     Fsio_StreamMigClient(migInfoPtr, dstClientID, (Fs_HandleHeader *)handlePtr,
 		    &closeSrcClient);
+/* XXX The above is a reference to the remote guy we've got a handle for,
+ * since we're the server and have the ioHandle with the buffer.  I guess this
+ * means that closeSrcClient must be false?  Or maybe both things happen and
+ * this is used for unmigrating too?
+ */
     PIPE_MIG_2(migInfoPtr, closeSrcClient, handlePtr);
 
     /*
@@ -941,9 +947,11 @@ Fsio_PipeMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
     /*
      * Move the client at the I/O handle level.
      */
+/* XXX Do I need to do something here? */
     Fsio_MigrateClient(&handlePtr->clientList, migInfoPtr->srcClientID,
 			dstClientID, migInfoPtr->flags, closeSrcClient);
 
+/* XXX So now put newish handle in recov table? */
     *sizePtr = 0;
     *dataPtr = (Address)NIL;
     *flagsPtr = migInfoPtr->flags;
@@ -1029,6 +1037,19 @@ Fsio_PipeReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
     Fsio_PipeReopenParams		*reopenParamsPtr;
 
     reopenParamsPtr = (Fsio_PipeReopenParams *)inData;
+    *outSizePtr = 0;
+    *outDataPtr = (ClientData)NIL;
+
+    /*
+     * Old clients may still do reopens of pipes with no references (at least,
+     * they do this with devices with no references), so protect ourselves
+     * here on the server.  But since we don't recover pipes except after
+     * network partitions, this may not be necessary.
+     */
+    if (reopenParamsPtr->use.ref == 0) {
+	return SUCCESS;
+    }
+
     handlePtr = Fsutil_HandleFetchType(Fsio_PipeIOHandle, &reopenParamsPtr->fileID);
     if (handlePtr == (Fsio_PipeIOHandle *)NIL) {
 	status = FAILURE;
@@ -1042,8 +1063,6 @@ Fsio_PipeReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	Fsutil_HandleRelease(handlePtr, TRUE);
 	status = SUCCESS;
     }
-    *outSizePtr = 0;
-    *outDataPtr = (ClientData)NIL;
     return(status);
 }
 
@@ -1146,4 +1165,48 @@ Fsio_PipeRecovTestUseCount(handlePtr)
     Fsio_PipeIOHandle *handlePtr;
 {
     return handlePtr->use.ref;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsio_PipeSetupHandle --
+ *
+ *	Given a pipe recovery object, setup the necessary handle state for it.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	A handle is created in put in the handle table.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fsio_PipeSetupHandle(recovInfoPtr)
+    Fsrecov_HandleState	*recovInfoPtr;
+{
+    Fs_FileID		fileID;
+    int			clientID;
+    Fsio_PipeIOHandle	*handlePtr;
+
+    if (!recov_Transparent) {
+	panic("Fsio_PipeSetupHandle: shouldn't have been called.");
+    }
+    fileID = recovInfoPtr->fileID;
+    clientID = fileID.serverID;
+    fileID.serverID = rpc_SpriteID;
+
+    handlePtr = Fsutil_HandleFetchType(Fsio_PipeIOHandle, &fileID);
+    if (handlePtr == (Fsio_PipeIOHandle *) NIL) {
+	return FAILURE;
+    }
+    (void)Fsconsist_IOClientReopen(&handlePtr->clientList, clientID,
+	    &recovInfoPtr->use);
+    handlePtr->use.ref += recovInfoPtr->use.ref;
+    handlePtr->use.write += recovInfoPtr->use.write;
+    Fsutil_HandleRelease(handlePtr, TRUE);
+
+    return SUCCESS;
 }

@@ -40,6 +40,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <recov.h>
 
 #include <stdio.h>
+#include <fsrecov.h>
 void IncVersionNumber _ARGS_((Fsio_FileIOHandle	*handlePtr));
 
 /*
@@ -223,8 +224,8 @@ Fsio_FileNameOpen(handlePtr, openArgsPtr, openResultsPtr)
      register Fsio_FileIOHandle *handlePtr;	/* A handle from FslclLookup.
 					 * Should be LOCKED upon entry,
 					 * Returned UNLOCKED. */
-      Fs_OpenArgs		*openArgsPtr;	/* Standard open arguments */
-     Fs_OpenResults	*openResultsPtr;/* For returning ioFileID, streamID,
+    Fs_OpenArgs		*openArgsPtr;	/* Standard open arguments */
+    Fs_OpenResults	*openResultsPtr;/* For returning ioFileID, streamID,
 					 * and Fsio_FileState */
 {
     Fsio_FileState *fileStatePtr;
@@ -323,6 +324,35 @@ Fsio_FileNameOpen(handlePtr, openArgsPtr, openResultsPtr)
 	    streamPtr = Fsio_StreamCreate(rpc_SpriteID, clientID,
 		(Fs_HandleHeader *)handlePtr, useFlags, handlePtr->hdr.name);
 	    openResultsPtr->streamID = streamPtr->hdr.fileID;
+
+	    /*
+	     * Handles should be put into recovery box if 1) we're the server
+	     * for the object, and 2) either it's a remote request or we're
+	     * sharing the object with a client.  XXX Right now I don't have
+	     * the sharing stuff in here!!! XXX
+	     */
+	    if (recov_Transparent && clientID != rpc_SpriteID) {
+		/* Add file handle to recov box. */
+		status = Fsrecov_AddHandle((Fs_HandleHeader *) handlePtr,
+			(Fs_FileID *) NIL, clientID,
+			useFlags, fileStatePtr->cacheable, TRUE);
+		/* We'll have to do better than this! */
+		if (status != SUCCESS) {
+		    panic(
+		    "Fsio_FileNameOpen: couldn't add handle to recov box.");
+		}
+		/*
+		 * Now add mapping between stream and ioHandle.  We'll need to
+		 * handle error cases better!!
+		 */
+		status = Fsrecov_AddHandle((Fs_HandleHeader *) streamPtr,
+			(Fs_FileID *) &((Fs_HandleHeader *) handlePtr)->fileID,
+			clientID, streamPtr->flags, streamPtr->offset, TRUE);
+		if (status != SUCCESS) {
+		    panic(
+		    "Fsio_FileNameOpen: couldn't add stream to recov box.");
+		}
+	    }
 	    Fsutil_HandleRelease(streamPtr, TRUE);
 	    return(SUCCESS);
 	} else {
@@ -389,6 +419,7 @@ Fsio_FileReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
     Fsio_FileIOHandle	    	*handlePtr;	/* Local handle for file */
     register ReturnStatus	status = SUCCESS; /* General return code */
     Fsdm_Domain			*domainPtr;
+    Fsrecov_HandleState		recovInfo;
 
     *outDataPtr = (ClientData) NIL;
     *outSizePtr = 0;
@@ -399,6 +430,75 @@ Fsio_FileReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
      * NAME note: we have no name for the file after a re-open.
      */
     reopenParamsPtr = (Fsio_FileReopenParams *) inData;
+
+    /*
+     * If this is a fast restart, but we're still doing recovery
+     * (fsrecov_FromBox is FALSE), we can look at recov box contents and
+     * check them against what the client says is true.
+     */
+    if (recov_Transparent && fsrecov_AlreadyInit) {
+        Fs_FileID       fid;
+
+	/*
+	 * The object won't be in the box if it has a 0 ref count and no
+	 * dirty blocks.  It is
+	 * a bug currently that clients can send reopen requests for files
+	 * that aren't open (0 ref count), but for which they have cached
+	 * blocks.  We'll fix this soon, I hope.
+	 */
+	if (reopenParamsPtr->use.ref <= 0 &&
+		!(reopenParamsPtr->flags & FSIO_HAVE_BLOCKS)) {
+	    goto FixClientBug;
+	}
+        fid = reopenParamsPtr->fileID;
+        /* Get info from recov box. */
+        status = Fsrecov_GetHandle(fid, clientID, &recovInfo, TRUE);
+        if (status != SUCCESS) {
+            panic("Fsio_FileReopen: couldn't get recov info for handle.");
+        }
+        /* Test it for sameness. */
+        if ((recovInfo.fileID.major != reopenParamsPtr->fileID.major) ||
+                (recovInfo.fileID.minor != reopenParamsPtr->fileID.minor)) {
+            panic("Fsio_FileReopen: major or minor numbers disagree.");
+        }
+        if (recovInfo.use.ref != reopenParamsPtr->use.ref) {
+            panic("Fsio_FileReopen: refs disagree.");
+        }
+        if (recovInfo.use.write != reopenParamsPtr->use.write) {
+            panic("Fsio_FileReopen: write refs disagree.");
+        }
+        if (recovInfo.use.exec != reopenParamsPtr->use.exec) {
+            panic("Fsio_FileReopen: exec refs disagree.");
+        }
+        if (recovInfo.info != reopenParamsPtr->version) {
+            panic("Fsio_FileReopen: versions disagree.");
+        }
+	/*
+	 * If we're doing recovery from the box, then return what we
+	 * recovered from the box to the client that still is doing reopens.
+	 */
+	if (fsrecov_FromBox) {
+	    handlePtr = (Fsio_FileIOHandle *) Fsutil_HandleFetch(&fid);
+	    fileStatePtr = mnew(Fsio_FileState);
+	    fileStatePtr->cacheable = reopenParamsPtr->flags & FSIO_HAVE_BLOCKS;
+	    fileStatePtr->version = recovInfo.info;
+	    fileStatePtr->attr = handlePtr->cacheInfo.attr;
+	    fileStatePtr->newUseFlags = 0;	/* Not used in re-open */
+	    *outDataPtr = (ClientData) fileStatePtr;
+	    *outSizePtr = sizeof(Fsio_FileState);
+	    Fsutil_HandleRelease(handlePtr, TRUE);
+
+	    return SUCCESS;
+	}
+    }
+
+/*
+ * If a client reopens a file with a 0 ref count, we make the reopen jump
+ * here regardless of whether we're recovering from the recovery box
+ * or not.  The problem is that if the ref count is 0, we won't find the
+ * object in the box!  We'll fix the client side soon to prevent this.
+ */
+FixClientBug:
     domainPtr = Fsdm_DomainFetch(reopenParamsPtr->fileID.major, FALSE);
     if (domainPtr == (Fsdm_Domain *)NIL) {
 	return(FS_DOMAIN_UNAVAILABLE);
@@ -466,6 +566,30 @@ Fsio_FileReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	fileStatePtr->newUseFlags = 0;		/* Not used in re-open */
 	*outDataPtr = (ClientData) fileStatePtr;
 	*outSizePtr = sizeof(Fsio_FileState);
+
+        if (recov_Transparent && !fsrecov_AlreadyInit &&
+		(reopenParamsPtr->use.ref > 0 ||
+		(reopenParamsPtr->flags & FSIO_HAVE_BLOCKS))) {
+            int         useFlags = 0;
+            Fs_FileID   fid;
+
+            fid = reopenParamsPtr->fileID;
+            if (handlePtr->use.write) {
+                useFlags |= FS_WRITE;
+            }
+            if (handlePtr->use.exec) {
+                useFlags |= FS_EXECUTE;
+            }
+            /* Add file handle to recov box. */
+            status = Fsrecov_AddHandle((Fs_HandleHeader *) handlePtr,
+		    (Fs_FileID *) NIL, clientID, useFlags,
+		    fileStatePtr->cacheable, (reopenParamsPtr->use.ref > 0));
+            /* We'll have to do better than this! */
+            if (status != SUCCESS) {
+                panic("Fsio_FileReopen: couldn't add handle to recov box.");
+            }
+	    /* Stream is added in stream reopen procedure. */
+        }
     }
     Fsutil_HandleRelease(handlePtr, FALSE);
 reopenReturn:
@@ -606,11 +730,34 @@ Fsio_FileClose(streamPtr, clientID, procID, flags, dataSize, closeData)
 				     (flags & FS_EXECUTE) != 0,
 				     clientID, TRUE);
     if (status == FS_FILE_REMOVED) {
-	if (clientID == rpc_SpriteID) {
+	/* XXX What is this about? XXX */
+	if (recov_Transparent && clientID != rpc_SpriteID) {
 	    status = SUCCESS;
+            if (Fsrecov_DeleteHandle((Fs_HandleHeader *) handlePtr, clientID,
+                    flags) != SUCCESS) {
+                /* We'll have to do better than this! */
+                panic("Fsio_FileClose: couldn't remove handle from recov box.");
+            }
+            if (Fsrecov_DeleteHandle((Fs_HandleHeader *) streamPtr, clientID,
+                    streamPtr->flags) != SUCCESS) {
+                /* We'll have to do better than this! */
+                panic("Fsio_FileClose: couldn't remove stream from recov box.");
+            }
 	}
     } else {
 	status = SUCCESS;
+	if (recov_Transparent && clientID != rpc_SpriteID) {
+	    if (Fsrecov_DeleteHandle((Fs_HandleHeader *) handlePtr, clientID,
+		    flags) != SUCCESS) {
+		/* We'll have to do better than this! */
+		panic("Fsio_FileClose: couldn't remove handle from recov box.");
+	    }
+	    if (Fsrecov_DeleteHandle((Fs_HandleHeader *) streamPtr, clientID,
+		    streamPtr->flags) != SUCCESS) {
+		/* We'll have to do better than this! */
+		panic("Fsio_FileClose: couldn't remove stream from recov box.");
+	    }
+        }
 	Fsutil_HandleRelease(handlePtr, TRUE);
     }
 
@@ -738,12 +885,36 @@ Fsio_FileClientKill(hdrPtr, clientID)
     Fsio_FileIOHandle *handlePtr = (Fsio_FileIOHandle *)hdrPtr;
     int refs, writes, execs;
     register ReturnStatus status;
+    int	flags = FS_READ;
 
     Fsconsist_IOClientKill(&handlePtr->consist.clientList, clientID,
 		    &refs, &writes, &execs);
     Fsio_LockClientKill(&handlePtr->lock, clientID);
 
     status = Fsio_FileCloseInt(handlePtr, refs, writes, execs, clientID, FALSE);
+    while (refs > 0) {
+        if (writes > 0) {
+            flags |= FS_WRITE;
+        }
+        if (execs > 0) {
+            flags |= FS_EXECUTE;
+        }
+	if (recov_Transparent && clientID != rpc_SpriteID) {
+	    if (Fsrecov_DeleteHandle((Fs_HandleHeader *) handlePtr, clientID,
+		    flags) != SUCCESS) {
+		/* We'll have to do better than this! */
+		panic("Fsio_FileClientKill: couldn't remove handle from recov box.");
+	    }
+        }
+        refs--;
+        if (writes > 0) {
+            writes--;
+        }
+        if (execs > 0) {
+            execs--;
+        }
+        flags = FS_READ;
+    }
     if (status != FS_FILE_REMOVED) {
 	Fsutil_HandleUnlock(handlePtr);
     }
@@ -983,6 +1154,26 @@ Fsio_FileMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
 		migInfoPtr->srcClientID,
 		dstClientID, migInfoPtr->flags, closeSrcClient,
 		&fileStatePtr->cacheable, &fileStatePtr->openTimeStamp);
+	/* Remove srcClient from recov box if it was its last handle ref. */
+	if (recov_Transparent && closeSrcClient &&
+		migInfoPtr->srcClientID != rpc_SpriteID) {
+	    if (Fsrecov_DeleteHandle((Fs_HandleHeader *) handlePtr,
+		    migInfoPtr->srcClientID, migInfoPtr->flags) != SUCCESS) {
+		/* Do better than this. */
+		panic("Fsio_FileMigrate: couldn't delete ioHandle from box.");
+	    }
+	}
+	/* Add the dstClient to box if this is a new stream for it. */
+	if (recov_Transparent && (migInfoPtr->flags & FS_NEW_STREAM) &&
+		dstClientID != rpc_SpriteID) {
+	    if (Fsrecov_AddHandle((Fs_HandleHeader *) handlePtr,
+		    (Fs_FileID *) NIL, dstClientID,
+		    migInfoPtr->flags & ~FS_NEW_STREAM,
+		    fileStatePtr->cacheable, TRUE) != SUCCESS) {
+		/* Do better. */
+		panic("Fsio_FileMigrate: couldn't add ioHandle to box.");
+	    }
+	}
 	if (status == SUCCESS) {
 	    Fscache_GetCachedAttr(&handlePtr->cacheInfo, &fileStatePtr->version,
 				&fileStatePtr->attr);
@@ -1588,4 +1779,103 @@ Fsio_FileRecovTestNumDirtyCacheBlocks(handlePtr)
     Fsio_FileIOHandle	*handlePtr;
 {
     return handlePtr->cacheInfo.numDirtyBlocks;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsio_FileSetupHandle --
+ *
+ *	Given a file recovery object, setup the necessary handle state for it.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	A handle is created in put in the handle table.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fsio_FileSetupHandle(recovInfoPtr)
+    Fsrecov_HandleState	*recovInfoPtr;
+{
+    Fsdm_Domain		*domainPtr;
+    Fsio_FileIOHandle	*handlePtr;
+    int			clientID;
+    ReturnStatus	status;
+    int			ref, write, exec;
+    int			useFlags;
+    Fs_FileID		fid;
+
+    if (!recov_Transparent) {
+	panic("Fsio_FileSetupHandle shouldn't have been called.");
+    }
+
+    fid = recovInfoPtr->fileID;
+    clientID = fid.serverID;
+    fid.serverID = rpc_SpriteID;
+    domainPtr = Fsdm_DomainFetch(fid.major, FALSE);
+    if (domainPtr == (Fsdm_Domain *) NIL) {
+#ifdef NOTDEF
+	return FS_DOMAIN_UNAVAILABLE;
+#endif NOTDEF
+	panic("Fsio_FileSetupHandle: domain unavailable.");
+    }
+    status = Fsio_LocalFileHandleInit(&fid, (char *) NIL,
+	    (Fsdm_FileDescriptor *) NIL, FALSE, &handlePtr);
+    if (status != SUCCESS) {
+	Fsdm_DomainRelease(fid.major);
+	printf ("Status: 0x%x\n", status);
+	panic("Fsio_FileSetupHandle: handle init failed.");
+    }
+    /* Cache consistency checks should be unnecessary. */
+
+    /*
+     * If necessary, I could use cacheable and use.write to say the
+     * thing MAY have dirty blocks and do a consistency call back just in
+     * case.  To see if this is necessary, I need to see if write-back will
+     * go ahead when processes are kicked on the client, or whether I need
+     * to get the blocks via a consistency call.  Test this!!! XXX
+     */
+
+    ref = recovInfoPtr->use.ref;
+    write = recovInfoPtr->use.write;
+    exec = recovInfoPtr->use.exec;
+    if (ref > 0) {
+	while (ref > 0) {
+	    useFlags = 0;
+	    if (write > 0) {
+		useFlags |= FS_WRITE;
+	    }
+	    if (exec > 0) {
+		useFlags |= FS_EXECUTE;
+	    }
+	    /* Client data is whether it's cacheable or not. */
+	    Fsconsist_UpdateFileConsistencyList(handlePtr, clientID, useFlags,
+		    recovInfoPtr->clientData);
+	    ref--;
+	    write--;
+	    exec--;
+	}
+    } else {
+	/* Add to client list with 0 references. */
+	Fsconsist_IOClientAdd(&(handlePtr->consist.clientList), clientID,
+		recovInfoPtr->clientData);
+    }
+    handlePtr->use.ref += recovInfoPtr->use.ref;
+    handlePtr->use.write += recovInfoPtr->use.write;
+    handlePtr->use.exec += recovInfoPtr->use.exec;
+    if (handlePtr->descPtr->version != recovInfoPtr->info) {
+	panic("Fsio_FileSetupHandle: version on file is wrong.\n");
+    }
+    /*
+     * Successful re-open here on the server. Copy cached attributes
+     * into the returned file state.
+     */
+    Fsutil_HandleRelease(handlePtr, TRUE);
+    Fsdm_DomainRelease(fid.major);
+
+    return SUCCESS;
 }

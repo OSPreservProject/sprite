@@ -408,15 +408,6 @@ typedef struct Fsio_RecovTestInfo {
 extern	Fsio_RecovTestInfo	fsio_StreamRecovTestFuncs[];
 
 /*
- * Recovery testing operations.
- */
-extern	int	Fsio_FileRecovTestUseCount();
-extern	int	Fsio_FileRecovTestNumCacheBlocks();
-extern	int	Fsio_FileRecovTestNumDirtyCacheBlocks();
-extern	int	Fsio_DeviceRecovTestUseCount();
-extern	int	Fsio_PipeRecovTestUseCount();
-
-/*
  * Initialization
  */
 extern void Fsio_InstallStreamOps _ARGS_((int streamType,

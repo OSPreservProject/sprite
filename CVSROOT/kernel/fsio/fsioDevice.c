@@ -49,6 +49,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <devTypes.h>
 
 #include <stdio.h>
+#include <fsrecov.h>
+#include <recov.h>
 
 /*
  * INET is defined so a file server can be used to open the
@@ -316,6 +318,27 @@ Fsio_DeviceIoOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtr
 	    devHandlePtr->use.write++;
 	}
 	*ioHandlePtrPtr = (Fs_HandleHeader *)devHandlePtr;
+	/*
+	 * Add the handles to the recovery box only if it's a remote request.
+	 */
+	if (recov_Transparent && clientID != rpc_SpriteID) {
+	    status = Fsrecov_AddHandle((Fs_HandleHeader *) devHandlePtr,
+		    (Fs_FileID *) NIL, clientID, flags, FALSE, TRUE);
+	    /* We'll have to do better than this! */
+	    if (status != SUCCESS) {
+		panic("Fsio_DeviceIoOpen: couldn't add handle to recov box.");
+	    }
+	    /*
+	     * Now add mapping between stream and ioHandle.  We'll need to
+	     * handle error cases better!!
+	     */
+	    status = Fsrecov_AddHandle((Fs_HandleHeader *) streamPtr,
+		    (Fs_FileID *) &((Fs_HandleHeader *) devHandlePtr)->fileID,
+		    clientID, streamPtr->flags, streamPtr->offset, TRUE);
+	    if (status != SUCCESS) {
+		panic("Fsio_DeviceIoOpen: couldn't add stream to recov box.");
+	    }
+	}
 	Fsutil_HandleUnlock(devHandlePtr);
     } else {
 	Fsutil_HandleRelease(devHandlePtr, TRUE);
@@ -374,6 +397,21 @@ Fsio_DeviceClose(streamPtr, clientID, procID, flags, size, data)
     Fsio_LockClose(&devHandlePtr->lock, &streamPtr->hdr.fileID);
 
     status = FsioDeviceCloseInt(devHandlePtr, flags, 1, (flags & FS_WRITE) != 0);
+    if (recov_Transparent && status == SUCCESS &&
+	    clientID != rpc_SpriteID) {
+	if (Fsrecov_DeleteHandle((Fs_HandleHeader *) devHandlePtr, clientID,
+		flags) != SUCCESS) {
+	    /* We'll have to do better than this! */
+	    panic(
+	    "Fsio_DeviceClose: couldn't remove handle from recov box.");
+	}
+	if (Fsrecov_DeleteHandle((Fs_HandleHeader *) streamPtr, clientID,
+		streamPtr->flags) != SUCCESS) {
+	    /* We'll have to do better than this! */
+	    panic(
+	    "Fsio_DeviceClose: couldn't remove stream from recov box.");
+	}
+    }
     /*
      * We don't bother to remove the handle here if the device isn't
      * being used.  Instead we let the handle get scavenged.
@@ -413,56 +451,178 @@ Fsio_DeviceReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
     register		devIndex;
     register Fsio_DeviceReopenParams *paramPtr =
 	    (Fsio_DeviceReopenParams *)inData;
+    Fsrecov_HandleState	recovInfo;
+    Boolean	found;
 
     *outDataPtr = (ClientData) NIL;
     *outSizePtr = 0;
 
-    (void) FsioDeviceHandleInit(&paramPtr->fileID, (char *)NIL, &devHandlePtr); 
+    /*
+     * Old clients still do reopens of devices with no references, so
+     * protect ourselves on the server.
+     */
+    if (paramPtr->use.ref == 0) {
+	return SUCCESS;
+    }
+    found = FsioDeviceHandleInit(&paramPtr->fileID, (char *)NIL, &devHandlePtr); 
 
     devIndex = DEV_TYPE_INDEX(devHandlePtr->device.type);
     if (devIndex >= devNumDevices) {
 	status = FS_DEVICE_OP_INVALID;
+        Fsutil_HandleRelease(devHandlePtr, TRUE);
+        return(status);
+    }
+
+    /* If this is a fast restart, we can look at recov box contents. */
+    if (recov_Transparent && fsrecov_AlreadyInit) {
+        Fs_FileID       fid;
+
+        printf("Device Reopen, looking for file %d.%d.%d.%d\n",
+                fid.type, fid.serverID, fid.major, fid.minor);
+        fid = paramPtr->fileID;
+	if (!found) {
+	    panic(
+		"Fsio_DeviceReopen: handle %d.%d.%d.%d  wasn't initialized.\n",
+		    fid.type, fid.serverID, fid.major, fid.minor);
+	}
+        /* Get info from recov box. */
+        status = Fsrecov_GetHandle(fid, clientID, &recovInfo, TRUE);
+        if (status != SUCCESS) {
+            panic("Fsio_DeviceReopen: couldn't get recov info for handle.");
+        }
+        /* Test it for sameness. */
+        if ((recovInfo.fileID.major != paramPtr->fileID.major) ||
+                (recovInfo.fileID.minor != paramPtr->fileID.minor)) {
+            panic("Fsio_DeviceReopen: major or minor numbers disagree.");
+        }
+        if (recovInfo.use.ref != paramPtr->use.ref) {
+            panic("Fsio_DeviceReopen: refs disagree.");
+        }
+        if (recovInfo.use.write != paramPtr->use.write) {
+            panic("Fsio_DeviceReopen: write refs disagree.");
+        }
+        if (recovInfo.use.exec != paramPtr->use.exec) {
+            panic("Fsio_DeviceReopen: exec refs disagree.");
+        }
+	/*
+	 * Use what we got from the recovery box to return to the client.
+	 */
+	if (fsrecov_FromBox) {
+	    return SUCCESS;		/* No outData for device reopen. */
+	}
+    }
+
+    /*
+     * Compute the difference between the client's and our version
+     * of the client's use state, and then call the device driver
+     * with that information.  We may have missed opens (across a
+     * reboot) or closes (during transient communication failures)
+     * so the net difference may be positive or negative.
+     */
+    Fsconsist_IOClientStatus(&devHandlePtr->clientList, clientID, &paramPtr->use);
+    if (paramPtr->use.ref == 0) {
+	status = SUCCESS;	/* No change visible to driver */
+    } else if (paramPtr->use.ref > 0) {
+	/*
+	 * Reestablish open connections.
+	 */
+	status = (*devFsOpTable[devIndex].reopen)(&devHandlePtr->device,
+				paramPtr->use.ref, paramPtr->use.write,
+				(Fs_NotifyToken)devHandlePtr,
+				&devHandlePtr->flags);
+	if (status == SUCCESS) {
+            Fsio_UseCounts      use;
+
+            use.ref = paramPtr->use.ref;
+            use.write = paramPtr->use.write;
+            use.exec = 0;
+
+	    (void)Fsconsist_IOClientReopen(&devHandlePtr->clientList, clientID,
+				     &paramPtr->use);
+	    devHandlePtr->use.ref += paramPtr->use.ref;
+	    devHandlePtr->use.write += paramPtr->use.write;
+            if (recov_Transparent && !fsrecov_AlreadyInit) {
+                int         useFlags = FS_READ;
+                Fs_FileID   fid;
+
+                fid = paramPtr->fileID;
+                printf("Reopen Device, installing file %d.%d.%d.%d refs: %d\n",
+                        fid.type, fid.serverID, fid.major, fid.minor, use.ref);
+
+                /*
+                 * May have to call this more than once if paramPtr->use
+                 * has a ref count of more than 1.
+                 */
+                while (use.ref > 0) {
+                    if (paramPtr->use.write) {
+                        useFlags |= FS_WRITE;
+                    }
+                    /* Add file handle to recov box. */
+                    status = Fsrecov_AddHandle((Fs_HandleHeader *) devHandlePtr,
+			    (Fs_FileID *) NIL, clientID, useFlags, FALSE, TRUE);
+                    useFlags = FS_READ;
+                    /* We'll have to do better than this! */
+                    if (status != SUCCESS) {
+                        panic("Fsio_DeviceReopen: couldn't add recov handle.");
+                    }
+                    use.ref--;
+                    if (use.write > 0) {
+                        use.write--;
+                    }
+                }
+		/* Stream is added in stream reopen procedure. */
+            }
+            /*
+             * XXX Else, should I check ref counts to make sure nothing lost?
+             * Not for now, since if it's a fast restart, we check for
+             * differing ref counts above and panic.
+             */
+        }
     } else {
 	/*
-	 * Compute the difference between the client's and our version
-	 * of the client's use state, and then call the device driver
-	 * with that information.  We may have missed opens (across a
-	 * reboot) or closes (during transient communication failures)
-	 * so the net difference may be positive or negative.
+	 * Clean up closed connections.  Note, we assume that
+	 * the client was reading, even though it may have had
+	 * a write-only stream.  This could break syslog, which
+	 * is a single-reader/multiple-writer stream.  "ref" should
+	 * be changed to "read".
 	 */
-	Fsconsist_IOClientStatus(&devHandlePtr->clientList, clientID, &paramPtr->use);
-	if (paramPtr->use.ref == 0) {
-	    status = SUCCESS;	/* No change visible to driver */
-	} else if (paramPtr->use.ref > 0) {
-	    /*
-	     * Reestablish open connections.
-	     */
-	    status = (*devFsOpTable[devIndex].reopen)(&devHandlePtr->device,
-				    paramPtr->use.ref, paramPtr->use.write,
-				    (Fs_NotifyToken)devHandlePtr,
-				    &devHandlePtr->flags);
-	    if (status == SUCCESS) {
-		(void)Fsconsist_IOClientReopen(&devHandlePtr->clientList, clientID,
-					 &paramPtr->use);
-		devHandlePtr->use.ref += paramPtr->use.ref;
-		devHandlePtr->use.write += paramPtr->use.write;
+	int useFlags = FS_READ;
+        Fsio_UseCounts  use;
+        Fs_FileID   fid;
+
+        fid = paramPtr->fileID;
+        use.ref = paramPtr->use.ref;
+        use.write = paramPtr->use.write;
+        use.exec = 0;
+
+	if (paramPtr->use.write > 0) {
+	    useFlags |= FS_WRITE;
+	}
+	status = FsioDeviceCloseInt(devHandlePtr, useFlags, paramPtr->use.ref,
+						paramPtr->use.write);
+	if (recov_Transparent) {
+	    printf("Reopen Deleteing Device: %d.%d.%d.%d, refs: %d\n",
+		    fid.type, fid.serverID, fid.major, fid.minor, use.ref);
+
+	    useFlags = FS_READ;
+	    while (use.ref > 0) {
+		if (use.write > 0) {
+		    useFlags |= FS_WRITE;
+		}
+		if (Fsrecov_DeleteHandle((Fs_HandleHeader *) devHandlePtr,
+			clientID, useFlags) != SUCCESS) {
+		    /* We'll have to do better than this! */
+		panic("Fsio_DeviceReopen: couldn't remove handle from box.");
+		}
+		use.ref--;
+		if (use.write > 0) {
+		    use.write--;
+		}
+		useFlags = FS_READ;
 	    }
-	} else {
-	    /*
-	     * Clean up closed connections.  Note, we assume that
-	     * the client was reading, even though it may have had
-	     * a write-only stream.  This could break syslog, which
-	     * is a single-reader/multiple-writer stream.  "ref" should
-	     * be changed to "read".
-	     */
-	    int useFlags = FS_READ;
-	    if (paramPtr->use.write > 0) {
-		useFlags |= FS_WRITE;
-	    }
-	    status = FsioDeviceCloseInt(devHandlePtr, useFlags, paramPtr->use.ref,
-						    paramPtr->use.write);
-	 }
+	}
     }
+
     Fsutil_HandleRelease(devHandlePtr, TRUE);
     return(status);
 }
@@ -471,18 +631,17 @@ Fsio_DeviceReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 /*
  * ----------------------------------------------------------------------------
  *
- * Fsio_DeviceCloseInt --
+ * FsioDeviceCloseInt --
  *
- *	Called when a client is assumed down.  This cleans up the
- *	references due to the client.
+ *	Called internally to Fsio_DeviceClose to close a device.  Also
+ *	called from other places as needed.
  *	
  *
  * Results:
  *	SUCCESS.
  *
  * Side effects:
- *	Removes the client list entry for the client and adjusts the
- *	use counts on the file.  This unlocks the handle.
+ *	Adjusts the use counts on the file.  This unlocks the handle.
  *
  * ----------------------------------------------------------------------------
  *
@@ -539,6 +698,7 @@ Fsio_DeviceClientKill(hdrPtr, clientID)
 {
     register Fsio_DeviceIOHandle *devHandlePtr = (Fsio_DeviceIOHandle *)hdrPtr;
     int refs, writes, execs;
+    int	flags = FS_READ;	/* Might be wrong for syslog. */
 
     /*
      * Remove the client from the list of users, and see what it was doing.
@@ -553,8 +713,32 @@ Fsio_DeviceClientKill(hdrPtr, clientID)
 	if (writes > 0) {
 	    useFlags |= FS_WRITE;
 	}
+	if (fsrecov_DebugLevel >= 2) {
+	    printf("Fsio_DeviceClientKill: deleting refs %d for %d.%d.%d.%d\n",
+		    refs, hdrPtr->fileID.type, hdrPtr->fileID.serverID,
+		    hdrPtr->fileID.major, hdrPtr->fileID.minor);
+	}
 	(void)FsioDeviceCloseInt(devHandlePtr, useFlags, refs, writes);
     }
+    while (refs > 0) {
+        if (writes > 0) {
+            flags |= FS_WRITE;
+        }
+	if (recov_Transparent && clientID != rpc_SpriteID) {
+	    if (Fsrecov_DeleteHandle((Fs_HandleHeader *) devHandlePtr, clientID,
+		    flags) != SUCCESS) {
+		/* We'll have to do better than this! */
+		panic(
+		"Fsio_DeviceClientKill: couldn't remove handle from box.");
+	    }
+        }
+        refs--;
+        if (writes > 0) {
+            writes--;
+        }
+        flags = FS_READ;
+    }
+
     Fsutil_HandleUnlock(devHandlePtr);
 }
 
@@ -734,6 +918,24 @@ Fsio_DeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPt
      */
     Fsio_MigrateClient(&devHandlePtr->clientList, migInfoPtr->srcClientID,
 			dstClientID, migInfoPtr->flags, closeSrcClient);
+    if (recov_Transparent && closeSrcClient &&
+	    migInfoPtr->srcClientID != rpc_SpriteID) {
+	if (Fsrecov_DeleteHandle((Fs_HandleHeader *) devHandlePtr,
+		migInfoPtr->srcClientID, migInfoPtr->flags) != SUCCESS) {
+	    /* Do better than this. */
+	    panic("Fsio_DeviceMigrate: couldn't delete ioHandle from box.");
+	}
+    }
+    if (recov_Transparent && (migInfoPtr->flags & FS_NEW_STREAM) &&
+	    dstClientID != rpc_SpriteID) {
+	if (Fsrecov_AddHandle((Fs_HandleHeader *) devHandlePtr,
+	    (Fs_FileID *) NIL, dstClientID,
+		migInfoPtr->flags & ~FS_NEW_STREAM, FALSE, TRUE) != SUCCESS) {
+	    /* Do better. */
+	    panic("Fsio_DeviceMigrate: couldn't add ioHandle to box.");
+	}
+
+    }
 
     *sizePtr = 0;
     *dataPtr = (Address)NIL;
@@ -1424,3 +1626,67 @@ Fsio_DeviceMmap(streamPtr, startAddr, length, offset, newAddrPtr)
     return status;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsio_DeviceSetupHandle --
+ *
+ *	Given a device recovery object, setup the necessary handle state for it.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	A handle is created in put in the handle table.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fsio_DeviceSetupHandle(recovInfoPtr)
+    Fsrecov_HandleState	*recovInfoPtr;
+{
+    Fs_FileID		fileID;
+    int			clientID;
+    Fsio_DeviceIOHandle	*devHandlePtr;
+    int			flags;
+    ReturnStatus	status;
+    int			devIndex;
+    Fsio_UseCounts	use;
+
+    if (!recov_Transparent) {
+	panic("Fsio_DeviceSetupHandle shouldn't have been called.");
+    }
+
+    fileID = recovInfoPtr->fileID;
+    clientID = fileID.serverID;
+    fileID.serverID = rpc_SpriteID;
+    (void) FsioDeviceHandleInit(&fileID, (char *) NIL, &devHandlePtr);
+
+    devIndex = DEV_TYPE_INDEX(devHandlePtr->device.type);
+    if (devIndex >= devNumDevices) {
+	Fsutil_HandleRelease(devHandlePtr, TRUE);
+	return FS_DEVICE_OP_INVALID;
+    }
+
+    status = (*devFsOpTable[devIndex].reopen)(&devHandlePtr->device,
+	    recovInfoPtr->use.ref, recovInfoPtr->use.write,
+	    (Fs_NotifyToken) devHandlePtr, &flags);
+    if (status != SUCCESS) {
+	Fsutil_HandleRelease(devHandlePtr, TRUE);
+	return FAILURE;
+    }
+
+    use.ref = recovInfoPtr->use.ref;
+    use.write = recovInfoPtr->use.write;
+    use.exec = 0;
+
+    (void)Fsconsist_IOClientReopen(&devHandlePtr->clientList, clientID,
+	     &recovInfoPtr->use);
+    devHandlePtr->use.ref += recovInfoPtr->use.ref;
+    devHandlePtr->use.write += recovInfoPtr->use.write;
+
+    Fsutil_HandleRelease(devHandlePtr, TRUE);
+
+    return SUCCESS;
+}

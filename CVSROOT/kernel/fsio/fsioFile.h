@@ -200,4 +200,17 @@ extern ReturnStatus Fsio_DeviceNameOpen _ARGS_((Fsio_FileIOHandle *handlePtr,
 extern ReturnStatus Fsio_FileTrunc _ARGS_((Fsio_FileIOHandle *handlePtr, 
 			int size, int flags));
 
+/*
+ * Recovery testing operations.
+ */
+extern int Fsio_FileRecovTestUseCount _ARGS_((Fsio_FileIOHandle *handlePtr));
+extern int Fsio_FileRecovTestNumCacheBlocks _ARGS_((Fsio_FileIOHandle *handlePtr));
+extern int Fsio_FileRecovTestNumDirtyCacheBlocks _ARGS_((Fsio_FileIOHandle *handlePtr));
+
+/*
+ * Fast recov stuff.
+ */
+#include <fsrecovTypes.h>
+extern ReturnStatus Fsio_FileSetupHandle _ARGS_((Fsrecov_HandleState *recovInfoPtr));
+
 #endif /* _FSFILE */

@@ -20,6 +20,7 @@
 #define _FSIOPIPE
 
 #include <fsio.h>
+#include <fsrecov.h>
 /*
  * The I/O descriptor for a local anonymous pipe: FSIO_LCL_PIPE_STREAM.
  */
@@ -50,6 +51,17 @@ typedef struct Fsio_PipeReopenParams {
     Fs_FileID	fileID;		/* File ID of pipe to reopen. MUST BE FIRST */
     Fsio_UseCounts use;		/* Recovery use counts */
 } Fsio_PipeReopenParams;
+
+/*
+ * Recovery testing operations.
+ */
+extern int Fsio_PipeRecovTestUseCount _ARGS_((Fsio_PipeIOHandle *handlePtr));
+
+/*
+ * Fast recov stuff.
+ */
+extern ReturnStatus Fsio_PipeSetupHandle _ARGS_((Fsrecov_HandleState *recovInfoPtr));
+
 
 /*
  * Stream operations.
