@@ -410,11 +410,13 @@ Fsio_RpcStreamMigClose(srvToken, clientID, command, storagePtr)
 
     paramPtr = (FsStreamReleaseParam *) storagePtr->requestParamPtr;
 
-    streamPtr = Fsio_StreamClientVerify(&paramPtr->streamID, rpc_SpriteID);
+    streamPtr = Fsio_StreamClientVerify(&paramPtr->streamID,
+				(Fs_HandleHeader *)NIL, rpc_SpriteID);
     if (streamPtr == (Fs_Stream *) NIL) {
 	printf("Fsio_RpcStreamMigClose, unknown stream <%d>, client %d\n",
 	    paramPtr->streamID.major, clientID);
-	return(FS_STALE_HANDLE);
+	return( (paramPtr->streamID.minor < 0) ? GEN_INVALID_ARG
+					       : FS_STALE_HANDLE);
     }
     replyPtr = mnew(FsStreamReleaseReply);
     storagePtr->replyParamPtr = (Address)replyPtr;
@@ -591,9 +593,11 @@ Fsio_StreamCopy(oldStreamPtr, newStreamPtrPtr)
  */
 
 Fs_Stream *
-Fsio_StreamClientVerify(streamIDPtr, clientID)
-    Fs_FileID	*streamIDPtr;	/* Client's stream ID */
-    int		clientID;	/* Host ID of the client */
+Fsio_StreamClientVerify(streamIDPtr, ioHandlePtr, clientID)
+    Fs_FileID	*streamIDPtr;		/* Client's stream ID */
+    Fs_HandleHeader *ioHandlePtr;	/* I/O handle the client thinks
+					 * is attached to the stream */
+    int		clientID;		/* Host ID of the client */
 {
     register FsStreamClientInfo *clientPtr;
     register Fs_Stream *streamPtr;
@@ -608,11 +612,28 @@ Fsio_StreamClientVerify(streamIDPtr, clientID)
 	    }
 	}
 	if (!found) {
-	    register Fs_HandleHeader *tHdrPtr = streamPtr->ioHandlePtr;
-	    printf("Fsio_StreamClientVerify, unknown client %d for stream <%d>\n",
-		clientID, tHdrPtr->fileID.minor);
+	    printf("Fsio_StreamClientVerify, unknown client %d for stream <%d> \"%s\"\n",
+		clientID, streamPtr->hdr.fileID.minor,
+		Fsutil_HandleName((Fs_HandleHeader *)streamPtr));
 	    Fsutil_HandleRelease(streamPtr, TRUE);
 	    streamPtr = (Fs_Stream *)NIL;
+	}
+	if (ioHandlePtr != (Fs_HandleHeader *)NIL &&
+	    streamPtr->ioHandlePtr != ioHandlePtr) {
+	    printf("Fsio_StreamClientVerify ioHandle mismatch client ID %d:\n",
+			clientID);
+	    printf("\tStream <%d> my handle %s \"%s\" <%d,%d>\n",
+		    streamIDPtr->minor,
+		    Fsutil_FileTypeToString(streamPtr->ioHandlePtr->fileID.type),
+		    Fsutil_HandleName(streamPtr->ioHandlePtr),
+		    streamPtr->ioHandlePtr->fileID.major,
+		    streamPtr->ioHandlePtr->fileID.minor);
+	    printf("\tClient %d handle %s \"%s\" <%d,%d>\n",
+		    clientID, Fsutil_HandleName(ioHandlePtr),
+		    Fsutil_FileTypeToString(ioHandlePtr->fileID.type),
+		    ioHandlePtr->fileID.major, ioHandlePtr->fileID.minor);
+	   Fsutil_HandleRelease(streamPtr, TRUE);
+	   streamPtr = (Fs_Stream *)NIL;
 	}
     } else {
 	printf("No stream <%d> for client %d\n", streamIDPtr->minor, clientID);
