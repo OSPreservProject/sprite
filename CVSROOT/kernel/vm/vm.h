@@ -549,7 +549,7 @@ extern void VmMach_SharedProcFinish _ARGS_((Proc_ControlBlock *procPtr));
 extern void VmMach_CopySharedMem _ARGS_((Proc_ControlBlock *parentProcPtr,
         Proc_ControlBlock *childProcPtr));
 extern ReturnStatus VmMach_SharedStartAddr _ARGS_((Proc_ControlBlock *procPtr,
-        int size, Address *reqAddr));
+        int size, Address *reqAddr, int fixed));
 
 
 #endif /* _VM */
