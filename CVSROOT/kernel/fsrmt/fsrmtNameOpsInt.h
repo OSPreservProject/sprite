@@ -1,5 +1,5 @@
 /*
- * fsNameOpsInt.h --
+ * fsrmtNameOpsInt.h --
  *
  *	Internal definitions for pathname related operations that go
  *	with the other definitions in fsNameOps.h.  This file is
@@ -17,10 +17,10 @@
 #ifndef _FSNAMEOPSINT
 #define _FSNAMEOPSINT
 
-#include "fsNameOps.h"
-#include "fsioFile.h"
-#include "fsioDevice.h"
-#include "fspdev.h"
+#include <fsNameOps.h>
+#include <fsioFile.h>
+#include <fsioDevice.h>
+#include <fspdev.h>
 
 /*
  * The stream data is a reference to the following union.  The union is used
