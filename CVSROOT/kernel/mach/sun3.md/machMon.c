@@ -20,7 +20,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "mach.h"
 #include "sys.h"
 
-#ifdef SUN2
+#ifdef sun2
 static	int	(*savedNmiVec)() = (int (*)()) 0;
 #endif
 extern	int	MachMonNmiNop();
@@ -178,12 +178,12 @@ void
 Mach_MonStartNmi()
 {
     if (stoppedNMI) {
-#ifdef SUN2
+#ifdef sun2
 	if (savedNmiVec != 0) {
 	    machVectorTablePtr->autoVec[6] = savedNmiVec;
 	}
 #endif
-#ifdef SUN3
+#ifdef sun3
 	*Mach_InterruptReg |= MACH_ENABLE_LEVEL7_INTR;
 #endif
 	stoppedNMI = FALSE;
@@ -226,12 +226,12 @@ Mach_MonStopNmi()
      */
     if (!main_AllowNMI) {
 	stoppedNMI = TRUE;
-#ifdef SUN2
+#ifdef sun2
 	savedNmiVec = machVectorTablePtr->autoVec[6];
 	machVectorTablePtr->autoVec[6] = MachMonNmiNop;
-#endif SUN2
-#ifdef SUN3
+#endif
+#ifdef sun3
 	*Mach_InterruptReg &= ~MACH_ENABLE_LEVEL7_INTR;
-#endif SUN3
+#endif
     }
 }

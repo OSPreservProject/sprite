@@ -75,7 +75,7 @@ typedef struct Mach_SetJumpState {
 /*
  * Delay for N microseconds.
  */
-#ifdef SUN3
+#ifdef sun3
 #define	MACH_DELAY(n)	{ register int N = (n)<<1; N--; while (N > 0) {N--;} }
 #else
 #define	MACH_DELAY(n)	{ register int N = (n)>>1; N--; while (N > 0) {N--;} }
@@ -128,7 +128,7 @@ typedef	struct {
  * 33 to 48.
  */
 
-#ifdef SUN3
+#ifdef sun3
 /*
  * Address and bus error info that is stored on the stack for a  68020 short
  * bus or address fault.
@@ -219,7 +219,7 @@ typedef struct {
 /*
  * Bus error register 
  */
-#ifdef SUN3
+#ifdef sun3
 typedef struct {
     unsigned	int	fill:24,	/* Filler to make it a long. */
 			pageInvalid: 1,	/* The page accessed did not have the

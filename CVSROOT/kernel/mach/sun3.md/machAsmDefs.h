@@ -130,7 +130,7 @@
  *----------------------------------------------------------------------
  */
 
-#ifdef SUN3
+#ifdef sun3
 #define BUS_ERROR_MOVS movsb
 #else 
 #define BUS_ERROR_MOVS movsw

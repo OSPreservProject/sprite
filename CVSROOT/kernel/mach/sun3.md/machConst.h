@@ -164,7 +164,7 @@
  *			a context switch.  Used to verify that the stack 
  *			doesn't get trashed.
  */
-#ifdef SUN3
+#ifdef sun3
 #define	MACH_KERN_START		0xf000000
 #define	MACH_CODE_START		0xf004000
 #define	MACH_STACK_BOTTOM	0xf000000
@@ -201,7 +201,7 @@
 
 #define	MACH_MAX_NUM_PROCESSORS		1
 
-#ifdef SUN3
+#ifdef sun3
 /*
  * Constants to access bits in the interrupt register.
  */
@@ -215,7 +215,7 @@
  */
 #define MACH_ENABLE_FPP			0x40
 
-#endif SUN3
+#endif /* sun3 */
 
 /*
  * The number of general purpose registers (d0-d7 and a0-a7)
