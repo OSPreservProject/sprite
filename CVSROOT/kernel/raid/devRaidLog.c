@@ -26,6 +26,15 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devRaidLog.h"
 #include "bitvec.h"
 
+/*
+static int
+fsync(fd)
+    int fd;
+{
+    return 0;
+}
+*/
+
 
 /*
  *----------------------------------------------------------------------
@@ -44,7 +53,7 @@ InitRaidLog(raidPtr)
 {
     char fileName[80];
 
-    raidPtr->log.enabled = 1;
+    raidPtr->log.enabled = 0;
     raidPtr->log.busy = 0;
 #ifdef TESTING
     Sync_CondInit(&raidPtr->log.notBusy);
@@ -144,6 +153,7 @@ ApplyRaidLog(raidPtr, fileName)
     char       **ctrlData = &statusBuf;
 
     if ((fp = fopen(fileName, "r")) == NULL) {
+	free(lockedVec);
 	return FAILURE;
     }
     while (fgets(buf, 120, fp) != NULL) {
@@ -151,6 +161,7 @@ ApplyRaidLog(raidPtr, fileName)
 	case 'D':
 	    if (sscanf(buf, "%*c %d %d %d  %d %d  %d %d\n",&row, &col, &version,
 		    &type, &unit, &state, &numValidSector) != 7) {
+		free(lockedVec);
 		return FAILURE;    
 	    }
 	    diskPtr = raidPtr->disk[col][row];
@@ -162,6 +173,7 @@ ApplyRaidLog(raidPtr, fileName)
 	    break;
 	case 'F':
 	    if (sscanf(buf, "%*c %d %d %d\n", &row, &col, &version) != 3) {
+		free(lockedVec);
 		return FAILURE;    
 	    }
 	    FailRaidDisk(raidPtr, col, row, version);
@@ -169,18 +181,21 @@ ApplyRaidLog(raidPtr, fileName)
 	case 'R':
 	    if (sscanf(buf, "%*c %d %d %d  %d %d\n", &row, &col, &version,
 		    &type, &unit) != 5) {
+		free(lockedVec);
 		return FAILURE;    
 	    }
 	    ReplaceRaidDisk(raidPtr, col, row, version, type, unit, 0);
 	    break;
 	case 'L':
 	    if (sscanf(buf, "%*c %d\n", &stripeID) != 1) {
+		free(lockedVec);
 		return FAILURE;    
 	    }
 	    SetBit(lockedVec, stripeID);
 	    break;
 	case 'U':
 	    if (sscanf(buf, "%*c %d\n", &stripeID) != 1) {
+		free(lockedVec);
 		return FAILURE;    
 	    }
 	    ClrBit(lockedVec, stripeID);
@@ -252,6 +267,41 @@ initDoneProc(controlBlockPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * SyncFile --
+ *	
+ *	Fsync file.
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+SyncFile(fileName)
+    char	*fileName;
+{
+    Fs_Stream	*streamPtr;
+
+    if ((streamPtr = (Fs_Stream *) open(fileName, O_RDONLY, 0666)) == 
+	    (Fs_Stream *)-1) {
+	return FAILURE;
+    }
+    while(fsync(streamPtr) != 0) {
+	Time time;
+	perror("Error writing log");
+	time.seconds = 10;
+	time.microseconds = 0;
+	Sync_WaitTime(time);
+    }
+    close(streamPtr);
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * SaveRaidState --
  *	
  *	Perform a consistent checkpoint of the raid state.
@@ -273,6 +323,10 @@ SaveRaidState(raidPtr)
     Fs_Stream *streamPtr;
     int col, row;
 
+    /*
+     * Clear cache of locked stripes.
+     */
+    ClearBitVec(raidPtr->lockedVec, raidPtr->numStripe);
     /*
      * Save configuration.
      */
@@ -308,11 +362,21 @@ SaveRaidState(raidPtr)
 		return FAILURE;
 	    }
 	}
-	fprintf(fp, "\n");
+	if (fprintf(fp, "\n") == -1) {
+	    fclose(fp);
+	    return FAILURE;
+	}
     }
     if (fclose(fp) == EOF) {
 	return FAILURE;
     }
+    if (SyncFile(fileName) == FAILURE) {
+	return FAILURE;
+    }
+
+    /*
+     * Rename file.
+     */
     sprintf(fileName2, "%s%d%s", RAID_ROOT_CONFIG_FILE_NAME,
 	    raidPtr->devicePtr->unit, ".state");
     if (rename(fileName, fileName2) == -1) {
@@ -342,6 +406,13 @@ SaveRaidState(raidPtr)
     if (fclose(fp) == EOF) {
 	return FAILURE;
     }
+    if (SyncFile(fileName) == FAILURE) {
+	return FAILURE;
+    }
+
+    /*
+     * Open new log and rename to current log.
+     */
     if ((streamPtr = (Fs_Stream *) open(fileName, O_WRONLY | O_APPEND, 0666))== 
 	    (Fs_Stream *)-1) {
 	return FAILURE;
@@ -384,6 +455,7 @@ RestoreRaidState(raidPtr)
     char fileName[80];
     ReturnStatus status;
 
+    DisableLog(raidPtr);
     sprintf(fileName, "%s%d%s", RAID_ROOT_CONFIG_FILE_NAME,
 	    raidPtr->devicePtr->unit, ".state");
     if (RaidConfigure(raidPtr, fileName) == SUCCESS) {
@@ -403,10 +475,15 @@ RestoreRaidState(raidPtr)
 	/*
 	 * Save new state.
 	 */
+/* LOGOFF
         if (SaveRaidState(raidPtr) == FAILURE) {
             printf("RAID:MSG:Could not checkpoint state.\n");
         }
+*/
 #endif
+/* LOGOFF
+	EnableLog(raidPtr);
+*/
 	return SUCCESS;
     }
     printf("RAID:MSG:Invalid state, reading configuration.\n");
@@ -424,6 +501,9 @@ RestoreRaidState(raidPtr)
     if (raidPtr->parityConfig != 'S') {
 	LockRaid(raidPtr);
     }
+/* LOGOFF
+    EnableLog(raidPtr);
+*/
     return SUCCESS;
 }
 
@@ -468,6 +548,13 @@ MasterFlushLog(raidPtr)
 	}
 	MASTER_UNLOCK(&raidPtr->log.mutex);
 	while (write(raidPtr->log.streamPtr, buf, size) == -1) {
+	    Time time;
+	    perror("Error writing log");
+	    time.seconds = 10;
+	    time.microseconds = 0;
+	    Sync_WaitTime(time);
+	}
+	while(fsync(raidPtr->log.streamPtr) != 0) {
 	    Time time;
 	    perror("Error writing log");
 	    time.seconds = 10;
@@ -549,6 +636,7 @@ RaidDeallocate(raidPtr)
     int		 col, row;
 
     if (raidPtr->state == RAID_VALID) {
+	free((char *) raidPtr->lockedVec);
 	for ( col = 0; col < raidPtr->numCol; col++ ) {
 	    for ( row = 0; row < raidPtr->numRow; row++ ) {
 		if (raidPtr->disk[col][row] != NULL) {
@@ -601,6 +689,7 @@ RaidConfigure(raidPtr, fileName)
     RaidDeallocate(raidPtr);
 
     raidPtr->numReqInSys = 0;
+    raidPtr->numStripeLocked = 0;
 #ifdef TESTING
     Sync_CondInit(&raidPtr->waitExclusive);
     Sync_CondInit(&raidPtr->waitNonExclusive);
@@ -703,5 +792,6 @@ RaidConfigure(raidPtr, fileName)
 	}
     }
     raidPtr->state = RAID_VALID;
+    raidPtr->lockedVec = MakeBitVec(raidPtr->numStripe);
     return SUCCESS;
 }
