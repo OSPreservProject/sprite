@@ -784,15 +784,6 @@ Proc_StringNCopy(numBytes, srcStr, destStr, strLengthPtr)
     register int length;
     ReturnStatus status;
 
-#if PARANOIA
-    if (procStringChecks && !IsUserAddr(srcStr)) {
-	panic("Proc_StringNCopy: copying from kernel\n");
-    }
-    if (procStringChecks && IsUserAddr(destStr)) {
-	panic("Proc_StringNCopy: copying to user\n");
-    }
-#endif
-
     if (!Proc_UseRpcBuffer()) {
 	status =  Vm_StringNCopy(numBytes, srcStr, destStr,
 				 strLengthPtr);
@@ -804,6 +795,24 @@ Proc_StringNCopy(numBytes, srcStr, destStr, strLengthPtr)
 	*strLengthPtr = length;
 	status = SUCCESS;
     }
+
+#if PARANOIA
+    /* 
+     * If the copy succeeded, check whether it should have.  This test used 
+     * to come first, but then it would cause panics if someone passed in a 
+     * null pointer.
+     */
+    if (procStringChecks && status == SUCCESS) {
+	if (!Proc_UseRpcBuffer() && !IsUserAddr(srcStr)) {
+	    panic("Proc_StringNCopy: copying from kernel address 0x%x\n",
+		  srcStr);
+	}
+	if (IsUserAddr(destStr)) {
+	    panic("Proc_StringNCopy: copying to user address 0x%x\n",
+		  destStr);
+	}
+    }
+#endif
 
     return status;
 }
