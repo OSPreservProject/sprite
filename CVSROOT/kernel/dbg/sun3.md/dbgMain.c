@@ -748,7 +748,7 @@ Dbg_Main(stackHole, dbgStack)
          */
         if (mach_NumDisableIntrsPtr[0] == 0 && !mach_AtInterruptLevel) {
             Mach_EnableIntr();
-            Sys_SyncDisks(MACH_CALL_DBG_TRAP);
+            Sys_SyncDisks(!MACH_BRKPT_TRAP);
             dbg_SyncedDisks = TRUE;
             Mach_DisableIntr();
         }
