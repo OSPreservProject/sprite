@@ -98,6 +98,7 @@ FsDeviceHandleInit(fileIDPtr, name, newHandlePtrPtr)
 		    (FsHandleHeader **)newHandlePtrPtr);
     if (!found) {
 	devHandlePtr = *newHandlePtrPtr;
+	List_Init(&devHandlePtr->clientList);
 	devHandlePtr->use.ref = 0;
 	devHandlePtr->use.write = 0;
 	devHandlePtr->use.exec = 0;
@@ -105,15 +106,13 @@ FsDeviceHandleInit(fileIDPtr, name, newHandlePtrPtr)
 	devHandlePtr->device.type = fileIDPtr->major;
 	devHandlePtr->device.unit = fileIDPtr->minor;
 	devHandlePtr->device.data = (ClientData)NIL;
-	List_Init(&devHandlePtr->clientList);
 	FsLockInit(&devHandlePtr->lock);
 	devHandlePtr->modifyTime = 0;
 	devHandlePtr->accessTime = 0;
 	List_Init(&devHandlePtr->readWaitList);
 	List_Init(&devHandlePtr->writeWaitList);
 	List_Init(&devHandlePtr->exceptWaitList);
-	devHandlePtr->readNotifyScheduled = FALSE;
-	devHandlePtr->writeNotifyScheduled = FALSE;
+	devHandlePtr->notifyFlags = 0;
 	fsStats.object.devices++;
     }
     return(found);
@@ -1582,13 +1581,13 @@ Fs_NotifyReader(data)
     register	FsDeviceIOHandle *devHandlePtr = (FsDeviceIOHandle *)data;
 
     if ((devHandlePtr == (FsDeviceIOHandle *)NIL) ||
-	(devHandlePtr->readNotifyScheduled)) {
+	(devHandlePtr->notifyFlags & FS_READABLE)) {
 	return;
     }
     if (devHandlePtr->hdr.fileID.type != FS_LCL_DEVICE_STREAM) {
-	panic( "Fs_NotifyReader, bad data\n");
+	printf("Fs_NotifyReader, bad handle\n");
     }
-    devHandlePtr->readNotifyScheduled = TRUE;
+    devHandlePtr->notifyFlags |= FS_READABLE;
     Proc_CallFunc(ReadNotify, (ClientData) devHandlePtr, 0);
 }
 
@@ -1599,9 +1598,9 @@ ReadNotify(data, callInfoPtr)
 {
     register FsDeviceIOHandle *devHandlePtr = (FsDeviceIOHandle *)data;
     if (devHandlePtr->hdr.fileID.type != FS_LCL_DEVICE_STREAM) {
-	printf( "ReadNotify, lost device handle\n");
+	printf("ReadNotify, lost device handle\n");
     } else {
-	devHandlePtr->readNotifyScheduled = FALSE;
+	devHandlePtr->notifyFlags &= ~FS_READABLE;
 	FsWaitListNotify(&devHandlePtr->readWaitList);
     }
     callInfoPtr->interval = 0;
@@ -1634,13 +1633,14 @@ Fs_NotifyWriter(data)
     register	FsDeviceIOHandle *devHandlePtr = (FsDeviceIOHandle *)data;
 
     if ((devHandlePtr == (FsDeviceIOHandle *)NIL) ||
-	(devHandlePtr->writeNotifyScheduled)) {
+	(devHandlePtr->notifyFlags & FS_WRITABLE)) {
 	return;
     }
     if (devHandlePtr->hdr.fileID.type != FS_LCL_DEVICE_STREAM) {
-	panic( "Fs_NotifyWriter, bad data\n");
+	printf("Fs_NotifyWriter, bad handle\n");
+	return;
     }
-    devHandlePtr->writeNotifyScheduled = TRUE;
+    devHandlePtr->notifyFlags |= FS_WRITABLE;
     Proc_CallFunc(WriteNotify, (ClientData) devHandlePtr, 0);
 }
 
@@ -1653,7 +1653,7 @@ WriteNotify(data, callInfoPtr)
     if (devHandlePtr->hdr.fileID.type != FS_LCL_DEVICE_STREAM) {
 	printf( "WriteNotify, lost device handle\n");
     } else {
-	devHandlePtr->writeNotifyScheduled = FALSE;
+	devHandlePtr->notifyFlags &= ~FS_WRITABLE;
 	FsWaitListNotify(&devHandlePtr->writeWaitList);
     }
     callInfoPtr->interval = 0;
