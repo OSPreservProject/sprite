@@ -1508,6 +1508,14 @@ vmFault_Return:
 	nop
 	add_nt		SPILL_SP, SPILL_SP, $64
 1:
+#ifdef FLUSH_CACHE_ON_RETURN
+        LD_CONSTANT(VOL_TEMP2, VMMACH_CACHE_SIZE); 
+        add_nt          VOL_TEMP1, r0, $0;
+2:      st_external     r0, VOL_TEMP1, $MACH_CO_FLUSH; 
+        add_nt          VOL_TEMP1, VOL_TEMP1, $VMMACH_CACHE_BLOCK_SIZE; 
+        cmp_br_delayed  lt, VOL_TEMP1, VOL_TEMP2, 2b; 
+	nop
+#endif
 	jump		ReturnTrap
 	Nop
 
@@ -2233,14 +2241,13 @@ SpecialUserTraps:
 	 * a fault.
 	 */
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
-	wr_kpsw		VOL_TEMP1, $0
-	ld_32		VOL_TEMP2, CUR_PC_REG, $0
 	/*
 	 * Leave all traps enabled but disable interrupts because are going
 	 * to be mucking register windows in ParseInstruction
 	 */
 	and		VOL_TEMP1, VOL_TEMP1, $~MACH_KPSW_INTR_TRAP_ENA
 	wr_kpsw		VOL_TEMP1, $0
+	ld_32		VOL_TEMP2, CUR_PC_REG, $0
 	
 	rd_special	VOL_TEMP1, pc
 	add_nt		VOL_TEMP1, VOL_TEMP1, $16
@@ -2811,6 +2818,8 @@ SaveState:
 	rd_special	VOL_TEMP3, pc
 	return		VOL_TEMP3, $12
 	Nop
+	and		r2, r5, $~MACH_KPSW_ALL_TRAPS_ENA
+	wr_kpsw		r2, $0
 
 	/*
 	 * Now we are in the previous window.  Save all of its registers
