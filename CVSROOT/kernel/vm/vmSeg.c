@@ -1046,6 +1046,7 @@ EndDelete(segPtr, firstPage, lastPage)
     register	Vm_PTE	*ptePtr;
     Vm_VirtAddr		virtAddr;
     unsigned	int	pfNum;
+    ReturnStatus	status = SUCCESS;
 
     LOCK_MONITOR;
 
@@ -1063,8 +1064,8 @@ EndDelete(segPtr, firstPage, lastPage)
 	 virtAddr.page++, VmIncPTEPtr(ptePtr, 1)) {
 	if (*ptePtr & VM_PHYS_RES_BIT) {
 	    if (VmPagePinned(ptePtr)) {
-		UNLOCK_MONITOR;
-		return(FAILURE);
+		status = FAILURE;
+		goto exit;
 	    }
 	    VmMach_PageInvalidate(&virtAddr, Vm_GetPageFrame(*ptePtr), FALSE);
 	    segPtr->resPages--;
@@ -1075,6 +1076,7 @@ EndDelete(segPtr, firstPage, lastPage)
 	*ptePtr = 0;
     }
 
+exit:
     /*
      * Release exclusive access.
      */
@@ -1083,7 +1085,7 @@ EndDelete(segPtr, firstPage, lastPage)
     Sync_Broadcast(&segPtr->condition);
 
     UNLOCK_MONITOR;
-    return(SUCCESS);
+    return(status);
 }
 
 
