@@ -47,6 +47,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsioDevice.h"
 #include "fsdmInt.h"
 #include "string.h"
+#include "fscache.h"
 
 
 #include "ofs.h"
@@ -1181,7 +1182,9 @@ Fsdm_FileDescWriteBack(handlePtr, doWriteBack)
     Boolean		doWriteBack;	/* Do a cache write back, not only
 					 * a store into the cache block. */
 {
+#ifdef NOTDEF
     Fs_HandleHeader	*hdrPtr = (Fs_HandleHeader *) handlePtr;
+#endif NOTDEF
     register Fsdm_FileDescriptor	*descPtr;
     register Fsdm_Domain		*domainPtr;
     register ReturnStatus     	status = SUCCESS;
