@@ -16,7 +16,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "compatInt.h"
 
 #include "user/sys/types.h"
-#include "user/sys/stat.h"
+#include "stat.h"
 
 
 /*

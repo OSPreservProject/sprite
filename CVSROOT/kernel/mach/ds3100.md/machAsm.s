@@ -1352,6 +1352,15 @@ END(MachFPInterrupt)
     .globl MachSysCall
     .ent MachSysCall, 0
 MachSysCall:
+/*
+ * Check the magic number.
+ */
+    li		k0, MACH_SYSCALL_MAGIC
+    beq		t1, k0, 1f
+    nop
+    j		Mach_UserGenException
+    nop
+1:
     add		t7, gp, zero			# Save the user's gp in t7
     la		gp, _gp				# Switch to the kernel's gp
 /*
@@ -1373,19 +1382,6 @@ MachSysCall:
     add		t3, t3, 4
     j		t3
     rfe
-1:
-/*
- * Check the magic number.
- */
-    li		t2, MACH_SYSCALL_MAGIC
-    beq		t1, t2, 1f
-    nop
-/* 
- * Bad magic number.  Take a full fledged fault.
- */
-    add		gp, t7, zero
-    j		Mach_UserGenException
-    nop
 /* 
  * Now we know that we have a good system call number so go ahead and
  * save state and switch to the kernel's stack.

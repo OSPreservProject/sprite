@@ -82,6 +82,8 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include "user/sys/resource.h"
 #include "user/sys/uio.h"
 #include "signal.h"
+#include "fs.h"
+#include "fsDisk.h"
 
 /*
  * System call entry structure.  Note that this is different than the one
@@ -94,7 +96,7 @@ typedef struct {
     ReturnStatus	(*func)();
 } SyscallInfo;
 
-static Boolean syscallTrace = TRUE;
+static Boolean syscallTrace = FALSE;
 
 /*
  * Zillions of forward declarations.
@@ -1125,6 +1127,20 @@ ReturnStatus MachUNIXLstat(retValPtr, pathName, attsBufPtr)
 	return(status);
     }
     (void)Vm_CopyIn(sizeof(Fs_Attributes), (Address)usp, (Address)&spriteAtts);
+    /*
+     * See if we just got a remote link.  If so turn around and do a normal
+     * stat because in compatibility mode we want to follow remote links.
+     */
+    if (spriteAtts.type == FS_REMOTE_LINK) {
+	status = Fs_GetAttributesStub(pathName, FS_ATTRIB_FILE,
+				      (Fs_Attributes *)usp);
+	if (status != SUCCESS) {
+	    return(status);
+	}
+	(void)Vm_CopyIn(sizeof(Fs_Attributes), (Address)usp, 
+			(Address)&spriteAtts);
+    }
+
     return(CvtSpriteToUnixAtts(&spriteAtts, attsBufPtr));
 }
 
@@ -1569,6 +1585,7 @@ MachUNIXSetTimeOfDay(retValPtr, tp, tzpPtr)
 
 ReturnStatus
 MachUNIXGetDirEntries(retValPtr, fd, buf, nbytes, basep)
+    int *retValPtr;
     int  fd;
     char *buf;
     int nbytes;
@@ -1576,16 +1593,67 @@ MachUNIXGetDirEntries(retValPtr, fd, buf, nbytes, basep)
 {
     ReturnStatus status;	/* result returned by Fs_Read */
     Address	usp;
+    int		bytesAcc;
+    FsDirEntry	*dirPtr;
+    Address	addr;
+    int		i;
 
-    /* 
-     * This routine needs to translate and byte swap things if necessary.
-     */
     usp = (Address)(machCurStatePtr->userState.regState.regs[SP] - 4);
     status = Fs_ReadStub(fd, nbytes, buf, (int *)usp);
     if (status == SUCCESS) {
 	(void)Vm_CopyIn(sizeof(int), usp, (Address)retValPtr);
+	if (*retValPtr == 0) {
+	    return(SUCCESS);
+	}
+    } else {
+	return(status);
     }
-    return(status);
+    /* 
+     * Translate and byte swap things if necessary.
+     */
+    Vm_MakeAccessible(VM_OVERWRITE_ACCESS, *retValPtr, buf, &bytesAcc, &addr);
+    if (bytesAcc != *retValPtr) {
+	panic("User buffer not accessible, but we just wrote to it !!!\n");
+    }
+    dirPtr = (FsDirEntry *)addr;
+    if (dirPtr->nameLength > FS_MAX_NAME_LENGTH) {
+	i = bytesAcc;
+	while (i > 0) {
+	    union {
+		short	s;
+		char    c[2];
+	    } shortIn, shortOut;
+	    union {
+		int	i;
+		char    c[4];
+	    } intIn, intOut;
+
+	    if (dirPtr->nameLength <= FS_MAX_NAME_LENGTH) {
+		printf("MachUNIXGetDirEntries: Bad directory format\n");
+	    }
+	    intIn.i = dirPtr->fileNumber;
+	    intOut.c[0] = intIn.c[3];
+	    intOut.c[1] = intIn.c[2];
+	    intOut.c[2] = intIn.c[1];
+	    intOut.c[3] = intIn.c[0];
+	    dirPtr->fileNumber = intOut.i;
+
+	    shortIn.s = dirPtr->recordLength;
+	    shortOut.c[0] = shortIn.c[1];
+	    shortOut.c[1] = shortIn.c[0];
+	    dirPtr->recordLength = shortOut.s;
+
+	    shortIn.s = dirPtr->nameLength;
+	    shortOut.c[0] = shortIn.c[1];
+	    shortOut.c[1] = shortIn.c[0];
+	    dirPtr->nameLength = shortOut.s;
+
+	    i -= dirPtr->recordLength;
+	    dirPtr = (FsDirEntry *) ((Address)dirPtr + dirPtr->recordLength);
+	}
+    }
+    Vm_MakeUnaccessible(addr, bytesAcc);
+    return(SUCCESS);
 }
 
 #define COPYTIME(TO,FROM) { \

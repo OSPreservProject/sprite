@@ -857,10 +857,12 @@ MachUserExceptionHandler(statusReg, causeReg, badVaddr, pc)
 	case MACH_EXC_BUS_ERR_LD_ST:
 	    panic("MachExceptionHandler: User bus error on ld or st");
 	case MACH_EXC_SYSCALL:
-	    printf("MachExceptionHandler: Bad syscall magic for process %x\n",
+	    if (!MachUNIXSyscall()) {
+		printf("MachExceptionHandler: Bad syscall magic for proc %x\n",
 							procPtr->processID);
-	    (void) Sig_Send(SIG_ILL_INST, SIG_BAD_TRAP,
-			    procPtr->processID, FALSE);
+		(void) Sig_Send(SIG_ILL_INST, SIG_BAD_TRAP,
+				procPtr->processID, FALSE);
+	    }
 	    break;
 	case MACH_EXC_BREAK: {
 	    unsigned inst;

@@ -29,7 +29,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "user/net/route.h"
 #include "user/net/if.h"
 #include "user/sys/time.h"
-#include "devGraphics.h"
 #include "machInt.h"
 #include "mach.h"
 
