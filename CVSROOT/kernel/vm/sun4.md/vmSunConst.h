@@ -66,33 +66,34 @@
 
 #define	VMMACH_ADDR_MASK	0x3FFFFFFF
 
+/*
+ * Check to see if a virtual address falls inside the hole in the middle
+ * of the sun4 address space.
+ */
 #define	VMMACH_ADDR_CHECK(virtAddr)	\
     (	((unsigned int) (virtAddr)) >= VMMACH_BOTTOM_OF_HOLE &&	\
 	((unsigned int) (virtAddr)) <= VMMACH_TOP_OF_HOLE ? FALSE : TRUE)
 
+/*
+ * Check, in assembly, whether a virtual address falls inside the hole in
+ * the middle of the sun4 address space.
+ */
 #define	VMMACH_ADDR_OK_ASM(virtAddr, CheckMore, DoneCheck, answerReg, useReg) \
 	clr	answerReg;				\
 	set	VMMACH_BOTTOM_OF_HOLE, useReg;		\
 	cmp     useReg, virtAddr;			\
-	bleu	KeepCheckingLabel;			\
+	bleu	CheckMore;				\
 	nop;						\
-	ba	DoneCheckingLabel;			\
+	ba	DoneCheck;				\
 	nop;						\
-KeepCheckingLabel:					\
+CheckMore:						\
 	set	VMMACH_TOP_OF_HOLE, useReg;		\
 	cmp	virtAddr, useReg;			\
-	bgu	DoneCheckingLabel;			\
+	bgu	DoneCheck;				\
 	nop;						\
 	set	0x1, answerReg;				\
-DoneCheckingLabel:
+DoneCheck:
 
-
-
-#ifdef NOTDEF
-    if (((unsigned int) virtAddr) > ((unsigned int) mach_LastUserAddr) && ((unsigned int) virtAddr) < ((unsigned int) VMMACH_MAP_SEG_ADDR)) { \
-	panic("Virtual address falls into illegal range!\n");	\
-    }
-#endif /* NOTDEF */
 
 /*
  * Sun memory management unit constants:
@@ -127,16 +128,13 @@ DoneCheckingLabel:
 
 #define VMMACH_KERN_CONTEXT		0
 #define VMMACH_NUM_CONTEXTS		16	/* impl. dependent */
-#ifdef NOTDEF
+
 /*
  * There is a hole in the middle of the address space, so really there's only
  * 2**12 segs per context, but having discontinuous maps is a pain, so we
  * pretend it's all mappable, which means there's 2**14 segs per context.
  */
-#define VMMACH_NUM_SEGS_PER_CONTEXT	4096	/* impl. dependent 2**12 */
-#else
 #define VMMACH_NUM_SEGS_PER_CONTEXT	0x4000	/* 2**14 */
-#endif NOTDEF
 
 #define VMMACH_NUM_PAGES_PER_SEG_INT	32	/* impl. dependent */
 #define VMMACH_NUM_PAGE_MAP_ENTRIES	16384	/* impl. dependent 2**14 */

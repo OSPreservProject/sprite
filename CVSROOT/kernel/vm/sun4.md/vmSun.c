@@ -210,11 +210,7 @@ typedef struct VmMach_Context {
 					   this context. */
 					/* A reflection of the hardware context
 					 * map. */
-#ifdef sun4
     unsigned short 	     map[VMMACH_NUM_SEGS_PER_CONTEXT];
-#else
-    unsigned char 	     map[VMMACH_NUM_SEGS_PER_CONTEXT];
-#endif /* sun4 */
     int			     context;	/* Which context this is. */
     int			     flags;	/* Defined below. */
 } VmMach_Context;
@@ -343,13 +339,8 @@ VmMach_BootInit(pageSizePtr, pageShiftPtr, pageTableIncPtr, kernMemSizePtr,
     /*
      * Do boot time allocation.
      */
-#ifdef sun4
     sysMachPtr = (VmMach_SegData *)Vm_BootAlloc(sizeof(VmMach_SegData) + 
 	    (sizeof (short) * VMMACH_NUM_SEGS_PER_CONTEXT));
-#else
-    sysMachPtr = (VmMach_SegData *)Vm_BootAlloc(sizeof(VmMach_SegData) + 
-					    VMMACH_NUM_SEGS_PER_CONTEXT);
-#endif sun4
     numPages = GetNumPages();
     refModMap = (VmMachPTE *)Vm_BootAlloc(sizeof(VmMachPTE) * numPages);
 
@@ -452,11 +443,7 @@ VmMach_Init(firstFreePage)
     int	firstFreePage;	/* Virtual page that is the first free for the 
 			 * kernel. */
 {
-#ifdef sun4
     register 	unsigned short	*segTablePtr;
-#else
-    register 	unsigned char	*segTablePtr;
-#endif /* sun4 */
     register 	VmMachPTE	pte;
     register	int 		i;
     int 			firstFreeSegment;
@@ -470,21 +457,11 @@ VmMach_Init(firstFreePage)
     vm_SysSegPtr->machPtr = sysMachPtr;
     sysMachPtr->numSegs = VMMACH_NUM_SEGS_PER_CONTEXT;
     sysMachPtr->offset = PageToSeg(vm_SysSegPtr->offset);
-#ifdef sun4
     sysMachPtr->segTablePtr =
 	    (unsigned short *) ((Address)sysMachPtr + sizeof(VmMach_SegData));
-    {
-	int	i;
-	for (i = 0; i < VMMACH_NUM_SEGS_PER_CONTEXT; i++) {
-	    sysMachPtr->segTablePtr[i] = VMMACH_INV_PMEG;
-	}
+    for (i = 0; i < VMMACH_NUM_SEGS_PER_CONTEXT; i++) {
+	sysMachPtr->segTablePtr[i] = VMMACH_INV_PMEG;
     }
-#else
-    sysMachPtr->segTablePtr =
-	    (unsigned char *) ((Address)sysMachPtr + sizeof(VmMach_SegData));
-    ByteFill(VMMACH_INV_PMEG, VMMACH_NUM_SEGS_PER_CONTEXT,
-	      (Address)sysMachPtr->segTablePtr);
-#endif /* sun4 */
 
     /*
      * Determine which hardware segment is the first that is not in use.
@@ -608,11 +585,7 @@ MMUInit(firstFreeSegment)
 {
     register	int		i;
     register	PMEG		*pmegPtr;
-#ifdef sun4
     register	unsigned short	*segTablePtr;
-#else
-    register	unsigned char	*segTablePtr;
-#endif /* sun4 */
     int				pageCluster;
 #if defined(sun3) || defined(sun4)
     int				dontUse;
@@ -662,12 +635,15 @@ MMUInit(firstFreeSegment)
      * Invalidate all hardware segments from segment 1 up to the beginning
      * of the kernel.
      */
-#ifdef sun4
-    for (; i <
-	    ((((unsigned int) mach_KernStart) & VMMACH_ADDR_MASK) >>
+    for (; i < ((((unsigned int) mach_KernStart) & VMMACH_ADDR_MASK) >>
 	    VMMACH_SEG_SHIFT); i++) {
 	int	j;
 
+	/*
+	 * Copy the invalidation to all the other contexts, so that
+	 * the user contexts won't have double-mapped pmegs at the low-address
+	 * segments.
+	 */
 	for (j = 0; j < VMMACH_NUM_CONTEXTS; j++) {
 	    VmMachSetUserContext(j);
 	    VmMachSetSegMap((Address)(i << VMMACH_SEG_SHIFT), VMMACH_INV_PMEG);
@@ -675,11 +651,6 @@ MMUInit(firstFreeSegment)
     }
     VmMachSetUserContext(VMMACH_KERN_CONTEXT);
     i = ((unsigned int) mach_KernStart >> VMMACH_SEG_SHIFT);
-#else
-    for (; i < ((unsigned int)mach_KernStart >> VMMACH_SEG_SHIFT); i++) {
-	VmMachSetSegMap((Address)(i << VMMACH_SEG_SHIFT), VMMACH_INV_PMEG);
-    }
-#endif sun4
 
     /*
      * Reserve all pmegs that have kernel code or heap.
@@ -713,10 +684,6 @@ MMUInit(firstFreeSegment)
      * the monitor.  Don't reserve any PMEGs that don't have any valid 
      * mappings in them.
      */
-#ifdef NOTDEF
-    /* I tried using this for sun4, but it's bad. */
-    for (; i <= (((unsigned int) 0xffffffff) / VMMACH_SEG_SIZE); i++, segTablePtr++) {
-#endif NOTDEF
     for (; i < VMMACH_NUM_SEGS_PER_CONTEXT; i++, segTablePtr++) {
 	Address		virtAddr;
 	int		j;
@@ -747,7 +714,7 @@ MMUInit(firstFreeSegment)
 			inusePMEG = TRUE;
 		    }
 		} else {
-#ifdef sun4
+#ifdef sun4				/* while porting */
 		    VmMachSetPageMap(virtAddr,
 			    (VmMachPTE)VMMACH_DONT_CACHE_BIT);
 #else
@@ -776,7 +743,7 @@ MMUInit(firstFreeSegment)
 	*segTablePtr = pageCluster;
     }
 
-#if defined (sun3) 	/* Will this apply to sun4??? */
+#if defined (sun3)
     /*
      * We can't use the hardware segment that corresponds to the
      * last segment of physical memory for some reason.  Zero it out
@@ -827,6 +794,7 @@ VmMach_SegInit(segPtr)
 {
     register	VmMach_SegData	*segDataPtr;
     int				segTableSize;
+    int		i;
 
     if (segPtr->type == VM_CODE) {
 	segTableSize =
@@ -835,31 +803,16 @@ VmMach_SegInit(segPtr)
     } else {
 	segTableSize = segPtr->ptSize / VMMACH_NUM_PAGES_PER_SEG;
     }
-#ifdef sun4
-    segDataPtr = 
-	(VmMach_SegData *)malloc(sizeof(VmMach_SegData) +
+    segDataPtr = (VmMach_SegData *)malloc(sizeof(VmMach_SegData) +
 	(segTableSize * sizeof (short)));
-#else
-    segDataPtr = 
-	(VmMach_SegData *)malloc(sizeof(VmMach_SegData) + segTableSize);
-#endif sun4
 
     segDataPtr->numSegs = segTableSize;
     segDataPtr->offset = PageToSeg(segPtr->offset);
-#ifdef sun4
     segDataPtr->segTablePtr =
 	    (unsigned short *) ((Address)segDataPtr + sizeof(VmMach_SegData));
-    {
-	int	i;
-	for (i = 0; i < segTableSize; i++) {
-	    segDataPtr->segTablePtr[i] = VMMACH_INV_PMEG;
-	}
+    for (i = 0; i < segTableSize; i++) {
+	segDataPtr->segTablePtr[i] = VMMACH_INV_PMEG;
     }
-#else
-    segDataPtr->segTablePtr =
-	    (unsigned char *) ((Address)segDataPtr + sizeof(VmMach_SegData));
-    ByteFill(VMMACH_INV_PMEG, segTableSize, (Address)segDataPtr->segTablePtr);
-#endif /* sun4 */
     segPtr->machPtr = segDataPtr;
     /*
      * Set the minimum and maximum virtual addresses for this segment to
@@ -868,11 +821,7 @@ VmMach_SegInit(segPtr)
      * each other.
      */
     segPtr->minAddr = (Address)0;
-#ifdef sun4
     segPtr->maxAddr = (Address)0xffffffff;
-#else
-    segPtr->maxAddr = (Address)0x7fffffff;
-#endif /* sun4 */
 }
 
 static void	CopySegData();
@@ -914,14 +863,9 @@ VmMach_SegExpand(segPtr, firstPage, lastPage)
 		sizeof (short)));
     newSegDataPtr->numSegs = newSegTableSize;
     newSegDataPtr->offset = PageToSeg(segPtr->offset);
-#ifdef sun4
     newSegDataPtr->segTablePtr =
 	    (unsigned short *) ((Address)newSegDataPtr +
 		    sizeof(VmMach_SegData));
-#else
-    newSegDataPtr->segTablePtr =
-	    (unsigned char *) ((Address)newSegDataPtr + sizeof(VmMach_SegData));
-#endif /* sun4 */
     CopySegData(segPtr, oldSegDataPtr, newSegDataPtr);
     free((Address)oldSegDataPtr);
 }
@@ -950,6 +894,8 @@ CopySegData(segPtr, oldSegDataPtr, newSegDataPtr)
     register	VmMach_SegData	*oldSegDataPtr;
     register	VmMach_SegData	*newSegDataPtr;
 {
+    int		i, j;
+
     MASTER_LOCK(vmMachMutexPtr);
 
     if (segPtr->type == VM_HEAP) {
@@ -957,55 +903,29 @@ CopySegData(segPtr, oldSegDataPtr, newSegDataPtr)
 	 * Copy over the hardware segment table into the lower part
 	 * and set the rest to invalid.
 	 */
-#ifdef sun4
 	bcopy((Address)oldSegDataPtr->segTablePtr,
 		(Address)newSegDataPtr->segTablePtr,
 		oldSegDataPtr->numSegs * sizeof (short));
-	{
-	    int	i;
-	    int	j;
-	    j = newSegDataPtr->numSegs - oldSegDataPtr->numSegs;
+	j = newSegDataPtr->numSegs - oldSegDataPtr->numSegs;
 
-	    for (i = 0; i < j; i++) {
-		newSegDataPtr->segTablePtr[oldSegDataPtr->numSegs + i]
-			= VMMACH_INV_PMEG;
-	    }
+	for (i = 0; i < j; i++) {
+	    newSegDataPtr->segTablePtr[oldSegDataPtr->numSegs + i]
+		    = VMMACH_INV_PMEG;
 	}
-#else
-	bcopy((Address)oldSegDataPtr->segTablePtr,
-		(Address)newSegDataPtr->segTablePtr, oldSegDataPtr->numSegs);
-	ByteFill(VMMACH_INV_PMEG,
-	  newSegDataPtr->numSegs - oldSegDataPtr->numSegs,
-	  (Address)(newSegDataPtr->segTablePtr + oldSegDataPtr->numSegs));
-#endif /* sun4 */
     } else {
 	/*
 	 * Copy the current segment table into the high part of the
 	 * new segment table and set the lower part to invalid.
 	 */
-#ifdef sun4
 	bcopy((Address)oldSegDataPtr->segTablePtr,
 	    (Address)(newSegDataPtr->segTablePtr + 
 	    newSegDataPtr->numSegs - oldSegDataPtr->numSegs),
 	    oldSegDataPtr->numSegs * sizeof (short));
-	{
-	    int	i;
-	    int	j;
-	    j = newSegDataPtr->numSegs - oldSegDataPtr->numSegs;
+	j = newSegDataPtr->numSegs - oldSegDataPtr->numSegs;
 
-	    for (i = 0; i < j; i++) {
-		newSegDataPtr->segTablePtr[i] = VMMACH_INV_PMEG;
-	    }
+	for (i = 0; i < j; i++) {
+	    newSegDataPtr->segTablePtr[i] = VMMACH_INV_PMEG;
 	}
-#else
-	bcopy((Address)oldSegDataPtr->segTablePtr,
-	    (Address)(newSegDataPtr->segTablePtr + 
-	    newSegDataPtr->numSegs - oldSegDataPtr->numSegs),
-	    oldSegDataPtr->numSegs);
-	ByteFill(VMMACH_INV_PMEG, 
-		newSegDataPtr->numSegs - oldSegDataPtr->numSegs,
-		(Address)newSegDataPtr->segTablePtr);
-#endif /* sun4 */
     }
     segPtr->machPtr = newSegDataPtr;
 
@@ -1068,23 +988,14 @@ SegDelete(segPtr)
     Vm_Segment	*segPtr;    /* Pointer to segment to free. */
 {
     register	int 		i;
-#ifdef sun4
     register	unsigned short 	*pmegPtr;
-#else
-    register	unsigned char 	*pmegPtr;
-#endif
     register	VmMach_SegData	*machPtr;
 
     MASTER_LOCK(vmMachMutexPtr);
 
     machPtr = segPtr->machPtr;
-#ifdef sun4
     for (i = 0, pmegPtr = (unsigned short *) machPtr->segTablePtr;
-#else
-    for (i = 0, pmegPtr = (unsigned int *) machPtr->segTablePtr;
-#endif /* sun4 */
-         i < machPtr->numSegs;
-	 i++, pmegPtr++) {
+	     i < machPtr->numSegs; i++, pmegPtr++) {
 	if (*pmegPtr != VMMACH_INV_PMEG) {
 	    PMEGFree((int) *pmegPtr);
 	}
@@ -1254,17 +1165,7 @@ PMEGGet(softSegPtr, hardSegNum, flags)
     pmegPtr->hardSegNum = hardSegNum;
     pmegPtr->pageCount = 0;
     List_Remove((List_Links *) pmegPtr);
-#ifdef sun4
-    ((List_Links *)pmegPtr)->prevPtr = (List_Links *) NIL;
-    ((List_Links *)pmegPtr)->nextPtr = (List_Links *) NIL;
-#endif sun4
     if (!(flags & PMEG_DONT_ALLOC)) {
-#ifdef sun4
-	if (((List_Links *)pmegPtr)->nextPtr != (List_Links *) NIL ||
-		((List_Links *)pmegPtr)->prevPtr != (List_Links *) NIL) {
-	    panic("PMEGGet: insertion of pmeg without NIL ptrs.\n");
-	}
-#endif sun4
 	List_Insert((List_Links *) pmegPtr, LIST_ATREAR(pmegInuseList));
     }
     pmegPtr->flags = flags;
@@ -1306,34 +1207,25 @@ PMEGFree(pmegNum)
 	VmMachPMEGZero(pmegNum);
     }
     pmegPtr->segPtr = (Vm_Segment *) NIL;
+
     /*
      * I really don't understand the code here.  The original was the second
      * line.  The first line was to try to fix an error that shows up in
      * UnmapIntelPage(), but I've tried now to fix that error there, since the
      * second line breaks things elsewhere.
      */
-#ifndef sun4
+#ifdef NOTDEF
     if (pmegPtr->pageCount == 0 && !(pmegPtr->flags & PMEG_DONT_ALLOC)) {
 #else
     if (pmegPtr->pageCount == 0 || !(pmegPtr->flags & PMEG_DONT_ALLOC)) {
 #endif /* sun4 */
 	List_Remove((List_Links *) pmegPtr);
-#ifdef sun4
-	((List_Links *)pmegPtr)->prevPtr = (List_Links *) NIL;
-	((List_Links *)pmegPtr)->nextPtr = (List_Links *) NIL;
-#endif sun4
     }
     pmegPtr->flags = 0;
     pmegPtr->lockCount = 0;
     /*
      * Put this pmeg at the front of the pmeg free list.
      */
-#ifdef sun4
-    if (((List_Links *)pmegPtr)->nextPtr != (List_Links *)NIL ||
-	    ((List_Links *)pmegPtr)->prevPtr != (List_Links *)NIL) {
-	panic("PMEGGet: insertion of pmeg without NIL ptrs.\n");
-    }
-#endif sun4
     List_Insert((List_Links *) pmegPtr, LIST_ATFRONT(pmegFreeList));
 }
 
@@ -1495,50 +1387,30 @@ SetupContext(procPtr)
 	/*
 	 * Set the context map.
 	 */
-#ifdef sun4
 	{
-	    int	i;
+	    int			i;
 	    unsigned int	j;
+
 	    j = ((unsigned int)mach_KernStart) >> VMMACH_SEG_SHIFT;
 	    for (i = 0; i < j; i++) {
 		contextPtr->map[i] = VMMACH_INV_PMEG;
 	    }
 	}
-#else
-	ByteFill(VMMACH_INV_PMEG,
-		  (int)((unsigned int)mach_KernStart >> VMMACH_SEG_SHIFT),
-		  (Address)contextPtr->map);
-#endif /* sun4 */
 	segDataPtr = vmPtr->segPtrArray[VM_CODE]->machPtr;
-#ifdef sun4
 	bcopy((Address)segDataPtr->segTablePtr, 
 	    (Address) (contextPtr->map + segDataPtr->offset),
 	    segDataPtr->numSegs * sizeof (short));
-#else
-	bcopy((Address)segDataPtr->segTablePtr, 
-	    (Address) (contextPtr->map + segDataPtr->offset),
-	    segDataPtr->numSegs);
-#endif /* sun4 */
+
 	segDataPtr = vmPtr->segPtrArray[VM_HEAP]->machPtr;
-#ifdef sun4
 	bcopy((Address)segDataPtr->segTablePtr, 
 		(Address) (contextPtr->map + segDataPtr->offset),
 		segDataPtr->numSegs * sizeof (short));
-#else
-	bcopy((Address)segDataPtr->segTablePtr, 
-		(Address) (contextPtr->map + segDataPtr->offset),
-		segDataPtr->numSegs);
-#endif /* sun4 */
+
 	segDataPtr = vmPtr->segPtrArray[VM_STACK]->machPtr;
-#ifdef sun4
 	bcopy((Address)segDataPtr->segTablePtr, 
 		(Address) (contextPtr->map + segDataPtr->offset),
 		segDataPtr->numSegs * sizeof (short));
-#else
-	bcopy((Address)segDataPtr->segTablePtr, 
-		(Address) (contextPtr->map + segDataPtr->offset),
-		segDataPtr->numSegs);
-#endif /* sun4 */
+
 	if (vmPtr->machPtr->mapSegPtr != (struct Vm_Segment *)NIL) {
 	    contextPtr->map[MAP_SEG_NUM] = vmPtr->machPtr->mapHardSeg;
 	} else {
@@ -1784,11 +1656,7 @@ static void
 InitNetMem()
 {
     unsigned char		pmeg;
-#ifdef sun4
     register unsigned short	*segTablePtr;
-#else
-    register unsigned char	*segTablePtr;
-#endif /* sun4 */
     int				i;
     int				segNum;
     Address			virtAddr;
@@ -1855,11 +1723,7 @@ VmMach_NetMemAlloc(numBytes)
     }
 
     retAddr = netMemAddr;
-#ifdef sun4				/* is this necessary for sun4? */
-    netMemAddr += (numBytes + 7) & ~7;
-#else
-    netMemAddr += (numBytes + 3) & ~3;
-#endif /* sun4 */
+    netMemAddr += (numBytes + 7) & ~7;	/* is this necessary for sun4? */
     /*
      * Panic if we are out of memory.  We are out of memory if we have filled
      * up a whole PMEG minus one page.  We have to leave one page at the
@@ -2222,11 +2086,7 @@ VmMach_SetSegProt(segPtr, firstPage, lastPage, makeWriteable)
 {
     register	VmMachPTE	pte;
     register	Address		virtAddr;
-#ifdef sun4
     register	unsigned short	*pmegNumPtr;
-#else
-    register	unsigned char	*pmegNumPtr;
-#endif
     register	PMEG		*pmegPtr;
     register	Boolean		skipSeg;
     Boolean			nextSeg = TRUE;
@@ -2658,11 +2518,7 @@ VmMach_PageValidate(virtAddrPtr, pte)
     Vm_PTE			pte;
 {
     register  Vm_Segment	*segPtr;
-#ifdef sun4
     register  unsigned  short	*segTablePtr;
-#else
-    register  unsigned  char	*segTablePtr;
-#endif
     register  PMEG		*pmegPtr;
     register  int		hardSeg;
     register  int		newPMEG;
@@ -2686,11 +2542,7 @@ VmMach_PageValidate(virtAddrPtr, pte)
      * Find out the hardware segment that has to be mapped.
      */
     hardSeg = PageToSeg(virtAddrPtr->page);
-#ifdef sun4
     segTablePtr = (unsigned short *) GetHardSegPtr(segPtr->machPtr, hardSeg);
-#else
-    segTablePtr = (unsigned int *) GetHardSegPtr(segPtr->machPtr, hardSeg);
-#endif /* sun4 */
 
     if (*segTablePtr == VMMACH_INV_PMEG) {
 	/*
@@ -2715,10 +2567,6 @@ VmMach_PageValidate(virtAddrPtr, pte)
 	     */
 	    if (pmegPtr->flags & PMEG_DONT_ALLOC) {
 		List_Remove((List_Links *)pmegPtr);
-#ifdef sun4
-		((List_Links *)pmegPtr)->prevPtr = (List_Links *)NIL;
-		((List_Links *)pmegPtr)->nextPtr = (List_Links *)NIL;
-#endif sun4
 	    } else {
 		List_Move((List_Links *)pmegPtr, LIST_ATREAR(pmegInuseList));
 	    }
@@ -2870,12 +2718,6 @@ PageInvalidate(virtAddrPtr, virtPage, segDeletion)
 	     * it around in case it is needed again.
 	     */
 	    if (pmegPtr->flags & PMEG_DONT_ALLOC) {
-#ifdef sun4
-		if (((List_Links *)pmegPtr)->nextPtr != (List_Links *)NIL ||
-			((List_Links *)pmegPtr)->prevPtr != (List_Links *)NIL) {
-		    panic("PMEGGet: insertion of pmeg without NIL ptrs.\n");
-		}
-#endif sun4
 		List_Insert((List_Links *)pmegPtr, 
 			    LIST_ATREAR(pmegFreeList));
 	    } else {
