@@ -252,7 +252,12 @@ again:
     if (vm_NoStickySegments || *segPtrPtr == (Vm_Segment *) NIL) {
 	/*
 	 * There is no segment associated with this file.  Set the value to
-	 * 0 so that we will know that we are about to set up this association.
+	 * 0 so that we will know that we are about to set up this 
+	 * association.
+	 * XXX - if vm_NoStickySegments is TRUE, then we don't check
+	 * whether there is really a segment associated with the file, 
+	 * so code segments will apparently never be shared.  Is this 
+	 * really what we want?  Can it cause a code segment leak?
 	 */
 	*segPtrPtr = (Vm_Segment *) 0;
 	segPtr = (Vm_Segment *) NIL;
@@ -334,7 +339,14 @@ Vm_InitCode(filePtr, segPtr, execInfoPtr)
     if (segPtr == (Vm_Segment *) NIL) {
 	/*
 	 * The caller doesn't want to set up any association between the file
-	 * and the segment.  In this case cleanup state.
+	 * and the segment.  In this case cleanup state, i.e., notify any 
+	 * other processes that might be waiting for the caller (our 
+	 * process) to finish the association.
+	 * XXX - Notice that this is the only place where there is a 
+	 * wakeup on codeSegCondition.  If the caller completes the 
+	 * association and there are processes waiting, these 
+	 * processes won't get notified until some other process kills 
+	 * a partial association.
 	 */
 	Sync_Broadcast(&codeSegCondition);
     } else {
@@ -366,8 +378,8 @@ Vm_InitCode(filePtr, segPtr, execInfoPtr)
  *
  *	This routine is called by the file system when it detects that a
  *	file has been opened for writing.  If the file corresponds to
- *	an object file that is being used then the corresponding code
- *	segment will be marked as deleted.
+ *	an unused sticky code segment, the segment will be marked as
+ *	deleted.
  *
  * Results:
  *	None.
