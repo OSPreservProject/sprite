@@ -23,6 +23,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "machEeprom.h"
 #include "machInt.h"
 #include "mach.h"
+#include "sys.h"
 
 
 /*
@@ -47,7 +48,7 @@ Mach_EepromPrintConfig()
     struct eed_conf *confPtr;
     int slot;
 
-    confPtr = machEepromPtr->ee_diag.ee_conf[0];
+    confPtr = &machEepromPtr->ee_diag.eed_conf[0];
     for (slot=0 ; slot<MACH_MAX_SLOTS ; slot++, confPtr++) {
 	if (confPtr->eec_un.eec_gen.eec_type == MACH_SLOT_TYPE_NONE) {
 	    continue;
@@ -56,7 +57,7 @@ Mach_EepromPrintConfig()
 	switch (confPtr->eec_un.eec_gen.eec_type) {
 	    case MACH_SLOT_TYPE_CPU:
 		printf(" CPU with %d Meg %s %s cache %d Kbytes\n",
-		    confPtr->eec_un.eec_cpu.eec_cpu_mem_size,
+		    confPtr->eec_un.eec_cpu.eec_cpu_memsize,
 		    confPtr->eec_un.eec_cpu.eec_cpu_dcp ? "DCP" : "",
 		    confPtr->eec_un.eec_cpu.eec_cpu_68881 ? "68881" : "",
 		    confPtr->eec_un.eec_cpu.eec_cpu_cachesize);
@@ -89,7 +90,7 @@ Mach_EepromPrintConfig()
 			MACH_SLOT_TAPE_TYPE_XT) ? "Xylogics 472"
 						  : "TapeMaster",
 		    confPtr->eec_un.eec_tape.eec_tape_ctlr,
-		    confPtr->eec_un.eec_tape.eec_tape_tapes);
+		    confPtr->eec_un.eec_tape.eec_tape_drives);
 		break;
 	    case MACH_SLOT_TYPE_TTY:
 		printf(" TTY");
@@ -158,10 +159,10 @@ Mach_EepromGetConfig(cpuPtr, memSizePtr, colorPtr, fpuPtr)
     int slot;
     unsigned int memSize = 0;
 
-    *fpuPtr->valid = 0;
-    *colorPtr->valid = 0;
+    fpuPtr->valid = 0;
+    colorPtr->valid = 0;
 
-    confPtr = machEepromPtr->ee_diag.ee_conf[0];
+    confPtr = &machEepromPtr->ee_diag.eed_conf[0];
     for (slot=0 ; slot<MACH_MAX_SLOTS ; slot++, confPtr++) {
 	if (confPtr->eec_un.eec_gen.eec_type == MACH_SLOT_TYPE_NONE) {
 	    continue;
@@ -171,10 +172,10 @@ Mach_EepromGetConfig(cpuPtr, memSizePtr, colorPtr, fpuPtr)
 		break;
 	    case MACH_SLOT_TYPE_COLOR:
 		colorPtr->valid = 1;
-		colorPtr->type = confPtr->eec_un.eec_color_type;
+		colorPtr->type = confPtr->eec_un.eec_color.eec_color_type;
 		break;
 	    case MACH_SLOT_TYPE_MEM:
-		memSize += confPtr->eec_un.eec_mem.eec_mem * 1024 * 1024;
+		memSize += confPtr->eec_un.eec_mem.eec_mem_size * 1024 * 1024;
 		break;
 	    case MACH_SLOT_TYPE_FPA:
 		fpuPtr->valid = 1;
@@ -201,14 +202,23 @@ Mach_EepromGetConfig(cpuPtr, memSizePtr, colorPtr, fpuPtr)
  */
 
 Boolean
-Mach_ColorBoardPresent()
+Mach_ColorBoardInfo(colorPtr)
     Mach_ColorConfig *colorPtr;		/* Color frame buffer info */
 {
     unsigned int memSize;
     Mach_CpuConfig cpu;
     Mach_FpuConfig fpu;
-    Mach_ColorConfig color
 
-    Mach_EepromGetConfig(&cpu, &memSize, &color, &fpu);
-    return(color.valid);
+    Mach_EepromGetConfig(&cpu, &memSize, colorPtr, &fpu);
+    switch (Mach_GetMachineType()) {
+	case SYS_SUN_3_60:
+	    /*
+	     * These are the hardware page fram numbers suitable for
+	     * putting into a PTE.
+	     */
+	    colorPtr->firstPage = 0xfc00;
+	    colorPtr->lastPage =  0xfc7f;
+	    break;
+    }
+    return(colorPtr->valid);
 }
