@@ -202,7 +202,7 @@ extern	void		FsEndIndex();
  * Declarations for the Local Domain lookup operations called via
  * the switch in FsLookupOperation.  These are called with a pathname.
  */
-ReturnStatus FsLocalPrefix();
+ReturnStatus FsLocalExport();
 ReturnStatus FsLocalOpen();
 ReturnStatus FsLocalLookup();
 ReturnStatus FsLocalGetAttrPath();

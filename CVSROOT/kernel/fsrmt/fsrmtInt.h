@@ -119,7 +119,7 @@ typedef struct FsSprite2PathReplyParams {
  * Sprite Domain functions called via FsLookupOperation.
  * These are called with a pathname.
  */
-extern	ReturnStatus	FsSpritePrefix();
+extern	ReturnStatus	FsSpriteImport();
 extern	ReturnStatus	FsSpriteOpen();
 extern	ReturnStatus	FsSpriteReopen();
 extern	ReturnStatus	FsSpriteDevOpen();
