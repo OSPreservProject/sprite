@@ -274,7 +274,8 @@ ReopenHandles(serverID)
 reopenReturn:
     if (status != SUCCESS) {
 	Net_HostPrint(serverID, "Recovery failed");
-	printf(" <%x>\n", status);
+	Fsutil_PrintStatus(status);
+	printf("\n");
     } else if (printed) {
 	Net_HostPrint(serverID, "Recovery complete");
 	printf(" %d handles reopened", fs_Stats.recovery.succeeded - succeeded);
