@@ -7,8 +7,14 @@
  *	with a controller.  This file should be automatically generated
  *	by a config program, but it isn't.
  *
- * Copyright 1986 Regents of the University of California
- * All rights reserved.
+ * Copyright 1986, 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
  */
 
 #ifndef lint
@@ -19,7 +25,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "devInt.h"
 #include "scsiHBA.h"
-#include "devTypesInt.h"
+#include "devTypes.h"
 
 /*
  * Per device include files.
@@ -42,7 +48,7 @@ DevConfigController devCntrlr[] = {
 				    72, DevXylogics450Intr},
     { "JaguarHBA", 0x8800, DEV_VME_D16A16, 0, DevJaguarInit, 211, 
 						DevJaguarIntr},
-    { "tmr0", 0x0FE14000, DEV_OBIO, 0, Dev_TimerProbe, 0, ((int *(*)())0)},
+    { "tmr0", 0x0FE14000, DEV_OBIO, 0, Dev_TimerProbe, 0, ((Boolean (*)())0)},
 
 };
 int devNumConfigCntrlrs = sizeof(devCntrlr) / sizeof(DevConfigController);
@@ -77,5 +83,3 @@ Fs_Device devFsDefaultDiskPartitions[] = {
     };
 int devNumDefaultDiskPartitions = sizeof(devFsDefaultDiskPartitions) / 
 			  sizeof(Fs_Device);
-
-
