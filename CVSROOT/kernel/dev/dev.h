@@ -20,15 +20,19 @@
 #define _DEV
 
 #include "status.h"
+#ifdef KERNEL
 #include "devTimer.h"
 #include "devSyslog.h"
 #include "devConsole.h"
 #include "devKeyboard.h"
-/* 
- * Machine dependent exported definitions.
- */
- 
 #include "devDependent.h"
+#else
+#include <kernel/devTimer.h>
+#include <kernel/devSyslog.h>
+#include <kernel/devConsole.h>
+#include <kernel/devKeyboard.h>
+#include <kernel/devDependent.h>
+#endif
 
 
 /*
