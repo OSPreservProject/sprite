@@ -448,6 +448,8 @@ typedef struct Proc_ControlBlock {
     Proc_Time   preEvictionUsage; 	 /* CPU usage (user + kernel)
 					  * as of the start of eviction. */
 
+    int		extraField[10];		/* Extra fields for later use. */
+
 } Proc_ControlBlock;
 
 /*
