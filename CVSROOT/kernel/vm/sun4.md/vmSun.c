@@ -1523,16 +1523,21 @@ PMEGGet(softSegPtr, hardSegNum, flags)
 	 */
 	oldContext = VmMachGetContextReg();
         if (segPtr->type == VM_SYSTEM) {
+	    /*
+	     * For cache accesses of data with the supervisor tag set,
+	     * the flush only needs to be done in one context.
+	     */
+	    numValidPages = GetNumValidPages(virtAddr);
+	    if (numValidPages >
+		    (VMMACH_CACHE_SIZE / VMMACH_PAGE_SIZE_INT)) {
+		VmMachFlushSegment(virtAddr);
+	    } else {
+		/* flush the pages */
+		FlushValidPages(virtAddr);
+	    }
+
 	    for (i = 0; i < VMMACH_NUM_CONTEXTS; i++) {
 		VmMachSetContextReg(i);
-		numValidPages = GetNumValidPages(virtAddr);
-		if (numValidPages >
-			(VMMACH_CACHE_SIZE / VMMACH_PAGE_SIZE_INT)) {
-		    VmMachFlushSegment(virtAddr);
-		} else {
-		    /* flush the pages */
-		    FlushValidPages(virtAddr);
-		}
 		VmMachSetSegMap(virtAddr, VMMACH_INV_PMEG);
 	    }
         } else {
