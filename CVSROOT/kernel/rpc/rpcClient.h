@@ -177,6 +177,11 @@ extern int		  rpcNumChannels;
 extern Rpc_Histogram	*rpcCallTime[];
 
 /*
+ * A raw count of the number of rpc calls.
+ */
+extern int		rpcClientCalls[];
+
+/*
  * Forward declarations.
  */
 RpcClientChannel	*RpcChanAlloc();

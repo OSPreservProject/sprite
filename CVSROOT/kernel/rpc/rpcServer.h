@@ -174,6 +174,11 @@ extern RpcService rpcService[];
 extern Rpc_Histogram	*rpcServiceTime[];
 
 /*
+ * A raw count of the number of service calls.
+ */
+extern int		rpcServiceCount[];
+
+/*
  * Forward declarations.
  */
 RpcServerState		*RpcServerAlloc();
