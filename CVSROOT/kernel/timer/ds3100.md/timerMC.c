@@ -40,18 +40,19 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif
 
-#include "sprite.h"
-#include "sys.h"
-#include "timerInt.h"
-#include "timerTick.h"
-#include "spriteTime.h"
-#include "mach.h"
-#include "machMon.h"
-#include "prof.h"
-#include "timer.h"
-#include "machAddrs.h"
+#include <sprite.h>
+#include <sys.h>
+#include <timerInt.h>
+#include <timerTick.h>
+#include <spriteTime.h>
+#include <mach.h>
+#include <machMon.h>
+#include <prof.h>
+#include <timer.h>
+#include <machAddrs.h>
+#include <assert.h>
 
 /*
  * Control register A.
@@ -297,7 +298,10 @@ Timer_TimerInactivate(timer)
  *----------------------------------------------------------------------
  */
 void
-Timer_TimerServiceInterrupt()
+Timer_TimerServiceInterrupt(statusReg, causeReg, pc)
+    unsigned int    statusReg;
+    unsigned int    causeReg;
+    Address         pc;
 { 
     static unsigned	addOne = 0;
     unsigned char 	timerStatus;
@@ -379,12 +383,18 @@ Timer_TimerServiceInterrupt()
 	}
     }    
     if (timerStatus & REGC_PER_INT_PENDING) {
-	/*
-	 * Check for kernel profiling.  We'll sample the PC here.
-	 */
-	if (profileIntrsWanted) {
-	    TIMER_PROFILE_ROUTINE(0);
-	} 
+	if (mach_KernelMode) {
+	    assert((statusReg & MACH_SR_KU_PREV) == 0);
+	    /*
+	     * Check for kernel profiling.  We'll sample the PC here.
+	     */
+	    if (profileIntrsWanted) {
+		TIMER_PROFILE_ROUTINE(pc);
+	    } 
+	} else {
+	    assert((statusReg & MACH_SR_KU_PREV) != 0);
+	    Proc_GetCurrentProc()->Prof_PC = (int) pc;
+	}
 	TIMER_CALLBACK_ROUTINE(interval, *timePtr);
     }
     INC(dbgCtr);

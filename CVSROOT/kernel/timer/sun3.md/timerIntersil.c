@@ -49,17 +49,17 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "sys.h"
-#include "mach.h"
-#include "machConst.h"
-#include "devAddrs.h"
-#include "timer.h"
-#include "timerInt.h"
-#include "timerIntersilInt.h"
-#include "spriteTime.h"
-#include "stdio.h"
-
+#include <sprite.h>
+#include <sys.h>
+#include <mach.h>
+#include <machConst.h>
+#include <devAddrs.h>
+#include <timer.h>
+#include <timerInt.h>
+#include <timerIntersilInt.h>
+#include <spriteTime.h>
+#include <stdio.h>
+#include <assert.h>
 
 /* For profiling call */
 #include "prof.h"
@@ -493,12 +493,22 @@ Timer_TimerServiceInterrupt(clientData, stack)
     /*
      * End in-lined Timer_TimerGetStatus
      */
-    /*
-     * Check for kernel profiling.  We'll sample the PC here.
-     */
-    if (profileIntrsWanted) {
-	TIMER_PROFILE_ROUTINE(&stack);
-    } 
+
+    if (mach_KernelMode) {
+	/*
+	 * Check for kernel profiling.  We'll sample the PC here.
+	 */
+	assert((stack.excStack.statusReg & MACH_SR_SUPSTATE) != 0);
+	if (profileIntrsWanted) {
+	    TIMER_PROFILE_ROUTINE(&stack);
+	}
+    } else {
+	/*
+	 * Save pc for user profiling.
+	 */
+	assert((stack.excStack.statusReg & MACH_SR_SUPSTATE) == 0);
+	Proc_GetCurrentProc()->Prof_PC = stack.excStack.pc;
+    }
     /*
      * Cut the call-back frequency in half.
      */
