@@ -142,7 +142,7 @@ Fs_AcceptStub(socketID, addrPtr, addrLenPtr)
 	if (status != SUCCESS) {
 	    UNIXRETURN(status);
 	}
-	if (addrLen != sizeof(struct sockaddr_in)) {
+	if (addrLen < sizeof(struct sockaddr_in)) {
 	    UNIXRETURN(SYS_INVALID_ARG);
 	}
     }
