@@ -439,7 +439,7 @@ RpcProcFork(parentProcPtr, dataPtr, dataLength, replyDataPtr,
     List_Insert((List_Links *) &(childProcPtr->siblingElement), 
 		LIST_ATREAR(parentProcPtr->childList));
 
-    Sig_ProcInit(childProcPtr);
+    Sig_Fork(parentProcPtr, childProcPtr);
 
     /*
      * Initialize information for migration.

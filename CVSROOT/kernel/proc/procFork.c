@@ -172,7 +172,7 @@ Proc_NewProc(PC, procType, shareHeap, pidPtr, procName, vforkFlag)
 	(void) strcpy(procPtr->argString, parentProcPtr->argString);
     }
 
-    Sig_ProcInit(procPtr);
+    if (!migrated) {
 	if (ProcFamilyInsert(procPtr, procPtr->familyID) != SUCCESS) {
 	    panic("Proc_NewProc: ProcFamilyInsert failed\n");
 	}

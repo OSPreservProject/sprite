@@ -715,10 +715,9 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
     String_Copy(fileName, procPtr->codeFileName);
 
     /*
-     * Set up signal hold masks and default actions, then unlock
-     * the process table entry so signals can come in.
+     * Take signal actions for execed process.
      */
-    Sig_ProcInit(procPtr);
+    Sig_Exec(procPtr);
     Proc_Unlock(procPtr);
 
     /*
