@@ -183,7 +183,14 @@ FsUpdateAttrFromClient(cacheInfoPtr, attrPtr)
     if (attrPtr->accessTime > cacheInfoPtr->attr.accessTime) {
 	cacheInfoPtr->attr.accessTime = attrPtr->accessTime;
     }
-    cacheInfoPtr->attr.lastByte = attrPtr->lastByte;
+    if (cacheInfoPtr->attr.lastByte > attrPtr->lastByte) {
+	Sys_Panic(SYS_WARNING, "FsUpdateAttrFromClient, <%d,%d> short size %d not %d\n",
+			       cacheInfoPtr->hdrPtr->fileID.major,
+			       cacheInfoPtr->hdrPtr->fileID.minor,
+	    attrPtr->lastByte, cacheInfoPtr->attr.lastByte);
+    } else {
+	cacheInfoPtr->attr.lastByte = attrPtr->lastByte;
+    }
     cacheInfoPtr->attr.firstByte = attrPtr->firstByte;
     UNLOCK_MONITOR;
 }
@@ -316,7 +323,6 @@ FsUpdateCachedAttr(cacheInfoPtr, attrPtr)
     if ((cacheInfoPtr->flags & FS_FILE_NOT_CACHEABLE) == 0) {
 	cacheInfoPtr->attr.accessTime = attrPtr->accessTime.seconds;
 	cacheInfoPtr->attr.modifyTime = attrPtr->dataModifyTime.seconds;
-	cacheInfoPtr->attr.lastByte = attrPtr->size - 1;
 	cacheInfoPtr->attr.permissions = attrPtr->permissions;
 	cacheInfoPtr->attr.uid = attrPtr->uid;
 	cacheInfoPtr->attr.gid = attrPtr->gid;
@@ -527,6 +533,9 @@ FsCacheRead(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 					(Address) &length, 0, (Address) NIL); 
     }
 exit:
+    if (status == SUCCESS) {
+	cacheInfoPtr->attr.accessTime = fsTimeInSeconds;
+    }
     UNLOCK_MONITOR;
     return(status);
 }
@@ -855,7 +864,22 @@ FsCacheBlockRead(cacheInfoPtr, blockNum, blockPtrPtr, numBytesPtr, blockType,
 	status = (*fsStreamOpTable[cacheInfoPtr->hdrPtr->fileID.type].blockRead)
 		    (cacheInfoPtr->hdrPtr, 0, (*blockPtrPtr)->blockAddr,
 		     &offset, numBytesPtr, (Sync_RemoteWaiter *) NIL);
+	if (status == SUCCESS && *numBytesPtr == 0 &&
+	    offset < cacheInfoPtr->attr.lastByte + 1) {
+	    /*
+	     * Due to delayed writes the disk descriptor has no space allocated
+	     * and the file block read routine thinks we've read past eof.
+	     * Actually were in a hole in the file and should return zeros.
+	     */
+	    Byte_Zero(FS_BLOCK_SIZE, (*blockPtrPtr)->blockAddr);
+	    *numBytesPtr = FS_BLOCK_SIZE;
+	}
 	if (status != SUCCESS || (*numBytesPtr == 0 && !allocate)) {
+	    /*
+	     * We hit a disk error or are really past the end-of-file.
+	     * Note that if allocate is TRUE well return a cache block
+	     * to our caller with *numBytesPtr == 0.
+	     */
 	    FsCacheUnlockBlock(*blockPtrPtr, 0, -1, 0, FS_DELETE_BLOCK);
 	    *blockPtrPtr = (FsCacheBlock *)NIL;
 	    *numBytesPtr = 0;
@@ -983,6 +1007,27 @@ FsCacheTrunc(cacheInfoPtr, length, flags)
 	    if (firstBlock > 0) {
 		FsCacheBlockTrunc(cacheInfoPtr, firstBlock - 1,
 				  length - (firstBlock - 1) * FS_BLOCK_SIZE);
+	    }
+	    if ((flags & FS_TRUNC_DELETE) && 
+		!List_IsEmpty(&cacheInfoPtr->blockList)) {
+		register FsCacheBlock *blockPtr;
+		register List_Links *listItem;
+		Sys_Panic(SYS_WARNING, 
+		    "File <%d,%d>: %d Extra cache blocks after delete %d-%d\n",
+		    cacheInfoPtr->hdrPtr->fileID.major,
+		    cacheInfoPtr->hdrPtr->fileID.minor,
+		    cacheInfoPtr->blocksInCache, firstBlock, lastBlock);
+		while (!List_IsEmpty(&cacheInfoPtr->blockList)) {
+		    listItem = List_First(&cacheInfoPtr->blockList);
+		    blockPtr = FILE_LINKS_TO_BLOCK(listItem);
+		    Sys_Printf("\tBlock %d ref %d\n", blockPtr->blockNum,
+			blockPtr->refCount);
+		    if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
+			Sys_Panic(SYS_FATAL, "Mistake in block list code\n");
+		    }
+		    FsCacheFileInvalidate(cacheInfoPtr, blockPtr->blockNum,
+			    blockPtr->blockNum);
+		}
 	    }
         }
 	cacheInfoPtr->attr.modifyTime = fsTimeInSeconds;
