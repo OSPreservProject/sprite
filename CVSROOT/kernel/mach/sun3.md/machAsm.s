@@ -36,25 +36,16 @@
     .text
     .globl	_Mach_GetEtherAddress
 _Mach_GetEtherAddress:
-    movc	sfc,d1			| Save source function code
-    movl	#VM_MMU_SPACE,d0	| Get function code in a reg
-    movc	d0,sfc			| Set source function code
-
     movl	sp@(4),a0		| Get pointer to target ethernet address
-    movl	d2,sp@-			| save d2
-
     movl	#6,d0			| loop counter
-    movl	#VM_ETHER_ADDR,a1	| The Prom address of the ethernet addr
+    movl	#VMMACH_ETHER_ADDR,a1	| The Prom address of the ethernet addr
 etherloop:
-    movsb	a1@,d2			| Copy one byte of the ethernet address
-    movb	d2,a0@			|   from prom to the target address.
+    movsb	a1@,d1			| Copy one byte of the ethernet address
+    movb	d1,a0@			|   from prom to the target address.
     addql	#1,a0			| bump target pointer
-    addl	#VM_IDPROM_INC,a1	| bump prom address, as per sec 4.8
+    addl	#VMMACH_IDPROM_INC,a1	| bump prom address, as per sec 4.8
     subl	#1,d0			| decrement loop counter
     bne		etherloop		| loop 6 times
-
-    movc	d1,sfc			| Restore source function code
-    movl	sp@+,d2			| Restore d2
 
     rts					| Return
 
@@ -100,11 +91,6 @@ ENTRY(Mach_ContextSwitch, 0, 0)
     movl	usp, a0  		| Push the user stack pointer onto 
     movl	a0, sp@-		|     the stack.
 
-    movc	sfc, d0			| Push source and dest function codes 
-    movl	d0, sp@-		|     onto the stack.
-    movc	dfc, d0
-    movl	d0, sp@-
-
     movl	#MAGIC, sp@-		| Put the magic number on the stack.
 
     movl	a6@(12), a0		| Save all of the registers for the 
@@ -120,11 +106,6 @@ ENTRY(Mach_ContextSwitch, 0, 0)
 
 1$:
     addql	#4, sp			| Pop the magic number.
-
-    movl	sp@+, d0		| Restore the dest and source
-    movc	d0, dfc			|     function codes.
-    movl	sp@+, d0
-    movc	d0, sfc
 
     movl	sp@+, a0		| Restore the user stack pointer.
     movl	a0, usp
@@ -183,19 +164,11 @@ _Mach_TestAndSet:
     .text
     .globl	_Mach_GetMachineType
 _Mach_GetMachineType:
-    movc	sfc,d1			| Save source function code
-    movl	#VM_MMU_SPACE,d0	| Get function code in a reg
-    movc	d0,sfc			| Set source function code
-
     clrl	d0			| Clear the return register
-
-    movl	#VM_MACH_TYPE_ADDR, a0	| Get the address of the machine type
+    movl	#VMMACH_MACH_TYPE_ADDR, a0 | Get the address of the machine type
 					|     in a register.
     movsb	a0@,d0			| Store the machine type in the return
 					|     register.
-
-    movc	d1,sfc			| Restore source function code
-
     rts
 
 
@@ -234,14 +207,9 @@ _MonNmiNop:
 | 
 | Move the upper half of the status register to the leds.
 |
-
-        movc    dfc,a0			| Change to MMU space
-        moveq   #VM_MMU_SPACE,d1	|
-        movc    d1,dfc			|
         movb    sp@(16),d0		| Move the upper half of the sr to d0
         eorb    #0xFF,d0		| Exclusive or the bits.
         movsb   d0,0xB                  | Move it to the leds.
-        movc    a0,dfc			| Change back to normal space.
 
 #endif SUN2
         moveml  sp@+,#0x0303            | restore regs
