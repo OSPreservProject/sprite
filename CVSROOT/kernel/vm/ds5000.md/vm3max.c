@@ -1,6 +1,6 @@
 /* vmPmax.c -
  *
- *     	This file contains all hardware dependent routines for the PMAX.
+ *     	This file contains all hardware dependent routines for the 3MAX.
  *
  * Copyright (C) 1989 Digital Equipment Corporation.
  * Permission to use, copy, modify, and distribute this software and
@@ -466,6 +466,7 @@ VmMach_ProcInit(vmPtr)
     vmPtr->machPtr->mapSegPtr = (struct Vm_Segment *)NIL;
     vmPtr->machPtr->pid = VMMACH_INV_PID;
     vmPtr->machPtr->sharedData.allocVector = (int *)NIL;
+    List_Init(&vmPtr->machPtr->kernSharedList);
 }
 
 
@@ -559,6 +560,8 @@ VmMach_FreeContext(procPtr)
 {
     PIDListElem		*pidPtr;
     VmMach_ProcData	*machPtr;
+    List_Links		*elemPtr;
+    List_Links		*tmpPtr = (List_Links *) NIL;
 
     MASTER_LOCK(vmMachMutexPtr);
 
@@ -573,7 +576,17 @@ VmMach_FreeContext(procPtr)
     VmMachFlushPIDFromTLB(machPtr->pid);
     TLBHashFlushPID(machPtr->pid);
     machPtr->pid = VMMACH_INV_PID;
-
+    LIST_FORALL(&machPtr->kernSharedList, elemPtr) {
+	if (tmpPtr != (List_Links *) NIL) {
+	    List_Remove(tmpPtr);
+	    free((char *) tmpPtr);
+	}
+	tmpPtr = elemPtr;
+    }
+    if (tmpPtr != (List_Links *) NIL) {
+	List_Remove(tmpPtr);
+	free((char *) tmpPtr);
+    }
     MASTER_UNLOCK(vmMachMutexPtr);
 }
 
@@ -1185,14 +1198,35 @@ VmMach_PageValidate(virtAddrPtr, pte)
 	}
     } else {
 	unsigned	highEntry;
+	Boolean		shared = FALSE;
+	VmMach_KernSharedInfo	*infoPtr = (VmMach_KernSharedInfo *) NIL
+	;
 
-	vmMachPhysPageArr[pte & VM_PAGE_FRAME_FIELD].user = 1;
+	if (!List_IsEmpty(&machPtr->kernSharedList)) {
+	    LIST_FORALL(&machPtr->kernSharedList, (List_Links *) infoPtr) {
+		if ((virtAddrPtr->page >= infoPtr->firstPage) &&
+		    (virtAddrPtr->page <= infoPtr->lastPage)) {
+		    shared = TRUE;
+		    List_Move((List_Links *) infoPtr, 
+			LIST_ATFRONT(&machPtr->kernSharedList));
+		}
+	    }
+	}
+	if ((pte & VM_PAGE_FRAME_FIELD) < vm_NumPhysPages) {
+	    vmMachPhysPageArr[pte & VM_PAGE_FRAME_FIELD].user = 1;
+	}
 	lowEntry = ((pte & VM_PAGE_FRAME_FIELD) << 
 				VMMACH_TLB_PHYS_PAGE_SHIFT) | 
 			VMMACH_TLB_VALID_BIT;
 	if (!(pte & (VM_COW_BIT | VM_READ_ONLY_PROT)) && !(virtAddrPtr->flags
 		& VM_READONLY_SEG)) {
 	    lowEntry |= VMMACH_TLB_ENTRY_WRITEABLE;
+	}
+	if (shared) {
+	    lowEntry |= VMMACH_TLB_MOD_BIT;
+	    if (infoPtr->flags & VMMACH_KERN_SHARED_UNCACHEABLE) {
+		lowEntry |= VMMACH_TLB_NON_CACHEABLE_BIT;
+	    }
 	}
 	if (virtAddrPtr->flags & USING_MAPPED_SEG) {
 	    virtPage = VMMACH_MAPPED_PAGE_NUM;
@@ -1486,21 +1520,34 @@ VmMach_TLBFault(virtAddr)
 	 * This address falls into the range of address that are used to
 	 * map kernel pages into a user's address space.
 	 */
-	unsigned virtPage, lowEntry, highEntry;
-	int pid;
+	unsigned 		virtPage, lowEntry, highEntry;
+	int 			pid;
+	VmMach_ProcData		*machPtr;
+	Proc_ControlBlock	*procPtr;
+	Boolean			found = FALSE;
+	VmMach_KernSharedInfo	*infoPtr;
 
-	if (Proc_GetCurrentProc() != mappedProcPtr) {
-	    dprintf("fault 2\n");
-	    return(FAILURE);
-	}
-	pid = mappedProcPtr->vmPtr->machPtr->pid;
+	procPtr = Proc_GetCurrentProc();
+	machPtr = procPtr->vmPtr->machPtr;
+	pid = procPtr->vmPtr->machPtr->pid;
 	virtPage = (unsigned)virtAddr >> VMMACH_PAGE_SHIFT;
-
-
-	lowEntry = userMappingTable[virtPage - VMMACH_USER_MAPPING_BASE_PAGE];
-	if (lowEntry == 0) {
-	    dprintf("fault 3\n");
-	    return(FAILURE);
+	LIST_FORALL(&machPtr->kernSharedList, (List_Links *) infoPtr) {
+	    if ((virtPage >= infoPtr->firstPage) &&
+		(virtPage <= infoPtr->lastPage)) {
+		found = TRUE;
+		List_Move((List_Links *) infoPtr, 
+		    LIST_ATFRONT(&machPtr->kernSharedList));
+		break;
+	    }
+	}
+	if (!found) {
+	    return FALSE;
+	}
+	lowEntry = (virtPage - infoPtr->firstPage + infoPtr->firstPhysPage) <<
+		    VMMACH_TLB_PHYS_PAGE_SHIFT;
+	lowEntry |= VMMACH_TLB_VALID_BIT | VMMACH_TLB_MOD_BIT;
+	if (infoPtr->flags & VMMACH_KERN_SHARED_UNCACHEABLE) {
+	    lowEntry |= VMMACH_TLB_NON_CACHEABLE_BIT;
 	}
 	highEntry = (virtPage << VMMACH_TLB_VIRT_PAGE_SHIFT) |
 		    (pid << VMMACH_TLB_PID_SHIFT);
@@ -1838,6 +1885,8 @@ VmMach_MakeNonCacheable(procPtr, addr)
     MASTER_UNLOCK(vmMachMutexPtr);
 }
 
+static char *userMapAllocPtr = (char *) VMMACH_USER_MAPPING_BASE_ADDR;
+
 
 /*
  *----------------------------------------------------------------------
@@ -1856,47 +1905,102 @@ VmMach_MakeNonCacheable(procPtr, addr)
  *
  *----------------------------------------------------------------------
  */
-Address
-VmMach_UserMap(numBytes, physAddr, firstTime, cache)
+ReturnStatus
+VmMach_UserMap(numBytes, addr, physAddr,cache, newAddrPtr)
     int		numBytes;
+    Address	addr;
     Address	physAddr;
-    Boolean	firstTime;	/* TRUE => first time called. */
-    Boolean	cache;		/* Should the page be cacheable?. */
+    Boolean	cache;		/* Should the region be cacheable?. */
+    Address	*newAddrPtr;
 {
-    int		i;
-    Address	retAddr;
-    unsigned	firstPhysPage;
-    unsigned	lastPhysPage;
-    unsigned 	tlbBits;
+    int				i;
+    Address			retAddr;
+    unsigned			firstPhysPage;
+    unsigned			lastPhysPage;
+    VmMach_KernSharedInfo	*infoPtr;
+    Proc_ControlBlock           *procPtr;
+    ReturnStatus		status = SUCCESS;
+    Vm_Segment      		*segPtr;
+    Vm_VirtAddr			virtAddr;
+    Vm_PTE			*ptePtr;
+    unsigned			physPage;
+    Boolean			doAlloc;
 
-    if (firstTime) {
-	if (userMapped) {
-	    return((Address)NIL);
+    procPtr = Proc_GetCurrentProc();
+    if (addr == (Address) NIL) {
+	/* 
+	 * If we have to allocate the space ourselves then we allocate it
+	 * up above the stack in the user mapping region.  We add it to
+	 * the stack segment.  Note that the allocation algorithm is
+	 * really stupid. It assumes that only the X server is going to use
+	 * this allocation.
+	 */
+	doAlloc = TRUE;
+	segPtr = procPtr->vmPtr->segPtrArray[VM_HEAP];
+	printf("userMapAllocPtr = 0x%x\n", userMapAllocPtr);
+	addr = (Address) ((unsigned) userMapAllocPtr | 
+		    ((unsigned) physAddr & VMMACH_OFFSET_MASK));
+	if ((unsigned) userMapAllocPtr > (unsigned)
+		(VMMACH_USER_MAPPING_BASE_ADDR + 
+		VMMACH_USER_MAPPING_PAGES * vm_PageSize)) {
+	    printf("Out of mapping pages.\n");
+	    return FAILURE;
 	}
-	bzero((char *)userMappingTable, sizeof(userMappingTable));
-	userMapIndex = 0;
-	userMapped = TRUE;
-	mappedProcPtr = Proc_GetCurrentProc();
+    } else {
+	doAlloc = FALSE;
+	segPtr = procPtr->vmPtr->segPtrArray[VM_HEAP];
     }
-    tlbBits = VMMACH_TLB_VALID_BIT | VMMACH_TLB_MOD_BIT;
-    if (!cache) {
-	tlbBits |= VMMACH_TLB_NON_CACHEABLE_BIT;
-    }
-    retAddr = (Address) (VMMACH_USER_MAPPING_BASE_ADDR +
-                         userMapIndex * VMMACH_PAGE_SIZE + 
-			 ((unsigned)physAddr & VMMACH_OFFSET_MASK));
+    infoPtr = (VmMach_KernSharedInfo *) malloc(sizeof(VmMach_KernSharedInfo));
+    bzero((char *) infoPtr, sizeof(*infoPtr));
+    List_InitElement((List_Links *) infoPtr);
     firstPhysPage = (unsigned)physAddr >> VMMACH_PAGE_SHIFT;
     lastPhysPage = (unsigned)(physAddr + numBytes - 1) >> VMMACH_PAGE_SHIFT;
-    for (i = firstPhysPage; i <= lastPhysPage; i++) {
-	userMappingTable[userMapIndex] = (i << VMMACH_TLB_PHYS_PAGE_SHIFT) |
-			     tlbBits;
-	userMapIndex++;
-	if (i <= lastPhysPage && userMapIndex == VMMACH_USER_MAPPING_PAGES) {
-	    return((Address)NIL);
-	}
+    infoPtr->firstPage = (unsigned) addr >> VMMACH_PAGE_SHIFT;
+    infoPtr->lastPage = 
+	(unsigned)(addr + numBytes - 1) >> VMMACH_PAGE_SHIFT;
+    if (!cache) {
+	infoPtr->flags |= VMMACH_KERN_SHARED_UNCACHEABLE;
     }
-
-    return(retAddr);
+    if (!doAlloc) {
+	status = Vm_DeleteFromSeg(segPtr, infoPtr->firstPage, 
+			infoPtr->lastPage);
+	if (status != SUCCESS) {
+	    printf("VmMach_UserMap: Vm_DeleteFromSeg failed 0x%x\n", status);
+	    free((char *) infoPtr);
+	    return status;
+	}
+	status = VmAddToSeg(segPtr, infoPtr->firstPage, infoPtr->lastPage);
+	if (status != SUCCESS) {
+	    printf("VmMach_UserMap: VmAddToSeg failed 0x%x\n", status);
+	    free((char *) infoPtr);
+	    return status;
+	}
+	virtAddr.segPtr = segPtr;
+	virtAddr.sharedPtr = (Vm_SegProcList *)NIL;
+	for(virtAddr.page = infoPtr->firstPage, 
+	    physPage = firstPhysPage,
+	    ptePtr = VmGetPTEPtr(segPtr, infoPtr->firstPage);
+	    virtAddr.page <= infoPtr->lastPage;
+	    virtAddr.page++, physPage++, VmIncPTEPtr(ptePtr, 1)) {
+    
+	    *ptePtr |= VM_PHYS_RES_BIT | VM_REFERENCED_BIT;
+	    *ptePtr |= (physPage & VM_PAGE_FRAME_FIELD);
+	}
+	infoPtr->firstPhysPage = (unsigned) NIL;
+    } else {
+	userMapAllocPtr += (infoPtr->lastPage - infoPtr->firstPage + 1) * 
+				vm_PageSize;
+	printf("userMapAllocPtr now = 0x%x\n", userMapAllocPtr);
+	infoPtr->firstPhysPage = firstPhysPage;
+    }
+    List_Insert((List_Links *) infoPtr, 
+	LIST_ATFRONT(&procPtr->vmPtr->machPtr->kernSharedList));
+    /*
+     * Make sure this process never migrates.
+     */
+    Proc_NeverMigrate(procPtr);
+    *newAddrPtr = addr;
+    return status;
 }
 
 
@@ -1915,27 +2019,66 @@ VmMach_UserMap(numBytes, physAddr, firstTime, cache)
  *
  *----------------------------------------------------------------------
  */
-ENTRY void
-VmMach_UserUnmap()
+ENTRY ReturnStatus
+VmMach_UserUnmap(addr)
+    Address		addr;
 {
-    int			pid;
-    Proc_ControlBlock	*procPtr;
+    int				pid;
+    Proc_ControlBlock		*procPtr;
+    List_Links			*listPtr;
+    VmMach_KernSharedInfo	*infoPtr;
+    List_Links			*tmpPtr;
+    int				page;
+    Boolean			doAll = FALSE;
+    ReturnStatus		status = SUCCESS;
+    Vm_Segment      		*segPtr;
+    Vm_PTE			*ptePtr;
 
-    if (!userMapped) {
-	return;
-    }
-    userMapped = FALSE;
     procPtr = Proc_GetCurrentProc();
-    if (procPtr != mappedProcPtr) {
-	printf("VmMach_UserUnmap: Different process is unmapping\n");
-    }
-    mappedProcPtr = (Proc_ControlBlock *)NIL;
     pid = procPtr->vmPtr->machPtr->pid;
+    if (addr == (Address) NIL) {
+	doAll = TRUE;
+    }
+    page = (unsigned) addr >> VMMACH_PAGE_SHIFT;
+    tmpPtr = (List_Links *) NIL;
+    listPtr = &procPtr->vmPtr->machPtr->kernSharedList;
+    LIST_FORALL(listPtr, (List_Links *) infoPtr) {
+	if (doAll) {
+	    if (tmpPtr != (List_Links *) NIL) {
+		List_Remove(tmpPtr);
+		free((char *) tmpPtr);
+	    }
+	}
+	if (doAll || infoPtr->firstPage == page) {
+	    if (infoPtr->firstPage < VMMACH_USER_MAPPING_BASE_PAGE) {
+		segPtr = procPtr->vmPtr->segPtrArray[VM_HEAP];
+		for(ptePtr = VmGetPTEPtr(segPtr, infoPtr->firstPage);
+		    page <= infoPtr->lastPage;
+		    page++, VmIncPTEPtr(ptePtr, 1)) {
+
+		    *ptePtr = 0;
+		}
+	    } else {
+		userMapAllocPtr = (char *) VMMACH_USER_MAPPING_BASE_ADDR;
+	    }
+	    tmpPtr = (List_Links *) infoPtr;
+	    if (!doAll) {
+		break;
+	    }
+	}
+    }
+    if (tmpPtr != (List_Links *) NIL) {
+	List_Remove(tmpPtr);
+	free((char *) tmpPtr);
+    } else if (!doAll) {
+	return FAILURE;
+    }
     if (pid != VMMACH_INV_PID && pid != VMMACH_KERN_PID) {
 	MASTER_LOCK(vmMachMutexPtr);
 	TLBHashFlushPID(pid);
 	MASTER_UNLOCK(vmMachMutexPtr);
     }
+    return SUCCESS;
 }
 
 
