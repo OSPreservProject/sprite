@@ -61,7 +61,7 @@ typedef struct DevTimerTest {
 
 # define DEV_TIMER_F1  0x1B      /* Count from input clock, no gating */
 # define DEV_TIMER_F2  0x1C      /* Count from input clock/16, no gating */
-# define DEV_TIMER_TC  0x10      /* Previous stage's output, no gating */
+# define DEV_TIMER_TC  0x00      /* Previous stage's output, no gating */
 # define DEV_TIMER_CNT 0x28      /* Wrap around up counter.  Outputs disabled */
 /*
  * Select the register to write.  These are writen to the load

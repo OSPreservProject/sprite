@@ -160,6 +160,7 @@ Dev_TimerIOControl(devicePtr, ioctlPtr, replyPtr)
    unsigned int t0, t1;
    DevTimerTest *tare;
 
+    replyPtr->length = ioctlPtr->outBufSize;
     switch (ioctlPtr->command) {
        case IOC_DEV_TIMER_INIT: 
 		    TimerInit(tmrp); 
