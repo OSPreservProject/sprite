@@ -19,8 +19,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsOpTable.h"
 #include "fsPrefix.h"
 #include "fsTrace.h"
+#include "fsMigrate.h"
 #include "fsNameHash.h"
 #include "fsBlockCache.h"
+#include "fsPdev.h"
 #include "fsDebug.h"
 #include "fsStat.h"
 #include "mem.h"
@@ -185,6 +187,20 @@ Fs_Command(command, bufSize, buffer)
 	     * Set the cache debug flag.
 	     */
 	    SWAP_TO_BUFFER(fsCacheDebug, buffer);
+	    break;
+	}
+	case FS_SET_MIG_DEBUG: {
+	    /*
+	     * Set the migration debug flag.
+	     */
+	    SWAP_TO_BUFFER(fsMigDebug, buffer);
+	    break;
+	}
+	case FS_SET_PDEV_DEBUG: {
+	    /*
+	     * Set the pseudo-device debug flag.
+	     */
+	    SWAP_TO_BUFFER(fsPdevDebug, buffer);
 	    break;
 	}
 	case FS_SET_RPC_DEBUG: {
