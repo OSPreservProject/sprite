@@ -246,9 +246,14 @@ FsWaitListRemove(list, waitPtr)
     Sync_RemoteWaiter *waitPtr;	/* Info about process for remote waiting */
 {
     register Sync_RemoteWaiter *myWaitPtr;
+    register Sync_RemoteWaiter *nextPtr;
 
     LOCK_MONITOR;
-    LIST_FORALL(list, (List_Links *) myWaitPtr) {
+
+    nextPtr = (Sync_RemoteWaiter *) List_First(list);
+    while (! List_IsAtEnd(list, (List_Links *)nextPtr) ) {
+	myWaitPtr = nextPtr;
+	nextPtr = (Sync_RemoteWaiter *)List_Next((List_Links *)myWaitPtr);
 	if (myWaitPtr->pid == waitPtr->pid &&
 	    myWaitPtr->hostID == waitPtr->hostID) {
 	    List_Remove((List_Links *) myWaitPtr);
@@ -281,7 +286,8 @@ FsWaitListDelete(list)
 {
     register Sync_RemoteWaiter *myWaitPtr;
 
-    LIST_FORALL(list, (List_Links *) myWaitPtr) {
+    while (!List_IsEmpty(list)) {
+	myWaitPtr = (Sync_RemoteWaiter *)List_First(list);
 	List_Remove((List_Links *) myWaitPtr);
 	free((Address) myWaitPtr);
     }
