@@ -16,6 +16,7 @@ _Mem_CallerPC:
      * an interrupt comes in after we do the return.
      */
     add_nt	r12, r10, $0
+    invalidate_ib
     rd_special	r16, pc
     return	r16, $12
     nop
