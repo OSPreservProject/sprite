@@ -49,6 +49,9 @@ int	dbgMonPC;				/* Place to get the PC from
 						 * if trap via the monitor.*/
 int	dbgTraceLevel;				/* The debugger tracing
 						 * level. */
+Boolean dbg_SyncedDisks = FALSE;                /* For determining in the
+                                                 * debugger whether the disks
+                                                 * got sync'd or not. */
 
 /*
  * Number of times to poll before timing out and resending (about 2 seconds).
@@ -736,12 +739,28 @@ Dbg_Main(stackHole, dbgStack)
     oldContext = VmMachGetKernelContext();
     VmMachSetKernelContext(VMMACH_KERN_CONTEXT);
 
+    if (!dbg_BeingDebugged) {
+        /*
+         * Try to sync the disks if we aren't at interrupt level.  If we
+         * are don't bother because we'll just hang waiting for interrupts.
+         * Of course I could force interrupts to be enabled but I'm not sure
+         * if that's a great idea.
+         */
+        if (mach_NumDisableIntrsPtr[0] == 0 && !mach_AtInterruptLevel) {
+            Mach_EnableIntr();
+            Sys_SyncDisks(MACH_CALL_DBG_TRAP);
+            dbg_SyncedDisks = TRUE;
+            Mach_DisableIntr();
+        }
+    }
+
     /*
      * Put us at interrupt level so that printf won't accidently enable
      * interrupts.
      */
     atInterruptLevel = mach_AtInterruptLevel;
     mach_AtInterruptLevel = TRUE;
+
 
     /*
      * Force system log output to the console.

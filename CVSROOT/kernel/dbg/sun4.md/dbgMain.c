@@ -39,8 +39,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <bstring.h>
 #include <string.h>
 
+Boolean dbg_InDebugger = FALSE;			/* TRUE if we are currently in
+						 * the debug command loop. */
 Boolean	dbg_BeingDebugged = FALSE;		/* TRUE if are under control
-						 * of kdbx.*/
+						 * of kdbx or kgdb.*/
 Boolean	dbg_UsingNetwork = FALSE;		/* TRUE if the debugger is
 						 * using the network interface*/
 char	requestBuffer[DBG_MAX_REQUEST_SIZE];	/* Buffer to receive request
@@ -62,6 +64,9 @@ Boolean	dbg_Rs232Debug = FALSE;			/* TRUE if we are using the
 						 * On the sun4, we have only
 						 * used the network.
 						 */
+Boolean	dbg_SyncedDisks = FALSE;		/* For determining in the
+						 * debugger whether the disks
+						 * got sync'd or not. */
 
 /*
  * Number of times to poll before timing out and resending (about 2 seconds).
@@ -578,6 +583,7 @@ SendReply()
     }
 }
 
+
 
 /*
  * ----------------------------------------------------------------------------
@@ -624,6 +630,22 @@ Dbg_Main(trapType, trapStatePtr)
     curContext = oldContext = VmMachGetKernelContext();
     VmMachSetKernelContext(VMMACH_KERN_CONTEXT);
 #endif
+    if (!dbg_BeingDebugged) {
+	/*
+	 * Try to sync the disks if we aren't at interrupt level.  If we
+	 * are don't bother because we'll just hang waiting for interrupts.
+	 * Of course I could force interrupts to be enabled but I'm not sure
+	 * if that's a great idea.
+	 */
+	if (mach_NumDisableIntrsPtr[0] == 0 && !mach_AtInterruptLevel) {
+	    Mach_EnableIntr();
+	    Sys_SyncDisks(MACH_CALL_DBG_TRAP);
+	    dbg_SyncedDisks = TRUE;
+	    Mach_DisableIntr();
+	}
+    }
+
+    dbg_InDebugger = TRUE;
     /*
      * Put us at interrupt level so that printf won't accidently enable
      * interrupts.
