@@ -334,7 +334,7 @@ main()
 	}
     }
     (void) Proc_NewProc((Address) Rpc_Daemon, PROC_KERNEL, FALSE, &pid,
-	"Rpc_Daemon");
+	"Rpc_Daemon", FALSE);
     if (main_PrintInitRoutines) {
 	Mach_MonPrintf("Creating Proc server procs\n");
     }
@@ -353,7 +353,7 @@ main()
      * letting the Proc_ServerProc wait for recovery.)
      */
     (void) Proc_NewProc((Address) Recov_Proc, PROC_KERNEL, FALSE, &pid,
-			"Recov_Proc");
+			"Recov_Proc", FALSE);
     /*
      * Set up process migration recovery management.
      */
@@ -382,7 +382,8 @@ main()
     if (main_PrintInitRoutines) {
 	Mach_MonPrintf("Creating Init\n");
     }
-    (void) Proc_NewProc((Address) Init, PROC_KERNEL, FALSE, &pid, "Init");
+    (void) Proc_NewProc((Address) Init, PROC_KERNEL, FALSE, &pid, "Init",
+			FALSE);
 
     (void) Sync_WaitTime(time_OneYear);
     printf("Main exiting\n");
