@@ -1284,3 +1284,51 @@ Sig_AllowMigration(procPtr)
     procPtr->sigHoldMask &= ~SigGetBitMask(SIG_MIGRATE_TRAP);
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_CheckForKill --
+ *
+ *	Check if a process has a kill signal and kill it if so.
+ *	Otherwise return.  this is for calling in difficult places where
+ *	we can't allow any signals that would be handled in user mode to
+ *	occur.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Process may be killed.
+ *
+ *----------------------------------------------------------------------
+ */
+void		
+Sig_CheckForKill(procPtr)
+    Proc_ControlBlock	*procPtr;
+{
+    int					sigs;
+
+    /*
+     * Find out which signals are pending.
+     */
+    sigs = procPtr->sigPendingMask & ~procPtr->sigHoldMask;
+    if (sigs == 0) {
+	return;
+    }
+
+    /*
+     * Check for the signal SIG_KILL.  This is processed specially because
+     * it is how processes that have some problem such as being unable
+     * to write to swap space on the file server are destroyed.
+     */
+    if (sigs & sigBitMasks[SIG_KILL]) {
+	if (procPtr->sigCodes[SIG_KILL] != SIG_NO_CODE) {
+	    Proc_ExitInt(PROC_TERM_DESTROYED, 
+			procPtr->sigCodes[SIG_KILL], 0);
+	} else {
+	    Proc_ExitInt(PROC_TERM_SIGNALED, SIG_KILL, 0);
+	}
+    }
+    return;
+}

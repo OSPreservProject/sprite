@@ -83,6 +83,7 @@ extern	void		Sig_Fork();
 extern	void		Sig_Exec();
 extern	void		Sig_ChangeState();
 extern	Boolean		Sig_Handle();
+extern	void		Sig_CheckForKill();
 extern	void		Sig_Return();
 
 /*
