@@ -123,16 +123,16 @@ ENTRY ReturnStatus
 Sync_SlowLock(lockPtr)
     register	Sync_Lock	*lockPtr;
 {
-    MASTER_LOCK(sched_Mutex);
+    MASTER_LOCK(sched_MutexPtr);
 
     while (Mach_TestAndSet(&(lockPtr->inUse)) != 0) {
 	lockPtr->waiting = TRUE;
 	(void) SyncEventWaitInt((unsigned int)lockPtr, FALSE);
-	MASTER_UNLOCK(sched_Mutex);
-	MASTER_LOCK(sched_Mutex);
+	MASTER_UNLOCK(sched_MutexPtr);
+	MASTER_LOCK(sched_MutexPtr);
     }
 
-    MASTER_UNLOCK(sched_Mutex);
+    MASTER_UNLOCK(sched_MutexPtr);
     return(SUCCESS);
 }
 
@@ -170,7 +170,7 @@ Sync_SlowWait(conditionPtr, lockPtr, wakeIfSignal)
 
     conditionPtr->waiting = TRUE;
 
-    MASTER_LOCK(sched_Mutex);
+    MASTER_LOCK(sched_MutexPtr);
     /*
      * release the monitor lock and wait on the condition
      */
@@ -178,7 +178,7 @@ Sync_SlowWait(conditionPtr, lockPtr, wakeIfSignal)
     lockPtr->waiting = FALSE;
     SyncEventWakeupInt((unsigned int)lockPtr);
     sigPending = SyncEventWaitInt((unsigned int) conditionPtr, wakeIfSignal);
-    MASTER_UNLOCK(sched_Mutex);
+    MASTER_UNLOCK(sched_MutexPtr);
 
     Sync_GetLock(lockPtr);
 
@@ -211,12 +211,12 @@ Sync_SlowBroadcast(event, waitFlagPtr)
     unsigned int event;
     int *waitFlagPtr;
 {
-    MASTER_LOCK(sched_Mutex);
+    MASTER_LOCK(sched_MutexPtr);
 
     *waitFlagPtr = FALSE;
     SyncEventWakeupInt(event);
 
-    MASTER_UNLOCK(sched_Mutex);
+    MASTER_UNLOCK(sched_MutexPtr);
     return(SUCCESS);
 }
 
@@ -243,25 +243,25 @@ Sync_SlowBroadcast(event, waitFlagPtr)
 ENTRY Boolean
 Sync_SlowMasterWait(event, mutexPtr, wakeIfSignal)
     unsigned int 	event;		/* Event to wait on. */
-    int 		*mutexPtr;	/* Mutex to release and reaquire. */
+    Sync_Semaphore	*mutexPtr;	/* Mutex to release and reaquire. */
     Boolean 		wakeIfSignal;	/* TRUE => wake if signal pending. */
 {
     Boolean	sigPending;
 
-    MASTER_LOCK(sched_Mutex);
+    MASTER_LOCK(sched_MutexPtr);
 
     /*
      * release the master lock and wait on the condition
      */
-    MASTER_UNLOCK(*mutexPtr);
+    MASTER_UNLOCK(mutexPtr);
 
     sigPending = SyncEventWaitInt(event, wakeIfSignal);
 
-    MASTER_UNLOCK(sched_Mutex);
+    MASTER_UNLOCK(sched_MutexPtr);
     /*
      * re-acquire master lock before proceeding
      */
-    MASTER_LOCK(*mutexPtr);
+    MASTER_LOCK(mutexPtr);
 
     return(sigPending);
 }
@@ -291,7 +291,7 @@ Sync_UnlockAndSwitch(lockPtr, state)
     register	Sync_Lock 	*lockPtr;
     Proc_State			state;
 {
-    MASTER_LOCK(sched_Mutex);
+    MASTER_LOCK(sched_MutexPtr);
     /*
      * release the monitor lock and context switch.
      */
@@ -300,7 +300,7 @@ Sync_UnlockAndSwitch(lockPtr, state)
     SyncEventWakeupInt((unsigned int)lockPtr);
     Sched_ContextSwitchInt(state);
 
-    MASTER_UNLOCK(sched_Mutex);
+    MASTER_UNLOCK(sched_MutexPtr);
 }
 
 
@@ -334,7 +334,7 @@ SyncEventWakeupInt(event)
     register	List_Links 		*chainHeader;
     register	List_Links		*itemPtr;
 
-    if (!sched_Mutex) {
+    if (!sched_MutexPtr->value) {
 	panic("SyncEventWakeupInt: master lock not held.\n");
     }
     
@@ -403,9 +403,9 @@ ENTRY void
 Sync_EventWakeup(event)
     unsigned int event;	/* arbitrary integer */
 {
-    MASTER_LOCK(sched_Mutex);
+    MASTER_LOCK(sched_MutexPtr);
     SyncEventWakeupInt(event);
-    MASTER_UNLOCK(sched_Mutex);
+    MASTER_UNLOCK(sched_MutexPtr);
 }
 
 
@@ -423,7 +423,7 @@ Sync_EventWakeup(event)
  *	we see it is running, and the time it gets the signal. It would seem
  *	we could do this by locking the pcb, but unfortunately 
  *	Sync_EventWaitInt does not grab this lock. This means we have to grab
- *	the sched_Mutex. Ideally we would grab the mutex in the sig module
+ *	the sched_MutexPtr. Ideally we would grab the mutex in the sig module
  *	(Sig_Send perhaps). If we did that, then we would deadlock in this
  *	routine. The bottom line is that this routine must do more than its
  *	name implies, due to some weirdness in the way the system is
@@ -445,7 +445,7 @@ void
 Sync_WakeWaitingProcess(procPtr)
     register	Proc_ControlBlock 	*procPtr;
 {
-    MASTER_LOCK(sched_Mutex);
+    MASTER_LOCK(sched_MutexPtr);
     if (procPtr->event != NIL) {
 	List_Remove(&procPtr->eventHashChain.links);
 	procPtr->event = NIL;
@@ -460,7 +460,7 @@ Sync_WakeWaitingProcess(procPtr)
 	       procPtr->processor != Mach_GetProcessorNumber()) {
 	Mach_CheckSpecialHandling(procPtr->processor);
     }
-    MASTER_UNLOCK(sched_Mutex);
+    MASTER_UNLOCK(sched_MutexPtr);
 }
 
 
@@ -486,7 +486,7 @@ void
 Sync_RemoveWaiter(procPtr)
     register	Proc_ControlBlock 	*procPtr;
 {
-    MASTER_LOCK(sched_Mutex);
+    MASTER_LOCK(sched_MutexPtr);
     if (procPtr->event != NIL) {
 	List_Remove(&procPtr->eventHashChain.links);
 	procPtr->event = NIL;
@@ -498,7 +498,7 @@ Sync_RemoveWaiter(procPtr)
 	    procPtr->syncFlags |= SYNC_WAIT_COMPLETE;
 	}
     }
-    MASTER_UNLOCK(sched_Mutex);
+    MASTER_UNLOCK(sched_MutexPtr);
 }
 
 
@@ -552,14 +552,14 @@ SyncEventWaitInt(event, wakeIfSignal)
  * Sync_EventWait --
  *
  *	Make a process sleep waiting for an event.  This is an external
- *	version of the routine which is to be called without the sched_Mutex
+ *	version of the routine which is to be called without the sched_MutexPtr
  *	master lock held.
  *
  * Results:
  *	TRUE if woke up because of a signal, FALSE otherwise.
  *
  * Side effects:
- *	The sched_Mutex master lock is set, then the "internal" version
+ *	The sched_MutexPtr master lock is set, then the "internal" version
  * 	of the EventWait routine is called.
  *
  *----------------------------------------------------------------------------
@@ -572,9 +572,9 @@ Sync_EventWait(event, wakeIfSignal)
 {
     Boolean	sigPending;
 
-    MASTER_LOCK(sched_Mutex);
+    MASTER_LOCK(sched_MutexPtr);
     sigPending = SyncEventWaitInt(event, wakeIfSignal);
-    MASTER_UNLOCK(sched_Mutex);
+    MASTER_UNLOCK(sched_MutexPtr);
     return(sigPending);
 }
 
@@ -605,7 +605,7 @@ Sync_GetWaitToken(pidPtr, tokenPtr)
 
     procPtr = Proc_GetCurrentProc();
 
-    MASTER_LOCK(sched_Mutex);
+    MASTER_LOCK(sched_MutexPtr);
 
     procPtr->waitToken++;
     if (pidPtr != (Proc_PID *) NIL) {
@@ -613,7 +613,7 @@ Sync_GetWaitToken(pidPtr, tokenPtr)
     }
     *tokenPtr = procPtr->waitToken;
 
-    MASTER_UNLOCK(sched_Mutex);
+    MASTER_UNLOCK(sched_MutexPtr);
 }
 
 
@@ -639,11 +639,11 @@ Sync_SetWaitToken(procPtr, waitToken)
     Proc_ControlBlock	*procPtr;	/* Process to set token for. */
     int			waitToken;	/* Token value. */
 {
-    MASTER_LOCK(sched_Mutex);
+    MASTER_LOCK(sched_MutexPtr);
 
     procPtr->waitToken = waitToken;
 
-    MASTER_UNLOCK(sched_Mutex);
+    MASTER_UNLOCK(sched_MutexPtr);
 }
 
 
@@ -681,7 +681,7 @@ Sync_ProcWait(lockPtr, wakeIfSignal)
     Boolean				releasedLock = FALSE;
     Boolean				sigPending = FALSE;
 
-    MASTER_LOCK(sched_Mutex);
+    MASTER_LOCK(sched_MutexPtr);
     procPtr = Proc_GetCurrentProc();
     if (!(procPtr->syncFlags & SYNC_WAIT_COMPLETE)) {
 	if (wakeIfSignal && Sig_Pending(procPtr)) {
@@ -719,7 +719,7 @@ Sync_ProcWait(lockPtr, wakeIfSignal)
      */
     procPtr->waitToken++;
     procPtr->syncFlags &= ~(SYNC_WAIT_COMPLETE | SYNC_WAIT_REMOTE);
-    MASTER_UNLOCK(sched_Mutex);
+    MASTER_UNLOCK(sched_MutexPtr);
     if (releasedLock) {
 	Sync_GetLock(lockPtr);
     }
@@ -753,9 +753,9 @@ Sync_ProcWakeup(pid, token)
 
     procPtr = Proc_GetPCB(pid);
     if (procPtr != (Proc_ControlBlock *)NIL) {
-	MASTER_LOCK(sched_Mutex);
+	MASTER_LOCK(sched_MutexPtr);
 	ProcessWakeup(procPtr, token);
-	MASTER_UNLOCK(sched_Mutex);
+	MASTER_UNLOCK(sched_MutexPtr);
     }
 }
 

@@ -30,6 +30,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "mach.h"
 #include "proc.h"
+#include "sync.h"
+#include "sched.h"
 #include "procMigrate.h"
 #include "procInt.h"
 #include "migrate.h"
@@ -43,8 +45,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vm.h"
 #include "sys.h"
 #include "rpc.h"
-#include "sched.h"
-#include "sync.h"
 #include "sysSysCall.h"
 #include "sysSysCallParam.h"
 
@@ -308,7 +308,10 @@ GetProcessState(buffer, hostID)
 	 */
 	List_Init((List_Links *) procPtr->childList);
 
-
+	/*
+	 * Remember the dependency on the other host.
+	 */
+	Proc_AddMigDependency(procPtr->processID, procPtr->peerHostID);
     }
 
 
@@ -395,8 +398,6 @@ ContinueMigratedProc(procPtr)
     if (!(procPtr->genFlags & PROC_FOREIGN)) {
 	procPtr->peerProcessID = (Proc_PID) NIL;
 	procPtr->peerHostID = NIL;
-    } else {
-	Proc_AddMigDependency(procPtr->processID, procPtr->peerHostID);
     }
     Proc_Unlock(procPtr);
     Sched_MakeReady(procPtr);
@@ -429,7 +430,7 @@ Proc_ResumeMigProc(pc)
     register     	Proc_ControlBlock *procPtr;
 
 
-    MASTER_UNLOCK(sched_Mutex);
+    MASTER_UNLOCK(sched_MutexPtr);
 
     procPtr = Proc_GetCurrentProc();
     Proc_Lock(procPtr);

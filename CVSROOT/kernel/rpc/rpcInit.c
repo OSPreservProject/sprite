@@ -89,7 +89,7 @@ Rpc_Init()
 	chanPtr->state = CHAN_FREE;
 	chanPtr->index = i;
 	chanPtr->serverID = -1;
-	chanPtr->mutex = 0;
+	SYNC_SEM_INIT_DYNAMIC(&chanPtr->mutex,"chanPtr->mutex");
 	chanPtr->waitCondition.waiting = FALSE;
 
 	/*
@@ -202,6 +202,8 @@ RpcInitServerState(index)
 					 * kept in the server's state. */
     register int frag;			/* Index into array of headers used
 					 * for fragmenting */
+    static Sync_Semaphore mutexInit =
+	SYNC_SEM_INIT_STATIC("RpcServerState->mutex");
 
     srvPtr = (RpcServerState *)Vm_RawAlloc(sizeof(RpcServerState));
 
@@ -211,7 +213,7 @@ RpcInitServerState(index)
     srvPtr->index = index;
     srvPtr->clientID = -1;
     srvPtr->channel = -1;
-    srvPtr->mutex = 0;
+    srvPtr->mutex = mutexInit;
     srvPtr->waitCondition.waiting = FALSE;
     /*
      * The sequence number of the client's last request is saved

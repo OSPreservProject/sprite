@@ -143,7 +143,7 @@ typedef struct RpcClientChannel {
      * The interrupt level routine notifies waitCondition when the waiting
      * process should wakeup and check for input.
      */
-    int			mutex;
+    Sync_Semaphore	mutex;
     Sync_Condition	waitCondition;
 
 } RpcClientChannel;

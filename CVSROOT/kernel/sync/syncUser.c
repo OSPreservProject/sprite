@@ -62,18 +62,18 @@ Sync_SlowLockStub(lockPtr)
     if (status != SUCCESS) {
 	return(status);
     }
-    MASTER_LOCK(sched_Mutex);
+    MASTER_LOCK(sched_MutexPtr);
     while (Mach_TestAndSet(&(lockPtr->inUse)) != 0) {
 	lockPtr->waiting = TRUE;
 	(void) SyncEventWaitInt((unsigned int)lockPtr, TRUE);
-	MASTER_UNLOCK(sched_Mutex);
-	MASTER_LOCK(sched_Mutex);
+	MASTER_UNLOCK(sched_MutexPtr);
+	MASTER_LOCK(sched_MutexPtr);
 	if (Sig_Pending(procPtr)) {
 	    status = GEN_ABORTED_BY_SIGNAL;
 	    break;
 	}
     }
-    MASTER_UNLOCK(sched_Mutex);
+    MASTER_UNLOCK(sched_MutexPtr);
 
     (void)Vm_UnpinUserMem(sizeof(*lockPtr), (Address)lockPtr);
     return(status);
@@ -116,7 +116,7 @@ Sync_SlowWaitStub(event, lockPtr, wakeIfSignal)
     if (status != SUCCESS) {
 	return(status);
     }
-    MASTER_LOCK(sched_Mutex);
+    MASTER_LOCK(sched_MutexPtr);
     /*
      * release the monitor lock and wait on the condition
      */
@@ -129,7 +129,7 @@ Sync_SlowWaitStub(event, lockPtr, wakeIfSignal)
     } else {
 	status = SUCCESS;
     }
-    MASTER_UNLOCK(sched_Mutex);
+    MASTER_UNLOCK(sched_MutexPtr);
 
     (void)Vm_UnpinUserMem(sizeof(*lockPtr), (Address)lockPtr);
     return(status);
@@ -170,12 +170,12 @@ Sync_SlowBroadcastStub(event, waitFlagPtr)
 	return(status);
     }
 
-    MASTER_LOCK(sched_Mutex);
+    MASTER_LOCK(sched_MutexPtr);
 
     *waitFlagPtr = FALSE;
     SyncEventWakeupInt(event);
 
-    MASTER_UNLOCK(sched_Mutex);
+    MASTER_UNLOCK(sched_MutexPtr);
 
     (void)Vm_UnpinUserMem(sizeof(*waitFlagPtr), (Address)waitFlagPtr);
 

@@ -29,7 +29,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * Trace module mutex.
  */
 
-int trace_Mutex = 0;
+Sync_Semaphore trace_Mutex = SYNC_SEM_INIT_STATIC("trace_Mutex");
 
 
 /*
@@ -112,10 +112,10 @@ Trace_Insert(traceHdrPtr, event, data)
     int size;
     Timer_Ticks ticks;
     
-    MASTER_LOCK(trace_Mutex);
+    MASTER_LOCK(&trace_Mutex);
     if (traceHdrPtr == (Trace_Header *)NIL ||
 	(traceHdrPtr->flags & TRACE_INHIBIT)) {
-	MASTER_UNLOCK(trace_Mutex);
+	MASTER_UNLOCK(&trace_Mutex);
 	return;
     }
 
@@ -137,7 +137,7 @@ Trace_Insert(traceHdrPtr, event, data)
     recordPtr->event = event;
     traceHdrPtr->currentRecord =
 	    (traceHdrPtr->currentRecord + 1) % traceHdrPtr->numRecords;
-    MASTER_UNLOCK(trace_Mutex);
+    MASTER_UNLOCK(&trace_Mutex);
 }
 
 
@@ -182,9 +182,9 @@ Trace_Dump(traceHdrPtr, numRecs, addr)
 	return(status);
     }
 
-    MASTER_LOCK(trace_Mutex);
+    MASTER_LOCK(&trace_Mutex);
     traceHdrPtr->flags |= TRACE_INHIBIT;
-    MASTER_UNLOCK(trace_Mutex);
+    MASTER_UNLOCK(&trace_Mutex);
 
     if (numRecs > traceHdrPtr->numRecords) {
 	numRecs = traceHdrPtr->numRecords;
@@ -308,9 +308,9 @@ Trace_Print(traceHdrPtr, numRecs, printProc)
     Time baseTime;		/* Used to calculate deltaTime */
     Trace_Record *recordPtr;
 
-    MASTER_LOCK(trace_Mutex);
+    MASTER_LOCK(&trace_Mutex);
     traceHdrPtr->flags |= TRACE_INHIBIT;
-    MASTER_UNLOCK(trace_Mutex);
+    MASTER_UNLOCK(&trace_Mutex);
 
     baseTime.seconds = 0;
     baseTime.microseconds = 0;

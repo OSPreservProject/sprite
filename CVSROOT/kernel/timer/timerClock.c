@@ -112,7 +112,7 @@ static Boolean DSTAllowed		= TRUE;
  * Semaphore protecting the above time of day variables.
  */
 
-int	timerClockMutex = 0;
+Sync_Semaphore	timerClockMutex = SYNC_SEM_INIT_STATIC("timerClockMutex");
 
 
 /*
@@ -192,7 +192,7 @@ Timer_GetRealTimeOfDay(timePtr, localOffsetPtr, DSTPtr)
      *  of the stored time of day to get the current T.O.D.
      */
 
-    MASTER_LOCK(timerClockMutex);
+    MASTER_LOCK(&timerClockMutex);
 
 
     Timer_GetCurrentTicks(&curTime);
@@ -207,7 +207,7 @@ Timer_GetRealTimeOfDay(timePtr, localOffsetPtr, DSTPtr)
     if (DSTPtr != (Boolean *) NIL) {
 	*DSTPtr = DSTAllowed;
     }
-    MASTER_UNLOCK(timerClockMutex);
+    MASTER_UNLOCK(&timerClockMutex);
 
 }
 
@@ -242,7 +242,7 @@ Timer_GetTimeOfDay(timePtr, localOffsetPtr, DSTPtr)
     Boolean *DSTPtr;		/* Optional buffer to hold DST allowed flag. */
 {
 
-    MASTER_LOCK(timerClockMutex);
+    MASTER_LOCK(&timerClockMutex);
 
     *timePtr = timerTimeOfDay;
 
@@ -253,7 +253,7 @@ Timer_GetTimeOfDay(timePtr, localOffsetPtr, DSTPtr)
 	*DSTPtr = DSTAllowed;
     }
 
-    MASTER_UNLOCK(timerClockMutex);
+    MASTER_UNLOCK(&timerClockMutex);
 
 }
 
@@ -288,7 +288,7 @@ Timer_SetTimeOfDay(newTOD, newLocalOffset, newDSTAllowed)
      *  the new local offset and the DST flag.
      */
 
-    MASTER_LOCK(timerClockMutex);
+    MASTER_LOCK(&timerClockMutex);
 
 
     timerTimeOfDay = newTOD;
@@ -300,7 +300,7 @@ Timer_SetTimeOfDay(newTOD, newLocalOffset, newDSTAllowed)
     localOffset 	= newLocalOffset;
     DSTAllowed 		= newDSTAllowed;
 
-    MASTER_UNLOCK(timerClockMutex);
+    MASTER_UNLOCK(&timerClockMutex);
 
 }
 

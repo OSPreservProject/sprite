@@ -38,7 +38,7 @@ static Boolean inMcount = FALSE;
  * of the storage for its arcs.
  */
 
-static int	mcountMutex;
+static Sync_Semaphore	mcountMutex = SYNC_SEM_INIT_STATIC("mcountMutex");
 
 
 /*
@@ -156,7 +156,7 @@ mcount()
 			"_mcount: No more arcs, stopping profiling\n");
 	} else {
 
-	    MASTER_LOCK(mcountMutex);
+	    MASTER_LOCK(&mcountMutex);
 
 	    arcPtr = profArcListFreePtr;
 	    profArcListFreePtr++;
@@ -165,7 +165,7 @@ mcount()
 	    arcPtr->count    = 1;
 	    arcPtr->link     = (ProfRawArc *)NIL;
 
-	    MASTER_UNLOCK(mcountMutex);
+	    MASTER_UNLOCK(&mcountMutex);
 	}
 	goto exit;
     }
@@ -190,7 +190,7 @@ mcount()
 	    if (profArcListFreePtr >= profArcListEndPtr) {
 		Sys_Panic(SYS_WARNING, "_mcount: No more arcs\n");
 	    } else {
-		MASTER_LOCK(mcountMutex);
+		MASTER_LOCK(&mcountMutex);
 
 		arcPtr->link = profArcListFreePtr;
 		profArcListFreePtr++;
@@ -200,7 +200,7 @@ mcount()
 		arcPtr->count		= 1;
 		arcPtr->link		= (ProfRawArc *) NIL;
 
-		MASTER_UNLOCK(mcountMutex);
+		MASTER_UNLOCK(&mcountMutex);
 	    }
 	    goto exit;
 	}

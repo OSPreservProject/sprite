@@ -47,9 +47,9 @@ Sched_SetClearUsageFlag()
     Proc_ControlBlock	*procPtr;
 
     procPtr = Proc_GetCurrentProc();
-    MASTER_LOCK(sched_Mutex);
+    MASTER_LOCK(sched_MutexPtr);
     procPtr->schedFlags |= SCHED_CLEAR_USAGE;
-    MASTER_UNLOCK(sched_Mutex);
+    MASTER_UNLOCK(sched_MutexPtr);
 }
 
 

@@ -136,7 +136,7 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
      * we place a call back procedure in the timer queue that will
      * also notify that condition upon timeout.
      */
-    MASTER_LOCK(chanPtr->mutex);
+    MASTER_LOCK(&chanPtr->mutex);
 
     /*
      * Send the request off to the server.  We update the server hint from
@@ -387,7 +387,7 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 	    printf("<%s> RPC exit 0x%x\n", rpcService[command].name, error);
 	}
     }
-    MASTER_UNLOCK(chanPtr->mutex);
+    MASTER_UNLOCK(&chanPtr->mutex);
     return(error);
 }
 
@@ -431,11 +431,11 @@ RpcClientDispatch(chanPtr, rpcHdrPtr)
      * Deadlock occurs here when doing RPCs to oneself and the client
      * resends and then the server acknowledges.
      */
-    if (chanPtr->mutex != 0) {
+    if (chanPtr->mutex.value != 0) {
 	printf("Warning:  Rpc to myself?\n");
 	return;
     } else {
-	MASTER_LOCK(chanPtr->mutex);
+	MASTER_LOCK(&chanPtr->mutex);
     }
     
     /*
@@ -602,7 +602,7 @@ unlock:
     RPC_TRACE(rpcHdrPtr, RPC_CLIENT_a, "client");
 #endif /* TIMESTAMP */
 
-    MASTER_UNLOCK(chanPtr->mutex);
+    MASTER_UNLOCK(&chanPtr->mutex);
 }
 
 /*
@@ -638,8 +638,8 @@ Rpc_Timeout(time, data)
      * We acquire the master lock (as a formality in a uniprocessor)
      * and use the form of broadcast designed for master locks.
      */
-    MASTER_LOCK(chanPtr->mutex);
+    MASTER_LOCK(&chanPtr->mutex);
     chanPtr->state &= ~CHAN_TIMEOUT;
     Sync_MasterBroadcast(&chanPtr->waitCondition);
-    MASTER_UNLOCK(chanPtr->mutex);
+    MASTER_UNLOCK(&chanPtr->mutex);
 }

@@ -55,6 +55,28 @@ typedef struct Sync_Instrument {
     int numUnlocks;		/* number of calls to MASTER_UNLOCK */
 } Sync_Instrument;
 
+typedef struct Sync_Semaphore {
+    int value;			/* value of semaphore */
+    int miss;			/* count of misses on lock */
+    char *name;			/* name of semaphore */
+    Address pc;			/* pc of lock holder */
+    char *lineInfo;		/* line/file of lock holder */
+} Sync_Semaphore;
+
+#ifdef CLEAN
+#define SYNC_SEM_INIT_STATIC(name) {0,0,(char *)NIL,(Address)NIL,(char *)NIL}
+#define SYNC_SEM_INIT_DYNAMIC(sem,semName) { \
+    (sem)->value = (sem)->miss = 0; (sem)->name = (char *)NIL; \
+    (sem)->pc = (Address)NIL; (sem)->lineInfo = (char *)NIL; }
+
+#else
+#define SYNC_SEM_INIT_STATIC(name) {0,0,name,(Address) NIL,""}
+#define SYNC_SEM_INIT_DYNAMIC(sem,semName) { \
+    (sem)->value = (sem)->miss = 0; (sem)->name = semName; \
+    (sem)->pc = (Address)NIL; (sem)->lineInfo = ""; }
+
+#endif
+
 /*
  * Define a structure to keep track of waiting processes on remote machines.
  */
@@ -139,8 +161,18 @@ extern 	void 		Sync_PrintStat();
  *----------------------------------------------------------------------------
  */
 
+/* The following 2 macros are used to turn __LINE__ into a string. The first
+ * turns its argument into a string, but it doesn't expand the argument so you
+ * end up with the string "__LINE__". The second expands __LINE__ before passing
+ * it to the first. These are only defined and used within the MASTER_LOCK
+ * and MASTER_UNLOCK definitions
+ */
+
+#define _hack(x) #x
+#define _hack2(x) _hack(x)
+
+#ifndef CLEAN
 #if (MACH_MAX_NUM_PROCESSORS == 1) /* uniprocessor implementation */
-#ifndef lint
 #define MASTER_LOCK(semaphore) \
     { \
         sync_Instrument.numLocks++; \
@@ -148,24 +180,19 @@ extern 	void 		Sync_PrintStat();
 	    Mach_DisableIntr(); \
 	    mach_NumDisableIntrsPtr[0]++; \
 	} \
-	if ((semaphore)++ == 1) { \
- 	    panic("Deadlock!!! (semaphore @ 0x%x)\n",(int)&(semaphore)); \
-	} \
+	if ((semaphore)->value == 1) { \
+	    panic("Deadlock!!!(%s @ 0x%x)\nHolder PC: 0x%x Current PC: 0x%x\n" \
+		"Holder: %s Current: line " _hack2(__LINE__) \
+		", file " __FILE__ "\n", \
+		(semaphore)->name,(int)(semaphore),(int)(semaphore)->pc,\
+		Mach_GetPC(),(semaphore)->lineInfo); \
+	} else { \
+	    (semaphore)->value++;\
+	    (semaphore)->pc = Mach_GetPC(); \
+	    (semaphore)->lineInfo = "line " _hack2(__LINE__) \
+		", file " __FILE__ ; \
+	}\
     }
-#else /* lint */
-#define MASTER_LOCK(semaphore) \
-    { \
-        sync_Instrument.numLocks++; \
-	if (!Mach_AtInterruptLevel()) { \
-          Mach_DisableIntr(); \
-	    mach_NumDisableIntrsPtr[0]++; \
-	} \
-	(semaphore)++; \
-	if ((semaphore) == 1) { \
-	    panic("Deadlock!!! (semaphore @ 0x%x)\n", (int)&(semaphore)); \
-	} \
-    }
-#endif /* lint */
 #else  			/* multiprocessor implementation */
 #define MASTER_LOCK(semaphore) \
     { \
@@ -174,10 +201,49 @@ extern 	void 		Sync_PrintStat();
 	    Mach_DisableIntr(); \
 	    mach_NumDisableIntrsPtr[0]++; \
 	} \
-	while(Mach_TestAndSet(&(semaphore)) != 0){ \
+	if(Mach_TestAndSet(&((semaphore)->value)) != 0){ \
+	    (semaphore)->miss++;\
+	} \
+	while(Mach_TestAndSet(&((semaphore)->value)) != 0){ \
+	} \
+	(semaphore)->pc = Mach_GetPC(); \
+	(semaphore)->lineInfo = "line " tmpMKString2(__LINE__) \
+		", file " __FILE__ ; \
+    }
+#endif  /* multiprocessor implementation */
+#else   /* CLEAN */
+#if (MACH_MAX_NUM_PROCESSORS == 1) /* uniprocessor implementation */
+#define MASTER_LOCK(semaphore) \
+    { \
+        sync_Instrument.numLocks++; \
+	if (!Mach_AtInterruptLevel()) { \
+	    Mach_DisableIntr(); \
+	    mach_NumDisableIntrsPtr[0]++; \
+	} \
+	if ((semaphore)->value == 1) { \
+	    panic("Deadlock!!! (semaphore @ 0x%x)\n", (int)(semaphore)); \
+	} \
+	(semaphore)->value == 1; \
+    }
+
+#else  			/* multiprocessor implementation */
+#define MASTER_LOCK(semaphore) \
+    { \
+        sync_Instrument.numLocks++; \
+	if (!Mach_AtInterruptLevel()) { \
+	    Mach_DisableIntr(); \
+	    mach_NumDisableIntrsPtr[0]++; \
+	} \
+	while(Mach_TestAndSet(&((semaphore)->value)) != 0){ \
 	} \
     }
-#endif
+
+#endif /*multiprocessor implementation */
+#endif /* CLEAN */
+
+#undef tmpMkString
+#undef tmpLineString
+
 
 /*
  *----------------------------------------------------------------------------
@@ -199,30 +265,17 @@ extern 	void 		Sync_PrintStat();
  *----------------------------------------------------------------------------
  */
 
-#ifndef lint 
 #define MASTER_UNLOCK(semaphore) \
     { \
         sync_Instrument.numUnlocks++; \
-	(semaphore) = 0; \
+	(semaphore)->value = 0; \
 	if (!Mach_AtInterruptLevel()) { \
-	    if (--(mach_NumDisableIntrsPtr[0]) == 0) { \
-		Mach_EnableIntr(); \
-	    } \
-	} \
-    }
-#else /* lint */
-#define MASTER_UNLOCK(semaphore) \
-    { \
-        sync_Instrument.numUnlocks++; \
-	(semaphore) = 0; \
-	if (!Mach_AtInterruptLevel()) { \
-	    mach_NumDisableIntrsPtr[0]--; \
+	    --mach_NumDisableIntrsPtr[0]; \
 	    if (mach_NumDisableIntrsPtr[0] == 0) { \
 		Mach_EnableIntr(); \
 	    } \
 	} \
     }
-#endif /* lint */
 
 /* 
  * Condition variables can be used in critical sections guarded by

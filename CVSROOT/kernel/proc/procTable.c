@@ -200,7 +200,7 @@ AddPCBs(procPtrPtr)
     /*
      *  Gain exclusive access to the process table.
      */
-    MASTER_LOCK(sched_Mutex);
+    MASTER_LOCK(sched_MutexPtr);
 
     for (i = 0; i < PROC_PCB_NUM_ALLOC; i++) {
 	proc_PCBTable[proc_MaxNumProcesses] = *procPtrPtr;
@@ -208,7 +208,7 @@ AddPCBs(procPtrPtr)
 	proc_MaxNumProcesses++;
     }
 
-    MASTER_UNLOCK(sched_Mutex);
+    MASTER_UNLOCK(sched_MutexPtr);
 }
     
 

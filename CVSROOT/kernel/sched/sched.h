@@ -17,10 +17,12 @@
 #include "timer.h"
 #include "proc.h"
 #include "mach.h"
+#include "sync.h"
 #else
 #include <kernel/timer.h>
 #include <kernel/proc.h>
 #include <kernel/mach.h>
+#include <kernel/sync.h>
 #endif
 
 /*
@@ -87,8 +89,9 @@ typedef struct Sched_Instrument {
  * External declarations:
  */
     
-extern int  sched_Mutex;		/* Mutual exclusion in scheduler */
+extern Sync_Semaphore sched_Mutex;	/* Mutual exclusion in scheduler */
 
+extern Sync_Semaphore *sched_MutexPtr;
 extern Sched_Instrument sched_Instrument;   /* Counters for instrumentation. */
 
 extern void			Sched_MakeReady();

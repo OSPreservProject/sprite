@@ -18,7 +18,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sys.h"
 #include "byte.h"
 
-unsigned	int	traceMutex = 0;
+Sync_Semaphore	traceMutex = SYNC_SEM_INIT_STATIC("traceMutex");
 
 Boolean		vm_Tracing = FALSE;
 int		vmTracesPerClock;
@@ -58,11 +58,11 @@ VmStoreTraceRec(recType, size, traceRecAddr, checkOverflow)
 {
     short	*shortPtr;
 
-    MASTER_LOCK(traceMutex);
+    MASTER_LOCK(&traceMutex);
 
     if (vmTraceNextByte - vmTraceFirstByte > VM_TRACE_BUFFER_SIZE - size) {
 	vmTraceStats.traceDrops++;
-	MASTER_UNLOCK(traceMutex);
+	MASTER_UNLOCK(&traceMutex);
 	return;
     }
     if ((vmTraceNextByte & VM_TRACE_BUF_MASK) !=
@@ -77,7 +77,7 @@ VmStoreTraceRec(recType, size, traceRecAddr, checkOverflow)
 	if (vmTraceNextByte - vmTraceFirstByte > 
 				VM_TRACE_BUFFER_SIZE - size) {
 	    vmTraceStats.traceDrops++;
-	    MASTER_UNLOCK(traceMutex);
+	    MASTER_UNLOCK(&traceMutex);
 	    return;
 	}
     }
@@ -96,7 +96,7 @@ VmStoreTraceRec(recType, size, traceRecAddr, checkOverflow)
 	    Proc_CallFunc(VmTraceDump, (ClientData)0, 0);
 	}
     }
-    MASTER_UNLOCK(traceMutex);
+    MASTER_UNLOCK(&traceMutex);
 }
 
 
@@ -174,13 +174,13 @@ VmTraceDump(data, callInfoPtr)
 void
 VmCheckTraceOverflow()
 {
-    MASTER_LOCK(traceMutex);
+    MASTER_LOCK(&traceMutex);
     if (vmTraceNextByte - vmTraceFirstByte > VM_TRACE_BUFFER_SIZE / 2 &&
 	!vmTraceDumpStarted) {
 	vmTraceDumpStarted = TRUE;
 	Proc_CallFunc(VmTraceDump, (ClientData)0, 0);
     }
-    MASTER_UNLOCK(traceMutex);
+    MASTER_UNLOCK(&traceMutex);
 }
 
 

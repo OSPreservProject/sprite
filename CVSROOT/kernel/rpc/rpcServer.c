@@ -105,7 +105,7 @@ Rpc_Server()
 	 * Synchronize with RpcServerDispatch and await a request message.
 	 * Change our state to indicate that we are ready for input.
 	 */
-	MASTER_LOCK(srvPtr->mutex);
+	MASTER_LOCK(&srvPtr->mutex);
 	srvPtr->state &= ~SRV_BUSY;
 	srvPtr->state |= SRV_WAITING;
 	if (error == RPC_NO_REPLY) {
@@ -116,13 +116,13 @@ Rpc_Server()
 				&srvPtr->mutex, TRUE);
 	    if (sys_ShuttingDown) {
 		srvPtr->state = SRV_NOTREADY;
-		MASTER_UNLOCK(srvPtr->mutex);
+		MASTER_UNLOCK(&srvPtr->mutex);
 		printf("Rpc_Server exiting\n");
 		Proc_Exit(0);
 	    }
 	}
 	srvPtr->state &= ~SRV_NO_REPLY;
-	MASTER_UNLOCK(srvPtr->mutex);
+	MASTER_UNLOCK(&srvPtr->mutex);
 
 	/*
 	 * At this point there is unsynchronized access to
@@ -238,7 +238,7 @@ RpcReclaimServers()
     for (srvIndex=0 ; srvIndex < rpcNumServers ; srvIndex++) {
 	srvPtr = rpcServerPtrPtr[srvIndex];
 
-	MASTER_LOCK(srvPtr->mutex);
+	MASTER_LOCK(&srvPtr->mutex);
 
 
 	procPtr = (int (*)())NIL;
@@ -302,7 +302,7 @@ RpcReclaimServers()
 	    srvPtr->freeReplyProc = (int (*)())NIL;
 	    srvPtr->freeReplyData = (ClientData)NIL;
 	}
-	MASTER_UNLOCK(srvPtr->mutex);
+	MASTER_UNLOCK(&srvPtr->mutex);
 	/*
 	 * Do the call-back to free up resources associated with the last RPC.
 	 */
@@ -347,7 +347,7 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
      * synchronize with each server process with a mutex that is part of
      * the server's state.
      */
-    MASTER_LOCK(srvPtr->mutex);
+    MASTER_LOCK(&srvPtr->mutex);
     
 #ifdef TIMESTAMP
     RPC_TRACE(rpcHdrPtr, RPC_SERVER_a, " server");
@@ -607,7 +607,7 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 #endif /* TIMESTAMP */
     }
 unlock:
-    MASTER_UNLOCK(srvPtr->mutex);
+    MASTER_UNLOCK(&srvPtr->mutex);
 }
 
 /*
@@ -661,10 +661,12 @@ Rpc_ErrorReply(srvToken, error)
 	/*
 	 * Make sure we have a good route back to the client.
 	 */
-	int mutex = 0;
-	MASTER_LOCK(mutex);
+	Sync_Semaphore mutex;
+
+	SYNC_SEM_INIT_DYNAMIC(&mutex,"Rpc_ErrorReply.mutex");
+	MASTER_LOCK(&mutex);
 	(void) Net_Arp(rpcHdrPtr->clientID, &mutex);
-	MASTER_UNLOCK(mutex);
+	MASTER_UNLOCK(&mutex);
     }
     (void)RpcOutput(rpcHdrPtr->clientID, rpcHdrPtr, &srvPtr->reply,
 					 (RpcBufferSet *)NIL, 0, (int *)NIL);
@@ -740,6 +742,7 @@ Rpc_Reply(srvToken, error, storagePtr, freeReplyProc, freeReplyData)
     register RpcHdr	*rpcHdrPtr;
     register RpcHdr	*requestHdrPtr;
 
+
     srvPtr = (RpcServerState *)srvToken;
     rpcHdrPtr = &srvPtr->replyRpcHdr;
     requestHdrPtr = &srvPtr->requestRpcHdr;
@@ -776,10 +779,12 @@ Rpc_Reply(srvToken, error, storagePtr, freeReplyProc, freeReplyData)
 	/*
 	 * Make sure we have a good route back to the client.
 	 */
-	int mutex = 0;
-	MASTER_LOCK(mutex);
+	Sync_Semaphore mutex;
+	  
+	SYNC_SEM_INIT_DYNAMIC(&mutex,"Rpc_Reply.mutex");
+	MASTER_LOCK(&mutex);
 	(void) Net_Arp(rpcHdrPtr->clientID, &mutex);
-	MASTER_UNLOCK(mutex);
+	MASTER_UNLOCK(&mutex);
     }
     (void)RpcOutput(rpcHdrPtr->clientID, rpcHdrPtr, &srvPtr->reply,
 					 srvPtr->fragment, 0, (int *)NIL);

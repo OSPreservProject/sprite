@@ -29,7 +29,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  * Rpc_Daemon process is all synchronized with the serverMutex master lock.
  * rpcDaemon is the condition that is used to wakeup the Rpc_Deamon.
  */
-static int serverMutex;
+static Sync_Semaphore serverMutex = SYNC_SEM_INIT_STATIC("serverMutex");
 Sync_Condition rpcDaemon;
 
 /*
@@ -207,7 +207,7 @@ RpcServerAlloc(rpcHdrPtr)
     register RpcServerState *srvPtr;
     int	freeServer = -1;
 
-    MASTER_LOCK(serverMutex);
+    MASTER_LOCK(&serverMutex);
 
     if (daemonState == DAEMON_DEAD) {
 	/*
@@ -262,7 +262,7 @@ RpcServerAlloc(rpcHdrPtr)
 	Sync_MasterBroadcast(&rpcDaemon);
     }
 unlock:
-    MASTER_UNLOCK(serverMutex);
+    MASTER_UNLOCK(&serverMutex);
     return(srvPtr);
 }
 
@@ -292,7 +292,7 @@ RpcServerInstall()
      * This synchronizes with RpcServerAlloc.  This will only be
      * important if the server is getting requests as the machine boots.
      */
-    MASTER_LOCK(serverMutex);
+    MASTER_LOCK(&serverMutex);
 
     for (i=0 ; i<rpcNumServers ; i++) {
 	srvPtr = rpcServerPtrPtr[i];
@@ -303,7 +303,7 @@ RpcServerInstall()
     }
     srvPtr = (RpcServerState *)NIL;
 unlock:
-    MASTER_UNLOCK(serverMutex);
+    MASTER_UNLOCK(&serverMutex);
     return(srvPtr);
 }
 
@@ -330,9 +330,9 @@ ENTRY void
 RpcResetNoServers(value)
     int value;		/* New value for rpcNoServers */
 {
-    MASTER_LOCK(serverMutex);
+    MASTER_LOCK(&serverMutex);
     rpcNoServers = value;
-    MASTER_UNLOCK(serverMutex);
+    MASTER_UNLOCK(&serverMutex);
 }
 
 /*
@@ -357,7 +357,7 @@ ENTRY void
 RpcDaemonWait(queueEntryPtr)
     Timer_QueueElement *queueEntryPtr;	/* Initialized timer queue item */
 {
-    MASTER_LOCK(serverMutex);
+    MASTER_LOCK(&serverMutex);
     if (daemonState & DAEMON_DEAD) {
 	daemonState &= ~DAEMON_DEAD;
     }
@@ -367,12 +367,12 @@ RpcDaemonWait(queueEntryPtr)
 	Sync_MasterWait(&rpcDaemon, &serverMutex, FALSE);
 	if (sys_ShuttingDown) {
 	    printf("Rpc_Daemon exiting.\n");
-	    MASTER_UNLOCK(serverMutex);
+	    MASTER_UNLOCK(&serverMutex);
 	    Proc_Exit(0);
 	}
     } while ((daemonState & DAEMON_POKED) == 0);
     daemonState &= ~DAEMON_POKED;
-    MASTER_UNLOCK(serverMutex);
+    MASTER_UNLOCK(&serverMutex);
 }
 
 /*
@@ -398,9 +398,9 @@ RpcDaemonWakeup(time, data)
     Timer_Ticks time;		/* Time we timed out at. */
     ClientData data;		/* NIL */
 {
-    MASTER_LOCK(serverMutex);
+    MASTER_LOCK(&serverMutex);
     daemonState &= ~DAEMON_TIMEOUT;
     daemonState |= DAEMON_POKED;
     Sync_MasterBroadcast(&rpcDaemon);
-    MASTER_UNLOCK(serverMutex);
+    MASTER_UNLOCK(&serverMutex);
 }

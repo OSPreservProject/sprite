@@ -20,15 +20,16 @@
 #define _TIMERINT
 
 #include "spriteTime.h"
+#include "sync.h"
 
 
-extern int 	timerMutex;
-extern int 	timerClockMutex;
-extern Time 	timerTimeOfDay;
+extern Sync_Semaphore 	timerMutex;
+extern Sync_Semaphore 	timerClockMutex;
+extern Time 		timerTimeOfDay;
 
-extern void	Timer_CallBack();
-extern void 	TimerTicksInit();
-extern void 	Timer_CounterInit();
-extern void	Timer_ClockInit();
+extern void		Timer_CallBack();
+extern void 		TimerTicksInit();
+extern void 		Timer_CounterInit();
+extern void		Timer_ClockInit();
 
 #endif _TIMERINT

@@ -21,6 +21,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "stdio.h"
 #include "varargs.h"
+#include "sync.h"
 #include "mach.h"
 #include "fs.h"
 #include "sys.h"
@@ -30,7 +31,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 /*
  * Calls to panic and printf are protected.
  */
-static	int	sysPrintMutex = 0;
+static	Sync_Semaphore	sysPrintMutex = SYNC_SEM_INIT_STATIC("sysPrintMutex");
 
 /*
  * Used to keep track of bytes written.
@@ -121,7 +122,7 @@ doVprintf(format, args)
 	return;
     }
     recursiveCallP = 1;
-    MASTER_LOCK(sysPrintMutex);
+    MASTER_LOCK(&sysPrintMutex);
     if (!initialized) {
 	Stdio_Setup(&stream, 0, 1, streamBuffer, STREAM_BUFFER_SIZE,
 		(void (*)()) 0, writeProc,  (int (*)()) 0, (ClientData) 0);
@@ -131,7 +132,7 @@ doVprintf(format, args)
     bytesWritten = 0;
     vfprintf(&stream, format, *args);
     fflush(&stream);
-    MASTER_UNLOCK(sysPrintMutex);
+    MASTER_UNLOCK(&sysPrintMutex);
     recursiveCallP = 0;
     return (bytesWritten);
 
@@ -211,9 +212,9 @@ panic(va_alist)
     Dev_SyslogDebug(TRUE);
     printf("Fatal Error: ");
     (void) doVprintf(format,&args);
-    MASTER_LOCK(sysPrintMutex);
+    MASTER_LOCK(&sysPrintMutex);
     sysPanicing = TRUE;
-    MASTER_UNLOCK(sysPrintMutex);
+    MASTER_UNLOCK(&sysPrintMutex);
     DBG_CALL;
     Dev_SyslogDebug(FALSE);
 }
@@ -267,9 +268,9 @@ Sys_Panic(va_alist)
 	return;
     }
 
-    MASTER_LOCK(sysPrintMutex);
+    MASTER_LOCK(&sysPrintMutex);
     sysPanicing = TRUE;
-    MASTER_UNLOCK(sysPrintMutex);
+    MASTER_UNLOCK(&sysPrintMutex);
     DBG_CALL;
     Dev_SyslogDebug(FALSE);
     return;

@@ -64,7 +64,7 @@ typedef struct RpcServerState {
      * is with 'mutex', a master lock.  The condition variable is
      * used to notify the server process that it has input.
      */
-    int			mutex;
+    Sync_Semaphore	mutex;
     Sync_Condition	waitCondition;
 
     /*

@@ -89,7 +89,7 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 					 * corresponding fragment.  A good
 					 * value for this is returned in
 					 * partial acknowlegment messages */
-    int			*mutexPtr;	/* This mutex is released while we
+    Sync_Semaphore	*mutexPtr;	/* This mutex is released while we
 					 * output the message.  If NIL, no
 					 * mutex is released.  This is done
 					 * in honor of DMA interfaces that
@@ -274,12 +274,12 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 		     * serviced in between the output of each packet.
 		     */
 		    RPC_TRACE(fragRpcHdrPtr, RPC_OUTPUT, "Fragout");
-		    if (mutexPtr != (int *)NIL) {
+		    if (mutexPtr != (Sync_Semaphore *)NIL) {
 			if (Mach_AtInterruptLevel()) {
 			    panic(
 			      "RpcOutput, unlocking mutex at interrupt level");
 			} else {
-			    MASTER_UNLOCK((*mutexPtr));
+			    MASTER_UNLOCK(mutexPtr);
 			}
 		    }
 		    rpcLastDelay = delay;
@@ -287,8 +287,8 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 			((fragRpcHdrPtr->flags & RPC_LASTFRAG) == 0)) {
 			MACH_DELAY(delay);
 		    }
-		    if (mutexPtr != (int *)NIL) {
-			MASTER_LOCK((*mutexPtr));
+		    if (mutexPtr != (Sync_Semaphore *)NIL) {
+			MASTER_LOCK(mutexPtr);
 		    }
 		}
 	    }

@@ -64,7 +64,7 @@ void TimerDumpElement();
  * The timer module mutex semaphore.  
  */
 
-int timerMutex = 0;
+Sync_Semaphore timerMutex = SYNC_SEM_INIT_STATIC("timerMutex");
 
 /*
  *  Debugging routine and data.
@@ -176,12 +176,12 @@ Timer_CallBack()
 	timer_Statistics.callback++;
 #endif
 
-	MASTER_LOCK(timerMutex);
+	MASTER_LOCK(&timerMutex);
 
-	MASTER_LOCK(timerClockMutex);
+	MASTER_LOCK(&timerClockMutex);
 	Time_Add(timerTimeOfDay, todUpdate, &timerTimeOfDay);
 	timeOfDay = timerTimeOfDay;
-	MASTER_UNLOCK(timerClockMutex);
+	MASTER_UNLOCK(&timerClockMutex);
 
 	if (vm_Tracing) {
 	    Vm_StoreTraceTime(timeOfDay);
@@ -234,7 +234,7 @@ Timer_CallBack()
 
 
 	} 
-	MASTER_UNLOCK(timerMutex);
+	MASTER_UNLOCK(&timerMutex);
     
 }
 
@@ -317,9 +317,9 @@ Timer_ScheduleRoutine(newElementPtr, interval)
     timer_Statistics.schedule++;
 #endif
 
-    MASTER_LOCK(timerMutex); 
+    MASTER_LOCK(&timerMutex); 
     Timer_RescheduleRoutine(newElementPtr, interval);
-    MASTER_UNLOCK(timerMutex); 
+    MASTER_UNLOCK(&timerMutex); 
 }
 
 
@@ -461,7 +461,7 @@ Timer_DescheduleRoutine(elementPtr)
      *  Go through the timer queue and remove the routine.  
      */
 
-    MASTER_LOCK(timerMutex); 
+    MASTER_LOCK(&timerMutex); 
 
     LIST_FORALL(timerQueueList, itemPtr) {
 
@@ -471,7 +471,7 @@ Timer_DescheduleRoutine(elementPtr)
 	}
     }
 
-    MASTER_UNLOCK(timerMutex); 
+    MASTER_UNLOCK(&timerMutex); 
 }
 
 /*
@@ -506,13 +506,13 @@ Timer_DumpQueue()
     } else {
 	printf("\n");
 
-	MASTER_LOCK(timerMutex); 
+	MASTER_LOCK(&timerMutex); 
 
 	LIST_FORALL(timerQueueList, itemPtr) {
 	    TimerDumpElement((Timer_QueueElement *) itemPtr);
 	}
 
-	MASTER_UNLOCK(timerMutex); 
+	MASTER_UNLOCK(&timerMutex); 
 
     }
 }

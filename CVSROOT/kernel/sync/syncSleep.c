@@ -164,10 +164,10 @@ WaitTimeSubr(wakeupTime)
     /*
      * Get the scheduler master lock here.  This is done to ensure that
      * the wakeup call cannot precede the process's going to sleep.
-     * SyncEventWaitInt expects the sched_Mutex lock to be held upon entry.
+     * SyncEventWaitInt expects the sched_MutexPtr lock to be held upon entry.
      */
 
-    MASTER_LOCK(sched_Mutex);
+    MASTER_LOCK(sched_MutexPtr);
     Timer_ScheduleRoutine(&wakeupElement, FALSE);
 
     /*
@@ -188,7 +188,7 @@ WaitTimeSubr(wakeupTime)
     } while (Timer_TickLT(currentTime, wakeupTime) && !sigPending);
 
     Timer_DescheduleRoutine(&wakeupElement);
-    MASTER_UNLOCK(sched_Mutex);
+    MASTER_UNLOCK(sched_MutexPtr);
 
     return(sigPending);
 }

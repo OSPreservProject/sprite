@@ -111,7 +111,7 @@ int	proc_NumServers = 5;
  * Mutex to synchronize accsess to the queue of pending requests and
  * to the process state.
  */
-int	serverMutex = 0;
+Sync_Semaphore	serverMutex = SYNC_SEM_INIT_STATIC("serverMutex");
 
 void	Proc_ServerProc();
 void	ScheduleFunc();
@@ -286,7 +286,7 @@ Proc_ServerProc()
     Proc_CallInfo		callInfo;
     int				i;
 
-    MASTER_LOCK(serverMutex);
+    MASTER_LOCK(&serverMutex);
     /*
      * Find which server table entry that we are to use.
      */
@@ -299,7 +299,7 @@ Proc_ServerProc()
 	}
     }
     if (i == proc_NumServers) {
-	MASTER_UNLOCK(serverMutex);
+	MASTER_UNLOCK(&serverMutex);
 	printf("Warning: Proc_ServerProc: No server entries free.\n");
 	Proc_Exit(0);
     }
@@ -333,7 +333,7 @@ Proc_ServerProc()
 	serverInfoPtr->flags |= SERVER_BUSY;
 	serverInfoPtr->flags &= ~FUNC_PENDING;
 
-	MASTER_UNLOCK(serverMutex);
+	MASTER_UNLOCK(&serverMutex);
 
 	/*
 	 * Call the function.
@@ -362,10 +362,10 @@ Proc_ServerProc()
 	/*
 	 * Go back around looking for something else to do.
 	 */
-	MASTER_LOCK(serverMutex);
+	MASTER_LOCK(&serverMutex);
 	serverInfoPtr->flags &= ~SERVER_BUSY;
     }
-    MASTER_UNLOCK(serverMutex);
+    MASTER_UNLOCK(&serverMutex);
     printf("Proc_ServerProc exiting.\n");
 }
 
@@ -473,7 +473,7 @@ CallFunc(funcInfoPtr)
     Boolean			queueIt = TRUE;
     int				i;
 
-    MASTER_LOCK(serverMutex);
+    MASTER_LOCK(&serverMutex);
     if (QUEUE_EMPTY) {
 	/*
 	 * If the the queue is empty then there may in fact be a
@@ -529,5 +529,5 @@ CallFunc(funcInfoPtr)
 	}
     }
 
-    MASTER_UNLOCK(serverMutex);
+    MASTER_UNLOCK(&serverMutex);
 }
