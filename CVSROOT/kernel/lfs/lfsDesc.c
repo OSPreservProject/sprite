@@ -119,7 +119,7 @@ Lfs_FileDescFetch(domainPtr, fileNumber, fileDescPtr)
     Fscache_UnlockBlock(blockPtr, 0, -1, 0, FSCACHE_DELETE_BLOCK);
     panic("Descriptor map foulup, can't find file %d at %d\n", fileNumber,
 			LfsDiskAddrToOffset(diskAddr));
-    return FAILURE;
+    return FS_FILE_NOT_FOUND;
 
 }
 
