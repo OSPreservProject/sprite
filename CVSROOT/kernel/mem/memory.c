@@ -250,7 +250,8 @@ static int numAllocs[BIN_BUCKETS];	/* Total number of allocation requests
  * ----------------------------------------------------------------------------
  */
 
-static char first[sizeof(AdminInfo)], last[sizeof(AdminInfo)];
+static char *first, *last;
+static char _first[sizeof(AdminInfo) + 4], _last[sizeof(AdminInfo) + 4];
 				/* Dummy blocks marking beginning and
 				 * end of free list.  Last has a size of
 				 * zero.  */
@@ -364,12 +365,18 @@ Init()
      * of characters. In order for malloc to work correctly they have to
      * be aligned on word boundaries.
      */
+#if 0
     if (((int) first) & 0x3) {
 	panic("Mem: 'first' is not word-aligned");
     }
     if (((int) last) & 0x3) {
 	panic("Mem: 'last' is not word-aligned");
     }
+#else
+    first = (char *) (((long)_first + 3) & ~3);
+    last = (char *) (((long)_last + 3) & ~3);
+#endif
+
     SET_ADMIN(first, MARK_DUMMY(last-first));
     SET_ADMIN(last, MARK_DUMMY(0));
     currentPtr		= first;
