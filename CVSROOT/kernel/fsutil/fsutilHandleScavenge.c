@@ -572,6 +572,7 @@ FsDomainInfo(fileIDPtr, domainInfoPtr)
 	    FsSetIDs((Proc_ControlBlock *)NIL, &openArgs.id);
 
 	    openArgs.rootID = *fileIDPtr;
+	    openArgs.prefixID = *fileIDPtr;
 	
 	    getAttrResults.attrPtr = &attr;
 	    getAttrResults.fileIDPtr = fileIDPtr;
