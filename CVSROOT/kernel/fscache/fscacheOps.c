@@ -933,18 +933,19 @@ FsCacheWrite(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	 * server and then check the block back in as clean.
 	 */
 	if (flags & FS_SERVER_WRITE_THRU) {
-	    int		tLen;
-	    int		tOffset;
 	    Fs_Stream	dummyStream;
+	    Fs_IOParam	io;
+	    Fs_IOReply	reply;
 
-	    tLen = toWrite;
-	    tOffset = offset;
+	    io.buffer = blockPtr->blockAddr + (offset & FS_BLOCK_OFFSET_MASK);
+	    io.length = toWrite;
+	    io.offset = offset;
+	    io.flags = flags | FS_CLIENT_CACHE_WRITE;
+	    io.flags &= ~(FS_USER | FS_SERVER_WRITE_THRU);
+
 	    dummyStream.ioHandlePtr = cacheInfoPtr->hdrPtr;
-	    status = FsRemoteWrite(&dummyStream, 
-			(int)((flags | FS_CLIENT_CACHE_WRITE) & 
-					~(FS_USER | FS_SERVER_WRITE_THRU)),
-			blockPtr->blockAddr + (offset & FS_BLOCK_OFFSET_MASK),
-			&tOffset, &tLen, (Sync_RemoteWaiter *)NIL);
+	    status = FsRemoteWrite(&dummyStream, &io,
+			 (Sync_RemoteWaiter *)NIL, &reply);
 	    if (status != SUCCESS) {
 		FsCacheUnlockBlock(blockPtr, 0, -1, 0, FS_DELETE_BLOCK);
 		break;
