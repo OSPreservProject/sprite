@@ -1496,6 +1496,7 @@ HandleItAgain:
 	     */
 	    int n[16];
 	    struct sigcontext	unixContext;
+	    procPtr->unixProgress = PROC_PROGRESS_UNIX;
 	    if (Compat_SpriteSignalToUnix(sigStackPtr->sigNum,
 		    &unixSignal) != SUCCESS) {
 		printf("Signal %d invalid in SetupSigHandler\n",
