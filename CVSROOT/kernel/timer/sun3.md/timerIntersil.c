@@ -57,11 +57,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "timer.h"
 #include "timerInt.h"
 #include "timerSun3Int.h"
-#ifdef NEWLIB
 #include "spriteTime.h"
-#else
-#include "time.h"
-#endif
 
 
 /* For profiling call */

@@ -39,14 +39,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "mach.h"
 #include "timerTick.h"
-#ifdef NEWLIB
 #include "spriteTime.h"
-#else
-#include "time.h"
-#endif
 #include "timerSun3Int.h"
 #include "sys.h"
-#include "byte.h"
 
 
 /*
@@ -132,7 +127,7 @@ TimerTicksInit()
     timer_IntOneMinute		= timer_IntOneSecond * 60;
     timer_IntOneHour		= timer_IntOneSecond * 3600;
 
-    Byte_Zero(sizeof(timer_TicksZeroSeconds), (Address)&timer_TicksZeroSeconds);
+    bzero((Address)&timer_TicksZeroSeconds, sizeof(timer_TicksZeroSeconds));
 }
 
 /*
