@@ -14,10 +14,19 @@
 #define _SYS
 
 #ifndef _ASM
+
+#ifdef KERNEL
 #include <user/sys.h>
 #include <sprite.h>
 #include <status.h>
 #include <timer.h>
+#else /* KERNEL */
+#include <sys.h>
+#include <sprite.h>
+#include <status.h>
+#include <kernel/timer.h>
+#endif /* KERNEL */
+
 #endif /* _ASM */
 
 /*
