@@ -128,7 +128,8 @@ Sync_Semaphore	timer_ClockMutex;
  * UpdateTimeOfDay() adjusts timerTimeOfDay to the real time of day.
  */
 
-static void UpdateUniversalTimeApprox _ARGS_((void));
+static void UpdateUniversalTimeApprox _ARGS_((Timer_Ticks timeTicks, 
+				  ClientData  clientData));
 static Timer_QueueElement      updateElement;
 
 
@@ -432,7 +433,9 @@ TimerSetSoftwareUniversalTime(newUniversal, newLocalOffset, newDSTAllowed)
  */
 
 static void
-UpdateUniversalTimeApprox()
+UpdateUniversalTimeApprox(timeTicks, clientData)
+    Timer_Ticks timeTicks;	/* Not used. */
+    ClientData	clientData;	/* Not used. */
 {
 	/* 
 	 * No need to get the timerClock Mutex lock because 
