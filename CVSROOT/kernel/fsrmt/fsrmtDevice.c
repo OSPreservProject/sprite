@@ -583,9 +583,8 @@ Fsrmt_IOMigOpen(migInfoPtr, size, data, hdrPtrPtr)
 	     * Printf for debugging ref count problem that affects recovery.
 	     */
 	    printf(
-	   "Fsrmt_IOMigOpen: register Fsutil_Reopen serverID %d, device %s\n",
-		   migInfoPtr->ioFileID.serverID,
-		   name == (char *) NIL ? "NIL" : name);
+	   "Fsrmt_IOMigOpen: register Fsutil_Reopen serverID %d\n",
+		   migInfoPtr->ioFileID.serverID);
 	}
 
 	Recov_RebootRegister(migInfoPtr->ioFileID.serverID, Fsutil_Reopen,
