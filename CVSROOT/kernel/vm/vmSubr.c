@@ -45,9 +45,15 @@ Boolean		vmDebugLargeAllocs = FALSE;
 /*
  * The maximum amount that a stack is allowed to grow.  We have to make it
  * real big because of the current configuration of SPUR.  This can be made
- * smaller once the exec stuff has changed.
+ * smaller once the exec stuff has changed.  Things are worse for the sun4
+ * due to the order in which user processes try to flush their register
+ * windows to a stack which hasn't been validated yet.
  */
+#ifndef sun4
 #define	MAX_STACK_GROWTH_SIZE	(1024 * 1024 * 2)
+#else
+#define	MAX_STACK_GROWTH_SIZE	(1024 * 1024 * 8)
+#endif /* not sun4 */
 int		vmMaxStackPagesGrowth;
 
 /*
