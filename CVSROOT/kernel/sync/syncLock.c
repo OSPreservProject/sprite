@@ -22,7 +22,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <sprite.h>
 #include <mach.h>
 #include <list.h>
-#include <sync.h>
 #include <syncInt.h>
 #include <sched.h>
 #include <proc.h>
@@ -64,10 +63,15 @@ Sync_Instrument *sync_InstrumentPtr[MACH_MAX_NUM_PROCESSORS];
  */
 int syncProcWakeupRaces = 0;
 
+/* 
+ * Locks held during initialization, when there's no "current process".
+ */
+static nullProcLocks = 0;
+
 static void ProcessWakeup _ARGS_((Proc_ControlBlock *procPtr, int waitToken));
+static void CheckUnlock _ARGS_ ((Sync_Lock *lockPtr));
 
 
-
 /*
  *----------------------------------------------------------------------------
  *
@@ -99,7 +103,7 @@ Sync_Init()
 	sync_InstrumentPtr[i] = &sync_Instrument[i];
     }
 }
-
+
 
 /*
  *----------------------------------------------------------------------
@@ -109,8 +113,6 @@ Sync_Init()
  *	This is the kernel version of the Sync_GetLock routine. The user
  * 	version is written in assembler, but in the kernel we want to
  *	record locking statistics so we have our own version.
- *	If LOCKREG is not defined then don't compile any of this, so that 
- *	the faster user version  is used.
  *
  * Results:
  *	None.
@@ -127,6 +129,7 @@ Sync_GetLock(lockPtr)
    Sync_Lock *lockPtr;
 {
     ReturnStatus	status = SUCCESS;
+    Proc_ControlBlock	*procPtr;
 
     Sync_LockRegister(lockPtr);
     if (Mach_TestAndSet(&(lockPtr->inUse)) != 0) {
@@ -136,6 +139,14 @@ Sync_GetLock(lockPtr)
 	Sync_StoreDbgInfo(lockPtr, FALSE);
 	Sync_AddPrior(lockPtr);
     }
+
+    procPtr = Proc_GetCurrentProc();
+    if (procPtr == (Proc_ControlBlock *)NIL) {
+	nullProcLocks++;
+    } else {
+	procPtr->locksHeld++;
+    }
+
     return status;
 }
 
@@ -147,8 +158,6 @@ Sync_GetLock(lockPtr)
  *
  *	The kernel version of the unlock routine. We have a different
  *	version from the user so we can do locking statistics.
- *	If LOCKREG is not defined then don't compile any of this, so that 
- *	the faster user version  is used.
  *
  * Results:
  *	None.
@@ -164,6 +173,9 @@ Sync_Unlock(lockPtr)
     Sync_Lock *lockPtr;
 {
     ReturnStatus	status = SUCCESS;
+
+    CheckUnlock(lockPtr);
+
     lockPtr->inUse = 0;
     SyncDeleteCurrent(lockPtr);
     if (lockPtr->waiting) {
@@ -172,6 +184,7 @@ Sync_Unlock(lockPtr)
     return status;
 }
 
+
 /*
  *----------------------------------------------------------------------------
  *
@@ -272,6 +285,7 @@ Sync_SlowWait(conditionPtr, lockPtr, wakeIfSignal)
     Boolean	sigPending;
 
     conditionPtr->waiting = TRUE;
+    CheckUnlock(lockPtr);
 
     MASTER_LOCK(sched_MutexPtr);
     /*
@@ -407,6 +421,8 @@ Sync_UnlockAndSwitch(lockPtr, state)
     register	Sync_Lock 	*lockPtr;
     Proc_State			state;
 {
+    CheckUnlock(lockPtr);
+
     MASTER_LOCK(sched_MutexPtr);
     /*
      * release the monitor lock and context switch.
@@ -761,6 +777,7 @@ Sync_ProcWait(lockPtr, wakeIfSignal)
 		/*
 		 * We were given a monitor lock to release, so release it.
 		 */
+		CheckUnlock(lockPtr);
 		lockPtr->inUse = 0;
 		lockPtr->waiting = FALSE;
 		SyncEventWakeupInt((unsigned int)lockPtr);
@@ -945,4 +962,59 @@ Sync_RemoteNotifyStub(srvToken, clientID, command, storagePtr)
     Rpc_Reply(srvToken, SUCCESS, storagePtr, (int (*) ()) NIL,
 	      (ClientData) NIL);
     return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CheckUnlock --
+ *
+ *	Paranoia checks when releasing a monitor or master lock.  Make 
+ *	sure that 
+ *	(1) the count of obtained locks is high enough
+ *	(2) the lock is actually in use
+ *	(3) the process that owns the lock is the process that 
+ *	    releases it .
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Decrements the counter in the current process's pcb.  If there 
+ *	isn't a current process, decrements the global "no process" 
+ *	lock counter.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+CheckUnlock(lockPtr)
+    Sync_Lock	*lockPtr;
+{
+    int			locksHeld; /* 
+    int			locksHeld;  * locks held by current process */
+    Proc_ControlBlock	*procPtr;
+
+    procPtr = Proc_GetCurrentProc();
+    if (procPtr == (Proc_ControlBlock *)NIL) {
+	nullProcLocks--;
+	locksHeld = nullProcLocks;
+    } else {
+	procPtr->locksHeld--;
+	locksHeld = procPtr->locksHeld;
+    }
+    if (locksHeld < 0) {
+	panic("more unlocks than locks.\n");
+    }
+    if (!lockPtr->inUse) {
+	panic("unlocking an unlocked lock.\n");
+    }
+
+#ifndef CLEAN_LOCK
+    if (lockPtr->holderPCBPtr != (Proc_ControlBlock *)NIL &&
+	    lockPtr->holderPCBPtr != procPtr) {
+	panic("unlocking somebody else's lock.\n");
+    }
+#endif
 }
