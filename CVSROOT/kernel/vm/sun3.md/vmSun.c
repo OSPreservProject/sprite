@@ -258,17 +258,8 @@ static	VmMachPTE		*refModMap;
 
 /*
  * The maximum amount of kernel code + data available. 
- *
- * MAX_BOOT_MAP_SIZE	- Number of pages of kernel image to map
- *			  for the pre VM setup code.
  */
-#ifdef sun2
-int	vmMachKernMemSize = 2048 * 1024;
-#define MAX_BOOT_MAP_PAGES (1024)	
-#else 
-int	vmMachKernMemSize = 8192 * 1024;
-#define MAX_BOOT_MAP_PAGES (512)	
-#endif
+int	vmMachKernMemSize = VMMACH_MAX_KERN_SIZE;
 
 /*
  * The segment that is used to map a segment into a process's virtual address
@@ -329,7 +320,7 @@ VmMach_BootInit(pageSizePtr, pageShiftPtr, pageTableIncPtr, kernMemSizePtr,
     Sync_SemInitDynamic(&vmMachMutex, "Vm:vmMachMutex");
 #endif
 
-    kernPages = MAX_BOOT_MAP_PAGES;
+    kernPages = VMMACH_BOOT_MAP_PAGES;
     /*
      * Map all of the kernel memory that we might need one for one.  We know
      * that the monitor maps the first part of memory one for one but for some
@@ -406,12 +397,14 @@ GetNumPages()
  * VmMach_AllocKernSpace --
  *
  *     Allocate memory for machine dependent stuff in the kernels VAS.
+ *	This allocates space used to map PMEG and PTE registers
+ *	into kernel virtual space.  Two segments are reserved.
  *
  * Results:
- *     None.
+ *     The kernel virtual address after the reserved area.
  *
  * Side effects:
- *     None.
+ *     Sets vmMachPTESegAddr and vmMachPMEGSegAddr.
  *
  * ----------------------------------------------------------------------------
  */
