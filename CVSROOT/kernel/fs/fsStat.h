@@ -94,7 +94,7 @@ typedef struct Fs_BlockCacheStats {
     unsigned int allInCacheTrue;        /* Number of times that FscacheAllBlocksInCache
 					 * returned TRUE. */
     /*
-     * Write statistics.
+     * Write statistics.  See also WriteBackStats.
      */
     unsigned int writeAccesses;		/* Number of write fetches on the
 					 * cache. */
@@ -352,6 +352,15 @@ typedef struct Fs_ConsistStats {
 } Fs_ConsistStats;
 
 /*
+ * (More) Write-back statistics.
+ */
+typedef struct Fs_WriteBackStats {
+    int passes;			/* Number of times Fs_CleanBlocks called */
+    int files;			/* Number of dirty files processed */
+    int blocks;			/* Number of dirty blocks processed */
+} Fs_WriteBackStats;
+
+/*
  * File system statistics.
  */
 typedef struct Fs_Stats {
@@ -367,6 +376,7 @@ typedef struct Fs_Stats {
     Fs_ObjectStats	object;		/* Counts of various objects */
     Fs_RecoveryStats	recovery;	/* Crash recovery and reopening */
     Fs_ConsistStats	consist;	/* Cache consistency actions */
+    Fs_WriteBackStats	writeBack;	/* Cache write-back stats */
 } Fs_Stats;
 
 /*
