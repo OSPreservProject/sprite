@@ -1038,6 +1038,7 @@ InitiateStripeIOs(raidPtr, operation, firstSector, nthSector,
         IOControlPtr->doneProc(IOControlPtr->clientData,
 		IOControlPtr->status, IOControlPtr->amountTransferred);
 	FreeIOControl(IOControlPtr);
+	EndRaidUse(IOControlPtr->raidPtr);
     } else {
         MASTER_UNLOCK(&IOControlPtr->mutex);
     }
