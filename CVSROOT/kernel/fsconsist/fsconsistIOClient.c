@@ -262,10 +262,11 @@ FsIOClientClose(clientList, clientID, flags, cachePtr)
 	if ((!(*cachePtr) || !clientPtr->cached) &&
 	    (clientPtr->use.ref == 0)) {
 	    *cachePtr = clientPtr->cached;
-	    if (clientPtr->locked) {
-		printf("FsIOClientClose: locked client %d\n",
-		    clientPtr->clientID);
-	    } else {
+	    if (!clientPtr->locked) {
+		/*
+		 * Free up the client list entry if it is not locked
+		 * due to an iteration through the client list.
+		 */
 		fsStats.object.fileClients--;
 		List_Remove((List_Links *) clientPtr);
 		free((Address) clientPtr);
