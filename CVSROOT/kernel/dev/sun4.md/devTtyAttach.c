@@ -332,7 +332,7 @@ DevGrabKeyboard(inputProc, inputData, outputProc, outputData)
 void
 DevReleaseKeyboard()
 {
-    ttys[0].inputProc = (void (*)()) ;
+    ttys[0].inputProc = (void (*)()) NIL;
     ttys[0].inputData = (ClientData) 0;
     keyboard.outputProc = NullOutputChar;
     keyboard.outputData = (ClientData) &ttys[0];
