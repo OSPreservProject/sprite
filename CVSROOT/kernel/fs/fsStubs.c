@@ -71,10 +71,10 @@ static char *errs[] = {"ENOERR", "EPERM", "ENOENT", "ESRCH", "EINTR", "EIO",
 	"EPROCLIM", "EUSERS", "EDQUOT", "ESTALE", "EREMOTE"};
 
 #undef Mach_SetErrno
-#define Mach_SetErrno(err) if (debugFsStubs) \
+#define Mach_SetErrno(err) if (debugFsStubs) { \
 	printf("Error %d (%s) at %d in %s\n", err,\
 	err<sizeof(errs)/sizeof(char *)?errs[err]:"",\
-	__LINE__, __FILE__); Proc_GetActualProc()->unixErrno = (err)
+	__LINE__, __FILE__); } Proc_GetActualProc()->unixErrno = (err)
 
 /*
  * The following defines are flags that are defined differently in
@@ -124,9 +124,9 @@ static void CvtTermiosToSgttyb _ARGS_((int termiosFlag, struct termios *ts,
 static void CvtSgttybToTermios _ARGS_((struct sgttyb *ttyb,
 	unsigned int *lmode, struct tchars *tc, struct ltchars *ltc,
 	struct termios *ts));
-static int GetTermInfo(Fs_Stream *streamPtr, Fs_IOCParam *ioctl,
+static int GetTermInfo _ARGS_ ((Fs_Stream *streamPtr, Fs_IOCParam *ioctl,
 	struct sgttyb *ttyb, unsigned int *lmode, struct tchars *tc,
-	struct ltchars *ltc);
+	struct ltchars *ltc));
 extern int CheckIfPresent _ARGS_((char *name));
 static char *copyin _ARGS_((char *string));
 static int Fs_GetdirInt _ARGS_((int fd, int nbytes, Address buf, long *off));
@@ -279,19 +279,19 @@ CvtTermiosToSgttyb(termiosFlag, ts, ttyb, lmode, tc, ltc)
     if (!(cflag&PARENB)&&(cflag&CSIZE)==CS8) {
 	flag &= ~(ODDP|EVENP|PASS8);
 	flag |= ttyb->sg_flags & (ODDP|EVENP);
-	if (*lmode&(PASS8>>16)) flag |= PASS8;
-	if (!(oflag&OPOST)) flag |= LITOUT;
-	if (!(iflag&ISTRIP)&&(oflag&OPOST)) flag |= PASS8;
+	if (*lmode&(PASS8>>16)) { flag |= PASS8; }
+	if (!(oflag&OPOST)) { flag |= LITOUT; }
+	if (!(iflag&ISTRIP)&&(oflag&OPOST)) { flag |= PASS8; }
     } else {
-	if (cflag&PARODD) flag &= ~EVENP;
-	if ((iflag&INPCK)&&!(cflag&PARODD)) flag &= ~ODDP;
+	if (cflag&PARODD) { flag &= ~EVENP; }
+	if ((iflag&INPCK)&&!(cflag&PARODD)) { flag &= ~ODDP; }
     }
 
-    if (!(iflag&IXANY)) flag |= DECCTQ;
-    if (iflag&IXOFF) flag |= TANDEM;
+    if (!(iflag&IXANY)) { flag |= DECCTQ; }
+    if (iflag&IXOFF) { flag |= TANDEM; }
 
 
-    if (oflag&OLCUC) flag |= LCASE;
+    if (oflag&OLCUC) { flag |= LCASE; }
     if (oflag&ONLCR) {
 	flag |= CRMOD;
 	if ((oflag&CRDLY)==T_CR2) {
@@ -301,27 +301,27 @@ CvtTermiosToSgttyb(termiosFlag, ts, ttyb, lmode, tc, ltc)
 	}
     }
     if (oflag&ONLRET) {
-	if ((oflag&NLDLY)==T_NL1) flag |= I_NL2;
+	if ((oflag&NLDLY)==T_NL1) { flag |= I_NL2; }
 	if (!(oflag&ONLCR) && (oflag&T_CR1)) {
 	    flag |= I_NL1;
 	}
     }
-    if (oflag&T_TAB1) flag |= I_TAB1;
-    if (oflag&T_TAB2) flag |= I_TAB2;
-    if (oflag&BSDLY) flag |= BSDELAY;
-    if (oflag&FFDLY) flag |= VTDELAY;
+    if (oflag&T_TAB1) { flag |= I_TAB1; }
+    if (oflag&T_TAB2) { flag |= I_TAB2; }
+    if (oflag&BSDLY) { flag |= BSDELAY; }
+    if (oflag&FFDLY) { flag |= VTDELAY; }
 
-    if (cflag&CLOCAL) flag |= NOHANG;
+    if (cflag&CLOCAL) { flag |= NOHANG; }
 
-    if (lflag&ICANON) flag &= ~CBREAK;
-    if (lflag&ECHOE) flag |= CRTERA|CRTBS;
-    if (lflag&T_NOFLSH) flag |= I_NOFLSH;
-    if (lflag&T_TOSTOP) flag |= I_TOSTOP;
-    if (lflag&ECHOCTL) flag |= CTLECH;
-    if (lflag&ECHOPRT) flag |= PRTERA;
-    if (lflag&ECHOKE) flag |= CRTKIL;
-    if (lflag&ECHO) flag |= ECHO;
-    if (lflag&T_FLUSHO) flag |= I_FLUSHO;
+    if (lflag&ICANON) { flag &= ~CBREAK; }
+    if (lflag&ECHOE) { flag |= CRTERA|CRTBS; }
+    if (lflag&T_NOFLSH) { flag |= I_NOFLSH; }
+    if (lflag&T_TOSTOP) { flag |= I_TOSTOP; }
+    if (lflag&ECHOCTL) { flag |= CTLECH; }
+    if (lflag&ECHOPRT) { flag |= PRTERA; }
+    if (lflag&ECHOKE) { flag |= CRTKIL; }
+    if (lflag&ECHO) { flag |= ECHO; }
+    if (lflag&T_FLUSHO) { flag |= I_FLUSHO; }
 
     ttyb->sg_flags = flag&0xffff;
     *lmode = flag>>16;
@@ -376,14 +376,14 @@ CvtSgttybToTermios(ttyb, lmode, tc, ltc, ts)
     oflag = ONLRET|OPOST;
     cflag = CREAD|CS8|B9600;
     lflag = ICANON|ISIG|IEXTEN|ECHOK;
-    if (flag&CBREAK) lflag &= ~ICANON;
-    if (flag&TANDEM) iflag |= IXOFF;
+    if (flag&CBREAK) { lflag &= ~ICANON; }
+    if (flag&TANDEM) { iflag |= IXOFF; }
     if (flag&LCASE) {
 	iflag |= IUCLC;
 	oflag |= OLCUC;
 	lflag |= XCASE;
     }
-    if (flag&ECHO) lflag |= ECHO;
+    if (flag&ECHO) { lflag |= ECHO; }
     if (flag&EVENP) {
 	iflag |= INPCK;
 	cflag |= PARENB;
@@ -406,8 +406,8 @@ CvtSgttybToTermios(ttyb, lmode, tc, ltc, ts)
     } else {
 	oflag &= ~CRDLY;
     }
-    if (flag&I_TAB1) oflag |= T_TAB1;
-    if (flag&I_TAB2) oflag |= T_TAB2;
+    if (flag&I_TAB1) { oflag |= T_TAB1; }
+    if (flag&I_TAB2) { oflag |= T_TAB2; }
     if ((flag&CRDELAY)==I_CR0 || (flag&CRDELAY)==I_CR3) {
 	if (!(flag&CRMOD) && (flag&NLDELAY)==I_NL1) {
 	    oflag |= T_CR1;
@@ -425,17 +425,17 @@ CvtSgttybToTermios(ttyb, lmode, tc, ltc, ts)
 	    oflag |= T_CR1;
 	}
     }
-    if (flag&VTDELAY) oflag |= FFDLY;
-    if (flag&BSDELAY) oflag |= BSDLY;
-    if (flag&PRTERA) lflag |= ECHOPRT;
-    if (flag&CRTERA) lflag |= ECHOE;
-    if (flag&I_TOSTOP) lflag |= TOSTOP;
-    if (flag&I_FLUSHO) lflag |= FLUSHO;
-    if (flag&NOHANG) cflag |= CLOCAL;
-    if (flag&CRTKIL) lflag |= ECHOKE;
-    if (flag&CTLECH) lflag |= ECHOCTL;
-    if (flag&DECCTQ) iflag &= ~IXANY;
-    if (flag&I_NOFLSH) lflag |= T_NOFLSH;
+    if (flag&VTDELAY) { oflag |= FFDLY; }
+    if (flag&BSDELAY) { oflag |= BSDLY; }
+    if (flag&PRTERA) { lflag |= ECHOPRT; }
+    if (flag&CRTERA) { lflag |= ECHOE; }
+    if (flag&I_TOSTOP) { lflag |= TOSTOP; }
+    if (flag&I_FLUSHO) { lflag |= FLUSHO; }
+    if (flag&NOHANG) { cflag |= CLOCAL; }
+    if (flag&CRTKIL) { lflag |= ECHOKE; }
+    if (flag&CTLECH) { lflag |= ECHOCTL; }
+    if (flag&DECCTQ) { iflag &= ~IXANY; }
+    if (flag&I_NOFLSH) { lflag |= T_NOFLSH; }
     if (flag&LITOUT) {
 	iflag &= ~(ISTRIP|INPCK);
 	oflag &= ~OPOST;
@@ -2127,7 +2127,6 @@ Fs_IoctlStub(streamID, request, buf)
     ReturnStatus        status = SUCCESS;
     Fs_IOCParam         ioctl;
     Fs_IOReply          reply;
-    Mach_State          *machStatePtr;
     int                 flags;
 
     if (debugFsStubs) {
@@ -2138,7 +2137,6 @@ Fs_IoctlStub(streamID, request, buf)
      * Get a stream pointer.
      */
     procPtr = Proc_GetEffectiveProc();
-    machStatePtr = procPtr->machStatePtr;
     status = Fs_GetStreamPtr(procPtr, streamID, &streamPtr);
     if (status != SUCCESS) {
 	Mach_SetErrno(Compat_MapCode(status));
@@ -3075,7 +3073,7 @@ Fs_IoctlStub(streamID, request, buf)
 	   * and finally our internet address.
 	   */
 	  ifc.ifc_len = 32;
-	  strcpy(ifreq.ifr_name, "se0");
+	  (void) strcpy(ifreq.ifr_name, "se0");
 	  intPtr = (int *)&ifreq.ifr_ifru;
 	  *intPtr = AF_INET;
 	  *(intPtr + 1) = sysHostID;
