@@ -224,6 +224,50 @@ moduloOkay:							\
 	MACH_WAIT_FOR_STATE_REGISTER()
 
 /*
+ * Equivalents to C macros for enabling and disabling interrupts.
+ * They aren't quite equivalent, since they don't do panic's on negative
+ * disable counts.  These macros should really only be used for debugging,
+ * in any case.
+ */
+#define	DISABLE_INTR_ASM(reg1, reg2, NoDisableLabel)	\
+	set	_mach_AtInterruptLevel, reg1;	\
+	ld	[reg1], reg1;			\
+	tst	reg1;				\
+	bne	NoDisableLabel;			\
+	nop;					\
+	mov	%psr, reg1;			\
+	set	MACH_DISABLE_INTR, reg2;	\
+	or	reg1, reg2, reg1;		\
+	mov	reg1, %psr;			\
+	MACH_WAIT_FOR_STATE_REGISTER();		\
+	set	_mach_NumDisableIntrsPtr, reg1;	\
+	ld	[reg1], reg2;			\
+	add	reg2, 0x1, reg2;		\
+	st	reg2, [reg1];			\
+NoDisableLabel:
+
+#define	ENABLE_INTR_ASM(reg1, reg2, NoEnableLabel)	\
+	set	_mach_AtInterruptLevel, reg1;	\
+	ld	[reg1], reg1;			\
+	tst	reg1;				\
+	bne	NoEnableLabel;			\
+	nop;					\
+	set	_mach_NumDisableIntrsPtr, reg1;	\
+	ld	[reg1], reg2;			\
+	sub	reg2, 0x1, reg2;		\
+	st	reg2, [reg1];			\
+	tst	reg2;				\
+	bne	NoEnableLabel;			\
+	nop;					\
+	mov	%psr, reg1;			\
+	set	MACH_ENABLE_INTR, reg2;		\
+	and	reg1, reg2, reg1;		\
+	mov	reg1, %psr;			\
+	MACH_WAIT_FOR_STATE_REGISTER();		\
+NoEnableLabel:
+
+
+/*
  * Run at high priority: supervisor mode, interrupts disabled, traps enabled.
  * This must be done in 2 steps - 1) leaving traps off, if they were off,
  * set new interrupt level.  2) Enable traps.  This keeps us from getting

@@ -108,10 +108,11 @@ doneZeroing:
 	 * to the base of our stack.  %sp points to the top word on the
 	 * stack for our current stack frame.   This must be set at least
 	 * to enough room to save our in registers and local registers upon
-	 * window overflow.
+	 * window overflow (and for main to store it's arguments, although it
+	 * doesn't have any...).
 	 */
 	set	MACH_STACK_START, %fp
-	set	(MACH_STACK_START - MACH_SAVED_WINDOW_SIZE), %sp
+	set	(MACH_STACK_START - MACH_FULL_STACK_FRAME), %sp
 	andn	%sp, 0x7, %sp			/* double-word aligned */
 
 	/*

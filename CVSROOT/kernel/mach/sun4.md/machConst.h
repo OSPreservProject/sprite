@@ -226,6 +226,28 @@
 #define	MACH_SAVED_WINDOW_SIZE	(MACH_NUM_LOCALS * 4 + MACH_NUM_INS * 4)
 
 /*
+ * The size of the state frame that's saved on interrupts, etc.  This must
+ * be the size of Mach_RegState, and this is checked in machCode.c.  We
+ * shouldn't succeed in booting if these constants are out of whack.  Keep
+ * it this way!  Size is in bytes.
+ */
+#define	MACH_SAVED_STATE_FRAME	(MACH_SAVED_WINDOW_SIZE + MACH_NUM_GLOBALS * 4)
+
+/*
+ * The compiler store parameters to C routines in its caller's stack frame,
+ * so this is at %fp + some_amount.  "Some_amount has to be below (higher addr)
+ * than the saved window area, so this means all routines that call C routines
+ * with arguments must have a stack frame that is at least
+ * MACH_SAVED_WINDOW_SIZE + MACH_INPUT_STORAGE = 96 bytes.  If the
+ * frame is also being used for trap state, then it's
+ * MACH_SAVED_STATE_FRAME + MACH_INPUT_STORAGE.
+ */
+#define	MACH_INPUT_STORAGE	(MACH_NUM_INS * 4)
+#define	MACH_FULL_STACK_FRAME	(MACH_SAVED_WINDOW_SIZE + MACH_INPUT_STORAGE)
+#define	MACH_FULL_TRAP_FRAME	(MACH_SAVED_STATE_FRAME + MACH_INPUT_STORAGE)
+
+
+/*
  * Constant for offset of first argument in a saved window area.
  */
 #define	MACH_ARG0_OFFSET	(MACH_NUM_LOCALS * 4)
@@ -239,14 +261,6 @@
  * Constant for offset of return pc in saved window area.  RetPC is %i7.
  */
 #define	MACH_RETPC_OFFSET	(MACH_NUM_LOCALS * 4 + 7 * 4)
-
-/*
- * The size of the state frame that's saved on interrupts, etc.  This must
- * be the size of Mach_RegState, and this is checked in machCode.c.  We
- * shouldn't succeed in booting if these constants are out of whack.  Keep
- * it this way!  Size is in bytes.
- */
-#define	MACH_SAVED_STATE_FRAME	(MACH_SAVED_WINDOW_SIZE + MACH_NUM_GLOBALS * 4)
 
 /*
  * The number of registers.

@@ -134,10 +134,12 @@ _Mach_TestAndSet:
 	 * we can't use address 0, but we shouldn't be doing that anyway.
 	 */
 #ifdef	NO_SUN4_CACHING
+	DISABLE_INTR_ASM(%OUT_TEMP1, %OUT_TEMP2, TestAndSetDisableIntrs)
 	set	0x1, %OUT_TEMP1
 	ld	[%RETURN_VAL_REG], %OUT_TEMP2
 	st	%OUT_TEMP1, [%RETURN_VAL_REG]
 	mov	%OUT_TEMP2, %RETURN_VAL_REG
+	ENABLE_INTR_ASM(%OUT_TEMP1, %OUT_TEMP2, TestAndSetEnableIntrs)
 #else
 	swap	[%RETURN_VAL_REG], %RETURN_VAL_REG	/* set addr with addr */
 #endif /* NO_SUN4_CACHING */
@@ -192,19 +194,16 @@ _Mach_ContextSwitch:
 	 * is okay here.  Save enough space for the context switch state on
 	 * the stack.
 	 */
-	MACH_DEBUG_BUF(%OUT_TEMP1, %OUT_TEMP2, DebugContextSwitch1, %g0)
-	MACH_DEBUG_BUF(%OUT_TEMP1, %OUT_TEMP2, DebugContextSwitch2, %o0)
 	set	MACH_SAVED_STATE_FRAME, %VOL_TEMP1
 	sub	%g0, %VOL_TEMP1, %VOL_TEMP1
 	save 	%sp, %VOL_TEMP1, %sp
 	andn	%sp, 0x7, %sp		/* should already be okay */
-#ifndef THE_WAY_IT_WAS
 	mov	%psr, %CUR_PSR_REG
-	MACH_SR_HIGHPRIO()
-#endif
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch3, %i1)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch4, %sp)
-
+	MACH_SR_HIGHPRIO()		/*
+					 * MAY BE EXTRANEOUS - interrupts should
+					 * already be off!
+					 */
+#ifdef NOTDEF
 	/* save old addresses for debugging */
 	set	_theAddrOfVmPtr, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %VOL_TEMP1
@@ -222,6 +221,7 @@ _Mach_ContextSwitch:
 	ld	[%VOL_TEMP1], %VOL_TEMP1	/* value of vmPtr */
 	MACH_DEBUG_BUF(%OUT_TEMP1, %OUT_TEMP2, DebugContextSwitch6, %VOL_TEMP1)
 FirstTimeDontPrint:
+#endif NOTDEF
 
 
 	/*
@@ -238,14 +238,6 @@ FirstTimeDontPrint:
 	 */
 	call	_VmMachSetContextReg, 1
 	nop
-#ifdef THE_WAY_IT_WAS
-	/*
-	 * Save psr by saving it into local register that will be saved
-	 * on window save and restore operations.  After this we can turn
-	 * off interrupts and stuff without worrying about saving the psr.
-	 */
-	mov	%psr, %CUR_PSR_REG
-#endif
 	/*
 	 * Save stack pointer into state struct.  This is also the pointer
 	 * in the mach state struct of the saved context switch state.  It
@@ -259,21 +251,11 @@ FirstTimeDontPrint:
 	add	%VOL_TEMP1, MACH_SWITCH_REGS_OFFSET, %VOL_TEMP1
 	st	%sp, [%VOL_TEMP1]
 	
-#ifdef NOTDEF
 	/*
 	 * Where was trapRegs pointer saved into mach state?
 	 * if this were user process, save user stack pointer?
 	 */
-#endif /* NOTDEF */
-#ifdef THE_WAY_IT_WAS
-	/*
-	 * Disable interrupts here, since we don't want to be caught between
-	 * states. I may be able to do this later, but this is easy and simple.
-	 * We must keep traps enabled, so that we can use the window overflow
-	 * and underflow routines to save and restore our windows.
-	 */
-	MACH_SR_HIGHPRIO()
-#endif
+
 	/*
 	 * Save context switch state, globals only for the time being...
 	 * This gets saved in our stack frame.
@@ -300,8 +282,6 @@ ContextRestoreSomeMore:
 	bne	ContextRestoreSomeMore
 	nop
 
-	set	0x777, %g1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch7, %g1)
 	/* restore stack pointer of new process - WE SWITCH STACKS HERE!!! */
 	set	_machMachProcOffset, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %VOL_TEMP1
@@ -309,11 +289,6 @@ ContextRestoreSomeMore:
 	ld	[%VOL_TEMP1], %VOL_TEMP1	/* procPtr->machStatePtr */
 	add	%VOL_TEMP1, MACH_SWITCH_REGS_OFFSET, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %sp
-
-	mov	%VOL_TEMP1, %g1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch8, %g1)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch9, %i1)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch10, %sp)
 
 	/* restore global registers of new process */
 	MACH_RESTORE_GLOBAL_STATE()
@@ -332,10 +307,8 @@ ContextRestoreSomeMore:
 	save
 	restore
 	/* restore user stack pointer if a user process? */
-	/*
-	 * Restore status register in such a way that it doesn't make
-	 * us change windows.
-	 */
+
+#ifdef NOTDEF
 	set	_theAddrOfVmPtr, %OUT_TEMP1	/* get addr of vmPtr */
 	ld	[%OUT_TEMP1], %OUT_TEMP1
 	ld	[%OUT_TEMP1], %OUT_TEMP1	/* get value of vmPtr */
@@ -361,6 +334,12 @@ ContextRestoreSomeMore:
 AgainFirstTimeDontPrint:
 
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch15, %CUR_PSR_REG)
+#endif NOTDEF
+
+	/*
+	 * Restore status register in such a way that it doesn't make
+	 * us change windows.
+	 */
 	MACH_RESTORE_PSR()
 
 	ret

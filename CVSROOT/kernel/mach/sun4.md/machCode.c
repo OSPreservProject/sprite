@@ -258,10 +258,6 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
     register	Mach_RegState	*stackPtr;
     register	Mach_State	*statePtr;
 
-    DEBUG_ADD(0x111);
-    DEBUG_ADD(procPtr);
-    DEBUG_ADD(startFunc);
-
     if (procPtr->machStatePtr == (Mach_State *)NIL) {
 	procPtr->machStatePtr = (Mach_State *)Vm_RawAlloc(sizeof(Mach_State));
 #ifdef NOTDEF
@@ -283,11 +279,8 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
      * to the top of the stack, since the regs are saved there.
      */
     ((Address) statePtr->switchRegs) = (statePtr->kernStackStart) +
-	    MACH_KERN_STACK_SIZE - MACH_SAVED_WINDOW_SIZE -
-	    MACH_SAVED_WINDOW_SIZE - sizeof (Mach_RegState);
+	    MACH_KERN_STACK_SIZE - MACH_FULL_STACK_FRAME - MACH_FULL_TRAP_FRAME;
     (unsigned int) (statePtr->switchRegs) &= ~0x7;/* should be okay already */
-    DEBUG_ADD(statePtr->switchRegs);
-    DEBUG_ADD(&(statePtr->switchRegs));
     /*
      * Initialize the stack so that it looks like it is in the middle of
      * Mach_ContextSwitch.
@@ -301,8 +294,7 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
      * set to the top of this saved window area.
      */
     *((Address *)(((Address)stackPtr) + MACH_FP_OFFSET)) =
-	    ((Address)stackPtr) + sizeof (Mach_RegState);
-    DEBUG_ADD(*((Address *)(((Address)stackPtr) + MACH_FP_OFFSET)));
+	    ((Address)stackPtr) + MACH_FULL_TRAP_FRAME;
     /*
      * We are to return to startFunc from Mach_ContextSwitch, but
      * Mach_ContextSwitch will do a return to retPC + 8, so we subtract
@@ -310,7 +302,6 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
      */
     *((Address *)(((Address)stackPtr) + MACH_RETPC_OFFSET)) =
 	    ((Address)startFunc) - 8;
-    DEBUG_ADD(*((Address *)(((Address)stackPtr) + MACH_RETPC_OFFSET)));
 
     /*
      * Set the psr to restore to have traps enabled and interrupts off.
@@ -349,9 +340,7 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
 	 * register area of Mach_RegState area on the stack.  Weird.
 	 */
 	*((Address *)(((Address)stackPtr) + MACH_ARG0_OFFSET)) = startPC;
-	DEBUG_ADD(*((Address *)(((Address)stackPtr) + MACH_ARG0_OFFSET)));
     }
-    DEBUG_ADD(0x222);
     return(SUCCESS);
 }
 
