@@ -168,7 +168,7 @@ Vm_GetKernelStack(invalidPage)
  */
 ENTRY void
 Vm_FreeKernelStack(stackBase)
-    int		stackBase;	/* Virtual address of the stack that is being
+    Address	stackBase;	/* Virtual address of the stack that is being
 				 * freed. */
 {
     Vm_VirtAddr			virtAddr;
@@ -202,7 +202,7 @@ Vm_FreeKernelStack(stackBase)
     }
     stackListPtr = (StackList *) List_First(activeList);
     List_Move((List_Links *) stackListPtr, LIST_ATREAR(freeList));
-    stackListPtr->startAddr = (Address) stackBase;
+    stackListPtr->startAddr = stackBase;
 
     UNLOCK_MONITOR;
 }

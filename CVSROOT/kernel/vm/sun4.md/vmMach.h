@@ -79,6 +79,7 @@ extern	void		VmMach_ProcInit();
  */
 extern	void		VmMach_SetSegProt();
 extern	void		VmMach_SetPageProt();
+extern	void		VmMach_SetProtForDbg();
 /*
  * Reference and modify bits.
  */
@@ -132,5 +133,9 @@ extern	void		VmMach_Trace();
  */
 extern	void		VmMach_PinUserPage();
 extern	void		VmMach_UnpinUserPage();
+/*
+ * Cache flushing.
+ */
+extern	void		VmMach_FlushPage();
 
 #endif _VMMACH

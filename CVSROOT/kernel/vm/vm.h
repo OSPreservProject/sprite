@@ -326,6 +326,7 @@ extern	void		Vm_FreeKernelStack();
 extern	void		Vm_ProcInit();
 extern	ReturnStatus	Vm_PinUserMem();
 extern	ReturnStatus	Vm_UnpinUserMem();
+extern	void		Vm_ReservePage();
 
 /*
  * Routines to provide access to internal virtual memory stuff for the machine

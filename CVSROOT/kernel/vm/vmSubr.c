@@ -314,7 +314,7 @@ Vm_ChangeCodeProt(procPtr, startAddr, numBytes, makeWriteable)
 	 * This process still has a hold of the original shared code 
 	 * segment.  Make a new segment for the process.
 	 */
-	Fs_StreamCopy(segPtr->filePtr, &codeFilePtr);
+	(void)Fs_StreamCopy(segPtr->filePtr, &codeFilePtr);
 	newSegPtr = Vm_SegmentNew(VM_CODE, codeFilePtr, segPtr->fileAddr, 
 				  segPtr->numPages, segPtr->offset, procPtr);
 	Vm_ValidatePages(newSegPtr, newSegPtr->offset, 
@@ -575,7 +575,7 @@ VmVirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
 	 * Wait while someone has exclusive access to the page tables.
 	 */
 	tSegPtr = seg1Ptr;
-	Sync_Wait(&tSegPtr->condition, FALSE);
+	(void)Sync_Wait(&tSegPtr->condition, FALSE);
     }
     transVirtAddrPtr->flags = 0;
     if (VmMach_VirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)) {

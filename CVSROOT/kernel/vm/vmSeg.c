@@ -243,7 +243,7 @@ again:
 	 * Someone is already trying to allocate this segment.  Wait for
 	 * them to finish.
 	 */
-	Sync_Wait(&codeSegCondition, FALSE);
+	(void)Sync_Wait(&codeSegCondition, FALSE);
 	goto again;
     } else {
 	segPtr = *segPtrPtr;
@@ -327,7 +327,7 @@ Vm_InitCode(filePtr, segPtr, execInfoPtr)
 	    if (length >= VM_OBJ_FILE_NAME_LENGTH) {
 		length = VM_OBJ_FILE_NAME_LENGTH - 1;
 	    }
-	    String_NCopy(length, fileNamePtr, segPtr->objFileName);
+	    (void)String_NCopy(length, fileNamePtr, segPtr->objFileName);
 	    segPtr->objFileName[length] = '\0';
 	} else {
 	    segPtr->objFileName[0] = '\0';
@@ -729,7 +729,7 @@ Vm_SegmentDelete(segPtr, procPtr)
 	DeleteSeg(segPtr);
 	VmPutOnFreeSegList(segPtr);
     } else if (status == VM_CLOSE_OBJ_FILE) {
-	Fs_Close(objStreamPtr);
+	(void)Fs_Close(objStreamPtr);
     }
 
     Mem_Free((Address)procLinkPtr);
@@ -766,7 +766,7 @@ DeleteSeg(segPtr)
     Mem_Free((Address)segPtr->ptPtr);
     segPtr->ptPtr = (Vm_PTE *)NIL;
     if (segPtr->filePtr != (Fs_Stream *)NIL) {
-	Fs_Close(segPtr->filePtr);
+	(void)Fs_Close(segPtr->filePtr);
 	segPtr->filePtr = (Fs_Stream *)NIL;
     }
     if (segPtr->flags & VM_SWAP_FILE_OPENED) {
@@ -1370,7 +1370,7 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
     Fs_Stream			*newFilePtr;
 
     if (srcSegPtr->type == VM_HEAP) {
-	Fs_StreamCopy(srcSegPtr->filePtr, &newFilePtr);
+	(void)Fs_StreamCopy(srcSegPtr->filePtr, &newFilePtr);
     } else {
 	newFilePtr = (Fs_Stream *) NIL;
     }
@@ -1388,7 +1388,7 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
     if (destSegPtr == (Vm_Segment *) NIL) {
 	VmDecPTUserCount(srcSegPtr);
 	if (srcSegPtr->type == VM_HEAP) {
-	    Fs_Close(newFilePtr);
+	    (void)Fs_Close(newFilePtr);
 	}
 	*destSegPtrPtr = (Vm_Segment *) NIL;
 	return(VM_NO_SEGMENTS);

@@ -233,7 +233,7 @@ VmMach_Init(firstFreePage)
 	    rootPTPageNum = pfNum;
 	    machPtr->RPTPM = rootPTPageNum;
 	}
-	Vm_ReservePage(PhysToVirtPage(pfNum));
+	Vm_ReservePage((unsigned int)PhysToVirtPage(pfNum));
     }
 
     /*
@@ -244,7 +244,7 @@ VmMach_Init(firstFreePage)
 	 i <= machPtr->lastPTPage;
 	 ptePtr++, i++) {
 	pfNum = GetPageFrame(*ptePtr);
-	Vm_ReservePage(PhysToVirtPage(pfNum));
+	Vm_ReservePage((unsigned int)PhysToVirtPage(pfNum));
      }
 
     /*
@@ -411,7 +411,7 @@ VmMach_SegInit(segPtr)
     } else {
 	numPages = segPtr->numPages;
     }
-    AllocPageTable(segPtr, segOffset, numPages);
+    AllocPageTable(segPtr, (unsigned int)segOffset, numPages);
 }
 
 
@@ -436,7 +436,8 @@ VmMach_SegExpand(segPtr, firstPage, lastPage)
     int				firstPage;	/* First page to add. */
     int				lastPage;	/* Last page to add. */
 {
-    AllocPageTable(segPtr, firstPage - segPtr->type * VMMACH_PAGES_PER_SEG,
+    AllocPageTable(segPtr, 
+	   (unsigned int)(firstPage - segPtr->type * VMMACH_PAGES_PER_SEG),
 		   lastPage - firstPage + 1);
 }
 
@@ -462,7 +463,7 @@ VmMach_SegDelete(segPtr)
 {
     register	VmMachPTE	*ptePtr;
     register	VmMach_SegData	*segDataPtr;
-    register	int		ptPage;
+    register	unsigned int	ptPage;
     register	int		firstPage;
 
     segDataPtr = segPtr->machPtr;
@@ -474,7 +475,7 @@ VmMach_SegDelete(segPtr)
 	 firstPage <= segDataPtr->lastPTPage;
 	 firstPage++, ptePtr++, ptPage++) {
 	if (*ptePtr & VMMACH_RESIDENT_BIT) {
-	    Vm_KernPageFree(PhysToVirtPage(GetPageFrame(*ptePtr)));
+	    Vm_KernPageFree((unsigned int)PhysToVirtPage(GetPageFrame(*ptePtr)));
 	    *ptePtr &= ~VMMACH_RESIDENT_BIT;
 	    VmMachFlushPage(vm_SysSegPtr, ptPage);
 	}
@@ -964,7 +965,7 @@ VmMach_SetPageProt(virtAddrPtr, softPTE)
     register	VmMach_SegData	*segDataPtr;
     register	VmMachPTE	*ptePtr;
     register	Vm_Segment	*segPtr;
-    int				page;
+    unsigned int		page;
 
     LOCK_MONITOR;
 
@@ -1043,7 +1044,7 @@ VmMach_ClearRefBit(virtAddrPtr, virtFrameNum)
 {
     register VmMach_SegData	*segDataPtr;
     VmMachPTE			*ptePtr;
-    int				page;
+    unsigned int		page;
 
     LOCK_MONITOR;
 
@@ -1124,7 +1125,7 @@ VmMach_ClearModBit(virtAddrPtr, virtFrameNum)
     unsigned	int		virtFrameNum;
 {
     register VmMach_SegData	*segDataPtr;
-    int				page;
+    unsigned int		page;
     VmMachPTE			*ptePtr;
 
     LOCK_MONITOR;
@@ -1506,7 +1507,7 @@ VmMachDoCopy(numBytes, sourcePtr, destPtr)
 		numBytes -= sizeof(int);
 	    }
 	    if (numBytes == 0) {
-		return;
+		return(SUCCESS);
 	    }
 	}
 	
@@ -1559,7 +1560,7 @@ VmMachDoCopy(numBytes, sourcePtr, destPtr)
 		numBytes -= sizeof(int);
 	    }
 	    if (numBytes == 0) {
-		return;
+		return(SUCCESS);
 	    }
 	}
 	
@@ -1574,6 +1575,7 @@ VmMachDoCopy(numBytes, sourcePtr, destPtr)
 	    numBytes--;
 	}
     }
+    return(SUCCESS);
 }
 
 
@@ -1732,7 +1734,8 @@ VmMach_FlushPage(virtAddrPtr)
     LOCK_MONITOR;
 
     VmMachFlushPage(virtAddrPtr->segPtr, 
-	virtAddrPtr->page & ~(VMMACH_SEG_REG_MASK >> VMMACH_PAGE_SHIFT));
+		    (unsigned int)(virtAddrPtr->page &
+			~(VMMACH_SEG_REG_MASK >> VMMACH_PAGE_SHIFT)));
 
     UNLOCK_MONITOR;
 }
@@ -1762,7 +1765,7 @@ VmMach_FlushPage(virtAddrPtr)
 INTERNAL void
 VmMachFlushPage(segPtr, pageNum)
     register	Vm_Segment	*segPtr; /* Segment to flush. */
-    int				pageNum; /* Page within segment to flush. */
+    unsigned	int		pageNum; /* Page within segment to flush. */
 {
     register	Address		pageAddr;
     register	Address		addr;
@@ -1821,8 +1824,8 @@ VmMachFlushBytes(segPtr, startAddr, numBytes)
     Address	startAddr;	/* Address to start flushing at. */
     int		numBytes;	/* Number of bytes to flush. */
 {
-    int		firstPage;
-    int		lastPage;
+    unsigned	int	firstPage;
+    unsigned	int	lastPage;
 
     LOCK_MONITOR;
 
@@ -1891,7 +1894,7 @@ FlushSegment(segPtr)
      * Uni-processor solution.  Flush the entire cache on this machine.
      */
     for (i = 0; i < VMMACH_CACHE_SIZE; i += VMMACH_CACHE_BLOCK_SIZE) {
-	VmMachFlushBlock(i);
+	VmMachFlushBlock((Address)i);
     }
 }
 
@@ -1921,7 +1924,7 @@ FlushAllCaches()
      * Uni-processor solution.  Flush the entire cache on this machine.
      */
     for (i = 0; i < VMMACH_CACHE_SIZE; i += VMMACH_CACHE_BLOCK_SIZE) {
-	VmMachFlushBlock(i);
+	VmMachFlushBlock((Address)i);
     }
 }
 

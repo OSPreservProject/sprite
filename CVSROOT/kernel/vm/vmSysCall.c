@@ -383,9 +383,9 @@ Vm_Cmd(command, arg)
 	    vmTraceFirstByte = 0;
 	    vmTraceNextByte = sizeof(Vm_TraceStart);
 
-	    String_Copy(VM_TRACE_FILE_NAME, fileName);
-	    Cvt_UtoA((unsigned) Sys_GetHostId(), 10, hostNum);
-	    String_Cat(hostNum, fileName);
+	    (void)String_Copy(VM_TRACE_FILE_NAME, fileName);
+	    (void)Cvt_UtoA((unsigned) Sys_GetHostId(), 10, hostNum);
+	    (void)String_Cat(hostNum, fileName);
 
 	    status = Fs_Open(fileName, FS_WRITE | FS_CREATE,
 			     FS_FILE, 0660, &vmTraceFilePtr);

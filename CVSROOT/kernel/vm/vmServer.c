@@ -67,7 +67,7 @@ VmSwapFileRemove(swapStreamPtr, swapFileName)
     int			origID = NIL;
     ReturnStatus	status;
 
-    Fs_Close(swapStreamPtr);
+    (void)Fs_Close(swapStreamPtr);
     procPtr = Proc_GetEffectiveProc();
     if (procPtr->genFlags & PROC_FOREIGN) {
 	return;
@@ -239,9 +239,9 @@ Vm_OpenSwapDirectory(data, callInfoPtr)
     char		fileName[FS_MAX_PATH_NAME_LENGTH];
     ReturnStatus	status;
 
-    String_Copy(VM_SWAP_DIR_NAME, fileName);
-    Cvt_UtoA((unsigned) Sys_GetHostId(), 10, number);
-    String_Cat(number, fileName);
+    (void)String_Copy(VM_SWAP_DIR_NAME, fileName);
+    (void)Cvt_UtoA((unsigned) Sys_GetHostId(), 10, number);
+    (void)String_Cat(number, fileName);
     status = Fs_Open(fileName, FS_FOLLOW, FS_DIRECTORY, 0, &vmSwapStreamPtr);
     if (status != SUCCESS) {
 	/*
@@ -306,7 +306,7 @@ VmOpenSwapFile(segPtr)
     origCwdPtr = procPtr->fsPtr->cwdPtr;
     if (vmSwapStreamPtr != (Fs_Stream *)NIL) {
 	procPtr->fsPtr->cwdPtr = vmSwapStreamPtr;
-	Cvt_UtoA((unsigned) segPtr->segNum, 10, fileName);
+	(void)Cvt_UtoA((unsigned) segPtr->segNum, 10, fileName);
 	swapFileNamePtr = fileName;
     } else {
 	swapFileNamePtr = segPtr->swapFileName;
@@ -356,12 +356,12 @@ VmMakeSwapName(segNum, fileName)
 {
     char number[CVT_INT_BUF_SIZE];
 
-    String_Copy(VM_SWAP_DIR_NAME, fileName);
-    Cvt_UtoA((unsigned) Sys_GetHostId(), 10, number);
-    String_Cat(number, fileName);
-    String_Cat("/", fileName);
-    Cvt_UtoA((unsigned) (segNum), 10, number);
-    String_Cat(number, fileName);
+    (void)String_Copy(VM_SWAP_DIR_NAME, fileName);
+    (void)Cvt_UtoA((unsigned) Sys_GetHostId(), 10, number);
+    (void)String_Cat(number, fileName);
+    (void)String_Cat("/", fileName);
+    (void)Cvt_UtoA((unsigned) (segNum), 10, number);
+    (void)String_Cat(number, fileName);
 }
 
 

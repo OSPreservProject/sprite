@@ -1867,7 +1867,7 @@ PageLocked(virtAddrPtr)
 
     ptePtr = VmGetPTEPtr(virtAddrPtr->segPtr, virtAddrPtr->page);
     while (*ptePtr & VM_IN_PROGRESS_BIT) {
-	Sync_Wait(&virtAddrPtr->segPtr->condition, FALSE);
+	(void)Sync_Wait(&virtAddrPtr->segPtr->condition, FALSE);
     }
     if (!(*ptePtr & VM_PHYS_RES_BIT)) {
 	retVal = FALSE;
@@ -1979,7 +1979,7 @@ PageUnlock(virtAddrPtr)
 
     ptePtr = VmGetPTEPtr(virtAddrPtr->segPtr, virtAddrPtr->page);
     while (*ptePtr & VM_IN_PROGRESS_BIT) {
-	Sync_Wait(&virtAddrPtr->segPtr->condition, FALSE);
+	(void)Sync_Wait(&virtAddrPtr->segPtr->condition, FALSE);
     }
 
     if (*ptePtr & VM_PHYS_RES_BIT) {

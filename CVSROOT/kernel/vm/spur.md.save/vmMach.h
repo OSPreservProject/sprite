@@ -81,6 +81,8 @@ extern	void		VmMach_SetPageProt();
 extern	void		VmMach_GetRefModBits();
 extern	void		VmMach_ClearRefBit();
 extern	void		VmMach_ClearModBit();		
+extern	void		VmMach_SetRefBit();
+extern	void		VmMach_SetModBit();
 /*
  * Page validation and invalidation.
  */
@@ -119,5 +121,9 @@ extern	void		VmMach_Trace();
  */
 extern	void		VmMach_PinUserPage();
 extern	void		VmMach_UnpinUserPage();
+/*
+ * Cache flushing.
+ */
+extern	void		VmMach_FlushPage();
 
 #endif _VMMACH

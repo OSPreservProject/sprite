@@ -200,12 +200,12 @@ EncapsulateInfo(segPtr, bufferPtr, bufferSizePtr)
     if (segPtr->type != VM_CODE) {
 	Byte_Copy(varSize, (Address) segPtr->ptPtr, ptr);
 	ptr += varSize;
-	Fs_StreamCopy(segPtr->swapFilePtr, &dummyStreamPtr);
+	(void)Fs_StreamCopy(segPtr->swapFilePtr, &dummyStreamPtr);
 	status = Fs_EncapStream(segPtr->swapFilePtr, ptr);
     } else {
 	Byte_Copy(varSize, (Address) &segPtr->execInfo, ptr);
 	ptr += varSize;
-	Fs_StreamCopy(segPtr->filePtr, &dummyStreamPtr);
+	(void)Fs_StreamCopy(segPtr->filePtr, &dummyStreamPtr);
 	status = Fs_EncapStream(segPtr->filePtr, ptr);
     }
     if (status != SUCCESS) {
@@ -286,7 +286,7 @@ Vm_ReceiveSegmentInfo(procPtr, buffer)
 		if (segPtr == (Vm_Segment *) NIL) {
 		    Vm_InitCode(filePtr, (Vm_Segment *) NIL,
 				(Vm_ExecInfo *) NIL);
-		    Fs_Close(filePtr);
+		    (void)Fs_Close(filePtr);
 		    return(VM_NO_SEGMENTS);
 		}
 		Vm_ValidatePages(segPtr, offset, 
@@ -294,13 +294,13 @@ Vm_ReceiveSegmentInfo(procPtr, buffer)
 		Vm_InitCode(filePtr, segPtr, oldExecInfoPtr);
 	    } else {
 		if (!usedFile) {
-		    Fs_Close(filePtr);
+		    (void)Fs_Close(filePtr);
 		}
 	    }
 	    procPtr->vmPtr->segPtrArray[type] = segPtr;
 	    return(SUCCESS);
 	case VM_HEAP:
-	    Fs_StreamCopy(procPtr->vmPtr->segPtrArray[VM_CODE]->filePtr,
+	    (void)Fs_StreamCopy(procPtr->vmPtr->segPtrArray[VM_CODE]->filePtr,
 			  &filePtr);
 	    if (filePtr == (Fs_Stream *) NIL) {
 		Sys_Panic(SYS_FATAL,
