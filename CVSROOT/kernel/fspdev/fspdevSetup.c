@@ -241,6 +241,14 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
     Proc_PID 			procID;
     int				uid;
 
+    /*
+     * PATCH - should allow execution via pseudo-devices some day.
+     *	Need to fix Fs_CheckSetID, and the sticky segment stuff.
+     */
+    if (*flagsPtr & FS_EXECUTE) {
+	return(FS_WRONG_TYPE);
+    }
+
     pdevStatePtr = (FsPdevState *)streamData;
     ctrlHandlePtr = FsHandleFetchType(PdevControlIOHandle,
 				    &pdevStatePtr->ctrlFileID);
@@ -252,9 +260,6 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
     if ((ctrlHandlePtr == (PdevControlIOHandle *)NIL) ||
 	(ctrlHandlePtr->serverID == NIL)) {
 	status = DEV_OFFLINE;
-	if (ctrlHandlePtr != (PdevControlIOHandle *)NIL) {
-	    FsHandleRelease(ctrlHandlePtr, TRUE);
-	}
 	goto exit;
     }
 
@@ -295,6 +300,7 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 
     FsFastWaitListNotify(&ctrlHandlePtr->readWaitList);
     FsHandleRelease(ctrlHandlePtr, TRUE);
+    ctrlHandlePtr = (PdevControlIOHandle *)NIL;
     /*
      * Now that the request response stream is set up we do
      * our first transaction with the server process to see if it
@@ -332,6 +338,9 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 	}
     }
 exit:
+    if (ctrlHandlePtr != (PdevControlIOHandle *)NIL) {
+	FsHandleRelease(ctrlHandlePtr, TRUE);
+    }
     free((Address)streamData);
     return(status);
 }
