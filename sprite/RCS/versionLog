@@ -410,4 +410,7 @@ lockProcID => lockProcPtr.
 
 1.091	Fri Apr 19 13:54:46 PDT 1991
 fixed stupid bug in test of count limit in scsi group 0 command
+
+1.092	Wed May  8 17:29:45 PDT 1991
+first installed ds5000 kernel
     New files linked in from the net library.
