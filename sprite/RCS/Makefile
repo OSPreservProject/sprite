@@ -9,7 +9,7 @@ LD = /sprite/cmds.${MACHINE}/ld
 # and then we can't override it.  But set it by default to the current machine
 # type.
 
-TM ?= $(MACHINE)
+TM          ?= $(MACHINE)
 
 #if make(sun3) || make(profile3)
 RTM = sun3
@@ -50,11 +50,13 @@ PROFILE =
 CFLAGS =	${MTFLAGS} -g -DKERNEL ${PROFILE} ${IFLAGS}
 LINTFLAGS =	-I. -I${H}
 LINTLIBS =	${LINT}/*.ln
+DISTDIR     ?= /dist/sprite/src/kernel/sprite
 
 # symbol looked for by 'make nm'
 NM = mcount
 
 UPDATE = /sprite/cmds.${MACHINE}/update
+TEST = /sprite/cmds.${MACHINE}/test
 MKVERSION = /sprite/cmds.${MACHINE}/mkversion
 RELEASE = 1
 NEWVERSION ?= TRUE
@@ -158,6 +160,17 @@ PROFOBJS= ${LIB}/dbg.o	${PROFD}/fs.o	${LIB}/prof.o \
 ALLSRCS= Makefile version.c
 
 HDRS = sprite.h
+
+DISTFILES ?= Save doversion mainHook.c porting_comments version.h.template
+
+dist:
+#if defined(DISTDIR) && !empty(DISTDIR)
+	for i in $(ALLSRCS) $(HDRS) $(DISTFILES)
+	do
+	if $(TEST) -e $${i}; then
+	    $(UPDATE)  $${i} $(DISTDIR)/$${i} ;else true; fi
+	done
+#endif
 
 .BEGIN: 
 	doversion ${RELEASE} ${NEWVERSION} version.h.template
