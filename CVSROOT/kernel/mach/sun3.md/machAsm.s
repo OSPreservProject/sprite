@@ -382,10 +382,10 @@ _Mach_GetStackPointer:
 |*
 |* ----------------------------------------------------------------------
 |*
-|* MachSetJump --
+|* Mach_SetJump --
 |*
 |*	Prepare for a non-local goto (i.e. Mach_LongJump).  This saves the
-|*	program counter and all local registers in the given Sys_SetJumpState
+|*	program counter and all local registers in the given Mach_SetJumpState
 |*	struct.
 |*	
 |*	MachSetJump(setJumpStatePtr)
@@ -400,10 +400,13 @@ _Mach_GetStackPointer:
 |* ----------------------------------------------------------------------
 |*
 
-	.globl	_MachSetJump
-_MachSetJump:
+	.globl	_Mach_SetJump
+_Mach_SetJump:
 	movl	sp@(4),a0		| Get the address of where to store the 
 					|     registers in a register.
+	movl	_machCurStatePtr, a1	| Get pointer to mach struct in a1 and
+					|     and then store the set jump ptr.
+	movl	a0, a1@(MACH_SET_JUMP_STATE_PTR_OFFSET)
 	moveml	#SAVED_REGS,a0@(4)	| Save registers.
 	movl	sp@,a0@			| Save program counter of caller.
 	clrl	d0			| Return zero
