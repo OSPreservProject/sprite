@@ -17,16 +17,16 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "stdio.h"
-#include "sync.h"
-#include "sysStats.h"
-#include "devDiskStats.h"
-#include "user/fs.h"
-#include "stdlib.h"
-#include "list.h"
-#include "bstring.h"
-#include "string.h"
+#include <sprite.h>
+#include <stdio.h>
+#include <sync.h>
+#include <sysStats.h>
+#include <devDiskStats.h>
+#include <user/fs.h>
+#include <stdlib.h>
+#include <list.h>
+#include <bstring.h>
+#include <string.h>
 
 /*
  * The disk stats modules cleans a linked list of registers disk to implment

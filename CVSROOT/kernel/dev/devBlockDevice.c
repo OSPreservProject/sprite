@@ -18,11 +18,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 
-#include "sprite.h"
-#include "fs.h"
-#include "devBlockDevice.h"
-#include "devFsOpTable.h"
-#include "sync.h"
+#include <sprite.h>
+#include <fs.h>
+#include <devBlockDevice.h>
+#include <devFsOpTable.h>
+#include <sync.h>
 
 static void syncDoneProc _ARGS_((DevBlockDeviceRequest *requestPtr,
     ReturnStatus status, int amountTransferred));
@@ -57,10 +57,12 @@ Dev_BlockDeviceAttach(devicePtr)
      * capabilities then give up. Otherwise we let the Device Attach
      * procedure file the device.
      */
+#ifndef lint
     if ((type >= devNumDevices) ||
 	(devFsOpTable[type].blockDevAttach == DEV_NO_ATTACH_PROC)) {
 	return ((DevBlockDeviceHandle *) NIL);
     }
+#endif
     return ((devFsOpTable[type].blockDevAttach)(devicePtr));
 }
 

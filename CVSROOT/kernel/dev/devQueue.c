@@ -26,14 +26,14 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "list.h"
-#include "bit.h"
-#include "devQueue.h"
-#include "proc.h"
-#include "sync.h"
-#include "stdlib.h"
-#include "bstring.h"
+#include <sprite.h>
+#include <list.h>
+#include <bit.h>
+#include <devQueue.h>
+#include <proc.h>
+#include <sync.h>
+#include <stdlib.h>
+#include <bstring.h>
 
 /*
  *	Design rationale
