@@ -198,6 +198,7 @@ extern void Proc_DestroyMigratedProc();
 
 extern void Proc_RemoveMigDependency();
 extern void Proc_AddMigDependency();
+extern ReturnStatus Proc_WaitForHost();
 
 
 

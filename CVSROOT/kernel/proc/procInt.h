@@ -43,9 +43,9 @@ typedef struct {
 
 extern void ProcRemoteExit();
 extern void ProcExitProcess();
-extern	void			ProcExitInit();
 
 extern	void			ProcFamilyHashInit();
+extern	void			ProcDebugInit();
 extern	void			ProcEnvironInit();
 
 extern	void			ProcDebugWakeup();
