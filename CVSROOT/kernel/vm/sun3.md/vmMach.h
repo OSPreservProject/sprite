@@ -134,6 +134,8 @@ extern ReturnStatus VmMach_DMAAllocContiguous _ARGS_((
  * Device mapping.
  */
 extern Address VmMach_MapInDevice _ARGS_((Address devPhysAddr, int type));
+extern Address VmMach_MapInBigDevice _ARGS_((Address devPhysAddr, int numBytes,
+	int type));
 /*
  * Network mapping routines.
  */
