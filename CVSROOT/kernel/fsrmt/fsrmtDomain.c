@@ -32,6 +32,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsSpriteDomain.h"
 #include "fsLocalDomain.h"
 #include "fsOpTable.h"
+#include "fsStream.h"
 #include "fsTrace.h"
 #include "fsDebug.h"
 #include "fsStat.h"
@@ -526,6 +527,7 @@ Fs_RpcReopen(srvToken, clientID, command, storagePtr)
  */
 typedef struct FsSpriteCloseParams {
     FsFileID	fileID;		/* File to close */
+    FsFileID	streamID;	/* Stream to close */
     int		flags;		/* Flags from the stream */
 } FsSpriteCloseParams;
 
@@ -550,18 +552,23 @@ typedef struct FsSpriteCloseParams {
  */
 /*ARGSUSED*/
 ReturnStatus
-FsSpriteClose(rmtHandlePtr, clientID, flags, dataSize, closeData)
-    FsRemoteIOHandle	*rmtHandlePtr;	/* Handle to close */
+FsSpriteClose(streamPtr, clientID, flags, dataSize, closeData)
+    Fs_Stream		*streamPtr;	/* Stream to close.  This is needed
+					 * (instead of I/O handle) so the
+					 * server can close its shadow stream */
     int			clientID;	/* IGNORED, implicitly passed by RPC */
     int			flags;		/* Flags from the stream being closed */
     int			dataSize;	/* Size of *closeData, or Zero */
     ClientData		closeData;	/* Copy of cached I/O attributes. */
 {
+    FsRemoteIOHandle	*rmtHandlePtr;	/* Handle to close */
     Rpc_Storage 	storage;
     ReturnStatus 	status;
     FsSpriteCloseParams	params;
 
+    rmtHandlePtr = (FsRemoteIOHandle *)streamPtr->ioHandlePtr;
     params.fileID = rmtHandlePtr->hdr.fileID;
+    params.streamID = streamPtr->hdr.fileID;
     params.flags = flags;
 
     storage.requestParamPtr = (Address)&params;
@@ -620,25 +627,52 @@ Fs_RpcClose(srvToken, clientID, command, storagePtr)
 					 * This can be passed to Rpc_Reply */
 {
     register	FsSpriteCloseParams	*paramsPtr;
+    register	Fs_Stream		*streamPtr;
     register	FsHandleHeader		*hdrPtr;
     ReturnStatus			status;
+    Fs_Stream				dummy;
 
     paramsPtr = (FsSpriteCloseParams *) storagePtr->requestParamPtr;
 
-    hdrPtr = (*fsStreamOpTable[paramsPtr->fileID.type].clientVerify)
-		(&paramsPtr->fileID, clientID);
-    if (hdrPtr == (FsHandleHeader *) NIL) {
-	status = FS_STALE_HANDLE;
-    } else  {
+    if (paramsPtr->streamID.type == -1) {
 	/*
-	 * Call the file type close routine to release the I/O handle
-	 * and clean up.  This call unlocks and decrements the reference
-	 * count on the handle.
+	 * This is a close of a prefix handle which doesn't have a stream.
 	 */
-	FS_TRACE_HANDLE(FS_TRACE_CLOSE, hdrPtr);
-	status = (*fsStreamOpTable[hdrPtr->fileID.type].close)(hdrPtr,
-		clientID, paramsPtr->flags, storagePtr->requestDataSize,
-		(ClientData)storagePtr->requestDataPtr);
+	streamPtr = &dummy;
+    } else {
+	streamPtr = FsStreamClientVerify(&paramsPtr->streamID, clientID);
+    }
+    if (streamPtr == (Fs_Stream *)NIL) {
+	status = FS_STALE_HANDLE;
+    } else {
+
+	hdrPtr = (*fsStreamOpTable[paramsPtr->fileID.type].clientVerify)
+		    (&paramsPtr->fileID, clientID);
+	dummy.ioHandlePtr = hdrPtr;
+	if (hdrPtr == (FsHandleHeader *) NIL) {
+	    status = FS_STALE_HANDLE;
+	} else  {
+	    /*
+	     * Call the file type close routine to release the I/O handle
+	     * and clean up.  This call unlocks and decrements the reference
+	     * count on the handle.
+	     */
+	    FS_TRACE_HANDLE(FS_TRACE_CLOSE, hdrPtr);
+	    status = (*fsStreamOpTable[hdrPtr->fileID.type].close)(streamPtr,
+		    clientID, paramsPtr->flags, storagePtr->requestDataSize,
+		    (ClientData)storagePtr->requestDataPtr);
+	}
+	if (streamPtr != &dummy) {
+	    /*
+	     * Take the client of the stream's list and nuke the server's
+	     * shadow stream if there are no client's left.
+	     */
+	    if (FsStreamClientClose(&streamPtr->clientList, clientID)) {
+		FsStreamDispose(streamPtr);
+	    } else {
+		FsHandleRelease(streamPtr, TRUE);
+	    }
+	}
     }
     /*
      * Send back the reply.
