@@ -42,4 +42,4 @@ typedef struct EventTableType {
 extern void Dump_Register_Events();
 extern void Dump_Show_Local_Menu();
 
-#endif _DUMPINT
+#endif /* _DUMPINT */

@@ -14,7 +14,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif /* not lint */
 
 
 #include "sprite.h"
@@ -69,7 +69,7 @@ static EventTableType eventTable[] = {
     {'h', Fs_NameHashStats, (ClientData)NULL, "Dump name hash stats"},
     {'m', Mem_DumpStats, (ClientData) FALSE,"Dump memory stats"},
     {'n', Net_Reset, (ClientData)0,"Reset the network interface"},
-    {'p', Proc_Dump, (ClientData) 0,"Dump process table"},
+    {'p', (void (*)()) Proc_Dump, (ClientData) 0,"Dump process table"},
     {'r', Sched_DumpReadyQueue,  (ClientData) 0,"Dump ready queue"},
     {'q', Fs_PdevPrintTrace,  (ClientData) 200,"Dump pseudo-device trace"},
     {'s', Timer_DumpStats,   (ClientData) 's',"Reset timer stats"},
@@ -79,15 +79,14 @@ static EventTableType eventTable[] = {
     {'x', Fs_HandleScavengeStub, (ClientData) 0,"Scavenge filesystem handles"},
     {'y', Recov_PrintTrace, (ClientData) 50,"Dump RPC recovery trace"},
     {'z', Rpc_PrintTrace, (ClientData) 50,"Dump RPC packet trace"},
-
     {'1', Timer_TimerGetInfo, (ClientData) 1,"Dump info for timer counter 1"},
     {'2', Timer_TimerGetInfo, (ClientData) 2,"Dump info for timer counter 2"},
     {'3', Timer_TimerGetInfo, (ClientData) 3,"Dump info for timer counter 3"},
     {'4', Timer_TimerGetInfo, (ClientData) 4,"Dump info for timer counter 4"},
     {'5', Timer_TimerGetInfo, (ClientData) 5,"Dump info for timer counter 5"},
-    {'6', PrintTOD, (ClientData) 0,"Print time of day counters"},
+    {'6', PrintTOD,           (ClientData) 0,"Print time of day counters"},
 	/* This MUST be the last entry */
-    {'\000', LAST_EVENT, NULL_ARG, (char *) 0 }, 
+    {'\0', LAST_EVENT,        NULL_ARG,       (char *) 0 },
 };
 
 
