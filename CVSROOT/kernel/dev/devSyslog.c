@@ -272,6 +272,10 @@ Dev_SyslogWrite(devicePtr, writePtr, replyPtr)
 	    for (i = 0; i < writePtr->length; i++, bufPtr++) {
 		Mach_MonPutChar(*bufPtr);
 	    }
+	    /*
+	     * Make sure we return that the entire amount was written.
+	     */
+	    writePtr->length = 0;
 	} else {
 	    if (firstIndex == -1) {
 		toWrite = SYSLOG_BUF_SIZE;
@@ -419,10 +423,12 @@ Dev_SyslogIOControl(devicePtr, ioctlPtr, replyPtr)
 	     * No syslog specific bits are set this way.
 	     */
 	    break;
+#ifdef notdef
 	case	IOC_TRUNCATE:
 	    firstIndex = -1;
 	    lastIndex = - 1;
 	    break;
+#endif
 
 	default:
 	    status = GEN_NOT_IMPLEMENTED;
