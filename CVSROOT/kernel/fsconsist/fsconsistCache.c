@@ -588,10 +588,10 @@ FsReopenClient(handlePtr, clientID, use, haveDirtyBlocks)
 	     * are not lost.
 	     */
 	    printf(
-	"FsReopenHandle: file \"%s\" <%d,%d>: client %d reading stale data\n",
+	"FsReopenHandle: file \"%s\" <%d,%d>: client %d has dirty blocks, but client %d is using\n",
 		FsHandleName(handlePtr),
 		handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
-		clientPtr->clientID);
+		clientID, clientPtr->clientID);
 	}
     }
 #ifdef notdef
@@ -622,9 +622,10 @@ FsReopenClient(handlePtr, clientID, use, haveDirtyBlocks)
 	    /*
 	     * Version number checking should have prevented this.
 	     */
-	    panic(
-		    "Client %d with dirty blocks not last writer %d\n",
-		    clientID, consistPtr->lastWriter);
+	    printf("FsReopenHandle: file \"%s\" <%d,%d>: Client %d with dirty blocks not last writer %d\n",
+		FsHandleName(handlePtr),
+		handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
+		clientID, consistPtr->lastWriter);
 	} else {
 	    consistPtr->lastWriter = clientID;
 	}
