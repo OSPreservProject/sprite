@@ -476,7 +476,8 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
  *
  * StripeBlockIOProc --
  *
- *	Perform block IO (w/ parity) on specified RAID device.
+ *	Perform block IO w/o parity, i.e. data striping only,
+ *	on specified RAID device.
  *
  * Results:
  *	None.
