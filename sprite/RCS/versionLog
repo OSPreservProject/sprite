@@ -240,4 +240,9 @@ deadlocks during migration/signals/exiting processes.
 Fixes change to ioctl rpc stub that wasn't byte-swapping IOC_REPOSITION for
 shadow stream.  Fixes migration not to accidentally leave mig trap signal
 blocked.
+
+1.069	Thu Jul 19 17:44:16 PDT 1990
+Has statistics for Fred.  Has various fs lock fixes.  Has L1-i function.
+
+1.070	Wed Aug  1 13:12:15 PDT 1990
     New files linked in from the net library.
