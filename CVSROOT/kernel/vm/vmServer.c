@@ -37,7 +37,6 @@ Boolean vmSwapFileDebug = FALSE;
  * of swap files.  It is possible that the open of the swap file could
  * happen more than once if the open is not synchronized.
  */
-
 Sync_Condition	swapFileCondition;
 
 
@@ -165,19 +164,18 @@ VmSwapFileUnlock(segPtr)
  *	This routine will panic if the swap file does not exist.
  *
  *	NOTE: It is assumed that the page frame that is to be written into
- *	      cannot be given to another process.
+ *	      cannot be given to another segment.
  *
  * Results:
  *	SUCCESS if the page server could be read from or an error if either
  *	a swap file could not be opened or the page server could not be
- *	read from.
+ *	read from the swap file.
  *
  * Side effects:
  *	The hardware page is written into.
  *
  *----------------------------------------------------------------------
  */
-
 ReturnStatus
 VmPageServerRead(virtAddrPtr, pageFrame)
     Vm_VirtAddr			*virtAddrPtr;
@@ -246,11 +244,6 @@ Vm_OpenSwapDirectory(data, callInfoPtr)
     String_Cat(number, fileName);
     status = Fs_Open(fileName, FS_FOLLOW, FS_DIRECTORY, 0, &vmSwapStreamPtr);
     if (status != SUCCESS) {
-/*
-	Sys_Panic(SYS_WARNING,
-		  "VmOpenSwapDirectory: Open of swap dir %s failed status %x\n",
-		  fileName, status);
-*/
 	/*
 	 * It didn't work, retry in 10 seconds.
 	 */
@@ -356,7 +349,6 @@ VmOpenSwapFile(segPtr)
  *
  *----------------------------------------------------------------------
  */
-
 void
 VmMakeSwapName(segNum, fileName)
     int  segNum;		/* segment for which to create name */ 
@@ -376,13 +368,13 @@ VmMakeSwapName(segNum, fileName)
 /*
  *----------------------------------------------------------------------
  *
- * VmPageServer --
+ * VmPageServerWrite --
  *
- *	Write the given page frame to the swap file.  If the swap file it
+ *	Write the given page frame to the swap file.  If the swap file is
  *	not open yet then it will be open.
  *
  *	NOTE: It is assumed that the page frame that is to be read from
- *	      cannot be given to another process.
+ *	      cannot be given to another segment.
  *
  * Results:
  *	SUCCESS if the page server could be written to or an error if either
@@ -394,7 +386,6 @@ VmMakeSwapName(segNum, fileName)
  *
  *----------------------------------------------------------------------
  */
-
 ReturnStatus
 VmPageServerWrite(virtAddrPtr, pageFrame)
     Vm_VirtAddr		*virtAddrPtr;
@@ -437,9 +428,6 @@ VmPageServerWrite(virtAddrPtr, pageFrame)
 			  pageToWrite << vmPageShift, vm_PageSize);
     VmUnmapPage((Address) mappedAddr);
 
-#ifdef notdef
-    VmSwapFileUnlock(segPtr);
-#endif
     return(status);
 }
 
@@ -498,12 +486,6 @@ VmCopySwapSpace(srcSegPtr, destSegPtr)
     	ptePtr = destSegPtr->ptPtr;
     }
 
-#ifdef COMMENT
-    Sys_Printf("Copying %d pages from seg %d to seg %d starting page %d\n", 
-		destSegPtr->numPages, srcSegPtr->segNum, destSegPtr->segNum,
-		page);
-#endif
-
     for (i = 0; i < destSegPtr->numPages; i++, VmIncPTEPtr(ptePtr, 1)) {
 
 	if (*ptePtr & VM_IN_PROGRESS_BIT) {
@@ -527,10 +509,6 @@ VmCopySwapSpace(srcSegPtr, destSegPtr)
 	}
     }
 
-#ifdef COMMENT
-    Sys_Printf("Finished Copying\n");
-#endif COMMENT
-
     return(status);
 }
 
@@ -543,7 +521,7 @@ VmCopySwapSpace(srcSegPtr, destSegPtr)
  *	Read the given page from the file server into the given page frame.
  *
  *	NOTE: It is assumed that the page frame that is to be written into
- *	      cannot be given to another process.
+ *	      cannot be given to another segment.
  *
  * Results:
  *	Error if file server could not be read from, SUCCESS otherwise.
@@ -570,7 +548,6 @@ VmFileServerRead(virtAddrPtr, pageFrame)
     /*
      * Map the page frame into the kernel's address space.
      */
-
     mappedAddr = (int) VmMapPage(pageFrame);
 
     /*
@@ -578,7 +555,6 @@ VmFileServerRead(virtAddrPtr, pageFrame)
      * page offset into the segment ((page - offset) << vmPageShift) plus
      * the offset of this segment into the file (fileAddr).
      */
-
     length = vm_PageSize;
     offset = ((virtAddrPtr->page - segPtr->offset) << vmPageShift) + 
 		segPtr->fileAddr;
@@ -626,9 +602,9 @@ VmFileServerRead(virtAddrPtr, pageFrame)
  */
 ReturnStatus
 VmCopySwapPage(srcSegPtr, virtPage, destSegPtr)
-    register	Vm_Segment	*srcSegPtr;
-    int				virtPage;
-    register	Vm_Segment	*destSegPtr;
+    register	Vm_Segment	*srcSegPtr;	/* Source for swap file. */
+    int				virtPage;	/* Virtual page to copy. */
+    register	Vm_Segment	*destSegPtr;	/* Destination swap file. */
 {
     int			pageToCopy;
     ReturnStatus	status;
@@ -660,4 +636,3 @@ VmCopySwapPage(srcSegPtr, virtPage, destSegPtr)
 
     return(status);
 }
-

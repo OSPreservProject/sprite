@@ -1,8 +1,7 @@
-/* vmSunBoot.c -
+/* vmBoot.c -
  *
  *	This file contains routines that allocate memory for tables at boot 
- *	time.  This contains some hardware dependencies when it initializes
- *	the virtual address space for the kernel.
+ *	time.
  *
  * Copyright (C) 1985 Regents of the University of California
  * All rights reserved.
@@ -32,10 +31,11 @@ Boolean	vmNoBootAlloc = TRUE;
  *	where to start allocating memory at boot time.
  *
  * Results:
- *     None.
+ *	None.
  *
  * Side effects:
- *     vmMemEnd is set.
+ *     	vmMemEnd is set and several variables are set by the machine dependent
+ *	boot routine.
  *
  * ----------------------------------------------------------------------------
  */

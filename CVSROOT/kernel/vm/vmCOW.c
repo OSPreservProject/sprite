@@ -5,17 +5,14 @@
  *
  * Copy-on-write (COW) is implemented by linking all related instances of a
  * segment in a list. "Related instances" means all segments related by a fork
- * of some initial segment, including childre, grandchildren, etc.  Each page
+ * of some initial segment, including children, grandchildren, etc.  Each page
  * in each related segment is marked either OK (meaning the page is no longer
  * involved in any COW activity), COW or COR (meaning it's copy-on-reference).
  * COR pages have no associated backing store or main-memory contents yet, but
  * the PTE for each COR page names the segment from which this page is to be 
  * copied by setting the page frame number equal to the segment number of the
  * source of the page.  Pages are marked COW and COR through the use of the
- * protection bits in the PTE.  If the page is COW, the protection is set to
- * VM_UR_PROT.  If the page is COR, then the protection is set to VM_KRW_PROT.
- * If the page is neither, then the protection is VM_URW_PROT.  Note that
- * only heap and stack segments are ever copy-on-write.
+ * bits in the PTE.
  *
  * When a COR page is referenced, the routine VmCOR is called.  The source of
  * the page is found through the page frame number and a copy of the page is 
@@ -50,13 +47,13 @@
  *
  * The routines in this file are designed to be called by routines in 
  * vmPage.c and vmSeg.c.  Whenever any of these routines are called  it is
- * assumed that the segment cannot have ranges of virtual addresses validated
- * or invalidated from the segment.  Also only one operation can occur to a
+ * assumed that the page tables for the segment have had their user count
+ * incremented so that it is safe to grab a pointer to the page tables outside.
+ * of the monitor lock. Also only one operation can occur to a
  * copy-on-write chain at one time.  This is assured by embedding a lock into 
  * a common data structure that all  segments in a copy-on-write chain 
- * reference (VmCOWInfo).  Since only one operation can happen at a time and a
- * segment's virtual address space cannot be mucked with, this greatly 
- * simplifies the code.
+ * reference (VmCOWInfo).  Since only one operation can happen at a time and 
+ * the pages tables are safe this greatly simplifies the code.
  *
  * CLEANUP
  *
@@ -119,13 +116,14 @@ unsigned int	GetMasterPF();
  * VmSegFork --
  *
  *	Make a copy-on-reference copy of the given segment.  It is assumed
- *	that this routine is called with the source segment not expandable.
+ *	that this routine is called with the source segment's page table
+ *	in use count incremented.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	None.
+ *	Memory may be allocated for COW info struct.
  *
  *----------------------------------------------------------------------
  */
@@ -265,13 +263,13 @@ DoFork(srcSegPtr, destSegPtr)
  *	Make of the copy of the given segment.  This includes handling all
  *	copy-on-write and copy-on-reference pages.  This segment will
  *	be removed from its copy-on-write chain.  It is assumed that the
- *	calling segment cannot be expanded.
+ *	calling segment has the in-use count of its page tables incremented.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	None.
+ *	Memory for a COW info struct may be freed.
  *
  *----------------------------------------------------------------------
  */
@@ -327,9 +325,7 @@ VmCOWCopySeg(segPtr)
  *
  *	Invalidate all cow or cor pages from the given range of pages in
  *	the given segment.  It is assumed that this routine is called with
- *	the segment not expandable.  It does not modify the protection
- *	in the page table under the assumption that the caller will clean
- *	things up in the page table.
+ *	the segment's page tables in use count incremented.
  *
  * Results:
  *	None.
@@ -458,6 +454,78 @@ again:
 /*
  *----------------------------------------------------------------------
  *
+ * COWEnd --
+ *
+ *	Clean up after a copy-on-write or copy-on-ref has happened.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	*cowInfoPtrPtr is set to point to COW info struct to free if there
+ *	are no segments left COW.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY static void
+COWEnd(segPtr, cowInfoPtrPtr)
+    register	Vm_Segment	*segPtr;	 /* Segment that was involved
+						  * in the COW or COR. */
+    VmCOWInfo			**cowInfoPtrPtr; /* Set to point to a COW
+						  * info struct to free. */
+{
+    register	VmCOWInfo	*cowInfoPtr;
+
+
+    LOCK_MONITOR;
+
+    cowInfoPtr = segPtr->cowInfoPtr;
+    cowInfoPtr->copyInProgress = FALSE;
+    Sync_Broadcast(&cowInfoPtr->condition);
+    if (segPtr->numCOWPages == 0 && segPtr->numCORPages == 0) {
+	List_Remove((List_Links *)segPtr);
+	segPtr->cowInfoPtr = (VmCOWInfo *)NIL;
+	cowInfoPtr->numSegs--;
+    }
+    if (cowInfoPtr->numSegs == 0) {
+	*cowInfoPtrPtr = cowInfoPtr;
+    } else if (cowInfoPtr->numSegs == 1) {
+	register Vm_Segment	*cowSegPtr;
+	register Vm_PTE		*ptePtr;
+	int			firstPage;
+	int			lastPage;
+	register int		i;
+	/*
+	 * Only one segment left.  Return this segment back to normal
+	 * protection and clean up.
+	 */
+	*cowInfoPtrPtr = cowInfoPtr;
+	cowSegPtr = (Vm_Segment *)List_First(&cowInfoPtr->cowList);
+	cowSegPtr->cowInfoPtr = (VmCOWInfo *)NIL;
+	if (cowSegPtr->type == VM_STACK) {
+	    firstPage = mach_LastUserStackPage - cowSegPtr->numPages + 1;
+	} else {
+	    firstPage = cowSegPtr->offset;
+	}
+	lastPage = firstPage + cowSegPtr->numPages - 1;
+	for (ptePtr = VmGetPTEPtr(cowSegPtr, firstPage),
+		i = cowSegPtr->numPages;
+	     i > 0;
+	     i--, VmIncPTEPtr(ptePtr, 1)) {
+	    *ptePtr &= ~(VM_COW_BIT | VM_COR_BIT);
+	}
+	VmMach_SetSegProt(cowSegPtr, firstPage, lastPage, TRUE);
+	cowSegPtr->numCORPages = 0;
+	cowSegPtr->numCOWPages = 0;
+    }
+
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * FindNewMasterSeg --
  *
  *	Find a segment that is sharing the given page copy-on-reference.
@@ -466,7 +534,8 @@ again:
  *	Pointer to segment that is sharing the given page copy-on-reference.
  *
  * Side effects:
- *	None.
+ *	All segments that are now dependent on the new master have their page
+ *	table entries set to point to the new master segment.
  *
  *----------------------------------------------------------------------
  */
@@ -542,83 +611,11 @@ IsResident(ptePtr)
 /*
  *----------------------------------------------------------------------
  *
- * COWEnd --
- *
- *	Clean up after a copy-on-write or copy-on-ref has happened.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	*cowInfoPtrPtr is set to point to COW info struct to free if there
- *	are no segments left COW.
- *
- *----------------------------------------------------------------------
- */
-ENTRY static void
-COWEnd(segPtr, cowInfoPtrPtr)
-    register	Vm_Segment	*segPtr;	 /* Segment that was involved
-						  * in the COW or COR. */
-    VmCOWInfo			**cowInfoPtrPtr; /* Set to point to a COW
-						  * info struct to free. */
-{
-    register	VmCOWInfo	*cowInfoPtr;
-
-
-    LOCK_MONITOR;
-
-    cowInfoPtr = segPtr->cowInfoPtr;
-    cowInfoPtr->copyInProgress = FALSE;
-    Sync_Broadcast(&cowInfoPtr->condition);
-    if (segPtr->numCOWPages == 0 && segPtr->numCORPages == 0) {
-	List_Remove((List_Links *)segPtr);
-	segPtr->cowInfoPtr = (VmCOWInfo *)NIL;
-	cowInfoPtr->numSegs--;
-    }
-    if (cowInfoPtr->numSegs == 0) {
-	*cowInfoPtrPtr = cowInfoPtr;
-    } else if (cowInfoPtr->numSegs == 1) {
-	register Vm_Segment	*cowSegPtr;
-	register Vm_PTE		*ptePtr;
-	int			firstPage;
-	int			lastPage;
-	register int		i;
-	/*
-	 * Only one segment left.  Return this segment back to normal
-	 * protection and clean up.
-	 */
-	*cowInfoPtrPtr = cowInfoPtr;
-	cowSegPtr = (Vm_Segment *)List_First(&cowInfoPtr->cowList);
-	cowSegPtr->cowInfoPtr = (VmCOWInfo *)NIL;
-	if (cowSegPtr->type == VM_STACK) {
-	    firstPage = mach_LastUserStackPage - cowSegPtr->numPages + 1;
-	} else {
-	    firstPage = cowSegPtr->offset;
-	}
-	lastPage = firstPage + cowSegPtr->numPages - 1;
-	for (ptePtr = VmGetPTEPtr(cowSegPtr, firstPage),
-		i = cowSegPtr->numPages;
-	     i > 0;
-	     i--, VmIncPTEPtr(ptePtr, 1)) {
-	    *ptePtr &= ~(VM_COW_BIT | VM_COR_BIT);
-	}
-	VmMach_SetSegProt(cowSegPtr, firstPage, lastPage, TRUE);
-	cowSegPtr->numCORPages = 0;
-	cowSegPtr->numCOWPages = 0;
-    }
-
-    UNLOCK_MONITOR;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * VmCOR --
  *
  *	Handle a copy-on-reference fault.  If the virtual address is not
  *	truly COR then don't do anything.  It is assumed that the given
- *	segment is not-expandable.
+ *	segment's page tables have had their in-use count incremented.
  *
  * Results:
  *	Status from VmPageServerRead if had to read from swap space.  
@@ -736,7 +733,7 @@ COR(virtAddrPtr, ptePtr)
  *
  * GetMasterPF --
  *
- *	Return the page frame from the master segments page table
+ *	Return the page frame from the master segment's page table
  *	entry.  0 if the page is not resident.
  *
  * Results:
@@ -1012,6 +1009,7 @@ SetPTE(virtAddrPtr, pte)
     Vm_PTE	pte;
 {
     Vm_PTE	*ptePtr;
+
     LOCK_MONITOR;
 
     ptePtr = VmGetPTEPtr(virtAddrPtr->segPtr, virtAddrPtr->page);

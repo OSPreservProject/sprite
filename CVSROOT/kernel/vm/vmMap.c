@@ -46,7 +46,7 @@ Address vmMapEndAddr;
  *      The kernel virtual address where the page is mapped.
  *
  * Side effects:
- *      None.
+ *      Kernel page table modified to validate the mapped page.
  *
  * ----------------------------------------------------------------------------
  */
@@ -94,7 +94,7 @@ VmMapPage(pfNum)
  * VmRemapPage --
  *
  *      Map the given physical page into the kernels virtual address space
- *	at the given virtual address.  The addres given must be produced from
+ *	at the given virtual address.  The address given must be produced from
  *	VmMapPage.  The purpose of this routine is to reduce overhead for
  *	routines that have to map numerous page frames into the kernel's
  *	virtual address space.
@@ -141,7 +141,7 @@ VmRemapPage(addr, pfNum)
  *      None.
  *
  * Side effects:
- *      None.
+ *      Kernel page table modified to invalidate the page.
  *
  * ----------------------------------------------------------------------------
  */
@@ -182,9 +182,10 @@ VmUnmapPage(mappedAddr)
  *
  * Side effects:
  *      If the address that is being made accessible falls into a heap or
- *	stack segment then the heap segment is prevented from being
- *	expanded for the calling process.  This is to ensure that the addresses
- *	remain valid until Vm_MakeUnaccessible is called.
+ *	stack segment then the heap segment for the currently executing
+ *	process has the page table in-use count incremented.  This is to
+ *	ensure that the addresses remain valid until Vm_MakeUnaccessible
+ *	is called.
  *
  * ----------------------------------------------------------------------------
  */
@@ -214,9 +215,7 @@ Vm_MakeAccessible(accessType, numBytes, startAddr, retBytesPtr, retAddrPtr)
 
     /*
      * Parse the virtual address to determine which segment that this page
-     * falls into and which page in the segment.  If it is a heap segment
-     * or stack segment, then the current process's heap segment will
-     * be prevented from being expanded.
+     * falls into and which page in the segment.
      */
     VmVirtAddrParse(procPtr, startAddr, &virtAddr);
     
@@ -282,7 +281,7 @@ Vm_MakeAccessible(accessType, numBytes, startAddr, retBytesPtr, retAddrPtr)
      * If we couldn't map anything then just return.
      */
     if (virtAddr.page == firstPage) {
-        VmDecExpandCount(procPtr->vmPtr->segPtrArray[VM_HEAP]);
+        VmDecPTUserCount(procPtr->vmPtr->segPtrArray[VM_HEAP]);
 	procPtr->vmPtr->numMakeAcc--;
 	*retBytesPtr = 0;
 	*retAddrPtr = (Address) NIL;
@@ -305,15 +304,15 @@ Vm_MakeAccessible(accessType, numBytes, startAddr, retBytesPtr, retAddrPtr)
  *
  *	Take the given kernel virtual address and make the range of pages
  *	that it addresses unaccessible.  All that has to be done is to
- *	make the heap segment for the calling process expandable if it was
- *	made unexpandable by Vm_MakeAccessible.
+ *	decrement the in-use count on the page table for the calling process's
+ *	heap segment.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Heap segment made expandable if the address falls into a heap or
- *	stack segment.
+ *	Heap segment page table in use count decremented if the address 
+ *	falls into a heap or stack segment.
  *
  *----------------------------------------------------------------------
  */
@@ -338,11 +337,11 @@ Vm_MakeUnaccessible(addr, numBytes)
 	 * was prevented from being expanded by Vm_MakeAccessible so we have
 	 * to let it be expanded now.
 	 */
-        segPtr->notExpandCount--;
-        if (segPtr->notExpandCount < 0) {
+        segPtr->ptUserCount--;
+        if (segPtr->ptUserCount < 0) {
             Sys_Panic(SYS_FATAL, "Vm_MakeUnaccessible: expand count < 0\n");
         }
-        if (segPtr->notExpandCount == 0) {
+        if (segPtr->ptUserCount == 0) {
             Sync_Broadcast(&segPtr->condition);
         }
     }

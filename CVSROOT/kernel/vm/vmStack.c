@@ -41,7 +41,7 @@ typedef struct {
 } StackList;
 
 /*
- * Array ofstack list information.
+ * Array of stack list information.
  */
 static	StackList	*stackListElements;
 
@@ -97,8 +97,7 @@ VmStackInit()
  *
  * Vm_GetKernelStack --
  *
- *      Allocate and initialize a stack for a kernel process.  The stack is
- *	returned so that it looks like it is in the middle of a context switch.
+ *      Allocate and initialize a stack for a kernel process.
  *
  * Results:
  *      The base of the new stack.
@@ -111,11 +110,11 @@ VmStackInit()
 ENTRY int
 Vm_GetKernelStack(progCounter, startFunc)
     int		progCounter;	/* Program counter of where to start 
-				   execution of new process.  */
+				 * execution of new process.  */
     void	(*startFunc)();	/* The function to call when the process
-				   first starts executing.  This function will
-				   initialize things and then start the
-				   process running at progCounter. */
+				 * first starts executing.  This function will
+				 * initialize things and then start the
+				 * process running at progCounter. */
 {
     register	Vm_PTE		*ptePtr;
     register	StackList	*stackListPtr;
@@ -174,14 +173,14 @@ Vm_GetKernelStack(progCounter, startFunc)
  *      None.
  *
  * Side effects:
- *      None.
+ *      List of free stacks modified.
  *
  * ----------------------------------------------------------------------------
  */
 ENTRY void
 Vm_FreeKernelStack(stackBase)
     int		stackBase;	/* Virtual address of the stack that is being
-				   freed. */
+				 * freed. */
 {
     Vm_VirtAddr			virtAddr;
     register	int		i;

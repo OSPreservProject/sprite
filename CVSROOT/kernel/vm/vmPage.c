@@ -50,9 +50,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 Boolean	vmDebug	= FALSE;
 
-/*
- * Variables global to this file.
- */
 static	VmCore          *coreMap;	/* Pointer to core map that is 
 					   allocated in VmCoreMapAlloc. */
 
@@ -95,11 +92,9 @@ Boolean		vmForceRef = FALSE;
 Boolean		vmForceSwap = FALSE;
 
 /*
- * Conditions to wait on.
+ * Condition to wait for a clean page to be put onto the allocate list.
  */
-static	Sync_Condition	cleanCondition;		/* Used to wait for a
-						 * clean page to be put
-						 * onto the allocate list. */
+static	Sync_Condition	cleanCondition;	
 
 /*
  * Variables to allow recovery.
@@ -107,9 +102,14 @@ static	Sync_Condition	cleanCondition;		/* Used to wait for a
 static	Boolean		swapDown = FALSE;
 static	Sync_Condition	swapDownCondition;
 
-void	PageOut();
-void	PutOnReserveList();
-void	PutOnFreeList();
+/*
+ * Maximum amount of pages to scan before waiting for a page to be cleaned.
+ */
+int	vmMaxDirtyPages = 50;
+
+void		PageOut();
+void		PutOnReserveList();
+void		PutOnFreeList();
 
 
 /*
@@ -153,19 +153,20 @@ VmCoreMapInit()
 {
     register	int	i;
     register	VmCore	*corePtr;
+    int			firstKernPage;
 
     /*   
-     * Initialize the core allocate, dirty, free and reserve lists.
+     * Initialize the allocate, dirty, free and reserve lists.
      */
     List_Init(allocPageList);
     List_Init(dirtyPageList);
     List_Init(freePageList);
     List_Init(reservePageList);
 
+    firstKernPage = (unsigned int)mach_KernStart >> vmPageShift;
     /*
      * Initialize the core map.  All pages up to vmFirstFreePage are
-     * owned by the kernel and the rest are free.  Note that vmFirstFreePage
-     * is the first free physical page not the first free virtual page.
+     * owned by the kernel and the rest are free.
      */
     for (i = 0, corePtr = coreMap; i < vmFirstFreePage; i++, corePtr++) {
 	corePtr->links.nextPtr = (List_Links *) NIL;
@@ -173,8 +174,7 @@ VmCoreMapInit()
         corePtr->lockCount = 1;
         corePtr->flags = 0;
         corePtr->virtPage.segPtr = vm_SysSegPtr;
-        corePtr->virtPage.page = 
-			i + ((unsigned int)mach_KernStart >> vmPageShift);
+        corePtr->virtPage.page = i + firstKernPage;
     }
     /*
      * The first NUM_RESERVED_PAGES are put onto the reserve list.
@@ -615,7 +615,7 @@ VmPageValidate(virtAddrPtr)
  *     	None.
  *
  * Side effects:
- *	None.
+ *	Page table modified.
  * ----------------------------------------------------------------------------
  */
 INTERNAL void
@@ -669,7 +669,7 @@ VmPageInvalidate(virtAddrPtr)
  *     	None.
  *
  * Side effects:
- *	None.
+ *	Page table modified.
  * ----------------------------------------------------------------------------
  */
 INTERNAL void
@@ -781,7 +781,7 @@ VmPageSwitch(pageNum, newSegPtr)
 /*
  * ----------------------------------------------------------------------------
  *
- * Vm_GetRefTim --
+ * Vm_GetRefTime --
  *
  *     	Return the age of the LRU page (0 if is a free page).
  *
@@ -941,12 +941,11 @@ DoPageAllocate(virtAddrPtr, canBlock)
  *
  * VmPageAllocate --
  *
- *     	This routine will return the page frame number of the first free or
- *     	unreferenced, unmodified, unlocked page that it can find on the 
- *	allocate list.  Calls VmPageAllocateInt to do the work.
+ *     	Return a page frame.  Will either get a page from VM or FS depending
+ *	on the LRU comparison and if there is a free page or not.
  *
  * Results:
- *     	The physical page number that is allocated.
+ *     	The page frame number that is allocated.
  *
  * Side effects:
  *     	None.
@@ -955,12 +954,10 @@ DoPageAllocate(virtAddrPtr, canBlock)
  */
 unsigned int
 VmPageAllocate(virtAddrPtr, canBlock)
-    Vm_VirtAddr	*virtAddrPtr;	/* The translated virtual address that 
-				   indicates the segment and virtual page 
-				   that this physical page is being allocated 
-				   for */
+    Vm_VirtAddr	*virtAddrPtr;	/* The translated virtual address that this
+				 * page frame is being allocated for */
     Boolean	canBlock;	/* TRUE if can block if hit enough consecutive
-				   dirty pages. */
+				 * dirty pages. */
 {
     unsigned	int	page;
     int			refTime;
@@ -1020,9 +1017,7 @@ VmPageAllocate(virtAddrPtr, canBlock)
 INTERNAL unsigned int
 VmPageAllocateInt(virtAddrPtr, canBlock)
     Vm_VirtAddr	*virtAddrPtr;	/* The translated virtual address that 
-				   indicates the segment and virtual page 
-				   that this physical page is being allocated 
-				   for */
+				   this page frame is being allocated for */
     Boolean	canBlock;	/* TRUE if can block if hit enough consecutive
 				   dirty pages. */
 {
@@ -1033,13 +1028,13 @@ VmPageAllocateInt(virtAddrPtr, canBlock)
     int			pageCount;
     Boolean		referenced;
     Boolean		modified;
+    int			dirtyCount = 0;
 
     Timer_GetTimeOfDay(&curTime, (int *) NIL, (Boolean *) NIL);
 
     vmStat.numListSearches++;
 
 again:
-
     if (!List_IsEmpty(freePageList)) {
 	corePtr = (VmCore *) List_First(freePageList);
 	TakeOffFreeList(corePtr);
@@ -1067,18 +1062,19 @@ again:
 	     * See if have gone all of the way through the list without finding
 	     * anything.
 	     */
-	    if (corePtr == (VmCore *) &endMarker) {	
+	    if ((canBlock && dirtyCount > vmMaxDirtyPages) ||
+	        corePtr == (VmCore *) &endMarker) {	
 		VmListRemove((List_Links *) &endMarker);
 		if (!canBlock) {
 		    Sys_Printf("VmPageAllocateInt: All of memory is dirty (%d pages examined).\n", pageCount);
 		    return(VM_NO_MEM_VAL);
 		} else {
 		    /*
-		     * There were no pages available.   This can only happen
-		     * if all of memory is dirty.  Therefore wait for a clean
+		     * There were no pages available.  Wait for a clean
 		     * page to appear on the allocate list.
 		     */
-		    Sync_Wait(&cleanCondition, FALSE);
+		    (void)Sync_Wait(&cleanCondition, FALSE);
+		    dirtyCount = 0;
 		    goto again;
 		}
 	    }
@@ -1128,6 +1124,7 @@ again:
 	     */
 	    if ((*ptePtr & VM_MODIFIED_BIT) || modified) {
 		vmStat.dirtySearched++;
+		dirtyCount++;
 		TakeOffAllocList(corePtr);
 		PutOnDirtyList(corePtr);
 		continue;
@@ -1262,15 +1259,28 @@ VmPageFree(pfNum)
  * Page fault handling is divided into four routines.  The first
  * routine is Vm_PageIn which is the external entry point to the page-in 
  * process.  It determines which segment the faulting address falls into and
- * calls the internal page-in routine VmDoPageIn.  VmDoPageIn is split into
+ * calls the internal page-in routine DoPageIn.  DoPageIn is split into
  * work it does at non-monitor level and at monitor level.  It first 
  * expands the segment if necessary by calling a hardware-dependent  monitored 
  * routine.  It then calls the monitored routine PreparePage which determines
  * if the page is already present.  If the page is not present, it calls
  * VmPageAllocate to actually allocate a physical page frame.  Next
- * VmDoPageIn fills the page at non-monitor level.  Finally it calls the 
+ * DoPageIn fills the page at non-monitor level.  Finally it calls the 
  * monitored routine FinishPage which validates the page and cleans up state.
  */
+
+
+typedef enum {
+    IS_COR,	/* This page is copy-on-reference. */
+    IS_COW, 	/* This page is copy-on-write. */
+    IS_DONE, 	/* The page-in has already completed. */
+    NOT_DONE,	/* The page-in is not yet done yet. */
+} PrepareResult;
+
+void		KillSharers();
+ReturnStatus	DoPageIn();
+PrepareResult	PreparePage();
+void		FinishPage();
 
 
 /*
@@ -1312,154 +1322,27 @@ Vm_PageIn(virtAddr, protFault)
     }
 
     /*
-     * Actually page in the page and don't leave the page locked down.
+     * Actually page in the page.
      */
-    status = VmDoPageIn(&transVirtAddr, protFault);
+    status = DoPageIn(&transVirtAddr, protFault);
 
-    if (transVirtAddr.flags & VM_HEAP_NOT_EXPANDABLE) {
+    if (transVirtAddr.flags & VM_HEAP_PT_IN_USE) {
 	/*
 	 * The heap segment has been made not expandable by VmVirtAddrParse
-	 * so that the address parse would remain valid.  Let it be expandable
-	 * now.
+	 * so that the address parse would remain valid.  Decrement the
+	 * in use count now.
 	 */
-	VmDecExpandCount(procPtr->vmPtr->segPtrArray[VM_HEAP]);
+	VmDecPTUserCount(procPtr->vmPtr->segPtrArray[VM_HEAP]);
     }
 
     return(status);
 }
 
-typedef enum {
-    IS_COR,	/* This page is copy-on-reference. */
-    IS_COW, 	/* This page is copy-on-write. */
-    IS_DONE, 	/* The page-in has already completed. */
-    NOT_DONE,	/* The page-in is not yet done yet. */
-} PrepareResult;
-
-
-/*
- * ----------------------------------------------------------------------------
- *
- * PreparePage --
- *
- *	This routine performs the first half of the page-in process.
- *	If the desired page is either already in the process of being
- *	faulted in, then this routine will return as soon as the page-in
- *	has finished.  If the desired page is already in memory then
- *	it will validate the page and return immediately.  Otherwise
- *	it will allocate a page frame and return the page frame in the given
- *	page table entry.
- *
- * Results:
- *	If a page had to be allocated then it returns FALSE in *donePtr.
- *	Otherwise it returns TRUE.
- *
- * Side effects:
- *	If the lockPage flag is set then the core map entry is marked as 
- *	locked.  In addition if a page had to be allocated then the page
- *	frame is marked as page-in in progress.
- *
- * ----------------------------------------------------------------------------
- */
-ENTRY static PrepareResult
-PreparePage(virtAddrPtr, protFault, ptePtrPtr)
-    register Vm_VirtAddr *virtAddrPtr; 	/* The translated virtual address */
-    Boolean		protFault;	/* TRUE if faulted because of a
-					 * protection fault. */
-    Vm_PTE		**ptePtrPtr;	/* The page table entry for the virtual 
-					 * address */
-{
-    register	Vm_PTE	*curPTEPtr;
-    PrepareResult	retVal;
-
-    LOCK_MONITOR;
-
-    curPTEPtr = VmGetPTEPtr(virtAddrPtr->segPtr, virtAddrPtr->page);
-again:
-    if (*curPTEPtr & VM_IN_PROGRESS_BIT) {
-	/*
-	 * The page is being faulted on by someone else.  In this case wait
-	 * for the page fault to complete.  When wakeup have to get the new
-	 * pte and see how things have changed.
-	 */
-	vmStat.collFaults++;
-	(void) Sync_Wait(&virtAddrPtr->segPtr->condition, FALSE);
-	goto again;
-    } else if (*curPTEPtr & VM_COR_BIT) {
-	/*
-	 * Copy-on-reference fault.
-	 */
-	retVal = IS_COR;
-    } else if (protFault && (*curPTEPtr & VM_COW_BIT) && 
-	       (*curPTEPtr & VM_PHYS_RES_BIT)) {
-	/*
-	 * Copy-on-write fault.
-	 */
-	retVal = IS_COW;
-    } else if (*curPTEPtr & VM_PHYS_RES_BIT) {
-	/*
-	 * The page is already be in memory.
-	 */
-	vmStat.quickFaults++;
-	VmPageValidateInt(virtAddrPtr, curPTEPtr);
-        retVal = IS_DONE;
-    } else {
-	*curPTEPtr |= VM_IN_PROGRESS_BIT;
-	retVal = NOT_DONE;
-    }
-    *ptePtrPtr = curPTEPtr;
-
-    UNLOCK_MONITOR;
-    return(retVal);
-}
-
-
-/*
- * ----------------------------------------------------------------------------
- *
- * FinishPage --
- *	This routine finishes the page-in process.  First the page is 
- *	validated.  Next if the lock page flag is not set, the lock count is 
- *	decremented.  Finally the page-in in progress is cleared and all 
- *	other processes waiting for the page-in to complete are awakened.  
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Page-in in progress cleared and lockcount may be decremented in the
- * 	core map entry.
- *	
- *
- * ----------------------------------------------------------------------------
- */
-ENTRY static void
-FinishPage(transVirtAddrPtr, ptePtr) 
-    register	Vm_VirtAddr	*transVirtAddrPtr;
-    register	Vm_PTE		*ptePtr;
-{
-    LOCK_MONITOR;
-
-    /*
-     * Make the page accessible to the user.
-     */
-    VmPageValidateInt(transVirtAddrPtr, ptePtr);
-    coreMap[Vm_GetPageFrame(*ptePtr)].lockCount--;
-    *ptePtr &= ~(VM_ZERO_FILL_BIT | VM_IN_PROGRESS_BIT);
-    /*
-     * Wakeup processes waiting for this pagein to complete.
-     */
-    Sync_Broadcast(&transVirtAddrPtr->segPtr->condition);
-
-    UNLOCK_MONITOR;
-}
-
-void	KillSharers();
-
 
 /*
  *----------------------------------------------------------------------
  *
- * VmDoPageIn --
+ * DoPageIn --
  *
  *	Actually perform the page-in for the given parsed virtual address.
  *	It is assumed that if this page fault is for a heap or stack segment
@@ -1475,8 +1358,8 @@ void	KillSharers();
  *
  *----------------------------------------------------------------------
  */
-ReturnStatus
-VmDoPageIn(virtAddrPtr, protFault)
+static ReturnStatus
+DoPageIn(virtAddrPtr, protFault)
     register	Vm_VirtAddr	*virtAddrPtr;	/* The virtual address of the
 						 * page to be faulted in. */
     Boolean			protFault;	/* TRUE if fault if because of 
@@ -1545,7 +1428,7 @@ VmDoPageIn(virtAddrPtr, protFault)
 	 */
 	result = PreparePage(virtAddrPtr, protFault, &tPTEPtr);
 	if (!vm_CanCOW && (result == IS_COR || result == IS_COW)) {
-	    Sys_Panic(SYS_FATAL, "VmDoPageIn: Bogus COW or COR\n");
+	    Sys_Panic(SYS_FATAL, "DoPageIn: Bogus COW or COR\n");
 	}
 	if (result == IS_COR) {
 	    status = VmCOR(virtAddrPtr);
@@ -1605,6 +1488,153 @@ VmDoPageIn(virtAddrPtr, protFault)
 }
 
 
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * PreparePage --
+ *
+ *	This routine performs the first half of the page-in process.
+ *	It will return a status to the caller telling them what the status
+ *	of the page is.
+ *
+ * Results:
+ *	IS_DONE if the page is already resident in memory and it is not a 
+ *	COW faults.  IS_COR is it is for a copy-on-reference fault.  IS_COW
+ *	if is for a copy-on-write fault.  Otherwise returns NOT_DONE.
+ *
+ * Side effects:
+ *	*ptePtrPtr is set to point to the page table entry for this virtual
+ *	page.  In progress bit set if the NOT_DONE status is returned.
+ *
+ * ----------------------------------------------------------------------------
+ */
+ENTRY static PrepareResult
+PreparePage(virtAddrPtr, protFault, ptePtrPtr)
+    register Vm_VirtAddr *virtAddrPtr; 	/* The translated virtual address */
+    Boolean		protFault;	/* TRUE if faulted because of a
+					 * protection fault. */
+    Vm_PTE		**ptePtrPtr;	/* The page table entry for the virtual 
+					 * address */
+{
+    register	Vm_PTE	*curPTEPtr;
+    PrepareResult	retVal;
+
+    LOCK_MONITOR;
+
+    curPTEPtr = VmGetPTEPtr(virtAddrPtr->segPtr, virtAddrPtr->page);
+again:
+    if (*curPTEPtr & VM_IN_PROGRESS_BIT) {
+	/*
+	 * The page is being faulted on by someone else.  In this case wait
+	 * for the page fault to complete.  When wakeup have to get the new
+	 * pte and see how things have changed.
+	 */
+	vmStat.collFaults++;
+	(void) Sync_Wait(&virtAddrPtr->segPtr->condition, FALSE);
+	goto again;
+    } else if (*curPTEPtr & VM_COR_BIT) {
+	/*
+	 * Copy-on-reference fault.
+	 */
+	retVal = IS_COR;
+    } else if (protFault && (*curPTEPtr & VM_COW_BIT) && 
+	       (*curPTEPtr & VM_PHYS_RES_BIT)) {
+	/*
+	 * Copy-on-write fault.
+	 */
+	retVal = IS_COW;
+    } else if (*curPTEPtr & VM_PHYS_RES_BIT) {
+	/*
+	 * The page is already be in memory.
+	 */
+	vmStat.quickFaults++;
+	VmPageValidateInt(virtAddrPtr, curPTEPtr);
+        retVal = IS_DONE;
+    } else {
+	*curPTEPtr |= VM_IN_PROGRESS_BIT;
+	retVal = NOT_DONE;
+    }
+    *ptePtrPtr = curPTEPtr;
+
+    UNLOCK_MONITOR;
+    return(retVal);
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * FinishPage --
+ *	This routine finishes the page-in process.  This includes validating
+ *	the page for the currently executing process and releasing the 
+ *	lock on the page.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Page-in in progress cleared and lockcount decremented in the
+ * 	core map entry.
+ *	
+ *
+ * ----------------------------------------------------------------------------
+ */
+ENTRY static void
+FinishPage(transVirtAddrPtr, ptePtr) 
+    register	Vm_VirtAddr	*transVirtAddrPtr;
+    register	Vm_PTE		*ptePtr;
+{
+    LOCK_MONITOR;
+
+    /*
+     * Make the page accessible to the user.
+     */
+    VmPageValidateInt(transVirtAddrPtr, ptePtr);
+    coreMap[Vm_GetPageFrame(*ptePtr)].lockCount--;
+    *ptePtr &= ~(VM_ZERO_FILL_BIT | VM_IN_PROGRESS_BIT);
+    /*
+     * Wakeup processes waiting for this pagein to complete.
+     */
+    Sync_Broadcast(&transVirtAddrPtr->segPtr->condition);
+
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * KillSharers --
+ *
+ *	Go down the list of processes sharing this segment and send a
+ *	kill signal to each one.  This is called when a page from a segment
+ *	couldn't be written to swap space
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     All processes sharing this segment are destroyed.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+ENTRY static void
+KillSharers(segPtr) 
+    register	Vm_Segment	*segPtr;
+{
+    register	VmProcLink	*procLinkPtr;
+
+    LOCK_MONITOR;
+
+    LIST_FORALL(segPtr->procList, (List_Links *) procLinkPtr) {
+	Sig_SendProc(procLinkPtr->procPtr, SIG_KILL, PROC_VM_READ_ERROR); 
+    }
+
+    UNLOCK_MONITOR;
+}
+
+
 /*----------------------------------------------------------------------------
  *
  * 		Routines for writing out dirty pages		
@@ -1625,40 +1655,64 @@ VmDoPageIn(virtAddrPtr, protFault)
  * returns (and dies).
  */
 
+static	void	PageOutPutAndGet();
+static	void	PutOnFront();
 
 /*
  * ----------------------------------------------------------------------------
  *
- * PutOnFront --
+ * PageOut --
  *
- *	Take one of two actions.  If page frame is already marked as free
- *	then put it onto the front of the free list.  Otherwise put it onto
- *	the front of the allocate list.  
- *
+ *	Function to write out pages on dirty list.  It will keep retrieving
+ *	pages from the dirty list until there are no more left.  This function
+ *	is designed to be called through Proc_CallFunc.
+ *	
  * Results:
- *	None.	
+ *     	None.
  *
  * Side effects:
- *	Allocate list or free list modified.
+ *     	The dirty list is emptied.
  *
  * ----------------------------------------------------------------------------
  */
-INTERNAL static void
-PutOnFront(corePtr)
-    register	VmCore	*corePtr;
+/* ARGSUSED */
+static void
+PageOut(data, callInfoPtr)
+    ClientData		data;		/* Ignored. */
+    Proc_CallInfo	*callInfoPtr;	/* Ignored. */
 {
-    if (corePtr->flags & VM_SEG_PAGEOUT_WAIT) {
-	Sync_Broadcast(&corePtr->virtPage.segPtr->condition);
+    VmCore		*corePtr;
+    ReturnStatus	status = SUCCESS;
+    Fs_Stream		*recStreamPtr;
+
+    vmStat.pageoutWakeup++;
+
+    corePtr = (VmCore *) NIL;
+    while (TRUE) {
+	PageOutPutAndGet(&corePtr, status, &recStreamPtr);
+	if (recStreamPtr != (Fs_Stream  *)NIL) {
+	    (void) Fs_WaitForHost(recStreamPtr,
+				  FS_NAME_SERVER | FS_NON_BLOCKING, status);
+	}
+
+	if (corePtr == (VmCore *) NIL) {
+	    break;
+	}
+	status = VmPageServerWrite(&corePtr->virtPage, 
+				   (unsigned int) (corePtr - coreMap));
+	if (status != SUCCESS) {
+	    if (vmSwapStreamPtr == (Fs_Stream *)NIL ||
+	        (status != RPC_TIMEOUT && status != FS_STALE_HANDLE &&
+		 status != RPC_SERVICE_DISABLED)) {
+		/*
+		 * Non-recoverable error on page write, so kill all users of 
+		 * this segment.
+		 */
+		KillSharers(corePtr->virtPage.segPtr);
+	    }
+	}
     }
-    corePtr->flags &= ~(VM_DIRTY_PAGE | VM_PAGE_BEING_CLEANED | 
-		        VM_SEG_PAGEOUT_WAIT | VM_DONT_FREE_UNTIL_CLEAN);
-    if (corePtr->flags & VM_FREE_PAGE) {
-	PutOnFreeList(corePtr);
-    } else {
-	PutOnAllocListFront(corePtr);
-    }
-    vmStat.numDirtyPages--; 
-    Sync_Broadcast(&cleanCondition);
+
 }
 
 
@@ -1801,92 +1855,36 @@ PageOutPutAndGet(corePtrPtr, status, recStreamPtrPtr)
 /*
  * ----------------------------------------------------------------------------
  *
- * KillSharers --
+ * PutOnFront --
  *
- *	Go down the list of processes sharing this segment and send a
- *	kill signal to each one.  This is called when a page from a segment
- *	couldn't be written to swap space
+ *	Take one of two actions.  If page frame is already marked as free
+ *	then put it onto the front of the free list.  Otherwise put it onto
+ *	the front of the allocate list.  
  *
  * Results:
- *     None.
+ *	None.	
  *
  * Side effects:
- *     All processes sharing this segment are destroyed.
+ *	Allocate list or free list modified.
  *
  * ----------------------------------------------------------------------------
  */
-
-ENTRY static void
-KillSharers(segPtr) 
-    register	Vm_Segment	*segPtr;
+INTERNAL static void
+PutOnFront(corePtr)
+    register	VmCore	*corePtr;
 {
-    register	VmProcLink	*procLinkPtr;
-
-    LOCK_MONITOR;
-
-    LIST_FORALL(segPtr->procList, (List_Links *) procLinkPtr) {
-	Sig_SendProc(procLinkPtr->procPtr, SIG_KILL, PROC_VM_READ_ERROR); 
+    if (corePtr->flags & VM_SEG_PAGEOUT_WAIT) {
+	Sync_Broadcast(&corePtr->virtPage.segPtr->condition);
     }
-
-    UNLOCK_MONITOR;
-}
-
-
-/*
- * ----------------------------------------------------------------------------
- *
- * PageOut --
- *
- *	Function to write out pages on dirty list.  It will keep retrieving
- *	pages from the dirty list until there are no more left.  This function
- *	is designed to be called through Proc_CallFunc.
- *	
- * Results:
- *     	None.
- *
- * Side effects:
- *     	The dirty list is emptied.
- *
- * ----------------------------------------------------------------------------
- */
-/* ARGSUSED */
-static void
-PageOut(data, callInfoPtr)
-    ClientData		data;		/* Ignored. */
-    Proc_CallInfo	*callInfoPtr;	/* Ignored. */
-{
-    VmCore		*corePtr;
-    ReturnStatus	status = SUCCESS;
-    Fs_Stream		*recStreamPtr;
-
-    vmStat.pageoutWakeup++;
-
-    corePtr = (VmCore *) NIL;
-    while (TRUE) {
-	PageOutPutAndGet(&corePtr, status, &recStreamPtr);
-	if (recStreamPtr != (Fs_Stream  *)NIL) {
-	    (void) Fs_WaitForHost(recStreamPtr,
-				  FS_NAME_SERVER | FS_NON_BLOCKING, status);
-	}
-
-	if (corePtr == (VmCore *) NIL) {
-	    break;
-	}
-	status = VmPageServerWrite(&corePtr->virtPage, 
-				   (unsigned int) (corePtr - coreMap));
-	if (status != SUCCESS) {
-	    if (vmSwapStreamPtr == (Fs_Stream *)NIL ||
-	        (status != RPC_TIMEOUT && status != FS_STALE_HANDLE &&
-		 status != RPC_SERVICE_DISABLED)) {
-		/*
-		 * Non-recoverable error on page write, so kill all users of 
-		 * this segment.
-		 */
-		KillSharers(corePtr->virtPage.segPtr);
-	    }
-	}
+    corePtr->flags &= ~(VM_DIRTY_PAGE | VM_PAGE_BEING_CLEANED | 
+		        VM_SEG_PAGEOUT_WAIT | VM_DONT_FREE_UNTIL_CLEAN);
+    if (corePtr->flags & VM_FREE_PAGE) {
+	PutOnFreeList(corePtr);
+    } else {
+	PutOnAllocListFront(corePtr);
     }
-
+    vmStat.numDirtyPages--; 
+    Sync_Broadcast(&cleanCondition);
 }
 
 
@@ -1896,7 +1894,7 @@ PageOut(data, callInfoPtr)
  * is the amount of time for the clock daemon before it runs again.
  */
 unsigned int	vmClockSleep;		
-int		vmPagesToCheck = 100;
+int		vmPagesToCheck = 50;
 static	int	clockHand = 0;
 
 /*
@@ -1912,7 +1910,7 @@ static	int	clockHand = 0;
  *     	None.
  *
  * Side effects:
- *     	The allocate and dirty lists are modified.
+ *     	The allocate list is modified.
  *
  * ----------------------------------------------------------------------------
  */
@@ -1955,7 +1953,7 @@ Vm_Clock(data, callInfoPtr)
 
 	/*
 	 * If the page is free, locked, in the middle of a page-in, 
-	 * or in the middle of a pageout, then we we aren't concerned 
+	 * or in the middle of a pageout, then we aren't concerned 
 	 * with this page.
 	 */
 	if ((corePtr->flags & (VM_DIRTY_PAGE | VM_FREE_PAGE)) ||
@@ -1968,8 +1966,6 @@ Vm_Clock(data, callInfoPtr)
 	/*
 	 * If the page has been referenced, then put it on the end of the
 	 * allocate list.
-	 *
-	 * NOTE: vmForceRef is for instrumenting the virtual memory system.
 	 */
 	VmMach_GetRefModBits(&corePtr->virtPage, Vm_GetPageFrame(*ptePtr),
 			     &referenced, &modified);
@@ -2020,7 +2016,7 @@ Vm_GetPageSize()
  * Vm_MapBlock --
  *
  *      Allocate and validate enough pages at the given address to map
- *	one fs cache block.
+ *	one FS cache block.
  *
  * Results:
  *      The number of pages that were allocated.
@@ -2210,5 +2206,3 @@ Vm_Recovery()
 
     UNLOCK_MONITOR;
 }
-
-

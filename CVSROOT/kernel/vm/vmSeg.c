@@ -28,29 +28,15 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "status.h"
 #include "string.h"
 
-/*
- * TRUE if sticky segments are disabled.
- */
-Boolean	vm_NoStickySegments = FALSE;
+Boolean	vm_NoStickySegments = FALSE;		/* TRUE if sticky segments
+						 * are disabled. */
+Vm_Segment		*vm_SysSegPtr;		/* The system segment. */
 
-/*
- * Declaration of variables global to this module.
- */
-
-Vm_Segment		*vm_SysSegPtr;
-
-/*
- * Variables local to this file.
- */
-
-static	Vm_Segment       *segmentTable;		/* The table of segments. */
-static	int		numSegments;		/* The number of segments in
-						   the segment table. */
+static	Vm_Segment      *segmentTable;		/* The table of segments. */
 
 /*
  * Free, inactive and dead segment lists.
  */
-
 static	List_Links      freeSegListHdr;	
 static	List_Links      inactiveSegListHdr;
 static	List_Links      deadSegListHdr;
@@ -61,13 +47,13 @@ static	List_Links      deadSegListHdr;
 /*
  * Condition to wait on when waiting for a code segment to be set up.
  */
-
 static	Sync_Condition	codeSegCondition;
 
 extern	Vm_Segment	**Fs_RetSegPtr();
-
 void	DeleteSeg();
 void	CleanSegment();
+
+int	vmNumSegments = 256;
 
 
 /*
@@ -88,10 +74,9 @@ void	CleanSegment();
 void
 VmSegTableAlloc()
 {
-    numSegments = 256;
     segmentTable = 
-		(Vm_Segment *) Vm_BootAlloc(sizeof(Vm_Segment) * numSegments);
-    Byte_Zero(numSegments * sizeof(Vm_Segment), (Address)segmentTable);
+	    (Vm_Segment *) Vm_BootAlloc(sizeof(Vm_Segment) * vmNumSegments);
+    Byte_Zero(vmNumSegments * sizeof(Vm_Segment), (Address)segmentTable);
 
     vm_SysSegPtr = &(segmentTable[VM_SYSTEM_SEGMENT]);
 }
@@ -127,9 +112,7 @@ VmSegTableInit()
 
     /*
      * Initialize the segment table.  The kernel gets the system segment and
-     * the rest of the segments go onto the segment free list.  The page 
-     * table and the machine dependent data field are initialized by the 
-     * machine dependent routines in Vm_Init.
+     * the rest of the segments go onto the segment free list.
      */
     vm_SysSegPtr->refCount = 1;
     vm_SysSegPtr->type = VM_SYSTEM;
@@ -138,7 +121,7 @@ VmSegTableInit()
     vm_SysSegPtr->numPages = vmFirstFreePage;
     vm_SysSegPtr->resPages = vmFirstFreePage;
 
-    for (i = 0, segPtr = segmentTable; i < numSegments; i++, segPtr++) {
+    for (i = 0, segPtr = segmentTable; i < vmNumSegments; i++, segPtr++) {
 	segPtr->filePtr = (Fs_Stream *)NIL;
 	segPtr->swapFilePtr = (Fs_Stream *)NIL;
 	segPtr->segNum = i;
@@ -152,7 +135,7 @@ VmSegTableInit()
 	    segPtr->machPtr = (VmMach_SegData *)NIL;
 	    segPtr->flags = VM_SEG_FREE;
 	    segPtr->refCount = 0;
-	    segPtr->notExpandCount = 0;
+	    segPtr->ptUserCount = 0;
 	    List_Insert((List_Links *) segPtr, LIST_ATREAR(freeSegList));
 	}
     }
@@ -173,23 +156,24 @@ Vm_Segment	*FindCode();
  *     	A pointer to the matching segment if one is found, NIL if none found. 
  *
  * Side effects:
- *     	Memory allocated.
+ *     	Memory allocated, *execInfoPtrPtr may be set to point to exec info, and
+ *	*userFilePtr is set to TRUE or FALSE depending on whether the filePtr
+ *	is used.
  *
  * ----------------------------------------------------------------------------
  */
 ENTRY Vm_Segment *
 Vm_FindCode(filePtr, procPtr, execInfoPtrPtr, usedFilePtr)
-    Fs_Stream		*filePtr;	/* The unique identifier for this file
-					   (if any) */
+    Fs_Stream		*filePtr;	/* Stream for the object file. */
     Proc_ControlBlock	*procPtr;	/* Process for which segment is being
-					   allocated. */
+					 * allocated. */
     Vm_ExecInfo		**execInfoPtrPtr;/* Where to return relevant info from
 					 * the a.out header. */
     Boolean		*usedFilePtr;	/* TRUE => Had to use the file pointer.
 					 * FALSE => didn't have to use it. */
 {
     register	Vm_Segment	*segPtr;
-    VmProcLink			*procLinkPtr;
+    register	VmProcLink	*procLinkPtr;
 
     procLinkPtr = (VmProcLink *) Mem_Alloc(sizeof(VmProcLink));
     procLinkPtr->procPtr = procPtr;
@@ -210,7 +194,7 @@ Vm_FindCode(filePtr, procPtr, execInfoPtrPtr, usedFilePtr)
  * FindCode --
  *
  *     	Search the segment table for a code segment that has a matching 
- *	filePtr.  If one can be found, then increment the reference coutn
+ *	filePtr.  If one can be found, then increment the reference count
  *	and return a pointer to the segment.  If one can't be found then
  *	mark the file so that subsequent calls to this routine will wait
  *	until this code segment is initialized.
@@ -220,6 +204,8 @@ Vm_FindCode(filePtr, procPtr, execInfoPtrPtr, usedFilePtr)
  *
  * Side effects:
  *     	If a matching segment is found its reference count is incremented.
+ *	*usedFilePtr is set to TRUE or FALSE depending on whether the filePtr
+ *	needs to be used for the code segment or not.
  *
  * ----------------------------------------------------------------------------
  */
@@ -274,7 +260,8 @@ again:
 	/*
 	 * Put the process into list of processes sharing this segment.
 	 */
-	List_Insert((List_Links *) procLinkPtr, LIST_ATFRONT(segPtr->procList));
+	List_Insert((List_Links *) procLinkPtr, 
+		    LIST_ATFRONT(segPtr->procList));
     }
 
     UNLOCK_MONITOR;
@@ -306,7 +293,7 @@ Vm_InitCode(filePtr, segPtr, execInfoPtr)
     Fs_Stream		*filePtr;	/* File for code segment. */
     register Vm_Segment	*segPtr;	/* Segment that is being initialized. */
     Vm_ExecInfo		*execInfoPtr;	/* Information needed to exec this 
-					  * object file. */
+					 * object file. */
 {
     register	Vm_Segment	**segPtrPtr;
     char			*fileNamePtr;
@@ -361,7 +348,7 @@ Vm_InitCode(filePtr, segPtr, execInfoPtr)
  *	None.
  *
  * Side effects:
- *	Segment entry may be marked as deleted and possibly put onto the
+ *	Segment entry may be marked as deleted and put onto the
  *	dead segment list.
  *
  *----------------------------------------------------------------------
@@ -395,15 +382,14 @@ void	GetNewSegment();
  *
  * Vm_SegmentNew --
  *
- *      Allocate a new segment from the segment table by calling the internal
- *      segment allocation routine GetNewSegment.  
+ *      Allocate a new segment from the segment table.
  *
  * Results:
  *      A pointer to the new segment is returned if a free segment
  *      is available.  If no free segments are available, then NIL is returned.
  *
  * Side effects:
- *      The segment table entry is initialized.
+ *      Memory is allocated.
  *
  * ----------------------------------------------------------------------------
  */
@@ -460,17 +446,19 @@ Vm_SegmentNew(type, filePtr, fileAddr, numPages, offset, procPtr)
  *
  * GetNewSegment --
  *
- *     	Allocate a new segment from the segment table.  If the segment is
- *	of type VM_CODE then it will have a flag set that indicates that
- *	its page tables have not been initialized.  It can be cleared by
- *	calling Vm_InitPageTable.
+ *     	Allocate a new segment from the segment table and return a pointer
+ *	to it in *segPtrPtr.  If the new segment corresponds to a dead or
+ *	inactive code segment, then *deletePtr will be set to TRUE and the 
+ *	caller must cleanup the segment that we returned and call us again 
+ *	with *segPtrPtr pointing to the segment that we returned.
  *
  * Results:
  *      None.
  *
  * Side effects:
- *     A new segment out of the segment table is allocated.  Also if no
- *     free segments can be found, an inactive segment will be freed.
+ *	*segPtrPtr is set to point to a segment in the segment table to
+ *	use for the new segment.  If no segments are available then *segPtrPtr
+ *	is set to NIL.
  *
  * ----------------------------------------------------------------------------
  */
@@ -478,16 +466,15 @@ ENTRY void
 GetNewSegment(type, filePtr, fileAddr, numPages, offset, procPtr,
 	      spacePtr, segPtrPtr, deletePtr)
     int			type;		/* The type of segment that this is */
-    Fs_Stream		*filePtr;	/* The unique identifier for this file
-					   (if any) */
+    Fs_Stream		*filePtr;	/* Object file stream. */
     int			fileAddr;	/* The address where the segments image
-					   begins in the object file. */
+					 * begins in the object file. */
     int			numPages;	/* The number of pages that this segment
-					   initially has. */
+					 * initially has. */
     int			offset;		/* At which page from the beginning of
-					   the VAS that this segment begins */
+					 * the VAS that this segment begins */
     Proc_ControlBlock	*procPtr;	/* Process for which the segment is
-					   being allocated. */
+					 *  being allocated. */
     VmSpace		*spacePtr;	/* Memory to be used for this segment.*/    Boolean		*deletePtr;	/* TRUE if have to delete a segment*/
     Vm_Segment		**segPtrPtr;	/* IN/OUT parameter: On input if 
 					 * non-nil then this segment should
@@ -521,8 +508,7 @@ GetNewSegment(type, filePtr, fileAddr, numPages, offset, procPtr,
 	    *deletePtr = TRUE;
 	} else {
 	    /*
-	     * No segments are available so return a NIL pointer in *segPtrPtr 
-	     * and make sure that the caller frees the space that he sent in.
+	     * No segments are available so return a NIL pointer in *segPtrPtr. 
 	     */
 	    *segPtrPtr = (Vm_Segment *)NIL;
 	    UNLOCK_MONITOR;
@@ -571,31 +557,31 @@ GetNewSegment(type, filePtr, fileAddr, numPages, offset, procPtr,
 
     UNLOCK_MONITOR;
 }
+
 
 /*
  * ----------------------------------------------------------------------------
  *
  * VmSegmentDeleteInt --
  *
- *      This routine will decrement the reference count for the given segment.
- *      If the reference count goes to zero, then one of two actions occurs.
- *      If the segment is code, then it is put on the inactive list.
- *      Otherwise the segments resources are freed up and it is put on the 
- *      free list.
- *
- *	If the segment is being migrated, it has already been cleaned
- *	but its space has not been reclaimed.
+ *      This routine will decrement the reference count for the given segment
+ *	and return a status to the caller to tell them what action to 
+ *	take.
  *
  * Results:
- *	DELETE_SEG	-	The segment should be deleted.
- *	CLOSE_OBJ_FILE	-	Don't delete the segment, but close the file
+ *	VM_DELETE_SEG -		The segment should be deleted.
+ *	VM_CLOSE_OBJ_FILE -	Don't delete the segment, but close the file
  *				containing the code for the segment.
- *	DELETE_NOTHING	-	Don't do anything.
+ *	VM_DELETE_NOTHING -	Don't do anything.
  *
  * Side effects:
- *      The segment table for the given segment is modified, either the
- *      free or inactive lists are modified and the list of processes
- *	sharing this segment is modified.
+ *      The segment table for the given segment is modified, the list of 
+ *	processes sharing this segment is modified and the inactive list
+ *	may be modified.  *objStreamPtrPtr is set to point to the object
+ *	file to close if the status is VM_CLOSE_OBJ_FILE.  *procLinkPtrPtr
+ *	is set to point to the proc link info struct to free.
+ *
+ * ----------------------------------------------------------------------------
  */
 ENTRY VmDeleteStatus
 VmSegmentDeleteInt(segPtr, procPtr, procLinkPtrPtr, objStreamPtrPtr, migFlag)
@@ -638,19 +624,19 @@ VmSegmentDeleteInt(segPtr, procPtr, procLinkPtrPtr, objStreamPtrPtr, migFlag)
 	*procLinkPtrPtr = (VmProcLink *)NIL;
     }
 
-    /*
-     * If the segment is still being used then there is nothing to do.
-     */
     if (segPtr->refCount > 0) {
+	/*
+	 * The segment is still being used so there is nothing to do.
+	 */
 	UNLOCK_MONITOR;
 	return(VM_DELETE_NOTHING);
     }
 
-    /* 
-     * If a code segment put onto the inactive list if we are using
-     * sticky segments.
-     */
     if (!vm_NoStickySegments && segPtr->type == VM_CODE) {
+	/* 
+	 * Put onto the inactive list and tell our caller to close the
+	 * object file.
+	 */
 	segPtr->flags |= VM_SEG_INACTIVE;
 	*objStreamPtrPtr = segPtr->filePtr;
 	segPtr->filePtr = (Fs_Stream *) NIL;
@@ -742,14 +728,15 @@ Vm_SegmentDelete(segPtr, procPtr)
  *
  * DeleteSeg --
  *
- *     	Actually delete a segment.  This includes freeing all memory 
+ *	Actually delete a segment.  This includes freeing all memory 
  *	resources for the segment and calling machine dependent cleanup.
  *
  * Results:
- *     None.
+ *     	None.
  *
  * Side effects:
- *     None.
+ *     	Allocated resources freed in the give segment and the pointers
+ *	in the segment are set to NIL.
  *
  * ----------------------------------------------------------------------------
  */
@@ -782,18 +769,17 @@ DeleteSeg(segPtr)
  *
  * CleanSegment --
  *
- *     Clean up the state information for a segment.  This involves freeing 
- *     all allocated pages.  This is called when a segment is deleted.
+ *	Do monitor level state cleanup for a deleted segment.
  *
  * Results:
- *     None.
+ *     	None.
  *
  * Side effects:
- *     All pages allocated to the segment are freed.
+ *     	All pages allocated to the segment are freed.
  *     
  * ----------------------------------------------------------------------------
  */
-INTERNAL static void
+ENTRY static void
 CleanSegment(segPtr)
     register Vm_Segment *segPtr;	/* Pointer to the segment to be 
 					 * cleaned */
@@ -802,6 +788,8 @@ CleanSegment(segPtr)
     register	int    	i;
     Vm_VirtAddr		virtAddr;
     Vm_Segment		**segPtrPtr;
+
+    LOCK_MONITOR;
 
     segPtr->flags |= VM_SEG_DEAD;
 
@@ -837,6 +825,8 @@ CleanSegment(segPtr)
     }
 
     segPtr->resPages = 0;
+
+    UNLOCK_MONITOR;
 }
 
 Boolean	StartDelete();
@@ -870,23 +860,23 @@ Vm_DeleteFromSeg(segPtr, firstPage, lastPage)
     /*
      * The deletion of virtual pages from the segment is done in two
      * phases.  First the copy-on-write dependencies are cleaned up and
-     * then the rest of the pages are cleaned up.  This requires some ugly
+     * then the rest of the pages are cleaned up.  This requires some
      * synchronization.  The problem is that during and after cleaning up
      * the copy-on-write dependencies, page faults and copy-on-write forks
      * in the segment must be prevented since cleanup is done at non-monitor
-     * level.  This is done by using the VM_ADD_DEL_VA flag.  When this flag 
-     * is set page faults and forks are blocked.  This flag is set by
-     * StartDelete and cleared by EndDelete.  The flag is looked at by
-     * VmVirtAddrParse (the routine that is called before any page fault
-     * can occur on the segment) and by IncExpandCount (the routine that is
-     * called when a segment is duplicated for a fork).
+     * level.  This is done by using the VM_PT_EXCL_ACC flag.  When this flag 
+     * is set page faults and forks are blocked because they are unable
+     * to get access to the page tables until the exclusive access flag
+     * is cleared.  This flag is set by StartDelete and cleared by EndDelete. 
+     * The flag is looked at by VmVirtAddrParse (the routine that is called 
+     * before any page fault can occur on the segment) and by IncPTUserCount
+     * (the routine that is called when a segment is duplicated for a fork).
      */
     if (!StartDelete(segPtr, firstPage, &lastPage)) {
 	return;
     }
     /*
-     * The segment is now not expandable.  Now rid the segment of all 
-     * copy-on-write dependencies.
+     * Rid the segment of all copy-on-write dependencies.
      */
     VmCOWDeleteFromSeg(segPtr, firstPage, lastPage);
 
@@ -899,14 +889,15 @@ Vm_DeleteFromSeg(segPtr, firstPage, lastPage)
  *
  * StartDelete --
  *
- *	Set things up to delete pages from a segment.  This involves making
- *	the segment not expandable.
+ *	Set things up to delete pages from a segment.  This involves grabbing
+ *	exclusive access to the page tables for the segment.
  *
  * Results:
  *	FALSE if there is nothing to delete from this segment.
  *
  * Side effects:
- *	Expand count incremented.
+ *	Page table user count incremented and exclusive access grabbed on
+ *	the page tables.
  *
  *----------------------------------------------------------------------
  */
@@ -921,7 +912,7 @@ StartDelete(segPtr, firstPage, lastPagePtr)
 
     LOCK_MONITOR;
 
-    while (segPtr->notExpandCount > 0) {
+    while (segPtr->ptUserCount > 0) {
 	(void) Sync_Wait(&segPtr->condition, FALSE);
     }
 
@@ -940,8 +931,8 @@ StartDelete(segPtr, firstPage, lastPagePtr)
 	 * Make sure that no one expands or shrinks the segment while 
 	 * we are expanding it.
 	 */
-	segPtr->notExpandCount = 1;
-	segPtr->flags |= VM_ADD_DEL_VA;
+	segPtr->ptUserCount = 1;
+	segPtr->flags |= VM_PT_EXCL_ACC;
 	retVal = TRUE;
     } else {
 	retVal = FALSE;
@@ -962,7 +953,8 @@ StartDelete(segPtr, firstPage, lastPagePtr)
  *	None.
  *
  * Side effects:
- *	Expand count decremented and the segment size may be shrunk.
+ *	Page table user count decremented, exclusive access on the page tables
+ *	is released and the segment size may be shrunk.
  *
  *----------------------------------------------------------------------
  */
@@ -1000,10 +992,10 @@ EndDelete(segPtr, firstPage, lastPage)
     }
 
     /*
-     * The segment can now be expanded.
+     * Release exclusive access.
      */
-    segPtr->notExpandCount = 0;
-    segPtr->flags &= ~VM_ADD_DEL_VA;
+    segPtr->ptUserCount = 0;
+    segPtr->flags &= ~VM_PT_EXCL_ACC;
     Sync_Broadcast(&segPtr->condition);
 
     UNLOCK_MONITOR;
@@ -1013,28 +1005,27 @@ EndDelete(segPtr, firstPage, lastPage)
 /*
  * ----------------------------------------------------------------------------
  *
- * VmDecExpandCount --
+ * VmDecPTUserCount --
  *
- *     	Decrement the number of times that the heap segment was prevented from
- *	expanding.  If the count goes to zero then wake up anyone waiting
- *	on it.
+ *     	Decrement the number of users of the page tables for this segment.
+ *	If the count goes to zero then wake up anyone waiting on it.
  *
  * Results:
  *     None.
  *
  * Side effects:
- *     Count of times prevented from expanding is decremented.
+ *     Count of users of page table decremented.
  *     
  * ----------------------------------------------------------------------------
  */
 ENTRY void
-VmDecExpandCount(segPtr)
+VmDecPTUserCount(segPtr)
     register	Vm_Segment		*segPtr;
 {
     LOCK_MONITOR;
 
-    segPtr->notExpandCount--;
-    if (segPtr->notExpandCount == 0) {
+    segPtr->ptUserCount--;
+    if (segPtr->ptUserCount == 0) {
 	Sync_Broadcast(&segPtr->condition);
     }
 
@@ -1066,11 +1057,11 @@ void	AllocMoreSpace();
 ReturnStatus
 VmAddToSeg(segPtr, firstPage, lastPage)
     register Vm_Segment *segPtr;	/* The segment whose VAS is to be
-					   modified. */
+					 * modified. */
     int	    	       	firstPage; 	/* The lowest page to put into the 
-					   VAS. */
+					 * VAS. */
     int	    	       	lastPage; 	/* The highest page to put into the 
-					   VAS. */
+					 * VAS. */
 {
     VmSpace	newSpace;
     VmSpace	oldSpace;
@@ -1112,14 +1103,13 @@ VmAddToSeg(segPtr, firstPage, lastPage)
  *
  * StartExpansion --
  *
- *	Mark the page tables as expansion in progress so that no other
- *	expansions or deletions can happen on the segment.
+ *	Grab exclusive access to the page tables.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Expand count incremented and VM_ADD_DEL_VA flag set.
+ *	Page table user count incremented and VM_PT_EXCL_ACC flag set.
  *
  *----------------------------------------------------------------------
  */
@@ -1129,11 +1119,11 @@ StartExpansion(segPtr)
 {
     LOCK_MONITOR;
 
-    while (segPtr->notExpandCount > 0) {
+    while (segPtr->ptUserCount > 0) {
 	(void)Sync_Wait(&segPtr->condition, FALSE);
     }
-    segPtr->flags |= VM_ADD_DEL_VA;
-    segPtr->notExpandCount++;
+    segPtr->flags |= VM_PT_EXCL_ACC;
+    segPtr->ptUserCount++;
 
     UNLOCK_MONITOR;
 }
@@ -1152,7 +1142,7 @@ StartExpansion(segPtr)
  *	None.
  *
  * Side effects:
- *	Expand count decremented and VM_ADD_DEL_VA flag cleared.
+ *	Page table user count decremented and VM_PT_EXCL_ACC flag cleared.
  *
  *----------------------------------------------------------------------
  */
@@ -1162,8 +1152,8 @@ EndExpansion(segPtr)
 {
     LOCK_MONITOR;
 
-    segPtr->flags &= ~VM_ADD_DEL_VA;
-    segPtr->notExpandCount--;
+    segPtr->flags &= ~VM_PT_EXCL_ACC;
+    segPtr->ptUserCount--;
     Sync_Broadcast(&segPtr->condition);
 
     UNLOCK_MONITOR;
@@ -1230,19 +1220,19 @@ AllocMoreSpace(segPtr, newNumPages, spacePtr)
 ENTRY ReturnStatus 
 AddToSeg(segPtr, firstPage, lastPage, newNumPages, newSpace, oldSpacePtr)
     register	Vm_Segment	*segPtr;	/* The segment to add the
-						   virtual pages to. */
+						 * virtual pages to. */
     int				firstPage;	/* The lowest page to put
-						   into the VAS. */
+						 * into the VAS. */
     int				lastPage;	/* The highest page to put
-						   into the VAS. */
+						 * into the VAS. */
     int				newNumPages;	/* The new number of pages
 						 * that will be in the
 						 * segment. */
     VmSpace			newSpace;	/* Pointer to new page table
-						   if the segment has to
-						   be expanded. */
+						 * if the segment has to
+						 * be expanded. */
     VmSpace			*oldSpacePtr;	/* Place to return pointer
-						   to space to free. */
+						 * to space to free. */
 {
     int				copySize;
     int				byteOffset;
@@ -1318,7 +1308,7 @@ AddToSeg(segPtr, firstPage, lastPage, newNumPages, newSpace, oldSpacePtr)
     return(SUCCESS);
 }
 
-void	IncExpandCount();
+void	IncPTUserCount();
 void	CopyInfo();
 Boolean	CopyPage();
 
@@ -1340,31 +1330,31 @@ Boolean	CopyPage();
  *	if are out of segments.  Otherwise return SUCCESS.
  *
  * Side effects:
- *	None.
+ *	New segment allocated, initialized and copied into.
  *
  *----------------------------------------------------------------------
  */
 ReturnStatus
 Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
     register Vm_Segment *srcSegPtr;	/* Pointer to the segment to be 
-					   duplicate. */
+					 * duplicate. */
     Proc_ControlBlock   *procPtr; 	/* Pointer to the process for which the 
-				   	   segment is being duplicated. */
-    Vm_Segment		**destSegPtrPtr; /* Place to return pointer to new
-					    segment. */
+					 * segment is being duplicated. */
+    Vm_Segment		**destSegPtrPtr;/* Place to return pointer to new
+					 * segment. */
 {
     register	Vm_Segment	*destSegPtr;
     ReturnStatus		status;
-    register	Vm_PTE	*srcPTEPtr;
-    register	Vm_PTE	*destPTEPtr;
-    Vm_PTE		*tSrcPTEPtr;
-    Vm_PTE		*tDestPTEPtr;
-    Vm_VirtAddr		srcVirtAddr;
-    Vm_VirtAddr		destVirtAddr;
-    int			i;
-    Address		srcAddr;
-    Address		destAddr;
-    Fs_Stream		*newFilePtr;
+    register	Vm_PTE		*srcPTEPtr;
+    register	Vm_PTE		*destPTEPtr;
+    Vm_PTE			*tSrcPTEPtr;
+    Vm_PTE			*tDestPTEPtr;
+    Vm_VirtAddr			srcVirtAddr;
+    Vm_VirtAddr			destVirtAddr;
+    int				i;
+    Address			srcAddr;
+    Address			destAddr;
+    Fs_Stream			*newFilePtr;
 
     if (srcSegPtr->type == VM_HEAP) {
 	/*
@@ -1372,7 +1362,7 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
 	 * segment.  Stack segments can't be expanded because they can't be
 	 * used by anybody but the process that is calling us.
 	 */
-	IncExpandCount(srcSegPtr);
+	IncPTUserCount(srcSegPtr);
 	Fs_StreamCopy(srcSegPtr->filePtr, &newFilePtr, procPtr->processID);
     } else {
 	newFilePtr = (Fs_Stream *) NIL;
@@ -1386,7 +1376,7 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
 			       srcSegPtr->offset, procPtr);
     if (destSegPtr == (Vm_Segment *) NIL) {
 	if (srcSegPtr->type == VM_HEAP) {
-	    VmDecExpandCount(srcSegPtr);
+	    VmDecPTUserCount(srcSegPtr);
 	    Fs_Close(newFilePtr);
 	}
 	*destSegPtrPtr = (Vm_Segment *) NIL;
@@ -1400,7 +1390,7 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
 	 */
 	VmSegFork(srcSegPtr, destSegPtr);
 	if (srcSegPtr->type == VM_HEAP) {
-	    VmDecExpandCount(srcSegPtr);
+	    VmDecPTUserCount(srcSegPtr);
 	}
 	*destSegPtrPtr = destSegPtr;
 
@@ -1452,7 +1442,7 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
     status = VmCopySwapSpace(srcSegPtr, destSegPtr);
 
     if (srcSegPtr->type == VM_HEAP) {
-	VmDecExpandCount(srcSegPtr);
+	VmDecPTUserCount(srcSegPtr);
     }
 
     /*
@@ -1472,29 +1462,28 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
 /*
  * ----------------------------------------------------------------------------
  *
- * IncExpandCount --
+ * IncPTUserCount --
  *
- *     	Increment the number of times that the heap segment was prevented from
- *	expanding.
+ *     	Increment the count of users of the page tables for the given segment.
  *
  * Results:
  *     None.
  *
  * Side effects:
- *     Count of times prevented from expanding is increment.
+ *     Count of users of page table incremented.
  *     
  * ----------------------------------------------------------------------------
  */
 ENTRY static void
-IncExpandCount(segPtr)
+IncPTUserCount(segPtr)
     register	Vm_Segment	*segPtr;
 {
     LOCK_MONITOR;
 
-    while (segPtr->flags & VM_ADD_DEL_VA) {
+    while (segPtr->flags & VM_PT_EXCL_ACC) {
 	(void)Sync_Wait(&segPtr->condition, FALSE);
     }
-    segPtr->notExpandCount++;
+    segPtr->ptUserCount++;
 
     UNLOCK_MONITOR;
 }
@@ -1512,8 +1501,8 @@ IncExpandCount(segPtr)
  *	None.
  *
  * Side effects:
- *	Page tables in the destination segment become copy of the source
- *	segments page table and the two pte pointers are set.	
+ *	Page table and virtual address pointers set for source and destination
+ *	segments.
  *
  *----------------------------------------------------------------------
  */
@@ -1632,7 +1621,6 @@ SegmentIncRef(segPtr, procLinkPtr)
     /*
      * Put the process into the list of processes sharing this segment.
      */
-
     List_Insert((List_Links *) procLinkPtr, LIST_ATFRONT(segPtr->procList));
 
     UNLOCK_MONITOR;
@@ -1713,7 +1701,7 @@ Vm_GetSegInfo(procPtr, segNum, segBufPtr)
 	    return(SYS_INVALID_ARG);
 	}
 	minSegAddr = segmentTable;
-	maxSegAddr = &(segmentTable[numSegments - 1]);
+	maxSegAddr = &(segmentTable[vmNumSegments - 1]);
 	for (i = VM_CODE; i <= VM_STACK; i++, segBufPtr++) {
 	    if (pcb.genFlags & PROC_KERNEL) {
 		segPtr = vm_SysSegPtr;
@@ -1729,7 +1717,7 @@ Vm_GetSegInfo(procPtr, segNum, segBufPtr)
 		return(SYS_ARG_NOACCESS);
 	    }
 	}
-    } else if (segNum < 0 || segNum >= numSegments) {
+    } else if (segNum < 0 || segNum >= vmNumSegments) {
 	return(SYS_INVALID_ARG);
     } else {
 	segPtr = &segmentTable[segNum];

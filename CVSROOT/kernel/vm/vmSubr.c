@@ -128,7 +128,7 @@ Vm_Init()
  *
  * Vm_ProcInit --
  *
- *     Initialize virtual info for this process.
+ *     Initialize VM info for this process.
  *
  * Results:
  *     None.
@@ -138,7 +138,6 @@ Vm_Init()
  *
  * ----------------------------------------------------------------------------
  */
-
 void
 Vm_ProcInit(procPtr)
     Proc_ControlBlock	*procPtr;
@@ -191,7 +190,6 @@ Vm_RawAlloc(numBytes)
     /*
      * We return the current end of memory as our new address.
      */
-
     if (numBytes > 100 * 1024) {
 	Sys_Printf("\nvmMemEnd = 0x%x - ", vmMemEnd);
 	Sys_Panic(SYS_WARNING, "VmRawAlloc asked for >100K\n");
@@ -207,7 +205,6 @@ Vm_RawAlloc(numBytes)
     /*
      * Panic if we just ran off the end of memory.
      */
-
     if (vmMemEnd > (Address) ( mach_KernStart + vmKernMemSize)) {
 	Sys_Printf("vmMemEnd = 0x%x - ", vmMemEnd);
 	Sys_Panic(SYS_FATAL, "Vm_RawAlloc: Out of memory.\n");
@@ -223,9 +220,7 @@ Vm_RawAlloc(numBytes)
      * Add new pages to the virtual address space until we have added
      * enough to handle this memory request.  Note that we don't allow
      * VmPageAllocateInt to block if it encounters lots of dirty pages.
-     * Better hope that not all of memory is dirty.
      */
-
     while ((int) (vmMemEnd) - 1 > maxAddr) {
 	int	page;
 
@@ -275,13 +270,13 @@ Vm_RawAlloc(numBytes)
 ENTRY void
 Vm_ChangeCodeProt(procPtr, startAddr, numBytes, makeWriteable)
     register Proc_ControlBlock 	*procPtr;   /* Process to change protection
-					       for. */
+					     * for. */
     Address		       	startAddr;  /* Beginning address of range of
-					       bytes to change protection.*/
+					     * bytes to change protection.*/
     int			       	numBytes;   /* Number of bytes to change
-					       protection for. */
+					     * protection for. */
     Boolean			makeWriteable;/* TRUE => make the pages 
-							 writable.
+					       *	 writable.
 					       * FALSE => make readable only.*/
 {
     int				firstPage;
@@ -342,9 +337,9 @@ Vm_ValidatePages(segPtr, firstPage, lastPage, zeroFill, clobber)
     int		lastPage;	/* The last page to mark valid. */
     Boolean	zeroFill;	/* Should mark pages zero fill. */
     Boolean	clobber;	/* TRUE -> overwrite the pte no matter what.
-				   FALSE -> only overwrite if the pte is not
-					    marked as valid in this segment's
-					    virtual address space. */
+				 * FALSE -> only overwrite if the pte is not
+				 *	    marked as valid in this segment's
+				 *	    virtual address space. */
 {
     LOCK_MONITOR;
 
@@ -372,14 +367,14 @@ Vm_ValidatePages(segPtr, firstPage, lastPage, zeroFill, clobber)
 INTERNAL void
 VmValidatePagesInt(segPtr,  firstPage, lastPage, zeroFill, clobber)
     Vm_Segment 	*segPtr;	/* The segment whose page table is being 
-				   initialized. */
+				 * initialized. */
     int		firstPage;	/* The first pte to be initialized */
     int		lastPage;	/* The last pte to be initialized */
     Boolean	zeroFill;	/* TRUE => Mark the page as zero fill. */
     Boolean	clobber;	/* TRUE -> overwrite the pte no matter what.
-				   FALSE -> only overwrite if the pte is not
-					    marked as valid in this segment's
-					    virtual address space. */
+				 * FALSE -> only overwrite if the pte is not
+				 *	    marked as valid in this segment's
+				 *	    virtual address space. */
 {
     register	int	i;
     register	Vm_PTE	pte;
@@ -433,10 +428,10 @@ VmZeroPage(pfNum)
  *
  * VmVirtAddrParse --
  *
- *	Take the given virtual address and fill in a virtual address struct with
- *	the segment, page, and offset for this address.  If it is determined
- *	in this routine that the address does not fall in any segment then
- *	the segment that is returned is NIL.
+ *	Take the given virtual address and fill in a virtual address struct
+ *	with the segment, page, and offset for this address.  If it is 
+ *	determined in this routine that the address does not fall in any 
+ *	segment then the segment that is returned is NIL.
  *
  * Results:
  *	The translated virtual address.
@@ -463,10 +458,9 @@ VmVirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
     LOCK_MONITOR;
 
     seg1Ptr = procPtr->vmPtr->segPtrArray[VM_HEAP];
-    while (seg1Ptr->flags & VM_ADD_DEL_VA) {
+    while (seg1Ptr->flags & VM_PT_EXCL_ACC) {
 	/*
-	 * We are not allowed to look at page tables for segments that are
-	 * having virtual addresses deleted or added from/to them.
+	 * Wait while someone has exclusive access to the page tables.
 	 */
 	tSegPtr = seg1Ptr;
 	Sync_Wait(&tSegPtr->condition, FALSE);
@@ -500,12 +494,13 @@ VmVirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
      * falls into the stack segment.  Since page tables are not allowed to
      * overlap, the end of the heap segment is defined to be the end of
      * the heap page table.  If it falls in the stack segment then prevent
-     * this process's heap segment from being expanded.
+     * this process's heap segment from being expanded by incrementing the
+     * in use count on the page table.
      */
     if (page > seg1Ptr->ptSize + seg1Ptr->offset) {
 	transVirtAddrPtr->segPtr = seg2Ptr;
-	transVirtAddrPtr->flags = VM_HEAP_NOT_EXPANDABLE;
-	seg1Ptr->notExpandCount++;
+	transVirtAddrPtr->flags = VM_HEAP_PT_IN_USE;
+	seg1Ptr->ptUserCount++;
 	UNLOCK_MONITOR;
 	return;
     }
@@ -516,8 +511,8 @@ VmVirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
     if (page >= seg1Ptr->offset && 
 	page < (seg1Ptr->offset + seg1Ptr->numPages)) {
 	transVirtAddrPtr->segPtr = seg1Ptr;
-	transVirtAddrPtr->flags = VM_HEAP_NOT_EXPANDABLE;
-	seg1Ptr->notExpandCount++;
+	transVirtAddrPtr->flags = VM_HEAP_PT_IN_USE;
+	seg1Ptr->ptUserCount++;
 	UNLOCK_MONITOR;
 	return;
     }
@@ -796,8 +791,8 @@ exit:
      * If the source segment was a stack or heap segment then the heap
      * segment was prevented from being expanded.  Let it be expanded now.
      */
-    if (transVirtAddr.flags & VM_HEAP_NOT_EXPANDABLE) {
-	VmDecExpandCount(fromProcPtr->vmPtr->segPtrArray[VM_HEAP]);
+    if (transVirtAddr.flags & VM_HEAP_PT_IN_USE) {
+	VmDecPTUserCount(fromProcPtr->vmPtr->segPtrArray[VM_HEAP]);
     }
     return(status);
 }
@@ -808,11 +803,9 @@ exit:
  *
  * Vm_CopyOutProc --
  *
- *	Copy from the current VAS to another processes VAS.  This is done by 
- *	mapping the other processes segment into the current VAS and then 
- *	doing the copy.  It assumed that this routine is called with the dest
- *	process locked such that its VM will not go away while we are doing
- *	the copy.
+ *	Copy from the current VAS to another processes VAS.  It assumed that
+ *	this routine is called with the dest process locked such that its 
+ *	VM will not go away while we are doing the copy.
  *
  * Results:
  *	SUCCESS if the copy succeeded, SYS_ARG_NOACCESS if fromAddr is invalid.
@@ -825,7 +818,7 @@ exit:
 ReturnStatus
 Vm_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr)
     int 	numBytes;		/* The maximum number of bytes to 
-					   copy in. */
+					 * copy in. */
     Address	fromAddr;		/* The address to copy from */
     Boolean	fromKernel;		/* This copy is happening to the
 					 * kernel's address space. */
@@ -876,8 +869,8 @@ exit:
      * If the dest segment was a stack or heap segment then the heap
      * segment was prevented from being expanded.  Let it be expanded now.
      */
-    if (transVirtAddr.flags & VM_HEAP_NOT_EXPANDABLE) {
-	VmDecExpandCount(toProcPtr->vmPtr->segPtrArray[VM_HEAP]);
+    if (transVirtAddr.flags & VM_HEAP_PT_IN_USE) {
+	VmDecPTUserCount(toProcPtr->vmPtr->segPtrArray[VM_HEAP]);
     }
     return(status);
 }
@@ -889,7 +882,7 @@ exit:
  * Vm_GetKernPageFrame --
  *
  *	Return the kernel virtual page frame that is valid at the given virtual
- *	page number.
+ *	page number.  Intended to be used by the hardware specific module.
  *
  * Results:
  *	Kernel page from the page table entry.
@@ -957,48 +950,3 @@ Vm_KernPageFree(pfNum)
 {
     VmPageFree(pfNum);
 }
-#ifdef notdef
-
-Address
-Vm_MapInDevice(devPhysAddr, type)
-    Address	devPhysAddr;
-    int		type;	
-{
-    return(VmMach_MapInDevice(devPhysAddr, type));
-}
-
-void
-Vm_DevBufferInit(vmDevBufPtr, startAddr, numBytes)
-    VmMach_DevBuffer	*vmDevBufPtr;
-    Address		 startAddr;
-    int			 numBytes;
-{
-    VmMach_DevBufferInit(vmDevBufPtr, startAddr, numBytes);
-}
-
-Address
-Vm_DevBufferAlloc(vmDevBufPtr, numBytes)
-    VmMach_DevBuffer	*vmDevBufPtr;
-    int			numBytes;
-{
-    return(VmMach_DevBufferAlloc(vmDevBufPtr, numBytes));
-}
-
-Address
-Vm_DevBufferMap(numBytes, startAddr, mapAddr)
-    int		numBytes;
-    Address	startAddr;
-    Address	mapAddr;
-{
-    return(VmMach_DevBufferMap(numBytes, startAddr, mapAddr));
-}
-
-void
-Vm_GetDevicePage(virtAddr) 
-    Address	virtAddr; /* Virtual address where a page has to be 
-			   * validated at. */
-{
-    VmMach_GetDevicePage(virtAddr);
-}
-
-#endif

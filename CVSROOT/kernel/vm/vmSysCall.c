@@ -43,10 +43,7 @@ Vm_PageSize(pageSizePtr)
 {
     int			pageSize = vm_PageSize;
 
-    if (Vm_CopyOut(4, (Address) &pageSize, (Address) pageSizePtr) != SUCCESS) {
-	return(SYS_ARG_NOACCESS);
-    }
-    return(SUCCESS);
+    return(Vm_CopyOut(4, (Address) &pageSize, (Address) pageSizePtr));
 }
 
 
@@ -80,7 +77,7 @@ Vm_PageSize(pageSizePtr)
  *	expanded to fill the size.
  *
  * Side effects:
- *	The page tables are modified.
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -138,7 +135,7 @@ Vm_CreateVA(address, size)
  *	VM_WRONG_SEG_TYPE if tried to invalidate addresses for a code.
  *
  * Side effects:
- *	The page tables are modified.
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -183,6 +180,7 @@ extern	int		vmPagesToCheck;
 extern	unsigned int	vmClockSleep;
 extern	Boolean		vmForceRef;
 extern	Boolean		vmForceSwap;
+extern	int		vmMaxDirtyPages;
 
 
 /*
@@ -210,6 +208,9 @@ Vm_Cmd(command, arg)
     ReturnStatus	status = SUCCESS;
  
     switch (command) {
+	case VM_SET_MAX_DIRTY_PAGES:
+	    vmMaxDirtyPages = arg;
+	    break;
 	case VM_SET_PAGEOUT_PROCS:
 	    vmMaxPageOutProcs = arg;
 	    break;
