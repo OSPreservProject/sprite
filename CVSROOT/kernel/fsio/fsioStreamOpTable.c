@@ -207,7 +207,7 @@ FsStreamTypeOps fsStreamOpTable[] = {
 		FsDeviceGetIOAttr, FsDeviceSetIOAttr,
 		NoHandle,				/* clientVerify */
 		FsDeviceRelease, FsDeviceMigEnd, FsDeviceMigrate,
-		NullProc,				/* reopen */
+		FsDeviceReopen,				/* reopen */
 		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
 		FsDeviceScavenge, FsDeviceClientKill, FsDeviceClose},
     /*
