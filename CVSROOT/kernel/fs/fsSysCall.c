@@ -259,6 +259,13 @@ Fs_UserClose(streamID)
     }
 
     /*
+     * Look after any shared memory associated with the file.
+     */
+    if (procPtr->vmPtr->sharedSegs != (List_Links *)NIL) {
+	Vm_CleanupSharedFile(procPtr,streamPtr);
+    }
+
+    /*
      * Clear the user-level streamID and then close the underlying stream.
      */
 

@@ -623,14 +623,7 @@ Fs_Close(streamPtr)
 	return(FS_INVALID_ARG);
     }
     Fsutil_HandleLock(streamPtr);
-
-    /*
-     * Look after any shared memory pages.
-     */
     procPtr = Proc_GetEffectiveProc();
-    if (procPtr->vmPtr->sharedSegs != (List_Links *)NIL) {
-	Vm_CleanupSharedFile(procPtr,streamPtr);
-    }
     if (streamPtr->hdr.refCount > 1) {
 	/*
 	 * There are other copies of the stream (due to fork/dup) so
