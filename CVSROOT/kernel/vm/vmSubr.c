@@ -220,7 +220,12 @@ Vm_RawAlloc(numBytes)
      * Bump the end of memory by the number of bytes that we just
      * allocated making sure that it is four byte aligned.
      */
+#ifdef SPUR
+    retAddr = (Address) (((unsigned)retAddr + 7) & ~7);
+    vmMemEnd += (numBytes + 7) & ~7;	/* eight byte aligned for SPUR. */
+#else
     vmMemEnd += (numBytes + 3) & ~3;
+#endif
 
     /*
      * Panic if we just ran off the end of memory.
