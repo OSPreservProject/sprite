@@ -430,12 +430,6 @@ FsPseudoDomainInfo(fileIDPtr, domainInfoPtr)
 	}
 	FsHandleRelease(cltHandlePtr, FALSE);
     }
-    if (status != SUCCESS) {
-	domainInfoPtr->maxKbytes = -1;
-	domainInfoPtr->freeKbytes = -1;
-	domainInfoPtr->maxFileDesc = -1;
-	domainInfoPtr->freeFileDesc = -1;
-    }
     return(status);
 }
 
