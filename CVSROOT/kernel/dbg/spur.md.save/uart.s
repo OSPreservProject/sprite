@@ -36,7 +36,7 @@ _uart_init:
 	st_uart	($AUX_CMD_VAL, AUX_CMD )	/* mainly for show */
 	st_uart	($MR1_VAL, MODE )		/* see uart.h */
 	st_uart	($MR2_VAL, MODE )		/* see uart.h */
-	st_uart	($r11, BAUD )		/* set baud */
+	st_uart	(r11, BAUD )		/* set baud */
 	st_uart	($INTR_MASK_DUMB, INTR_MSK )	/* take no uart intrs */
 	st_uart	($(TX_OFF|RX_OFF|CLR_ERR_STATUS), COMMAND ) /* clear errors */
 	st_uart	($(TX_OFF|RX_OFF|CLR_BRK_STATUS), COMMAND )/* clear break info */
