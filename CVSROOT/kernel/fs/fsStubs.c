@@ -3102,8 +3102,6 @@ Fs_IoctlStub(streamID, request, buf)
 	   */
 	  struct ifconf ifc;
 	  struct ifreq   ifreq;
-	  extern int	  sysHostID;
-	  int		  *intPtr;
 	  Net_Interface	  *interPtr;
 
 	  if (debugFsStubs) {
