@@ -113,16 +113,7 @@ Fsconsist_IOClientOpen(clientList, clientID, useFlags, cached)
 	    goto found;
 	}
     }
-    fs_Stats.object.fileClients++;
-    clientPtr = mnew(Fsconsist_ClientInfo);
-    clientPtr->clientID = clientID;
-    clientPtr->use.ref = 0;
-    clientPtr->use.write = 0;
-    clientPtr->use.exec = 0;
-    clientPtr->openTimeStamp = 0;
-    clientPtr->locked = FALSE;
-    List_InitElement((List_Links *)clientPtr);
-    List_Insert((List_Links *) clientPtr, LIST_ATFRONT(clientList));
+    INSERT_CLIENT(clientList, clientPtr, clientID);
 found:
     clientPtr->cached = cached;
     clientPtr->use.ref++;
@@ -180,17 +171,7 @@ Fsconsist_IOClientReopen(clientList, clientID, usePtr)
 	    goto doit;
 	}
     }
-    fs_Stats.object.fileClients++;
-    clientPtr = mnew(Fsconsist_ClientInfo);
-    clientPtr->clientID = clientID;
-    clientPtr->openTimeStamp = 0;
-    clientPtr->locked = FALSE;
-    clientPtr->cached = FALSE;
-    clientPtr->use.ref = 0;
-    clientPtr->use.write = 0;
-    clientPtr->use.exec = 0;
-    List_InitElement((List_Links *)clientPtr);
-    List_Insert((List_Links *) clientPtr, LIST_ATFRONT(clientList));
+    INSERT_CLIENT(clientList, clientPtr, clientID);
 doit:
     clientPtr->use.ref += usePtr->ref;
     clientPtr->use.write += usePtr->write;
@@ -263,9 +244,7 @@ Fsconsist_IOClientClose(clientList, clientID, flags, cachePtr)
 		 * Free up the client list entry if it is not locked
 		 * due to an iteration through the client list.
 		 */
-		fs_Stats.object.fileClients--;
-		List_Remove((List_Links *) clientPtr);
-		free((Address) clientPtr);
+		REMOVE_CLIENT(clientPtr);
 	    }
 	} else {
 	    *cachePtr = clientPtr->cached;
@@ -327,6 +306,9 @@ Fsconsist_IOClientRemoveWriter(clientList, clientID)
  *	one has then we call Fsutil_RemoveClient to clean up the file state
  *	associated with it.
  *
+ *	NOT USED.  File servers let regular traffic, like consistency
+ *	call backs, detect failures.
+ *
  * Results:
  *	None.
  *
@@ -337,6 +319,7 @@ Fsconsist_IOClientRemoveWriter(clientList, clientID)
  * ----------------------------------------------------------------------------
  *
  */
+#ifdef notdef
 ENTRY void
 Fsconsist_ClientScavenge()
 {
@@ -353,6 +336,7 @@ Fsconsist_ClientScavenge()
 
     UNLOCK_MONITOR;
 }
+#endif notdef
 
 /*
  * ----------------------------------------------------------------------------
@@ -398,14 +382,11 @@ Fsconsist_IOClientKill(clientList, clientID, refPtr, writePtr, execPtr)
 	    *writePtr += clientPtr->use.write;
 	    *execPtr += clientPtr->use.exec;
 	    if (clientPtr->locked) {
-		printf("Fsconsist_IOClientKill, client %d locked\n", clientID);
 		clientPtr->use.ref = 0;
 		clientPtr->use.write = 0;
 		clientPtr->use.exec = 0;
 	    } else {
-		fs_Stats.object.fileClients--;
-		List_Remove((List_Links *) clientPtr);
-		free((Address) clientPtr);
+		REMOVE_CLIENT(clientPtr);
 	    }
 	    break;
 	}
@@ -471,10 +452,12 @@ Fsconsist_IOClientStatus(clientList, clientID, clientUsePtr)
  * ----------------------------------------------------------------------------
  *
  */
+/*ARGSUSED*/
 ENTRY void
 Fsconsist_AddClient(clientID)
     int clientID;
 {
+#ifdef notdef
     register	ClientItem	*listPtr;
 
     LOCK_MONITOR;
@@ -490,5 +473,6 @@ Fsconsist_AddClient(clientID)
     List_Insert((List_Links *)listPtr, LIST_ATFRONT(masterClientList));
 exit:
     UNLOCK_MONITOR;
+#endif notdef
 }
 
