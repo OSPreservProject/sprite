@@ -1825,7 +1825,6 @@ PinPages(virtAddrPtr, lastPage)
 {
     register	VmCore	*corePtr;
     register	Vm_PTE	*ptePtr;
-    Boolean		retVal = FALSE;
 
     LOCK_MONITOR;
 
@@ -2024,8 +2023,7 @@ PageOut(data, callInfoPtr)
     while (TRUE) {
 	PageOutPutAndGet(&corePtr, status, &recStreamPtr);
 	if (recStreamPtr != (Fs_Stream  *)NIL) {
-	    (void) Fs_WaitForHost(recStreamPtr,
-				  FS_NAME_SERVER | FS_NON_BLOCKING, status);
+	    (void) Fs_WaitForHost(recStreamPtr, FS_NON_BLOCKING, status);
 	}
 
 	if (corePtr == (VmCore *) NIL) {
