@@ -21,17 +21,6 @@ Test_GetChar()
 }
 #endif
 
-Mach_GetLastSyscall()
-{
-}
-
-Proc_RpcMigInfo()
-{
-}
-Proc_RpcMigInit()
-{
-}
-
 /*ARGSUSED*/
 VmMachTracePMEG(pmeg)
 int pmeg;
@@ -42,46 +31,4 @@ int pmeg;
 Mach_GetStackPointer()
 {
     panic("Mach_GetStackPointer called.\n");
-}
-
-ReturnStatus
-Mach_EncapState()
-{
-    panic("Mach_EncapState called.\n");
-}
-
-ReturnStatus
-Mach_GetEncapState()
-{
-    panic("Mach_GetEncapState called.\n");
-}
-
-ReturnStatus
-Mach_GetEncapSize()
-{
-    panic("Mach_GetEncapSize called.\n");
-}
-
-ReturnStatus
-Mach_DeencapState()
-{
-    panic("Mach_DeencapState called.\n");
-}
-
-Boolean
-Mach_CanMigrate()
-{
-    panic("Mach_CanMigrate called.\n");
-}
-
-Vm_FreezeSegments()
-{
-}
-
-Vm_MigrateSegment()
-{
-}
-
-Vm_ReceiveSegmentInfo()
-{
 }
