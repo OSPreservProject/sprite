@@ -35,6 +35,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsNameHash.h"
 #include "fsOpTable.h"
 #include "fsConsist.h"
+#include "fsCacheOps.h"
 #include "fsTrace.h"
 #include "fsStat.h"
 #include "rpc.h"
@@ -203,7 +204,7 @@ FsLocalLookup(prefixHdrPtr, relativeName, useFlags, type, clientID, idPtr,
 		    extern char *etc_MachineType;	/* XXX */
 		    machType = etc_MachineType;
 		} else {
-		    machType = Net_SpriteIDToMachType(clientID);
+		    machType = (char *)Net_SpriteIDToMachType(clientID);
 		    if (machType == (char *)NIL) {
 			Sys_Panic(SYS_WARNING,
 			 "FsLocalLookup, no machine type for client %d\n",
@@ -371,7 +372,7 @@ FsLocalLookup(prefixHdrPtr, relativeName, useFlags, type, clientID, idPtr,
 	}
     }
     if (useFlags & FS_TRACE_FLAG) {
-	FS_TRACE_NAME(FS_TRACE_3, relativeName);
+	FS_TRACE_NAME(FS_TRACE_LOOKUP_DONE, relativeName);
     }
     if ((status == SUCCESS) ||
 	((status == FS_FILE_NOT_FOUND) && (*curCharPtr == '\0'))) {
@@ -462,7 +463,8 @@ FsLocalLookup(prefixHdrPtr, relativeName, useFlags, type, clientID, idPtr,
 			 * Try the delete, this fails on non-empty directories.
 			 */
 			status = DeleteFileName(domainPtr, parentHandlePtr,
-			      &curHandlePtr, component, compLen, FALSE, idPtr);
+			      &curHandlePtr, component, compLen, FALSE,
+			      clientID, idPtr);
 		    }
 		} else if (status == FS_FILE_NOT_FOUND) {
 		    /*
@@ -486,7 +488,7 @@ FsLocalLookup(prefixHdrPtr, relativeName, useFlags, type, clientID, idPtr,
 		    } else {
 			status = DeleteFileName(domainPtr, parentHandlePtr, 
 				&curHandlePtr, component, compLen,
-				(int) (useFlags & FS_RENAME), idPtr);
+				(int) (useFlags & FS_RENAME), clientID, idPtr);
 		    }
 		}
 		break;
@@ -1158,9 +1160,13 @@ CreateFile(domainPtr, parentHandlePtr, component, compLen, fileNumber, type,
 			    /*
 			     * Nuke the data block for the directory.  Any
 			     * error returned is ignored because this is a
-			     * recovery action anyway.
+			     * recovery action anyway.  (This seems like
+			     * a severe action.  What about files already
+			     * in the directory? BW 5/88)
 			     */
-			    (void)FsFileTrunc(*curHandlePtrPtr, 0);
+#ifdef notdef
+			    (void)FsFileTrunc(*curHandlePtrPtr, 0, 0);
+#endif notdef
 			}
 		    }
 		}
@@ -1615,7 +1621,7 @@ SetParentNumber(curHandlePtr, newParentNumber)
  */
 static ReturnStatus
 DeleteFileName(domainPtr, parentHandlePtr, curHandlePtrPtr, component,
-	       compLen, forRename, idPtr)
+	       compLen, forRename, clientID, idPtr)
     FsDomain *domainPtr;			/* Domain of the file */
     FsLocalFileIOHandle *parentHandlePtr;	/* Handle of directory in
 						 * which to delete file*/
@@ -1625,6 +1631,8 @@ DeleteFileName(domainPtr, parentHandlePtr, curHandlePtrPtr, component,
     int forRename;		/* if FS_RENAME, then the file being delted
 				 * is being renamed.  This allows non-empty
 				 * directories to be deleted */
+    int clientID;		/* Host doing lookup.  Used to prevent call-
+				 * backs to this host. */
     FsUserIDs *idPtr;		/* User and group IDs */
 {
     ReturnStatus status;
@@ -1715,11 +1723,9 @@ DeleteFileName(domainPtr, parentHandlePtr, curHandlePtrPtr, component,
 		status = FsDeleteFileDesc(curHandlePtr);
 		/*
 		 * Tell other clients (only the last writer) that the
-		 * file has been deleted.  In order to prevent delayed writes
-		 * from cruising in during the callback we set
-		 * the 'file gone' flag.
+		 * file has been deleted.  Call with our own hostID
+		 * order to guarantee a call-back to all clients.
 		 */
-		curHandlePtr->flags |= FS_FILE_GONE;
 		FsClientRemoveCallback(&curHandlePtr->consist, rpc_SpriteID);
 		/*
 		 * Wipe out the handle.
@@ -1777,7 +1783,8 @@ FsDeleteFileDesc(handlePtr)
     if (domainPtr == (FsDomain *)NIL) {
 	return(FS_DOMAIN_UNAVAILABLE);
     }
-    status = FsFileTrunc(handlePtr, 0);
+    FS_TRACE_HANDLE(FS_TRACE_DELETE, ((FsHandleHeader *)handlePtr));
+    status = FsFileTrunc(handlePtr, 0, FS_TRUNC_DELETE);
     if (status != SUCCESS) {
 	Sys_Panic(SYS_WARNING, "FsDeleteFileDesc: Can't truncate file\n");
     } else {
@@ -2031,9 +2038,7 @@ CacheDirBlockWrite(handlePtr, blockPtr, blockNum, length)
 	    flags = FS_DELETE_BLOCK;
 	}
     }
-    if (newLastByte > handlePtr->descPtr->lastByte) {
-	handlePtr->descPtr->lastByte = newLastByte;
-    }
+    FsUpdateDirSize(&handlePtr->cacheInfo, newLastByte);
     handlePtr->descPtr->dataModifyTime = fsTimeInSeconds;
     fsStats.blockCache.dirBytesWritten += FS_DIR_BLOCK_SIZE;
     fsStats.blockCache.dirBlockWrites++;
