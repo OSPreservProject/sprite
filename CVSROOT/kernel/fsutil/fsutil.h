@@ -236,6 +236,12 @@ extern int fsMaxRpcParamSize;
 extern Boolean fsShouldSyncDisks;
 
 /*
+ * TRUE once the file system has been initialized, so we
+ * know we can sync the disks safely.
+ */
+extern  Boolean fsInitialized;		
+
+/*
  * Fs_StringNCopy
  *
  *	Copy the null terminated string in srcStr to destStr and return the
