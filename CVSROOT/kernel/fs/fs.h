@@ -242,6 +242,17 @@ typedef struct Fs_Stream {
  *	FS_WB_ON_LDB - Write this file back to disk if this is the last dirty
  *		       block.
  *	FS_MAP - File is being mapped into virtual memory.
+ *	FS_MIGRATED_FILE - Migration related.  This says a file has been
+ *		involved in a migration, so (for example) if the file
+ *		gets flushed to the server then the host that's flushing
+ *		it knows to attribute the flush to migration.  Used
+ *		for statistics.
+ *	FS_MIGRATING - Migration related.  This says a file is in the
+ *		process of migrating.  Also used for statistics.
+ *		MIGRATED_FILE stays set for any file that has ever been
+ *		migrated (it is reset if the file is not open anywhere), while
+ *		MIGRATING is set as a temporary flag during cache consistency
+ *		operations, for a single reference to the file.
  */
 #define FS_KERNEL_FLAGS		0xfffff000
 #define FS_FOLLOW		0x00001000
@@ -255,7 +266,7 @@ typedef struct Fs_Stream {
 #define FS_RENAME		0x00080000
 #define FS_CLIENT_CACHE_WRITE	0x00100000
 #define FS_CONSUME		0x00200000
-#define FSUTIL_TRACE_FLAG		0x00400000
+#define FSUTIL_TRACE_FLAG	0x00400000
 #define FS_USER_OUT		0x00800000
 #define	FS_SERVER_WRITE_THRU	0x01000000
 #define	FS_LAST_DIRTY_BLOCK	0x02000000
@@ -263,6 +274,8 @@ typedef struct Fs_Stream {
 #define FS_NEW_STREAM		0x08000000
 #define	FS_WB_ON_LDB		0x10000000
 #define	FS_MAP			0x20000000
+#define	FS_MIGRATED_FILE	0x40000000
+#define	FS_MIGRATING		0x80000000
 
 
 /*
