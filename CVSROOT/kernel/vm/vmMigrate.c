@@ -141,6 +141,9 @@ Vm_MigrateSegment(segPtr, bufferPtr, bufferSizePtr, numPagesPtr)
 	if (status != SUCCESS) {
 	    return(status);
 	}
+	if (segPtr->flags & VM_SEG_IO_ERROR) {
+	    return(VM_SWAP_ERROR);
+	}
     }
     status = EncapsulateInfo(segPtr, bufferPtr, bufferSizePtr);
 #ifdef CANT_DO_YET
