@@ -22,6 +22,11 @@
 #include <sprite.h>
 #include <fsdm.h>
 
+/*
+ * Flags controlling file system.
+ * LFS_CONTROL_CLEANALL - When cleaning, clean all dirty segments.
+ */
+#define	LFS_CONTROL_CLEANALL	0x1
 
 /* Descriptor management routines. */
 

@@ -22,6 +22,7 @@
 #include <fs.h>
 #include <fsconsist.h>
 #include <user/fs.h>
+#include <lfs.h>
 #include <lfsDesc.h>
 #include <lfsDescMapInt.h>
 #include <lfsDescInt.h>
@@ -97,6 +98,8 @@ typedef struct Lfs {
 		 */
     Fs_Device	  *devicePtr;	/* Device containing file system. */
     char	  *name;	/* Name used for error messages. */
+    int		  controlFlags;	/* Flags controlling file system operating. 
+				 * see lfs.h for definitions.  */
     Fsdm_Domain	  *domainPtr;	/* Domain this file system belongs. */
     /*
      * Routine for cache backend. 
