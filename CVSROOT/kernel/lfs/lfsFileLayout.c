@@ -67,6 +67,7 @@ static Boolean BlockMatch _ARGS_((Fscache_Block *blockPtr,
 				ClientData clientData));
 
 static void DirLogInit _ARGS_((Lfs *lfsPtr));
+static void DirLogDestory _ARGS_((Lfs *lfsPtr));
 static void NewDirLogBlock _ARGS_((Lfs *lfsPtr));
 static LfsDirOpLogEntry *FindLogEntry _ARGS_((Lfs *lfsPtr, int logSeqNum));
 static Boolean AddDirLogBlocks _ARGS_((Lfs *lfsPtr, LfsSeg *segPtr, 
@@ -86,9 +87,12 @@ extern void LfsFileLayoutWriteDone _ARGS_((LfsSeg *segPtr, int flags,
 extern Boolean LfsFileLayoutClean _ARGS_((LfsSeg *segPtr, int *sizePtr, 
 			int *numCacheBlocksPtr, ClientData *clientDataPtr));
 
+extern ReturnStatus LfsFileLayoutDetach _ARGS_((Lfs *lfsPtr));
+
 static LfsSegIoInterface layoutIoInterface = 
 	{ LfsFileLayoutAttach, LfsFileLayoutProc, LfsFileLayoutClean,
-	  LfsFileLayoutCheckpoint, LfsFileLayoutWriteDone,  0};
+	  LfsFileLayoutCheckpoint, LfsFileLayoutWriteDone, 
+	  LfsFileLayoutDetach, 0};
 
 #define	WRITEBACK_TOKEN		0
 #define	CLEANING_TOKEN		1
@@ -181,6 +185,37 @@ LfsFileLayoutAttach(lfsPtr, checkPointSize, checkPointPtr)
 
     return SUCCESS;
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LfsFileLayoutDetach --
+ *
+ *	Detach routine for file layout module. 
+ *
+ * Results:
+ *	SUCCESS if attaching is going ok.
+ *
+ * Side effects:
+ *	Many
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+LfsFileLayoutDetach(lfsPtr)
+    Lfs   *lfsPtr;	     /* File system for attach. */
+{
+
+    LfsDescCacheDestory(lfsPtr);
+    DirLogDestory(lfsPtr);
+
+    return SUCCESS;
+}
+
+
+
 
 /*
  *----------------------------------------------------------------------
@@ -1315,6 +1350,39 @@ DirLogInit(lfsPtr)
 		    0, TRUE, &attr, lfsPtr->domainPtr->backendPtr);
     dirLogPtr->leastCachedSeqNum = 0;
     dirLogPtr->paused = FALSE;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DirLogDestory --
+ *
+ *	Free up the directory change log for this LFS file system.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+DirLogDestory(lfsPtr)
+    Lfs	*lfsPtr;	/* File system to initialize dir log for. */
+{
+    LfsDirLog *dirLogPtr = &lfsPtr->dirLog;
+
+    if (!List_IsEmpty(&dirLogPtr->activeListHdr) || 
+	!List_IsEmpty(&dirLogPtr->writingListHdr) ||
+	(dirLogPtr->curBlockHdrPtr !=  (LfsDirOpLogBlockHdr *) NIL)) {
+	LfsError(lfsPtr, FAILURE,
+		"DirLogDestory - directory log still active\n");
+	return;
+    }
+
+    Fscache_FileInvalidate(&dirLogPtr->handle.cacheInfo, 0, FSCACHE_LAST_BLOCK);
 }
 
 /*
