@@ -36,6 +36,7 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
+#include <status.h>
 #include <sprite.h>
 #include <fs.h>
 #include <fsutil.h>
