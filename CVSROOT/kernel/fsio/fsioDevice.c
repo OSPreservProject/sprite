@@ -1568,12 +1568,12 @@ Fs_NotifyReader(data)
 {
     register	FsDeviceIOHandle *devHandlePtr = (FsDeviceIOHandle *)data;
 
-    if (devHandlePtr->hdr.fileID.type != FS_LCL_DEVICE_STREAM) {
-	panic( "Fs_NotifyReader, bad data\n");
-    }
     if ((devHandlePtr == (FsDeviceIOHandle *)NIL) ||
 	(devHandlePtr->readNotifyScheduled)) {
 	return;
+    }
+    if (devHandlePtr->hdr.fileID.type != FS_LCL_DEVICE_STREAM) {
+	panic( "Fs_NotifyReader, bad data\n");
     }
     devHandlePtr->readNotifyScheduled = TRUE;
     Proc_CallFunc(ReadNotify, (ClientData) devHandlePtr, 0);
@@ -1620,12 +1620,12 @@ Fs_NotifyWriter(data)
 {
     register	FsDeviceIOHandle *devHandlePtr = (FsDeviceIOHandle *)data;
 
-    if (devHandlePtr->hdr.fileID.type != FS_LCL_DEVICE_STREAM) {
-	panic( "Fs_NotifyWriter, bad data\n");
-    }
     if ((devHandlePtr == (FsDeviceIOHandle *)NIL) ||
 	(devHandlePtr->writeNotifyScheduled)) {
 	return;
+    }
+    if (devHandlePtr->hdr.fileID.type != FS_LCL_DEVICE_STREAM) {
+	panic( "Fs_NotifyWriter, bad data\n");
     }
     devHandlePtr->writeNotifyScheduled = TRUE;
     Proc_CallFunc(WriteNotify, (ClientData) devHandlePtr, 0);
