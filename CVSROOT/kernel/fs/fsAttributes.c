@@ -84,8 +84,21 @@ Fs_GetAttrStream(streamPtr, attrPtr)
 	     * Get the initial version of the attributes from the file server
 	     * that has the name of the file.
 	     */
+#ifdef SOSP91
+	    int hostID, userID;
+	    userID = Proc_GetEffectiveProc()->userID;
+	    if (Proc_GetEffectiveProc()->genFlags & PROC_FOREIGN) {
+		hostID = Proc_GetEffectiveProc()->peerHostID;
+	    } else {
+		hostID = rpc_SpriteID;
+	    }
+	    status = (*fs_AttrOpTable[nameInfoPtr->domainType].getAttr)
+			(&nameInfoPtr->fileID, rpc_SpriteID, attrPtr, hostID,
+			userID);
+#else
 	    status = (*fs_AttrOpTable[nameInfoPtr->domainType].getAttr)
 			(&nameInfoPtr->fileID, rpc_SpriteID, attrPtr);
+#endif
 #ifdef lint
 	    status = FslclGetAttr(&nameInfoPtr->fileID, rpc_SpriteID,attrPtr);
 	    status = FsrmtGetAttr(&nameInfoPtr->fileID,rpc_SpriteID,attrPtr);
@@ -159,8 +172,21 @@ Fs_SetAttrStream(streamPtr, attrPtr, idPtr, flags)
 	    /*
 	     * Set the attributes at the name server.
 	     */
+#ifdef SOSP91
+	    int hostID, userID;
+	    userID = Proc_GetEffectiveProc()->userID;
+	    if (Proc_GetEffectiveProc()->genFlags & PROC_FOREIGN) {
+		hostID = Proc_GetEffectiveProc()->peerHostID;
+	    } else {
+		hostID = rpc_SpriteID;
+	    }
+	    status = (*fs_AttrOpTable[nameInfoPtr->domainType].setAttr)
+			(&nameInfoPtr->fileID, attrPtr, idPtr, flags,
+			hostID, userID);
+#else
 	    status = (*fs_AttrOpTable[nameInfoPtr->domainType].setAttr)
 			(&nameInfoPtr->fileID, attrPtr, idPtr, flags);
+#endif
 #ifdef lint
 	    status = FslclSetAttr(&nameInfoPtr->fileID, attrPtr,idPtr,flags);
 	    status = FsrmtSetAttr(&nameInfoPtr->fileID, attrPtr,idPtr,flags);
