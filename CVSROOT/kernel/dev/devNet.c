@@ -36,7 +36,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "byte.h"
 #include "sync.h"
 #include "fs.h"
-
+#include "user/net.h"
 
 Boolean devNetEtherDebug = FALSE;
 
@@ -131,6 +131,7 @@ DevNet_FsOpen(devicePtr, useFlags, data)
 {
     register ProtocolState *protoPtr;
     register int i;
+    register unsigned int protocol;
     ReturnStatus status = SUCCESS;
 
     MASTER_LOCK(protoMutex);
@@ -138,9 +139,14 @@ DevNet_FsOpen(devicePtr, useFlags, data)
 	List_Init(&etherProtos);
 	initList = TRUE;
     }
-
+    /*
+     * We keep the protocol number in network byte order so as to match
+     * the values coming off the net.
+     */
+    protocol = (unsigned int) 
+		Net_HostToNetShort((unsigned short) (devicePtr->unit));  
     LIST_FORALL(&etherProtos, (List_Links *)protoPtr) {
-	if (protoPtr->protocol == devicePtr->unit) {
+	if (protoPtr->protocol == protocol) {
 	    if (protoPtr->open) {
 		Sys_Panic(SYS_WARNING, "DevNet_FsOpen: Extra open of net device");
 		status = FS_FILE_BUSY;
@@ -161,7 +167,7 @@ DevNet_FsOpen(devicePtr, useFlags, data)
     List_InitElement((List_Links*) protoPtr);
     List_Insert((List_Links *)protoPtr, LIST_ATREAR(&etherProtos));
 
-    protoPtr->protocol = devicePtr->unit;
+    protoPtr->protocol = protocol;
     Byte_Zero(sizeof(ProtoStats), (Address)&protoPtr->stats);
 
     /*
