@@ -476,3 +476,23 @@ bad:
 	.globl _MachProbeEnd
 	.even
 _MachProbeEnd:
+|*----------------------------------------------------------------------------
+|*
+|* Mach_Return2 -
+|*
+|*	void	MachReturn2(int val)
+|*
+|* Results:
+|*     	Sets the second return value to val.  This is used for Unix
+|*	compatibility for system calls that return two values.
+|*
+|* Side effects:
+|*	d1 <- val
+|*
+|*----------------------------------------------------------------------------
+
+    .text
+    .globl	_Mach_Return2
+_Mach_Return2:
+    movl	sp@(4),d1
+    rts
