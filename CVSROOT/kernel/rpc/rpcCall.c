@@ -183,8 +183,10 @@ Rpc_Call(serverID, command, storagePtr)
     RPC_CALL_TIMING_END(command, &histTime);
 #ifndef NO_RECOVERY
     if (error == RPC_TIMEOUT || error == NET_UNREACHABLE_NET) {
-	Sys_Printf("<%s> ", rpcService[command].name);
-	Net_HostPrint(serverID, "RPC timed-out");
+	if (command != RPC_ECHO_2) {
+	    Sys_Printf("<%s> ", rpcService[command].name);
+	    Net_HostPrint(serverID, "RPC timed-out");
+	}
 	Recov_HostDead(serverID);
     } else {
 	Recov_HostAlive(serverID, srvBootID, TRUE, notActive);
