@@ -398,9 +398,10 @@ typedef struct {
  */
 
 extern	ReturnStatus	NetLEInit _ARGS_((Net_Interface *interPtr));
-extern	void		NetLEOutput _ARGS_((Net_Interface *interPtr,
+extern	ReturnStatus	NetLEOutput _ARGS_((Net_Interface *interPtr,
 			    Address hdrPtr,Net_ScatterGather *scatterGatherPtr,
-			    int scatterGatherLength));
+			    int scatterGatherLength, Boolean rpc,
+			    ReturnStatus *statusPtr));
 extern	void		NetLEIntr _ARGS_((Net_Interface *interPtr, 
 			    Boolean polling));
 extern	void		NetLERestart _ARGS_((Net_Interface *interPtr));

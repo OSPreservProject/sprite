@@ -546,7 +546,8 @@ NetLEXmitDone(statePtr)
  *
  *
  * Results:
- *	None.
+ *	SUCCESS if the packet was queued to the chip correctly, otherwise
+ *	a standard Sprite error code.
  *
  * Side effects:
  *	Queue of packets modified.
@@ -554,14 +555,17 @@ NetLEXmitDone(statePtr)
  *----------------------------------------------------------------------
  */
 
-void
-NetLEOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength)
+ReturnStatus
+NetLEOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength, rpc,
+	    statusPtr)
     Net_Interface	*interPtr;	/* The network interface. */
     Address		hdrPtr;		/* Packet header. */
     register	Net_ScatterGather	*scatterGatherPtr; /* Data portion of 
 							    * the packet. */
     int			scatterGatherLength;	/* Length of data portion gather
 						 * array. */
+    Boolean		rpc;			/* Is this an RPC packet? */
+    ReturnStatus	*statusPtr;		/* Status from sending packet.*/
 {
     register	NetXmitElement		*xmitPtr;
     ReturnStatus			status;
@@ -583,7 +587,7 @@ NetLEOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength)
 
 	printf("LE ethernet: Packet in too many pieces\n");
 	ENABLE_INTR();
-	return;
+	return FAILURE;
     }
 
 
@@ -616,7 +620,10 @@ NetLEOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength)
         scatterGatherPtr->done = TRUE;
 
 	ENABLE_INTR();
-	return;
+	if (statusPtr != (ReturnStatus *) NIL) {
+	    *statusPtr = SUCCESS;
+	}
+	return SUCCESS;
     }
 
     /*
@@ -629,9 +636,11 @@ NetLEOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength)
 		    statePtr);
 	if (status != SUCCESS) {
 		NetLERestart(interPtr);
+	} else if (statusPtr != (ReturnStatus *) NIL) {
+	    *statusPtr = SUCCESS;
 	}
 	ENABLE_INTR();
-	return;
+	return status;
     }
 
     /*
@@ -643,7 +652,7 @@ NetLEOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength)
     if (List_IsEmpty(statePtr->xmitFreeList)) {
         scatterGatherPtr->done = TRUE;
 	ENABLE_INTR();
-	return;
+	return FAILURE;
     }
 
     xmitPtr = (NetXmitElement *) List_First((List_Links *) statePtr->xmitFreeList);
@@ -664,8 +673,11 @@ NetLEOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength)
 
     List_Insert((List_Links *) xmitPtr, LIST_ATREAR(statePtr->xmitList)); 
 
+    if (statusPtr != (ReturnStatus *) NIL) {
+	*statusPtr = SUCCESS;
+    }
     ENABLE_INTR();
-    return;
+    return SUCCESS;
 }
 
 

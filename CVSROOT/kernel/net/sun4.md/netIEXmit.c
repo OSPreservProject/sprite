@@ -429,6 +429,12 @@ NetIEXmitDone(statePtr)
  *	   boundary then a warning message is printed and the packet is
  *	   sent anyway.
  *
+ *	In theory the statusPtr argument should be filled in by NetIEXmitDone
+ *	when the command completes.  We fill it in here because a 
+ *	mechansism doesn't exist for getting the pointer to NetIEXmitDone,
+ *	and because it doesn't appear that NetIEXmitDone would ever
+ *	return anything other than SUCCESS.
+ *
  * Results:
  *	None.
  *
@@ -438,12 +444,15 @@ NetIEXmitDone(statePtr)
  *----------------------------------------------------------------------
  */
 
-void
-NetIEOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength)
+ReturnStatus
+NetIEOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength, rpc,
+	    statusPtr)
     Net_Interface			*interPtr;
     Address				hdrPtr;
     register	Net_ScatterGather	*scatterGatherPtr;
     int					scatterGatherLength;
+    Boolean				rpc;		/* Is this an rpc? */
+    ReturnStatus			*statusPtr;  /* Return status. */
 {
     register volatile NetXmitElement    *xmitPtr;
     NetIEState				*statePtr;
@@ -466,7 +475,7 @@ NetIEOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength)
 
 	printf("Intel: Packet in too many pieces\n");
 	ENABLE_INTR();
-	return;
+	return FAILURE;
     }
     statePtr->stats.bytesSent += sizeof(Net_EtherHdr);
     for (i = scatterGatherLength, gathPtr = scatterGatherPtr; 
@@ -503,9 +512,11 @@ NetIEOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength)
         }
 
         scatterGatherPtr->done = TRUE;
-
+	if (statusPtr != (ReturnStatus *) NIL) {
+	    *statusPtr = SUCCESS;
+	}
 	ENABLE_INTR();
-	return;
+	return SUCCESS;
     }
 
     /*
@@ -515,8 +526,11 @@ NetIEOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength)
     if (!statePtr->transmitting) {
 	OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength,
 		statePtr);
+	if (statusPtr != (ReturnStatus *) NIL) {
+	    *statusPtr = SUCCESS;
+	}
 	ENABLE_INTR();
-	return;
+	return SUCCESS;
     }
 
     /*
@@ -528,7 +542,7 @@ NetIEOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength)
     if (List_IsEmpty(statePtr->xmitFreeList)) {
         scatterGatherPtr->done = TRUE;
 	ENABLE_INTR();
-	return;
+	return FAILURE;
     }
 
     xmitPtr = (volatile NetXmitElement *)
@@ -550,8 +564,11 @@ NetIEOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength)
 
     List_Insert((List_Links *) xmitPtr, LIST_ATREAR(statePtr->xmitList)); 
 
+    if (statusPtr != (ReturnStatus *) NIL) {
+	*statusPtr = SUCCESS;
+    }
     ENABLE_INTR();
-    return;
+    return SUCCESS;
 }
 
 /*

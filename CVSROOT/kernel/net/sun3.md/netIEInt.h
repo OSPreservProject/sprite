@@ -784,9 +784,9 @@ extern	char	*netIEXmitFiller;
  */
 
 extern ReturnStatus NetIEInit _ARGS_((Net_Interface *interPtr));
-extern void NetIEOutput _ARGS_((Net_Interface *interPtr, 
+extern ReturnStatus NetIEOutput _ARGS_((Net_Interface *interPtr, 
 		Address hdrPtr, Net_ScatterGather *scatterGatherPtr,
-		int scatterGatherLength));
+		int scatterGatherLength, Boolean rpc, ReturnStatus *statusPtr));
 extern void NetIEIntr _ARGS_((Net_Interface *interPtr, Boolean polling));
 extern ReturnStatus NetIEIOControl _ARGS_((Net_Interface *interPtr, 
 			Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
