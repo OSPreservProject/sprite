@@ -149,15 +149,8 @@ typedef struct Mach_SigContext {
  * Mary will fix this!  Ask her about it.
  */
 #ifdef KERNEL
-#include "sprite.h"
-#include "devAddrs.h"
-#include "machConst.h"
-#include "user/fmt.h"
 #include "sigTypes.h"
 #else
-#include <kernel/devAddrs.h>
-#include <kernel/machConst.h>
-#include <fmt.h>
 #include <kernel/sigTypes.h>
 #endif
 
