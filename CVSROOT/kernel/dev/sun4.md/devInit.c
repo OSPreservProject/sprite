@@ -38,7 +38,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "machMon.h"
 #endif
 
-int devConfigDebug = FALSE;
+int devConfigDebug = TRUE;
 
 /*
  * ----------------------------------------------------------------------------
@@ -175,6 +175,15 @@ Dev_Config()
 	    case DEV_OBIO:
 		mapItIn = FALSE;
 		break;
+	    case DEV_SBUS_OB:
+		if (devConfigDebug) {
+		    printf("Dev config looking at DEV_SBUS_OB.\n");
+		}
+		mapItIn = TRUE;
+		break;
+	    case DEV_SBUS:
+		printf("Regular SBUS devices not handled yet.\n");
+		continue;
 	}
 	/*
 	 * Each different Sun architecture arranges pieces of memory into
@@ -206,22 +215,43 @@ Dev_Config()
 	    case DEV_OBIO:
 		memoryType = 1;
 		break;
+	    case DEV_SBUS_OB:
+		if (devConfigDebug) {
+		    printf("Dev config setting mem type for DEV_SBUS_OB.\n");
+		}
+		memoryType = 1;
+		break;
+	    case DEV_SBUS:
+		/* Regular SBUS devices not handled yet. */
+		continue;
 	}
 	if (mapItIn) {
+	    if (devConfigDebug) {
+		printf("Dev config mapping %s at 0x%x, memType %d.\n",
+			cntrlrPtr->name, cntrlrPtr->address, memoryType);
+	    }
 	    cntrlrPtr->address =
-		(int)VmMach_MapInDevice((Address)cntrlrPtr->address,memoryType);
+		    (int) VmMach_MapInDevice((Address) cntrlrPtr->address,
+		    memoryType);
+	    if (devConfigDebug) { printf("Dev config virtual addr is 0x%x.\n",
+		    cntrlrPtr->address);
+	    }
 	}
 	if (cntrlrPtr->address != NIL) {
 	    ClientData	callBackData;
-	    callBackData = (*cntrlrPtr->initProc)(cntrlrPtr);
-	    if (callBackData != DEV_NO_CONTROLLER) {
-		printf("%s at kernel address %x\n", cntrlrPtr->name,
-			       cntrlrPtr->address);
-		if (cntrlrPtr->vectorNumber > 0) {
-		    Mach_SetHandler(cntrlrPtr->vectorNumber,
-			cntrlrPtr->intrProc, callBackData);
+
+	    if (cntrlrPtr->initProc != (ClientData (*)()) NIL) {
+		callBackData = (*cntrlrPtr->initProc)(cntrlrPtr);
+		if (callBackData != DEV_NO_CONTROLLER) {
+		    printf("%s at kernel address %x\n", cntrlrPtr->name,
+				   cntrlrPtr->address);
+		    if (cntrlrPtr->vectorNumber > 0) {
+			Mach_SetHandler(cntrlrPtr->vectorNumber,
+			    cntrlrPtr->intrProc, callBackData);
+		    }
 		}
 	    }
 	}
     }
+    return;
 }

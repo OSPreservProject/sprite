@@ -50,6 +50,8 @@ typedef struct DevConfigController {
  * DEV_MULTIBUS_IO - Multibus I/O space on the Sun2
  * DEV_VME_DxAx - The 6 sets of VME address spaces available on
  *	Sun3's.  Only D16A24 and D16A16 are available on VME based Sun2's.
+ * DEV_SBUS_OB - Sbus device in logical slot 0 (on-board device).
+ * DEV_SBUS - Sbus device in some physical slot (not an on-board device).
  */
 #define DEV_OBMEM	0
 #define DEV_OBIO	1
@@ -61,6 +63,8 @@ typedef struct DevConfigController {
 #define DEV_VME_D32A32	34
 #define DEV_VME_D32A24	35
 #define DEV_VME_D32A16	36
+#define DEV_SBUS_OB	37
+#define DEV_SBUS	38
 
 /*
  * Special valued returned from Controller init procedures indicating 
