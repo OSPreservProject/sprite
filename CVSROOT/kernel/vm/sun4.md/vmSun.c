@@ -31,22 +31,12 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "dbg.h"
 #include "net.h"
 
-#ifndef multiprocessor
-
-#undef MASTER_LOCK
-#define MASTER_LOCK(mutexPtr)
-#undef MASTER_UNLOCK
-#define MASTER_UNLOCK(mutexPtr)
-
-#else
 
 /*
  * The master lock to synchronize access to pmegs and context.
  */
 static Sync_Semaphore vmMachMutex;
 static Sync_Semaphore *vmMachMutexPtr = &vmMachMutex;
-
-#endif
 
 #ifndef sun4c
 /*
@@ -72,12 +62,6 @@ extern	Address	vmStackEndAddr;
 
 static void SegDelete();
 static void WriteHardMapSeg();
-#ifdef NOTDEF
-/* This is broken for now */
-#ifdef sun4c
-static	void	MapColorMapAndIdRomAddr();
-#endif
-#endif NOTDEF
 
 /*----------------------------------------------------------------------
  * 
@@ -1411,6 +1395,20 @@ VmMach_ProcInit(vmPtr)
     vmPtr->machPtr->sharedData.allocVector = (int *)NIL;
 }
 
+#ifdef sun4c
+typedef	struct lilac {
+    Address	fromSegPtr;
+    Address	toSegPtr;
+    int		fromHardSegNum;
+    int		toHardSegNum;
+    int		pmegNum;
+} StolenPmeg;
+
+StolenPmeg	stolenArray[100];
+int		stolenIndex = 0;
+#endif /* sun4c */
+
+
 
 /*
  * ----------------------------------------------------------------------------
@@ -1473,6 +1471,18 @@ PMEGGet(softSegPtr, hardSegNum, flags)
 	segPtr = pmegPtr->segPtr;
 	*GetHardSegPtr(segPtr->machPtr, pmegPtr->hardSegNum) = VMMACH_INV_PMEG;
 	virtAddr = (Address) (pmegPtr->hardSegNum << VMMACH_SEG_SHIFT);
+#ifdef sun4c
+	/* log from segPtr, to segPtr fromHardSegNum and virtAddr */
+	stolenArray[stolenIndex].fromSegPtr = segPtr;
+	stolenArray[stolenIndex].toSegPtr = softSegPtr;
+	stolenArray[stolenIndex].fromHardSegNum = pmegPtr->hardSegNum;
+	stolenArray[stolenIndex].toHardSegNum = hardSegNum;
+	stolenArray[stolenIndex].pmegNum = pmegNum;
+	stolenIndex++;
+	if (stolenIndex >= 100) {
+	    stolenIndex = 0;
+	}
+#endif sun4c
 	/*
 	 * Delete the pmeg from all appropriate contexts.
 	 */
@@ -1538,7 +1548,19 @@ PMEGGet(softSegPtr, hardSegNum, flags)
 		    }
 		}
 	    }
-	 }
+	}
+#ifdef sun4c
+	ptePtr = pteArray;
+	VmMachReadAndZeroPMEG(pmegNum, ptePtr);
+	for (i = 0;
+	     i < VMMACH_NUM_PAGES_PER_SEG_INT;
+	     i++, ptePtr++) {
+	    hardPTE = *ptePtr;
+	    if (hardPTE & VMMACH_RESIDENT_BIT) {
+		panic("resident ickiness.\n");
+	    }
+	}
+#endif
     }
 
     /* Initialize the pmeg and delete it from the fifo.  If we aren't 
@@ -2412,7 +2434,8 @@ VmMach_VirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
  * We use this array to flush the cache by touching entries at the correct
  * offsets to clear the corresponding parts of the direct-mapped cache.
  */
-char	cacheFlusherArray[VMMACH_NUM_CACHE_LINES * VMMACH_CACHE_LINE_SIZE * 2];
+volatile char	cacheFlusherArray[VMMACH_NUM_CACHE_LINES *
+	VMMACH_CACHE_LINE_SIZE * 2];
 
 
 /*
@@ -2442,6 +2465,14 @@ VmMachFlushCacheRange(startAddr, endAddr)
 #define	 VMMACH_CACHE_MASK (VMMACH_CACHE_SIZE - 1)
 #define	 VMMACH_LINE_MASK (VMMACH_CACHE_LINE_SIZE - 1)
 
+    if ((unsigned int )endAddr -
+	    (unsigned int )startAddr >= VMMACH_CACHE_SIZE) {
+	VmMachFlushWholeCache();
+
+	return;
+    }
+    
+	
     /* Offset into array where entry maps to 1st entry of cache. */
     cacheFlushPtr = (char *) (((unsigned int) (cacheFlusherArray +
 	    VMMACH_CACHE_SIZE)) & ~VMMACH_CACHE_MASK);
@@ -2463,13 +2494,33 @@ VmMachFlushCacheRange(startAddr, endAddr)
     return;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmMachFlushWholeCache --
+ *
+ *	Flush the whole cache.  It is important that the compiler not
+ *	optimize out this loop!
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Cache flushed.
+ *
+ *----------------------------------------------------------------------
+ */
 void
 VmMachFlushWholeCache()
 {
     int	i;
+    char junk;
+    register volatile char *cacheFlusherArrayPtr;
 
+    cacheFlusherArrayPtr = cacheFlusherArray;
     for (i = 0; i < VMMACH_CACHE_SIZE; i += VMMACH_CACHE_LINE_SIZE) {
-	cacheFlusherArray[i] = 33;
+	junk = cacheFlusherArrayPtr[i];
     }
     return;
 }
@@ -2640,8 +2691,12 @@ VmMach_CopyInProc(numBytes, fromProcPtr, fromAddr, virtAddrPtr,
 	    toContext = VmMachGetContextReg();
 	    fromContext = fromProcPtr->vmPtr->machPtr->contextPtr->context;
 
+#ifndef sun4c
 	    status = VmMachQuickNDirtyCopy(bytesToCopy, fromAddr, toAddr,
 		fromContext, toContext);
+#else
+	    status = FAILURE;
+#endif /* sun4c */
 	    VmMachSetContextReg((int)toContext);
 
 	    if (status == SUCCESS) {
@@ -2768,8 +2823,12 @@ VmMach_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr,
 	    fromContext = VmMachGetContextReg();
 	    toContext = toProcPtr->vmPtr->machPtr->contextPtr->context;
 
+#ifndef sun4c
 	    status = VmMachQuickNDirtyCopy(bytesToCopy, fromAddr, toAddr,
 		    fromContext, toContext);
+#else
+	    status = FAILURE;
+#endif /* sun4c */
 	    VmMachSetContextReg((int)fromContext);
 
 	    if (status == SUCCESS) {
@@ -3433,6 +3492,23 @@ VmMach_PageValidate(virtAddrPtr, pte)
 	} else {
 	    hardPTE |= VMMACH_URW_PROT;
 	}
+#ifdef NOTDEF
+#ifdef sun4c
+	{
+	    int	contextNum;
+	    int	segNum;
+	    Address	virtAddr;
+
+	    virtAddr = (Address) (virtAddrPtr->page << VMMACH_PAGE_SHIFT);
+	    contextNum = VmMachGetContextReg();
+	    segNum = VmMachGetSegMap(virtAddr);
+	    if ((contextArray[contextNum].map[((unsigned int) virtAddr)
+		    >> VMMACH_SEG_SHIFT]) != segNum) {
+		panic("VmMach_PageValidate: hard/soft segNums different.\n");
+	    }
+	}
+#endif /* sun4c */
+#endif /* NOTDEF */
     }
     tHardPTE = VmMachGetPageMap(addr);
     if (tHardPTE & VMMACH_RESIDENT_BIT) {
@@ -4440,9 +4516,38 @@ VmMach_Cmd(command, arg)
 /*
  *----------------------------------------------------------------------
  *
+ * VmMach_HandleSegMigration --
+ *
+ *	Do machine-dependent aspects of segment migration.  On the sun4's,
+ *	this means flush the segment from the virtually addressed cache.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+VmMach_HandleSegMigration(segPtr)
+    Vm_Segment		*segPtr;	/* Pointer to segment to be migrated. */
+{
+    Address	virtAddr;
+
+    virtAddr = (Address) (segPtr->offset << VMMACH_PAGE_SHIFT);
+    VmMachFlushSegment(virtAddr);
+
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * VmMach_FlushCode --
  *
- *      Machine dependent vm commands.
+ *      Does nothing on this machine.
  *
  * Results:
  *      None.
