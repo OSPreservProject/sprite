@@ -469,7 +469,7 @@ FsCacheConsist(cacheInfoPtr, flags, cachedAttrPtr)
 	firstBlock = cacheInfoPtr->attr.firstByte / FS_BLOCK_SIZE;
     }
     status = SUCCESS;
-    switch (flags) {
+    switch (flags & ~FS_DEBUG_CONSIST) {
 	case FS_WRITE_BACK_BLOCKS:
 	    status = FsCacheFileWriteBack(cacheInfoPtr, firstBlock,
 			FS_LAST_BLOCK, FS_FILE_WB_WAIT, &numSkipped);
