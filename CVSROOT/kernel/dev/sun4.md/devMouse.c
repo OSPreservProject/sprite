@@ -389,14 +389,11 @@ DevMouseClose(devicePtr, useFlags, openCount, writerCount)
 					 * closed was open for reading and/or
 					 * writing:  OR'ed combination of
 					 * FS_READ and FS_WRITE. */
-    int openCount;			/* # of times this particular stream
-					 * is still open. */
-    int writerCount;			/* # of times this particular stream
-					 * is still open for writing. */
+    int openCount;			/* # of opens still active for this
+					 * device. */
+    int writerCount;			/* # of active opens that permit
+					 * writing. */
 {
-    if (openCount > 0) {
-	return SUCCESS;
-    }
     LOCK_MONITOR;
     mouseOpenCount -= 1;
     if (mouseOpenCount == 0) {
