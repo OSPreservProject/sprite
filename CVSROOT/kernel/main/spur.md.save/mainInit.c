@@ -153,7 +153,8 @@ main()
      * Initialize the timer, signal, process, scheduling and synchronization
      * modules' data structures.
      */
-
+    Proc_Init();
+    Sync_LockStatInit();
     if (main_PrintInitRoutines) {
 	Mach_MonPrintf("Calling Timer_Init().\n");
     }
@@ -168,12 +169,6 @@ main()
     led_display(bootProgress,0,0);
     Sig_Init();
 
-    if (main_PrintInitRoutines) {
-	Mach_MonPrintf("Calling Proc_InitTable().\n");
-    }
-    bootProgress = 9;
-    led_display(bootProgress,0,0);
-    Proc_InitTable();
 
     if (main_PrintInitRoutines) {
 	Mach_MonPrintf("Calling Sched_Init().\n");
@@ -304,7 +299,6 @@ main()
     bootProgress =  19;
     led_display(bootProgress,0,0);
     ENABLE_INTR();
-
     if (main_Debug) {
 	DBG_CALL;
     }
@@ -504,11 +498,11 @@ mainSlaveStart()
     procPtr = Proc_GetCurrentProc();
     procPtr->schedFlags |= SCHED_STACK_IN_USE; 
     procPtr->processor = Mach_GetProcessorNumber(); 
-    Sched_TimeTicks();
     /* 
      * Enable interrupts.
      */
     ENABLE_INTR();
+    Sched_TimeTicks();
     /*
      * Enter the scheduler by calling Proc_Exit.
      */
