@@ -208,7 +208,7 @@ extern Recov_Stats recov_Stats;
 /*
  * TRUE if we're using transparent server recovery.
  */
-extern	Boolean		recov_transparent;
+extern	Boolean		recov_Transparent;
 
 extern void 	Recov_Init _ARGS_((void));
 extern void 	Recov_CrashRegister _ARGS_((void (*crashCallBackProc)(), ClientData crashData));

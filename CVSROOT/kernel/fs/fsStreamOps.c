@@ -696,7 +696,7 @@ Fs_Close(streamPtr)
 	 * If the server will recover quickly, then it should be okay
 	 * to hang here.  We didn't use to.  This is only worth doing in
 	 * transparent server recovery, where it depends on correct
-	 * reference counts.  Therefore recov_transparent must be true
+	 * reference counts.  Therefore recov_Transparent must be true
 	 * for this.  (And must be true on both clients and servers.)
 	 */
 	switch(status) {
@@ -715,7 +715,7 @@ Fs_Close(streamPtr)
 	default:
 	    break;
 	}
-    } while (retry && recov_transparent);
+    } while (retry && recov_Transparent);
 
     if (Fsio_StreamClientClose(&streamPtr->clientList, rpc_SpriteID)) {
 	Fsio_StreamDestroy(streamPtr);
