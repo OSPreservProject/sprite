@@ -38,6 +38,10 @@ typedef struct FsPrefix {
 				 * prefix (a directory) on the server */
     int		domainType;	/* These are cached and used when trying to */
     int		serverID;	/* re-establish a prefix table entry. */
+				/* serverID is also used to find a prefix.
+				 * It contains the server id if it is
+				 * known, otherwise it contains the 
+				 * broadcast id. */
     int		flags;		/* One of the flags defined below. */
     /*
      * At recovery time things are simpler if there are no active opens
