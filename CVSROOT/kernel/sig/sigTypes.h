@@ -30,7 +30,6 @@
 #include <procTypes.h>
 #else
 #include <sig.h>
-#include <kernel/machTypes.h>
 #include <kernel/procTypes.h>
 #endif
 
