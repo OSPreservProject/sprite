@@ -33,6 +33,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fspdev.h"
 #include "fsprefix.h"
 #include "fsNameOps.h"
+#include "fsStat.h"
 #include "byte.h"
 #include "rpc.h"
 #include "procMigrate.h"
@@ -98,11 +99,20 @@ Fsio_EncapStream(streamPtr, bufPtr)
 	migInfoPtr->nameID = streamPtr->nameInfoPtr->fileID;
 	migInfoPtr->rootID = streamPtr->nameInfoPtr->rootID;
     }
+    /*
+     * Offset is no longer used by the I/O server -- should remove once
+     * new RPCs in place.
+     */
     migInfoPtr->offset = streamPtr->offset;
+    
     migInfoPtr->srcClientID = rpc_SpriteID;
-    migInfoPtr->flags = streamPtr->flags;
+    migInfoPtr->flags = streamPtr->flags | FS_MIGRATED_FILE;
 
     Fsutil_HandleUnlock(streamPtr);
+
+    fs_Stats.mig.filesEncapsulated++;
+
+
     return(SUCCESS);
 }
 
@@ -149,6 +159,8 @@ Fsio_DeencapStream(bufPtr, streamPtrPtr)
     ClientData			data;
 
     migInfoPtr = (FsMigInfo *) bufPtr;
+
+    fs_Stats.mig.filesDeencapsulated++;
 
     if (migInfoPtr->srcClientID == rpc_SpriteID) {
 	/*
@@ -343,7 +355,7 @@ Fsio_MigrateUseCounts(flags, closeSrcClient, usePtr)
 	}
     } else {
 	/*
-	 * The stream moved completly, or a reference just moved between
+	 * The stream moved completely, or a reference just moved between
 	 * two existing streams, so there is no change visible to
 	 * the I/O handle use counts.
 	 */
