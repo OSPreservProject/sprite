@@ -151,7 +151,7 @@
 /*
  * The maximum number of kernel stacks.
  */
-#define	VMMACH_MAX_KERN_STACKS	64
+#define	VMMACH_MAX_KERN_STACKS	256
 
 /*
  * TLB probe return codes.
