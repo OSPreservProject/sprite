@@ -206,10 +206,15 @@ Vm_Cmd(command, arg)
 {
     int			numBytes;
     ReturnStatus	status = SUCCESS;
+    int			numModifiedPages;
  
     switch (command) {
 	case VM_COUNT_DIRTY_PAGES:
-	    vmStat.numModifiedPages = VmCountDirtyPages();
+	    numModifiedPages = VmCountDirtyPages();
+	    if (Vm_CopyOut(sizeof(int), (Address) &numModifiedPages,
+			   (Address) arg) != SUCCESS) {
+		status = SYS_ARG_NOACCESS;
+	    }
 	    break;
 	case VM_SET_MAX_DIRTY_PAGES:
 	    vmMaxDirtyPages = arg;
