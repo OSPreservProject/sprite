@@ -205,6 +205,7 @@ static CallBack callBackVector[] = {
     { RSNIL /* Not migrated */,		RSNIL},  /* SYNC_SEMGET 103 */
     { RSNIL /* Not migrated */,		RSNIL},  /* SYNC_SEMOP 104 */
     { RSNIL /* Not migrated */,		RSNIL},  /* VM_MPROTECT 105 */
+    { RSNIL /* Not migrated */,		RSNIL},  /* SYS_PROC_VFORK 106 */
 };
 
 
