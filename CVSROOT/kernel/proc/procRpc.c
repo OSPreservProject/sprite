@@ -171,6 +171,7 @@ static CallBack callBackVector[] = {
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_MACH_NUM_PROCESSORS 92 */
     { Prof_Profil,                      RSNIL }, /* SYS_PROF_PROFIL 93 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_PROC_REMOTE_EXEC     94 */
+    { RSNIL /* Not migrated */,		RSNIL},  /* SYS_SYS_GETMACHINEINFO_NEW 95 */
 };
 
 
