@@ -270,6 +270,17 @@ typedef enum {
     FS_HEAP_PAGE,
     FS_SWAP_PAGE,
 } Fs_PageType;
+
+/*
+ * Buffer type that includes size, location, and kernel space flag.
+ * This is passed into Fs_IOControl to specify the input/output buffers.
+ */
+typedef struct Fs_Buffer {
+    Address addr;
+    int size;
+    int flags;		/* 0 or FS_USER */
+} Fs_Buffer;
+
 /*
  * Filesystem initialization calls.
  */
