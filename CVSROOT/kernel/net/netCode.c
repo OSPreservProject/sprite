@@ -72,17 +72,20 @@ void
 Net_Init()
 {
     register int inter;
+    register int machineType;
 
     /*
      * Zero out the statistics struct.
      */
     Byte_Zero(sizeof(net_EtherStats), (Address) &net_EtherStats);
 
+#ifdef notdef
+    /* Probing seems to cause bus errors even on existing interfaces. */
+
     /*
      * Determine the number and kind of network interfaces by calling
      * each network interface initialization procedure.
      */
-#ifdef notdef
     for (inter = 0 ; inter<numNetInterfaces ; inter++) {
 	Sys_Printf("Probing %s-%d net interface at 0x%x ...\n",
 		netInterface[inter].name,
@@ -104,21 +107,31 @@ Net_Init()
      */
     machineType = Mach_GetMachineType();
     switch(machineType) {
-	case SYS_SUN_2_120:
+	case SYS_SUN_2_120: {
+	    extern Boolean Net3CInit();
+	    extern void    Net3COutput();
+	    extern void    Net3CIntr();
+	    extern void    Net3CRestart();
+
 	    netEtherFuncs.init   = Net3CInit;
 	    netEtherFuncs.output = Net3COutput;
 	    netEtherFuncs.intr   = Net3CIntr;
 	    netEtherFuncs.reset  = Net3CRestart;
 	    break;
+	}
+	case SYS_SUN_2_50:   /* SYS_SUN_2_160 has the same value */
+	case SYS_SUN_3_75: { /* SYS_SUN_3_160 has the same value */
+	    extern Boolean NetIEInit();
+	    extern void    NetIEOutput();
+	    extern void    NetIEIntr();
+	    extern void    NetIERestart();
 
-	case SYS_SUN_2_50: /* SYS_SUN_2_160 has the same value */
-	case SYS_SUN_3_75: /* SYS_SUN_3_160 has the same value */
 	    netEtherFuncs.init   = NetIEInit;
 	    netEtherFuncs.output = NetIEOutput;
 	    netEtherFuncs.intr   = NetIEIntr;
 	    netEtherFuncs.reset  = NetIERestart;
 	    break;
-
+	}
 	default:
 	    Sys_Panic(SYS_FATAL, 
 			"Net_Init: unknown machine type: %d\n", machineType);
