@@ -58,8 +58,10 @@ int	proc_NumServers = PROC_NUM_SERVER_PROCS;
  */
 volatile Sync_Semaphore	serverMutex; 
 
-static void 	ScheduleFunc _ARGS_((void (*func)(), ClientData clientData,
-			unsigned int interval, FuncInfo *funcInfoPtr));
+static void 	ScheduleFunc _ARGS_((void (*func)(ClientData clientData,
+						  Proc_CallInfo	*callInfoPtr),
+			ClientData clientData, unsigned int interval, 
+			FuncInfo *funcInfoPtr));
 static void 	CallFuncFromTimer _ARGS_((Timer_Ticks time, 
 			FuncInfo *funcInfoPtr));
 static void	CallFunc _ARGS_((FuncInfo *funcInfoPtr));	
@@ -103,7 +105,8 @@ static void	CallFunc _ARGS_((FuncInfo *funcInfoPtr));
  */
 void
 Proc_CallFunc(func, clientData, interval)
-    void		(*func)();	/* Function to call. */
+    void		(*func) _ARGS_((ClientData clientData, 
+			Proc_CallInfo	*callInfoPtr));	/* Function to call. */
     ClientData		clientData;	/* Data to pass function. */
     unsigned	int	interval;	/* Time to wait before calling func. */
 {
@@ -158,7 +161,8 @@ Proc_CallFunc(func, clientData, interval)
  */
 ClientData
 Proc_CallFuncAbsTime(func, clientData, time)
-    void		(*func)();	/* Function to call. */
+    void		(*func) _ARGS_((ClientData clientData, 
+			Proc_CallInfo	*callInfoPtr));	/* Function to call. */
     ClientData		clientData;	/* Data to pass to func. */
     Timer_Ticks		time;		/* Time when to call func. */
 {
@@ -364,7 +368,8 @@ Proc_ServerProc()
 
 static void
 ScheduleFunc(func, clientData, interval, funcInfoPtr)
-    void		(*func)();	/* Function to call. */
+    void		(*func) _ARGS_((ClientData clientData, 
+			Proc_CallInfo	*callInfoPtr));	/* Function to call. */
     ClientData		clientData;	/* Data to pass function. */
     unsigned	int	interval;	/* Time to wait before calling func. */
     FuncInfo		*funcInfoPtr;	/* Pointer to function information

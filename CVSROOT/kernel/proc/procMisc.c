@@ -1055,8 +1055,10 @@ Proc_HasPermission(userID)
 
 ReturnStatus
 Proc_DoForEveryProc(booleanFuncPtr, actionFuncPtr, ignoreStatus, numMatchedPtr)
-    Boolean (*booleanFuncPtr)();	/* function to match */
-    ReturnStatus (*actionFuncPtr)();	/* function to invoke on matches */
+    Boolean (*booleanFuncPtr) _ARGS_((Proc_ControlBlock *pcbPtr));
+					/* function to match */
+    ReturnStatus (*actionFuncPtr)_ARGS_((Proc_PID pid));	
+					/* function to invoke on matches */
     Boolean ignoreStatus;		/* do not abort if bad ReturnStatus  */
     int *numMatchedPtr;			/* number of matches in table, or NIL */
 {

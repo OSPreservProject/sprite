@@ -23,7 +23,9 @@
  * future.
  */
 typedef struct {
-    void		(*func)();	/* Function to call. */
+    void	(*func) _ARGS_((ClientData clientData,
+			       Proc_CallInfo *callInfoPtr));
+			     /* Function to call. */
     ClientData		data;		/* Data to pass to function. */
     Boolean		allocated;	/* TRUE => Struct was allocated by
 					 *         malloc. */
@@ -35,7 +37,9 @@ typedef struct {
  * Element of queue of pending requests for functions to be called.
  */
 typedef struct {
-    void	(*func)();		/* Function to call. */
+    void	(*func) _ARGS_((ClientData clientData,
+			       Proc_CallInfo *callInfoPtr));
+			     /* Function to call. */
     ClientData	data;			/* Data to pass to function. */
     FuncInfo	*funcInfoPtr;		/* Pointer to function info struct
 					 * that was allocated if were

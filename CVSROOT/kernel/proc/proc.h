@@ -138,9 +138,13 @@ extern Boolean proc_RefuseMigrations;
 
 extern ReturnStatus 	Proc_ByteCopy _ARGS_((Boolean copyIn, int numBytes,
 				Address sourcePtr, Address destPtr));
-extern void		Proc_CallFunc _ARGS_((void (*func)(), 
+extern void		Proc_CallFunc _ARGS_((void (*func)(
+						   ClientData clientData, 
+						   Proc_CallInfo *callInfoPtr), 
 				ClientData clientData, unsigned int interval));
-extern ClientData 	Proc_CallFuncAbsTime _ARGS_((void (*func)(), 
+extern ClientData 	Proc_CallFuncAbsTime _ARGS_((void (*func)(
+						   ClientData clientData, 
+						   Proc_CallInfo *callInfoPtr), 
 				ClientData clientData, Timer_Ticks time));
 extern void 		Proc_CancelCallFunc _ARGS_((ClientData token));
 extern	ReturnStatus	Proc_Debug _ARGS_((Proc_PID pid, 
@@ -150,8 +154,9 @@ extern	void		Proc_DestroyMigratedProc _ARGS_((ClientData pidData));
 extern ReturnStatus 	Proc_Detach _ARGS_((int status));
 extern void 		Proc_DetachInt _ARGS_((register 
 				Proc_ControlBlock *procPtr));
-extern	ReturnStatus	Proc_DoForEveryProc _ARGS_((Boolean (*booleanFuncPtr)(),
-				ReturnStatus (*actionFuncPtr)(), 
+extern	ReturnStatus	Proc_DoForEveryProc _ARGS_((Boolean (*booleanFuncPtr)
+						(Proc_ControlBlock *pcbPtr),
+				ReturnStatus (*actionFuncPtr)(Proc_PID pid), 
 				Boolean ignoreStatus, int *numMatchedPtr));
 extern ReturnStatus 	Proc_DoRemoteCall _ARGS_((int callNumber, int numWords,
 				ClientData *argsPtr, Sys_CallParam *specsPtr));

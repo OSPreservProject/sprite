@@ -166,7 +166,8 @@ extern	void		ProcInitTable _ARGS_((void));
 extern	Proc_ControlBlock *ProcGetUnusedPCB _ARGS_((void));
 extern	void		ProcFreePCB _ARGS_((Proc_ControlBlock *procPtr));
 extern	int		ProcTableMatch _ARGS_((int maxPids,
-				Boolean (*booleanFuncPtr)(),
+				Boolean (*booleanFuncPtr)
+					(Proc_ControlBlock *pcbPtr),
 				Proc_PID *pidArray));
 extern 	int		ProcGetObjInfo _ARGS_((ProcExecHeader *execPtr,
 				ProcObjInfo *objInfoPtr));

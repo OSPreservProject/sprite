@@ -623,7 +623,8 @@ ProcFreePCB(procPtr)
 ENTRY int
 ProcTableMatch(maxPids, booleanFuncPtr, pidArray)
     int maxPids;			/* size of pidArray */
-    Boolean (*booleanFuncPtr)();	/* function to match */
+    Boolean (*booleanFuncPtr) _ARGS_((Proc_ControlBlock *pcbPtr));
+					/* function to match */
     Proc_PID *pidArray;			/* array to store results */
 {
     Proc_ControlBlock *pcbPtr;
