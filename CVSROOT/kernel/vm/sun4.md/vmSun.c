@@ -326,6 +326,21 @@ static	Memory_Board	*lastMemBoard;
 static	Memory_Board	Mboards[6];
 #endif /* sun4c */
 
+#ifdef sun4c
+/*
+ * For debugging window overflow problem.
+ */
+void
+CallForOverflow()
+{
+    volatile	int	foo;
+    int	i;
+
+    i = foo;
+    return;
+}
+#endif /* sun4c */
+
 
 /*
  * ----------------------------------------------------------------------------
@@ -1489,6 +1504,9 @@ PMEGGet(softSegPtr, hardSegNum, flags)
 	oldContext = VmMachGetContextReg();
         if (segPtr->type == VM_SYSTEM) {
 	    for (i = 0; i < VMMACH_NUM_CONTEXTS; i++) {
+#ifdef sun4c
+		CallForOverflow();
+#endif
 		VmMachSetContextReg(i);
 		VmMachFlushSegment(virtAddr);
 		VmMachSetSegMap(virtAddr, VMMACH_INV_PMEG);
@@ -1499,12 +1517,18 @@ PMEGGet(softSegPtr, hardSegNum, flags)
 		 i++, contextPtr++) {
 		if (contextPtr->flags & CONTEXT_IN_USE) {
 		    if (contextPtr->map[pmegPtr->hardSegNum] == pmegNum) {
+#ifdef sun4c
+		CallForOverflow();
+#endif
 			VmMachSetContextReg(i);
 			contextPtr->map[pmegPtr->hardSegNum] = VMMACH_INV_PMEG;
 			VmMachFlushSegment(virtAddr);
 			VmMachSetSegMap(virtAddr, VMMACH_INV_PMEG);
 		    }
 		    if (contextPtr->map[MAP_SEG_NUM] == pmegNum) {
+#ifdef sun4c
+		CallForOverflow();
+#endif
 			VmMachSetContextReg(i);
 			contextPtr->map[MAP_SEG_NUM] = VMMACH_INV_PMEG;
 			VmMachFlushSegment((Address)VMMACH_MAP_SEG_ADDR);
@@ -2690,17 +2714,12 @@ VmMach_CopyInProc(numBytes, fromProcPtr, fromAddr, virtAddrPtr,
 	    toContext = VmMachGetContextReg();
 	    fromContext = fromProcPtr->vmPtr->machPtr->contextPtr->context;
 
-#ifdef NOTDEF
 #ifndef sun4c
 	    status = VmMachQuickNDirtyCopy(bytesToCopy, fromAddr, toAddr,
 		fromContext, toContext);
 #else
 	    status = FAILURE;
 #endif /* sun4c */
-#else
-	    status = VmMachQuickNDirtyCopy(bytesToCopy, fromAddr, toAddr,
-		fromContext, toContext);
-#endif /* NOTDEF */
 	    VmMachSetContextReg((int)toContext);
 
 	    if (status == SUCCESS) {
@@ -2717,6 +2736,9 @@ VmMach_CopyInProc(numBytes, fromProcPtr, fromAddr, virtAddrPtr,
 	 */
 	if (fromProcPtr->vmPtr->machPtr->contextPtr != (VmMach_Context *)NIL) {
 	    oldContext = VmMachGetContextReg();
+#ifdef sun4c
+		CallForOverflow();
+#endif
 	    VmMachSetContextReg(
 		    (int)fromProcPtr->vmPtr->machPtr->contextPtr->context);
 	    VmMachFlushSegment(fromAddr);
@@ -2827,17 +2849,12 @@ VmMach_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr,
 	    fromContext = VmMachGetContextReg();
 	    toContext = toProcPtr->vmPtr->machPtr->contextPtr->context;
 
-#ifdef NOTDEF
 #ifndef sun4c
 	    status = VmMachQuickNDirtyCopy(bytesToCopy, fromAddr, toAddr,
 		    fromContext, toContext);
 #else
 	    status = FAILURE;
 #endif /* sun4c */
-#else
-	    status = VmMachQuickNDirtyCopy(bytesToCopy, fromAddr, toAddr,
-		    fromContext, toContext);
-#endif /* NOTDEF */
 	    VmMachSetContextReg((int)fromContext);
 
 	    if (status == SUCCESS) {
@@ -2854,6 +2871,9 @@ VmMach_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr,
 	 */
 	if (toProcPtr->vmPtr->machPtr->contextPtr != (VmMach_Context *)NIL) {
 	    oldContext = VmMachGetContextReg();
+#ifdef sun4c
+		CallForOverflow();
+#endif
 	    VmMachSetContextReg(
 		    (int)toProcPtr->vmPtr->machPtr->contextPtr->context);
 	    VmMachFlushSegment(toAddr);
