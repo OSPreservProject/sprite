@@ -180,7 +180,7 @@ DeferSignal(data)
     return;
 
     failure:
-    if (proc_MigDebugLevel > 0) {
+    if (proc_MigDebugLevel > 2) {
 	printf("DeferSignal: unable to send delayed signal to migrated process %x\n",
 	       infoPtr->processID);
     }
