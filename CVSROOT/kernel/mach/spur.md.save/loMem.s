@@ -1557,13 +1557,19 @@ sysCallTrap_FetchArgs:
 	/*
 	 * Haven't fetched enough args so we have to copy them from the user's
 	 * spill stack to the kernel's spill stack.  Set VOL_TEMP1 to be
-	 * the user stack pointer - numArgs * 4 to point to the base
+	 * the user stack pointer + (numArgs - 5) * 8 to point to the base
 	 * of the arguments on the spill stack.
 	 */
 	ld_32		VOL_TEMP1, SAFE_TEMP1, $(MACH_TRAP_REGS_OFFSET + 8 * MACH_SPILL_SP)
-	Nop
-	sll		VOL_TEMP3, SAFE_TEMP3, $3
-	add_nt		VOL_TEMP1, VOL_TEMP1, VOL_TEMP3
+	sub		VOL_TEMP3, SAFE_TEMP3, $5
+	sll		VOL_TEMP3, VOL_TEMP3, $3
+	add		VOL_TEMP1, VOL_TEMP1, VOL_TEMP3
+	/*
+	 * Move back the kernel's spill sp to cover the args that we are
+	 * about to copy onto it. 
+	 */
+	add_nt		NON_INTR_TEMP1, SPILL_SP, $0
+	sub		SPILL_SP, SPILL_SP, VOL_TEMP3
 	/*
 	 * Now fetch the args.  This code fetches up to 7 more args by jumping
 	 * into the right spot in the sequence.  The spot to jump is 
@@ -1577,6 +1583,7 @@ sysCallTrap_FetchArgs:
 	 *	VOL_TEMP1:	User spill SP
 	 *	VOL_TEMP2:	Temporary.
 	 *	VOL_TEMP3:	Spill stack size.
+	 *	NON_INTR_TEMP1:	Kernel SP
 	 */
 	add_nt		VOL_TEMP2, r0, $12
 	sub		SAFE_TEMP3, VOL_TEMP2, SAFE_TEMP3
@@ -1590,38 +1597,34 @@ sysCallTrap_FetchArgs:
 _MachFetchArgStart:
 	ld_32		VOL_TEMP2, VOL_TEMP1, $-56	/* 7 args */
 	Nop
-	st_32		VOL_TEMP2, SPILL_SP, $-56
+	st_32		VOL_TEMP2, NON_INTR_TEMP1, $-56
 	Nop
 	ld_32		VOL_TEMP2, VOL_TEMP1, $-48	/* 6 args */
 	Nop
-	st_32		VOL_TEMP2, SPILL_SP, $-48
+	st_32		VOL_TEMP2, NON_INTR_TEMP1, $-48
 	Nop
 	ld_32		VOL_TEMP2, VOL_TEMP1, $-40	/* 5 args */
 	Nop
-	st_32		VOL_TEMP2, SPILL_SP, $-40
+	st_32		VOL_TEMP2, NON_INTR_TEMP1, $-40
 	Nop
 	ld_32		VOL_TEMP2, VOL_TEMP1, $-32	/* 4 args */
 	Nop
-	st_32		VOL_TEMP2, SPILL_SP, $-32
+	st_32		VOL_TEMP2, NON_INTR_TEMP1, $-32
 	Nop
 	ld_32		VOL_TEMP2, VOL_TEMP1, $-24	/* 3 args */
 	Nop
-	st_32		VOL_TEMP2, SPILL_SP, $-24
+	st_32		VOL_TEMP2, NON_INTR_TEMP1, $-24
 	Nop
 	ld_32		VOL_TEMP2, VOL_TEMP1, $-16	/* 2 args */
 	Nop
-	st_32		VOL_TEMP2, SPILL_SP, $-16
+	st_32		VOL_TEMP2, NON_INTR_TEMP1, $-16
 	Nop
-	ld_32		VOL_TEMP2, VOL_TEMP1, $-8	/* 1 args */
+	ld_32		VOL_TEMP2, VOL_TEMP1, $-8	/* 1 arg */
 	Nop
-	st_32		VOL_TEMP2, SPILL_SP, $-8
+	st_32		VOL_TEMP2, NON_INTR_TEMP1, $-8
 	Nop
 	.globl _MachFetchArgEnd
 _MachFetchArgEnd:
-	/*
-	 * Set the kernel's spill stack.
-	 */
-	add_nt		SPILL_SP, VOL_TEMP3, $0
 
 sysCallTrap_CallRoutine:
 	/*
