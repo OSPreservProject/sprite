@@ -21,6 +21,20 @@
 #endif
 
 /*
+ * Since the index into the segment table is passed to various
+ * machine-dependent routines, its size must depend on the hardware size
+ * or else be the largest size used, which would waste space.  So far, this
+ * has only been generalized for the various types of sun4s.
+ */
+#ifdef sun4
+#ifdef sun4c
+typedef	unsigned short	VMMACH_SEG_NUM;	/* should be unsigned char, but fails */
+#else
+typedef	unsigned short	VMMACH_SEG_NUM;
+#endif	/* sun4c */
+#endif	/* sun4 */
+
+/*
  * Machine dependent data for each software segment.  The data for each 
  * segment is a hardware segment table that contains one entry for each
  * hardware segment in the software segment's virtual address space.
@@ -30,7 +44,7 @@
  */
 typedef struct VmMach_SegData {
 #ifdef sun4
-    unsigned short	*segTablePtr;
+    VMMACH_SEG_NUM	*segTablePtr;
 #else
     unsigned char 	*segTablePtr;
 #endif /* sun4 */
