@@ -906,6 +906,7 @@ Dbg_Main(stackHole, trapStack)
 
 	    case DBG_GET_STOP_INFO: {
 		StopInfo	stopInfo;
+		extern void	MachContextSwitch();
 		stopInfo.codeStart = (int)mach_CodeStart;
 		if (procPtr != (Proc_ControlBlock *) NIL) {
 		    stopInfo.maxStackAddr = 
@@ -913,7 +914,7 @@ Dbg_Main(stackHole, trapStack)
 		    Byte_Copy(sizeof(procPtr->saveRegs),
 			    (Address) procPtr->saveRegs,
 			    (Address) stopInfo.genRegs);
-		    stopInfo.pc = (int) ((Address) Mach_ContextSwitch);
+		    stopInfo.pc = (int) ((Address) MachContextSwitch);
 		} else {
 		    stopInfo.maxStackAddr = dbgMaxStackAddr;
 		    Byte_Copy(sizeof(dbgTrapStack.genRegs),
