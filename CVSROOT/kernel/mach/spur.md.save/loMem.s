@@ -130,6 +130,8 @@
 	.globl _MachSigReturn
 	.globl _MachGetWinMem
 	.globl _MachUserAction
+	.globl _machNonmaskableIntrMask
+	.globl _machIntrMask 
 
 /*
  * The KPSW value to set and 
@@ -217,12 +219,20 @@ _debugger_active_address:
  *
  * Other options are LD_PC_RELATIVE or LD_CONSTANT.
  */
+traceStartAddr:			.long 0x100000
+traceEndAddr:			.long 0x400000
+traceOvFlowBit:			.long 0x10000000
 runningProcesses: 		.long _proc_RunningProcesses
 _machCurStatePtr: 		.long 0
 _machStatePtrOffset:		.long 0
 _machSpecialHandlingOffset:	.long 0
 _machMaxSysCall	:		.long 0
 _machKcallTableOffset:		.long 0
+_machIntrMask:			.long 0
+_machNonmaskableIntrMask:	.long 0
+
+_machNumOvFlow:			.long 0
+_machNumUnderFlow:		.long 0
 
 numArgsPtr:			.long _machNumArgs
 debugStatePtr:			.long _machDebugState
@@ -306,11 +316,15 @@ start:
  *	KERN_PT2_BASE		The address of the 2nd level kernel
  *				page tables.
  */
-#define	MEM_SLOT_MASK		0xff000000
-#define KERN_FIRST_PHYS_PAGE	2
+
+#ifdef small_mem
 #define	KERN_PT_FIRST_PAGE	60
+#else
+#define	KERN_PT_FIRST_PAGE	1024
+#endif
+
 #define	KERN_NUM_PAGES		1024
-#define	KERN_PT_BASE	(MEM_SLOT_MASK | (KERN_PT_FIRST_PAGE * VMMACH_PAGE_SIZE))
+#define	KERN_PT_BASE	(MACH_MEM_SLOT_MASK | (KERN_PT_FIRST_PAGE * VMMACH_PAGE_SIZE))
 #define	KERN_PT2_BASE	(KERN_PT_BASE + ((VMMACH_SEG_PT_SIZE / 4) * VMMACH_KERN_PT_QUAD))
 
 /*
@@ -327,7 +341,7 @@ start:
  */
 	LD_CONSTANT(r1, KERN_PT2_BASE)
 	add_nt		r2, r0, $VMMACH_NUM_PT_PAGES
-	LD_CONSTANT(r3, MEM_SLOT_MASK | (KERN_PT_FIRST_PAGE << VMMACH_PAGE_FRAME_SHIFT) | VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | VMMACH_KRW_URO_PROT | VMMACH_REFERENCED_BIT | VMMACH_MODIFIED_BIT)
+	LD_CONSTANT(r3, MACH_MEM_SLOT_MASK | (KERN_PT_FIRST_PAGE << VMMACH_PAGE_FRAME_SHIFT) | VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | VMMACH_KRW_URO_PROT | VMMACH_REFERENCED_BIT | VMMACH_MODIFIED_BIT)
 	LD_CONSTANT(r4, 1 << VMMACH_PAGE_FRAME_SHIFT)
 
 1:
@@ -340,13 +354,14 @@ start:
 	cmp_br_delayed	gt, r2, $1, 1b
 	Nop
 
+#ifdef small_mem
 /*
  * Remap 16 Mbytes of the device 2nd level page tables for now.
  */
 	LD_CONSTANT(r1, KERN_PT2_BASE)
 	add_nt		r1, r1, $512 
 	add_nt		r2, r0, $4
-	LD_CONSTANT(r3, MEM_SLOT_MASK | ((KERN_PT_FIRST_PAGE - 4) << VMMACH_PAGE_FRAME_SHIFT) | VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | VMMACH_KRW_URO_PROT | VMMACH_REFERENCED_BIT | VMMACH_MODIFIED_BIT)
+	LD_CONSTANT(r3, MACH_MEM_SLOT_MASK | ((KERN_PT_FIRST_PAGE - 4) << VMMACH_PAGE_FRAME_SHIFT) | VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | VMMACH_KRW_URO_PROT | VMMACH_REFERENCED_BIT | VMMACH_MODIFIED_BIT)
 	LD_CONSTANT(r4, 1 << VMMACH_PAGE_FRAME_SHIFT)
 1:
 	st_32		r3, r1, $0
@@ -355,6 +370,7 @@ start:
 	sub		r2, r2, $1
 	cmp_br_delayed	gt, r2, $0, 1b
 	Nop
+#endif
 
 /*
  * Next initialize the kernel page table to point to 4 Mbytes of mapped
@@ -362,7 +378,7 @@ start:
  */
 	LD_CONSTANT(r1, KERN_PT_BASE)
 	add_nt		r2, r0, $KERN_NUM_PAGES
-	LD_CONSTANT(r3, MEM_SLOT_MASK | (KERN_FIRST_PHYS_PAGE << VMMACH_PAGE_FRAME_SHIFT) | VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | VMMACH_KRW_URO_PROT | VMMACH_REFERENCED_BIT | VMMACH_MODIFIED_BIT)
+	LD_CONSTANT(r3, MACH_MEM_SLOT_MASK | (MACH_FIRST_PHYS_PAGE << VMMACH_PAGE_FRAME_SHIFT) | VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | VMMACH_KRW_URO_PROT | VMMACH_REFERENCED_BIT | VMMACH_MODIFIED_BIT)
 
 1:
 	st_32		r3, r1, $0
@@ -424,8 +440,13 @@ refreshWell:
 	nop
 	jump		ErrorTrap
 	nop
+	rd_special	r7, pc
+	add_nt		r7, r7, $24
+	ld_32_ro	r2, r1, $0
+	nop
+	jump		ErrorTrap
+	nop
 	wr_kpsw		r3, $0
-
 
 /*
  * Initialize the cwp, swp and SPILL_SP to their proper values.
@@ -434,6 +455,16 @@ refreshWell:
 	LD_CONSTANT(r1, MACH_STACK_BOTTOM)
 	wr_special	swp, r1, $0
 	LD_CONSTANT(SPILL_SP, MACH_CODE_START)
+
+/*
+ * Clear out the upsw.
+ */
+	wr_special	upsw, r0, $0
+
+/*
+ * Clear out the interrupt mask register so that no interrupts are enabled.
+ */
+	WRITE_STATUS_REGS(MACH_INTR_MASK_0, r0)
 
 #ifndef BARB
 /*
@@ -477,6 +508,9 @@ mainAddr:	.long	_main
  *	killed.  Also if in user mode more memory will be wired down if not
  * 	enough is wired already.
  */
+winOvFlow_Const1:
+	.long 0x8387
+
 WinOvFlow:
 	rd_kpsw		SAFE_TEMP1			
 	and		SAFE_TEMP1, SAFE_TEMP1, $MACH_KPSW_CUR_MODE
@@ -490,33 +524,84 @@ winOvFlow_SaveWindow:
 	 * Actually save the window.
 	 */
 	add_nt		SAFE_TEMP2, r1, $0	# Save r1
+#ifdef ovflow_tracing
+	add_nt		SAFE_TEMP3, r2, $0
+	add_nt		NON_INTR_TEMP1, r3, $0
+	LD_PC_RELATIVE(r2, winOvFlow_Const1)
+#endif
 	rd_special	VOL_TEMP1, cwp
 	wr_special	cwp, VOL_TEMP1, $4	# Move forward one window.
 	Nop
 	rd_special	r1, swp
 	wr_special	swp, r1, $MACH_SAVED_WINDOW_SIZE
 	add_nt		r1, r1, $MACH_SAVED_WINDOW_SIZE
-	st_40		r10, r1, $0
-	st_40		r11, r1, $8
-	st_40		r12, r1, $16
-	st_40		r13, r1, $24
-	st_40		r14, r1, $32
-	st_40		r15, r1, $40
-	st_40		r16, r1, $48
-	st_40		r17, r1, $56
-	st_40		r18, r1, $64
-	st_40		r19, r1, $72
-	st_40		r20, r1, $80
-	st_40		r21, r1, $88
-	st_40		r22, r1, $96
-	st_40		r23, r1, $104
-	st_40		r24, r1, $112
-	st_40		r25, r1, $120
+
+#ifdef ovflow_tracing
+	ld_32		r2, r0, $_machNumOvFlow
+	nop
+	add_nt		r2, r2, $1
+	st_32		r2, r0, $_machNumOvFlow
+	cmp_br_delayed	lt, r1, r2, 1f
+	nop
+	wr_special	cwp, r0, $0x0
+	st_32		r10, r0, $0x1000
+	wr_special	cwp, r0, $0x4
+	st_32		r10, r0, $0x1004
+	wr_special	cwp, r0, $0x8
+	st_32		r10, r0, $0x1008
+	wr_special	cwp, r0, $0xc
+	st_32		r10, r0, $0x100c
+	wr_special	cwp, r0, $0x10
+	st_32		r10, r0, $0x1010
+	wr_special	cwp, r0, $0x14
+	st_32		r10, r0, $0x1014
+	wr_special	cwp, r0, $0x18
+	st_32		r10, r0, $0x1018
+	wr_special	cwp, r0, $0x1c
+	st_32		r10, r0, $0x101c
+	rd_special	r10, swp
+	st_32		r10, r0, $0x1020
+	st_32		r1, r0, $0x1024
+	st_32		r0, r0, $-1
+	nop
+
+1:
+	ld_32		r2, r0, $traceStartAddr
+	ld_32		r3, r0, $traceOvFlowBit
+	nop
+	or		r3, r3, r10
+	st_32		r3, r2, $0
+	st_32		r1, r2, $4
+	add_nt		r2, r2, $8
+	st_32		r2, r0, $traceStartAddr
+#endif
+
+	st_32		r10, r1, $0
+	st_32		r11, r1, $8
+	st_32		r12, r1, $16
+	st_32		r13, r1, $24
+	st_32		r14, r1, $32
+	st_32		r15, r1, $40
+	st_32		r16, r1, $48
+	st_32		r17, r1, $56
+	st_32		r18, r1, $64
+	st_32		r19, r1, $72
+	st_32		r20, r1, $80
+	st_32		r21, r1, $88
+	st_32		r22, r1, $96
+	st_32		r23, r1, $104
+	st_32		r24, r1, $112
+	st_32		r25, r1, $120
 	rd_special	r1, cwp
 	wr_special	cwp, r1, $-4		# Move back one window.
 	Nop
 
 	add_nt		r1, SAFE_TEMP2, $0	# Restore r1
+#ifdef ovflow_tracing
+	add_nt		r2, SAFE_TEMP3, $0
+	add_nt		r3, NON_INTR_TEMP1, $0
+#endif
+
 	/* 
 	 * See if we have to allocate more memory.  We need to allocate more
 	 * if
@@ -572,31 +657,52 @@ WinUnFlow:
 	/* DOESN'T RETURN */
 winUnFlow_RestoreWindow:
 	add_nt		SAFE_TEMP2, r1, $0	# Save r1
+#ifdef ovflow_tracing
+	add_nt		SAFE_TEMP3, r2, $0
+#endif
 	rd_special	r1, swp
 	rd_special	VOL_TEMP1, cwp
 	wr_special	cwp, VOL_TEMP1,  $-8	# move back two windows
 	Nop
-	ld_40		r10, r1,   $0
-	ld_40		r11, r1,   $8
-	ld_40		r12, r1,  $16
-	ld_40		r13, r1,  $24
-	ld_40		r14, r1,  $32
-	ld_40		r15, r1,  $40
-	ld_40		r16, r1,  $48
-	ld_40		r17, r1,  $56
-	ld_40		r18, r1,  $64
-	ld_40		r19, r1,  $72
-	ld_40		r20, r1,  $80
-	ld_40		r21, r1,  $88
-	ld_40		r22, r1,  $96
-	ld_40		r23, r1, $104
-	ld_40		r24, r1, $112
-	ld_40		r25, r1, $120
+
+#ifdef ovflow_tracing
+	ld_32		r2, r0, $_machNumUnderFlow
+	nop
+	add_nt		r2, r2, $1
+	st_32		r2, r0, $_machNumUnderFlow
+
+	ld_32		r2, r0, $traceStartAddr
+	nop
+	st_32		r10, r2, $0
+	st_32		r1, r2, $4
+	add_nt		r2, r2, $8
+	st_32		r2, r0, $traceStartAddr
+#endif
+
+	ld_32		r10, r1,   $0
+	ld_32		r11, r1,   $8
+	ld_32		r12, r1,  $16
+	ld_32		r13, r1,  $24
+	ld_32		r14, r1,  $32
+	ld_32		r15, r1,  $40
+	ld_32		r16, r1,  $48
+	ld_32		r17, r1,  $56
+	ld_32		r18, r1,  $64
+	ld_32		r19, r1,  $72
+	ld_32		r20, r1,  $80
+	ld_32		r21, r1,  $88
+	ld_32		r22, r1,  $96
+	ld_32		r23, r1, $104
+	ld_32		r24, r1, $112
+	ld_32		r25, r1, $120
 	wr_special	swp, r1, $-MACH_SAVED_WINDOW_SIZE
 	rd_special	r1, cwp
 	wr_special	cwp,  r1, $8	# move back ahead two windows
 	Nop
 	add_nt		r1, SAFE_TEMP2, $0	# Restore r1
+#ifdef ovflow_tracing
+	add_nt		r2, SAFE_TEMP3, $0	# Restore r2
+#endif
 	/*
 	 * See if need more memory.  We need more if 
 	 *
@@ -807,7 +913,7 @@ faultIntr_NormFault:
 Interrupt:
 	/*
 	 * Read the interrupt status register and clear it.  The ISR is passed
-	 * as a arg to the interrupt routine.
+	 * as an arg to the interrupt routine.
 	 */
 	READ_STATUS_REGS(MACH_INTR_STATUS_0, OUTPUT_REG1)
 	WRITE_STATUS_REGS(MACH_INTR_STATUS_0, OUTPUT_REG1)
@@ -815,30 +921,25 @@ Interrupt:
 	 * The second argument is the kpsw.
 	 */
 	add_nt		OUTPUT_REG2, KPSW_REG, r0
-
 	/*
-	 * Save the insert register in a safe temporary.
+	 * Save the insert register in a safe temporary, disable all but
+	 * non-maskable interrupts and then enable all traps.
 	 */
 	rd_insert	SAFE_TEMP1
-
-	/*
-	 * Disable interrupts but enable all other traps.
-	 */
-	and		VOL_TEMP2, KPSW_REG, $(~MACH_KPSW_INTR_TRAP_ENA)
-	or		VOL_TEMP2, VOL_TEMP2, $MACH_KPSW_ALL_TRAPS_ENA
-	wr_kpsw		VOL_TEMP2, $0
+	ld_32		SAFE_TEMP2, r0, $_machNonmaskableIntrMask
+	nop
+	WRITE_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP2)
+	wr_kpsw		KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
 	/*
 	 * See if took the interrupt from user mode.
 	 */
 	and		VOL_TEMP2, KPSW_REG, $MACH_KPSW_PREV_MODE
 	cmp_br_delayed	eq, VOL_TEMP2, $0, interrupt_KernMode
 	Nop
-
 	/*
 	 * We took the interrupt from user mode.
 	 */
 	VERIFY_SWP(interrupt_GoodSWP)
-
 	/*
 	 * We have a bogus user swp.  Switch over to the kernel's stacks
 	 * and take the interrupt.  After taking the interrupt kill the user
@@ -847,8 +948,9 @@ Interrupt:
 	SWITCH_TO_KERNEL_STACKS()
 	call		_MachInterrupt
 	Nop
-	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
-	wr_kpsw		VOL_TEMP1, $0
+	ld_32		SAFE_TEMP1, r0, $_machIntrMask
+	nop
+	WRITE_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP1)
 	add_nt		OUTPUT_REG1, r0, $MACH_USER_BAD_SWP
 	call		_MachUserError
 	Nop
@@ -860,10 +962,15 @@ interrupt_GoodSWP:
 	call		_MachInterrupt
 	Nop
 	/*
-	 * Restore the insert register and then do a normal return
-	 * from trap in case the user process needs to take some action.
+	 * Restore the insert register and the kpsw, enable interrupts and 
+	 * then do a normal return from trap in case the user process needs to
+	 * take some action.
 	 */
 	wr_insert	SAFE_TEMP1
+	wr_kpsw		KPSW_REG, $0
+	ld_32		SAFE_TEMP1, r0, $_machIntrMask
+	nop
+	WRITE_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP1)
 	add_nt		RETURN_VAL_REG, r0, $MACH_NORM_RETURN
 	jump		ReturnTrap
 	Nop
@@ -872,13 +979,16 @@ interrupt_KernMode:
 	call 		_MachInterrupt
 	Nop
 	/*
-	 * Restore insert register and kpsw and return.
+	 * Restore insert register and kpsw, enable interrupts and return.
 	 */
 	wr_insert	SAFE_TEMP1
+	ld_32		SAFE_TEMP1, r0, $_machIntrMask
+	nop
+	WRITE_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP1)
+	or		KPSW_REG, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
 	wr_kpsw		KPSW_REG, $0
 	jump_reg	CUR_PC_REG, $0
-	return_trap	NEXT_PC_REG, $0
-	Nop
+	return		NEXT_PC_REG, $0
 
 /*
  *---------------------------------------------------------------------------
@@ -1032,6 +1142,10 @@ cmpTrap_CallFunc:
 	Nop
 	jump		SingleStepTrap
 	Nop
+	jump		CallDebuggerTrap
+	Nop
+	jump		cmpTrap_RefreshTrap
+	Nop
 	jump		SysCallTrap	
 	Nop
 	jump		SigReturnTrap
@@ -1049,8 +1163,6 @@ cmpTrap_CallFunc:
 	jump		cmpTrap_BadSWPTrap
 	Nop
 	jump		cmpTrap_TestFaultTrap
-	Nop
-	jump		cmpTrap_RefreshTrap
 	Nop
 
 cmpTrap_FPUTrap:
@@ -1182,6 +1294,44 @@ SingleStepTrap:
 
 singleStep_KernSS:
 	CALL_DEBUGGER(r0, MACH_SINGLE_STEP);
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * CallDebuggerTrap --
+ *
+ *	Handle a call debugger trap.
+ *
+ *----------------------------------------------------------------------------
+ */
+CallDebuggerTrap:
+	/*
+	 * We just took a breakpoint trap.  If this is a user trap then 
+	 * call the user error routine.  Otherwise call the kernel debugger.
+	 */
+	and		VOL_TEMP1, KPSW_REG, $MACH_KPSW_PREV_MODE
+	cmp_br_delayed	eq, VOL_TEMP1, $0, callDebugger_KernBP
+	Nop
+	/*
+	 * Enable all traps and call the user error routine.
+	 */
+	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
+	wr_kpsw		VOL_TEMP1, $0
+	add_nt		OUTPUT_REG1, r0, $MACH_CALL_DEBUGGER
+	rd_insert	VOL_TEMP1
+	call		_MachUserError
+	Nop
+	wr_insert	VOL_TEMP1
+	/*
+	 * Do a return from trap.
+	 */
+	jump		ReturnTrap
+	Nop
+
+callDebugger_KernBP:
+	add_nt		CUR_PC_REG, NEXT_PC_REG, $0
+	add_nt		NEXT_PC_REG, r0, $0
+	CALL_DEBUGGER(r0, MACH_CALL_DEBUGGER);
 
 /*
  *----------------------------------------------------------------------------
@@ -1380,7 +1530,7 @@ SysCall_Return:
 	 * stack pointer and the kpsw and then do a normal return from
 	 * trap.
 	 */
-	st_40		RETURN_VAL_REG, SAFE_TEMP1, $(MACH_TRAP_REGS_OFFSET + 8 * MACH_RETURN_VAL_REG)
+	st_32		RETURN_VAL_REG, SAFE_TEMP1, $(MACH_TRAP_REGS_OFFSET + 8 * MACH_RETURN_VAL_REG)
 	ld_32		SPILL_SP, SAFE_TEMP1, $MACH_KERN_STACK_END_OFFSET
 	Nop
 	add_nt		RETURN_VAL_REG, r0, $MACH_NORM_RETURN
@@ -1588,10 +1738,11 @@ returnTrap_NormReturn:
 	/*
 	 * Put us back into user mode.
 	 */
-	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_CUR_MODE
-	wr_kpsw		VOL_TEMP1, $0
+	or		KPSW_REG, KPSW_REG, $MACH_KPSW_CUR_MODE
 
 returnTrap_Return:
+	or		KPSW_REG, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
+	wr_kpsw		KPSW_REG, $0
 	/*
 	 * If we are supposed to return to the next PC then set the current
 	 * PC to the next PC and clear the next PC so that the return
@@ -1611,10 +1762,10 @@ returnTrap_Return:
 	cmp_br_delayed	eq, NEXT_PC_REG, $0, returnTrap_No2ndPC
 	Nop
 	jump_reg	CUR_PC_REG, $0
-	return_trap	NEXT_PC_REG, $0
+	return		NEXT_PC_REG, $0
 
 returnTrap_No2ndPC:
-	return_trap	CUR_PC_REG, $0
+	return		CUR_PC_REG, $0
 	Nop
 
 /*
@@ -1781,7 +1932,9 @@ SaveState:
 	st_32		KPSW_REG, VOL_TEMP1, $MACH_REG_STATE_KPSW_OFFSET
 	rd_special	VOL_TEMP3, upsw
 	st_32		VOL_TEMP3, VOL_TEMP1, $MACH_REG_STATE_UPSW_OFFSET
+	and		CUR_PC_REG, CUR_PC_REG, $~3
 	st_32		CUR_PC_REG, VOL_TEMP1, $MACH_REG_STATE_CUR_PC_OFFSET
+	and		NEXT_PC_REG, NEXT_PC_REG, $~3
 	st_32		NEXT_PC_REG, VOL_TEMP1, $MACH_REG_STATE_NEXT_PC_OFFSET
 	rd_insert	VOL_TEMP3
 	st_32		VOL_TEMP3, VOL_TEMP1, $MACH_REG_STATE_INSERT_OFFSET
@@ -1789,16 +1942,16 @@ SaveState:
 	/*
 	 * Save all of the globals.
 	 */
-	st_40		r0, VOL_TEMP1, $0
-	st_40		r1, VOL_TEMP1, $8
-	st_40		r2, VOL_TEMP1, $16
-	st_40		r3, VOL_TEMP1, $24
-	st_40		r4, VOL_TEMP1, $32
-	st_40		r5, VOL_TEMP1, $40
-	st_40		r6, VOL_TEMP1, $48
-	st_40		r7, VOL_TEMP1, $56
-	st_40		r8, VOL_TEMP1, $64
-	st_40		r9, VOL_TEMP1, $72
+	st_32		r0, VOL_TEMP1, $0
+	st_32		r1, VOL_TEMP1, $8
+	st_32		r2, VOL_TEMP1, $16
+	st_32		r3, VOL_TEMP1, $24
+	st_32		r4, VOL_TEMP1, $32
+	st_32		r5, VOL_TEMP1, $40
+	st_32		r6, VOL_TEMP1, $48
+	st_32		r7, VOL_TEMP1, $56
+	st_32		r8, VOL_TEMP1, $64
+	st_32		r9, VOL_TEMP1, $72
 
 	/*
 	 * Move where to save to into a global.
@@ -1822,28 +1975,28 @@ SaveState:
 	 * Now we are in the previous window.  Save all of its registers
 	 * into the state structure.
 	 */
-	st_40		r10, r1, $80
-	st_40		r11, r1, $88
-	st_40		r12, r1, $96
-	st_40		r13, r1, $104
-	st_40		r14, r1, $112
-	st_40		r15, r1, $120
-	st_40		r16, r1, $128
-	st_40		r17, r1, $136
-	st_40		r18, r1, $144
-	st_40		r19, r1, $152
-	st_40		r20, r1, $160
-	st_40		r21, r1, $168
-	st_40		r22, r1, $176
-	st_40		r23, r1, $184
-	st_40		r24, r1, $192
-	st_40		r25, r1, $200
-	st_40		r26, r1, $208
-	st_40		r27, r1, $216
-	st_40		r28, r1, $224
-	st_40		r29, r1, $232
-	st_40		r30, r1, $240
-	st_40		r31, r1, $248
+	st_32		r10, r1, $80
+	st_32		r11, r1, $88
+	st_32		r12, r1, $96
+	st_32		r13, r1, $104
+	st_32		r14, r1, $112
+	st_32		r15, r1, $120
+	st_32		r16, r1, $128
+	st_32		r17, r1, $136
+	st_32		r18, r1, $144
+	st_32		r19, r1, $152
+	st_32		r20, r1, $160
+	st_32		r21, r1, $168
+	st_32		r22, r1, $176
+	st_32		r23, r1, $184
+	st_32		r24, r1, $192
+	st_32		r25, r1, $200
+	st_32		r26, r1, $208
+	st_32		r27, r1, $216
+	st_32		r28, r1, $224
+	st_32		r29, r1, $232
+	st_32		r30, r1, $240
+	st_32		r31, r1, $248
 
 	/*
 	 * Now push all of the windows before the current one onto the saved
@@ -1875,22 +2028,22 @@ saveState_SaveRegs:
 	Nop
 					# Increment the swp by one window.
 	add_nt		r1, r1, $MACH_SAVED_WINDOW_SIZE
-	st_40		r10, r1, $0
-	st_40		r11, r1, $8
-	st_40		r12, r1, $16
-	st_40		r13, r1, $24
-	st_40		r14, r1, $32
-	st_40		r15, r1, $40
-	st_40		r16, r1, $48
-	st_40		r17, r1, $56
-	st_40		r18, r1, $64
-	st_40		r19, r1, $72
-	st_40		r20, r1, $80
-	st_40		r21, r1, $88
-	st_40		r22, r1, $96
-	st_40		r23, r1, $104
-	st_40		r24, r1, $112
-	st_40		r25, r1, $120
+	st_32		r10, r1, $0
+	st_32		r11, r1, $8
+	st_32		r12, r1, $16
+	st_32		r13, r1, $24
+	st_32		r14, r1, $32
+	st_32		r15, r1, $40
+	st_32		r16, r1, $48
+	st_32		r17, r1, $56
+	st_32		r18, r1, $64
+	st_32		r19, r1, $72
+	st_32		r20, r1, $80
+	st_32		r21, r1, $88
+	st_32		r22, r1, $96
+	st_32		r23, r1, $104
+	st_32		r24, r1, $112
+	st_32		r25, r1, $120
 	jump		saveState_SaveRegs
 	Nop
 
@@ -1937,28 +2090,28 @@ RestoreState:
 	 * saved cwp points to the window that we saved in the reg state 
 	 * struct.
 	 */
-	ld_40		r10, r1, $80
-	ld_40		r11, r1, $88
-	ld_40		r12, r1, $96
-	ld_40		r13, r1, $104
-	ld_40		r14, r1, $112
-	ld_40		r15, r1, $120
-	ld_40		r16, r1, $128
-	ld_40		r17, r1, $136
-	ld_40		r18, r1, $144
-	ld_40		r19, r1, $152
-	ld_40		r20, r1, $160
-	ld_40		r21, r1, $168
-	ld_40		r22, r1, $176
-	ld_40		r23, r1, $184
-	ld_40		r24, r1, $192
-	ld_40		r25, r1, $200
-	ld_40		r26, r1, $208
-	ld_40		r27, r1, $216
-	ld_40		r28, r1, $224
-	ld_40		r29, r1, $232
-	ld_40		r30, r1, $240
-	ld_40		r31, r1, $248
+	ld_32		r10, r1, $80
+	ld_32		r11, r1, $88
+	ld_32		r12, r1, $96
+	ld_32		r13, r1, $104
+	ld_32		r14, r1, $112
+	ld_32		r15, r1, $120
+	ld_32		r16, r1, $128
+	ld_32		r17, r1, $136
+	ld_32		r18, r1, $144
+	ld_32		r19, r1, $152
+	ld_32		r20, r1, $160
+	ld_32		r21, r1, $168
+	ld_32		r22, r1, $176
+	ld_32		r23, r1, $184
+	ld_32		r24, r1, $192
+	ld_32		r25, r1, $200
+	ld_32		r26, r1, $208
+	ld_32		r27, r1, $216
+	ld_32		r28, r1, $224
+	ld_32		r29, r1, $232
+	ld_32		r30, r1, $240
+	ld_32		r31, r1, $248
 	/*
 	 * Go forward to the window that we are to execute in.
 	 */
@@ -1979,15 +2132,15 @@ RestoreState:
 	/*
 	 * Restore the globals.
 	 */
-	ld_40		r1, VOL_TEMP1, $8
-	ld_40		r2, VOL_TEMP1, $16
-	ld_40		r3, VOL_TEMP1, $24
-	ld_40		r4, VOL_TEMP1, $32
-	ld_40		r5, VOL_TEMP1, $40
-	ld_40		r6, VOL_TEMP1, $48
-	ld_40		r7, VOL_TEMP1, $56
-	ld_40		r8, VOL_TEMP1, $64
-	ld_40		r9, VOL_TEMP1, $72
+	ld_32		r1, VOL_TEMP1, $8
+	ld_32		r2, VOL_TEMP1, $16
+	ld_32		r3, VOL_TEMP1, $24
+	ld_32		r4, VOL_TEMP1, $32
+	ld_32		r5, VOL_TEMP1, $40
+	ld_32		r6, VOL_TEMP1, $48
+	ld_32		r7, VOL_TEMP1, $56
+	ld_32		r8, VOL_TEMP1, $64
+	ld_32		r9, VOL_TEMP1, $72
 	/*
 	 * Return to our caller.
 	 */
@@ -2007,6 +2160,8 @@ machRefresh_Const1:
 	.long		MACH_CC_FAULT_ADDR
 machRefresh_Const2:
 	.long		MACH_KPSW_CC_REFRESH
+machRefresh_Const3:
+	.long		0x100403e0
 
 	.globl _MachRefreshCCWells
 _MachRefreshCCWells:
@@ -2014,7 +2169,14 @@ _MachRefreshCCWells:
 	LD_PC_RELATIVE(SAFE_TEMP2, machRefresh_Const1)
 	LD_PC_RELATIVE(SAFE_TEMP3, machRefresh_Const2)
 	wr_kpsw		SAFE_TEMP1, SAFE_TEMP3
+	LD_PC_RELATIVE(NON_INTR_TEMP1, machRefresh_Const3)
+	st_external	r0, NON_INTR_TEMP1, $MACH_CO_FLUSH
 	ld_32_ri	VOL_TEMP1, SAFE_TEMP2, $0
+	nop
+	jump		ErrorTrap
+	nop
+	st_external	r0, NON_INTR_TEMP1, $MACH_CO_FLUSH
+	ld_32_ro	VOL_TEMP1, SAFE_TEMP2, $0
 	nop
 	jump		ErrorTrap
 	nop
@@ -2114,11 +2276,11 @@ _MachContextSwitch:
 /*
  *----------------------------------------------------------------------------
  *
- * Mach_DisableIntr --
+ * Mach_DisableNonmaskableIntr --
  *
- *	Mach_DisableIntr()
+ *	Mach_DisableNonmaskableIntr()
  *
- *	Disable interrupts.
+ *	Disable non-maskable interrupts.
  *
  * Results:
  *     	None.
@@ -2128,8 +2290,8 @@ _MachContextSwitch:
  *
  *----------------------------------------------------------------------------
  */
-	.globl	_Mach_DisableIntr
-_Mach_DisableIntr:
+	.globl	_Mach_DisableNonmaskableIntr
+_Mach_DisableNonmaskableIntr:
 	rd_kpsw		VOL_TEMP1
 	and		VOL_TEMP1, VOL_TEMP1, $(~MACH_KPSW_INTR_TRAP_ENA)
 	wr_kpsw		VOL_TEMP1, $0
@@ -2139,9 +2301,9 @@ _Mach_DisableIntr:
 /*
  *----------------------------------------------------------------------------
  *
- * Mach_EnableIntr --
+ * Mach_EnableNonmaskableIntr --
  *
- *	void Mach_EnableIntr()
+ *	void Mach_EnableNonmaskableIntr()
  *
  *	Enable interrupts.
  *
@@ -2153,11 +2315,64 @@ _Mach_DisableIntr:
  *
  *----------------------------------------------------------------------------
  */
-	.globl	_Mach_EnableIntr
-_Mach_EnableIntr:
+	.globl	_Mach_EnableNonmaskableIntr
+_Mach_EnableNonmaskableIntr:
+	ld_32		SAFE_TEMP1, r0, $_machNonmaskableIntrMask
+	nop
+	WRITE_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP1)
 	rd_kpsw		VOL_TEMP1
 	or		VOL_TEMP1, VOL_TEMP1, $MACH_KPSW_INTR_TRAP_ENA
 	wr_kpsw		VOL_TEMP1, $0
+	return		RETURN_ADDR_REG, $8
+	Nop
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * Mach_DisableIntr --
+ *
+ *	Mach_DisableIntr()
+ *
+ *	Disable maskable interrupts.
+ *
+ * Results:
+ *     	None.
+ *
+ * Side effects:
+ *	Interrupts are disabled.
+ *
+ *----------------------------------------------------------------------------
+ */
+	.globl	_Mach_DisableIntr
+_Mach_DisableIntr:
+	ld_32		SAFE_TEMP1, r0, $_machNonmaskableIntrMask
+	nop
+	WRITE_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP1)
+	return		RETURN_ADDR_REG, $8
+	Nop
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * Mach_EnableIntr --
+ *
+ *	void Mach_EnableIntr()
+ *
+ *	Enable all interrupts.
+ *
+ * Results:
+ *     	None.
+ *
+ * Side effects:
+ *	Interrupts are enabled.
+ *
+ *----------------------------------------------------------------------------
+ */
+	.globl	_Mach_EnableIntr
+_Mach_EnableIntr:
+	ld_32		SAFE_TEMP1, r0, $_machIntrMask
+	nop
+	WRITE_STATUS_REGS(MACH_INTR_MASK_0, SAFE_TEMP1)
 	return		RETURN_ADDR_REG, $8
 	Nop
 
@@ -2185,6 +2400,31 @@ _Mach_TestAndSet:
 	test_and_set	RETURN_VAL_REG, INPUT_REG1, $0
 	return		RETURN_ADDR_REG, $8
 	Nop
+
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * Mach_SaveCCAndHalt --
+ *
+ *	int Mach_TestAndSet(intPtr)
+ *	    int *intPtr;
+ *
+ *	Test-and-set an integer.
+ *
+ * Results:
+ *     	Returns 0 if *intPtr was zero and 1 if *intPtr was non-zero.  Also
+ *	in all cases *intPtr is set to a non-zero value.
+ *
+ * Side effects:
+ *	*intPtr set to a non-zero value if not there already.
+ *
+ *----------------------------------------------------------------------------
+ */
+	.globl _Mach_SaveCCAndHalt
+_Mach_SaveCCAndHalt:
+	SAVE_CC_STATE_VIRT()
+	CALL_DEBUGGER(r0, MACH_BREAKPOINT)
 
 /*
  * ParseInstruction --

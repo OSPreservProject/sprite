@@ -407,6 +407,7 @@
  *	constErrorVal -	Constant error value.
  */
 #define	CALL_DEBUGGER(regErrorVal, constErrorVal) \
+	st_32		r0, r0, $-1; \
 	ld_32		VOL_TEMP1, r0, $debugStatePtr; \
 	rd_special	VOL_TEMP2, pc; \
 	add_nt		VOL_TEMP2, VOL_TEMP2, $16; \
@@ -451,6 +452,32 @@
 #define SAVE_CC_STATE() \
 	add_nt		r1, r0, $0; \
 	LD_CONSTANT(r2, 0xff03b000); \
+	nop; \
+1:	ld_external	r5, r1, $MACH_CO_RD_REG; \
+	nop; \
+	ld_external	r6, r1, $(MACH_CO_RD_REG + 0x20); \
+	wr_insert	$1; \
+	insert		r5, r5, r6; \
+	ld_external	r6, r1, $(MACH_CO_RD_REG + 0x40); \
+	wr_insert	$2; \
+	insert		r5, r5, r6; \
+	ld_external	r6, r1, $(MACH_CO_RD_REG + 0x60); \
+	wr_insert	$3; \
+	insert		r5, r5, r6; \
+	st_32		r5, r2, $0; \
+	add_nt		r1, r1, $0x80; \
+	add_nt		r2, r2, $4; \
+	add_nt		r3, r0, $0x1000; \
+	cmp_br_delayed	lt, r1, r3, 1b; \
+	nop
+
+
+/*
+ * Save the cache controller state.
+ */
+#define SAVE_CC_STATE_VIRT() \
+	add_nt		r1, r0, $0; \
+	LD_CONSTANT(r2, (MACH_STACK_BOTTOM + 4096)); \
 	nop; \
 1:	ld_external	r5, r1, $MACH_CO_RD_REG; \
 	nop; \

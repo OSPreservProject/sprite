@@ -121,11 +121,6 @@ void	InterruptError();
 void	MachFetchArgStart();
 void	MachFetchArgEnd();
 
-/*
- * The address where the UART is mapped.
- */
-Address	mach_UARTAddr = (Address)VMMACH_UART_ADDR;
-
 
 /*
  * ----------------------------------------------------------------------------
@@ -177,6 +172,10 @@ Mach_Init()
     for (i = 0; i < MACH_NUM_INTR_TYPES; i++) {
 	interruptHandlers[i] = InterruptError;
     }
+    /*
+     * Turn off all timers.
+     */
+    Mach_Write8bitCCReg(MACH_MODE_REG,0);
 }
 
 
@@ -313,9 +312,9 @@ Mach_SetupNewState(procPtr, parStatePtr, startFunc, startPC)
 	 * is the first and next PCs in the trap register state which will
 	 * be restored before the process is started running in user mode.
 	 */
-	Byte_Copy(sizeof(statePtr->userState.trapRegState),
-		  (Address)&parStatePtr->userState.trapRegState,
-		  (Address)&statePtr->userState.trapRegState);
+	bcopy((Address)&parStatePtr->userState.trapRegState,
+	      (Address)&statePtr->userState.trapRegState,
+	      sizeof(statePtr->userState.trapRegState));
     } else {
 	/*
 	 * Kernel processes start executing at startPC.
@@ -382,7 +381,7 @@ Mach_StartUserProc(procPtr, entryPoint)
     /*
      * Allocate memory for the saved window stack.
      */
-    Vm_UserMap(VM_READWRITE_ACCESS,
+    Vm_PinUserMem(VM_READWRITE_ACCESS,
 	       statePtr->userState.maxSWP - statePtr->userState.minSWP, 
 	       statePtr->userState.minSWP);
     MachRunUserProc();
@@ -422,7 +421,7 @@ Mach_ExecUserProc(procPtr, userStackPtr, entryPoint)
     /*
      * Free up the old saved window stack.
      */
-    Vm_UserUnmap(statePtr->userState.maxSWP - statePtr->userState.minSWP,
+    Vm_UnpinUserMem(statePtr->userState.maxSWP - statePtr->userState.minSWP,
 		 statePtr->userState.minSWP);
 
     regStatePtr = &statePtr->userState.trapRegState;
@@ -504,9 +503,9 @@ Mach_CopyState(statePtr, destProcPtr)
     Proc_ControlBlock	*destProcPtr;	/* Process control block to copy
 					 * state to. */
 {
-    Byte_Copy(sizeof(Mach_RegState),
-	      (Address)&statePtr->userState.trapRegState,
-	      (Address)&destProcPtr->machStatePtr->userState.trapRegState);
+    bcopy((Address)&statePtr->userState.trapRegState,
+	  (Address)&destProcPtr->machStatePtr->userState.trapRegState,
+	  sizeof(Mach_RegState));
 }
 
 
@@ -614,6 +613,7 @@ Mach_SetHandler(intrMask, handler)
 	mask = mask << 1;
 	intrType++;
     }
+    machIntrMask |= intrMask;
 }
 
 
@@ -672,6 +672,31 @@ Mach_AllocExtIntrNumber(handler,intrNumberPtr)
 /*
  * ----------------------------------------------------------------------------
  *
+ * Mach_SetNonmaskableIntr --
+ *
+ *      Set the non-maskable interrupt mask to the given value.  This will
+ *	define which interrupts are non-maskable.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+Mach_SetNonmaskableIntr(mask)
+    unsigned 	int	mask;
+{
+    machNonmaskableIntrMask = mask;
+}
+
+static unsigned int globStatusReg;
+
+/*
+ * ----------------------------------------------------------------------------
+ *
  * MachInterrupt --
  *
  *	Call the proper routine to handle an interrupt.
@@ -692,6 +717,8 @@ MachInterrupt(intrStatusReg, kpsw)
     unsigned	int	intrMask;
     int			intrType;
     unsigned	int	statusReg;
+
+    globStatusReg = intrStatusReg;
 
     mach_KernelMode = !(kpsw & MACH_KPSW_PREV_MODE);
     mach_AtInterruptLevel = TRUE;
@@ -797,6 +824,8 @@ MachVMFault(faultType, PC, isDestAddr, destAddr, kpsw)
     Address	destAddr;	/* Value of dest/src of store/load instruction*/
     int		kpsw;		/* The KPSW at the time of the fault. */
 {
+    return(MACH_KERN_ACCESS_VIOL);
+#ifdef real_kernel
     Proc_ControlBlock	*procPtr;
 
     procPtr = Proc_GetCurrentProc();
@@ -882,6 +911,7 @@ MachVMFault(faultType, PC, isDestAddr, destAddr, kpsw)
 	    }
 	}
     }
+#endif
 }
 
 
@@ -975,10 +1005,10 @@ MachGetWinMem()
 	     * full pages at once.
 	     */
 	    statePtr->userState.maxSWP -= VMMACH_PAGE_SIZE;
-	    Vm_UserUnmap(VMMACH_PAGE_SIZE, statePtr->userState.maxSWP);
+	    Vm_UnpinUserMem(VMMACH_PAGE_SIZE, statePtr->userState.maxSWP);
 	}
 	statePtr->userState.minSWP -= VMMACH_PAGE_SIZE;
-	Vm_UserMap(VM_READWRITE_ACCESS,
+	Vm_PinUserMem(VM_READWRITE_ACCESS,
 		   statePtr->userState.maxSWP - statePtr->userState.minSWP, 
 		   statePtr->userState.minSWP);
     } else if (swp > statePtr->userState.maxSWP - 2 * MACH_SAVED_WINDOW_SIZE) {
@@ -994,11 +1024,11 @@ MachGetWinMem()
 	     * Free the lowest page because we never want more than two
 	     * full pages at once.
 	     */
-	    Vm_UserUnmap(VMMACH_PAGE_SIZE, statePtr->userState.minSWP);
+	    Vm_UnpinUserMem(VMMACH_PAGE_SIZE, statePtr->userState.minSWP);
 	    statePtr->userState.minSWP += VMMACH_PAGE_SIZE;
 	}
 	statePtr->userState.maxSWP += VMMACH_PAGE_SIZE;
-	Vm_UserMap(VM_READWRITE_ACCESS,
+	Vm_PinUserMem(VM_READWRITE_ACCESS,
 		   statePtr->userState.maxSWP - statePtr->userState.minSWP, 
 		   statePtr->userState.minSWP);
     }
@@ -1124,5 +1154,5 @@ Mach_GetMachineType()
 int
 Mach_GetMachineArch()
 {
-	return (SYS_SPUR);
+    return (SYS_SPUR);
 }

@@ -71,6 +71,12 @@ extern	MachVectorTable		*machVectorTablePtr;
 extern	MachVectorTable 	machProtoVectorTable;
 
 /*
+ * The interrupt mask registers.
+ */
+extern	unsigned int	machNonmaskableIntrMask;
+extern	unsigned int	machIntrMask;
+
+/*
  * Internal functions.
  */
 extern	void	MachUserReturn();

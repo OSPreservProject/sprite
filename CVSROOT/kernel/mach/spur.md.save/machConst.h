@@ -30,17 +30,18 @@
  */
 #define	MACH_BREAKPOINT_TRAP		0
 #define	MACH_SINGLE_STEP_TRAP		1
-#define	MACH_SYS_CALL_TRAP		2
-#define	MACH_SIG_RETURN_TRAP		3
-#define	MACH_GET_WIN_MEM_TRAP		4
-#define	MACH_USER_FPU_EXCEPT_TRAP	5
-#define	MACH_USER_ILLEGAL_TRAP		6
-#define	MACH_USER_FIXNUM_TRAP		7
-#define	MACH_USER_OVERFLOW_TRAP		8
-#define	MACH_USER_BAD_SWP_TRAP		9
-#define	MACH_TEST_FAULT_TRAP		10
-#define	MACH_REFRESH_TRAP		11
-#define	MACH_MAX_TRAP_TYPE		11
+#define	MACH_CALL_DEBUGGER_TRAP		2
+#define	MACH_REFRESH_TRAP		3
+#define	MACH_SYS_CALL_TRAP		4
+#define	MACH_SIG_RETURN_TRAP		5
+#define	MACH_GET_WIN_MEM_TRAP		6
+#define	MACH_USER_FPU_EXCEPT_TRAP	7
+#define	MACH_USER_ILLEGAL_TRAP		8
+#define	MACH_USER_FIXNUM_TRAP		9
+#define	MACH_USER_OVERFLOW_TRAP		10
+#define	MACH_USER_BAD_SWP_TRAP		11
+#define	MACH_TEST_FAULT_TRAP		12
+#define	MACH_MAX_TRAP_TYPE		12
 
 /*
  * The return codes from the C trap handler routine:
@@ -82,6 +83,7 @@
  *	MACH_BAD_SYS_CALL	A bad system call type was passed in.
  *	MACH_BREAKPOINT		A process called the debugger.
  *	MACH_SINGLE_STEP	A single step trap occured.
+ *	MACH_CALL_DEBUGGER	The debugger was called.
  */
 #define	MACH_USER_FPU_EXCEPT		(MACH_MAX_RETURN_CODE + 1)
 #define	MACH_KERN_FPU_EXCEPT		(MACH_MAX_RETURN_CODE + 2)
@@ -100,6 +102,8 @@
 #define	MACH_BAD_SYS_CALL		(MACH_MAX_RETURN_CODE + 15)
 #define	MACH_BREAKPOINT			(MACH_MAX_RETURN_CODE + 16)
 #define	MACH_SINGLE_STEP		(MACH_MAX_RETURN_CODE + 17)
+#define	MACH_POWERUP			(MACH_MAX_RETURN_CODE + 18)
+#define	MACH_CALL_DEBUGGER		(MACH_MAX_RETURN_CODE + 19)
 
 /*
  * The size of a single saved window and all of the saved windows.
@@ -464,5 +468,15 @@
  * we can refresh the CC wells.
  */
 #define	MACH_CC_FAULT_ADDR	0x3ffffffc
+
+/*
+ * Physical memory constants:
+ *
+ *	MACH_MEM_SLOT_MASK	The bits to put into the high order bits
+ *				of any physical memory address.
+ *	MACH_FIRST_PHYS_PAGE	The first physical page that is usable.
+ */
+#define	MACH_MEM_SLOT_MASK	0xff000000
+#define	MACH_FIRST_PHYS_PAGE	2
 
 #endif _MACHCONST
