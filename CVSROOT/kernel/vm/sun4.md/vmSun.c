@@ -4392,7 +4392,7 @@ ByteFill(fillByte, numBytes, destPtr)
 /*
  * ----------------------------------------------------------------------------
  *
- * VmMach_SharedStart --
+ * VmMach_SharedStartAddr --
  *
  *      Determine the starting address for a shared segment.
  *
@@ -4404,11 +4404,15 @@ ByteFill(fillByte, numBytes, destPtr)
  *
  * ----------------------------------------------------------------------------
  */
-Address
-VmMach_SharedStart(reqAddr,size)
-Address		reqAddr;	/* Requested start address. */
+ReturnStatus
+VmMach_SharedStartAddr(procPtr,size,reqAddr)
+Proc_ControlBlock	*procPtr;
 int		size;		/* Length of shared segment. */
+Address		*reqAddr;	/* Requested start address. */
 {
-    return reqAddr;
+    return SUCCESS;
 }
 
+void VmMach_SharedSegFinish() {}
+void VmMach_SharedProcStart() {}
+void VmMach_SharedProcFinish() {}
