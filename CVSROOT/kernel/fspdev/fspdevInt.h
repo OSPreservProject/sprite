@@ -71,113 +71,39 @@ typedef struct FspdevNotify {
     Fs_Stream *streamPtr;
 } FspdevNotify;
 
-/*
- * The following types and macros are used to take pdev traces.
- */
-typedef enum { PDEVT_NIL, PDEVT_SRV_OPEN, PDEVT_CLT_OPEN, PDEVT_READ_AHEAD,
-	       PDEVT_SRV_CLOSE, PDEVT_CLT_CLOSE, PDEVT_READ_WAIT, 
-	       PDEVT_WAKEUP, PDEVT_REQUEST, PDEVT_REPLY,
-	       PDEVT_SRV_READ, PDEVT_SRV_READ_WAIT, PDEVT_SRV_WRITE,
-	       PDEVT_SRV_SELECT, PDEVT_CNTL_READ, PDEVT_WAIT_LIST,
-	       PDEVT_SELECT} FspdevTraceRecType ;
-
-typedef struct FspdevTraceRecord {
-    int index;
-    Fs_FileID fileID;
-    union {
-	Pdev_RequestHdr	requestHdr;
-	Pdev_Reply	reply;
-	int		selectBits;
-	struct WaitTrace {
-	    int		selectBits;
-	    Proc_PID	procID;
-	} wait;
-	Fsio_UseCounts	use;
-    } un;
-} FspdevTraceRecord;
-
-#ifndef CLEAN
-
-#define PDEV_TRACE(fileIDPtr, event) \
-    if (fspdevTracing) { \
-	FspdevTraceRecord rec; \
-	rec.index = ++fspdevTraceIndex; \
-	rec.fileID = *(fileIDPtr); \
-	Trace_Insert(fspdevTraceHdrPtr, event, (ClientData)&rec);	\
-    }
-
-#define PDEV_REQUEST(fileIDPtr, requestHdrPtr) \
-    if (fspdevTracing) {							\
-	FspdevTraceRecord rec; \
-	rec.index = ++fspdevTraceIndex; \
-	rec.fileID = *(fileIDPtr); \
-	rec.un.requestHdr = *(requestHdrPtr); \
-	Trace_Insert(fspdevTraceHdrPtr, PDEVT_REQUEST, (ClientData)&rec);\
-    }
-
-#define PDEV_REPLY(fileIDPtr, replyPtr) \
-    if (fspdevTracing) {							\
-	FspdevTraceRecord rec; \
-	rec.index = ++fspdevTraceIndex; \
-	rec.fileID = *(fileIDPtr); \
-	rec.un.reply = *(replyPtr); \
-	Trace_Insert(fspdevTraceHdrPtr, PDEVT_REPLY, (ClientData)&rec);\
-    }
-
-#define PDEV_TSELECT(fileIDPtr, read, write, except) \
-    if (fspdevTracing) {							\
-	FspdevTraceRecord rec; \
-	rec.index = ++fspdevTraceIndex; \
-	rec.fileID = *(fileIDPtr); \
-	rec.un.selectBits = 0; \
-	if (read) { rec.un.selectBits |= FS_READABLE; } \
-	if (write) { rec.un.selectBits |= FS_WRITABLE; } \
-	if (except) { rec.un.selectBits |= FS_EXCEPTION; } \
-	Trace_Insert(fspdevTraceHdrPtr, PDEVT_SELECT, (ClientData)&rec);\
-    }
-
-#define PDEV_WAKEUP(fileIDPtr, zprocID, zselectBits) \
-    if (fspdevTracing) {							\
-	FspdevTraceRecord rec; \
-	rec.index = ++fspdevTraceIndex; \
-	rec.fileID = *(fileIDPtr); \
-	rec.un.wait.selectBits = zselectBits; \
-	rec.un.wait.procID = zprocID; \
-	Trace_Insert(fspdevTraceHdrPtr, PDEVT_WAKEUP, (ClientData)&rec);\
-    }
-#define DBG_PRINT(fmt)	if (fspdev_Debug) { printf fmt ; }
-
 #define PDEV_REQUEST_PRINT(fileIDPtr, requestHdrPtr) \
-    switch(requestHdrPtr->operation) {	\
-	case PDEV_OPEN:	\
-	    DBG_PRINT( ("Pdev %d,%d: Open  ", (fileIDPtr)->major, \
-					     (fileIDPtr)->minor) ); \
-	    break;	\
-	case PDEV_READ:	\
-	    DBG_PRINT( ("Pdev %d,%d: Read  ", (fileIDPtr)->major, \
-					     (fileIDPtr)->minor) ); \
-	    break;	\
-	case PDEV_WRITE:	\
-	    DBG_PRINT( ("Pdev %d,%d: Write ", (fileIDPtr)->major, \
-					     (fileIDPtr)->minor) ); \
-	    break;	\
-	case PDEV_CLOSE:	\
-	    DBG_PRINT( ("Pdev %d,%d: Close ", (fileIDPtr)->major, \
-					     (fileIDPtr)->minor) ); \
-	    break;	\
-	case PDEV_IOCTL:	\
-	    DBG_PRINT( ("Pdev %d,%d: Ioctl ", (fileIDPtr)->major, \
-					     (fileIDPtr)->minor) ); \
-	    break;	\
-	default:	\
-	    DBG_PRINT( ("Pdev %d,%d: ?!?   ", (fileIDPtr)->major, \
-					     (fileIDPtr)->minor) ); \
-	    break;	\
+    switch(requestHdrPtr->operation) {  \
+        case PDEV_OPEN: \
+            DBG_PRINT( ("Pdev %d,%d: Open  ", (fileIDPtr)->major, \
+                                             (fileIDPtr)->minor) ); \
+            break;      \
+        case PDEV_READ: \
+            DBG_PRINT( ("Pdev %d,%d: Read  ", (fileIDPtr)->major, \
+                                             (fileIDPtr)->minor) ); \
+            break;      \
+        case PDEV_WRITE:        \
+            DBG_PRINT( ("Pdev %d,%d: Write ", (fileIDPtr)->major, \
+                                             (fileIDPtr)->minor) ); \
+            break;      \
+        case PDEV_CLOSE:        \
+            DBG_PRINT( ("Pdev %d,%d: Close ", (fileIDPtr)->major, \
+                                             (fileIDPtr)->minor) ); \
+            break;      \
+        case PDEV_IOCTL:        \
+            DBG_PRINT( ("Pdev %d,%d: Ioctl ", (fileIDPtr)->major, \
+                                             (fileIDPtr)->minor) ); \
+            break;      \
+        default:        \
+            DBG_PRINT( ("Pdev %d,%d: ?!?   ", (fileIDPtr)->major, \
+                                             (fileIDPtr)->minor) ); \
+            break;      \
     }
-#else
+
 /*
- * Compiling with -DCLEAN will zap the if statements and procedure
- * calls defined by the above macros
+ * These are the trace macros left over from -DCLEAN.  We no longer have
+ * pdev tracing, but some folks find it useful to see the macro calls in
+ * the code, so we're leaving those there and thus these empty defitions
+ * here.
  */
 #define DBG_PRINT(fmt)
 
@@ -186,8 +112,6 @@ typedef struct FspdevTraceRecord {
 #define PDEV_REPLY(fileIDPtr, replyPtr)
 #define PDEV_TSELECT(fileIDPtr, read, write, except)
 #define PDEV_WAKEUP(fileIDPtr, waitInfoPtr, selectBits)
-
-#endif not CLEAN
 
 /*
  * Internal Pdev routines
@@ -198,15 +122,6 @@ extern Fspdev_ClientIOHandle *FspdevConnect _ARGS_((
 		Fspdev_ControlIOHandle *ctrlHandlePtr, Fs_FileID *ioFileIDPtr,
 		int clientID, Boolean naming));
 
-/*
- * Definitions for a trace of the request-response protocol.
- */
-extern Trace_Header fspdevTraceHdr;
-extern Trace_Header *fspdevTraceHdrPtr;
-extern int fspdevTraceLength;
-extern Boolean fspdevTracing;
-extern int fspdevMaxTraceDataSize;
-extern int fspdevTraceIndex;
 /*
  * File server open-time routines.
  */
@@ -239,15 +154,9 @@ extern Fs_HandleHeader *FspdevControlVerify _ARGS_((Fs_FileID *fileIDPtr,
 extern ReturnStatus FspdevControlReopen _ARGS_((Fs_HandleHeader *hdrPtr,
 		int clientID, ClientData inData, int *outSizePtr, 
 		ClientData *outDataPtr));
-#ifdef SOSP91
-extern ReturnStatus FspdevControlClose _ARGS_((Fs_Stream *streamPtr, 
-		int clientID, Proc_PID procID, int flags, int size,
-		ClientData data, int *offsetPtr, int *rwFlagsPtr));
-#else
 extern ReturnStatus FspdevControlClose _ARGS_((Fs_Stream *streamPtr, 
 		int clientID, Proc_PID procID, int flags, int size,
 		ClientData data));
-#endif
 extern void FspdevControlClientKill _ARGS_((Fs_HandleHeader *hdrPtr,
 		int clientID));
 extern Boolean FspdevControlScavenge _ARGS_((Fs_HandleHeader *hdrPtr));
@@ -268,15 +177,9 @@ extern ReturnStatus FspdevServerStreamRead _ARGS_((Fs_Stream *streamPtr,
 		Fs_IOReply *replyPtr));
 extern ReturnStatus FspdevServerStreamIOControl _ARGS_((Fs_Stream *streamPtr, 
 		Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
-#ifdef SOSP91
-extern ReturnStatus FspdevServerStreamClose _ARGS_((Fs_Stream *streamPtr, 
-		int clientID, Proc_PID procID, int flags, int size, 
-		ClientData data, int *offsetPtr, int *rwFlagsPtr));
-#else
 extern ReturnStatus FspdevServerStreamClose _ARGS_((Fs_Stream *streamPtr, 
 		int clientID, Proc_PID procID, int flags, int size, 
 		ClientData data));
-#endif
 /*
  * Pseudo-device (client-side) streams
  */
@@ -308,15 +211,9 @@ extern ReturnStatus FspdevPseudoStreamMigrate _ARGS_((Fsio_MigInfo *migInfoPtr,
 		Address *dataPtr));
 extern ReturnStatus FspdevPseudoStreamMigOpen _ARGS_((Fsio_MigInfo *migInfoPtr,
 		int size, ClientData data, Fs_HandleHeader **hdrPtrPtr));
-#ifdef SOSP91
-extern ReturnStatus FspdevPseudoStreamClose _ARGS_((Fs_Stream *streamPtr, 
-		int clientID, Proc_PID procID, int flags, int size,
-		ClientData data, int *offsetPtr, int *rwFlagsPtr));
-#else
 extern ReturnStatus FspdevPseudoStreamClose _ARGS_((Fs_Stream *streamPtr, 
 		int clientID, Proc_PID procID, int flags, int size,
 		ClientData data));
-#endif
 extern void FspdevPseudoStreamCloseInt _ARGS_((	
 		Fspdev_ServerIOHandle *pdevHandlePtr));
 
@@ -334,15 +231,9 @@ extern Fs_HandleHeader *FspdevRmtPseudoStreamVerify _ARGS_((
 extern ReturnStatus FspdevRmtPseudoStreamMigrate _ARGS_((
 		Fsio_MigInfo *migInfoPtr, int dstClientID, int *flagsPtr,
 		int *offsetPtr, int *sizePtr, Address *dataPtr));
-#ifdef SOSP91
-extern ReturnStatus FspdevRmtPseudoStreamClose _ARGS_((Fs_Stream *streamPtr, 
-		int clientID, Proc_PID procID, int flags, int size,
-		ClientData data, int *offsetPtr, int *rwFlagsPtr));
-#else
 extern ReturnStatus FspdevRmtPseudoStreamClose _ARGS_((Fs_Stream *streamPtr, 
 		int clientID, Proc_PID procID, int flags, int size,
 		ClientData data));
-#endif
 /*
  * Local and remote pseudo-device streams to pseudo-file-systems
  */
