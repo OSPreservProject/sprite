@@ -455,6 +455,9 @@ FsDescTrunc(handlePtr, size)
     int				fragsToFree;
     int				bytesToFree;
 
+    if (size < 0) {
+	return(GEN_INVALID_ARG);
+    }
     domainPtr = FsDomainFetch(handlePtr->hdr.fileID.major, FALSE);
     if (domainPtr == (FsDomain *)NIL) {
 	return(FS_DOMAIN_UNAVAILABLE);
