@@ -1220,7 +1220,7 @@ MachSigReturn()
     /*
      * Now copy in the register state.
      */
-    savedKPSW = statePtr->userState.trapRegState.kpsw;
+    savedKPSW = statePtr->userState.trapRegState.kpsw & ~MACH_KPSW_USE_CUR_PC;
     usp += (unsigned)&sigContext.machContext.regState -
 	   (unsigned)&sigContext;
     if (Vm_CopyIn(sizeof(Mach_RegState), usp,
@@ -1229,7 +1229,9 @@ MachSigReturn()
     }
     statePtr->userState.trapRegState.regs[MACH_SPILL_SP][0] +=
 							sizeof(sigContext);
-    statePtr->userState.trapRegState.kpsw = savedKPSW;
+    
+    statePtr->userState.trapRegState.kpsw = savedKPSW |
+	    (statePtr->userState.trapRegState.kpsw & MACH_KPSW_USE_CUR_PC);
     sigStack.contextPtr = &sigContext;
     Sig_Return(Proc_GetCurrentProc(), &sigStack);
     return(MACH_NORM_RETURN);
