@@ -32,12 +32,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <fsioLock.h>
 #include <fsprefix.h>
 #include <fsrmt.h>
-#include <dev.h>
 #include <rpc.h>
 #include <recov.h>
 #include <fsStat.h>
 #include <fsioDevice.h>
-#include <devFsOpTable.h>
 
 #include <stdio.h>
 
@@ -371,15 +369,6 @@ Fsrmt_IOClose(streamPtr, clientID, procID, flags, dataSize, closeData)
     }
     return(status);
 }
-
-/*
- * Parameters for a device reopen RPC used to reestablish state on
- * the I/O server for a device.
- */
-typedef struct FsRmtDeviceReopenParams {
-    Fs_FileID	fileID;		/* File ID of file to reopen. MUST BE FIRST! */
-    Fsio_UseCounts use;		/* Device usage information */
-} FsRmtDeviceReopenParams;
 
 /*
  *----------------------------------------------------------------------
@@ -410,7 +399,7 @@ FsrmtDeviceReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
     register Fsrmt_IOHandle	*handlePtr = (Fsrmt_IOHandle *)hdrPtr;
     ReturnStatus		status;
     int				outSize;
-    FsRmtDeviceReopenParams	reopenParams;
+    Fsio_DeviceReopenParams	reopenParams;
 
     /*
      * Set up reopen parameters.  fileID must be first in order
@@ -628,93 +617,3 @@ FsrmtDeviceVerify(fileIDPtr, clientID, domainTypePtr)
     }
     return((Fs_HandleHeader *)devHandlePtr);
 }
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Fsrmt_DeviceReopen --
- *
- *	Reopen a device here on the I/O server.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *	
-REMOVE this code whenever the fsio and fsrmt modules are both reinstalled.
-This routine has been renamed Fsio_DeviceReopen and is now found in the
-fsio module.  It has been left here for temporary backwards-compatibility.
-			Mary Baker 9/20/91
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-ReturnStatus
-Fsrmt_DeviceReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
-    Fs_HandleHeader	*hdrPtr;	/* NIL on the I/O server */
-    int			clientID;	/* Client doing the reopen */
-    ClientData		inData;		/* Ref. to FsRmtDeviceReopenParams */
-    int			*outSizePtr;	/* Size of returned data, 0 here */
-    ClientData		*outDataPtr;	/* Returned data, NIL here */
-{
-    Fsio_DeviceIOHandle	*devHandlePtr;
-    ReturnStatus	status;
-    register		devIndex;
-    register FsRmtDeviceReopenParams *paramPtr =
-	    (FsRmtDeviceReopenParams *)inData;
-
-    *outDataPtr = (ClientData) NIL;
-    *outSizePtr = 0;
-
-    (void) FsioDeviceHandleInit(&paramPtr->fileID, (char *)NIL, &devHandlePtr); 
-
-    devIndex = DEV_TYPE_INDEX(devHandlePtr->device.type);
-    if (devIndex >= devNumDevices) {
-	status = FS_DEVICE_OP_INVALID;
-    } else {
-	/*
-	 * Compute the difference between the client's and our version
-	 * of the client's use state, and then call the device driver
-	 * with that information.  We may have missed opens (across a
-	 * reboot) or closes (during transient communication failures)
-	 * so the net difference may be positive or negative.
-	 */
-	Fsconsist_IOClientStatus(&devHandlePtr->clientList, clientID, &paramPtr->use);
-	if (paramPtr->use.ref == 0) {
-	    status = SUCCESS;	/* No change visible to driver */
-	} else if (paramPtr->use.ref > 0) {
-	    /*
-	     * Reestablish open connections.
-	     */
-	    status = (*devFsOpTable[devIndex].reopen)(&devHandlePtr->device,
-				    paramPtr->use.ref, paramPtr->use.write,
-				    (Fs_NotifyToken)devHandlePtr,
-				    &devHandlePtr->flags);
-	    if (status == SUCCESS) {
-		(void)Fsconsist_IOClientReopen(&devHandlePtr->clientList, clientID,
-					 &paramPtr->use);
-		devHandlePtr->use.ref += paramPtr->use.ref;
-		devHandlePtr->use.write += paramPtr->use.write;
-	    }
-	} else {
-	    /*
-	     * Clean up closed connections.  Note, we assume that
-	     * the client was reading, even though it may have had
-	     * a write-only stream.  This could break syslog, which
-	     * is a single-reader/multiple-writer stream.  "ref" should
-	     * be changed to "read".
-	     */
-	    int useFlags = FS_READ;
-	    if (paramPtr->use.write > 0) {
-		useFlags |= FS_WRITE;
-	    }
-	    status = FsioDeviceCloseInt(devHandlePtr, useFlags, paramPtr->use.ref,
-						    paramPtr->use.write);
-	 }
-    }
-    Fsutil_HandleRelease(devHandlePtr, TRUE);
-    return(status);
-}
-
