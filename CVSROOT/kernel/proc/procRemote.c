@@ -64,6 +64,13 @@ static ReturnStatus ContinueMigratedProc();
 
 #define ValidAddress(addr) (((Address) addr != (Address) NIL) && \
 			    ((Address) addr != (Address) USER_NIL))
+/*
+ * Number of times to try an RPC before giving up due to RPC_TIMEOUT, while
+ * waiting for the host to come up.
+ */
+
+#define MAX_RPC_RETRIES 2
+
 
 /*
  *----------------------------------------------------------------------
@@ -544,6 +551,7 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
     ReturnStatus remoteCallStatus;	/* status returned by system call */
     Proc_TraceRecord record;		/* used to store trace data */
     int lastArraySize = -1;			/* size of last array found */
+    int numTries;			/* number of times trying RPC */
 
     /*
      * Create a synonym for argsPtr so that integer arguments can be referred
@@ -820,8 +828,17 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
 	Sys_Printf("Proc_DoRemoteCall: sending call %d home.\n", callNumber); 
     }
 
-    remoteCallStatus = Rpc_Call(procPtr->peerHostID, RPC_PROC_REMOTE_CALL, &storage);
-
+    for (numTries = 0; numTries < MAX_RPC_RETRIES; numTries++) {
+	remoteCallStatus = Rpc_Call(procPtr->peerHostID, RPC_PROC_REMOTE_CALL,
+				    &storage);
+	if (remoteCallStatus != RPC_TIMEOUT) {
+	    break;
+	}
+	remoteCallStatus = Proc_WaitForHost(procPtr->peerHostID);
+	if (status != SUCCESS) {
+	    break;
+	}
+    }
     if (proc_MigDebugLevel > 4) {
 	Sys_Printf("Proc_DoRemoteCall: status %x returned by Rpc_Call.\n",
 		   remoteCallStatus);
@@ -967,6 +984,7 @@ ProcRemoteFork(parentProcPtr, childProcPtr)
     Proc_RemoteCall call;
     ReturnStatus status;
     Proc_TraceRecord record;		/* used to store trace data */
+    int numTries;			/* number of times trying RPC */
 
     if (proc_MigDebugLevel > 3) {
 	Sys_Printf("ProcRemoteFork called.\n");
@@ -1012,8 +1030,17 @@ ProcRemoteFork(parentProcPtr, childProcPtr)
     storage.replyDataPtr = (Address) &childProcPtr->peerProcessID;
     storage.replyDataSize = sizeof(Proc_PID);
 
-    status = Rpc_Call(parentProcPtr->peerHostID, RPC_PROC_REMOTE_CALL,
-		       &storage);
+    for (numTries = 0; numTries < MAX_RPC_RETRIES; numTries++) {
+	status = Rpc_Call(parentProcPtr->peerHostID, RPC_PROC_REMOTE_CALL,
+			   &storage);
+	if (status != RPC_TIMEOUT) {
+	    break;
+	}
+	status = Proc_WaitForHost(parentProcPtr->peerHostID);
+	if (status != SUCCESS) {
+	    break;
+	}
+    }
 
     if (proc_DoTrace && proc_DoCallTrace) {
 	record.flags &= ~PROC_MIGTRACE_START;
@@ -1086,6 +1113,7 @@ ProcRemoteExit(procPtr, reason, exitStatus, code)
     Proc_RemoteCall call;
     ReturnStatus status;
     Proc_TraceRecord record;		/* used to store trace data */
+    int numTries;			/* number of times trying RPC */
 
     if (proc_MigDebugLevel > 4) {
 	Sys_Printf("ProcRemoteExit(%x) called.\n", exitStatus);
@@ -1145,7 +1173,16 @@ ProcRemoteExit(procPtr, reason, exitStatus, code)
     storage.replyDataSize = 0;
 
 
-    status = Rpc_Call(procPtr->peerHostID, RPC_PROC_REMOTE_CALL, &storage);
+    for (numTries = 0; numTries < MAX_RPC_RETRIES; numTries++) {
+	status = Rpc_Call(procPtr->peerHostID, RPC_PROC_REMOTE_CALL, &storage);
+	if (status != RPC_TIMEOUT) {
+	    break;
+	}
+	status = Proc_WaitForHost(procPtr->peerHostID);
+	if (status != SUCCESS) {
+	    break;
+	}
+    }
 
     if (proc_DoTrace && proc_DoCallTrace) {
 	record.flags &= ~PROC_MIGTRACE_START;
