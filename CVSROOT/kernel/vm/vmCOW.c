@@ -236,8 +236,13 @@ DoFork(srcSegPtr, destSegPtr)
 
     cowInfoPtr = srcSegPtr->cowInfoPtr;
     if (numCORPages > 0) {
-	vmStat.numCOWPages += numCOWPages;
-	vmStat.numCORPages += numCORPages;
+	if (srcSegPtr->type == VM_HEAP) {
+	    vmStat.numCOWHeapPages += numCOWPages;
+	    vmStat.numCORHeapPages += numCORPages;
+	} else {
+	    vmStat.numCOWStkPages += numCOWPages;
+	    vmStat.numCORStkPages += numCORPages;
+	}
 	srcSegPtr->numCOWPages += numCOWPages;
 	destSegPtr->numCORPages = numCORPages;
 	/*
@@ -634,7 +639,11 @@ VmCOR(virtAddrPtr)
     VmCOWInfo			*cowInfoPtr;
     ReturnStatus		status;
 
-    vmStat.numCORFaults++;
+    if (virtAddrPtr->segPtr->type == VM_HEAP) {
+	vmStat.numCORHeapFaults++;
+    } else {
+	vmStat.numCORStkFaults++;
+    }
     cowInfoPtr = (VmCOWInfo *)NIL;
     if (!COWStart(virtAddrPtr->segPtr, &cowInfoPtr)) {
 	vmStat.quickCORFaults++;
@@ -692,7 +701,7 @@ COR(virtAddrPtr, ptePtr)
 	Sys_Panic(SYS_FATAL, "COR stop\n");
     }
     mastSegPtr = VmGetSegPtr((int) (Vm_GetPageFrame(*ptePtr)));
-    virtFrameNum = VmPageAllocate(virtAddrPtr, TRUE);
+    virtFrameNum = VmPageAllocate(virtAddrPtr, VM_CAN_BLOCK);
     mastVirtPF = GetMasterPF(mastSegPtr, virtAddrPtr->page);
     if (mastVirtPF != 0) {
 	/*
@@ -799,7 +808,11 @@ VmCOW(virtAddrPtr)
     register	Vm_PTE		*ptePtr;
     VmCOWInfo			*cowInfoPtr;
 
-    vmStat.numCOWFaults++;
+    if (virtAddrPtr->segPtr->type == VM_HEAP) {
+	vmStat.numCOWHeapFaults++;
+    } else {
+	vmStat.numCOWStkFaults++;
+    }
     cowInfoPtr = (VmCOWInfo *)NIL;
     if (!COWStart(virtAddrPtr->segPtr, &cowInfoPtr)) {
 	vmStat.quickCOWFaults++;
@@ -889,7 +902,7 @@ COW(virtAddrPtr, ptePtr, isResident, deletePage)
 		/*
 		 * Copy the page.
 		 */
-		virtFrameNum = VmPageAllocate(&virtAddr, TRUE);
+		virtFrameNum = VmPageAllocate(&virtAddr, VM_CAN_BLOCK);
 		CopyPage(Vm_GetPageFrame(*ptePtr), virtFrameNum);
 		pte = VM_VIRT_RES_BIT | VM_PHYS_RES_BIT | 
 		      VM_REFERENCED_BIT | VM_MODIFIED_BIT | virtFrameNum;

@@ -89,6 +89,7 @@ typedef unsigned int	Vm_PTE;
 #define VM_MODIFIED_BIT		0x00800000
 #define VM_READ_ONLY_PROT	0x00400000
 #define VM_COR_CHECK_BIT	0x00200000
+#define VM_PREFETCH_BIT		0x00100000
 #define VM_PAGE_FRAME_FIELD	0x000fffff
 
 /*

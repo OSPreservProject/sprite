@@ -145,7 +145,7 @@ Vm_GetKernelStack(progCounter, startFunc)
     for (i = 1, ptePtr = VmGetPTEPtr(vm_SysSegPtr, virtAddr.page);
 	 i < numStackPages;
 	 i++, VmIncPTEPtr(ptePtr, 1), virtAddr.page++) {
-	*ptePtr |= VmPageAllocate(&virtAddr, TRUE);
+	*ptePtr |= VmPageAllocate(&virtAddr, VM_CAN_BLOCK);
 	vmStat.kernStackPages++;
 	VmPageValidate(&virtAddr);
     }

@@ -125,8 +125,6 @@ VmSegTableInit()
 	segPtr->filePtr = (Fs_Stream *)NIL;
 	segPtr->swapFilePtr = (Fs_Stream *)NIL;
 	segPtr->segNum = i;
-	segPtr->numCORPages = 0;
-	segPtr->numCOWPages = 0;
 	segPtr->cowInfoPtr = (VmCOWInfo *)NIL;
 	segPtr->procList = (List_Links *) &(segPtr->procListHdr);
 	List_Init(segPtr->procList);
@@ -134,8 +132,6 @@ VmSegTableInit()
 	    segPtr->ptPtr = (Vm_PTE *)NIL;
 	    segPtr->machPtr = (VmMach_SegData *)NIL;
 	    segPtr->flags = VM_SEG_FREE;
-	    segPtr->refCount = 0;
-	    segPtr->ptUserCount = 0;
 	    List_Insert((List_Links *) segPtr, LIST_ATREAR(freeSegList));
 	}
     }
@@ -632,6 +628,14 @@ VmSegmentDeleteInt(segPtr, procPtr, procLinkPtrPtr, objStreamPtrPtr, migFlag)
 	return(VM_DELETE_NOTHING);
     }
 
+    while (segPtr->ptUserCount > 0 ) {
+	/*
+	 * Wait until all users of the page tables of this segment are gone.
+	 * The only remaining users of a deleted segment would be 
+	 * prefetch processes.
+	 */
+	(void)Sync_Wait(&segPtr->condition, FALSE);
+    }
     if (!vm_NoStickySegments && segPtr->type == VM_CODE) {
 	/* 
 	 * Put onto the inactive list and tell our caller to close the
@@ -1357,16 +1361,14 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
     Fs_Stream			*newFilePtr;
 
     if (srcSegPtr->type == VM_HEAP) {
-	/*
-	 * Prevent the source segment from being expanded if it is a heap 
-	 * segment.  Stack segments can't be expanded because they can't be
-	 * used by anybody but the process that is calling us.
-	 */
-	IncPTUserCount(srcSegPtr);
 	Fs_StreamCopy(srcSegPtr->filePtr, &newFilePtr, procPtr->processID);
     } else {
 	newFilePtr = (Fs_Stream *) NIL;
     }
+    /*
+     * Prevent the source segment from being expanded.
+     */
+    IncPTUserCount(srcSegPtr);
 
     /*
      * Allocate the segment that we are copying to.
@@ -1375,8 +1377,8 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
 			       srcSegPtr->fileAddr, srcSegPtr->numPages, 
 			       srcSegPtr->offset, procPtr);
     if (destSegPtr == (Vm_Segment *) NIL) {
+	VmDecPTUserCount(srcSegPtr);
 	if (srcSegPtr->type == VM_HEAP) {
-	    VmDecPTUserCount(srcSegPtr);
 	    Fs_Close(newFilePtr);
 	}
 	*destSegPtrPtr = (Vm_Segment *) NIL;
@@ -1389,9 +1391,7 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
 	 * src segment in the dest segment.
 	 */
 	VmSegFork(srcSegPtr, destSegPtr);
-	if (srcSegPtr->type == VM_HEAP) {
-	    VmDecPTUserCount(srcSegPtr);
-	}
+	VmDecPTUserCount(srcSegPtr);
 	*destSegPtrPtr = destSegPtr;
 
 	return(SUCCESS);
@@ -1414,7 +1414,7 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
 		destVirtAddr.page++) {
 	if (CopyPage(srcSegPtr, srcPTEPtr, destPTEPtr)) {
 	    *destPTEPtr |= VM_REFERENCED_BIT | VM_MODIFIED_BIT |
-	                   VmPageAllocate(&destVirtAddr, TRUE);
+	                   VmPageAllocate(&destVirtAddr, VM_CAN_BLOCK);
 	    destSegPtr->resPages++;
 	    if (srcAddr == (Address) NIL) {
 		srcAddr = VmMapPage(Vm_GetPageFrame(*srcPTEPtr));
@@ -1440,10 +1440,7 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
      * Copy over swap space resources.
      */
     status = VmCopySwapSpace(srcSegPtr, destSegPtr);
-
-    if (srcSegPtr->type == VM_HEAP) {
-	VmDecPTUserCount(srcSegPtr);
-    }
+    VmDecPTUserCount(srcSegPtr);
 
     /*
      * If couldn't copy the swap space over then return an error.

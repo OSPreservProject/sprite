@@ -325,6 +325,12 @@ Vm_Cmd(command, arg)
 	case VM_SET_COR_READ_ONLY:
 	    vmCORReadOnly = arg;
 	    break;
+	case VM_SET_PREFETCH:
+	    vmPrefetch = arg;
+	    break;
+	case VM_SET_USE_FS_READ_AHEAD:
+	    vmUseFSReadAhead = arg;
+	    break;
         default:
             Sys_Panic(SYS_WARNING, "Vm_Cmd: Unknown command.\n");
             break;

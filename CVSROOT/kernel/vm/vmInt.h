@@ -225,6 +225,9 @@ extern	int		vmMaxPageOutProcs; /* Maximum number of page out procs
 extern	Boolean		vmCORReadOnly;	/* After a cor fault the page is marked
 					 * as read only so that it can be
 					 * determined if it gets modified. */
+extern	Boolean		vmPrefetch;	/* Whether to do prefetch or not. */
+extern	Boolean		vmUseFSReadAhead;/* Should have FS do read ahead on
+					  * object files. */
 
 /*
  * Variables to control negotiations between the file system and the virtual
@@ -250,6 +253,17 @@ int	vmCurPenalty;		/* The number of seconds that FS is currently
 int	vmBoundary;		/* The current number of pages that must be
 				 * exceeded or gone under before changing the
 				 * penalty. */
+
+/*
+ * Flags for VmPageAllocate and VmPageAllocateInt:
+ *
+ *  VM_CAN_BLOCK	Can block if no clean memory is available.
+ *  VM_ABORT_WHEN_DIRTY	Abrot even if VM_CAN_BLOCK is set if have exceeded
+ *			the maximum number of dirty pages on the dirty list.
+ */
+#define	VM_CAN_BLOCK		0x1
+#define	VM_ABORT_WHEN_DIRTY	0x2
+
 
 /*---------------------------------------------------------------------------*/
 
@@ -451,6 +465,7 @@ extern	void		VmPutOnFreePageList();
  */
 extern	void		VmLockPageInt();
 extern	void		VmUnlockPage();
+extern	void		VmUnlockPageInt();
 /*
  * Routine to handle page faults.
  */
@@ -458,6 +473,7 @@ extern	ReturnStatus	VmDoPageIn();
 extern	void		VmVirtAddrParse();
 extern	Boolean		VmCheckBounds();
 extern	void		VmZeroPage();
+extern	void		VmKillSharers();
 /*
  * Segment handling routines.
  */
@@ -466,6 +482,7 @@ extern	void 		VmDeleteFromSeg();
 extern  VmDeleteStatus 	VmSegmentDeleteInt();
 extern	void		VmDecPTUserCount();
 extern	Vm_Segment	*VmGetSegPtr();
+extern	void		VmFlushSegment();
 /*
  * Routines to validate and validate pages.
  */
@@ -511,5 +528,9 @@ extern  ENTRY void	VmPutOnDirtyList();
 extern	Address		VmMapPage();
 extern	void		VmUnmapPage();
 extern	void		VmRemapPage();
+/*
+ * Prefetch routine.
+ */
+extern	void		VmPrefetch();
 
 #endif _VMINT

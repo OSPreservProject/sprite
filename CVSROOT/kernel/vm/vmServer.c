@@ -26,6 +26,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "mem.h"
 #include "proc.h"
 
+Boolean	vmUseFSReadAhead = TRUE;
 extern	Boolean	vm_NoStickySegments;
 Fs_Stream	*vmSwapStreamPtr = (Fs_Stream *)NIL;
 
@@ -204,8 +205,7 @@ VmPageServerRead(virtAddrPtr, pageFrame)
      */
     mappedAddr = (int) VmMapPage(pageFrame);
     status = Fs_PageRead(segPtr->swapFilePtr, (Address) mappedAddr,
-			 pageToRead << vmPageShift,
-			 vm_PageSize);
+			 pageToRead << vmPageShift, vm_PageSize, FS_SWAP_PAGE);
     VmUnmapPage((Address) mappedAddr);
 
     return(status);
@@ -549,33 +549,46 @@ VmFileServerRead(virtAddrPtr, pageFrame)
      * Map the page frame into the kernel's address space.
      */
     mappedAddr = (int) VmMapPage(pageFrame);
-
     /*
-     * Read the page from the file server.  The address to read is just the
-     * page offset into the segment ((page - offset) << vmPageShift) plus
-     * the offset of this segment into the file (fileAddr).
+     * The address to read is just the page offset into the segment
+     * ((page - offset) << vmPageShift) plus the offset of this segment into
+     * the file (fileAddr).
      */
     length = vm_PageSize;
     offset = ((virtAddrPtr->page - segPtr->offset) << vmPageShift) + 
 		segPtr->fileAddr;
-    status = Fs_Read(segPtr->filePtr, (Address) mappedAddr, offset, &length);
-    VmUnmapPage((Address) mappedAddr);
-    if (status != SUCCESS || length != vm_PageSize) {
-	if (status != SUCCESS) {
-	    Sys_Panic(SYS_WARNING, 
-		      "VmFileServerRead: Error %x from Fs_Read\n", status);
-	    return(status);
-	} else {
-	    Sys_Panic(SYS_WARNING, 
-		      "VmFileServerRead: Short read of length %d\n", length);
-	    return(VM_SHORT_READ);
-	}
-    } else if (!vm_NoStickySegments && segPtr->type == VM_CODE) {
+    if (vmPrefetch || !vmUseFSReadAhead) {
 	/*
-	 * Tell the file system that we just read some file system blocks
-	 * into virtual memory.
+	 * If we are using prefetch then do the reads ourselves.
 	 */
-	Fs_CacheBlocksUnneeded(segPtr->filePtr, offset, vm_PageSize, TRUE);
+	if (segPtr->type == VM_CODE && !vm_NoStickySegments) {
+	    status = Fs_PageRead(segPtr->filePtr, (Address)mappedAddr, offset,
+				 length, FS_CODE_PAGE);
+	} else {
+	    status = Fs_PageRead(segPtr->filePtr, (Address)mappedAddr, offset,
+				 length, FS_HEAP_PAGE);
+	}
+    } else {
+	/*
+	 * No prefetch so use the file system full blown mechanism so
+	 * that we can take advantage of its read ahead.
+	 */
+	status = Fs_Read(segPtr->filePtr, (Address) mappedAddr, offset,
+			 &length);
+	if (status == SUCCESS && !vm_NoStickySegments && 
+	    segPtr->type == VM_CODE) {
+	    /*
+	     * Tell the file system that we just read some file system blocks
+	     * into virtual memory.
+	     */
+	    Fs_CacheBlocksUnneeded(segPtr->filePtr, offset, vm_PageSize, TRUE);
+	}
+    }
+    VmUnmapPage((Address) mappedAddr);
+    if (status != SUCCESS) {
+	Sys_Panic(SYS_WARNING, 
+	  "VmFileServerRead: Error %x from Fs_Read or Fs_PageRead\n", status);
+	return(status);
     }
 
     return(SUCCESS);

@@ -229,7 +229,7 @@ Vm_RawAlloc(numBytes)
 	VmIncPTEPtr(ptePtr, 1);
 	virtAddr.page = lastPage;
 	virtAddr.offset = 0;
-	page = VmPageAllocateInt(&virtAddr, FALSE);
+	page = VmPageAllocateInt(&virtAddr, 0);
 	if (page == VM_NO_MEM_VAL) {
 	    /*
 	     * The normal page allocation mechanism failed so go to the
@@ -925,7 +925,7 @@ Vm_KernPageAllocate()
 
     virtAddr.segPtr = vm_SysSegPtr;
     virtAddr.page = 0;
-    return(VmPageAllocate(&virtAddr, TRUE));
+    return(VmPageAllocate(&virtAddr, VM_CAN_BLOCK));
 }
 
 

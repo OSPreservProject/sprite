@@ -755,6 +755,32 @@ VmUnlockPage(pfNum)
 /*
  * ----------------------------------------------------------------------------
  *
+ * VmUnlockPageInt --
+ *
+ *     	Decrement the lock count on a page.
+ *
+ * Results:
+ *     	None.
+ *
+ * Side effects:
+ *	The core map entry for the page has its lock count decremented.
+ *
+ * ----------------------------------------------------------------------------
+ */
+INTERNAL void
+VmUnlockPageInt(pfNum)
+    unsigned	int	pfNum;
+{
+    coreMap[pfNum].lockCount--;
+    if (coreMap[pfNum].lockCount < 0) {
+	Sys_Panic(SYS_FATAL, "VmUnlockPage: Coremap lock count < 0\n");
+    }
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
  * VmPageSwitch --
  *
  *     	Move the given page from the current owner to the new owner.
@@ -929,13 +955,12 @@ GetRefTime(refTimePtr, pagePtr)
  * ----------------------------------------------------------------------------
  */
 ENTRY static unsigned	int
-DoPageAllocate(virtAddrPtr, canBlock)
+DoPageAllocate(virtAddrPtr, flags)
     Vm_VirtAddr	*virtAddrPtr;	/* The translated virtual address that 
 				   indicates the segment and virtual page 
 				   that this physical page is being allocated 
 				   for */
-    Boolean	canBlock;	/* TRUE if can block if hit enough consecutive
-				   dirty pages. */
+    int		flags;		/* VM_CAN_BLOCK | VM_ABORT_WHEN_DIRTY */
 {
     unsigned	int page;
 
@@ -944,7 +969,7 @@ DoPageAllocate(virtAddrPtr, canBlock)
     while (swapDown) {
 	(void)Sync_Wait(&swapDownCondition, FALSE);
     }
-    page = VmPageAllocateInt(virtAddrPtr, canBlock);
+    page = VmPageAllocateInt(virtAddrPtr, flags);
 
     UNLOCK_MONITOR;
     return(page);
@@ -968,11 +993,10 @@ DoPageAllocate(virtAddrPtr, canBlock)
  * ----------------------------------------------------------------------------
  */
 unsigned int
-VmPageAllocate(virtAddrPtr, canBlock)
+VmPageAllocate(virtAddrPtr, flags)
     Vm_VirtAddr	*virtAddrPtr;	/* The translated virtual address that this
 				 * page frame is being allocated for */
-    Boolean	canBlock;	/* TRUE if can block if hit enough consecutive
-				 * dirty pages. */
+    int		flags;		/* VM_CAN_BLOCK | VM_ABORT_WHEN_DIRTY. */
 {
     unsigned	int	page;
     int			refTime;
@@ -985,7 +1009,7 @@ VmPageAllocate(virtAddrPtr, canBlock)
 	Fs_GetPageFromFS(refTime + vmCurPenalty, &tPage);
 	if (tPage == -1) {
 	    vmStat.pageAllocs++;
-	    return(DoPageAllocate(virtAddrPtr, canBlock));
+	    return(DoPageAllocate(virtAddrPtr, flags));
 	} else {
 	    page = tPage;
 	    vmStat.gotPageFromFS++;
@@ -1030,11 +1054,14 @@ VmPageAllocate(virtAddrPtr, canBlock)
  * ----------------------------------------------------------------------------
  */
 INTERNAL unsigned int
-VmPageAllocateInt(virtAddrPtr, canBlock)
+VmPageAllocateInt(virtAddrPtr, flags)
     Vm_VirtAddr	*virtAddrPtr;	/* The translated virtual address that 
 				   this page frame is being allocated for */
-    Boolean	canBlock;	/* TRUE if can block if hit enough consecutive
-				   dirty pages. */
+    int		flags;		/* VM_CAN_BLOCK if can block if non memory is
+				 * available. VM_ABORT_WHEN_DIRTY if should
+				 * abort even if VM_CAN_BLOCK is set if have
+				 * exceeded the maximum number of dirty pages
+				 * on the dirty list. */
 {
     register	VmCore	*corePtr; 
     register	Vm_PTE	*ptePtr;
@@ -1071,16 +1098,16 @@ again:
 	while (TRUE) {
 	    corePtr = (VmCore *) List_First(allocPageList);
 	    pageCount++;
-    
+
 	    /*
 	     * See if have gone all of the way through the list without finding
 	     * anything.
 	     */
-	    if ((canBlock && vmStat.numDirtyPages > vmMaxDirtyPages) ||
+	    if (((flags & (VM_CAN_BLOCK | VM_ABORT_WHEN_DIRTY)) && 
+	         vmStat.numDirtyPages > vmMaxDirtyPages) ||
 	        corePtr == (VmCore *) &endMarker) {	
 		VmListRemove((List_Links *) &endMarker);
-		if (!canBlock) {
-		    Sys_Printf("VmPageAllocateInt: All of memory is dirty (%d pages examined).\n", pageCount);
+		if (!(flags & VM_CAN_BLOCK)) {
 		    return(VM_NO_MEM_VAL);
 		} else {
 		    /*
@@ -1306,7 +1333,6 @@ typedef enum {
     NOT_DONE,	/* The page-in is not yet done yet. */
 } PrepareResult;
 
-void		KillSharers();
 ReturnStatus	DoPageIn();
 PrepareResult	PreparePage();
 void		FinishPage();
@@ -1451,11 +1477,19 @@ DoPageIn(virtAddrPtr, protFault)
 	    break;
     }
 
+    ptePtr = VmGetPTEPtr(virtAddrPtr->segPtr, virtAddrPtr->page);
+    /*
+     * Fetch the next page.
+     */
+    if (vmPrefetch) {
+	VmPrefetch(virtAddrPtr, ptePtr + 1);
+    }
+
     while (TRUE) {
 	/*
 	 * Do the first part of the page-in.
 	 */
-	result = PreparePage(virtAddrPtr, protFault, &tPTEPtr);
+	result = PreparePage(virtAddrPtr, protFault, ptePtr);
 	if (!vm_CanCOW && (result == IS_COR || result == IS_COW)) {
 	    Sys_Panic(SYS_FATAL, "DoPageIn: Bogus COW or COR\n");
 	}
@@ -1470,11 +1504,9 @@ DoPageIn(virtAddrPtr, protFault)
 	    break;
 	}
     }
-
     if (result == IS_DONE) {
 	return(SUCCESS);
     }
-    ptePtr = tPTEPtr;
 
     /*
      * Allocate a page.
@@ -1510,7 +1542,7 @@ DoPageIn(virtAddrPtr, protFault)
      * that are sharing the code segment.
      */
     if (status != SUCCESS) {
-	KillSharers(virtAddrPtr->segPtr);
+	VmKillSharers(virtAddrPtr->segPtr);
     }
 
     return(status);
@@ -1538,25 +1570,21 @@ DoPageIn(virtAddrPtr, protFault)
  * ----------------------------------------------------------------------------
  */
 ENTRY static PrepareResult
-PreparePage(virtAddrPtr, protFault, ptePtrPtr)
+PreparePage(virtAddrPtr, protFault, curPTEPtr)
     register Vm_VirtAddr *virtAddrPtr; 	/* The translated virtual address */
     Boolean		protFault;	/* TRUE if faulted because of a
 					 * protection fault. */
-    Vm_PTE		**ptePtrPtr;	/* The page table entry for the virtual 
-					 * address */
+    register	Vm_PTE	*curPTEPtr;	/* Page table pointer for the page. */
 {
-    register	Vm_PTE	*curPTEPtr;
     PrepareResult	retVal;
 
     LOCK_MONITOR;
 
-    curPTEPtr = VmGetPTEPtr(virtAddrPtr->segPtr, virtAddrPtr->page);
 again:
     if (*curPTEPtr & VM_IN_PROGRESS_BIT) {
 	/*
 	 * The page is being faulted on by someone else.  In this case wait
-	 * for the page fault to complete.  When wakeup have to get the new
-	 * pte and see how things have changed.
+	 * for the page fault to complete.
 	 */
 	vmStat.collFaults++;
 	(void) Sync_Wait(&virtAddrPtr->segPtr->condition, FALSE);
@@ -1578,10 +1606,32 @@ again:
 	 * the reference bit since we are about to reference it.
 	 */
 	if (protFault && (*curPTEPtr & VM_COR_CHECK_BIT)) {
-	    vmStat.numCORCOWFaults++;
+	    if (virtAddrPtr->segPtr->type == VM_HEAP) {
+		vmStat.numCORCOWHeapFaults++;
+	    } else {
+		vmStat.numCORCOWStkFaults++;
+	    }
 	    *curPTEPtr &= ~(VM_COR_CHECK_BIT | VM_READ_ONLY_PROT);
 	} else {
 	    vmStat.quickFaults++;
+	}
+	if (*curPTEPtr & VM_PREFETCH_BIT) {
+	    switch (virtAddrPtr->segPtr->type) {
+		case VM_CODE:
+		    vmStat.codePrefetchHits++;
+		    break;
+		case VM_HEAP:
+		    if (*curPTEPtr & VM_ON_SWAP_BIT) {
+			vmStat.heapSwapPrefetchHits++;
+		    } else {
+			vmStat.heapFSPrefetchHits++;
+		    }
+		    break;
+		case VM_STACK:
+		    vmStat.stackPrefetchHits++;
+		    break;
+	    }
+	    *curPTEPtr &= ~VM_PREFETCH_BIT;
 	}
 	VmPageValidateInt(virtAddrPtr, curPTEPtr);
 	*curPTEPtr |= VM_REFERENCED_BIT;
@@ -1590,7 +1640,6 @@ again:
 	*curPTEPtr |= VM_IN_PROGRESS_BIT;
 	retVal = NOT_DONE;
     }
-    *ptePtrPtr = curPTEPtr;
 
     UNLOCK_MONITOR;
     return(retVal);
@@ -1640,7 +1689,7 @@ FinishPage(transVirtAddrPtr, ptePtr)
 /*
  * ----------------------------------------------------------------------------
  *
- * KillSharers --
+ * VmKillSharers --
  *
  *	Go down the list of processes sharing this segment and send a
  *	kill signal to each one.  This is called when a page from a segment
@@ -1655,8 +1704,8 @@ FinishPage(transVirtAddrPtr, ptePtr)
  * ----------------------------------------------------------------------------
  */
 
-ENTRY static void
-KillSharers(segPtr) 
+ENTRY void
+VmKillSharers(segPtr) 
     register	Vm_Segment	*segPtr;
 {
     register	VmProcLink	*procLinkPtr;
@@ -1744,7 +1793,7 @@ PageOut(data, callInfoPtr)
 		 * Non-recoverable error on page write, so kill all users of 
 		 * this segment.
 		 */
-		KillSharers(corePtr->virtPage.segPtr);
+		VmKillSharers(corePtr->virtPage.segPtr);
 	    }
 	}
     }
@@ -1980,8 +2029,8 @@ static	int	clockHand = 0;
 /*ARGSUSED*/
 ENTRY void
 Vm_Clock(data, callInfoPtr)
-	ClientData	data;
-	Proc_CallInfo	*callInfoPtr;
+    ClientData	data;
+    Proc_CallInfo	*callInfoPtr;
 {
     static Boolean initialized = FALSE;
 
@@ -2236,7 +2285,7 @@ Vm_MapBlock(addr)
      * Allocate a block.  We know that the page size is not smaller than
      * the block size so that one page will suffice.
      */
-    page = DoPageAllocate(&virtAddr, FALSE);
+    page = DoPageAllocate(&virtAddr, 0);
     if (page == VM_NO_MEM_VAL) {
 	/*
 	 * Couldn't get any memory.  
