@@ -76,6 +76,7 @@ typedef struct VmMach_ProcData {
 					 * space. */
     unsigned int	mapHardSeg;	/* Address in the mapped seg where 
 					 * the mapping begins. */
+    struct Vm_SegProcList *sharedPtr;	/* Shared memory data */
     VmMach_SharedData   sharedData;     /* Data for shared memory. */
 } VmMach_ProcData;
 
