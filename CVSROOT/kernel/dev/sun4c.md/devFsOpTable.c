@@ -144,15 +144,17 @@ DevFsTypeOps devFsOpTable[] = {
     /*  
      * RAID device.
      */ 
-    {DEV_RAID,  noOpenProc, nullReadProc, nullWriteProc,
-		    Dev_NullIOControl, nullCloseProc, nullSelectProc,
-		    DEV_NO_ATTACH_PROC, noReopenProc, noMmapProc},
+    {DEV_RAID, DevRawBlockDevOpen, DevRawBlockDevRead,
+                    DevRawBlockDevWrite, DevRawBlockDevIOControl,
+                    DevRawBlockDevClose, Dev_NullSelect, DevRaidAttach,
+                    DevRawBlockDevReopen, noMmapProc},
     /*  
      * Debug device. (useful for debugging RAID device)
      */ 
-    {DEV_DEBUG, noOpenProc, nullReadProc, nullWriteProc,
-		    Dev_NullIOControl, nullCloseProc, nullSelectProc,
-		    DEV_NO_ATTACH_PROC, noReopenProc, noMmapProc},
+    {DEV_DEBUG, DevRawBlockDevOpen, DevRawBlockDevRead,
+                    DevRawBlockDevWrite, DevRawBlockDevIOControl,
+                    DevRawBlockDevClose, Dev_NullSelect, DevDebugAttach,
+                    DevRawBlockDevReopen, noMmapProc},
     /*
      * Event devices for window systems.
      */
