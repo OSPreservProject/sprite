@@ -516,46 +516,6 @@ exit:
     }
     return(status);
 }
-#ifdef notdef
-FooProc()
-{
-    status = Fs_GetAttributes(srcFile, FS_ATTR_FILE, &srcAttr);
-    if (status != SUCCESS) {
-	return(status);
-    }
-    /*
-     * Massage the dstName to get the name of its parent.
-     * We copy the destination name and note the slash that
-     * delimits the last component of the name.
-     */
-    dstParentName = (char *)malloc(FS_MAX_PATH_NAME_LENGTH);
-    pPtr = parentName;
-    lastSlash = (char *)NIL;
-    for (cPtr = dstName ; *cPtr ; cPtr++) {
-	if (*cPtr == '/') {
-	    lastSlash = cPtr;
-	}
-	*pPtr = *cPtr;
-    }
-    if (lastSlash == (char *)NIL) {
-	free((Address)dstParentName);
-	dstParentName = ".";
-    } else {
-	*lastSlash = '\0';
-    }
-    status = Fs_GetAttributes(dstParentName, FS_ATTR_FILE, &dstParentAttr);
-    if (lastSlash != (char *)NIL) {
-	free((Address)dstParentName);
-    }
-    if (status != SUCCESS) {
-	return(status);
-    }
-    if (srcAttr.serverID != dstParentAttr.serverID ||
-	srcAttr.domain != dstParentAttr.domain) {
-	status = FS_CROSS_DOMAIN_OPERATION;
-    }
-}
-#endif notdef
 
 /*
  *----------------------------------------------------------------------
@@ -1307,6 +1267,10 @@ LocatePrefix(fileName, serverID, domainTypePtr, hdrPtrPtr)
     for (domainType = 0; domainType < FS_NUM_DOMAINS; domainType++) {
 	status = (*fsDomainLookup[domainType][FS_DOMAIN_IMPORT])
 		    (fileName, serverID, &ids, domainTypePtr, hdrPtrPtr);
+#ifdef lint
+	status = FsSpriteImport(fileName, serverID, &ids, domainTypePtr,
+				hdrPtrPtr);
+#endif /* lint */
 	if (status == SUCCESS) {
 	    return(FS_NEW_PREFIX);
 	}
@@ -1762,6 +1726,80 @@ FsPrefixOpenInProgress(fileIDPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * FsPrefixInterate --
+ *
+ *	This is called to loop through the prefix table entries.
+ *	Our caller is given 'read-only' access to the prefix table
+ *	entry.  This is used for the 'df' and 'prefix' programs
+ *	which call Fs_PrefixDump.
+ *	
+ *	Upon entry, the *prefixPtr should be NIL to indicate the
+ *	beginning of the iteration.
+ *
+ * Results:
+ *	A pointer to the next prefix table entry.
+ *
+ * Side effects:
+ *	Marks the next prefix table entry as non-deletable, and
+ *	returns a pointer to it.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+FsPrefixIterate(prefixPtrPtr)
+    FsPrefix **prefixPtrPtr;		/* In/Out pointer to prefix entry */
+{
+    register FsPrefix *prefixPtr;
+    LOCK_MONITOR;
+
+    prefixPtr = *prefixPtrPtr;
+    if (prefixPtr == (FsPrefix *)NIL) {
+	prefixPtr = (FsPrefix *)List_First(prefixList);
+    } else {
+	prefixPtr->flags &= ~FS_PREFIX_LOCKED;
+	prefixPtr = (FsPrefix *)List_Next(((List_Links *)prefixPtr));
+	if (List_IsAtEnd(prefixList, (List_Links *)prefixPtr)) {
+	    prefixPtr = (FsPrefix *)NIL;
+	}
+    }
+    if (prefixPtr != (FsPrefix *)NIL) {
+	prefixPtr->flags |= FS_PREFIX_LOCKED;
+    }
+    *prefixPtrPtr = prefixPtr;
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsPrefixDone --
+ *
+ *	This is called to terminate a prefix table iteration.  The
+ *	current entry is unlocked so it could be deleted.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Clears the FS_PREFIX_LOCKED bit in the prefix table entry.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+FsPrefixDone(prefixPtr)
+    FsPrefix *prefixPtr;
+{
+    LOCK_MONITOR;
+
+    if (prefixPtr != (FsPrefix *)NIL) {
+	prefixPtr->flags &= ~FS_PREFIX_LOCKED;
+    }
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Fs_PrefixDump --
  *
  *	Dump out the prefix table to the console, or copy individual
@@ -1776,19 +1814,19 @@ FsPrefixOpenInProgress(fileIDPtr)
  *----------------------------------------------------------------------
  */
 
-ENTRY ReturnStatus
+ReturnStatus
 Fs_PrefixDump(index, argPtr)
     int index;		/* Prefix table index, -1 means dump to console */
     Address argPtr;	/* Buffer space for entry */
 {
-    register FsPrefix *prefixPtr;	/* Pointer to table entry */
+    FsPrefix *prefixPtr;		/* Pointer to table entry */
     Boolean	foundPrefix = FALSE;
     int i;
 
-    LOCK_MONITOR;
-
     i = 0;
-    LIST_FORALL(prefixList, (List_Links *)prefixPtr) {
+    prefixPtr = (FsPrefix *)NIL;
+    FsPrefixIterate(&prefixPtr);
+    while (prefixPtr != (FsPrefix *)NIL) {
 	if (index < 0) {
 	    /*
 	     * Dump the prefix entry to the console.
@@ -1816,7 +1854,13 @@ Fs_PrefixDump(index, argPtr)
 	} else if (i == index) {
 	    Fs_Prefix userPrefix;
 	    if (prefixPtr->hdrPtr != (FsHandleHeader *)NIL) {
-
+		/*
+		 * Call down to a domain-specific routine to get the
+		 * information about the domain.  We pass in a copy
+		 * of the file ID here because pseudo-file-system's
+		 * will change the ID to match the user-visible one,
+		 * not the internal one we use in the kernel.
+		 */
 		Fs_FileID fileID;
 		register Fs_FileID *fileIDPtr = &fileID;
 
@@ -1835,8 +1879,10 @@ Fs_PrefixDump(index, argPtr)
 		userPrefix.domainInfo.freeKbytes = -1;
 		userPrefix.domainInfo.maxFileDesc = -1;
 		userPrefix.domainInfo.freeFileDesc = -1;
+		userPrefix.domainInfo.blockSize = -1;
+		userPrefix.domainInfo.optSize = -1;
 	    }
-	    userPrefix.flags = prefixPtr->flags;
+	    userPrefix.flags = prefixPtr->flags & ~FS_PREFIX_LOCKED;
 	    if (prefixPtr->prefixLength >= FS_USER_PREFIX_LENGTH) {
 		bcopy((Address)prefixPtr->prefix, (Address)userPrefix.prefix, FS_USER_PREFIX_LENGTH);
 		userPrefix.prefix[FS_USER_PREFIX_LENGTH-1] = '\0';
@@ -1845,11 +1891,15 @@ Fs_PrefixDump(index, argPtr)
 	    }
 	    Vm_CopyOut(sizeof(Fs_Prefix), (Address)&userPrefix, argPtr);
 	    foundPrefix = TRUE;
-	    break;
 	}
 	i++;
+	if (!foundPrefix) {
+	    FsPrefixIterate(&prefixPtr);
+	} else {
+	    FsPrefixDone(prefixPtr);
+	    break;
+	}
     }
-    UNLOCK_MONITOR;
     if (index < 0 || foundPrefix) {
 	return(SUCCESS);
     } else {
