@@ -18,7 +18,11 @@
 #ifndef _FSIO
 #define _FSIO
 
+#ifdef KERNEL
 #include <fs.h>
+#else
+#include <kernel/fs.h>
+#endif
 
 /*
  * Structure that is transfered when a stream is migrated with a process
