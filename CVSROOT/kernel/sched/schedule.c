@@ -548,6 +548,15 @@ IdleLoop()
     cpu = Mach_GetProcessorNumber();
     queuePtr = schedReadyQueueHdrPtr;
     MASTER_UNLOCK(sched_MutexPtr);
+    if (Mach_IntrNesting(cpu) != 0) {
+	int i;
+
+	Mach_EnableIntr();
+	i = Mach_IntrNesting(cpu);
+	mach_NumDisableIntrsPtr[cpu] = 0;
+	Mach_EnableIntr();
+	panic("Interrupt level at %d going into idle loop.\n", i);
+    }
     while (1) {
 	Proc_SetCurrentProc((Proc_ControlBlock *) NIL);
 	/*
