@@ -315,7 +315,7 @@ Rpc_GetStats(command, option, argPtr)
 		Rpc_PrintCallCount();
 	    } else {
 		status = Vm_CopyOut(option,
-				  (Address)&rpcClientCalls,
+				  (Address) rpcClientCalls,
 				  (Address) callCountPtr);
 	    }
 	    break;
@@ -332,7 +332,7 @@ Rpc_GetStats(command, option, argPtr)
 		Rpc_PrintServiceCount();
 	    } else {
 		status = Vm_CopyOut(option,
-				  (Address)&rpcServiceCount,
+				  (Address) rpcServiceCount,
 				  (Address) serviceCountPtr);
 	    }
 	    break;
