@@ -56,7 +56,7 @@ static char rcsid[] = "$Header$";
 #include <fslcl.h>
 #include <user/inet.h>
 
-char *errs[] = {"ENOERR", "EPERM", "ENOENT", "ESRCH", "EINTR", "EIO",
+static char *errs[] = {"ENOERR", "EPERM", "ENOENT", "ESRCH", "EINTR", "EIO",
 	"ENXIO", "E2BIG", "ENOEXEC", "EBADF", "ECHILD", "EAGAIN", "ENOMEM",
 	"EACCES", "EFAULT", "ENOTBLK", "EBUSY", "EEXIST", "EXDEV", "ENODEV",
 	"ENOTDIR", "EISDIR", "EINVAL", "ENFILE", "EMFILE", "ENOTTY",
@@ -129,8 +129,7 @@ static int GetTermInfo(Fs_Stream *streamPtr, Fs_IOCParam *ioctl,
 	struct ltchars *ltc);
 extern int CheckIfPresent _ARGS_((char *name));
 static char *copyin _ARGS_((char *string));
-static int Fs_GetdirInt _ARGS_((Fs_Stream *streamPtr, struct direct *inDir,
-	int *oldOff, int *newOff, struct direct *kernDir));
+static int Fs_GetdirInt _ARGS_((int fd, int nbytes, Address buf, long *off));
 
 /*
  *----------------------------------------------------------------------
@@ -711,35 +710,26 @@ Fs_NewReadStub(streamID, buffer, numBytes)
 	Mach_SetErrno(Compat_MapCode(status));
 	return -1;
     }
-    for (;;) {
-	amountRead = numBytes - totalAmountRead;
-	if (debugFsStubs) {
-	    printf("Fs_Read(%x, %x, %x, %x(%d))\n", streamPtr, buffer,
-		    streamPtr->offset, &amountRead, amountRead);
-	}
-	status = Fs_Read(streamPtr, buffer, streamPtr->offset, &amountRead);
-	totalAmountRead += amountRead;
-	if (status != SUCCESS) {
-#if 0	    
-	    if (status == GEN_ABORTED_BY_SIGNAL) {
-		if (debugFsStubs) {
-		    printf("Fs_Read aborted by signal\n");
-		}
-		assert(proc_RunningProcesses[0]->specialHandling);
-		assert(procPtr->specialHandling);
-		MachRecoverFromSignal();
-		buffer += amountRead;
-		continue;
-	    }
-#endif	    
-	    if (debugFsStubs) {
-		printf("Fs_Read aborted by signal\n");
-	    }
-	    Mach_SetErrno(Compat_MapCode(status));
-	    return -1;
-	}
-	return totalAmountRead;
+    amountRead = numBytes - totalAmountRead;
+    if (debugFsStubs) {
+        printf("Fs_Read(%x, %x, %x, %x(%d))\n", streamPtr, buffer,
+                streamPtr->offset, &amountRead, amountRead);
     }
+    status = Fs_Read(streamPtr, buffer, streamPtr->offset, &amountRead);
+    totalAmountRead += amountRead;
+    if (status == GEN_ABORTED_BY_SIGNAL) {
+        if (debugFsStubs) {
+            printf("Fs_Read aborted by signal\n");
+        }
+        if (totalAmountRead==0) {
+            procPtr->unixProgress = PROC_PROGRESS_RESTART;
+            return 1122334455; /* Bogus return value */
+        }
+    } else if (status != SUCCESS) {
+        Mach_SetErrno(Compat_MapCode(status));
+        return -1;
+    }
+    return totalAmountRead;
 }
 
 /*
@@ -778,30 +768,22 @@ Fs_NewWriteStub(streamID, buffer, numBytes)
 	Mach_SetErrno(Compat_MapCode(status));
 	return -1;
     }
-    for (;;) {
-	writeLength = numBytes - totalAmountWritten;
-	status = Fs_Write(streamPtr, buffer, streamPtr->offset, &writeLength);
-	totalAmountWritten += writeLength;
-	if (status != SUCCESS) {
-#if 0	    
-	    if (status == GEN_ABORTED_BY_SIGNAL) {
-		if (debugFsStubs) {
-		    printf("write aborted by signal\n");
-		}
-		assert(proc_RunningProcesses[0]->specialHandling);
-		MachRecoverFromSignal();
-		buffer += writeLength;
-		continue;
-	    }
-#endif	    
-	    if (debugFsStubs) {
-		printf("Fs_Write aborted by signal\n");
-	    }
-	    Mach_SetErrno(Compat_MapCode(status));
-	    return -1;
-	}
-	return totalAmountWritten;
+    writeLength = numBytes - totalAmountWritten;
+    status = Fs_Write(streamPtr, buffer, streamPtr->offset, &writeLength);
+    totalAmountWritten += writeLength;
+    if (status == GEN_ABORTED_BY_SIGNAL) {
+        if (debugFsStubs) {
+            printf("Fs_Write aborted by signal\n");
+        }
+        if (totalAmountWritten==0) {
+            Proc_GetCurrentProc()->unixProgress = PROC_PROGRESS_RESTART;
+            return 1122334455; /* Bogus return value */
+        }
+    } else if (status != SUCCESS) {
+        Mach_SetErrno(Compat_MapCode(status));
+        return -1;
     }
+    return totalAmountWritten;
 }
 
 /*
@@ -1040,29 +1022,41 @@ Fs_CreatStub(pathName, permissions)
  *
  *----------------------------------------------------------------------
  */
+#define MAX_IOV 16
 int
 Fs_ReadvStub(streamID, iov, iovcnt)
     int streamID;		/* descriptor for stream to read. */
     register struct iovec *iov;	/* pointer to array of iovecs. */
     int iovcnt;			/* number of  iovecs in iov. */
 {
-    int amountRead;		/* place to hold number of bytes read */
-    int totalRead = 0;  	/* place to hold total # of bytes read */
+    int amountRead;             /* place to hold number of bytes read */
+    int totalRead = 0;          /* place to hold total # of bytes read */
     int i;
+    struct iovec iovCopy[MAX_IOV];      /* Kernel copy of iov */
+    ReturnStatus status;
 
     if (debugFsStubs) {
-	printf("Fs_ReadvStub\n");
+        printf("Fs_ReadvStub\n");
     }
-    for (i=0; i < iovcnt; i++, iov++) {
-	amountRead = Fs_NewReadStub(streamID, iov->iov_base, iov->iov_len);
-	if (amountRead == -1) {
-	    return -1;
-	}
-	totalRead += amountRead;
+    if (iovcnt<=0 || iovcnt > MAX_IOV) {
+        Mach_SetErrno(EINVAL);
+        return -1;
+    }
+    if (Vm_CopyIn(sizeof(struct iovec)*iovcnt, (Address)iov,
+            (Address)iovCopy) != SUCCESS) {
+        Mach_SetErrno(EFAULT);
+        return -1;
+    }
+    for (i=0; i < iovcnt; i++) {
+        amountRead = Fs_NewReadStub(streamID, iovCopy[i].iov_base,
+                iovCopy[i].iov_len);
+        if (amountRead == -1) {
+            return -1;
+        }
+        totalRead += amountRead;
     }
     return totalRead;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -1082,30 +1076,38 @@ Fs_ReadvStub(streamID, iov, iovcnt)
  */
 int
 Fs_WritevStub(streamID, iov, iovcnt)
-
     int streamID;		/* descriptor for stream to read. */
     register struct iovec *iov;	/* pointer to array of iovecs. */
     int iovcnt;			/* number of  iovecs in iov. */
 {
-    int amountWritten;		/* place to hold number of bytes read */
-    int totalWritten = 0;	/* place to hold total # of bytes written */
+    int amountWritten;          /* place to hold number of bytes read */
+    int totalWritten = 0;       /* place to hold total # of bytes written */
     int i;
+    struct iovec iovCopy[MAX_IOV];      /* Kernel copy of iov */
+    ReturnStatus status;
 
-#if 0
     if (debugFsStubs) {
-	printf("Fs_WritevStub\n");
+        printf("Fs_WritevStub\n");
     }
-#endif
-    for (i=0; i < iovcnt; i++, iov++) {
-	amountWritten = Fs_NewWriteStub(streamID, iov->iov_base, iov->iov_len);
-	if (amountWritten == -1) {
-	    return -1;
-	}
-	totalWritten += amountWritten;
+    if (iovcnt<=0 || iovcnt > MAX_IOV) {
+        Mach_SetErrno(EINVAL);
+        return -1;
+    }
+    if (Vm_CopyIn(sizeof(struct iovec)*iovcnt, (Address)iov,
+            (Address)iovCopy) != SUCCESS) {
+        Mach_SetErrno(EFAULT);
+        return -1;
+    }
+    for (i=0; i < iovcnt; i++) {
+        amountWritten = Fs_NewWriteStub(streamID, iovCopy[i].iov_base,
+                iovCopy[i].iov_len);
+        if (amountWritten == -1) {
+            return -1;
+        }
+        totalWritten += amountWritten;
     }
     return totalWritten;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -2087,7 +2089,7 @@ Fs_ReadlinkStub(linkName, buffer, bufSize)
 		if (buffer[bufSize-1] == '\0') {
 		    bufSize--;
 		}
-		status = Proc_ByteCopy(FALSE, sizeof(int), (Address)&bufSize, 
+		status = Proc_ByteCopy(TRUE, sizeof(int), (Address)&bufSize, 
 		                       (Address) &linkSize);
 	    }
 	    (void)Fs_Close(streamPtr);
@@ -2184,15 +2186,20 @@ Fs_IoctlStub(streamID, request, buf)
 	break;
 
 
-    case FIONREAD:
+    case FIONREAD: {
+	int result;
 	if (debugFsStubs) {
                 printf("ioctl: FIONREAD\n");
                 }
 	ioctl.command = IOC_NUM_READABLE;
-	ioctl.outBuffer = (Address) &flags;
-	ioctl.outBufSize = sizeof(flags);
+	ioctl.outBuffer = (Address) &result;
+	ioctl.outBufSize = sizeof(int);
 	status = Fs_IOControl(streamPtr, &ioctl, &reply);
+	if (status == SUCCESS) {
+	    status = Vm_CopyOut(sizeof(int), (Address) &result, buf);
+	}
 	break;
+	}
 
 
     case FIONBIO:
@@ -3641,6 +3648,10 @@ int fd, cmd, arg;
     int value;
     Address		usp;
 
+    if (debugFsStubs) {
+	printf("Fs_FcntlStub(%d, %d, %d)\n", fd, cmd, arg);
+    }
+
     status = Fs_GetStreamPtr(procPtr, fd, &streamPtr);
     if (status != SUCCESS) {
 	Mach_SetErrno(EBADF);
@@ -3794,23 +3805,22 @@ int fd, cmd, arg;
     return -1;
 }
 
-#define SWAP2(val) ((char *)&tmp)[0] = ((char *)&val)[1];\
-	((char *)&tmp)[1] = ((char *)&val)[0]; val = tmp
-#define SWAP4(val) ((char *)&tmp)[0] = ((char *)&val)[3]; \
-	((char *)&tmp)[1] = ((char *)&val)[2]; \
-	((char *)&tmp)[2] = ((char *)&val)[1]; \
-	((char *)&tmp)[3] = ((char *)&val)[0]; val = tmp
+#define DIR_BUF 4096
+
 /*
  *----------------------------------------------------------------------
  *
  * Fs_GetdirInt --
  *
- *	This is an internal routine to get a directory entry from a file.
+ *	This is an internal routine to get some directory entries.
+ *	It does the byteswapping on the buffer.
+ *	A partial record won't be byteswapped.
+ *	It will read the requested number of bytes if they exist.
+ *	The file pointer will point to the end of the data read.
  *
  * Results:
- *	Returns 0 if successful.
- *	Returns EISDIR if we reach end of directory.
- *	Returns other Unix errors for other error conditions.
+ *	Returns number of bytes read if successful.
+ *	Returns -1 if error.
  *
  * Side effects:
  *	Reads from the file.
@@ -3820,87 +3830,115 @@ int fd, cmd, arg;
  */
 /*ARGSUSED*/
 static int
-Fs_GetdirInt(streamPtr, inDir, oldOff, newOff, kernDir)
-    Fs_Stream		*streamPtr;
-    struct direct *inDir;	/* This buffer must be kernel accessible.  */
-    int *oldOff;
-    int *newOff;
-    struct direct	*kernDir;
+Fs_GetdirInt(fd, nbytes, buf, off)
+    int			fd;
+    int			nbytes;	/* Length of user buffer. */
+    Address		buf;    /* Kernel space buffer for data. */
+    long		*off;	/* File offset at start */
 {
-    ReturnStatus	status;
-    int                 amountRead;
-    int			amountToRead;
-    int			tmp;
+    ReturnStatus 	status;	/* result returned by Fs_Read */
+    int			i;
+    int			offset;
+    Proc_ControlBlock	*procPtr;
+    Fs_Stream		*streamPtr;
+    int			bytesRead;
+    Fs_Attributes	spriteAttrs;
+    Fslcl_DirEntry	*dirPtr;
+
+    if (debugFsStubs) {
+	printf("Fs_GetdirInt(%d, %d, %x)\n", fd, nbytes, buf);
+    }
+    if (nbytes < sizeof(struct direct)) {
+	Mach_SetErrno(EINVAL);
+	return -1;
+    }
+    procPtr = Proc_GetEffectiveProc();
+    status = Fs_GetStreamPtr(procPtr, fd, &streamPtr);
+    if (status == SUCCESS) {
+	status = Fs_GetAttrStream(streamPtr, &spriteAttrs);
+    }
+    if (status != SUCCESS) {
+	Mach_SetErrno(EBADF);
+	return -1;
+    }
+    if (spriteAttrs.type != FS_DIRECTORY) {
+	Mach_SetErrno(ENOTDIR);
+	return -1;
+    }
+
+    offset = streamPtr->offset;
+    *off = offset;
+    bytesRead = nbytes;
+    if (debugFsStubs) {
+	printf("Doing Fs_Read: %x, %x, %x, %x\n", streamPtr, buf, offset,
+		bytesRead);
+    }
+    streamPtr->flags &= ~FS_USER;
+    status = Fs_Read(streamPtr, buf, offset, &bytesRead);
+    streamPtr->flags |= FS_USER;
+    if (status != SUCCESS) {
+	if (debugFsStubs) {
+	    printf("Read: status %x\n", status);
+	}
+	Mach_SetErrno(Compat_MapCode(status));
+	return -1;
+    }
 
     /*
-     * If Fslcl_DirEntry and struct direct are not the same, we'll
-     * have to do yet another layer of translation.
+     * Check against big-endian/little-endian conflict.
+     * The max record length is 512, which is 02 when byteswapped.
+     * The min record length is 8, which is > 512 when byteswapped.
+     * All other values fall outside the range 8-512 when byteswapped.
      */
-    assert(sizeof(Fslcl_DirEntry)==sizeof(struct direct));
+    dirPtr = (Fslcl_DirEntry *)buf;
+    if (debugFsStubs) {
+	printf("Fs_GetdirInt: recordLength = %d\n", dirPtr->recordLength);
+    }
+    if (dirPtr->recordLength > FSLCL_DIR_BLOCK_SIZE ||
+	dirPtr->recordLength < 2 * (int)sizeof(int)) {
+	if (debugFsStubs) {
+	    printf("Fs_GetdirInt: swapping entries\n");
+	    printf("Bytes: %x %x %x %x\n", ((int *)buf)[0], ((int *)buf)[1],
+		((int *)buf)[2], ((int *)buf)[3]);
+	}
+	i = bytesRead;
+	while (i >= (int)(sizeof(u_long)+2*sizeof(u_short))) {
+	    union {
+		short	s;
+		char    c[2];
+	    } shortIn, shortOut;
+	    union {
+		int	i;
+		char    c[4];
+	    } intIn, intOut;
 
-#define HDR_SIZE sizeof(u_long)+2*sizeof(u_short)
-    *oldOff = streamPtr->offset;
-    while (1) {
-	amountRead = HDR_SIZE;
-	status = Fs_Read(streamPtr, (Address)inDir, streamPtr->offset,
-		&amountRead);
-	if (status != SUCCESS) {
-	    if (debugFsStubs) {
-		printf("Fs_GetdirInt: Read failed: %x\n", status);
-	    }
-	    Mach_SetErrno(Compat_MapCode(status));
-	    return -1;
-	}
-	if (amountRead < HDR_SIZE) {
-	    return EISDIR;
-	}
-	if (Vm_CopyIn(HDR_SIZE, (Address)inDir, (Address)kernDir) != SUCCESS) {
-	    Mach_SetErrno(EINVAL);
-	    return -1;
-	}
+	    intIn.i = dirPtr->fileNumber;
+	    intOut.c[0] = intIn.c[3];
+	    intOut.c[1] = intIn.c[2];
+	    intOut.c[2] = intIn.c[1];
+	    intOut.c[3] = intIn.c[0];
+	    dirPtr->fileNumber = intOut.i;
 
-	/*
-	 * Check against big-endian/little-endian conflict.
-	 * The max record length is 512, which is 02 when byteswapped.
-	 * The min record length is 8, which is > 512 when byteswapped.
-	 * All other values fall outside the range 8-512 when byteswapped.
-	 */
-	if (kernDir->d_reclen > FSLCL_DIR_BLOCK_SIZE ||
-		kernDir->d_reclen < 2 * sizeof(int)) {
-	    SWAP4(kernDir->d_ino);
-	    SWAP2(kernDir->d_reclen);
-	    SWAP2(kernDir->d_namlen);
-	    if (Vm_CopyOut(HDR_SIZE, (Address)kernDir, (Address) inDir)
-		    != SUCCESS) {
-		Mach_SetErrno(EINVAL);
+	    shortIn.s = dirPtr->recordLength;
+	    shortOut.c[0] = shortIn.c[1];
+	    shortOut.c[1] = shortIn.c[0];
+	    dirPtr->recordLength = shortOut.s;
+
+	    shortIn.s = dirPtr->nameLength;
+	    shortOut.c[0] = shortIn.c[1];
+	    shortOut.c[1] = shortIn.c[0];
+	    dirPtr->nameLength = shortOut.s;
+
+	    if (dirPtr->recordLength <= 0) {
+		printf("Fs_GetdirInt: length = %d!!\n", dirPtr->recordLength);
 		return -1;
 	    }
+	    i -= dirPtr->recordLength;
+	    dirPtr = (Fslcl_DirEntry *) ((Address)dirPtr +
+		    dirPtr->recordLength);
 	}
-
-		
-	amountToRead = kernDir->d_reclen - amountRead;
-	if (amountToRead<0 || kernDir->d_reclen < kernDir->d_namlen ||
-		kernDir->d_namlen>255) {
-	    Mach_SetErrno(EINVAL);
-	    return -1;
-	}
-	amountRead = amountToRead;
-	status = Fs_Read(streamPtr, ((Address)(inDir))+HDR_SIZE,
-		streamPtr->offset, &amountRead);
-	*newOff = streamPtr->offset;
-	if (status != SUCCESS) {
-	    return Compat_MapCode(status);
-	}
-	if (amountRead < amountToRead) {
-	    /*
-	     * Directory is truncated?
-	     */
-	    printf("Fs_GetdirInt: directory truncated\n");
-	    return ENOTDIR;
-	}
-	if (kernDir->d_ino != 0) break;
     }
-    return 0;
+    return bytesRead;
 }
 
 /*
@@ -3925,15 +3963,14 @@ Fs_GetdentsStub(fd, buf, nbytes)
     char *buf;
     int nbytes;
 {
-    Fs_Stream		*streamPtr;
-    Proc_ControlBlock	*procPtr;
-    struct dirent	tmpBuf;
-    int			status;
-    ReturnStatus	returnStatus;
-    int			oldOff;	/* dummy */
-    int			newOff;
-    int			totalBytes = 0;
-    Fs_Attributes	spriteAttrs;
+    ReturnStatus 	status;
+    int			bytesRead;
+    int			bytesStored, bytesUsed;
+    char		kBuf[DIR_BUF];
+    char		kBuf2[DIR_BUF];
+    Address		directPtr, directPtr2;
+    long		offset;
+    int			dirsiz;
 
     if (debugFsStubs) {
 	printf("Fs_Getdents(%d, %x, %d)\n", fd, buf, nbytes);
@@ -3945,52 +3982,103 @@ Fs_GetdentsStub(fd, buf, nbytes)
 	return -1;
     }
 
-    procPtr = Proc_GetEffectiveProc();
-    status = Fs_GetStreamPtr(procPtr, fd, &streamPtr);
-    if (status == SUCCESS) {
-	status = Fs_GetAttrStream(streamPtr, &spriteAttrs);
-    }
-    if (status != SUCCESS) {
-	Mach_SetErrno(EBADF);
-	return -1;
+    if (nbytes>DIR_BUF) {
+	nbytes = DIR_BUF;
     }
 
-    if (spriteAttrs.type != FS_DIRECTORY) {
-	Mach_SetErrno(ENOTDIR);
-	return -1;
+    bytesStored = 0;
+    while (bytesStored==0) {
+	bytesRead = Fs_GetdirInt(fd, nbytes, kBuf, &offset);
+	bytesUsed = 0;
+	if (debugFsStubs) {
+	    printf("Fs_Getdirentries got %d bytes from Fs_GetdirInt\n",
+		    bytesRead);
+	}
+	if (bytesRead <=0) {
+	    return bytesRead;
+	}
+
+	/*
+	 * Scan through the entries converting them to the new format.
+	 * directPtr points to the directory we read in.
+	 * directPtr2 points to the directory we are creating.
+	 * We can take bytesRead bytes from directPtr, and we count these
+	 * in bytesUsed.
+	 * We can put nbytes bytes into directPtr2, and we count these
+	 * in bytesStored.
+	 */
+
+	directPtr = kBuf;
+	directPtr2 = kBuf2;
+
+	while (bytesUsed+sizeof(u_long)+2*sizeof(u_short) <= bytesRead &&
+		bytesStored < nbytes) {
+	    dirsiz = DIRSIZ((struct direct *)directPtr);
+	    if (debugFsStubs) {
+		printf("dirsiz = %d\n", dirsiz);
+		printf("bytes = %x %x %x\n", ((int *)directPtr)[0],
+			((int *)directPtr)[1], ((int *)directPtr)[2]);
+		printf("d_reclen %d, d_namlen %d\n", ((struct direct *)
+			directPtr)->d_reclen,
+			((struct direct *)directPtr)->d_namlen);
+	    }
+	    if (dirsiz > sizeof(struct direct) || ((struct direct *)
+		    directPtr)->d_reclen > FSLCL_DIR_BLOCK_SIZE) {
+		printf("Fs_Getdirentries: Directory record too long!\n");
+		printf("dirsiz = %d, reclen = %d\n", dirsiz,
+			((struct direct *)directPtr)->d_reclen);
+		Mach_SetErrno(EINVAL);
+		return -1;
+	    }
+	    if (((struct direct *)directPtr)->d_ino != 0) {
+		if (bytesUsed+dirsiz>bytesRead ||
+			bytesStored+dirsiz+sizeof(off_t)>nbytes){
+		    break;
+		}
+		bcopy(directPtr, directPtr2+sizeof(off_t), dirsiz);
+		((struct dirent *)directPtr2)->d_off = offset+bytesUsed;
+		((struct dirent *)directPtr2)->d_reclen = dirsiz+sizeof(off_t);
+		bytesStored += dirsiz+sizeof(off_t);
+		directPtr2 += dirsiz+sizeof(off_t);
+	    }
+	    bytesUsed += ((struct direct *)directPtr)->d_reclen;
+	    directPtr += ((struct direct *)directPtr)->d_reclen;
+	    if (bytesStored > nbytes) {
+		printf("Overflow! %d vs %d, %d vs %d\n", bytesUsed, bytesRead,
+			bytesStored, nbytes);
+		Mach_SetErrno(EINVAL);
+		return -1;
+	    }
+	}
+
+	/*
+	 * Set the file pointer.
+	 */
+	if (bytesUsed != bytesRead) {
+	    if (debugFsStubs) {
+		printf("old offset = %d, read %d, used %d\n",
+			offset, bytesRead, bytesUsed);
+	    }
+	    status = Fs_LseekStub(fd, offset+bytesUsed, L_SET);
+	    if (status < 0) {
+		printf("Lseek to %d failed in getdents!\n", offset+bytesUsed);
+		return -1;
+	    }
+	}
     }
 
     /*
-     * We do something tricky here.  The dirent structure has an extra
-     * byte at the beginning for the offset.  So we offset tmpBuf
-     * appropriately.
+     * Copy out the results.
      */
-    while (nbytes-totalBytes>=sizeof(struct dirent)) {
-	status = Fs_GetdirInt(streamPtr,
-		(struct direct *)(buf+sizeof(off_t)),
-		&oldOff, &newOff, (struct direct *)(&tmpBuf.d_fileno));
-	tmpBuf.d_off = newOff;
-	if (status == EISDIR) {
-	    break;
-	} else if (status != 0) {
-	    printf("GetdirInt failure: %d\n", status);
-	    Mach_SetErrno(status);
-	    return -1;
-	}
-	tmpBuf.d_reclen += sizeof(off_t);
 
-	returnStatus = Vm_CopyOut(HDR_SIZE+sizeof(off_t), (Address) &tmpBuf,
-		buf);
-	if (returnStatus != SUCCESS) {
-	    Mach_SetErrno(EFAULT);
-	    return -1;
-	}
-	buf += tmpBuf.d_reclen;
-	totalBytes += tmpBuf.d_reclen;
+    status = Vm_CopyOut(bytesStored, kBuf2, buf);
+    if (status != SUCCESS) {
+	Mach_SetErrno(EFAULT);
+	return -1;
     }
-    return totalBytes;
-}
 
+    return bytesStored;
+}
 /*
  *----------------------------------------------------------------------
  *
@@ -4015,79 +4103,102 @@ Fs_GetdirentriesStub(fd, buf, nbytes, basep)
     long *basep;
 
 {
-    ReturnStatus status;	/* result returned by Fs_Read */
-    Address	usp;
-    int		bytesAcc;
-    Fslcl_DirEntry	*dirPtr;
-    Address	addr;
-    int		i;
-    int		nBytes;
+    ReturnStatus 	status;
+    int			bytesRead;
+    int			bytesStored, bytesUsed;
+    char		kBuf[DIR_BUF];
+    char		kBuf2[DIR_BUF];
+    Address		directPtr, directPtr2;
+    long		offset;
+    int			dirsiz;
 
     if (debugFsStubs) {
 	printf("Fs_Getdirentries(%d, %x, %d, %x)\n", fd, buf, nbytes, basep);
     }
-    usp = (Address)(Mach_UserStack() - 4);
-    status = Fs_ReadStub(fd, nbytes, buf, (int *)usp);
-    if (status == SUCCESS) {
-	(void)Vm_CopyIn(sizeof(int), usp,
-		        (Address)&nBytes);
-	if (nBytes == 0) {
-	    return 0;
+
+    if (nbytes > DIR_BUF) {
+	nbytes = DIR_BUF;
+    }
+
+    bytesStored = 0;
+    while (bytesStored==0) {
+	bytesRead = Fs_GetdirInt(fd, nbytes, kBuf, &offset);
+	bytesUsed = 0;
+	if (debugFsStubs) {
+	    printf("Fs_Getdirentries got %d bytes from Fs_GetdirInt\n",
+		    bytesRead);
 	}
-    } else {
-	Mach_SetErrno(Compat_MapCode(status));
+	if (bytesRead <=0) {
+	    return bytesRead;
+	}
+
+	/*
+	 * Scan through the entries converting them to the new format.
+	 * directPtr points to the directory we read in.
+	 * directPtr2 points to the directory we are creating.
+	 * We can take bytesRead bytes from directPtr, and we count these
+	 * in bytesUsed.
+	 * We can put nbytes bytes into directPtr2, and we count these
+	 * in bytesStored.
+	 */
+
+	directPtr = kBuf;
+	directPtr2 = kBuf2;
+
+	while (bytesUsed+sizeof(u_long)+2*sizeof(u_short) <= bytesRead &&
+		bytesStored < nbytes) {
+	    dirsiz = DIRSIZ((struct direct *)directPtr);
+	    if (dirsiz > sizeof(struct direct) || ((struct direct *)
+		    directPtr)->d_reclen > FSLCL_DIR_BLOCK_SIZE) {
+		printf("Fs_Getdirentries: Directory record too long!\n");
+		Mach_SetErrno(EINVAL);
+		return -1;
+	    }
+	    if (((struct direct *)directPtr)->d_ino != 0) {
+		if (bytesUsed+dirsiz>bytesRead || bytesStored+dirsiz>nbytes){
+		    break;
+		}
+		bcopy(directPtr, directPtr2, dirsiz);
+		((struct direct *)directPtr2)->d_reclen = dirsiz;
+		bytesStored += dirsiz;
+		directPtr2 += dirsiz;
+	    }
+	    bytesUsed += ((struct direct *)directPtr)->d_reclen;
+	    directPtr += ((struct direct *)directPtr)->d_reclen;
+	    if (bytesStored > nbytes) {
+		printf("Overflow! %d vs %d, %d vs %d\n", bytesUsed, bytesRead,
+			bytesStored, nbytes);
+		Mach_SetErrno(EINVAL);
+		return -1;
+	    }
+	}
+
+	/*
+	 * Set the file pointer.
+	 */
+	if (bytesUsed != bytesRead) {
+	    status = Fs_LseekStub(fd, offset+bytesUsed, L_SET);
+	    if (status < 0) {
+		printf("Lseek to %d failed in getdents!\n", offset+bytesUsed);
+		return -1;
+	    }
+	}
+    }
+
+    /*
+     * Copy out the results.
+     */
+
+    status = Vm_CopyOut(sizeof(long), (Address)&offset, (Address)basep);
+    if (status != SUCCESS) {
+	Mach_SetErrno(EFAULT);
 	return -1;
     }
-    Vm_MakeAccessible(VM_OVERWRITE_ACCESS, 
-		nBytes, buf, &bytesAcc, &addr);
-    if (bytesAcc != nBytes) {
-	panic("User buffer not accessible, but we just wrote to it !!!\n");
+    status = Vm_CopyOut(bytesStored, kBuf2, buf);
+    if (status != SUCCESS) {
+	Mach_SetErrno(EFAULT);
+	return -1;
     }
-    /*
-     * Check against big-endian/little-endian conflict.
-     * The max record length is 512, which is 02 when byteswapped.
-     * The min record length is 8, which is > 512 when byteswapped.
-     * All other values fall outside the range 8-512 when byteswapped.
-     */
-    dirPtr = (Fslcl_DirEntry *)addr;
-    if (dirPtr->recordLength > FSLCL_DIR_BLOCK_SIZE ||
-	dirPtr->recordLength < 2 * sizeof(int)) {
-	i = bytesAcc;
-	while (i > 0) {
-	    union {
-		short	s;
-		char    c[2];
-	    } shortIn, shortOut;
-	    union {
-		int	i;
-		char    c[4];
-	    } intIn, intOut;
 
-	    if (dirPtr->nameLength <= FS_MAX_NAME_LENGTH) {
-		printf("Getdirentries: Bad directory format\n");
-	    }
-	    intIn.i = dirPtr->fileNumber;
-	    intOut.c[0] = intIn.c[3];
-	    intOut.c[1] = intIn.c[2];
-	    intOut.c[2] = intIn.c[1];
-	    intOut.c[3] = intIn.c[0];
-	    dirPtr->fileNumber = intOut.i;
-
-	    shortIn.s = dirPtr->recordLength;
-	    shortOut.c[0] = shortIn.c[1];
-	    shortOut.c[1] = shortIn.c[0];
-	    dirPtr->recordLength = shortOut.s;
-
-	    shortIn.s = dirPtr->nameLength;
-	    shortOut.c[0] = shortIn.c[1];
-	    shortOut.c[1] = shortIn.c[0];
-	    dirPtr->nameLength = shortOut.s;
-
-	    i -= dirPtr->recordLength;
-	    dirPtr = (Fslcl_DirEntry *) ((Address)dirPtr +
-		    dirPtr->recordLength);
-	}
-    }
-    Vm_MakeUnaccessible(addr, bytesAcc);
-    return nBytes;
+    return bytesStored;
 }

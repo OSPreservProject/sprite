@@ -34,6 +34,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <fsutil.h>
 #include <fsNameOps.h>
 #include <fsUnixStubs.h>
+#include <procUnixStubs.h>
 #include <fsio.h>
 #include <sync.h>
 #include <list.h>
@@ -44,9 +45,25 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <rpc.h>
 #include <vm.h>
 
-#ifndef Mach_SetErrno
-#define Mach_SetErrno(err)
-#endif
+static char *errs[] = {"ENOERR", "EPERM", "ENOENT", "ESRCH", "EINTR", "EIO",
+        "ENXIO", "E2BIG", "ENOEXEC", "EBADF", "ECHILD", "EAGAIN", "ENOMEM",
+        "EACCES", "EFAULT", "ENOTBLK", "EBUSY", "EEXIST", "EXDEV", "ENODEV",
+        "ENOTDIR", "EISDIR", "EINVAL", "ENFILE", "EMFILE", "ENOTTY",
+        "ETXTBSY", "EFBIG", "ENOSPC", "ESPIPE", "EROFS", "EMLINK", "EPIPE",
+        "EDOM", "ERANGE", "EWOULDBLOCK", "EINPROGRESS", "EALREADY", "ENOTSOCK",
+        "EDESTADDRREQ", "EMSGSIZE", "EPROTOTYPE", "ENOPROTOOPT",
+        "EPROTONOSUPPORT", "ESOCKTNOSUPPORT", "EOPNOTSUPP", "EPFNOSUPPORT",
+        "EAFNOSUPPORT", "EADDRINUSE", "EADDRNOTAVAIL", "ENETDOWN",
+        "ENETUNREACH", "ENETRESET", "ECONNABORTED", "ECONNRESET", "ENOBUFS",
+        "EISCONN", "ENOTCONN", "ESHUTDOWN", "ETIMEDOUT", "ECONNREFUSED",
+        "ELOOP", "ENAMETOOLONG", "EHOSTDOWN", "EHOSTUNREACH", "ENOTEMPTY",
+        "EPROCLIM", "EUSERS", "EDQUOT", "ESTALE", "EREMOTE"};
+
+#undef Mach_SetErrno
+#define Mach_SetErrno(err) if (debugFsStubs) \
+        printf("Error %d (%s) at %d in %s\n", err,\
+        err<sizeof(errs)/sizeof(char *)?errs[err]:"",\
+        __LINE__, __FILE__); Proc_GetActualProc()->unixErrno = (err)
 
 /*
  * Internal limit on the number of streams that can be checked.
@@ -223,6 +240,22 @@ Fs_SelectStub(numStreams, userTimeoutPtr, userReadMaskPtr, userWriteMaskPtr,
     return(status);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_NewSelectStub --
+ *
+ *      The stub for the "select" Unix system call.
+ *
+ * Results:
+ *      Returns -1 on failure.
+ *
+ * Side effects:
+ *      Side effects associated with the system call.
+ *
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Fs_NewSelectStub(numStreams, userReadMaskPtr, userWriteMaskPtr,
               userExceptMaskPtr, userTimeoutPtr)
@@ -261,7 +294,9 @@ Fs_NewSelectStub(numStreams, userReadMaskPtr, userWriteMaskPtr,
     extern int          debugFsStubs;
 
     if (debugFsStubs) {
-	printf("Fs_NewSelectStub\n");
+	printf("Fs_NewSelectStub(%d, %x, %x, %x, %x)\n", numStreams,
+		userReadMaskPtr, userWriteMaskPtr, userExceptMaskPtr,
+		userTimeoutPtr);
     }
 
     if ((userReadMaskPtr == (int *) USER_NIL) &&
@@ -284,7 +319,7 @@ Fs_NewSelectStub(numStreams, userReadMaskPtr, userWriteMaskPtr,
     } else {
 	if (Vm_CopyIn(sizeof(Time), (Address) userTimeoutPtr, 
 				(Address) &timeout) != SUCCESS) {
-	    Mach_SetErrno(EACCES);
+	    Mach_SetErrno(EFAULT);
 	    return -1;
 	}
 	timeoutPtr = &timeout;
@@ -314,7 +349,7 @@ Fs_NewSelectStub(numStreams, userReadMaskPtr, userWriteMaskPtr,
     status = readInMasks(numStreams, userReadMaskPtr, inReadMaskPtr,
 	userWriteMaskPtr, inWriteMaskPtr, userExceptMaskPtr, inExceptMaskPtr);
     if (status != SUCCESS) {
-	Mach_SetErrno(EACCES);
+	Mach_SetErrno(EFAULT);
 	return -1;
     }
     status = Fs_Select(numStreams, timeoutPtr, inReadMaskPtr, outReadMaskPtr,
@@ -332,13 +367,12 @@ Fs_NewSelectStub(numStreams, userReadMaskPtr, userWriteMaskPtr,
 	    status = SYS_ARG_NOACCESS;
 	}
     }
-    /*
-     * Note: I'm not convinced this is correct.  The code here before
-     * was wrong, but I don't know if I got this right.  I think this
-     * does the right thing for a timeout, but I'm not sure. -Ken
-     */
     if (status == SUCCESS) {
 	return numReady;
+    } else if (status == GEN_ABORTED_BY_SIGNAL) {
+	Proc_GetCurrentProc()->unixProgress = PROC_PROGRESS_MIG_RESTART;
+	Mach_SetErrno(EINTR);
+	return -1;
     } else if (status == FS_TIMEOUT) {
 	return 0;
     } else {
