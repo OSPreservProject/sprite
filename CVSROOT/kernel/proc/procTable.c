@@ -561,7 +561,7 @@ ProcFreePCB(procPtr)
 
     LOCK_MONITOR;
 
-#ifndef CLEAN_LOCK
+#ifdef LOCKREG
     lockPtr = &(procPtr->lockInfo);
 #endif
 
