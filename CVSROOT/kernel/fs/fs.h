@@ -69,18 +69,15 @@ typedef struct FsHandleHeader {
 } FsHandleHeader;			/* 28 BYTES */
 
 /*
- * For files on Sprite servers there is a common set of name related
- * information.  This is used to direct name operations to the name server,
- * to handle the lookup redirects that are part of the prefix table lookup,
- * and for human readable error messages.  This is the structure referenced
- * by a Fs_Stream and used to get to the name server, ie. the host that
- * did the name lookup, not neccesarily the I/O server for the stream.
+ * The following name-related information is referenced by each stream.
+ * This identifies the name of the file, which will be different than
+ * the file itself in the case of devices.  This is used to get to the
+ * name server during set/get attributes operations.  Also, this name
+ * fileID is used as the starting point for relative lookups.
  */
 
 typedef struct FsNameInfo {
     FsFileID		fileID;		/* Identifies file and name server. */
-    int			nameDomain;	/* Name domain type, defined in fs.h */
-    struct FsPrefix	*prefixPtr;	/* To handle naming re-directs. */
     char		*name;		/* For console error messages. */
 } FsNameInfo;
 
@@ -95,22 +92,20 @@ typedef struct FsNameInfo {
  *	local pipes, remote pipes, locally cached named pipes,
  *	remotely cached named pipes, control streams for pseudo devices,
  *	psuedo streams, their corresponding server streams, etc. etc.
+ *	The different stream types are defined in fsInt.h
  *
  */
 
 typedef struct Fs_Stream {
-    FsHandleHeader	hdr;		/* Global stream identifier. */
+    FsHandleHeader	hdr;		/* Global stream identifier.  This
+					 * includes a reference count which
+					 * is incremented on fork/dup */
     int			offset;		/* File access position */
     int			flags;		/* Flags defined below */
     FsHandleHeader	*ioHandlePtr;	/* Stream specific data used for I/O.
 					 * This really references a somewhat
 					 * larger object, see fsInt.h */
     FsNameInfo	 	*nameInfoPtr;	/* Used to contact the name server */
-    int			refCount;	/* This reference count is incremented
-					 * upon fork/dup, and is decremented
-					 * when the stream is closed.  After
-					 * no refs are left a close on the
-					 * stream's I/O handle is done. */
     List_Links		clientList;	/* Needed for recovery and sharing
 					 * detection */
 } Fs_Stream;				/* 52 BYTES */
