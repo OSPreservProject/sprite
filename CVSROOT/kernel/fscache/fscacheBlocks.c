@@ -1797,7 +1797,6 @@ again:
 	} else if (blockPtr->flags & FSCACHE_BLOCK_DIRTY) {
 	    PutBlockOnDirtyList(blockPtr, FALSE);
 	    if (flags & FSCACHE_FILE_WB_WAIT) {
-#ifdef wait_for_fsStat
 		/*
 		 * Synchronous invalidation... record statistics.
 		 */
@@ -1805,7 +1804,6 @@ again:
 		if (flags & FSCACHE_WB_MIGRATION) {
 		    fs_Stats.blockCache.migBlocksFlushed++;
 		}
-#endif
 	    }
 	} else if (flags & FSCACHE_WRITE_BACK_AND_INVALIDATE) {
 	    /*
