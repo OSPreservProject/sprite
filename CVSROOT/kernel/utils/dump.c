@@ -34,6 +34,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "net.h"
 #include "mem.h"
 #include "recov.h"
+#include "string.h"
 
 /*
  * Define constants, which are used instead of enumerated types to allow
@@ -371,16 +372,16 @@ DumpPCB(procPtr)
 {
    
     static char *states[] = {
-	    "unused",
-	    "running",
-	    "ready",
-	    "waiting",
-	    "exiting",
-	    "dead",
-	    "debug",
-	    "migrated",
-	    "new",
-	    "suspended",
+	"unused",
+	"running",
+	"ready",
+	"waiting",
+	"exiting",
+	"dead",
+	"debug",
+	"migrated",
+	"new",
+	"suspended",
     };
     Proc_State state;
 
@@ -396,33 +397,45 @@ DumpPCB(procPtr)
 	case PROC_MIGRATED:
 	case PROC_NEW:
 	case PROC_SUSPENDED:
-	    break;
+	break;
 	default:
-	    Sys_Panic(SYS_FATAL, "DumpPCB: invalid proess state: %d.\n", state);
+	Sys_Panic(SYS_FATAL, "DumpPCB: invalid proess state: %d.\n", state);
     }
     /*
      * A header describing the fields has already been printed.
      */
     Sys_Printf(
-	    " %6x %6x %5d [%1d,%6d] [%1d,%6d] %8x %8s %s\n",
-	    procPtr, 
-	    procPtr->processID, 
-	    procPtr->weightedUsage, 
+	       " %6x %6x %5d [%1d,%6d] [%1d,%6d] %8x %8s",
+	       procPtr, 
+	       procPtr->processID, 
+	       procPtr->weightedUsage, 
 #ifdef SUN2
-	    procPtr->userCpuUsage.high,
-	    procPtr->userCpuUsage.low,
-	    procPtr->kernelCpuUsage.high, 
-	    procPtr->kernelCpuUsage.low,
+	       procPtr->userCpuUsage.high,
+	       procPtr->userCpuUsage.low,
+	       procPtr->kernelCpuUsage.high, 
+	       procPtr->kernelCpuUsage.low,
 #endif
 #ifdef SUN3
-	    procPtr->userCpuUsage.seconds,
-	    procPtr->userCpuUsage.microseconds,
-	    procPtr->kernelCpuUsage.seconds, 
-	    procPtr->kernelCpuUsage.microseconds,
+	       procPtr->userCpuUsage.seconds,
+	       procPtr->userCpuUsage.microseconds,
+	       procPtr->kernelCpuUsage.seconds, 
+	       procPtr->kernelCpuUsage.microseconds,
 #endif
-	    procPtr->event,
-	    states[(int) state],
-	    procPtr->codeFileName);
+	       procPtr->event,
+	       states[(int) state]);
+    if (procPtr->argString != (Address) NIL) {
+	char cmd[30];
+	char *space;
+
+	String_NCopy(30, procPtr->argString, cmd);
+	space = String_FindChar(cmd, ' ');
+	if (space != (char *) NULL) {
+	    *space = '\0';
+	}
+	Sys_Printf(" %s\n", cmd);
+    } else {
+	Sys_Printf("\n");
+    }
 }
 
 
