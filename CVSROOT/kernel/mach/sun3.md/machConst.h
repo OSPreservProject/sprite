@@ -43,13 +43,11 @@
 #define	MACH_LEVEL5_INT		29
 #define	MACH_LEVEL6_INT		30
 #define	MACH_LEVEL7_INT		31
-#define	MACH_SYSCALL_TRAP	32
-#define	MACH_SIG_RET_TRAP	33
-#define	MACH_BAD_TRAP		34
-#define	MACH_BRKPT_TRAP		35
-#define	MACH_UNKNOWN_EXC	36
+#define	MACH_SYSCALL_TRAP	33
+#define	MACH_SIG_RET_TRAP	34
+#define	MACH_BAD_TRAP		35
 
-#ifdef sun3
+#define	MACH_BRKPT_TRAP		47
 #define MACH_FP_UNORDERED_COND  48
 #define MACH_FP_INEXACT_RESULT  49
 #define MACH_FP_ZERO_DIV        50
@@ -57,7 +55,7 @@
 #define MACH_FP_OPERAND_ERROR   52
 #define MACH_FP_OVERFLOW        53
 #define MACH_FP_NAN             54
-#endif
+#define	MACH_UNKNOWN_EXC	55
 
 /*
  * The offsets for the various things on the exception stack
