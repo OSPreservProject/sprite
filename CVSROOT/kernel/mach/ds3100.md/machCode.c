@@ -236,9 +236,9 @@ unsigned	machInstCacheSize;
 Mach_DebugState	mach_DebugState;
 Mach_DebugState *machDebugStatePtr = &mach_DebugState;
 
-static void	SetupSigHandler();
-static void	ReturnFromSigHandler();
-static void	Interrupt();
+static void		SetupSigHandler();
+static void		ReturnFromSigHandler();
+static ReturnStatus 	Interrupt();
 
 /*
  * Preallocate all machine state structs.
@@ -812,6 +812,7 @@ MachUserExceptionHandler(statusReg, causeReg, badVaddr, pc)
     register	Proc_ControlBlock	*procPtr;
     int					cause;
     Boolean				retVal;
+    ReturnStatus			status;
 
     cause = (causeReg & MACH_CR_EXC_CODE) >> MACH_CR_EXC_CODE_SHIFT;
     if (cause != MACH_EXC_INT) {
@@ -821,7 +822,10 @@ MachUserExceptionHandler(statusReg, causeReg, badVaddr, pc)
     procPtr = Proc_GetActualProc();
     switch (cause) {
 	case MACH_EXC_INT:
-	    Interrupt(statusReg, causeReg);
+	    status = Interrupt(statusReg, causeReg);
+	    if (status != MACH_OK) {
+		panic("MachUserExceptionHandler: nested interrupts.\n");
+	    }
 	    /* 
 	     * Enable interrupts so that we can do the user mode return
 	     * checks.
@@ -975,8 +979,8 @@ MachKernelExceptionHandler(statusReg, causeReg, badVaddr, pc)
     procPtr = Proc_GetActualProc();
     switch (cause) {
 	case MACH_EXC_INT:
-	    Interrupt(statusReg, causeReg);
-	    return(MACH_OK);
+	    status = Interrupt(statusReg, causeReg);
+	    return(status);
 	case MACH_EXC_TLB_LD_MISS:
 	case MACH_EXC_TLB_ST_MISS:
 	case MACH_EXC_TLB_MOD: {
@@ -1063,14 +1067,15 @@ MachKernelExceptionHandler(statusReg, causeReg, badVaddr, pc)
  *      Call the proper interrupt handler for the given interrupt.
  *
  * Results:
- *      None.
+ *      MACH_KERN_ERROR if the machine should go into the debugger, or MACH_OK
+ *	otherwise.
  *
  * Side effects:
  *      None.
  *
  * ----------------------------------------------------------------------------
  */
-static void
+static ReturnStatus
 Interrupt(statusReg, causeReg)
     unsigned	statusReg;
     unsigned	causeReg;
@@ -1078,6 +1083,19 @@ Interrupt(statusReg, causeReg)
     int		n;
     unsigned	mask;
 
+#define DEBUG_INTR
+#ifdef DEBUG_INTR
+    if (mach_AtInterruptLevel) {
+	printf("Received interrupt while at interrupt level.\n");
+	return(MACH_KERN_ERROR);
+    }
+    if (mach_NumDisableIntrsPtr[0] > 0) {
+	printf("Received interrupt with mach_NumDisableIntrsPtr[0] = %d.\n",
+	       mach_NumDisableIntrsPtr[0]);
+	return(MACH_KERN_ERROR);
+    }
+#endif /* DEBUG_INTR */
+    
     mach_KernelMode = !(statusReg & MACH_SR_KU_PREV);
     mach_AtInterruptLevel = 1;
     n = 0;
@@ -1092,6 +1110,7 @@ Interrupt(statusReg, causeReg)
     }
 
     mach_AtInterruptLevel = 0;
+    return(MACH_OK);
 }
 
 
