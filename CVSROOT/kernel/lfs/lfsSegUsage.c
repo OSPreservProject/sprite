@@ -174,7 +174,8 @@ LfsCheckRead(lfsPtr,diskAddress, numBytes)
     s = (LfsSegUsageEntry *) LfsStableMemEntryAddr(&smemEntry);
 
     if (s->flags & LFS_SEG_USAGE_CLEAN) {
-	panic("LfsOkToRead read from clean segment\n");
+	panic("LfsOkToRead read from clean segment: %s\n",
+	    lfsPtr->name);
 	LfsStableMemRelease(&(usagePtr->stableMem), &smemEntry, FALSE);
 	return;
     }
@@ -258,7 +259,8 @@ LfsSetSegUsage(lfsPtr, segNumber, activeBytes)
     cp->freeBlocks += (LfsBytesToBlocks(lfsPtr, s->activeBytes) - 
 				LfsBytesToBlocks(lfsPtr, activeBytes));
     if (s->flags & LFS_SEG_USAGE_CLEAN) {
-	panic("LfsSetSegUsage called on a clean segment (%d)\n", segNumber);
+	panic("LfsSetSegUsage called on a clean segment (%d): %s\n", 
+	    segNumber, lfsPtr->name);
 	LfsStableMemRelease(&(usagePtr->stableMem), &smemEntry, FALSE);
 	return;
     }

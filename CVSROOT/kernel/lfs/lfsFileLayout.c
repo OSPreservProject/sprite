@@ -674,9 +674,6 @@ LfsFileLayoutClean(segPtr, sizePtr, numCacheBlocksPtr, clientDataPtr)
 				    (Fsdm_FileDescriptor *) NIL, TRUE, 
 				    &newHandlePtr);
 		if (status == FS_WOULD_BLOCK) {
-		    printf("Can't fetch handle for file %d for cleaning\n",
-				fileSumPtr->fileNumber);
-
 		    LFS_STATS_INC(lfsPtr->stats.layout.cleanLockedHandle);
 		    error = TRUE;
 		    break;
@@ -985,9 +982,6 @@ LfsFileLayoutCleanVerify(segPtr)
 				    (Fsdm_FileDescriptor *) NIL, TRUE, 
 				    &newHandlePtr);
 		if (status == FS_WOULD_BLOCK) {
-		    printf("Can't fetch handle for file %d for cleaning\n",
-				fileSumPtr->fileNumber);
-
 		    error = TRUE;
 		    break;
 		}
