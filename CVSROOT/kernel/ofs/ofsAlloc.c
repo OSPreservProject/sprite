@@ -682,7 +682,7 @@ FsRecordDeletionStats(cacheInfoPtr, bytesToFree)
 	type = FsFindFileType(cacheInfoPtr);
 	
 	if (type == FS_FILE_TYPE_SWAP &&
-	    cacheInfoPtr->hdrPtr->type == FS_LCL_FILE_STREAM) {
+	    cacheInfoPtr->hdrPtr->fileID.type == FS_LCL_FILE_STREAM) {
 	    register FsLocalFileIOHandle *handlePtr;
 	    register FsFileDescriptor 	*descPtr;
 
