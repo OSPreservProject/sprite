@@ -402,16 +402,15 @@ FsCacheCheckVersion(cacheInfoPtr, version, clientID)
 /*
  * ----------------------------------------------------------------------------
  *
- * FsCacheNumBlocks --
+ * FsCacheOkToScavenge --
  *
- * 	This is called at handle scavenge time to see how many blocks
- *	there are in the cache.  If there are no blocks it is ok to
- *	remove the handle.  This calls a routine in fsBlockCache.c
+ * 	This is called at handle scavenge time to see if it is ok to
+ *	scavenge the handle.  This calls a routine in fsBlockCache.c
  *	which gets the global cache monitor lock because the blocksInCache
- *	attribute is modified under that lock.
+ *	attribute and FS_FILE_ON_DIRTY list flags is modified under that lock.
  *
  * Results:
- *	The number of blocks in the cache for the file.
+ *	TRUE if there is no information in the cache for the file.
  *
  * Side effects:
  *	None.
@@ -419,15 +418,15 @@ FsCacheCheckVersion(cacheInfoPtr, version, clientID)
  * ----------------------------------------------------------------------------
  *
  */
-ENTRY int
-FsCacheNumBlocks(cacheInfoPtr)
+ENTRY Boolean
+FsCacheOkToScavenge(cacheInfoPtr)
     register FsCacheFileInfo	*cacheInfoPtr;	/* Cache state to check. */
 {
-    register int numBlocks;
+    register Boolean ok;
     LOCK_MONITOR;
-    numBlocks = FsCacheFileBlocks(cacheInfoPtr);
+    ok = FsBlockCacheOkToScavenge(cacheInfoPtr);
     UNLOCK_MONITOR;
-    return(numBlocks);
+    return(ok);
 }
 
 /*
