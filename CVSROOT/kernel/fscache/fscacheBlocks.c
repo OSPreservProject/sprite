@@ -459,6 +459,8 @@ FsCacheInfoInit(cacheInfoPtr, hdrPtr, version, cacheable, attrPtr)
 {
     List_InitElement(&cacheInfoPtr->links);
     List_Init(&cacheInfoPtr->dirtyList);
+    List_Init(&cacheInfoPtr->blockList);
+    List_Init(&cacheInfoPtr->indList);
     cacheInfoPtr->flags = (cacheable ? 0 : FS_FILE_NOT_CACHEABLE);
     cacheInfoPtr->version = version;
     cacheInfoPtr->hdrPtr = hdrPtr;
@@ -1065,6 +1067,12 @@ again:
     *blockPtrPtr = blockPtr;
     Hash_SetValue(hashEntryPtr, blockPtr);
     List_Insert((List_Links *) blockPtr, LIST_ATREAR(lruList));
+    List_InitElement(&blockPtr->fileLinks);
+    if (flags & FS_IND_CACHE_BLOCK) {
+	List_Insert(&blockPtr->fileLinks, LIST_ATREAR(&cacheInfoPtr->indList));
+    } else {
+	List_Insert(&blockPtr->fileLinks,LIST_ATREAR(&cacheInfoPtr->blockList));
+    }
 
     UNLOCK_MONITOR;
     return;
@@ -1368,6 +1376,7 @@ CacheFileInvalidate(cacheInfoPtr, firstBlock, lastBlock)
 	     * Remove it from the hash table.
 	     */
 	    cacheInfoPtr->blocksInCache--;
+	    List_Remove(&blockPtr->fileLinks);
 	    Hash_Delete(blockHashTable, hashEntryPtr);
     
 	    /*
@@ -1602,6 +1611,7 @@ again:
 	    }
 	    if (flags & FS_FILE_WB_INVALIDATE) {
 		cacheInfoPtr->blocksInCache--;
+		List_Remove(&blockPtr->fileLinks);
 		Hash_Delete(blockHashTable, hashEntryPtr);
 		List_Remove((List_Links *) blockPtr);
 		blockPtr->flags |= FS_BLOCK_DELETED;
@@ -2788,6 +2798,7 @@ DeleteBlock(blockPtr)
     }
     Hash_Delete(blockHashTable, hashEntryPtr);
     blockPtr->cacheInfoPtr->blocksInCache--;
+    List_Remove(&blockPtr->fileLinks);
 }
 
 

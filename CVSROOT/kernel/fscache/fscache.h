@@ -67,6 +67,9 @@ typedef struct FsCacheBlock {
 				   THIS MUST BE FIRST in the struct. */
     List_Links	dirtyLinks;	/* Links to put block into list of dirty
 				 * blocks for the file.  THIS MUST BE 2ND */
+    List_Links	fileLinks;	/* Links to put block into list of blocks
+				 * for the file.  There are two lists, either
+				 * regular or for indirect blocks. */
     unsigned int timeDirtied;	/* Time in seconds that block was
 				   dirtied if at all. */
     unsigned int timeReferenced;/* Time in seconds that this block was
@@ -91,6 +94,8 @@ typedef struct FsCacheBlock {
 #define DIRTY_LINKS_TO_BLOCK(ptr) \
 		((FsCacheBlock *) ((int) (ptr) - sizeof(List_Links)))
 
+#define FILE_LINKS_TO_BLOCK(ptr) \
+		((FsCacheBlock *) ((int) (ptr) - 2 * sizeof(List_Links)))
 /* 
  * Flags for a FsCacheBlock: 
  * 
