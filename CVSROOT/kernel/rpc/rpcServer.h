@@ -155,11 +155,6 @@ extern int		rpcNumServers;
 extern int		rpcNoServers;
 
 /*
- * A bootId is kept for each client to detect reboots.
- */
-extern int		rpcBootIds[];
-
-/*
  * The service procedure switch. This is indexed by procedure number.
  */
 typedef int		(*IntProc)();
@@ -173,11 +168,6 @@ extern RpcService rpcService[];
  * A histogram of the service times for the different RPCs.
  */
 extern Rpc_Histogram	*rpcServiceTime[];
-
-/*
- * The list of call-back procedures invoked when we detect a client crash.
- */
-extern	List_Links	rpcNotifyList;
 
 /*
  * Forward declarations.
