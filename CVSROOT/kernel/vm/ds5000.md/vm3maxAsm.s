@@ -719,7 +719,7 @@ VmMach_UTLBMiss:
 #ifndef NO_COUNTERS
     lw		AT, VMMACH_UTLB_COUNT_OFFSET(k1)
     nop	
-    add		AT, AT, 1
+    addu	AT, AT, 1
     sw		AT, VMMACH_UTLB_COUNT_OFFSET(k1)
 #endif
 
@@ -757,7 +757,7 @@ VmMach_UTLBMiss:
 #ifndef NO_COUNTERS
     lw		k1, VMMACH_UTLB_HIT_OFFSET(AT)
     nop
-    add		k1, k1, 1
+    addu	k1, k1, 1
     sw		k1, VMMACH_UTLB_HIT_OFFSET(AT)
 #endif
     lw		AT, VMMACH_SAVED_AT_OFFSET(AT)
@@ -801,7 +801,7 @@ SlowUTLBFault:
  *----------------------------------------------------------------------------
  */
 str:
-    .asciiz	"Error on stack\n"
+    .asciiz	"Error on stack @ 0x%x\n"
     .globl VmMach_KernTLBException
     .ent VmMach_KernTLBException, 0
 VmMach_KernTLBException:
@@ -813,7 +813,16 @@ VmMach_KernTLBException:
     srl		k0, k0, VMMACH_PAGE_SHIFT
     bne		k0, k1, 1f
     nop
+/* 
+ * TLB faults on kernel stacks are bad news because they should be wired. 
+ * Call panic but which to the initial kernel stack so when panic pushes
+ * things on the stack when won't come right back here.
+ */
+#define	START_FRAME   ((4*4) + 4 + 4)
+
     la		a0, str
+    add		a1, sp, zero
+    li		sp, MACH_CODE_START - START_FRAME
     jal		panic
     nop
 
@@ -877,7 +886,7 @@ VmMach_TLBModException:
 #ifndef NO_COUNTERS
     lw		AT, VMMACH_MOD_COUNT_OFFSET(k1)
     nop	
-    add		AT, AT, 1
+    addu	AT, AT, 1
     sw		AT, VMMACH_MOD_COUNT_OFFSET(k1)
 #endif
 
@@ -913,7 +922,7 @@ VmMach_TLBModException:
     lui		k0, 0x8000
     lw		k1, VMMACH_MOD_HIT_OFFSET(k0)
     nop
-    add		k1, k1, 1
+    addu	k1, k1, 1
     sw		k1, VMMACH_MOD_HIT_OFFSET(k0)
 #endif
 
