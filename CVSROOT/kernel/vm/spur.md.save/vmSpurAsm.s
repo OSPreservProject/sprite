@@ -152,14 +152,14 @@ _VmMachSetSegRegisters:
  *
  * VmMachSetSegReg1 --
  *
- *	void VmMachSetSegReg1(segNum, RPTPM)
+ *	unsigned VmMachSetSegReg1(segNum, RPTPM)
  *	    int	segNum;
  *	    int RPTM;
  *
  *	Set the global segment register 1.
  *
  * Results:
- *	None.
+ *	The previous GSN1.
  *
  * Side effects:
  *	Set segment register 1.
@@ -169,7 +169,7 @@ _VmMachSetSegRegisters:
 	.globl _VmMachSetSegReg1
 _VmMachSetSegReg1:
 	rd_kpsw		SAFE_TEMP3
-	and		VOL_TEMP2, SAFE_TEMP3, $~(MACH_KPSW_INTR_TRAP_ENA);
+	and		VOL_TEMP2, SAFE_TEMP3, $~(MACH_KPSW_INTR_TRAP_ENA)
 	wr_kpsw		VOL_TEMP2, $0
 	LD_GSN(SAFE_TEMP1, MACH_GSN_1)
 	ST_GSN(INPUT_REG1, MACH_GSN_1)
@@ -185,14 +185,14 @@ _VmMachSetSegReg1:
  *
  * VmMachSetSegReg2 --
  *
- *	void VmMachSetSegReg2(segNum, RPTPM)
+ *	unsigned  VmMachSetSegReg2(segNum, RPTPM)
  *	    int	segNum;
  *	    int RPTM;
  *
  *	Set the global segment register 1.
  *
  * Results:
- *	None.
+ *	The previous GSN2.
  *
  * Side effects:
  *	Set segment register 1.
@@ -202,7 +202,7 @@ _VmMachSetSegReg1:
 	.globl _VmMachSetSegReg2
 _VmMachSetSegReg2:
 	rd_kpsw		SAFE_TEMP3
-	and		VOL_TEMP2, SAFE_TEMP3, $~(MACH_KPSW_INTR_TRAP_ENA);
+	and		VOL_TEMP2, SAFE_TEMP3, $~(MACH_KPSW_INTR_TRAP_ENA)
 	wr_kpsw		VOL_TEMP2, $0
 	LD_GSN(SAFE_TEMP1, MACH_GSN_2)
 	ST_GSN(INPUT_REG1, MACH_GSN_2)
@@ -218,14 +218,14 @@ _VmMachSetSegReg2:
  *
  * VmMachSetSegReg3 --
  *
- *	void VmMachSetSegReg3(segNum, RPTPM)
+ *	unsigned VmMachSetSegReg3(segNum, RPTPM)
  *	    int	segNum;
  *	    int RPTM;
  *
  *	Set the global segment register 1.
  *
  * Results:
- *	None.
+ *	The previous GSN3.
  *
  * Side effects:
  *	Set segment register 1.
@@ -235,7 +235,7 @@ _VmMachSetSegReg2:
 	.globl _VmMachSetSegReg3
 _VmMachSetSegReg3:
 	rd_kpsw		SAFE_TEMP3
-	and		VOL_TEMP2, SAFE_TEMP3, $~(MACH_KPSW_INTR_TRAP_ENA);
+	and		VOL_TEMP2, SAFE_TEMP3, $~(MACH_KPSW_INTR_TRAP_ENA)
 	wr_kpsw		VOL_TEMP2, $0
 	LD_GSN(SAFE_TEMP1, MACH_GSN_3)
 	ST_GSN(INPUT_REG1, MACH_GSN_3)
