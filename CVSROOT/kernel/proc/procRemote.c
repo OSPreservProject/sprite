@@ -46,7 +46,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sync.h"
 #include "sysSysCall.h"
 #include "sysSysCallParam.h"
-#include "exc.h"
 
 #include "dbg.h"
 
@@ -251,6 +250,7 @@ GetProcessState(buffer, hostID)
     int			trapStackSize;
     Boolean 		home = FALSE;
 
+#ifdef notdef
     Byte_EmptyBuffer(buffer, Proc_PID, pid);
     if (pid == (Proc_PID) NIL) {
 	procPtr = ProcGetUnusedPCB();
@@ -309,7 +309,6 @@ GetProcessState(buffer, hostID)
     procPtr->sigPendingMask &=
 	    ~((1 << SIG_MIGRATE_TRAP) | (1 << SIG_MIGRATE_HOME));
     
-
     /*
      * Since the new and old trap stacks may be of different sizes,
      * free up any old trapStackPtr associated with this PCB and allocate
@@ -393,6 +392,7 @@ GetProcessState(buffer, hostID)
     }
 
     return(pid);
+#endif
 }
 
 
@@ -615,8 +615,8 @@ void
 ProcResumeMigProc()
 {
     register     	Proc_ControlBlock *procPtr;
-    register		Exc_TrapStack *trapStackPtr;
 
+#ifdef notdef
 
     MASTER_UNLOCK(sched_Mutex);
 
@@ -638,16 +638,6 @@ ProcResumeMigProc()
      * mode if the system call is not being restarted.
      */
 
-    trapStackPtr = procPtr->trapStackPtr;
-
-    /*
-     * Mousetrap.
-     */
-
-    if (proc_MigDebugLevel > 5) {
-	Sys_Printf("Status register: %x.\n", trapStackPtr->excStack.statusReg);
-    }
-
     /*
      * Disable interrupts and then start off the process.  Note that
      * we don't use the macro DISABLE_INTR because there is an implicit 
@@ -659,11 +649,12 @@ ProcResumeMigProc()
     if (proc_MigDebugLevel > 5) {
 	Sys_Printf("Calling RunMigProc.\n");
     }
-    Sys_DisableIntr();
+    Mach_StartUserProc(procPtr, 
     trapStackPtr->genRegs[mach_SP] = trapStackPtr->userStackPtr;
     Proc_RunUserProc(trapStackPtr->genRegs, trapStackPtr->excStack.pc,
 	    Proc_Exit, procPtr->stackStart + mach_ExecStackOffset);
     Sys_Panic(SYS_FATAL, "ProcResumeMigProc: Proc_RunUserProc returned.\n");
+#endif
 }
 
 
@@ -1150,7 +1141,7 @@ ProcRemoteFork(parentProcPtr, childProcPtr)
     }
     childProcPtr->peerHostID = parentProcPtr->peerHostID;
     childProcPtr->genFlags |= PROC_FOREIGN;
-    childProcPtr->kcallTable = exc_MigratedHandlers;
+    childProcPtr->kcallTable = mach_MigratedHandlers;
 
     if (proc_MigDebugLevel > 3) {
 	Sys_Printf("ProcRemoteFork returning status %x.\n", status);
@@ -1252,6 +1243,4 @@ ProcRemoteExit(procPtr, reason, status, code)
 		  error);
     }
 }
-
-
 

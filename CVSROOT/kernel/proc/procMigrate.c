@@ -32,7 +32,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "byte.h"
 #include "vm.h"
 #include "sys.h"
-#include "exc.h"
 #include "dbg.h"
 #include "rpc.h"
 #include "sched.h"
@@ -195,10 +194,11 @@ Proc_Migrate(pid, nodeID)
  */
 
 void
-Proc_MigrateTrap(procPtr, trapStackPtr)
+Proc_MigrateTrap(procPtr, machStatePtr)
     register Proc_ControlBlock 	*procPtr; /* The process being migrated */
-    Exc_TrapStack *trapStackPtr;	  /* Its trap stack at time of call */ 
+    Mach_State	*machStatePtr;		  /* Machine state at time of call. */
 {
+#ifdef notdef
     int nodeID;				  /* node to which it migrates */
     Proc_PCBLink *procLinkPtr;
     register Proc_ControlBlock *procItemPtr;
@@ -338,7 +338,8 @@ failure:
     Sig_SendProc(procPtr, SIG_KILL, status);
     Proc_Unlock(procPtr);
     WakeupCallers();
-   
+
+#endif
 }
 
 
@@ -409,12 +410,13 @@ failure:
  */
 
 static ReturnStatus
-SendProcessState(procPtr, nodeID, trapStackPtr, foreign)
+SendProcessState(procPtr, nodeID, machStatePtr, foreign)
     register Proc_ControlBlock 	*procPtr; /* The process being migrated */
     int nodeID;				  /* node to which it migrates */
-    Exc_TrapStack *trapStackPtr;	  /* trap stack at time of migration */
+    Mach_State	*machStatePtr;	  /* trap stack at time of migration */
     Boolean foreign;			  /* Is it migrating back home? */
 {
+#ifdef notdef
     Address procBuffer;
     Address ptr;
     int procBufferSize;
@@ -439,7 +441,7 @@ SendProcessState(procPtr, nodeID, trapStackPtr, foreign)
     }
    
     argStringLength = Byte_AlignAddr(String_Length(procPtr->argString) + 1);
-    trapStackSize = Exc_GetTrapStackSize(trapStackPtr);
+    trapStackSize = Exc_GetTrapStackSize(machStatePtr->trapStackPtr);
     procBufferSize = (3 + PROC_NUM_FLAGS + PROC_NUM_BILLING_FIELDS +
 		      PROC_NUM_ID_FIELDS + procPtr->numGroupIDs) *
 	    sizeof(int) +
@@ -523,6 +525,7 @@ SendProcessState(procPtr, nodeID, trapStackPtr, foreign)
 	}
 	return(returnInfo.status);
     }
+#endif
 }
 
 
