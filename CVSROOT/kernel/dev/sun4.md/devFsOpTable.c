@@ -45,6 +45,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devTMR.h"
 #include "devfb.h"
 #include "devVMElink.h"
+#include "devSmem.h"
 
 static ReturnStatus NoDevice();
 static ReturnStatus NullProc();
@@ -156,11 +157,11 @@ DevFsTypeOps devFsOpTable[] = {
                    DevFBIOControl, DevFBClose, NullProc,
                    DEV_NO_ATTACH_PROC, NoDevice, DevFBMMap},
     /*
-     * This exists only on the Symmetry, so use all null entries
+     * /dev/smem
      */
-    {DEV_ZDC_DISK, NoDevice, NullProc, NullProc,
-		   Dev_NullIOControl, NullProc, NullProc,
-		   DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+    {DEV_SMEM,     NullProc, Dev_SmemRead, Dev_SmemWrite,
+                   Dev_SmemIOControl, NullProc, Dev_SmemSelect,
+                   DEV_NO_ATTACH_PROC, NullProc, NullProc},
      
     /*
      * The audio device may exist for the sun4.  If so, ignore it for now.

@@ -41,6 +41,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <tty.h>
 #include <graphics.h>
 #include <devStdFBInt.h>
+#include <devSmem.h>
 
 static ReturnStatus NoDevice();
 static ReturnStatus NullProc();
@@ -155,8 +156,13 @@ DevFsTypeOps devFsOpTable[] = {
      */
     {13, NullProc, NullProc, NullProc, NullProc, NullProc, NullProc, 
 		   DEV_NO_ATTACH_PROC, NullProc, NullProc},
-    {14, NullProc, NullProc, NullProc, NullProc, NullProc, NullProc, 
-		   DEV_NO_ATTACH_PROC, NullProc, NullProc},
+    /*
+     * /dev/smem
+     */
+    {DEV_SMEM,    NullProc, Dev_SmemRead, Dev_SmemWrite,
+		    Dev_SmemIOControl, NullProc, Dev_SmemSelect,
+		    DEV_NO_ATTACH_PROC, NullProc, NullProc},
+
     {15, NullProc, NullProc, NullProc, NullProc, NullProc, NullProc, 
 		   DEV_NO_ATTACH_PROC, NullProc, NullProc},
     {16, NullProc, NullProc, NullProc, NullProc, NullProc, NullProc, 

@@ -41,6 +41,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "raidExt.h"
 #include "tty.h"
 #include "mouse.h"
+#include "devSmem.h"
 
 
 static ReturnStatus nullOpenProc _ARGS_ ((Fs_Device *devicePtr,
@@ -167,7 +168,12 @@ DevFsTypeOps devFsOpTable[] = {
     {DEV_GRAPHICS, DevFBOpen, nullReadProc, nullWriteProc,
 		   DevFBIOControl, DevFBClose, nullSelectProc,
 		   DEV_NO_ATTACH_PROC, noReopenProc, DevFBMMap},
-
+    /*
+     * /dev/smem
+     */
+    {DEV_SMEM,     nullOpenProc, Dev_SmemRead, Dev_SmemWrite,
+                   Dev_SmemIOControl, nullCloseProc, Dev_SmemSelect,
+                   DEV_NO_ATTACH_PROC, nullReopenProc, noMmapProc},
 };
 
 int devNumDevices = sizeof(devFsOpTable) / sizeof(DevFsTypeOps);
