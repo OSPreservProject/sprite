@@ -24,8 +24,24 @@
  */
 typedef Time Timer_Ticks;
 
+
 /*
- * Because of the Sun3's timer speaks in the same until as type Time, we can
+ * Definitions for useful intervals and clock values. 
+ * See timer.h for more details.
+ */
+ 
+ extern unsigned int 	timer_IntZeroSeconds; 
+ extern unsigned int 	timer_IntOneMillisecond;   
+ extern unsigned int 	timer_IntOneSecond;
+ extern unsigned int 	timer_IntOneMinute;
+ extern unsigned int 	timer_IntOneHour; 
+ extern Timer_Ticks	timer_TicksZeroSeconds;
+ extern Time 		timer_MaxIntervalTime; 
+
+
+
+/*
+ * Because the Sun3's timer speaks in the same units as type Time, we can
  * use the Time_ modules routines to Add and Subtract
  */
 
@@ -39,13 +55,9 @@ typedef Time Timer_Ticks;
 #define Timer_TicksToTime(a,b)		*(b) = a;
 #define Timer_TimeToTicks(a,b)		*(b) = a;
 
- /* PROCEDURES */
 
 extern void Timer_AddIntervalToTicks();
 extern void Timer_GetCurrentTicks();
-extern void Timer_GetTimeOfDay();
-extern void Timer_GetRealTimeOfDay();
-extern void Timer_SetTimeOfDay();
 
 
 /*
