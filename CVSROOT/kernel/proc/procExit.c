@@ -295,18 +295,20 @@ ExitProcessInt(exitProcPtr, migrated, contextSwitch)
 	register Proc_ControlBlock 	*parentProcPtr;
 
 	parentProcPtr = Proc_GetPCB(exitProcPtr->parentID);
-	Timer_AddTicks(exitProcPtr->kernelCpuUsage.ticks, 
-		parentProcPtr->childKernelCpuUsage.ticks, 
-		&(parentProcPtr->childKernelCpuUsage.ticks));
-	Timer_AddTicks(exitProcPtr->childKernelCpuUsage.ticks, 
-		parentProcPtr->childKernelCpuUsage.ticks, 
-		&(parentProcPtr->childKernelCpuUsage.ticks));
-	Timer_AddTicks(exitProcPtr->userCpuUsage.ticks, 
-		parentProcPtr->childUserCpuUsage.ticks, 
-		&(parentProcPtr->childUserCpuUsage.ticks));
-	Timer_AddTicks(exitProcPtr->childUserCpuUsage.ticks, 
-		parentProcPtr->childUserCpuUsage.ticks, 
-		&(parentProcPtr->childUserCpuUsage.ticks));
+	if (parentProcPtr != (Proc_ControlBlock *) NIL) {
+	    Timer_AddTicks(exitProcPtr->kernelCpuUsage.ticks, 
+			   parentProcPtr->childKernelCpuUsage.ticks, 
+			   &(parentProcPtr->childKernelCpuUsage.ticks));
+	    Timer_AddTicks(exitProcPtr->childKernelCpuUsage.ticks, 
+			   parentProcPtr->childKernelCpuUsage.ticks, 
+			   &(parentProcPtr->childKernelCpuUsage.ticks));
+	    Timer_AddTicks(exitProcPtr->userCpuUsage.ticks, 
+			   parentProcPtr->childUserCpuUsage.ticks, 
+			   &(parentProcPtr->childUserCpuUsage.ticks));
+	    Timer_AddTicks(exitProcPtr->childUserCpuUsage.ticks, 
+			   parentProcPtr->childUserCpuUsage.ticks, 
+			   &(parentProcPtr->childUserCpuUsage.ticks));
+	}
     }
     /*
      *  Go through the list of children of the current process to 
@@ -376,7 +378,22 @@ ExitProcessInt(exitProcPtr, migrated, contextSwitch)
     } else {
 	Proc_ControlBlock 	*parentProcPtr;
 
+#ifdef DEBUG_PARENT_PID
+	int hostID;
+	
+	hostID = Proc_GetHostID(exitProcPtr->parentID);
+	if (hostID != rpc_SpriteID && hostID != 0) {
+	    panic("ExitProcessInt: parent process (%x) is on wrong host.\n",
+		  exitProcPtr->parentID);
+	    goto done;
+	}
+#endif DEBUG_PARENT_PID
 	parentProcPtr = Proc_GetPCB(exitProcPtr->parentID);
+	if (parentProcPtr == (Proc_ControlBlock *) NIL) {
+	    panic("ExitProcessInt: no parent process (pid == %x)\n",
+		  exitProcPtr->parentID);
+	    goto done;
+	}
 	if (parentProcPtr->state != PROC_MIGRATED) {
 	    Sync_Broadcast(&parentProcPtr->waitCondition);
 #ifdef notdef
@@ -394,6 +411,7 @@ ExitProcessInt(exitProcPtr, migrated, contextSwitch)
 
 	newState = PROC_EXITING;
     }
+done:
     if (contextSwitch) {
 	Proc_Unlock(exitProcPtr);
 	UNLOCK_MONITOR_AND_SWITCH(newState);
@@ -479,7 +497,7 @@ ProcExitProcess(exitProcPtr, reason, status, code, contextSwitch)
      * migrated processes have family information on the home node.)
      */
 
-    if (exitProcPtr->state != PROC_MIGRATED) {
+    if (exitProcPtr->fsPtr != (struct Fs_ProcessState *) NIL) {
 	Fs_CloseState(exitProcPtr);
     }
     if (!migrated) {
