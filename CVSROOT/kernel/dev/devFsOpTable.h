@@ -1,8 +1,8 @@
 /*
  * devFsOpTable.h --
  *
- *	Declarations for device access.  The DEVICE operation switch is
- *	defined here.  The I/O handle formas for devices is defined here.
+ *	The DEVICE operation switch is defined here.  This is the main
+ *	interface between the file system and the device drivers.
  *
  * Copyright 1987 Regents of the University of California
  * All rights reserved.
@@ -26,20 +26,86 @@
 #include "devBlockDevice.h"
 
 /*
- * Device type specific operations.
- *	The arguments to the operations are commented below the
- *	macro definitions used to invoke them.
+ * Device type specific operations, calling sequence defined below.
+ *	DeviceOpen
+ *	DeviceRead
+ *	DeviceWrite
+ *	DeviceIOControl
+ *	DeviceClose
+ *	DeviceSelect
+ *	BlockDeviceAttach
+ *	DeviceReopen
  */
 
 typedef struct DevFsTypeOps {
     int		 type;	/* One of the device types. See devNumbersInt.h */
+    /*
+     * Device Open - called during an open of a device file.
+     *	(*openProc)(devicePtr, flags, notifyToken)
+     *		Fs_Device *devicePtr;		(Identifies device)
+     *		int flags;			(Usage flags from open)
+     *		Fs_NotifyToken notifyToken;	(Handle on device used with
+     *						(Fs_NotifyWriter/Reader calls)
+     */
     ReturnStatus (*open)();
+    /*
+     * Device Read - called to get data from a device.
+     *	(*readProc)(devicePtr, readPtr, replyPtr)
+     *		Fs_Device *devicePtr;		(Identifies device)
+     *		Fs_IOParam *readPtr;		(See fsIO.h)
+     *		Fs_IOReply *replyPtr;		(See fsIO.h)
+     */
     ReturnStatus (*read)();
+    /*
+     * Device Write - called to pass data to a device.
+     *	(*writeProc)(devicePtr, writePtr, replyPtr)
+     *		Fs_Device *devicePtr;		(Identifies device)
+     *		Fs_IOParam *writePtr;		(See fsIO.h)
+     *		Fs_IOReply *replyPtr;		(See fsIO.h)
+     */
     ReturnStatus (*write)();
-    ReturnStatus (*ioControl)();
+    /*
+     * Device I/O Control - perform a device-specific operation
+     *	(*ioctlProc)(devicePtr, ioctlPtr, replyPtr)
+     *		Fs_Device *devicePtr;		(Identifies device)
+     *		Fs_IOCParam *ioctlPtr;		(See fsIO.h)
+     *		Fs_IOReply *replyPtr;		(See fsIO.h)
+     */
+    ReturnStatus (*ioctl)();
+    /*
+     * Device Close - close a stream to a device.
+     *	(*closeProc)(devicePtr, flags, numUsers, numWriters)
+     *		Fs_Device *devicePtr;		(Identifies device)
+     *		int flags;			(Stream usage flags)
+     *		int numUsers;			(Number of active streams left)
+     *		int numWriters;			(Number of writers left)
+     */
     ReturnStatus (*close)();
+    /*
+     * Device Select - poll a device for readiness
+     *	(*selectProc)(devicePtr, readPtr, writePtr, exceptPtr)
+     *		Fs_Device *devicePtr;		(Identifies device)
+     *		int *readPtr;			(Readability bit)
+     *		int *writePtr;			(Writability bit)
+     *		int *exceptPtr;			(Exception bit)
+     */
     ReturnStatus (*select)();
+    /*
+     * Block Device Attach - attach a block device at boot-time.
+     *	(*attachProc)(devicePtr)
+     *		Fs_Device *devicePtr;		(Identifies device)
+     */
     DevBlockDeviceHandle *((*blockDevAttach)());
+    /*
+     * Reopen Device -  called during recovery to reestablish a stream
+     *	(*reopenProc)(devicePtr, numUsers, numWriters, notifyToken)
+     *		Fs_Device *devicePtr;		(Identifies device)
+     *		int numUsers;			(Number of active streams)
+     *		int numWriters;			(Number of writers)
+     *		Fs_NotifyToken *notifyToken	(Handle on device used with
+     *						(Fs_NotifyWriter/Reader calls)
+     */
+    ReturnStatus (*reopen)();
 } DevFsTypeOps;
 
 extern DevFsTypeOps devFsOpTable[];
