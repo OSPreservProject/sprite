@@ -42,7 +42,9 @@ static volatile unsigned short *csrPtr =  REG_ADDR(0x00);
 static volatile unsigned short *rBufPtr = REG_ADDR(0x08);
 static volatile unsigned short *lprPtr =  REG_ADDR(0x08);
 static volatile unsigned short *tcrPtr =  REG_ADDR(0x10);
+#ifndef lint
 static volatile unsigned short *msrPtr =  REG_ADDR(0x18);
+#endif
 static volatile unsigned short *tdrPtr =  REG_ADDR(0x18);
 
 /*
@@ -317,6 +319,7 @@ static void RecvIntr(), XmitIntr();
  *
  * ----------------------------------------------------------------------------
  */
+/*ARGSUSED*/
 ENTRY void
 Dev_DC7085Interrupt(statusReg, causeReg, pc, data)
     unsigned int statusReg;
@@ -403,7 +406,7 @@ RecvIntr()
 		}
 
 		asciiChar = DevDC7085TranslateKey(ch, shiftDown, ctrlDown);
-		if (asciiChar != -1) {
+		if (asciiChar != (unsigned char) -1) {
 		    if (consoleCmd) {
 			Time curTime, diff;
 
@@ -516,7 +519,7 @@ DevDC7085TranslateKey(ch, shiftDown, ctrlDown)
 static void
 XmitIntr()
 {
-    char c;
+    int c;
     int lineNum;
 
     if (!(*csrPtr & CSR_TRDY)) {
@@ -528,7 +531,7 @@ XmitIntr()
 	case KBD_PORT:
 	    break;
 	case MODEM_PORT:
-	    c = (*devSerialA.outputProc)(devSerialA.outputData);
+	    c = (int) (*devSerialA.outputProc)(devSerialA.outputData);
 	    if (c == -1) {
 		*tcrPtr &= ~(1 << MODEM_PORT);
 		devSerialA.flags &= ~XMIT_ENABLED;
@@ -537,7 +540,7 @@ XmitIntr()
 	    }
 	    break;
 	case PRINTER_PORT:
-	    c = (*devSerialB.outputProc)(devSerialB.outputData);
+	    c = (int) (*devSerialB.outputProc)(devSerialB.outputData);
 	    if (c == -1) {
 		*tcrPtr &= ~(1 << PRINTER_PORT);
 		devSerialB.flags &= ~XMIT_ENABLED;

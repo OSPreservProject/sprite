@@ -427,8 +427,6 @@ InitScreenDefaults(scrInfoPtr)
 static void
 ScreenInit()
 {
-    int	i;
-    int addr;
     /*
      * Home the cursor.
      * We want an LSI terminal emulation.  We want the graphics
@@ -874,10 +872,10 @@ DevGraphicsKbdIntr(ch)
     } else if (ch == KEY_COMMAND) {
 	consoleCmdDown = TRUE;
     } else if (consoleCmdDown) {
-	char asciiChar;
+	int asciiChar;
 
 	consoleCmdDown = FALSE;
-	asciiChar = DevDC7085TranslateKey(ch, FALSE, FALSE);
+	asciiChar = (int) DevDC7085TranslateKey(ch, FALSE, FALSE);
 	if (asciiChar != -1) {
 	    Dev_InvokeConsoleCmd(asciiChar);
 	    return;
@@ -985,8 +983,6 @@ MouseEvent(newRepPtr)
     unsigned	milliSec;
     int		i;
     DevEvent	*eventPtr;
-    static 	int lastAdd = 0;
-    static 	int lastUpdate = 0;
 
     Timer_GetRealTimeOfDay(&time, (int *) NIL, (Boolean *) NIL);
     milliSec = TO_MS(time);
@@ -1127,9 +1123,6 @@ MouseButtons(newRepPtr)
     DevEvent	*eventPtr;
     Time	time;
 
-    int		type;
-    int		key;
-
     newSwitch = newRepPtr->state & 0x07;
     oldSwitch = lastRep.state & 0x07;
     
@@ -1154,19 +1147,19 @@ MouseButtons(newRepPtr)
 	    eventPtr = &events[scrInfoPtr->eventQueue.eTail];
 	    switch (j) {
 		case RIGHT_BUTTON:
-		    key = eventPtr->key = DEV_EVENT_RIGHT_BUTTON;
+		    eventPtr->key = DEV_EVENT_RIGHT_BUTTON;
 		    break;
 		case MIDDLE_BUTTON:
-		    key = eventPtr->key = DEV_EVENT_MIDDLE_BUTTON;
+		    eventPtr->key = DEV_EVENT_MIDDLE_BUTTON;
 		    break;
 		case LEFT_BUTTON:
-		    key = eventPtr->key = DEV_EVENT_LEFT_BUTTON;
+		    eventPtr->key = DEV_EVENT_LEFT_BUTTON;
 		    break;
 	    }
 	    if (newSwitch & j) {
-		type = eventPtr->type = DEV_BUTTON_DOWN_TYPE;
+		eventPtr->type = DEV_BUTTON_DOWN_TYPE;
 	    } else {
-		type = eventPtr->type = DEV_BUTTON_UP_TYPE;
+		eventPtr->type = DEV_BUTTON_UP_TYPE;
 	    }
 	    eventPtr->device = DEV_MOUSE_DEVICE;
 
@@ -1652,7 +1645,6 @@ DevGraphicsIOControl(devicePtr, ioctlPtr, replyPtr)
     switch (ioctlPtr->command) {
 	case IOC_GRAPHICS_GET_INFO: {
 	    char		*addr;
-	    Proc_ControlBlock	*procPtr;
 	    /*
 	     * Map the screen info struct into the user's address space.
 	     */
@@ -1859,6 +1851,7 @@ DevGraphicsSelect(devicePtr, readPtr, writePtr, exceptPtr)
  *
  *----------------------------------------------------------------------
  */
+/*ARGSUSED*/
 ReturnStatus
 Dev_VidEnable(onOff)
 Boolean onOff;		/* TRUE if video is to be on. */
