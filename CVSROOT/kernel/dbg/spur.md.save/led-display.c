@@ -1,3 +1,5 @@
+#include "sprite.h"
+#include "mach.h"
     
 /* This displays its first argument in the seven segment displays, its
    second in the led lights, and if its third is non-zero, waits for about
@@ -20,7 +22,8 @@ led_display(seven_seg,led,wait_flag)
      int wait_flag;
 {
 
-
+  extern int machLEDValues[16];
+  machLEDValues[Mach_GetProcessorNumber()] = seven_seg;
   write_physical_word(LIGHTS,(seven_seg&0xff)|LAMP_OFF|((led<<8) & 0x0f00));
 
   wait(5,wait_flag);
