@@ -119,11 +119,13 @@ Sig_Init()
 
     for (i = SIG_MIN_SIGNAL; i < SIG_NUM_SIGNALS; i++) {
 	sigBitMasks[i] = Sig_NumberToMask(i);
-	sigDefActions[i] = SIG_IGNORE_ACTION;
+	sigDefActions[i] = SIG_KILL_ACTION;
     }
 
-    sigDefActions[SIG_INTERRUPT]	= SIG_KILL_ACTION;
-    sigDefActions[SIG_KILL]		= SIG_KILL_ACTION;
+    /* 
+     * Note that SIG_RESUME uses the "kill" action, even though it's not 
+     * actually used to kill the process.
+     */
     sigDefActions[SIG_DEBUG]		= SIG_DEBUG_ACTION;
     sigDefActions[SIG_ARITH_FAULT]	= SIG_DEBUG_ACTION;
     sigDefActions[SIG_ILL_INST] 	= SIG_DEBUG_ACTION;
@@ -133,13 +135,13 @@ Sig_Init()
     sigDefActions[SIG_MIGRATE_TRAP] 	= SIG_MIGRATE_ACTION;
     sigDefActions[SIG_MIGRATE_HOME] 	= SIG_MIGRATE_ACTION;
     sigDefActions[SIG_SUSPEND]		= SIG_SUSPEND_ACTION;
-    sigDefActions[SIG_RESUME]		= SIG_KILL_ACTION;
     sigDefActions[SIG_TTY_INPUT]	= SIG_SUSPEND_ACTION;
-    sigDefActions[SIG_PIPE]		= SIG_KILL_ACTION;
-    sigDefActions[SIG_TIMER]		= SIG_KILL_ACTION;
-    sigDefActions[SIG_TERM]		= SIG_KILL_ACTION;
+    sigDefActions[SIG_URGENT]		= SIG_IGNORE_ACTION;
+    sigDefActions[SIG_CHILD]		= SIG_IGNORE_ACTION;
     sigDefActions[SIG_TTY_SUSPEND]	= SIG_SUSPEND_ACTION;
     sigDefActions[SIG_TTY_OUTPUT]	= SIG_SUSPEND_ACTION;
+    sigDefActions[SIG_IO_READY]		= SIG_IGNORE_ACTION;
+    sigDefActions[SIG_WINDOW_CHANGE]	= SIG_IGNORE_ACTION;
 
     sigCanHoldMask = 
 	      ~(sigBitMasks[SIG_ARITH_FAULT] | sigBitMasks[SIG_ILL_INST] |
