@@ -210,6 +210,7 @@ Fsconsist_MappedConsistency(handlePtr, clientID, isMapped)
     int 		clientID;	/* ID of the host doing the map. */
     int			isMapped;	/* 1 if file is being mapped. */
 {
+#ifdef 0
     int					cacheable;	/* Dummy. */
     register Fsconsist_ClientInfo	*clientPtr;
     register Fsconsist_Info		*consistPtr = &handlePtr->consist;
@@ -235,6 +236,7 @@ Fsconsist_MappedConsistency(handlePtr, clientID, isMapped)
 
     UNLOCK_MONITOR;
     return(status);
+#endif
 }
 
 /*
