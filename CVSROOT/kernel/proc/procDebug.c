@@ -347,9 +347,11 @@ Proc_SuspendProcess(procPtr, debug, termReason, termStatus, termCode)
     procPtr->termStatus	= termStatus;
     procPtr->termCode	= termCode;
 
-    if (debug &&
-	(procPtr->genFlags & PROC_FOREIGN) && (proc_MigDebugLevel > 4)) {
-	panic("Migrated process being placed on debug list.\n");
+    if (debug && (procPtr->genFlags & PROC_FOREIGN) &&
+	proc_KillMigratedDebugs) {
+	if (proc_MigDebugLevel > 0) {
+	    panic("Migrated process being placed on debug list.\n");
+	}
     }
 
     if (debug) {
