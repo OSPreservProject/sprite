@@ -1493,6 +1493,10 @@ END(MachFPInterrupt)
  *
  *	Handle a system call.
  *
+ * Entry Registers:
+ *	t0: system call number.
+ *	t1: magic number to distinguish Sprite system calls from UNIX calls.
+ *
  * Results:
  *     	None.
  *
@@ -1571,20 +1575,67 @@ MachSysCall:
     or		t3, s8, MACH_SR_INT_ENA_CUR
     mtc0	t3, MACH_COP_0_STATUS_REG
 /*
- * Now fetch the args.  The user's stack pointer is in t2.
+ * Instrumentation.  Always bump the counter for the current system
+ * call.  If the call profiling flag is on, call the routine to save the
+ * current time in the PCB and set s4 to non-zero.  Otherwise, set s4 to zero
+ * to indicate that profiling is off.
+ *
+ * t0 currently holds the system call number, t1 points at the current state,
+ * and t2 is the user stack pointer.
  */
-    sll		t0, t0, 2
+    sll		s5, t0, 2			# s5 <= syscall offset for int
+						#	or pointer array  
+    la		t3, sys_NumCalls
+    addu	t3, s5, t3			# t3 <= ptr to counter for
+    lw		t4, 0(t3)			# 	this syscall
+    nop
+    addu	t4, t4, 1
+    sw		t4, 0(t3)
+
+    lw		t3, sys_CallProfiling
+    addu	s0, t1, zero			# s0 <= machCurStatePtr (save)
+    beq		t3, zero, fetchArgs
+    addu	s4, zero, zero			# flag profiling as off
+
+    addu	s1, a0, zero			# save the syscall arguments
+    addu	s2, a1, zero			#   and user stack ptr
+    addu	s3, a2, zero
+    addu	s4, a3, zero
+    jal		Sys_RecordCallStart
+    addu	s6, t2, zero
+
+    addu	a0, s1, zero			# restore the syscall args,
+    addu	a1, s2, zero			#   and user stack ptr
+    addu	a2, s3, zero
+    addu	a3, s4, zero
+    addu	t2, s6, zero
+
+    li		s4, 1				# flag profiling as on
+
+/*
+ * Now fetch the args.  Important registers are as follows:
+ *
+ *	t2: user's stack pointer (used to fetch arguments)
+ *	s0: points at the current state
+ *	s4: "profiling enabled" flag
+ *	s5: the int/pointer array offset for the current system call.
+ *	s8: status register
+ */
+fetchArgs:
     la		t3, machArgDispatch
-    addu	t3, t0, t3
+    addu	t3, s5, t3
     lw		t3, 0(t3)
     nop
-    jal		t3
+    jal		t3				# call MachFetch?Args
     addu	v0, zero, zero
-    bne		v0, zero, sysCallReturn
-    addu	s0, t1, zero			# Save pointer to current state
-						#    in s0
+
 /* 
- * We got the args now call the routine.
+ * If there was an error reading in the user's arguments, the trap
+ * handler will set v0 to a non-zero value.  So, get the address of
+ * the process's "special handling" flag, which is checked when we
+ * prepare to return to user land.  Once that's done, if there was an
+ * error, bail out without calling the syscall function or doing any
+ * more instrumentation.
  */
     lw		s2, proc_RunningProcesses	# s2 <= pointer to running
 						#       processes array.
@@ -1595,24 +1646,47 @@ MachSysCall:
     addu	s3, s2, s1			# s3 <= pointer to kcall table
 						#       pointer for currently
 						#       running	process
+    bne		v0, zero, sysCallReturn
     addu	s1, s3, 4			# Special handling flag follows
 						# kcallTable field.  Save a 
 						# pointer to it in s1.
+
     lw		s3, 0(s3)			# s3 <= pointer to kcall table
     nop
-    addu	s3, s3, t0			# s3 <= pointer to pointer to
+    addu	s3, s3, s5			# s3 <= pointer to pointer to
 						#       function to call.
     lw		s3, 0(s3)			# s3 <= pointer to function.
     nop
     jal		s3				# Call the function
     nop
 /*
- * Return to the user.  We have following saved information:
+ * More instrumentation.  If system call profiling is still turned on, call
+ * the routine to update the total time for the current call.  Note that the
+ * child of a fork() doesn't follow this path, so only the time the parent
+ * spent in Proc_Fork is recorded.
+ *
+ * The following registers are currently precious: s0, s1, s2, s4, s5, s8, 
+ * and v0.
+ */
+    beq		s4, zero, sysCallReturn		# branch if profiling was off
+    nop						#   at the start of the call.
+    lw		t0, sys_CallProfiling
+    nop
+    beq		t0, zero, sysCallReturn
+
+    addu	s3, v0, zero			# save syscall's return value
+    jal		Sys_RecordCallFinish
+    srl		a0, s5, 2			# a0 <= syscall number
+    addu	v0, s3, zero			# restore the return value
+/*
+ * Return to the user.  Assuming there were no errors fetching the user
+ * arguments, we have the following saved information:
  *
  *	s0:	machCurStatePtr
- *	s1:	procPtr->specialHandling
+ *	s1:	&(procPtr->specialHandling)
  *	s2:	procPtr
  *	s8:	status register
+ *	v0:	return code from the system call
  */
 sysCallReturn:
     mtc0	s8, MACH_COP_0_STATUS_REG	# Disable interrupts.
@@ -2065,7 +2139,7 @@ MachFetchArgs:
  *     	None.
  *
  * Side effects:
- *	None.
+ *	Potentially clobbers t0, t1, t3, t4, t5, t6.
  *
  *----------------------------------------------------------------------------
  */
@@ -2077,75 +2151,75 @@ MachFetch0Args:
 
     .globl MachFetch1Arg
 MachFetch1Arg:
-    lw		s0, 16(t2)	
+    lw		t0, 16(t2)	
     subu	sp, sp, MACH_STAND_FRAME_SIZE + 4
     j		ra
-    sw		s0, 16(sp)
+    sw		t0, 16(sp)
 
     .globl MachFetch2Args
 MachFetch2Args:
-    lw		s0, 16(t2)	
-    lw		s1, 20(t2)
+    lw		t0, 16(t2)	
+    lw		t1, 20(t2)
     subu	sp, sp, MACH_STAND_FRAME_SIZE + 8
-    sw		s0, 16(sp)
+    sw		t0, 16(sp)
     j		ra
-    sw		s1, 20(sp)
+    sw		t1, 20(sp)
 
     .globl MachFetch3Args
 MachFetch3Args:
-    lw		s0, 16(t2)	
-    lw		s1, 20(t2)
-    lw		s2, 24(t2)
+    lw		t0, 16(t2)	
+    lw		t1, 20(t2)
+    lw		t3, 24(t2)
     subu	sp, sp, MACH_STAND_FRAME_SIZE + 12
-    sw		s0, 16(sp)
-    sw		s1, 20(sp)
+    sw		t0, 16(sp)
+    sw		t1, 20(sp)
     j		ra
-    sw		s2, 24(sp)
+    sw		t3, 24(sp)
 
     .globl MachFetch4Args
 MachFetch4Args:
-    lw		s0, 16(t2)	
-    lw		s1, 20(t2)
-    lw		s2, 24(t2)
-    lw		s3, 28(t2)
+    lw		t0, 16(t2)	
+    lw		t1, 20(t2)
+    lw		t3, 24(t2)
+    lw		t4, 28(t2)
     subu	sp, sp, MACH_STAND_FRAME_SIZE + 16
-    sw		s0, 16(sp)
-    sw		s1, 20(sp)
-    sw		s2, 24(sp)
+    sw		t0, 16(sp)
+    sw		t1, 20(sp)
+    sw		t3, 24(sp)
     j		ra
-    sw		s3, 28(sp)
+    sw		t4, 28(sp)
 
     .globl MachFetch5Args
 MachFetch5Args:
-    lw		s0, 16(t2)	
-    lw		s1, 20(t2)
-    lw		s2, 24(t2)
-    lw		s3, 28(t2)
-    lw		s4, 32(t2)
+    lw		t0, 16(t2)	
+    lw		t1, 20(t2)
+    lw		t3, 24(t2)
+    lw		t4, 28(t2)
+    lw		t5, 32(t2)
     subu	sp, sp, MACH_STAND_FRAME_SIZE + 20
-    sw		s0, 16(sp)
-    sw		s1, 20(sp)
-    sw		s2, 24(sp)
-    sw		s3, 28(sp)
+    sw		t0, 16(sp)
+    sw		t1, 20(sp)
+    sw		t3, 24(sp)
+    sw		t4, 28(sp)
     j		ra
-    sw		s4, 32(sp)
+    sw		t5, 32(sp)
 
     .globl MachFetch6Args
 MachFetch6Args:
-    lw		s0, 16(t2)	
-    lw		s1, 20(t2)
-    lw		s2, 24(t2)
-    lw		s3, 28(t2)
-    lw		s4, 32(t2)
-    lw		s5, 36(t2)
+    lw		t0, 16(t2)	
+    lw		t1, 20(t2)
+    lw		t3, 24(t2)
+    lw		t4, 28(t2)
+    lw		t5, 32(t2)
+    lw		t6, 36(t2)
     subu	sp, sp, MACH_STAND_FRAME_SIZE + 24
-    sw		s0, 16(sp)
-    sw		s1, 20(sp)
-    sw		s2, 24(sp)
-    sw		s3, 28(sp)
-    sw		s4, 32(sp)
+    sw		t0, 16(sp)
+    sw		t1, 20(sp)
+    sw		t3, 24(sp)
+    sw		t4, 28(sp)
+    sw		t5, 32(sp)
     j		ra
-    sw		s5, 36(sp)
+    sw		t6, 36(sp)
 
 .set reorder
 
