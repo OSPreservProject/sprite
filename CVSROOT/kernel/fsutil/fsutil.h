@@ -63,6 +63,10 @@
  *	FS_PFS_CONTROL_STREAM	Control stream for pseudo-filesystems.
  *	FS_PFS_NAMING_STREAM	The request-response stream used for naming
  *				operations in a pseudo-filesystem.
+ *	FS_LCL_PFS_STREAM	A pseudo-stream to a pseudo-filesystem.  This
+ *		differs only in what happens at open time.  I/O is the same.
+ *	FS_RMT_PFS_STREAM	As above, but when the server is remote.
+ *
  * The following streams are not implemented
  *	FS_REMOTE_NFS_STREAM	NFS access implemented in kernel.
  *	FS_REMOTE_UNIX_STREAM	For files on the old hybrid unix/sprite server.
@@ -84,12 +88,22 @@
 #define FS_RMT_PSEUDO_STREAM		10
 #define FS_PFS_CONTROL_STREAM		11
 #define FS_PFS_NAMING_STREAM		12
+#define FS_LCL_PFS_STREAM		13
+#define FS_RMT_PFS_STREAM		14
 
-#define FS_RMT_NFS_STREAM		13
-#define FS_LCL_NAMED_PIPE_STREAM	14
-#define FS_RMT_NAMED_PIPE_STREAM	15
-#define FS_RMT_UNIX_STREAM		16
+#define FS_RMT_NFS_STREAM		15
+#define FS_LCL_NAMED_PIPE_STREAM	16
+#define FS_RMT_NAMED_PIPE_STREAM	17
+#define FS_RMT_UNIX_STREAM		18
 
+#define FS_NUM_STREAM_TYPES		19
+
+/*
+ * Two arrays are used to map between local and remote types.  This has
+ * to happen when shipping FsFileIDs between clients and servers.
+ */
+extern int fsLclToRmtType[];
+extern int fsRmtToLclType[];
 
 /*
  * The following structures are subfields of the various I/O handles.
