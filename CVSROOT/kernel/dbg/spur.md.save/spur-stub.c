@@ -91,6 +91,7 @@ void kdb();
 
 static int old_step_contents;  
 static int step_addr;
+static char nextChar = 0;
 
 extern int debugger_active_address;
   
@@ -600,24 +601,28 @@ Dbg_Rs232putpkt (buf)
 
   /* Send it over and over until we get a positive ack.  */
   
-  while (1)
-    {
-      csum  = 0;
-      writechar('$');		/* Header flag */
-      for (i = 0; buf[i] != 0; i++)
-	{
-	  csum += buf[i];
-	  writechar(buf[i]);
+    while (1) {
+	csum  = 0;
+	writechar('$');		/* Header flag */
+	for (i = 0; buf[i] != 0; i++) {
+	    csum += buf[i];
+	    writechar(buf[i]);
 	}
-      writechar('#');		/* trailer and checksum */
-      writechar(tohex ((csum >> 4) & 0xf));
-      writechar(tohex (csum & 0xf));
+	writechar('#');		/* trailer and checksum */
+	writechar(tohex ((csum >> 4) & 0xf));
+	writechar(tohex (csum & 0xf));
 
-      if (readchar() == '+')	/* If all OK, exit */
-	return;
-      else			/* Report error on leds */
-	led_display(ERROR_PUT_PKT,LED_ERROR,TRUE);
-    } 
+	nextChar = readchar();
+	if (nextChar == '+') {	/* If all OK, exit */
+	    nextChar = 0;
+	    return;
+	} else if (nextChar == '-') {
+	    led_display(ERROR_PUT_PKT,LED_ERROR,TRUE);
+	} else {			/* Report error on leds */
+	    led_display(ERROR_PUT_PKT,LED_ERROR,TRUE);
+	    return;
+	} 
+    }
 }
 
 
@@ -636,7 +641,15 @@ Dbg_Rs232getpkt (buf)
   while (1)
     {
       led_display(GET_PKT,LED_OK,FALSE);
-      while ((c = readchar()) != '$');
+      if (nextChar != 0) {
+	c = nextChar;
+	nextChar = 0;
+	if (c != '$') {
+	  while ((c = readchar()) != '$');
+	}
+      } else {
+	  while ((c = readchar()) != '$');
+      }
       csum = 0;
       bp = buf;
       while (1)
