@@ -14,12 +14,14 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vm.h"
 #include "vmInt.h"
 #include "vmTrace.h"
+#include "vmMach.h"
 #include "lock.h"
 #include "sync.h"
 #include "sys.h"
 #include "list.h"
 #include "dbg.h"
 #include "stdlib.h"
+#include "fs.h"
 #ifdef sun4
 #include "machMon.h"
 #endif sun4
@@ -31,6 +33,8 @@ Vm_Stat		vmStat;
 int             vmFirstFreePage;  
 Address		vmMemEnd;
 Sync_Lock 	vmMonitorLock;
+Sync_Lock 	vmShmLock;
+int		vmShmLockCnt = 0;
 int		vm_PageSize;
 int		vmPageShift;
 int		vmPageTableInc;
@@ -40,9 +44,6 @@ Address		vmBlockCacheBaseAddr;
 Address 	vmBlockCacheEndAddr;
 int		vmMaxMachSegs;
 extern Vm_SharedSegTable	sharedSegTable;
-
-void		Fs_StreamCopy();
-void		VmMach_FlushCode();
 
 Boolean		vmDebugLargeAllocs = FALSE;
 
@@ -85,6 +86,7 @@ Vm_Init()
 #endif
 
     Sync_LockInitDynamic(&vmMonitorLock, "Vm:vmMonitorLock");
+    Sync_LockInitDynamic(&vmShmLock, "Vm:vmShmLock");
 
     /*
      * Set up the maximum number of pages that a stack can grow.
@@ -591,12 +593,14 @@ VmVirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
     Vm_SegProcList			*segProcPtr;
     register	int			page;
 
+    LOCK_SHM_MONITOR;
     LOCK_MONITOR;
 
 #ifdef sun4
     if (!VMMACH_ADDR_CHECK(virtAddr)) {
 	transVirtAddrPtr->segPtr = (Vm_Segment *) NIL;
 	UNLOCK_MONITOR;
+	UNLOCK_SHM_MONITOR;
 	return;
     }
 #endif sun4
@@ -607,6 +611,7 @@ VmVirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
 	 * The hardware routine was able to translate it for us.
 	 */
 	UNLOCK_MONITOR;
+	UNLOCK_SHM_MONITOR;
 	return;
     }
 	
@@ -624,31 +629,23 @@ VmVirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
     page = (unsigned int) (virtAddr) >> vmPageShift;
     transVirtAddrPtr->page = page;
 
-    if (procPtr->vmPtr->sharedSegs != (List_Links *)NIL) {
-	dprintf("VmVirtAddrParse: Checking shared segment, addr %x for %x:\n",
-		(int)virtAddr,procPtr->processID);
+    if (procPtr->vmPtr->sharedSegs != (List_Links *)NIL &&
+	    virtAddr >= procPtr->vmPtr->sharedStart &&
+	    virtAddr < procPtr->vmPtr->sharedEnd) {
+	dprintf("VmVirtAddrParse: Checking for address %x\n",virtAddr);
 	segProcPtr = VmFindSharedSegment(procPtr->vmPtr->sharedSegs,virtAddr);
 	if (segProcPtr != (Vm_SegProcList *)NIL) {
-	    dprintf("Found shared segment\n");
+	    dprintf("VmVirtAddrParse: found address in seg %x\n",
+		    segProcPtr->segTabPtr->segPtr->segNum);
 	    transVirtAddrPtr->segPtr = segProcPtr->segTabPtr->segPtr;
 	    transVirtAddrPtr->flags |= (segProcPtr->prot & VM_READONLY_SEG);
 	    transVirtAddrPtr->sharedPtr = segProcPtr;
 	    if (transVirtAddrPtr->flags & VM_READONLY_SEG) {
-		dprintf("readonly segment accessed.\n");
+		dprintf("VmVirtAddrParse: (segment is readonly)\n");
 	    }
 	    UNLOCK_MONITOR;
+	    UNLOCK_SHM_MONITOR;
 	    return;
-	} else {
-	    if (page >= seg1Ptr->offset && 
-		    page < (seg1Ptr->offset + seg1Ptr->numPages)) {
-	    } else {
-		Vm_SegProcList *segTabPtr;
-		LIST_FORALL((List_Links *)procPtr->vmPtr->sharedSegs,
-			(List_Links *)segTabPtr) {
-		    dprintf("Didn't find %x in %x to %x\n",virtAddr,
-			    segTabPtr->mappedStart,segTabPtr->mappedEnd);
-		}
-	    }
 	}
     }
 
@@ -659,6 +656,7 @@ VmVirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
     if (page > mach_LastUserStackPage) {
 	transVirtAddrPtr->segPtr = (Vm_Segment *) NIL;
 	UNLOCK_MONITOR;
+	UNLOCK_SHM_MONITOR;
 	return;
     }
     seg2Ptr = procPtr->vmPtr->segPtrArray[VM_STACK];
@@ -686,6 +684,7 @@ VmVirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
 		     mach_LastUserStackPage - newPTSize + 1) {
 		transVirtAddrPtr->segPtr = (Vm_Segment *) NIL;
 		UNLOCK_MONITOR;
+		UNLOCK_SHM_MONITOR;
 		return;
 	    }
 	}
@@ -693,6 +692,7 @@ VmVirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
 	transVirtAddrPtr->flags = VM_HEAP_PT_IN_USE;
 	seg1Ptr->ptUserCount++;
 	UNLOCK_MONITOR;
+	UNLOCK_SHM_MONITOR;
 	return;
     }
     /* 
@@ -706,6 +706,7 @@ VmVirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
 	transVirtAddrPtr->flags = VM_HEAP_PT_IN_USE;
 	seg1Ptr->ptUserCount++;
 	UNLOCK_MONITOR;
+	UNLOCK_SHM_MONITOR;
 	return;
     }
 
@@ -717,6 +718,7 @@ VmVirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
         page < (seg1Ptr->offset + seg1Ptr->numPages)) {
 	transVirtAddrPtr->segPtr = seg1Ptr;
 	UNLOCK_MONITOR;
+	UNLOCK_SHM_MONITOR;
 	return;
     }
 
@@ -725,6 +727,7 @@ VmVirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
      */
     transVirtAddrPtr->segPtr = (Vm_Segment *) NIL;
     UNLOCK_MONITOR;
+    UNLOCK_SHM_MONITOR;
 }
 
 
@@ -1196,6 +1199,7 @@ VmFindSharedSegment(sharedSegs, virtAddr)
     /*
      * Check the shared segment list.
      */
+    CHECK_SHM_MONITOR;
     VmCheckListIntegrity(sharedSegs);
     LIST_FORALL(sharedSegs, (List_Links *) segLinkPtr) {
 	i++;
@@ -1214,6 +1218,59 @@ VmFindSharedSegment(sharedSegs, virtAddr)
 	}
     }
     return (Vm_SegProcList *)NIL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_CleanupSharedProc --
+ *
+ *	Remove a process's shared memory structures, for when the
+ *	process exits.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Shared memory structures associated with the process are deleted.
+ *	
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Vm_CleanupSharedProc(procPtr)
+    Proc_ControlBlock	*procPtr;	/* Process that is exiting. */
+{
+    int i;
+    List_Links	*sharedSegs;	/* Process's shared segments. */
+
+    LOCK_SHM_MONITOR;
+    sharedSegs = procPtr->vmPtr->sharedSegs;
+    while (0 && sharedSegs != (List_Links *)NIL) {
+	if (sharedSegs == (List_Links *)NULL) {
+	    dprintf("Vm_CleanupSharedProc: warning: sharedSegs == NULL\n");
+	    break;
+	}
+	i++;
+	if (i>20) {
+	    dprintf("Vm_CleanupSharedProc: procExit: segment loop!\n");
+	    break;
+	}
+	if (sharedSegs==(List_Links *)NULL) {
+	    printf("Vm_CleanupSharedProc: Danger: null sharedSegs list\n");
+	    break;
+	}
+	if (List_IsEmpty(sharedSegs)) {
+	    printf("Vm_CleanupSharedProc: Danger: empty sharedSegs list\n");
+	    break;
+	}
+	if (List_First(sharedSegs)==
+		(List_Links *)NULL) {
+	    break;
+	}
+	VmDeleteSharedSegment(procPtr, List_First(sharedSegs));
+    }
+    UNLOCK_SHM_MONITOR;
 }
 
 /*
@@ -1240,39 +1297,58 @@ VmFindSharedSegment(sharedSegs, virtAddr)
  *
  *----------------------------------------------------------------------
  */
+void
 VmDeleteSharedSegment(procPtr,segProcPtr)
     Proc_ControlBlock	*procPtr;	/* Process with mapping. */
     Vm_SegProcList		*segProcPtr;	/* Pointer to segment mapping. */
 {
+    Vm_SharedSegTable	*segTabPtr = segProcPtr->segTabPtr;
     Vm_Segment		*segPtr;
+    Vm_VirtAddr		virtAddr;
+    Vm_PTE	*ptePtr;
+    int			done = 0;
+
+    CHECK_SHM_MONITOR;
     VmCheckListIntegrity(procPtr->vmPtr->sharedSegs);
-    dprintf("VmDeleteSharedSegment: Removing process's reference to segment\n");
+
+    LOCK_MONITOR;
+    virtAddr.page = ((int)segProcPtr->mappedStart) >> vmPageShift;
+    virtAddr.segPtr = segTabPtr->segPtr;
+    virtAddr.sharedPtr = segProcPtr;
+    ptePtr = VmGetAddrPTEPtr(&virtAddr,virtAddr.page);
+    UNLOCK_MONITOR;
+
+    VmFlushSegment(&virtAddr, ((int)segProcPtr->mappedEnd+1)>>vmPageShift);
     List_Remove((List_Links *)segProcPtr);
     VmMach_SharedSegFinish(procPtr,segProcPtr->addr);
+    free((Address)segProcPtr);
     VmCheckListIntegrity((List_Links *)&sharedSegTable);
     /*
      * Check if this is the process's last reference to the segment.
      */
-    segProcPtr->segTabPtr->refCount--;
-    segPtr = segProcPtr->segTabPtr->segPtr;
+    segPtr = segTabPtr->segPtr;
+    segTabPtr->refCount--;
+    if (segTabPtr->refCount == 0) {
+	done = 1;
+    }
     if (!VmCheckSharedSegment(procPtr,segPtr)){
 	dprintf("VmDeleteSharedSegment: Process has no more references to segment\n");
-	dprintf("Vm_SegmentDelete: seg %x, proc %x\n",
-		(int)segPtr,(int)procPtr);
-	if (segProcPtr->segTabPtr->refCount==0) {
-	    /*
-	     * Flush the segment.
-	     */
-	}
-	Vm_SegmentDelete(segPtr,procPtr);
 	if (List_IsEmpty(procPtr->vmPtr->sharedSegs)) {
 	    dprintf("VmDeleteSharedSegment: Process has no more shared segments\n");
 	    VmMach_SharedProcFinish(procPtr);
 	    free((Address)procPtr->vmPtr->sharedSegs);
 	    procPtr->vmPtr->sharedSegs = (List_Links *)NIL;
 	}
+	/*
+	 * Don't want Vm_SegmentDelete to destroy swap file unless we're
+	 * through with it.
+	 */
+	Vm_SegmentDelete(segPtr,procPtr);
+	if (!done) {
+	    printf("VmDeleteSharedSegment: Restoring VM_SWAP_FILE_OPENED\n");
+	    segPtr->flags |= VM_SWAP_FILE_OPENED;
+	}
     }
-    free((Address)segProcPtr);
     PrintSharedSegs(procPtr);
     dprintf("VmDeleteSharedSegment: done\n");
 
@@ -1290,7 +1366,7 @@ VmDeleteSharedSegment(procPtr,segProcPtr)
  *	FALSE otherwise.
  *
  * Side effects:
- *	None.
+ *	Reads the shared memory data, so the SHM lock must be held.
  *
  *----------------------------------------------------------------------
  */
@@ -1304,6 +1380,7 @@ VmCheckSharedSegment(procPtr,segPtr)
     /*
      * Check if segment is already on the process's list.
      */
+    CHECK_SHM_MONITOR;
     dprintf("VmCheckSharedSegment: Checking if segment attached to process\n");
     VmCheckListIntegrity(procPtr->vmPtr->sharedSegs);
     LIST_FORALL(procPtr->vmPtr->sharedSegs,
@@ -1334,7 +1411,7 @@ VmCheckSharedSegment(procPtr,segPtr)
  *	FALSE otherwise.
  *
  * Side effects:
- *	None.
+ *	Reads the shared memory data, so the SHM lock must be held.
  *
  *----------------------------------------------------------------------
  */
@@ -1346,20 +1423,35 @@ VmCheckListIntegrity(listHdr)
     List_Links	*list1;
 
 
+    /*
+    CHECK_SHM_MONITOR;
+    */
+    if (List_Prev(listHdr) == (List_Links *)NULL) {
+	panic("List_Prev is NULL!\n");
+    }
+    if (List_Prev(listHdr) == (List_Links *)NIL) {
+	panic("List_Prev is NIL!\n");
+    }
+    if (List_Next(listHdr) == (List_Links *)NULL) {
+	panic("List_Next is NULL!\n");
+    }
+    if (List_Next(listHdr) == (List_Links *)NIL) {
+	panic("List_Next is NIL!\n");
+    }
     if (List_IsEmpty(listHdr)) {
 	return;
     }
 
     LIST_FORALL(listHdr,list1) {
 	i++;
-	if (i>50) {
-	    dprintf("VmCheckListIntegrity: too long\n");
+	if (i>10000) {
+	    panic("VmCheckListIntegrity: too long\n");
 	}
 	if (List_Next(List_Prev(list1))!=list1) {
-	    dprintf("VmCheckListIntegrity: error\n");
+	    panic("VmCheckListIntegrity: error\n");
 	}
 	if (List_Prev(List_Next(list1))!=list1) {
-	    dprintf("VmCheckListIntegrity: error\n");
+	    panic("VmCheckListIntegrity: error\n");
 	}
     }
 }
@@ -1375,7 +1467,7 @@ VmCheckListIntegrity(listHdr)
  *	None.
  *
  * Side effects:
- *	None.
+ *	Reads the shared memory data, so the SHM lock must be held.
  *
  *----------------------------------------------------------------------
  */
@@ -1385,26 +1477,27 @@ PrintSharedSegs(procPtr)
 {
     Vm_SegProcList		*procListPtr;
     Vm_SharedSegTable	*segTabPtr;
+
+    CHECK_SHM_MONITOR;
     dprintf("PrintSharedSegs: info for %x (%x)\n",(int)procPtr,
 	    (int)procPtr->processID);
-    dprintf("Shared Segment Table:\n");
+    dprintf("  Shared Segment Table:\n");
     LIST_FORALL((List_Links *)&sharedSegTable,(List_Links *)segTabPtr) {
-	dprintf("entry: %x fileNumber: %d refcount: %d segPtr: %x segNum: %d\n",
+	dprintf("  entry: %x fileNumber: %d refcount: %d segPtr: %x segNum: %d\n",
 		(int)segTabPtr,segTabPtr->fileNumber, segTabPtr->refCount,
 		(int)segTabPtr->segPtr,segTabPtr->segPtr->segNum);
     }
     if (procPtr->vmPtr->sharedSegs == (List_Links *)NIL) {
-	dprintf("Process list: NIL\n");
+	dprintf("  Process list: NIL\n");
     } else {
-	dprintf("Proc: %x (%x):\n",(int)procPtr,procPtr->processID);
+	dprintf("  Proc: %x (%x):\n",(int)procPtr,procPtr->processID);
 	LIST_FORALL(procPtr->vmPtr->sharedSegs,(List_Links *)procListPtr) {
-	    dprintf("fd: %d table: %x address: %x start: %x end: %x\n",
+	    dprintf("  fd: %d table: %x address: %x start: %x end: %x\n",
 		    (int)procListPtr->fd, procListPtr->segTabPtr,
 		    (int)procListPtr->addr, (int)procListPtr->mappedStart,
 		    (int)procListPtr->mappedEnd);
 	}
     }
-    dprintf("PrintSharedSegs: end\n");
 }
 
 /*
@@ -1421,20 +1514,20 @@ PrintSharedSegs(procPtr)
  *
  * Side effects:
  *	Shared segments are deleted.
+ *	Uses the SHM lock.
  *
  *----------------------------------------------------------------------
  */
-int
+void
 Vm_CleanupSharedFile(procPtr,streamPtr)
     Proc_ControlBlock	*procPtr;	/* Process with file. */
     Fs_Stream		*streamPtr;	/* Stream to remove. */
 {
     Vm_SegProcList		*segPtr;
     Vm_SegProcList		*nextPtr;
-    ReturnStatus		status;
-    Fs_Stream			*sPtr;
     List_Links			*sharedSegs = procPtr->vmPtr->sharedSegs;
 
+    LOCK_SHM_MONITOR;
     if (procPtr->vmPtr->sharedSegs != (List_Links *)NIL) {
 	for (segPtr=(Vm_SegProcList *)List_First(sharedSegs);
 		!List_IsAtEnd(sharedSegs,(List_Links *)segPtr);
@@ -1450,5 +1543,5 @@ Vm_CleanupSharedFile(procPtr,streamPtr)
 	    }
 	}
     }
-    return SUCCESS;
+    UNLOCK_SHM_MONITOR;
 }
