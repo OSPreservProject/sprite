@@ -229,7 +229,7 @@ typedef struct NetLERecvMsgDesc {
     unsigned short	bufAddrLow;	/* Low order 16 addr bits of buffer. */
     unsigned int	chipOwned	:1;	/* Buffer is owned by LANCE. */
     unsigned int	error		:1;	/* Error summary */
-    unsigned int	frammingError	:1;	/* Framing Error occured.  */
+    unsigned int	framingError	:1;	/* Framing Error occured.  */
     unsigned int	overflowError	:1;	/* Packet overflowed. */
     unsigned int	crcError	:1;	/* CRC error. */
     unsigned int	bufferError	:1;	/* Buffer error. */

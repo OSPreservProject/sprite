@@ -156,7 +156,7 @@ NetLERecvInit()
 	 * Clear out error fields. 
 	 */
 	descPtr->error = 0;
-	descPtr->frammingError = 0;
+	descPtr->framingError = 0;
 	descPtr->overflowError = 0;
 	descPtr->crcError = 0;
 	descPtr->bufferError = 0;
@@ -283,10 +283,10 @@ NetLERecvProcess(dropPackets)
 	     */
 	    if (descPtr->error) {
 		tossPacket = TRUE;	/* Throw away packet on error. */
-		if (descPtr->frammingError) {
+		if (descPtr->framingError) {
 		    net_EtherStats.frameErrors++;
 		    printf(
-		       "LE ethernet: Received packet with framming error.\n");
+		       "LE ethernet: Received packet with framing error.\n");
 		}
 		if (descPtr->crcError) {
 		    net_EtherStats.crcErrors++;
