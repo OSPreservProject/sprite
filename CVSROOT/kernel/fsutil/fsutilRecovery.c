@@ -279,7 +279,7 @@ ReopenHandles(serverID)
     }
 reopenReturn:
     if (status != SUCCESS) {
-	Net_HostPrint(serverID, "Recovery failed");
+	Net_HostPrint(serverID, "Recovery failed: ");
 	Fsutil_PrintStatus(status);
 	printf("\n");
     } else if (printed) {
