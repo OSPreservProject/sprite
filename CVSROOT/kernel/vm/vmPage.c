@@ -46,6 +46,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "lock.h"
 #include "sys.h"
 #include "byte.h"
+#include "cvt.h"
 
 Boolean	vmDebug	= FALSE;
 
@@ -106,6 +107,12 @@ static	Sync_Condition	pageinCondition;	/* Used to wait for page in
 static	Sync_Condition	segmentCondition;	/* Used to wait for page out
 						   daemon to clean a page
 						   for a dieing segment. */
+
+/*
+ * Variables to allow recovery.
+ */
+static	Boolean		swapDown = FALSE;
+static	Sync_Condition	swapDownCondition;
 
 void	PageOut();
 void	PutOnReserveList();
@@ -655,8 +662,10 @@ Vm_GetRefTime()
 
     LOCK_MONITOR;
 
-    if (vmStat.numFreePages + vmStat.numUserPages + vmStat.numDirtyPages <= 
-	vmStat.minVMPages) {
+    vmStat.fsAsked++;
+
+    if (swapDown || (vmStat.numFreePages + vmStat.numUserPages + 
+		     vmStat.numDirtyPages <= vmStat.minVMPages)) {
 	/*
 	 * We are already at or below the minimum amount of memory that
 	 * we are guaranteed for our use so refuse to give any memory to
@@ -667,6 +676,7 @@ Vm_GetRefTime()
     }
 
     if (!List_IsEmpty(freePageList)) {
+	vmStat.haveFreePage++;
 	refTime = 0;
 	if (vmDebug) {
 	    Sys_Printf("Vm_GetRefTime: VM has free page\n");
@@ -777,6 +787,9 @@ DoPageAllocate(virtAddrPtr, canBlock)
 
     LOCK_MONITOR;
 
+    while (swapDown) {
+	(void)Sync_Wait(&swapDownCondition, FALSE);
+    }
     page = VmPageAllocateInt(virtAddrPtr, canBlock);
 
     UNLOCK_MONITOR;
@@ -888,6 +901,7 @@ again:
     if (!List_IsEmpty(freePageList)) {
 	corePtr = (VmCore *) List_First(freePageList);
 	TakeOffFreeList(corePtr);
+	vmStat.usedFreePage++;
     } else {
 	/*
 	 * Put a marker at the end of the core map so that we can detect loops.
@@ -1503,11 +1517,12 @@ PutOnFront(corePtr)
  * ----------------------------------------------------------------------------
  */
 ENTRY static void
-PageOutPutAndGet(corePtrPtr) 
+PageOutPutAndGet(corePtrPtr, status) 
     VmCore	**corePtrPtr;	/* IN/OUT:  On input points to page frame
 				 *          to be put back onto allocate list.
 				 *	    On output points to page frame
 				 *	    to be cleaned. */
+    ReturnStatus status;	/* Status from the write. */
 {
     Vm_PTE		pte;
     register	VmCore	*corePtr;
@@ -1515,7 +1530,32 @@ PageOutPutAndGet(corePtrPtr)
     LOCK_MONITOR;
 
     corePtr = *corePtrPtr;
-    if (corePtr != (VmCore *) NIL) {
+    if (corePtr == (VmCore *)NIL) {
+	if (swapDown) {
+	    numPageOutProcs--;
+	    UNLOCK_MONITOR;
+	    return;
+	}
+    } else {
+	switch (status) {
+	    case RPC_TIMEOUT:
+	    case FS_STALE_HANDLE:
+		if (vmSwapStreamPtr != (Fs_Stream *)NIL) {
+		    Fs_WaitForHost(vmSwapStreamPtr,
+				   FS_NAME_SERVER | FS_NON_BLOCKING, status);
+		    swapDown = TRUE;
+		    corePtr->flags &= ~VM_PAGE_BEING_CLEANED;
+		    VmListInsert((List_Links *)corePtr,
+				 LIST_ATREAR(dirtyPageList));
+		    *corePtrPtr = (VmCore *)NIL;
+		    numPageOutProcs--;
+		    UNLOCK_MONITOR;
+		    return;
+		}
+		break;
+	    default:
+		break;
+	}
 	PutOnFront(corePtr);
 	corePtr = (VmCore *) NIL;	
     }
@@ -1627,18 +1667,20 @@ PageOut(data, callInfoPtr)
     Proc_CallInfo	*callInfoPtr;	/* Ignored. */
 {
     VmCore		*corePtr;
-    ReturnStatus	status;
+    ReturnStatus	status = SUCCESS;
 
     vmStat.pageoutWakeup++;
 
     corePtr = (VmCore *) NIL;
     while (TRUE) {
-	PageOutPutAndGet(&corePtr);
+	PageOutPutAndGet(&corePtr, status);
 	if (corePtr == (VmCore *) NIL) {
 	    break;
 	}
 	status = VmPageServerWrite(&corePtr->virtPage, corePtr - coreMap);
-	if (status != SUCCESS) {
+	if (status != SUCCESS && (vmSwapStreamPtr == (Fs_Stream *)NIL ||
+				  (status != RPC_TIMEOUT && 
+				   status != FS_STALE_HANDLE))) {
 	    KillSharers(corePtr->virtPage.segPtr);
 	}
     }
@@ -1878,6 +1920,8 @@ Vm_MapBlock(addr)
     VmVirtAddr		virtAddr;
     int			page;
 
+    vmStat.fsMap++;
+
     virtAddr.page = (unsigned int) addr >> VM_PAGE_SHIFT;
     virtAddr.offset = 0;
     virtAddr.segPtr = vmSysSegPtr;
@@ -1928,6 +1972,8 @@ Vm_UnmapBlock(addr, retOnePage, pageNumPtr)
 {
     register	Vm_PTE	*ptePtr;
     VmVirtAddr		virtAddr;
+
+    vmStat.fsUnmap++;
 
     virtAddr.page = (unsigned int) addr >> VM_PAGE_SHIFT;
     virtAddr.offset = 0;
@@ -1992,3 +2038,60 @@ Vm_FsCacheSize(startAddrPtr, endAddrPtr)
     Sys_Printf("%d virtual pages for cache\n", numPages);
     *endAddrPtr = (Address) (VM_BLOCK_CACHE_BASE + numPages * VM_PAGE_SIZE - 1);
 }
+
+/*---------------------------------------------------------------------------
+ * 
+ *	Routines for recovery
+ *
+ * VM needs to be able to recover when the server of swap crashes.  This is
+ * done in the following manner:
+ *
+ *    1) At boot time the directory "/swap/host_number" is open by the
+ *	 routine Vm_OpenSwapDirectory and the stream is stored in 
+ *	 vmSwapStreamPtr.
+ *    2) If an error occurs on a page write then the variable swapDown
+ *	 is set to TRUE which prohibits all further actions that would dirty
+ *	 physical memory pages (e.g. page faults) and prohibits dirty pages
+ *	 from being written to swap.
+ *    3) Next the routine Fs_WaitForHost is called to asynchronously wait
+ *	 for the server to come up.  When it detects that the server is
+ *	 in fact up and the file system is alive, it calls Vm_Recovery.
+ *    4) Vm_Recovery when called will set swapDown to FALSE and start cleaning
+ *	 dirty pages if necessary.
+ */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_Recovery --
+ *
+ *	The swap area has just come back up.  Wake up anyone waiting for it to
+ *	come back and start up page cleaners if there are dirty pages to be
+ *	written out.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	swapDown flag set to FALSE.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+Vm_Recovery()
+{
+    LOCK_MONITOR;
+
+    swapDown = FALSE;
+    Sync_Broadcast(&swapDownCondition);
+    while (vmStat.numDirtyPages - numPageOutProcs > 0 &&
+	   numPageOutProcs < maxPageOutProcs) { 
+	Proc_CallFunc(PageOut, (ClientData) numPageOutProcs, 0);
+	numPageOutProcs++;
+    }
+
+    UNLOCK_MONITOR;
+}
+
+

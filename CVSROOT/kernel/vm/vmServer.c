@@ -28,10 +28,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "proc.h"
 
 extern	Boolean	vm_NoStickySegments;
+Fs_Stream	*vmSwapStreamPtr = (Fs_Stream *)NIL;
 
 Boolean vmSwapFileDebug = FALSE;
-
-#define	SWAP_DIR_NAME	"/swap/"
 
 /*
  * Condition to wait on when want to do a swap file operation but someone
@@ -219,6 +218,48 @@ VmPageServerRead(virtAddrPtr, pageFrame)
 /*
  *----------------------------------------------------------------------
  *
+ * VmOpenSwapDirectory --
+ *
+ *	Open the swap directory for this machine.  This is needed for 
+ *	recovery.  This is called periodically until it successfully opens
+ *	the swap directory.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Swap directory stream pointer is set.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Vm_OpenSwapDirectory(data, callInfoPtr)
+    ClientData		data;	
+    Proc_CallInfo	*callInfoPtr;
+{
+    char		number[CVT_INT_BUF_SIZE];
+    char		fileName[FS_MAX_PATH_NAME_LENGTH];
+    ReturnStatus	status;
+
+    String_Copy(VM_SWAP_DIR_NAME, fileName);
+    Cvt_UtoA((unsigned) Sys_GetHostId(), 10, number);
+    String_Cat(number, fileName);
+    status = Fs_Open(fileName, FS_FOLLOW, FS_DIRECTORY, 0, &vmSwapStreamPtr);
+    if (status != SUCCESS) {
+	Sys_Panic(SYS_WARNING,
+		  "VmOpenSwapDirectory: Open of swap dir %s failed status %x\n",
+		  fileName, status);
+	/*
+	 * It didn't work, retry in 10 seconds.
+	 */
+	callInfoPtr->interval = 10 * timer_IntOneSecond;
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * VmOpenSwapFile --
  *
  *	Open a swap file for this segment.  Store the name of the swap
@@ -232,21 +273,22 @@ VmPageServerRead(virtAddrPtr, pageFrame)
  *
  *----------------------------------------------------------------------
  */
-
 ReturnStatus
 VmOpenSwapFile(segPtr)
     register	Vm_Segment	*segPtr;
 {
     int				status;
-    char			fileName[FS_MAX_PATH_NAME_LENGTH];
     Proc_ControlBlock		*procPtr;
     int				origID = NIL;
+    char			fileName[FS_MAX_PATH_NAME_LENGTH];
+    char			*swapFileName;
+    Fs_Stream			*origCwdPtr;
 
-    /*
-     * There is no swap file yet so open one.  This may entail assembling the
-     * file name first.  The file name is the segment number in hex.
-     */
     if (segPtr->swapFileName == (char *) NIL) {
+	/*
+	 * There is no swap file yet so open one.  This may entail assembling 
+	 * the file name first.  The file name is the segment number.
+	 */
 	VmMakeSwapName(segPtr->segNum, fileName);
 	segPtr->swapFileName = (char *) Mem_Alloc(String_Length(fileName) + 1);
 	(void) String_Copy(fileName, segPtr->swapFileName);
@@ -259,12 +301,27 @@ VmOpenSwapFile(segPtr)
 	origID = procPtr->effectiveUserID;
 	procPtr->effectiveUserID = PROC_SUPER_USER_ID;
     }
-    status = Fs_Open(segPtr->swapFileName, 
+    /*
+     * We want the swap file open to happen relative to the swap directory
+     * for this machine if possible.  This is so that if the swap directory
+     * is a symbolic link and the swap open fails we know that it failed
+     * because the swap server is down, not the server of the symbolic link.
+     */
+    origCwdPtr = procPtr->cwdPtr;
+    if (vmSwapStreamPtr != (Fs_Stream *)NIL) {
+	procPtr->cwdPtr = vmSwapStreamPtr;
+	Cvt_UtoA((unsigned) segPtr->segNum, fileName);
+	swapFileName = fileName;
+    } else {
+	swapFileName = segPtr->swapFileName;
+    }
+    status = Fs_Open(swapFileName, 
 		     FS_READ | FS_WRITE | FS_CREATE | FS_TRUNC, FS_FILE,
 		     0660, &segPtr->swapFilePtr);
     if (origID != NIL) {
 	procPtr->effectiveUserID = origID;
     }
+    procPtr->cwdPtr = origCwdPtr;
     if (status != SUCCESS) {
 	Sys_Panic(SYS_WARNING, 
 	    "VmOpenSwapFile: Could not open swap file %s, reason 0x%x\n", 
@@ -303,7 +360,7 @@ VmMakeSwapName(segNum, fileName)
 {
     char number[CVT_INT_BUF_SIZE];
 
-    String_Copy(SWAP_DIR_NAME, fileName);
+    String_Copy(VM_SWAP_DIR_NAME, fileName);
     Cvt_UtoA((unsigned) Sys_GetHostId(), 10, number);
     String_Cat(number, fileName);
     String_Cat("/", fileName);
