@@ -28,6 +28,7 @@ typedef struct VmMach_SegData {
     int		firstPTPage;	/* First page table's page to be mapped. */
     int		lastPTPage;	/* Last page table's page to be mapped.  */
     int		RPTPM;		/* Root page table physical page number. */
+    unsigned 	createTime;	/* The time that this segment was created. */
 } VmMach_SegData;
 
 /*
@@ -37,6 +38,7 @@ typedef struct VmMach_ProcData {
     int			segNums[VMMACH_NUM_SEGMENTS];
     int			RPTPMs[VMMACH_NUM_SEGMENTS];
     unsigned int	segRegMask;
+    unsigned int	mappedSegMask;
     struct Vm_Segment	*mapSegPtr;
 } VmMach_ProcData;
 
