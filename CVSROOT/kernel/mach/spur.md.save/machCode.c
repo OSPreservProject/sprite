@@ -906,7 +906,18 @@ MachUserError(errorType)
 		     FALSE);
 	    break;
 	case MACH_BREAKPOINT:
+		/*
+ 		 * Breakpoint and signal step trap should return to the
+		 * current (traping) PC.
+		 */
+	    procPtr->machStatePtr->userState.trapRegState.kpsw |= 
+					MACH_KPSW_USE_CUR_PC;
 	    Sig_Send(SIG_BREAKPOINT, SIG_NO_CODE, procPtr->processID, FALSE);
+	    break;
+	case MACH_SINGLE_STEP:
+	    procPtr->machStatePtr->userState.trapRegState.kpsw |= 
+					MACH_KPSW_USE_CUR_PC;
+	    Sig_Send(SIG_TRACE_TRAP, SIG_NO_CODE, procPtr->processID, FALSE);
 	    break;
 	default:
 	    Sys_Panic(SYS_FATAL, "MachUserError: Unknown user error %d\n",
