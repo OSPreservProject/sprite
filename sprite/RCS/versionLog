@@ -257,4 +257,12 @@ Fixes the global register trashing bug on the sun4.
 1.075	Tue Sep 11 19:52:13 PDT 1990
 Fix for deadlock caused by delete callback.  
 First attempt at adding function prototypes.
+
+1.078	Thu Nov  8 17:30:08 PST 1990
+Ultranet and multiple network interface support.
+More function prototypes.
+Profiling on the ds3100.
+LFS added.
+ProcExit closes a process's files in two phases to avoid races between
+the vm and fs modules during process exit.
     New files linked in from the net library.
