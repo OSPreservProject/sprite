@@ -297,27 +297,24 @@ typedef struct {
  */
 
 #define Mach_MonPrintf (romVectorPtr->printf)
-extern	void 	Mach_MonPutChar ();
-extern	int  	Mach_MonMayPut();
-extern	void	Mach_MonAbort();
-extern	void	Mach_MonReboot();
+
+extern void Mach_MonPutChar _ARGS_((int ch));
+extern int Mach_MonMayPut _ARGS_((int ch));
+extern void Mach_MonAbort _ARGS_((void));
+extern void Mach_MonReboot _ARGS_((char *rebootString));
+extern	void	Mach_MonTrap _ARGS_((Address address_to_trap_to));
+extern void Mach_MonStartNmi _ARGS_((void));
+extern void Mach_MonStopNmi _ARGS_((void));
 
 /*
  * These routines no longer work correctly with new virtual memory.
  * IS THIS TRUE FOR SUN4 TOO?
  */
-
 #define Mach_MonGetChar (romVectorPtr->getChar)
 #define Mach_MonGetLine (romVectorPtr->getLine)
 #define Mach_MonGetNextChar (romVectorPtr->getNextChar)
 #define Mach_MonPeekNextChar (romVectorPtr->peekNextChar)
 
 
-#ifdef NOTDEF
-extern	void	Mach_MonTrap();
-#endif /* NOTDEF */
-/* Do these routines work with new virtual memory?  They were claimed not to. */
-extern	void	Mach_MonStopNmi();
-extern	void	Mach_MonStartNmi();
 
 #endif /* _MACHMON */

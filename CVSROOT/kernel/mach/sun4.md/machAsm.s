@@ -135,7 +135,7 @@ _Mach_GetMachineType:
  *
  *	Returns the type of machine that is stored in the id prom.
  *
- *	int *	Mach_GetEtherAddress(ether)
+ *	Net_EtherAddress *Mach_GetEtherAddress(&etherAddress)
  *
  * Results:
  *	The argument struct gets the prom's ethernet address and is
@@ -1077,8 +1077,8 @@ _MachHandleBadArgs:
  * Beginning of area where the kernel should be able to handle a bus error
  * (which includes size errors) while in kernel mode.
  */
-.globl	_Mach_ProbeStart
-_Mach_ProbeStart:
+.globl	_MachProbeStart
+_MachProbeStart:
 
 /*
  * ----------------------------------------------------------------------
@@ -1087,6 +1087,8 @@ _Mach_ProbeStart:
  *
  *	Read or write a virtual address handling bus errors that may occur.
  *	This routine is intended to be used to probe for memory-mapped devices.
+ *
+ *	Mach_Probe(byteCount, readAddress, writeAddress)
  *
  * Results:
  *	SUCCESS if the read or write worked and FAILURE otherwise.
@@ -1098,17 +1100,10 @@ _Mach_ProbeStart:
  */
 .globl	_Mach_Probe
 _Mach_Probe:
-				/* %o0 = size in bytes of the read to do.
+				/* %o0 = size in bytes of the read/write to do.
 				 * Must be 1, 2, 4, or 8 bytes. */
 				/* %o1 = address to read. */
 				/* %o2 = Location to store the read value. */
-
-				/* %o0 = address to peek in. */
-				/* %o1 = size in bytes of the read to do.
-				 * Must be 1, 2, 4, or 8 bytes. */
-				/* %o2 = Location to store the correctly read
-				 * value. It should be a pointer to an
-				 * object of size size. */
 	cmp	%o0, 1
 	bne	Read2Bytes
 	nop
@@ -1171,8 +1166,8 @@ BadRead:
  * End of the area where the kernel should be able to handle a bus error
  * while in kernel mode.
  */
-.globl	_Mach_ProbeEnd
-_Mach_ProbeEnd:
+.globl	_MachProbeEnd
+_MachProbeEnd:
 
 /*
  *---------------------------------------------------------------------

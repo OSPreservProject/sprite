@@ -98,7 +98,7 @@ int	machArgOffsets[SYS_NUM_SYSCALLS];/* For each system call, tells how
 					 * much to add to the fp at the time
 					 * of the call to get to the highest
 					 * argument on the stack.  */
-Address	machArgDispatch[SYS_NUM_SYSCALLS];	/* For each system call, gives an
+Address	machArgDispatch[SYS_NUM_SYSCALLS];/* For each system call, gives an
 					 * address to branch to, in the
 					 * middle of MachFetchArgs, to copy the
 					 * right # of args from user space to
@@ -201,8 +201,11 @@ Address			oldAddrOfMachPtr = 0;
 Address			machRomVectorPtr;
 MachMonBootParam	machMonBootParam;
 
-extern	void	MachFlushWindowsToStack();
-    
+/*
+ * Forward declarations.
+ */
+static void FlushTheWindows _ARGS_((int num));
+
 
 
 /*
@@ -469,7 +472,7 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
      */
     if (user) {
 	Mach_DisableIntr();
-	MachFlushWindowsToStack();
+	Mach_FlushWindowsToStack();
 	Mach_EnableIntr();
     }
     if (procPtr->machStatePtr == (Mach_State *)NIL) {
@@ -543,7 +546,7 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
 		sizeof (Mach_RegState));
 	/*
 	 * Check to see if any register windows were saved to internal buffer
-	 * in MachFlushWindowsToStack(), above.  If so, copy the buffer state
+	 * in Mach_FlushWindowsToStack(), above.  If so, copy the buffer state
 	 * to the new process, so that when it returns from the fork trap, it
 	 * will copy out the saved windows to its stack.
 	 */
@@ -1104,28 +1107,7 @@ Mach_GetNumProcessors()
 	return (mach_NumProcessors);
 }
 
-/*
- *----------------------------------------------------------------------
- *
- * MachIntrNotHandledYet() -
- *
- *	I don't handle this level of interrupt yet.
- *
- * Results:
- *	None
- *
- * Side effects:
- *	None
- *
- *----------------------------------------------------------------------
- */
-void
-MachIntrNotHandledYet()
-{
-    printf("Received an interrupt I don't handle yet.\n");
-    return;
-}
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1144,11 +1126,7 @@ MachIntrNotHandledYet()
  */
 void
 MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
-#ifdef sun4c
     unsigned	int	busErrorReg;
-#else
-    unsigned	char	busErrorReg;
-#endif
     Address		addrErrorReg;
     unsigned	int	trapPsr;
     Address		pcValue;
@@ -1181,8 +1159,8 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
      * We must check this before looking for the current process, since this
      * can happen during boot-time before we have set up processes.
      */
-    if ((pcValue >= (Address) &Mach_ProbeStart)  &&
-	    (pcValue < (Address) &Mach_ProbeEnd)) {
+    if ((pcValue >= (Address) &MachProbeStart)  &&
+	    (pcValue < (Address) &MachProbeEnd)) {
 	/*
 	 * This doesn't return to here.  It erases the fact that the
 	 * page fault happened and makes the probe routine that
@@ -1376,7 +1354,7 @@ HandleItAgain:
      * in that case.
      */
     Mach_DisableIntr();
-    MachFlushWindowsToStack();
+    Mach_FlushWindowsToStack();
     if (procPtr->specialHandling != 0) {
 	goto HandleItAgain;
     }
@@ -1592,7 +1570,7 @@ MachHandleTrap(trapType, pcValue, trapPsr)
     case MACH_FP_DISABLED: {
 	register Mach_State 	*machStatePtr;
 
-	MachFlushWindowsToStack();
+	Mach_FlushWindowsToStack();
 	machStatePtr = procPtr->machStatePtr;
 	/*
 	 * Upon a user's first FPU disable trap we initialize and enable
@@ -1628,96 +1606,6 @@ MachHandleTrap(trapType, pcValue, trapPsr)
 }
 
 
-#ifdef sun4c
-/*
- *----------------------------------------------------------------------
- *
- * Mach_PrintInterruptReg --
- *
- *	For debugging - print the contents of the interrupt register
- *	on the sun4c.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-void
-Mach_PrintInterruptReg()
-{
-    unsigned char	interReg;
-
-    interReg = *Mach_InterruptReg;
-    Mach_MonPrintf("Interrupt register: 0x%x\n", interReg);
-    return;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Mach_PrintBusErrorRegs --
- *
- *	For debugging - print the contents of the bus error registers
- *	on the sun4c.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-void
-Mach_PrintBusErrorRegs()
-{
-    unsigned int	busErrorReg;
-
-    busErrorReg = MachGetSyncErrorReg();
-    Mach_MonPrintf("Sync error register: 0x%x\n", busErrorReg);
-    busErrorReg = MachGetSyncErrorAddrReg();
-    Mach_MonPrintf("Sync error addr register: 0x%x\n", busErrorReg);
-    busErrorReg = MachGetASyncErrorReg();
-    Mach_MonPrintf("ASync error register: 0x%x\n", busErrorReg);
-    busErrorReg = MachGetASyncErrorAddrReg();
-    Mach_MonPrintf("ASync error addr register: 0x%x\n", busErrorReg);
-    return;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Mach_PrintSystemEnableReg --
- *
- *	For debugging - print the contents of the system enable register
- *	on the sun4c.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-void
-Mach_PrintSystemEnableReg()
-{
-    unsigned char	systemEnableReg;
-
-    systemEnableReg = MachGetSystemEnableReg();
-    Mach_MonPrintf("System enable register: 0x%x\n", systemEnableReg);
-    return;
-}
-#endif /* sun4c */
-
- 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -1749,7 +1637,7 @@ FlushTheWindows(num)
 /*
  *----------------------------------------------------------------------
  *
- * MachFlushWindowsToStack --
+ * Mach_FlushWindowsToStack --
  *
  *	Calls a routine to flush the register windows to the stack.
  *	This routine can be caled from traps, or wherever.
@@ -1763,7 +1651,7 @@ FlushTheWindows(num)
  *----------------------------------------------------------------------
  */
 void
-MachFlushWindowsToStack()
+Mach_FlushWindowsToStack()
 {
     /*
      * We want to do NWINDOWS - 1 saves and then restores to make sure all our
@@ -1844,4 +1732,26 @@ Mach_GetBootArgs(argc, bufferSize, argv, buffer)
 	argv[i] = (char *) (machMonBootParam.argPtr[i] - (char *) offset);
     }
     return i;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_GetStackPointer --
+ *
+ *	This is a stub routine for the sun4.
+ *
+ * Results:
+ *	Address.
+ *
+ * Side effects:
+ *	It panics since it should never be called.  If it ends up being
+ *	useful someday, change it so it doesn't panic.
+ *
+ *----------------------------------------------------------------------
+ */
+Address
+Mach_GetStackPointer()
+{
 }
