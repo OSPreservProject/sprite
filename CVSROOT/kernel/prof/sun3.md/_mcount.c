@@ -123,7 +123,7 @@ mcount()
     instructionNumber = 
 	    (callerPC - (unsigned int) &spriteStart) >> PROF_ARC_SHIFT;
     if (instructionNumber > profArcIndexSize) {
-	Sys_Panic(SYS_WARNING,
+	printf(
 		  "_mcount: Index (%d) exceeds bounds (%d) of index array.\n",
 		  instructionNumber, profArcIndexSize);
 	goto exit;
@@ -138,7 +138,7 @@ mcount()
     if (arcPtr == (ProfRawArc *) 0) {
 
 #ifdef DEBUG
-	Sys_Panic(SYS_WARNING, "mcount: 1 callerPC = %x(%d), calleePC = %x\n",
+	printf( "mcount: 1 callerPC = %x(%d), calleePC = %x\n",
 			    callerPC, instructionNumber, calleePC);
 	/* DBG_CALL; */
 #endif DEBUG
@@ -152,7 +152,7 @@ mcount()
 
 	if (profArcListFreePtr >= profArcListEndPtr) {
 	    profEnabled = FALSE;
-	    Sys_Panic(SYS_WARNING, 
+	    printf( 
 			"_mcount: No more arcs, stopping profiling\n");
 	} else {
 
@@ -181,14 +181,14 @@ mcount()
 	     *  Allocate, link, and initialize another arc storage unit.
 	     */
 #ifdef DEBUG
-	    Sys_Panic(SYS_WARNING, 
+	    printf( 
 			"mcount 2 callerPC = %x(%d), calleePC = %x\n",
 			callerPC, instructionNumber, calleePC);
 	/* DBG_CALL; */
 #endif DEBUG
 
 	    if (profArcListFreePtr >= profArcListEndPtr) {
-		Sys_Panic(SYS_WARNING, "_mcount: No more arcs\n");
+		printf( "_mcount: No more arcs\n");
 	    } else {
 		MASTER_LOCK(&mcountMutex);
 
