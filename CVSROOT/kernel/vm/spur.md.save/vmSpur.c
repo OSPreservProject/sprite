@@ -1065,6 +1065,23 @@ VmMach_SetProtForDbg(readWrite, numBytes, addr)
         pte |= readWrite ? VMMACH_KRW_UNA_PROT : VMMACH_KRO_UNA_PROT;
         *ptePtr = pte;
     }
+    /*
+     * Flush the range from the cache so new protect will be read.  This
+     * code should work before the Vm module is initialized.
+     */
+    while (numBytes > 0) { 
+        VmMachFlushBlock(
+		(Address)((unsigned)addr & ~(VMMACH_CACHE_BLOCK_SIZE-1)));
+	addr += VMMACH_CACHE_BLOCK_SIZE;
+	numBytes -= VMMACH_CACHE_BLOCK_SIZE;
+    }
+    /*
+     * Flush the following cache block in case the range slops over into it.
+     * For example addr = 0x1f numBytes = 2.
+     */
+    VmMachFlushBlock(
+		(Address)((unsigned)addr & ~(VMMACH_CACHE_BLOCK_SIZE-1)));
+   
 }
 
 
