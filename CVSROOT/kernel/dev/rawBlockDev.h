@@ -21,6 +21,7 @@
 #define _RAWBLOCKDEV
 
 extern ReturnStatus DevRawBlockDevOpen();
+extern ReturnStatus DevRawBlockDevReopen();
 extern ReturnStatus DevRawBlockDevRead();
 extern ReturnStatus DevRawBlockDevWrite();
 extern ReturnStatus DevRawBlockDevClose();

@@ -17,6 +17,7 @@
  * Forward Declarations.
  */
 extern ReturnStatus Dev_SyslogOpen();
+extern ReturnStatus Dev_SyslogReopen();
 extern ReturnStatus Dev_SyslogRead();
 extern ReturnStatus Dev_SyslogWrite();
 extern ReturnStatus Dev_SyslogIOControl();
