@@ -540,6 +540,45 @@ Vm_Mmap(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
     int		share;		/* Private/shared flag. */
     int		streamID;	/* Open file to be mapped. */
     int		fileAddr;	/* Offset into mapped file. */
+    Address	*mappedAddr;	/* Mapped address (user space). */
+{
+    Address mappedAddrInt;
+    ReturnStatus status;
+
+    status = Vm_MmapInt(startAddr, length, prot, share, streamID, fileAddr,
+	    &mappedAddrInt);
+    if (status==SUCCESS) {
+	status = Vm_CopyOut(sizeof(int), (Address)&mappedAddrInt,
+		(Address)mappedAddr);
+    }
+    return status;
+    
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_MmapInt --
+ *
+ *	Internal routine for Vm_Mmap.
+ *
+ * Results:
+ *	Status from the map.
+ *
+ * Side effects:
+ *	Maps the page.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ENTRY ReturnStatus
+Vm_MmapInt(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
+    Address	startAddr;	/* Requested starting virt-addr. */
+    int		length;		/* Length of mapped segment. */
+    int		prot;		/* Protection for mapped segment. */
+    int		share;		/* Private/shared flag. */
+    int		streamID;	/* Open file to be mapped. */
+    int		fileAddr;	/* Offset into mapped file. */
     Address	*mappedAddr;	/* Mapped address. */
 {
     Proc_ControlBlock	*procPtr;
@@ -593,10 +632,9 @@ Vm_Mmap(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
         status = Fsio_DeviceMmap(streamPtr, startAddr, length, fileAddr,
                 &startAddr);
         if (status != SUCCESS) {
-            return status;
+	    *mappedAddr = startAddr;
         }
-        return(Vm_CopyOut(sizeof(Address), (Address) &startAddr,
-            (Address) mappedAddr));
+	return status;
     }
 
 
@@ -751,9 +789,8 @@ Vm_Mmap(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
     VmPrintSharedSegs(procPtr);
     UNLOCK_SHM_MONITOR;
     dprintf("Vm_Mmap: Completed page mapping\n");
-    return(Vm_CopyOut(sizeof(Address), (Address) &startAddr,
-	    (Address) mappedAddr));
-
+    *mappedAddr = startAddr;
+    return SUCCESS;
 }
 
 /*
