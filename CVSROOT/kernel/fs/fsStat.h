@@ -348,7 +348,7 @@ typedef struct Fs_ConsistStats {
     int nonFiles;		/* # of directories, links, etc. */
     int swap;			/* # of uncached swap files. */
     int cacheable;		/* # of files that were cacheable */
-    int uncachable;		/* # of files that were not cacheable */
+    int uncacheable;		/* # of files that were not cacheable */
 } Fs_ConsistStats;
 
 /*
