@@ -18,11 +18,14 @@
 #ifndef _DEVJaguar
 #define _DEVJaguar
 
+#include "devInt.h"
 #include "scsiHBA.h"
 
-extern ClientData DevJaguarInit();
-extern Boolean DevJaguarIntr();
-extern ScsiDevice   *DevJaguarAttachDevice();
+extern ClientData DevJaguarInit _ARGS_ ((DevConfigController *ctrlLocPtr));
+extern Boolean DevJaguarIntr _ARGS_ ((ClientData clientData));
+extern ScsiDevice   *DevJaguarAttachDevice _ARGS_ ((Fs_Device *devicePtr,
+    void (*insertProc) _ARGS_ ((List_Links *elementPtr,
+                                List_Links *elementListHdrPtr))));
 
 #endif /* _DEVJaguar */
 

@@ -26,9 +26,9 @@
 #include "z8530.h"
 #endif
 
-extern DevZ8530	*	DevGrabKeyboard();
-extern void		DevReleaseKeyboard();
-extern DevTty *		DevTtyAttach();
-extern void		DevTtyInit();
+extern DevZ8530 *DevGrabKeyboard _ARGS_((void (*inputProc)(), ClientData inputData, int (*outputProc)(), ClientData outputData));
+extern void DevReleaseKeyboard _ARGS_((void));
+extern DevTty *DevTtyAttach _ARGS_((int unit));
+extern void DevTtyInit _ARGS_((void));
 
 #endif /* _DEVTTYATTACH */
