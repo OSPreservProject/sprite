@@ -339,6 +339,11 @@ DevRaidAttach(devicePtr)
     }
 
     handlePtr = (RaidHandle *) malloc(sizeof(RaidHandle));
+
+    /*
+     * 'S' means data striping only, no parity.
+     * We use a different blockIOproc to support this function.
+     */
     if (raidPtr->parityConfig == 'S') {
 	handlePtr->blockHandle.blockIOProc = StripeBlockIOProc;
     } else {
