@@ -1845,9 +1845,11 @@ Recov_PrintTraceRecord(clientData, event, printHeaderFlag)
  */
 
 void
-Recov_PrintTrace(numRecs)
-    int numRecs;
+Recov_PrintTrace(clientData)
+    ClientData clientData;
 {
+    int numRecs = (int)clientData;
+
     if (numRecs <= 0 || numRecs > recovTraceLength) {
 	numRecs = recovTraceLength;
     }

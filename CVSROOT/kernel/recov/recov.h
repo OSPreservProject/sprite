@@ -211,7 +211,7 @@ extern ReturnStatus 	Recov_DumpState _ARGS_((int size, Address userAddr));
 extern void 		Recov_ChangePrintLevel _ARGS_((int newLevel));
 extern void 		RecovPingInit _ARGS_((void));
 extern void 		RecovPrintPingList _ARGS_((void));
-extern void 		Recov_PrintTrace _ARGS_((int numRecs));
+extern void 		Recov_PrintTrace _ARGS_((ClientData numRecs));
 extern void 		Recov_PrintState _ARGS_((void));
 extern int 		Recov_PrintTraceRecord _ARGS_((ClientData clientData, int event, Boolean printHeaderFlag));
 extern void 		Recov_Proc _ARGS_((void));
