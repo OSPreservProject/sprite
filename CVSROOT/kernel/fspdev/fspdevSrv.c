@@ -586,16 +586,33 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPt
 			    ioHandlePtrPtr);
     cltHandlePtr = (PdevClientIOHandle *)(*ioHandlePtrPtr);
     if (found) {
-	Sys_Panic(SYS_FATAL, "FsPseudoStreamCltOpen found client handle\n");
+	Sys_Panic(SYS_WARNING,
+	    "FsPseudoStreamCltOpen found client handle\n");
+	if (cltHandlePtr->pdevHandlePtr != (PdevServerIOHandle *)NIL) {
+	    Sys_Printf("Check (and kill) client process %x\n",
+		cltHandlePtr->pdevHandlePtr->clientPID);
+	}
+	/*
+	 * Invalidate this lingering handle.  The client process is hung
+	 * or suspended and hasn't closed its end of the pdev connection.
+	 */
+	FsHandleInvalidate(cltHandlePtr);
+	FsHandleRelease(cltHandlePtr, TRUE);
+
+	found = FsHandleInstall(ioFileIDPtr, sizeof(PdevClientIOHandle),
+			ioHandlePtrPtr);
+	cltHandlePtr = (PdevClientIOHandle *)(*ioHandlePtrPtr);
+	if (found) {
+	    Sys_Panic(SYS_FATAL, "FsPseudoStreamCltOpen handle still there\n");
+	}
     }
     /*
-     * Set up a service stream that corresponds to the client's
-     * pseudo stream, and hook the client handle to it.  We have to look around
-     * and decide if we are being called directly from Fs_Open, or via
-     * RPC from a remote client.  In the latter case the remote client's
+     * We have to look around and decide if we are being called
+     * from Fs_Open, or via RPC from a remote client.  A remote client's
      * processID and uid are passed to us via the PdevState.  We also
      * have to ensure that a FS_STREAM exists and has the remote client
      * on its list so the client's remote I/O ops. are accepted here.
+     * The remote client's stream is closed for us by the close rpc stub.
      */
     if (clientID == rpc_SpriteID) {
 	procPtr = Proc_GetEffectiveProc();
@@ -613,6 +630,9 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPt
 				clientID, *flagsPtr);
 	FsHandleUnlock(cltHandlePtr->streamPtr);
     }
+    /*
+     * Set up a service stream and hook the client handle to it.
+     */
     cltHandlePtr->pdevHandlePtr = ServerStreamCreate(ctrlHandlePtr,
 				    ioFileIDPtr, clientID, procID);
     List_Init(&cltHandlePtr->clientList);
@@ -852,16 +872,6 @@ FsPseudoStreamClose(streamPtr, clientID, flags, size, data)
     DBG_PRINT( ("Client closing pdev %x,%x\n", 
 		cltHandlePtr->hdr.fileID.major,
 		cltHandlePtr->hdr.fileID.minor) );
-
-    if (cltHandlePtr->streamPtr != (Fs_Stream *)NIL) {
-	/*
-	 * Clean up the stream we had to create on this host in order for a
-	 * remote client to do I/O.
-	 */
-	FsHandleLock(cltHandlePtr->streamPtr);
-	FsStreamClientClose(cltHandlePtr->streamPtr, clientID);
-	FsStreamDispose(cltHandlePtr->streamPtr);
-    }
     /*
      * Notify the server that a client has gone away.  Then we get rid
      * of our reference to the server's handle and nuke our own.
@@ -1565,7 +1575,6 @@ RequestResponse(pdevHandlePtr, requestPtr,
      * Put an entry in the scheduler trace so we can correlate...
      */
     procPtr = Proc_GetEffectiveProc();
-    Sched_TraceInsert(procPtr, 10);
     /*
      * See if we have to switch to a new request buffer.  This is needed
      * to support UDP, which wants to set a maximum write size.  The max
@@ -1717,8 +1726,6 @@ RequestResponse(pdevHandlePtr, requestPtr,
 	pdevHandlePtr->reply.status = SUCCESS;
     }
 failure:
-
-    Sched_TraceInsert(procPtr, 20);
 
     if (status == SUCCESS) {
 	status = pdevHandlePtr->reply.status;
