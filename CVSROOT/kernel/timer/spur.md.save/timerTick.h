@@ -18,8 +18,13 @@
 #ifndef _TIMERTICK
 #define _TIMERTICK
 
+#ifdef KERNEL
 #include "time.h"
 #include "devTimer.h"
+#else
+#include <spriteTime.h>
+#include <kernel/devTimer.h>
+#endif
 
 /* DATA STRUCTURES: */
 
