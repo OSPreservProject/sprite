@@ -86,7 +86,7 @@ typedef struct {
     void	(*startFunc)();		/* Function to call when process
 					 * first starts executing. */
     int		retPC;			/* Return PC that will be sitting on the
-    					 * stack when startFunc is called. */
+					 * stack when startFunc is called. */
     Address	startPC;		/* PC to start executing at.  Is passed
 					 * as an argument to startFunc. */
     int		fill1;			/* Filler for the debugger. */
@@ -1060,6 +1060,11 @@ MachUserReturn(procPtr)
 {
     SignalStack			sigStack;
     Address			pc;
+
+
+    if (procPtr->Prof_Scale != 0 && procPtr->Prof_PC != 0) {
+	Prof_RecordPC(procPtr);
+    }
 
     /* 
      * Take a context switch if one is pending for this process.

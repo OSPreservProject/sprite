@@ -152,7 +152,7 @@
 	movl	d0, sp@-; \
 	movw	sp@(4), d0; \
 	andl	#MACH_SR_SUPSTATE, d0; \
-	beq	101$; \
+	beq	9$; \
 	movl	sp@+, d0; \
 	moveml	#0xC0C0, sp@-; \
 	BUS_ERROR_MOVS VMMACH_BUS_ERROR_REG, d0; \
@@ -161,9 +161,9 @@
         jsr 	_MachTrap; \
 	jra	MachReturnFromKernTrap; \
 	\
-101$:   movl	sp@+, d0; \
+9$:   movl	sp@+, d0; \
 	cmpl	#0xffffffff, _machCurStatePtr; \
-	bne	100$; \
+	bne	8$; \
 	\
 	subl	#16, sp; \
 	BUS_ERROR_MOVS VMMACH_BUS_ERROR_REG,d0; \
@@ -171,7 +171,7 @@
 	movl	#type, sp@-; \
 	jra	_Dbg_Trap; \
 	\
-100$:	movl	a0, sp@-; \
+8$:	movl	a0, sp@-; \
 	movl	_machCurStatePtr, a0; \
 	moveml	#0x7fff, a0@(MACH_TRAP_REGS_OFFSET); \
 	movl	sp@+, a0@(MACH_TRAP_REGS_OFFSET + 32); \
