@@ -958,28 +958,66 @@ Fsrmt_RpcIOControl(srvToken, clientID, command, storagePtr)
 	Ioc_RepositionArgs	iocArgs;
 	int size;
 	int inSize;
+#ifdef SOSP91
+	int oldOffset = -1;
+#endif
 
 	if (ioctl.inBuffer == (Address)NIL ||
 	    (ioctl.inBufSize != sizeof(Ioc_RepositionArgs))) {
 	    status = GEN_INVALID_ARG;
 	} else if (ioctl.format != mach_Format) {
-		int fmtStatus;
-		size = sizeof(Ioc_RepositionArgs);
-		inSize = ioctl.inBufSize;
-		fmtStatus = Fmt_Convert("ww", ioctl.format, &inSize,
-				ioctl.inBuffer, mach_Format, &size,
-				(Address) &iocArgs);
-		if (fmtStatus != 0) {
-		    printf("Format of ioctl failed <0x%x>\n", fmtStatus);
-		    status = GEN_INVALID_ARG;
-		}
-		if (size != sizeof(Ioc_RepositionArgs)) {
-		    status = GEN_INVALID_ARG;
-		}
-		iocArgsPtr = &iocArgs;
-	    } else {
-		iocArgsPtr = (Ioc_RepositionArgs *)ioctl.inBuffer;
+	    int fmtStatus;
+	    size = sizeof(Ioc_RepositionArgs);
+	    inSize = ioctl.inBufSize;
+	    fmtStatus = Fmt_Convert("ww", ioctl.format, &inSize,
+			    ioctl.inBuffer, mach_Format, &size,
+			    (Address) &iocArgs);
+	    if (fmtStatus != 0) {
+		printf("Format of ioctl failed <0x%x>\n", fmtStatus);
+		status = GEN_INVALID_ARG;
 	    }
+	    if (size != sizeof(Ioc_RepositionArgs)) {
+		status = GEN_INVALID_ARG;
+	    }
+#ifdef SOSP91
+	    /*
+	     * SOSP91
+	     *
+	     *	The old offset is included in the RPC following the
+	     *	Ioc_RepositionArgs. If its not there assume the
+	     *	RPC came from a client running a standard kernel.
+	     */
+	    if (inSize != ioctl.inBufSize) {
+		char	*offsetPtr;
+		offsetPtr = ioctl.inBuffer + inSize;
+		inSize = ioctl.inBufSize - inSize;
+		size = sizeof(int);
+		fmtStatus = Fmt_Convert("w", ioctl.format, &inSize,
+			    offsetPtr, mach_Format, &size,
+			    (Address) &oldOffset);
+		if (fmtStatus != 0) {
+		    printf("Format of old offset failed <0x%x>\n", 
+			fmtStatus);
+		}
+		if (size != sizeof(int)) {
+		    printf("Old offset wrong size %d\n", size);
+		}
+	    }
+#endif
+	    iocArgsPtr = &iocArgs;
+	} else {
+	    iocArgsPtr = (Ioc_RepositionArgs *)ioctl.inBuffer;
+	}
+	/*
+	 * SOSP91
+	 *
+	 *  Somewhere in here write out the trace record.  This should
+	 *  include the old and new offset, streamID, and time.
+	 *  The old offset should be determined from the shadow stream if
+	 *  the stream is shared (FS_RMT_SHARED), or from the variable
+	 *  oldOffset otherwise.  TODO: verify that the shadow stream
+	 *  id is the same as the client stream id.
+	 */
 	if (status == SUCCESS) {
 	    switch(iocArgsPtr->base) {
 		case IOC_BASE_ZERO:
