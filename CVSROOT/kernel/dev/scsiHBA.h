@@ -65,8 +65,8 @@
  *			 requests a REQUEST SENSE.
  */
 #define	SCSI_CHECK_STATUS(statusBytes) (((statusBytes)&0x2) != 0)
-#define	DEV_MAX_SENSE_BYTES	64
-#define	DEV_MAX_INQUIRY_SIZE	254
+#define	DEV_MAX_SENSE_BYTES	128
+#define	DEV_MAX_INQUIRY_SIZE	128
 
 /*
  * Definitions of SCSI messages.
