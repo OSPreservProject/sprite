@@ -1431,7 +1431,7 @@ CreateFile(domainPtr, parentHandlePtr, component, compLen, fileNumber, type,
 		 * Unwind by marking the file descriptor as free and
 		 * releasing the handle we've created.
 		 */
-		printf("CreateFile: aborting create of %d (%s) in %d\n",
+		panic("CreateFile: aborting create of %d (%s) in %d\n",
 			fileNumber, component, 
 			parentHandlePtr->hdr.fileID.minor);
 		newDescPtr->flags = FSDM_FD_FREE;
