@@ -27,14 +27,26 @@ char *main_AltInit	= NULL;  /* If non-null then contains name of
 				  * alternate init program to use. */
 Boolean main_AllowNMI = FALSE;	 /* TRUE -> allow non-maskable intrrupts */
 
+/*
+ * These memory tracing sizes are based on a granularity of 8 bytes
+ * per bucket in the memory allocator.  This granuarity stems from the
+ * use of a double-word for administrative info that is used so that
+ * allocated objects on the SPUR machine are all 8 byte aligned.
+ * To repeat, these are bucket sizes and reflect the implementation of
+ * the memory allocator.
+ */
 Mem_TraceInfo mainMemTraceInfo[] = {
-    { 20, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE)  },
     { 24, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE)  },
-    { 28, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE)  },
-    { 36, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE)  },
-    { 44, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
-    { 132, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
-    { 280, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
+    { 32, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
+    { 40, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE)  },
+    { 48, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE)  },
+    { 56, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
+    { 64, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
+    { 72, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
+    { 80, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
+    { 88, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
+    { 136, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
+    { 288, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
 };
 
 
