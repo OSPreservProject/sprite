@@ -251,11 +251,69 @@ Vm_RawAlloc(numBytes)
     return(retAddr);
 }
 
+void ChangeCodeProt();
+
 
 /*
  *----------------------------------------------------------------------
  *
  * Vm_ChangeCodeProt --
+ *
+ *	Change the protection of the code segment for the given process.  If
+ *	the process still has the shared code segment then make a new 
+ *	copy.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Vm_ChangeCodeProt(procPtr, startAddr, numBytes, makeWriteable)
+    Proc_ControlBlock		*procPtr;	/* Process to change code
+						 * protection for. */
+    Address		       	startAddr;	/* Beginning address of range
+						 * of bytes to change
+						 * protection.*/
+    int			       	numBytes;	/* Number of bytes to change
+						 * protection for. */
+    Boolean			makeWriteable;	/* TRUE => make the pages 
+					         *	 writable.
+					         * FALSE => make readable only*/
+{
+    register	Vm_Segment	*segPtr;
+    Vm_Segment	*newSegPtr;
+    Fs_Stream			*codeFilePtr;
+
+    segPtr = procPtr->vmPtr->segPtrArray[VM_CODE];
+    if (!(segPtr->flags & VM_DEBUGGED_SEG)) {
+	/*
+	 * This process still has a hold of the original shared code 
+	 * segment.  Make a new segment for the process.
+	 */
+	Fs_StreamCopy(segPtr->filePtr, &codeFilePtr, procPtr->processID);
+	newSegPtr = Vm_SegmentNew(VM_CODE, codeFilePtr, segPtr->fileAddr, 
+				  segPtr->numPages, segPtr->offset, procPtr);
+	Vm_ValidatePages(newSegPtr, newSegPtr->offset, 
+			 newSegPtr->offset + newSegPtr->numPages - 1,
+			 FALSE, TRUE);
+    } else {
+	newSegPtr = (Vm_Segment *)NIL;
+    }
+    ChangeCodeProt(procPtr, &newSegPtr, startAddr, numBytes, makeWriteable);
+    if (newSegPtr != (Vm_Segment *)NIL) {
+	Vm_SegmentDelete(newSegPtr, procPtr);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ChangeCodeProt --
  *
  *	Change the protection of the code segment for the given process.
  *
@@ -268,28 +326,50 @@ Vm_RawAlloc(numBytes)
  *----------------------------------------------------------------------
  */
 ENTRY void
-Vm_ChangeCodeProt(procPtr, startAddr, numBytes, makeWriteable)
-    register Proc_ControlBlock 	*procPtr;   /* Process to change protection
-					     * for. */
-    Address		       	startAddr;  /* Beginning address of range of
-					     * bytes to change protection.*/
-    int			       	numBytes;   /* Number of bytes to change
-					     * protection for. */
-    Boolean			makeWriteable;/* TRUE => make the pages 
-					       *	 writable.
-					       * FALSE => make readable only.*/
+ChangeCodeProt(procPtr, segPtrPtr, startAddr, numBytes, makeWriteable)
+    Proc_ControlBlock		*procPtr;	/* Process to change protection
+						 * for. */
+    Vm_Segment			**segPtrPtr;	/* IN:  New duplicated segment
+						 * OUT: Segment to free if 
+						 *      non-NIL. */
+    Address		       	startAddr;	/* Beginning address of range
+						 * of bytes to change
+						 * protection.*/
+    int			       	numBytes;	/* Number of bytes to change
+						 * protection for. */
+    Boolean			makeWriteable;	/* TRUE => make the pages 
+					         *	 writable.
+					         * FALSE => make readable only*/
 {
     int				firstPage;
     int				lastPage;
     int				i;
-    register	Vm_Segment	*segPtr;
     register	Vm_PTE		*ptePtr;
+    register	Vm_Segment	*segPtr;
 
     LOCK_MONITOR;
 
+    segPtr = procPtr->vmPtr->segPtrArray[VM_CODE];
+    if (!(segPtr->flags & VM_DEBUGGED_SEG)) {
+	/*
+	 * This process is currently using the shared code segment.  Use the
+	 * private copy that our caller allocated for us and return the 
+	 * original segment so our caller can release its reference to it.
+	 */
+	segPtr = *segPtrPtr;
+	segPtr->flags |= VM_DEBUGGED_SEG;
+	*segPtrPtr = procPtr->vmPtr->segPtrArray[VM_CODE];
+	procPtr->vmPtr->segPtrArray[VM_CODE] = segPtr;
+	/*
+	 * Free up the hardware context for this process.  When it starts
+	 * running again new context will be setup which will have
+	 * the new code segment in it.
+	 */
+	VmMach_FreeContext(procPtr);
+    }
+
     firstPage = (unsigned int) startAddr >> vmPageShift;
     lastPage = ((unsigned int) (startAddr) + numBytes - 1) >> vmPageShift;
-    segPtr = procPtr->vmPtr->segPtrArray[VM_CODE];
     /* 
      * Make sure that the range of addresses falls into the code segment's 
      * page table.  If not don't do anything.
@@ -451,7 +531,6 @@ VmVirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
     register	Vm_VirtAddr	*transVirtAddrPtr;
 {
     register	Vm_Segment		*seg1Ptr;
-    Vm_Segment				*tSegPtr;
     register	Vm_Segment		*seg2Ptr;
     register	int			page;
 
@@ -459,6 +538,7 @@ VmVirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
 
     seg1Ptr = procPtr->vmPtr->segPtrArray[VM_HEAP];
     while (seg1Ptr->flags & VM_PT_EXCL_ACC) {
+	Vm_Segment	*tSegPtr;
 	/*
 	 * Wait while someone has exclusive access to the page tables.
 	 */
