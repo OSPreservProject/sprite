@@ -106,6 +106,9 @@ _MachTrap:
 	cmp	%VOL_TEMP1, MACH_LEVEL6_INT		/* ether interrupt */
 	be	WeHandleIt
 	nop
+	cmp	%VOL_TEMP1, MACH_TRAP_DEBUGGER
+	be	WeHandleIt
+	nop
 							/* no - their stuff */
 	add	%VOL_TEMP1, %TBR_REG, %VOL_TEMP1 /* add t.t. to real tbr */
 	jmp	%VOL_TEMP1		/* jmp (non-pc-rel) to real tbr */
@@ -143,8 +146,6 @@ WindowOkay:
 	mov	%fp, %sp
 	set	MACH_SAVED_STATE_FRAME, %VOL_TEMP1
 	sub	%sp, %VOL_TEMP1, %sp
-	/* for debugging */
-
 
 	/*
 	 * For now, this only saves the globals to the stack.  The locals
@@ -164,6 +165,9 @@ WindowOkay:
 	nop
 	cmp	%VOL_TEMP1, MACH_LEVEL6_INT		/* ether interrupt */
 	be	MachHandleInterrupt
+	nop
+	cmp	%VOL_TEMP1, MACH_TRAP_DEBUGGER		/* enter debugger */
+	be	MachHandleDebugTrap
 	nop
 
 
@@ -418,4 +422,76 @@ MachWindowUnderflow:
 	 * jump to calling routine - this may be a trap-handler or not.
 	 */
 	jmp	%SAFE_TEMP + 8
+	nop
+
+
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MachHandleDebugTrap --
+ *
+ *	Enter the debugger.  This means make sure all the windows are
+ *	saved to the stack, save my stack pointer, switch the stack pointer
+ *	to the debugger stack, and go.
+ *
+ *	When we return, we change stack pointers and go to the usual
+ *	return from trap routine.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------
+ */
+.globl	MachHandleDebugTrap
+MachHandleDebugTrap:
+	/*
+	 * This points to the top stack frame, which consists of a
+	 * Mach_RegState structure.  This is handed to the debugger.  We
+	 * also use this to restore our stack pointer upon returning from the
+	 * debugger.
+	 */
+	set	_machSavedRegisterState, %VOL_TEMP1
+	st	%sp, [%VOL_TEMP1]
+	/*
+	 * Now make sure all windows are flushed to the stack.  We do this
+	 * with MACH_NUM_WINDOWS - 1 saves and restores.  The window overflow
+	 * and underflow traps will then handle this for us.  We put the counter
+	 * in a global, since they have all been saved already and are free
+	 * for our use and we need the value across windows.
+	 */
+	set	(MACH_NUM_WINDOWS - 1), %g1
+SaveSomeMore:
+	save
+	subcc	%g1, 1, %g1
+	bne	SaveSomeMore
+	nop
+	set	(MACH_NUM_WINDOWS - 1), %g1
+RestoreSomeMore:
+	restore
+	subcc	%g1, 1, %g1
+	bne	RestoreSomeMore
+	nop
+	/* Set stack base for debugger */
+	set	MACH_DEBUG_STACK_START, %sp
+	/* get trap type into o0 from local saved value */
+	and	%CUR_TBR_REG, MACH_TRAP_TYPE_MASK, %o0
+	srl	%o0, 4, %o0
+	/* put saved reg ptr into o1 */
+	set	_machSavedRegisterState, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %o1
+	/* call debugger */
+	call	_Dbg_Main,2
+	nop
+
+	/* put saved stack pointer into %sp. */
+	set	_machSavedRegisterState, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %sp
+
+	/* finish as for regular trap */
+	set	_MachReturnFromTrap, %VOL_TEMP1
+	jmp	%VOL_TEMP1
 	nop

@@ -32,6 +32,11 @@ int mach_NumProcessors = NUM_PROCESSORS;
 Boolean	mach_KernelMode;
 
 /*
+ * Sp saved into this before debugger call.
+ */
+int	machSavedRegisterState = 0;
+
+/*
  *  Flag used by routines to determine if they are running at
  *  interrupt level.
  */
@@ -91,6 +96,9 @@ int		debugSpace[500];
 void
 Mach_Init()
 {
+    /* Temporary: for debugging net module and debugger: */
+    mach_NumDisableInterrupts[0] = 1;
+
     /*
      * Set exported machine dependent variables.
      */

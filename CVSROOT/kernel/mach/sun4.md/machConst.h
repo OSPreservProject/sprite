@@ -41,6 +41,7 @@
 #define	MACH_DATA_ACCESS	0x090
 #define	MACH_TAG_OVERFLOW	0x0a0
 #define	MACH_TRAP_INSTR_FIRST	0x800		/* 128 */
+#define	MACH_TRAP_INSTR_1	0x810		/* 129 */
 #define	MACH_TRAP_INSTR_LAST	0xff0
 
 #define	MACH_LEVEL1_INT		0x110		/* 17 */
@@ -58,6 +59,10 @@
 #define	MACH_LEVEL13_INT	0x1d0
 #define	MACH_LEVEL14_INT	0x1e0
 #define	MACH_LEVEL15_INT	0x1f0
+
+#define	MACH_TRAP_DEBUGGER	MACH_TRAP_INSTR_1
+						    /* trap type gets 128 + 1 */
+#define	MACH_CALL_DBG		(MACH_TRAP_DEBUGGER - 128)
 
 /*
  * Mask for extracting the trap type from the psr.
@@ -134,6 +139,8 @@
  * MACH_CODE_START	The address where the kernel code is loaded at.
  * MACH_STACK_START The address of the base of the stack. (1st word is
  *							unusable.)
+ * MACH_DEBUG_STACK_START The address of the base of the debugger stack.
+ *						(1st word is unusable.)
  * MACH_STACK_BOTTOM	The address of the bottom of the kernel stack for the
  *			main process that is initially run.
  * MACH_KERN_END	The address where the last kernel virtual address is
@@ -149,6 +156,7 @@
  */
 #define	MACH_KERN_START		0xff000000
 #define	MACH_STACK_START	0xff004000
+#define	MACH_DEBUG_STACK_START	0xff002000
 #define	MACH_CODE_START		0xff004020
 #define	MACH_STACK_BOTTOM	0xff000000
 #define MACH_KERN_END		VMMACH_DEV_START_ADDR
