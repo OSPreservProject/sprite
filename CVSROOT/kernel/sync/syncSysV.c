@@ -571,9 +571,7 @@ retry:
 	    semmod[i] = 0;
 	}
 	for (i=0;i<nsops;i++) {
-	    if (sops[i].sem_num != 0) {
-		semmod[sops[i].sem_num]++;
-	    }
+	    semmod[sops[i].sem_num]++;
 	}
 	Timer_GetRealTimeOfDay(&timeVal, (int *)NIL, (Boolean *) NIL);
 	semPtr->sem_otime = timeVal.seconds;
