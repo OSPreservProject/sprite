@@ -567,6 +567,7 @@ FspdevPseudoStreamClose(streamPtr, clientID, procID, flags, size, data,
 	 * in case the server process is buggy and hangs us.
 	 */
 	if ((segPtr != (struct Vm_Segment *)NIL) &&
+	    (segPtr != (struct Vm_Segment *)0) &&
 	    (segPtr->type == VM_CODE)) {
 	    Vm_FileChanged(&segPtr);
 	}
@@ -627,6 +628,7 @@ FspdevRmtPseudoStreamClose(streamPtr, clientID, procID, flags, size, data,
 		cltHandlePtr->hdr.fileID.minor) );
 
     if ((segPtr != (struct Vm_Segment *)NIL) &&
+	(segPtr != (struct Vm_Segment *)0) &&
 	(segPtr->type == VM_CODE)) {
 	Vm_FileChanged(&segPtr);
     }
