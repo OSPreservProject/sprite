@@ -51,6 +51,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <stdio.h>
 #include <fsrecov.h>
 #include <recov.h>
+#include <vmMach.h>
 
 /*
  * INET is defined so a file server can be used to open the
@@ -1039,7 +1040,11 @@ Fsio_DeviceRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
      * does its DMA. Don't do this malloc and copy if the device
      * driver said it would handle it.
      */
-    copy = (readPtr->flags & FS_USER) && !(flags & FS_DEV_DONT_COPY);
+    if (VmMachIsXbusMem(readPtr->buffer)) {
+	copy = 0;
+    } else {
+	copy = (readPtr->flags & FS_USER) && !(flags & FS_DEV_DONT_COPY);
+    }
     if (copy) {
 	userBuffer = readPtr->buffer;
 	readPtr->buffer = (Address)malloc(readPtr->length);
@@ -1121,7 +1126,11 @@ Fsio_DeviceWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
      * does its DMA. Don't do this malloc and copy if the device
      * driver said it would handle it.
      */
-    copy = ((writePtr->flags & FS_USER) && !(flags & FS_DEV_DONT_COPY));
+    if (VmMachIsXbusMem(writePtr->buffer)) {
+	copy = 0;
+    } else {
+	copy = ((writePtr->flags & FS_USER) && !(flags & FS_DEV_DONT_COPY));
+    }
     if (copy) {
 	userBuffer = writePtr->buffer;
         writePtr->buffer = (Address)malloc(writePtr->length);
