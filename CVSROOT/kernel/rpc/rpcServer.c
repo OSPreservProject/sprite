@@ -155,8 +155,10 @@ Rpc_Server()
 	 * has a side effect of blocking the server process while any
 	 * crash recovery call-backs are in progress.
 	 */
+#ifndef NO_RECOVERY
 	Recov_HostAlive(srvPtr->clientID, rpcHdrPtr->bootID,
 			FALSE, rpcHdrPtr->flags & RPC_NOT_ACTIVE);
+#endif
 	/*
 	 * Before branching to the service procedure we check that the
 	 * server side of RPC is on, and that the RPC number is good.
@@ -236,7 +238,6 @@ RpcReclaimServers()
     register RpcServerState *srvPtr;
     int (*procPtr)();
     ClientData data;
-    int deadClientID;
 
     for (srvIndex=0 ; srvIndex < rpcNumServers ; srvIndex++) {
 	srvPtr = rpcServerPtrPtr[srvIndex];
@@ -245,7 +246,6 @@ RpcReclaimServers()
 
 
 	procPtr = (int (*)())NIL;
-	deadClientID = -1;
 	if ((srvPtr->clientID >= 0) &&
 	    (srvPtr->state & SRV_WAITING)) {
 	     if (srvPtr->state & SRV_NO_REPLY) {
@@ -273,7 +273,9 @@ RpcReclaimServers()
 		 * a reply from the client closing its connection it will
 		 * mark the server process SRV_FREE.  If we continue to
 		 * send probes with no reply, we give up after N tries
-		 * and consider the client down.
+		 * and free up the server.  It is possible that the client
+		 * has re-allocated its channel, in which case it drops
+		 * our probes on the floor.
 		 */
 		srvPtr->age++;
 		if (srvPtr->age >= rpcMaxServerAge) {
@@ -282,7 +284,6 @@ RpcReclaimServers()
 		    srvPtr->freeReplyProc = (int (*)())NIL;
 		    srvPtr->freeReplyData = (ClientData)NIL;
 		    rpcSrvStat.reclaims++;
-		    deadClientID = srvPtr->clientID;
 		    srvPtr->state = SRV_FREE;
 		} else if (srvPtr->clientID == rpc_SpriteID) {
 		    Sys_Panic(SYS_WARNING, "Reclaiming from myself.\n");
@@ -311,14 +312,6 @@ RpcReclaimServers()
 	 */
 	if (procPtr != (int (*)())NIL) {
 	    (void)(*procPtr)(data);
-	}
-	/*
-	 * Mark the client as dead if we did a reclaim.
-	 */
-	if (deadClientID == rpc_SpriteID) {
-	    Sys_Panic(SYS_WARNING, "RpcDaemon thought this host was down");
-	} else if (deadClientID > 0) {
-	    Recov_HostDead(deadClientID);
 	}
     }
 }

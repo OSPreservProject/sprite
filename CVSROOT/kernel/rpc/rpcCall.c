@@ -175,11 +175,13 @@ Rpc_Call(serverID, command, storagePtr)
 #endif TIMESTAMP
 
     RPC_CALL_TIMING_END(command, &histTime);
+#ifndef NO_RECOVERY
     if (error == RPC_TIMEOUT || error == NET_UNREACHABLE_NET) {
 	Recov_HostDead(serverID);
     } else {
 	Recov_HostAlive(serverID, srvBootID, TRUE, notActive);
     }
+#endif NO_RECOVERY
     return(error);
 }
 
