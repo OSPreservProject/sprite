@@ -134,7 +134,10 @@ VmPageServerRead(virtAddrPtr, pageFrame)
 
     segPtr = virtAddrPtr->segPtr;
     if (!(segPtr->flags & VM_SWAP_FILE_OPENED)) {
-	panic("VmPageServerRead: Trying to read from non-existent swap file.\n");
+	printf("VmPageServerRead: swap file %s doesn't exist.\n",
+	       (segPtr->swapFileName != (char *)NIL
+		? segPtr->swapFileName : "???"));
+	return(VM_SWAP_ERROR);
     }
 
     if (segPtr->type == VM_STACK) {

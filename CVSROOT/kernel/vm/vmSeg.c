@@ -1640,34 +1640,6 @@ VmSegCanCOW(segPtr)
     return(retVal);
 }
 
-
-
-/*
- * ----------------------------------------------------------------------------
- *
- * VmSegCantCOW --
- *
- *     	Mark this segment such that it can no longer be made copy-on-write.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	VM_SEG_CANT_COW flag set.
- *     
- * ----------------------------------------------------------------------------
- */
-void
-VmSegCantCOW(segPtr)
-    Vm_Segment	*segPtr;
-{
-    if (!VmSegCanCOW(segPtr)) {
-	return;
-    }
-    (void)VmCOWCopySeg(segPtr);
-    VmSegCOWDone(segPtr, TRUE);
-}
-
 
 /*
  * ----------------------------------------------------------------------------
