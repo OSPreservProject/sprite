@@ -82,6 +82,9 @@ FsCacheUpdate(cacheInfoPtr, openForWriting, version, cacheable, attrPtr)
 {
     register Boolean outOfDate;
     Boolean changed = FALSE;
+#ifdef CONSIST_DEBUG
+    extern int fsTraceConsistMinor;
+#endif
     LOCK_MONITOR;
 
     /* 
@@ -95,6 +98,16 @@ FsCacheUpdate(cacheInfoPtr, openForWriting, version, cacheable, attrPtr)
     } else {
 	outOfDate = (cacheInfoPtr->version < version);
     }
+#ifdef CONSIST_DEBUG
+    if (fsTraceConsistMinor == cacheInfoPtr->hdrPtr->fileID.minor) {
+	Sys_Printf("FsCacheUpdate: <%d,%d> version %d->%d, %s, %s\n",
+		    cacheInfoPtr->hdrPtr->fileID.major,
+		    cacheInfoPtr->hdrPtr->fileID.minor,
+		    cacheInfoPtr->version, version,
+		    (cacheable ? "cacheable" : "not-cacheable"),
+		    (outOfDate ? "out of date" : "not out of date"));
+    }
+#endif /* CONSIST_DEBUG */
     if (version > cacheInfoPtr->version) {
 	/*
 	 * Update the version of the handle, ie. we just opened for writing
