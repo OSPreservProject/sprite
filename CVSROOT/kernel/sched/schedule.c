@@ -157,7 +157,7 @@ Sched_Init()
     Timer_AddIntervalToTicks(gatherTicks, gatherInterval, &gatherTicks);
     quantumTicks	= quantumInterval / gatherInterval;
 
-    Byte_Zero(sizeof(sched_Instrument), (Address) &sched_Instrument);
+    bzero((Address) &(sched_Instrument),sizeof(sched_Instrument));
 
     List_Init(schedReadyQueueHdrPtr);
 
@@ -244,8 +244,6 @@ Sched_ForgetUsage(time)
  *	Various statistics about the running process are collected in the
  *      process's control block.
  *
- *  FIXME:
- *	Everything should understand multiprocessors: instrumentation, etc.
  *
  *----------------------------------------------------------------------
  */
@@ -274,8 +272,8 @@ Sched_GatherProcessInfo()
 	 * charge the usage to a particular process but keep track of it.
 	 */
 	if (curProcPtr == (Proc_ControlBlock *) NIL) {
-	    Timer_AddTicks(sched_Instrument.noProcessRunning, gatherTicks,
-		           &(sched_Instrument.noProcessRunning));
+	    Timer_AddTicks(sched_Instrument.noProcessRunning[cpu], gatherTicks,
+		           &(sched_Instrument.noProcessRunning[cpu]));
 	    continue;
 	}
 
@@ -350,8 +348,10 @@ Sched_ContextSwitchInt(state)
     register Proc_ControlBlock	*curProcPtr;  	/* PCB for currently runnning 
 						 * process. */
     register Proc_ControlBlock	*newProcPtr;  	/* PCB for new process. */
+    register int cpu;
 
-    sched_Instrument.numContextSwitches++;
+    cpu = Mach_GetProcessorNumber();
+    sched_Instrument.numContextSwitches[cpu]++;
 
     curProcPtr = Proc_GetCurrentProc();
     /*
@@ -398,6 +398,7 @@ Sched_ContextSwitchInt(state)
      * Set the state of the new process.  
      */
     newProcPtr->state = PROC_RUNNING;
+    newProcPtr->processor = cpu;
     Proc_SetCurrentProc(newProcPtr);
 
     /*
@@ -417,7 +418,7 @@ Sched_ContextSwitchInt(state)
 	return;
     }
 
-    sched_Instrument.numFullCS++;
+    sched_Instrument.numFullCS[cpu]++;
 
     /*
      * Perform the hardware context switch.  After switching, make
@@ -520,29 +521,48 @@ IdleLoop()
 {
     register Proc_ControlBlock	*procPtr;
     register List_Links		*queuePtr;
+    register int cpu;
 
+    cpu = Mach_GetProcessorNumber();
     queuePtr = schedReadyQueueHdrPtr;
-    while (List_IsEmpty(queuePtr)) {
-	/*
-	 * Wait for a process to become runnable.  Turn on interrupts, then
-	 * turn off interrupts again and see if someone became runnable.
-	 */
+    MASTER_UNLOCK(sched_Mutex);
+    while (1) {
 	Proc_SetCurrentProc((Proc_ControlBlock *) NIL);
 	/*
-	 * Count Idle ticks.  This is uni-processor code.
+	 * Wait for a process to become runnable.  
 	 */
-	if (sched_Instrument.idleTicksLow == (unsigned) 0xffffffff) {
-	    sched_Instrument.idleTicksLow = 0;
-	    sched_Instrument.idleTicksOverflow++;
-	} else {
-	    sched_Instrument.idleTicksLow++;
+	if (List_IsEmpty(queuePtr) == FALSE) {
+	    /*
+	     * Looks like there might be something in the queue. We don't
+	     * have sched_Mutex down at this point, so this is only a hint.
+	     */
+	    MASTER_LOCK(sched_Mutex);
+	    /*
+	     * Make sure queue is not empty.
+	     */
+	    if (List_IsEmpty(queuePtr) == FALSE) {
+		break; 
+	    }
+	    MASTER_UNLOCK(sched_Mutex);
 	}
-	MASTER_UNLOCK(sched_Mutex);
-	MASTER_LOCK(sched_Mutex);
+	/*
+	 * Count Idle ticks.  
+	 */
+	if (sched_Instrument.idleTicksLow[cpu] == (unsigned) 0xffffffff) {
+	    sched_Instrument.idleTicksLow[cpu] = 0;
+	    sched_Instrument.idleTicksOverflow[cpu]++;
+	} else {
+	    sched_Instrument.idleTicksLow[cpu]++;
+	}
     }
     procPtr = (Proc_ControlBlock *) List_First(queuePtr);
     if (procPtr->state != PROC_READY) {
-	Sys_Panic(SYS_FATAL, "Non-ready process found in ready queue.\n");
+	/*
+	 * Unlock sched_Mutex because panic tries to grab it somewhere.
+	 */
+     	MASTER_UNLOCK(sched_Mutex);
+	panic("Non-ready process found in ready queue.\n");
+	MASTER_LOCK(sched_Mutex);
     }
     ((List_Links *)procPtr)->prevPtr->nextPtr =
 					    ((List_Links *)procPtr)->nextPtr;
@@ -561,9 +581,14 @@ IdleLoop()
  * Sched_TimeTicks --
  *
  *	Idle for a few seconds and count the ticks recorded in IdleLoop.
+ *	For now, we only do this for one processor. All we're trying to get
+ *	is a rough estimate of idleTicksPerSecond.
+ *
+ *      This procedure is called during boot. The results are pretty much
+ *	meaningless if it is not.
  *
  * Results:
- *	A pointer to the next process to run.
+ *	None.
  *
  * Side effects:
  *	Momentarily enables interrupts.
@@ -575,13 +600,16 @@ void
 Sched_TimeTicks()
 {
     register int lowTicks;
+    register int cpu;
     Time time;
+
+    cpu = Mach_GetProcessorNumber(); 
     Time_Multiply(time_OneSecond, 5, &time);
-    Sys_Printf("Idling for 5 seconds...");
-    lowTicks = sched_Instrument.idleTicksLow;
+    printf("Idling for 5 seconds...");
+    lowTicks = sched_Instrument.idleTicksLow[cpu];
     (void) Sync_WaitTime(time);
-    lowTicks = sched_Instrument.idleTicksLow - lowTicks;
-    Sys_Printf(" %d ticks\n", lowTicks);
+    lowTicks = sched_Instrument.idleTicksLow[cpu] - lowTicks;
+    printf(" %d ticks\n", lowTicks);
     sched_Instrument.idleTicksPerSecond = lowTicks / 5;
 }
 
@@ -616,7 +644,22 @@ QuantumEnd(procPtr)
     procPtr->schedFlags |= SCHED_CONTEXT_SWITCH_PENDING;
     procPtr->specialHandling = 1;
     if (!mach_KernelMode) {
+	/*
+	 * FIX ME - either get rid of this flag, or have one per processor.
+	 * The spur port doesn't even use this thing, so maybe it can go 
+	 * away.
+	 */
 	sched_DoContextSwitch = TRUE;
+    }
+    if (procPtr->processor != Mach_GetProcessorNumber()) {
+	/* 
+	 * If the process whose quantum has ended is running on a different
+	 * processor we need to poke the processor and force it into the
+	 * kernel. On its way back to user mode the special handling flag
+	 * will be checked and a context switch will occur (assuming that
+	 * the offending process is still running).
+	 */
+	Mach_CheckSpecialHandling(procPtr->processor);
     }
 }
 
@@ -639,15 +682,21 @@ void
 Sched_PrintStat()
 {
     Time  tmp;
-    Sys_Printf("Sched Statistics\n");
-    Sys_Printf("numContextSwitches = %d\n",sched_Instrument.numContextSwitches);
-    Sys_Printf("numFullSwitches    = %d\n",sched_Instrument.numFullCS);
-    Sys_Printf("numInvoluntary     = %d\n",
-				      sched_Instrument.numInvoluntarySwitches);
-/*    Sys_Printf("numIdles           = %d\n",sched_Instrument.numIdles); */
-    Timer_TicksToTime(sched_Instrument.noProcessRunning, &tmp);
-    Sys_Printf("Idle Time          = %d.%06d seconds\n", 
-				      tmp.seconds, tmp.microseconds);
+    int   i;
+
+    printf("Sched Statistics\n");
+    for(i = 0; i < mach_NumProcessors;i++) {
+	printf("Processor: %d\n",i);
+	printf("numContextSwitches = %d\n",
+	       sched_Instrument.numContextSwitches[i]);
+	printf("numFullSwitches    = %d\n",
+	       sched_Instrument.numFullCS[i]);
+	printf("numInvoluntary     = %d\n",
+	       sched_Instrument.numInvoluntarySwitches[i]);
+	Timer_TicksToTime(sched_Instrument.noProcessRunning[i], &tmp);
+	printf("Idle Time          = %d.%06d seconds\n", 
+  	       tmp.seconds, tmp.microseconds);
+    }
 }
 
 
@@ -674,7 +723,7 @@ void
 Sched_LockAndSwitch()
 {
     MASTER_LOCK(sched_Mutex);
-    sched_Instrument.numInvoluntarySwitches++;
+    sched_Instrument.numInvoluntarySwitches[Mach_GetProcessorNumber()]++;
     Sched_ContextSwitchInt(PROC_READY);
     MASTER_UNLOCK(sched_Mutex);
 }
@@ -797,4 +846,38 @@ Sched_StartUserProc(pc)
      * Start the process running.  This does not return.
      */
     Mach_StartUserProc(procPtr, pc);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sched_DumpReadyQueue --
+ *
+ *	Print out the contents of the ready queue.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Output goes to the screen.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Sched_DumpReadyQueue()
+{
+    List_Links *itemPtr;
+
+    if (List_IsEmpty(schedReadyQueueHdrPtr)) {
+	printf("\nReady queue is empty.\n");
+    } else {
+	MASTER_LOCK(sched_Mutex);
+	printf("\n");
+	LIST_FORALL(schedReadyQueueHdrPtr,itemPtr) {
+	    Proc_DumpPCB((Proc_ControlBlock *) itemPtr);
+	}
+	MASTER_UNLOCK(sched_Mutex);
+    }
 }

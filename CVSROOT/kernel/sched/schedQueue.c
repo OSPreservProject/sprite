@@ -162,7 +162,8 @@ Sched_MoveInQueue(procPtr)
 	    /*
 	     * If no change in position, return.
 	     */
-	    if (itemProcPtr == procPtr) {
+	    if (((List_Links *)(procPtr))->nextPtr == 
+		(List_Links *) itemProcPtr && !insert) {
 		return;
 	    }
 	    followingItemPtr = (List_Links *) itemProcPtr;
@@ -307,4 +308,3 @@ Sched_InsertInQueue(procPtr, returnProc)
 	return((Proc_ControlBlock *)NIL);
     }
 }
-
