@@ -161,13 +161,19 @@ Sig_SigvecStub(sig, newVectorPtr, oldVectorPtr)
     ReturnStatus 	status;		/* Generic result code */
     struct sigvec newVector;
     struct sigvec oldVector;
-    Proc_ControlBlock	*procPtr;
+    Proc_ControlBlock	*procPtr = Proc_GetActualProc();
     Address		dummy;
 
     if (debugSigStubs) {
 	printf("Sig_SigvecStub(%d, %x, %x)\n", sig, newVectorPtr,
 		oldVectorPtr);
     }
+
+    /*
+     * Set magic flag to indicate we're in Unix signal mode.
+     */
+    procPtr->unixProgress = 0x11beef22;
+
     status = Compat_UnixSignalToSprite(sig, &spriteSignal);
     if (status == FAILURE || spriteSignal == NULL) {
 	Mach_SetErrno(EINVAL);
@@ -207,7 +213,6 @@ Sig_SigvecStub(sig, newVectorPtr, oldVectorPtr)
 	    Mach_SetErrno(EINVAL);
 	    return -1;
 	}
-	procPtr = Proc_GetActualProc();
 	/* 
          * There are two cases:
          *
@@ -435,6 +440,9 @@ Sig_SigpauseStub(mask)
 	Mach_SetErrno(EINVAL);
     }
     status = Sig_Pause(spriteMask);
+    if (debugSigStubs) {
+	printf("Sig_Sigpause done\n");
+    }
     if (status != SUCCESS) {
 	return(status);
     } else {
