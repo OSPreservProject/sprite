@@ -57,6 +57,12 @@ static	VmCore          *coreMap;	/* Pointer to core map that is
 static	int		numVirtPages;	/* Number of physical page frames. */
 
 /*
+ * Minimum fraction of pages that VM wants for itself.  It keeps
+ * 1 / MIN_VM_PAGE_FRACTION of the available pages at boot time for itself.
+ */
+#define	MIN_VM_PAGE_FRACTION	16
+
+/*
  * Variables to define the number of page procs working at a time and the
  * maximum possible number that can be working at a time.
  */
@@ -81,12 +87,6 @@ static	List_Links	reservePageListHdr;
 #define dirtyPageList	(&dirtyPageListHdr)
 #define	freePageList	(&freePageListHdr)
 #define	reservePageList	(&reservePageListHdr)
-
-/*
- * Maximum number of dirty pages encountered during page allocation before
- * waiting for pages to be cleaned.
- */
-static	int             maxDirtyPages = 50;
 
 /*
  * Variables used to instrument virtual memory.
@@ -655,6 +655,17 @@ Vm_GetRefTime()
 
     LOCK_MONITOR;
 
+    if (vmStat.numFreePages + vmStat.numUserPages + vmStat.numDirtyPages <= 
+	vmStat.minVMPages) {
+	/*
+	 * We are already at or below the minimum amount of memory that
+	 * we are guaranteed for our use so refuse to give any memory to
+	 * the file system.
+	 */
+	UNLOCK_MONITOR;
+	return((int) 0x7fffffff);
+    }
+
     if (!List_IsEmpty(freePageList)) {
 	refTime = 0;
 	if (vmDebug) {
@@ -841,11 +852,8 @@ VmPageAllocate(virtAddrPtr, canBlock)
  *	contain the virtual page number and the lock count will be set to 
  *	1 to indicate that this page is locked down.
  *
- *	This routine will sleep if it encounters maxDirtyPages consecutive
- *	dirty pages.  This is because if the entire allocate list is dirty, 
- *	then this routine would loop forever with the monitor lock looking for 
- *	a clean page.  By sleeping it gives the page-out daemon time to
- *	clean some pages.
+ *	This routine will sleep if the entire allocate list is dirty in order
+ *	to give the page-out daemon some time to clean pages.
  *
  * Results:
  *     	The physical page number that is allocated.
@@ -1785,9 +1793,6 @@ Vm_Cmd(command, arg)
 	case VM_FORCE_SWAP:
 	    forceSwap = arg;
 	    break;
-        case VM_SET_MAX_DIRTY_PAGES:
-            maxDirtyPages = arg;
-            break;
         case VM_IGNORE_DIRT:
             ignoreDirt = arg;
             break;
@@ -1942,8 +1947,6 @@ Vm_UnmapBlock(addr, retOnePage, pageNumPtr)
     return(1);
 }
 
-#define	MIN_VM_PAGES	128
-
 
 /*
  *----------------------------------------------------------------------
@@ -1968,16 +1971,23 @@ Vm_FsCacheSize(startAddrPtr, endAddrPtr)
 {
     int	numPages;
 
+    /*
+     * Compute the minimum number of pages that are reserved for VM.  The number
+     * of free pages is the maximum number of pages that will ever exist
+     * for user processes.
+     */
+    vmStat.minVMPages = vmStat.numFreePages / MIN_VM_PAGE_FRACTION;
+
     *startAddrPtr = (Address) VM_BLOCK_CACHE_BASE;
     /*
      * We aren't going to get any more free pages so limit the maximum number
      * of blocks in the cache to the number of free pages that we have minus
-     * some reasonable minimum amount of free pages that we keep for user
+     * the minimum amount of free pages that we keep for user
      * processes to run.
      */
     numPages = (VM_BLOCK_CACHE_END - VM_BLOCK_CACHE_BASE) / VM_PAGE_SIZE;
-    if (numPages > vmStat.numFreePages - MIN_VM_PAGES) {
-	numPages = vmStat.numFreePages - MIN_VM_PAGES;
+    if (numPages > vmStat.numFreePages - vmStat.minVMPages) {
+	numPages = vmStat.numFreePages - vmStat.minVMPages;
     }
     Sys_Printf("%d virtual pages for cache\n", numPages);
     *endAddrPtr = (Address) (VM_BLOCK_CACHE_BASE + numPages * VM_PAGE_SIZE - 1);
