@@ -319,7 +319,9 @@ typedef struct Proc_ControlBlock {
      */
 
     int		sigHoldMask;		/* Mask of signals to be held. */
-    int		sigPendingMask;		/* Mask of pending signals. */
+    int		sigPendingMask;		/* Mask of pending signals.  Some 
+					 * care is needed to keep the mask
+					 * consistent with genFlags. */
     					/* Array of the different types
 					   of actions for signals. */
     int		sigActions[SIG_NUM_SIGNALS];
