@@ -455,14 +455,14 @@ FsSpriteWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     
 	status = Rpc_Call(rmtHandlePtr->hdr.fileID.serverID, RPC_FS_WRITE,
 		    &storage);
-    
 	if (status == SUCCESS || status == FS_WOULD_BLOCK) {
+	    register int shortWrite = (lenWritten < writeLen);
 	    writeLen = lenWritten;
 	    length -= writeLen;
 	    buffer += writeLen;
 	    offset += writeLen;
 	    amountWritten += writeLen;
-	    if (status == FS_WOULD_BLOCK) {
+	    if (status == FS_WOULD_BLOCK || shortWrite) {
 		break;
 	    }
 	} else if (status == RPC_TIMEOUT || status == FS_STALE_HANDLE ||
