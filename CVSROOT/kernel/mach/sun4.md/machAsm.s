@@ -156,6 +156,7 @@ _Mach_GetMachineType:
 	retl
 	nop
 
+#ifdef NOTDEF
 .globl	_panic
 _panic:
 	mov	%o7, %VOL_TEMP1
@@ -167,3 +168,4 @@ _panic:
 loopForever:
 	ba	loopForever
 	nop
+#endif NOTDEF
