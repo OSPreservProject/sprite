@@ -525,12 +525,33 @@ DevFBIOControl(devicePtr, ioctlPtr, replyPtr)
 	    printf("fbtype was bad.\n");
 	    return FAILURE;
 	}
-	if (fbCmap == (struct colormap *) NIL) {
-	    if (InitCmap(devPtr) != SUCCESS) {
-		printf("Couldn't initialize colormap.\n");
-		return FAILURE;
+
+	/*
+	 * If the display is a color display, initialize the color map first.
+	 */
+	switch (devPtr->type.fb_type) {
+	case FBTYPE_SUN1COLOR:
+	case FBTYPE_SUN2COLOR:
+	case FBTYPE_SUN2GP:		/* color? */
+	case FBTYPE_SUN5COLOR:
+	case FBTYPE_SUN3COLOR:
+	case FBTYPE_MEMCOLOR:
+	case FBTYPE_SUN4COLOR:
+	case FBTYPE_SUNFAST_COLOR:
+	case FBTYPE_SUNROP_COLOR:
+	case FBTYPE_SUNFB_VIDEO:	/* color? */
+	    if (fbCmap == (struct colormap *) NIL) {
+		if (InitCmap(devPtr) != SUCCESS) {
+		    printf("Couldn't initialize colormap.\n");
+		    return FAILURE;
+		}
 	    }
+	    break;
+	default:
+	    /* Do nothing. */
+	    break;
 	}
+
 	if (SVideo(devPtr->type.fb_type,
 		(int *) ioctlPtr->inBuffer) != SUCCESS) {
 	    return FAILURE;
@@ -549,12 +570,32 @@ DevFBIOControl(devicePtr, ioctlPtr, replyPtr)
 	    printf("fbtype was bad.\n");
 	    return FAILURE;
 	}
-	if (fbCmap == (struct colormap *) NIL) {
-	    if (InitCmap(devPtr) != SUCCESS) {
-		printf("Couldn't initialize colormap.\n");
-		return FAILURE;
+	/*
+	 * If the display is a color display, initialize the color map first.
+	 */
+	switch (devPtr->type.fb_type) {
+	case FBTYPE_SUN1COLOR:
+	case FBTYPE_SUN2COLOR:
+	case FBTYPE_SUN2GP:		/* color? */
+	case FBTYPE_SUN5COLOR:
+	case FBTYPE_SUN3COLOR:
+	case FBTYPE_MEMCOLOR:
+	case FBTYPE_SUN4COLOR:
+	case FBTYPE_SUNFAST_COLOR:
+	case FBTYPE_SUNROP_COLOR:
+	case FBTYPE_SUNFB_VIDEO:	/* color? */
+	    if (fbCmap == (struct colormap *) NIL) {
+		if (InitCmap(devPtr) != SUCCESS) {
+		    printf("Couldn't initialize colormap.\n");
+		    return FAILURE;
+		}
 	    }
+	    break;
+	default:
+	    /* Do nothing. */
+	    break;
 	}
+
 	if (GVideo(devPtr->type.fb_type,
 		(int *) ioctlPtr->outBuffer) != SUCCESS) {
 	    return FAILURE;
