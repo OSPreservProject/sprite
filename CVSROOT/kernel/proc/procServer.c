@@ -500,6 +500,9 @@ CallFunc(funcInfoPtr)
 	 * message.
 	 */
 	if (QUEUE_FULL) {
+	    extern Boolean sys_ShouldSyncDisks;
+	    Sys_EnableIntr();
+	    sys_ShouldSyncDisks = FALSE;
 	    Sys_Panic(SYS_FATAL, "CallFunc: Process queue full.\n");
 	}
 	queueElementPtr = &queue[nextIndex];
