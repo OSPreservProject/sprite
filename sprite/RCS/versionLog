@@ -235,4 +235,9 @@ migration.
 fixes migration bugs: pipe buffer being freed if host crash callback closes 
 it; argString getting NIL'ed out and then used during migration; various
 deadlocks during migration/signals/exiting processes. 
+
+1.068	Sat Jun 30 14:35:58 PDT 1990
+Fixes change to ioctl rpc stub that wasn't byte-swapping IOC_REPOSITION for
+shadow stream.  Fixes migration not to accidentally leave mig trap signal
+blocked.
     New files linked in from the net library.
