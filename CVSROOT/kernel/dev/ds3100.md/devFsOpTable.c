@@ -148,6 +148,12 @@ DevFsTypeOps devFsOpTable[] = {
     {DEV_MOUSE, DevGraphicsOpen, DevGraphicsRead, DevGraphicsWrite,
 		   DevGraphicsIOControl, DevGraphicsClose, DevGraphicsSelect,
 		   DEV_NO_ATTACH_PROC, NoDevice, NullProc}, 
+    /*
+     * The following device number is unused.
+     */
+    {DEV_PLACEHOLDER_3, NoDevice, NullProc, NullProc,
+		    NullProc, NullProc, NullProc, 
+		    DEV_NO_ATTACH_PROC, NoDevice, NullProc},
 };
 
 int devNumDevices = sizeof(devFsOpTable) / sizeof(DevFsTypeOps);
