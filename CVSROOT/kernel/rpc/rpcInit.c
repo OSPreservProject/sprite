@@ -36,14 +36,6 @@ int	rpc_SwappedVersion = RPC_SWAPPED_VERSION;
  */
 RpcConst rpcEtherConst;
 RpcConst rpcInetConst;
-int	rpcMaxTries = 8;	/* Number of times to re-send before aborting.
-				 * If the initial timeout is .1 sec, and it
-				 * doubles until 1 sec, 8 retries means a
-				 * total timeout period of about 6 seconds. */
-int	rpcMaxAcks = 10;	/* Watchdog against lots of acks from a server.
-				 * This limit causes a warning message to be
-				 * printed every rpcMaxAcks, and if the RPC
-				 * is a broadcast it gets aborted. */
 
 
 /*
@@ -287,6 +279,7 @@ RpcInitServerState(index)
     srvPtr = (RpcServerState *)Vm_RawAlloc(sizeof(RpcServerState));
 
     srvPtr->state = SRV_NOTREADY;
+    srvPtr->ID = 0;
     srvPtr->freeReplyProc = (int (*)())NIL;
     srvPtr->freeReplyData = (ClientData)NIL;
     srvPtr->index = index;
@@ -294,11 +287,6 @@ RpcInitServerState(index)
     srvPtr->channel = -1;
     srvPtr->mutex = mutexInit;
     srvPtr->waitCondition.waiting = FALSE;
-    /*
-     * The sequence number of the client's last request is saved
-     * in our reply header.  We initialize it here.
-     */
-    srvPtr->replyRpcHdr.ID = 0;
 
     maxHdrSize = Net_MaxProtoHdrSize();
     /*
