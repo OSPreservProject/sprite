@@ -56,7 +56,7 @@
 #include "mach.h"
 #include "proc.h"
 #else
-#include <syncTypes.h>
+#include <kernel/syncTypes.h>
 #include <kernel/mach.h>
 #include <kernel/proc.h>
 #endif /* */
