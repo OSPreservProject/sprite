@@ -18,13 +18,7 @@
 #ifndef _TIMERTICK
 #define _TIMERTICK
 
-#ifdef KERNEL
-#include "time.h"
-#include "devTimer.h"
-#else
 #include <spriteTime.h>
-#include <kernel/devTimer.h>
-#endif
 
 /* DATA STRUCTURES: */
 
@@ -33,10 +27,19 @@
  *  	whose format is based on the free-running counter: 
  *  For the SPUR, Timer_Ticks is the same type as read from the counter.
  *
- * See timer.h and devTimer.h for more details.
+ * See timer.h  for more details.
  */
 
-typedef  DevCounter	Timer_Ticks;
+/*
+ * The free running counter on the SPUR is T0, a 64 bit integer.  DevCounter
+ * is the lower 32-bits (low) and the upper 32-bits (high) of the counter.
+ * Any changes to this structure will require changes to timerSpurT0.s
+ */
+     
+typedef struct Spur64bitCounterStruct {
+	unsigned	int	low;
+	unsigned	int	high;
+} Timer_Ticks;
 
 /*
  * Definitions for useful intervals and clock values. 

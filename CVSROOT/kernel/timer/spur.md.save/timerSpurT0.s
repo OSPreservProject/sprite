@@ -1,4 +1,4 @@
-/* DevTimerT0.s --
+/* timerT0.s --
  *
  * 	Routines for reading and writing the T0 free running timer on the
  *	Spur's Cache controller chip. 
@@ -18,19 +18,19 @@
  *
  * The routines in this file are callable from C. The C definitions are:
  *
- * extern ReturnStatus Dev_TimerT0Read(valPtr) 
- *		DevCounter	*valPtr;
- * extern ReturnStatus Dev_TimerT0Write(valPtr)
- *		DevCounter	*valPtr;
+ * extern void Timer_ReadT0(valPtr) 
+ *		Timer_Ticks	*valPtr;
+ * extern void Timer_ReadT0(valPtr)
+ *		Timer_Ticks	*valPtr;
  *
  *
  *----------------------------------------------------------------------
- * _Dev_TimerT0Read --
+ * Timer_ReadT0 --
  *
  *	Read the current value of the SPUR Cache Controller register T0.
  *
  *	Results:
- *		ReturnStatus	SUCCESS or FAILURE 
+ *		None. 
  *
  *	Side effects:
  *		Node.
@@ -56,14 +56,10 @@
  * #define TIMERMATCHBITS	~017
  * 
  * 
- * typedef struct timer_val {
- * 	unsigned int	low;
- * 	unsigned int	high;
- * } DevCounter ;
  * 
- * ReturnStatus
- * Dev_TimerT0Read(val)
- * 	DevCounter	*val;
+ * void
+ * Timer_ReadT0(val)
+ * 	Timer_Ticks *val;
  * {
  * 	register unsigned int	T0low, T0high, T0low2, temp1, temp2;
  * 	unsigned int	get_timer();
@@ -78,12 +74,12 @@
  * 	} while (temp1 != temp2);
  * 	val->low = T0low;
  * 	val->high = T0high;
- * 	return SUCCESS;
+ * 	return;
  * }
  */
 	.text
 	.align 2
-	.globl _Dev_TimerT0Read
+	.globl _Timer_ReadT0
 
  /*
   * Register assigment: 
@@ -95,19 +91,17 @@
   *		TEMP1	- Masked T0LOW2
   *	Inputs:
   *		VALPTR  - Address of TimerT0Value, Input argument.
-  *	Outputs:
-  *		RESULT	- Function result return register.
   */
 
 #include "machConst.h"
 
 #define	VALPTR	r11
-#define	RESULT	r11
 #define	T0LOW	r12
 #define	T0HIGH	r13
 #define	T0LOW2	r14
 #define	TEMP	r15
 #define	TEMP1	r16
+#define	KPSW	r20
 
  /*
   * TIMERMASKBITS - a 14 bit mask (sign extented to form a 32bit mask) that is
@@ -125,13 +119,14 @@
  */
 #define	TIMERMASKBITS14BIT	-((~TIMERMASKBITS)+1)
 
-#define	SUCCESS	0
-
-_Dev_TimerT0Read:
+_Timer_ReadT0:
 
 	/* 
 	 * T0LOW <- T0<31:0> a byte at a time.
 	 */
+	rd_kpsw		KPSW
+	and		TEMP1,KPSW,$~(MACH_KPSW_INTR_TRAP_ENA)
+	wr_kpsw		TEMP1, $0
 	ld_external	T0LOW, r0, $T00|RDREG
 	ld_external	TEMP, r0, $T01|RDREG
 	wr_insert	$1
@@ -142,7 +137,7 @@ _Dev_TimerT0Read:
 	ld_external	TEMP, r0,  $T03|RDREG
 	wr_insert	$3
 	insert		T0LOW, T0LOW, TEMP
-ReadTimerT0ReadAgain:
+1:
 	/* 
 	 * T0HIGH <- T0<63:32> a byte at a time.
 	 */
@@ -185,7 +180,7 @@ ReadTimerT0ReadAgain:
 	 */
 	and		TEMP, T0LOW, $TIMERMASKBITS14BIT
 	and		TEMP1, T0LOW2, $TIMERMASKBITS14BIT
-	cmp_br_delayed	ne, TEMP, TEMP1, ReadTimerT0ReadAgain
+	cmp_br_delayed	ne, TEMP, TEMP1, 1b
 	add_nt		T0LOW, r0, T0LOW2
 
 	/*
@@ -194,23 +189,19 @@ ReadTimerT0ReadAgain:
 	 */
 	st_32		T0LOW, VALPTR, $0
 	st_32		T0HIGH, VALPTR, $4
-	/*
-	 * Return the integer of SUCCESS
-	 */
-	 add_nt		RESULT, r0, $SUCCESS
+	 wr_kpsw	KPSW, $0
 	 return		r10,$8
 	 nop
 
 /*
  *----------------------------------------------------------------------
- * _Dev_TimerT0Write --
+ * _Timer_WriteT0 --
  *
  *	Write the SPUR Cache Controller register T0. For best results 
  *	interrupts should be disabled before calling this routine and 
  *	the timer turned off.
  *
  *	Results:
- *		ReturnStatus	SUCCESS or FAILURE 
  *
  *	Side effects:
  *		The timer is updated.
@@ -219,14 +210,14 @@ ReadTimerT0ReadAgain:
  */
 	.text
 	.align 2
-	.globl _Dev_TimerT0Write
+	.globl _Timer_WriteT0
  /* 	
-  *	ReturnStatus
-  *	Dev_TimerT0Write(val)
-  * 		DevCounter	*val;
+  *	void
+  *	Timer_WriteT0(val)
+  * 		Timer_Ticks	*val;
   * 
   */
-_Dev_TimerT0Write: 
+_Timer_WriteT0: 
 
  /*
   * Register assigment: 
@@ -234,21 +225,19 @@ _Dev_TimerT0Write:
   *		TEMP	_ Temp register
   *		HALF	- 32 bit half of new value to write.
   *	Inputs:
-  *		VALPTR  - Address of DevCounter value.
+  *		VALPTR  - Address of Timer_Ticks value.
   *	Outputs:
-  *		RESULT	- Function result return register.
   */
 #define	VALPTR	r11
-#define	RESULT	r11
 #define	HALF	r12
 #define	TEMP	r15
 	/*
 	 * Write register high order bytes first. 
 	 */
 	ld_32		HALF, VALPTR, $4
-	rd_kpsw		r16
-	and		r17,r16,$~(MACH_KPSW_INTR_TRAP_ENA)
-	wr_kpsw		r17, $0
+	rd_kpsw		KPSW
+	and		TEMP,KPSW,$~(MACH_KPSW_INTR_TRAP_ENA)
+	wr_kpsw		TEMP, $0
 	extract		TEMP, HALF,$3
 	st_external	TEMP, r0, $T07|WRREG
 	extract		TEMP, HALF, $2
@@ -267,8 +256,7 @@ _Dev_TimerT0Write:
 	extract		TEMP, HALF, $1
 	st_external	TEMP, r0, $T01|WRREG
 	st_external	HALF, r0, $T00|WRREG
-	add_nt		RESULT, r0, $SUCCESS
-	wr_kpsw		r16, $0
+	wr_kpsw		KPSW, $0
 	return		r10,$8
 	nop
 

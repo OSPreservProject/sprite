@@ -1,5 +1,5 @@
 /*
- * devTimer.c --
+ * timerSpur.c --
  *
  *	This file contains routines that manipulate the SPUR Cache Controller's
  *	timers. 
@@ -40,16 +40,17 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "sys.h"
-#include "devTimer.h"
-#include "devTimerSpurInt.h"
+#include "timer.h"
+#include "timerSpurInt.h"
 #include "mach.h"
-#include "time.h"
+#include "sync.h"
+#include "spriteTime.h"
 
 /*
  * The timers must be loaded with the number of ticks to count
  * before causing an interrupt. The number of ticks is calculated
  * from the timer's interrupt interval (in milliseconds) and
- * the timer's counting frequency in routine Dev_TimerInit().
+ * the timer's counting frequency in routine Timer_TimerInit().
  */
 
 static	unsigned int callbackTicks;
@@ -58,12 +59,7 @@ static  unsigned int profileTicks;
 /*
  * A zero valued counter.
  */
-static	DevCounter	zeroCount = {0,0};
-
-/*
- * Time per tick of high 32bits of counter.
- */
-static Time		timeHigh;		
+static	 Timer_Ticks	zeroCount = {0,0};
 
 /*
  * The largest interval value.
@@ -71,21 +67,43 @@ static Time		timeHigh;
 #define	MAXINT	((unsigned int ) 0xffffffff)
 
 /*
- * Scale factor to make integer division more accurate. 
+ * Processor containing the timer for each timer and counter
  */
-#define	SCALE_FACTOR	100
-
+
+#define	CALLBACK_COUNTER	0
+#define	PROFILE_COUNTER		1
+#define	CLOCK_COUNTER		2
+#define	NUM_COUNTERS		3
+
+static	int	processor[NUM_COUNTERS]; 
+
+/*
+ * Last value read from counter. This number is used to provide access to a
+ * recent value of the counter for processors other than the processor with
+ * the counter. It is assumed that the processor with the counter will also 
+ * be the processor with the inteval times to Timer_GetCurrentTicks will
+ * be called frequently. 
+ */
+
+static Timer_Ticks	currentTicks;
+
+/*
+ * Semaphore protecting the currentTicks variable.
+ */
+
+int	currentTicksMutex = 0;
+
 
 /*
  *----------------------------------------------------------------------
  *
- * Dev_TimerInit --
+ * Timer_TimerInit --
  *
  *	Initialize the specified timer on the Cache Controller chip to
  *	cause interrupts at regular intervals. Initialize the call back
  *	interval ticks.
  *
- *	N.B. This routine must be called before Dev_TimerStart.
+ *	N.B. This routine must be called before Timer_TimerStart.
  *
  * Results:
  *	None.
@@ -97,7 +115,7 @@ static Time		timeHigh;
  */
 
 void
-Dev_TimerInit(timer)
+Timer_TimerInit(timer)
     register unsigned short 	timer;
 {
      unsigned int modeRegister;		/* Local copy of CC mode register */
@@ -110,23 +128,24 @@ Dev_TimerInit(timer)
      * timer.  Also compute the timer's value.
      */
 
-     if (timer == DEV_CALLBACK_TIMER) {
+     if (timer == TIMER_CALLBACK_TIMER) {
 	intrMaskBit = CALLBACK_TIMER_MASK_BIT;
 	modeRegBit = CALLBACK_TIMER_MODE_BIT;
-	callbackTicks = (int) (TIMER_FREQ/1000.0 * DEV_CALLBACK_INTERVAL); 
-#ifdef notdef
-    } else if (timer == DEV_PROFILE_TIMER) {
+	callbackTicks = (int) (TIMER_FREQ/1000.0 * TIMER_CALLBACK_INTERVAL); 
+	processor[CALLBACK_COUNTER] = Mach_GetProcessorNumber();
+#ifdef NO_PROFILE_TIMER
+    } else if (timer == TIMER_PROFILE_TIMER) {
 	intrMaskBit = PROFILE_TIMER_MASK_BIT;
 	modeRegBit = PROFILE_TIMER_MODE_BIT;
-	profileTicks = (int) (TIMER_FREQ/1000.0 * DEV_PROFILE_INTERVAL); 
+	profileTicks = (int) (TIMER_FREQ/1000.0 * TIMER_PROFILE_INTERVAL); 
+	processor[PROFILE_COUNTER] = Mach_GetProcessorNumber();
 #endif
     } else {
-	Sys_Panic(SYS_FATAL,"Dev_TimerInit: unknown timer %d\n", timer);
+	Sys_Panic(SYS_FATAL,"Timer_TimerInit: unknown timer %d\n", timer);
     }
     /*
      * Stop the timer in case it is ticking.
      */
-    DISABLE_INTR();
     Mach_DisableNonmaskableIntr();
     modeRegister = Mach_Read8bitCCReg(MACH_MODE_REG);
     if (modeRegister & modeRegBit) { 
@@ -143,31 +162,21 @@ Dev_TimerInit(timer)
     /*
      * Register the routine to call on this interrupt.
      */
-    Mach_SetHandler(intrMaskBit,Dev_TimerServiceInterrupts);
-    /*
-     * Enable interrupts from the timer. 
-     *
-     * The current thinking is that the imask register should always be 
-     * either on or off. In that cause we wont need this code.
-     */
-#ifdef notdef
-    imaskRegister = Mach_Read32bitCCReg(MACH_INTR_MASK_0);
-    imaskRegister |= intrMaskBit;
-    Mach_Write32bitCCReg(MACH_INTR_MASK_0,imaskRegister);
-#endif
-    ENABLE_INTR();
+    Mach_SetHandler(intrMaskBit,Timer_TimerServiceInterrupts);
+    Mach_EnableNonmaskableIntr();
+
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * Dev_TimerStart --
+ * Timer_TimerStart --
  *
  *	Loads the specified timer with a new value to count from
  *	ands starts the timer.
  *
- *	N.B. The timer must have been initialized with Dev_TimerInit
+ *	N.B. The timer must have been initialized with Timer_TimerInit
  *	before this routine is called.
  *
  * Results:
@@ -180,27 +189,35 @@ Dev_TimerInit(timer)
  */
 
 void
-Dev_TimerStart(timer)
+Timer_TimerStart(timer)
     register unsigned short timer;
 {
     unsigned int modeRegister;		/* Local copy of mode register. */
     unsigned int modeRegBit = 0;	/* Timer's bit in mode register. */
     unsigned int timerAddress = 0;	/* Timer's addresses in CC. */
     int ticks = 0;			/* Number of ticks to set timer to. */
+    int		counter;		/* Processor number of counter. */
 
-    if (timer == DEV_CALLBACK_TIMER) {
+    if (timer == TIMER_CALLBACK_TIMER) {
 	modeRegBit = CALLBACK_TIMER_MODE_BIT;
 	timerAddress = CALLBACK_TIMER_ADDR;
 	ticks = callbackTicks;
-#ifdef notdef
-    } else if (timer == DEV_PROFILE_TIMER) {
+	counter	= CALLBACK_COUNTER;
+#ifdef NO_PROFILE_TIMER
+    } else if (timer == TIMER_PROFILE_TIMER) {
 	modeRegBit = PROFILE_TIMER_MODE_BIT;
 	timerAddress = PROFILE_TIMER_ADDR;
 	ticks = profileTicks;
+	counter	= PROFILE_COUNTER;
 #endif
     } else {
-	Sys_Panic(SYS_FATAL,"Dev_TimerStart: unknown timer %d\n", timer);
+	Sys_Panic(SYS_FATAL,"Timer_TimerStart: unknown timer %d\n", timer);
     }
+    if (processor[counter] != Mach_GetProcessorNumber()) {
+	Sys_Panic(SYS_FATAL,
+	    "Timer_TimerStart: timer %d started on wrong processor.\n", timer);
+    }
+
     DISABLE_INTR();
     /*
      * Make sure the timer is really off.
@@ -216,11 +233,11 @@ Dev_TimerStart(timer)
     }
     Mach_EnableNonmaskableIntr();
 
-#ifdef notdef
+#ifdef NO_PROFILE_TIMER
     /*
      * Setup the nonMaskable interupt for the PROFILE/refresh timer.
      */
-    if (timer == DEV_PROFILE_TIMER) {
+    if (timer == TIMER_PROFILE_TIMER) {
 	Mach_SetNonmaskableIntr(PROFILE_TIMER_MASK_BIT);
 	Mach_EnableNonmaskableIntr();
     }
@@ -270,19 +287,26 @@ RestartTimer(timer)
     unsigned int modeRegBit = 0;	/* Timer's mode bit */
     unsigned int timerAddress = 0;	/* Timer's address */
     int ticks = 0;			/* Number of ticks to load */
+    int		counter;		/* Processor number of counter. */
 
-    if (timer == DEV_CALLBACK_TIMER) {
+    if (timer == TIMER_CALLBACK_TIMER) {
 	modeRegBit = CALLBACK_TIMER_MODE_BIT;
 	timerAddress = CALLBACK_TIMER_ADDR;
 	ticks = callbackTicks;
-#ifdef notdef
-    } else if (timer == DEV_PROFILE_TIMER) {
+	counter	= CALLBACK_COUNTER;
+#ifdef NO_PROFILE_TIMER
+    } else if (timer == TIMER_PROFILE_TIMER) {
 	modeRegBit = PROFILE_TIMER_MODE_BIT;
 	timerAddress = PROFILE_TIMER_ADDR;
 	ticks = profileTicks;
+	counter	= PROFILE_COUNTER;
 #endif
     } else {
 	Sys_Panic(SYS_FATAL,"RestartTimer: unknown timer %d\n", timer);
+    }
+    if (processor[counter] != Mach_GetProcessorNumber()) {
+	Sys_Panic(SYS_FATAL,
+	    "RestartTimer: timer %d restarted on wrong processor.\n", timer);
     }
     /*
      * Initialize the timer. Since the timers count up the a negative number
@@ -303,7 +327,7 @@ RestartTimer(timer)
 /*
  *----------------------------------------------------------------------
  *
- * Dev_TimerInactivate --
+ * Timer_TimerInactivate --
  *
  *      Stops the specified timer such that it will cease counting. 
  *      If the timer has already  stopped and has set its interrupt
@@ -320,7 +344,7 @@ RestartTimer(timer)
  */
 
 void
-Dev_TimerInactivate(timer)
+Timer_TimerInactivate(timer)
     register unsigned short timer;
 {
     unsigned int modeRegister;
@@ -328,19 +352,27 @@ Dev_TimerInactivate(timer)
     unsigned int modeRegBit = 0;
     unsigned int timerAddress = 0;
     unsigned int intrMaskBit = 0; 
+    int		counter;		/* Processor number of counter. */
 
-    if (timer == DEV_CALLBACK_TIMER) {
+    if (timer == TIMER_CALLBACK_TIMER) {
 	modeRegBit = CALLBACK_TIMER_MODE_BIT;
 	timerAddress = CALLBACK_TIMER_ADDR;
 	intrMaskBit = CALLBACK_TIMER_MASK_BIT;
-#ifdef notdef
-    } else if (timer == DEV_PROFILE_TIMER) {
+	counter	= CALLBACK_COUNTER;
+#ifdef NO_PROFILE_TIMER
+    } else if (timer == TIMER_PROFILE_TIMER) {
 	modeRegBit = PROFILE_TIMER_MODE_BIT;
 	timerAddress = PROFILE_TIMER_ADDR;
 	intrMaskBit = PROFILE_TIMER_MASK_BIT;
+	counter	= PROFILE_COUNTER;
 #endif
     } else {
-	Sys_Panic(SYS_FATAL,"Dev_TimerStart: unknown timer %d\n", timer);
+	Sys_Panic(SYS_FATAL,"Timer_TimerStart: unknown timer %d\n", timer);
+    }
+    if (processor[counter] != Mach_GetProcessorNumber()) {
+	Sys_Panic(SYS_FATAL,
+	    "Timer_TimerInactivate: timer %d stopped on wrong processor.\n",
+	    timer);
     }
     /*
      * Stop the timer in case it is ticking.
@@ -357,15 +389,6 @@ Dev_TimerInactivate(timer)
      * Clear the interrupt status bit and turn the interrupt mask bit off.
      */
     Mach_Write32bitCCReg(MACH_INTR_STATUS_0,intrMaskBit);
-    /*
-     * Currently, we leave the interrupt mask turned on at all times.
-     */
-
-#ifdef notdef
-    imaskRegister = Mach_Read32bitCCReg(MACH_INTR_MASK_0);
-    imaskRegister &= (~intrMaskBit) & 0xff;
-    Mach_Write32bitCCReg(MACH_INTR_MASK_0,imaskRegister);
-#endif
 
     ENABLE_INTR();
 
@@ -374,7 +397,7 @@ Dev_TimerInactivate(timer)
 /*
  *----------------------------------------------------------------------
  *
- *  Dev_TimerServiceInterrupts --
+ *  Timer_TimerServiceInterrupts --
  *
  *      This routine is called at every timer interrupt. 
  *      It calls the timer callback queue handling if the callback timer 
@@ -394,7 +417,7 @@ Dev_TimerInactivate(timer)
  */
 
 void
-Dev_TimerServiceInterrupts(intrStatusPtr)
+Timer_TimerServiceInterrupts(intrStatusPtr)
     unsigned int	*intrStatusPtr;		/* Copy of interrupt status 
 						 * register.
 						 */
@@ -435,7 +458,7 @@ Dev_TimerServiceInterrupts(intrStatusPtr)
 		 * Collect the profile information.
 		 */
 	Prof_CollectInfo();
-	RestartTimer(DEV_PROFILE_TIMER);
+	RestartTimer(TIMER_PROFILE_TIMER);
      } 
      if (istatusReg & CALLBACK_TIMER_MASK_BIT) {
 	/*
@@ -453,7 +476,7 @@ Dev_TimerServiceInterrupts(intrStatusPtr)
 		 */
 	Timer_CallBack();
 
-	RestartTimer(DEV_CALLBACK_TIMER);
+	RestartTimer(TIMER_CALLBACK_TIMER);
     }
     /*
      * Reset the two timer bits in the status register so we wont get called
@@ -470,7 +493,7 @@ Dev_TimerServiceInterrupts(intrStatusPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Dev_CounterInit --
+ * Timer_CounterInit --
  *
  *	Start the free running 64 bit counter on the Spur CC chip running.
  *	
@@ -485,20 +508,10 @@ Dev_TimerServiceInterrupts(intrStatusPtr)
  */
 
 void
-Dev_CounterInit()
+Timer_CounterInit()
 {
     unsigned int modeRegister;	/* Local copy of CC mode register */
 
-    /*
-     * Initialized the number of seconds per tick of high word of 
-     * counter.
-     */
-
-    timeHigh.seconds =  (int) (0xffffffff / TIMER_FREQ);
-    timeHigh.microseconds = (int) (((0xffffffff % TIMER_FREQ) * SCALE_FACTOR) /
-				((TIMER_FREQ * SCALE_FACTOR) / ONE_SECOND));
-
-    DISABLE_INTR();
     /*
      * Make sure the timer is not ticking.
      */
@@ -508,20 +521,20 @@ Dev_CounterInit()
 	modeRegister &= (~(FREERUNNING_TIMER_MODE_BIT) & 0xff);
 	Mach_Write8bitCCReg(MACH_MODE_REG,modeRegister);
     }
-    Mach_EnableNonmaskableIntr();
     /*
      * Load the 64 bit register.
      */
-    Dev_TimerT0Write(&zeroCount);
+    currentTicks = zeroCount;
+    Timer_WriteT0(&zeroCount);
     /*
      * Start the counter running.
      */
-    Mach_DisableNonmaskableIntr();
     modeRegister = Mach_Read8bitCCReg(MACH_MODE_REG);
     modeRegister |= (FREERUNNING_TIMER_MODE_BIT);
     Mach_Write8bitCCReg(MACH_MODE_REG,modeRegister);
+
+    processor[CLOCK_COUNTER] = Mach_GetProcessorNumber();
     Mach_EnableNonmaskableIntr();
-    ENABLE_INTR();
 
 }
 
@@ -529,234 +542,38 @@ Dev_CounterInit()
 /*
  *----------------------------------------------------------------------
  *
- * Dev_CounterRead --
+ * Timer_GetCurrentTicks --
  *
- *	Read the contents of the free running counter.
- *	To be used with interrupts disabled to assure that the
- *	counter is read atomically.
+ *	Read the contents of the clock counter. 
  *
  * Results:
- *	The current value of the counter.
+ *	None.
  *
  * Side effects:
- *	None.
+ *	CurrentTicks is updated if we are called on the processor with the
+ *	counter.
  *
  *----------------------------------------------------------------------
  */
 
 void
-Dev_CounterRead(counterPtr)
-    DevCounter *counterPtr;
+Timer_GetCurrentTicks(timePtr)
+    Timer_Ticks	*timePtr;	/* Time from the counters. */
 {
-    ReturnStatus	status;
-
-    DISABLE_INTR();
-    status = Dev_TimerT0Read(counterPtr);
-    if (status != SUCCESS) {
-	Sys_Panic(SYS_FATAL,"Dev_CounterRead: Can not read counter T0\n");
+    MASTER_LOCK(currentTicksMutex);
+	/*
+	 * Are we running on the CPU with the counter. If so then
+	 * update the currentTicks structure.
+	 */
+    if (Mach_GetProcessorNumber() == processor[CLOCK_COUNTER]) {
+	Timer_ReadT0(&currentTicks);
     }
-    ENABLE_INTR();
-}
-
+    *timePtr = currentTicks;
+    MASTER_UNLOCK(currentTicksMutex);
 
-/*
- *----------------------------------------------------------------------
- *
- *  Dev_CounterIntToTime --
- *
- *      Converts an interval value into a standard time value.
- *
- *	This routine is meant for use by the Timer module only.
- *
- *  Results:
- *	A time value.
- *
- *  Side Effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Dev_CounterIntToTime(interval, resultPtr)
-    unsigned int interval;
-    Time *resultPtr;
-{
-    DevCounter		tmp;
-    unsigned int	overflow;
-
-    Dev_CounterAddIntToCount(zeroCount,interval,&tmp,&overflow);
-    Dev_CounterCountToTime(tmp,resultPtr);
 
 }
-
 
-/*
- *----------------------------------------------------------------------
- *
- *  Dev_CounterCountToTime --
- *
- *      Converts DevCounter into a standard time value.
- *
- *	This routine is meant for use by the Timer module only.
- *
- *  Results:
- *	A time value.
- *
- *  Side Effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Dev_CounterCountToTime(count, resultPtr)
-    DevCounter	count;
-    Time *resultPtr;
-{
-    unsigned int leftOver;
-    Time	tmp;
-
-    resultPtr->seconds = (int) (count.low / TIMER_FREQ);
-    leftOver = (unsigned int) (count.low - (resultPtr->seconds * TIMER_FREQ));
-    resultPtr->microseconds = (int) ((leftOver * SCALE_FACTOR) /
-				((TIMER_FREQ * SCALE_FACTOR) / ONE_SECOND));
-
-    Time_Multiply(timeHigh,count.high,&tmp);
-    Time_Add(*resultPtr, tmp, resultPtr);
-
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- *  Dev_CounterTimeToInt --
- *
- *      Converts a standard time value into an interval  value.
- *	This routine is meant for use by the Timer module only.
- *
- *  Results:
- *	A counter interval value.
- *
- *  Side Effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Dev_CounterTimeToInt(time, resultPtr)
-    Time time;
-    unsigned int *resultPtr;
-{
-    DevCounter		tmp;
-
-    /*
-     * Convert time to a DevCounter value 
-     */
-    Dev_CounterTimeToCount(time,&tmp);
-
-    /*
-     * Check to see if value is too bit for an interval.
-     */
-    if (tmp.high > INTERVAL_HIGH(MAXINT) || 
-       ((tmp.high == INTERVAL_HIGH(MAXINT)) && 
-	(tmp.low > INTERVAL_LOW(MAXINT)))) {
-	Sys_Panic(SYS_WARNING, "Dev_CounterTimeToInt: time value too large\n");
-	*resultPtr = MAXINT;
-    } else {
-        *resultPtr = COUNTER_TO_INTERVAL(tmp);
-    }
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- *  Dev_CounterTimeToCount --
- *
- *      Converts a standard time value into an DevCounter  value.
- *	This routine is meant for use by the Timer module only.
- *
- *  Results:
- *	A DevCounter value.
- *
- *  Side Effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Dev_CounterTimeToCount(time, resultPtr)
-    Time time;
-    DevCounter *resultPtr;
-{
-    unsigned int intervalLow;
-
-    /*
-     * Number of seconds in each DevCounter.high tick.
-     */
-#define	SECONDS_HIGH	((int)(MAXINT/TIMER_FREQ))
-
-    resultPtr->high =  (time.seconds / SECONDS_HIGH);
-    resultPtr->low = (int) ((time.seconds % SECONDS_HIGH) * TIMER_FREQ);
-    intervalLow = (int) ((time.microseconds / SCALE_FACTOR) *
-		((TIMER_FREQ * SCALE_FACTOR)/ONE_SECOND));
-    resultPtr->low += intervalLow;
-    if (resultPtr->low < intervalLow) {
-	resultPtr->high += 1;
-    }
-#undef SECONDS_HIGH
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- *  Dev_CounterAddIntToCount --
- *
- *      Add an interval value to a DevCounter value returning a
- *	DevCounter value Int time units in the future. Specify in the
- *	variable overflow the number of times the addition caused the
- *	DevCounter to overflow.  
- *	
- *	This routine is meant for use by the Timer module only.
- *
- *  Results:
- *	A counter interval value.
- *
- *  Side Effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Dev_CounterAddIntToCount(count, interval, resultPtr, overflowPtr)
-    DevCounter	count;		/* Counter to add to */
-    unsigned int	interval;	/* Interval to add */	
-    DevCounter	*resultPtr;	/* Buffer to place the results */
-    unsigned int	*overflowPtr;	/* Overflow count */
-{
-    unsigned	int	intervalLow;
-    unsigned	int	intervalHigh;
-
-    intervalLow = INTERVAL_LOW(interval);  
-    intervalHigh = INTERVAL_HIGH(interval);
-    resultPtr->low = count.low + intervalLow; 
-    resultPtr->high = count.high + intervalHigh;
-
-    if (resultPtr->low < intervalLow) {
-	 resultPtr->high++;
-    } 
-    if (resultPtr->high < intervalHigh) {
-	*overflowPtr = 1;
-    } else {
-	*overflowPtr = 0;
-    }
-}
 
 
 /*  @#@#@#@#@#@#@#@#@#@#@    DEBUGGING CODE    @#@#@#@#@#@#@#@#@#@#@  */
@@ -764,7 +581,7 @@ Dev_CounterAddIntToCount(count, interval, resultPtr, overflowPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Dev_TimerGetInfo --
+ * Timer_TimerGetInfo --
  *
  *	Reads the status and master mode registers of the chip and the
  *	specified counter's load, hold and mode registers and prints them
@@ -780,25 +597,21 @@ Dev_CounterAddIntToCount(count, interval, resultPtr, overflowPtr)
  */
 
 void
-Dev_TimerGetInfo(data)
+Timer_TimerGetInfo(data)
     ClientData data;	/* Ignored. */
 {
-    DevCounter		timer;
+    Timer_Ticks		timer;
     ReturnStatus	status;
     unsigned	int	modeRegister;
     unsigned	int	imaskRegister;
 
     DISABLE_INTR();
-    status = Dev_TimerT0Read(&timer);
+    Timer_GetCurrentTicks(&timer);
     modeRegister = Mach_Read8bitCCReg(MACH_MODE_REG);
     imaskRegister = Mach_Read32bitCCReg(MACH_INTR_MASK_0);
     ENABLE_INTR();
 
-    if (status == SUCCESS) {
-	Sys_Printf("CounterT0 0x%x 0x%x\n",timer.high, timer.low);
-    } else {
-	Sys_Printf("CounterT0 CAN NOT READ\n");
-    }
+    Sys_Printf("CounterT0 0x%x 0x%x\n",timer.high, timer.low);
     Sys_Printf("Mode Reg:\n");
     Sys_Printf("TIMER ENABLE %d\tCALLBACK ENABLE %d\tPROFILE ENABLE %d\n",
 		((modeRegister & FREERUNNING_TIMER_MODE_BIT) != 0),

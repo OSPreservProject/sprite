@@ -12,8 +12,7 @@
  *  scheduled time.  Unlike the Time format, which represents time in
  *  seconds and microseconds, the Timer_Ticks format represents time in a
  *  machine-dependent way. On the SPUR, Timer_Ticks is a value based on
- *  the hardware's free-running 64bit counter with access provided using 
- *  the Dev_Counter routines (see the dev module). 
+ *  the hardware's free-running 64bit counter. 
  *
  *  A time value in the Timer_Ticks format is a hardware-dependent 64-bit
  *  number that represents a specific or absolute point in time since some
@@ -46,10 +45,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "mach.h"
 #include "timerTick.h"
-#include "time.h"
-#include "devTimer.h"
+#include "spriteTime.h"
+#include "timerSpurInt.h"
 #include "sys.h"
-#include "byte.h"
 
 /*
  *  Definition of the maximum number of seconds and microseconds that the
@@ -65,13 +63,50 @@ Time timer_MaxIntervalTime;
  * Some commonly used values for intervals.
  */
 
-Timer_Ticks	timer_TicksZeroSeconds;
+Timer_Ticks	timer_TicksZeroSeconds = {0, 0};
 unsigned int    timer_IntZeroSeconds;
 unsigned int    timer_IntOneSecond;
 unsigned int    timer_IntOneMillisecond;
 unsigned int    timer_IntOneMinute;
 unsigned int    timer_IntOneHour;
 
+/*
+ * The largest interval value.
+ */
+#define	MAXINT	((unsigned int ) 0xffffffff)
+
+/*
+ * Scale factor to make integer division more accurate. 
+ */
+#define	SCALE_FACTOR	100
+
+/*
+ * 2 ^ 32.
+ */
+#define	TWO_TO_32 	4294967296.0
+
+#ifndef FLOATING_POINTER_CONVERT
+static	Time	timeHigh;	/* Time per high tick of counter. */
+static unsigned int maxMicrosecondMutiple;/* Maximum number that we can
+					   * multiply timeHigh.microseconds 
+					   * by and still fix in a 32bit 
+					   * integer.  */
+static unsigned int secondsPerMicrosecondMultiple;
+					/* The number of seconds per each 
+					 * maxMicrosecondMutiple. 
+					 */
+/*
+ * The maximum number that we can multiply and microsecond value and have it
+ * fit an a 32bit integer.
+ */
+#define	MAX_MICROSEC_MULTIPLE	((int)(MAXINT / ONE_SECOND))
+#endif
+
+/*
+ * Forward routine declarations. 
+ */
+static void ConvertTimeToInt();
+static void ConvertIntToTime();
 
 /*
  *----------------------------------------------------------------------
@@ -94,21 +129,35 @@ TimerTicksInit()
 {
     Time tmp;
 
-    Dev_CounterIntToTime((unsigned int) 0xFFFFFFFF, &timer_MaxIntervalTime);
+#ifndef FLOATING_POINT_CONVERT
+    /*
+     * Initailized values used by counter conversion routines.
+     */
+    {
+	double	intPart, modf();
+	timeHigh.microseconds = (int)
+		((ONE_SECOND * modf(TWO_TO_32/TIMER_FREQ,&intPart)) + 0.5);
+	timeHigh.seconds = (int) intPart;
+	maxMicrosecondMutiple = (unsigned int)(TWO_TO_32/timeHigh.microseconds);
+	secondsPerMicrosecondMultiple = (unsigned int) (TWO_TO_32/ONE_SECOND);
+    }
+#endif
+    ConvertIntToTime((unsigned int) 0xFFFFFFFF, &timer_MaxIntervalTime);
 
     tmp.seconds = 1;
     tmp.microseconds = 0;
-    Dev_CounterTimeToInt(tmp, &timer_IntOneSecond);
+    ConvertTimeToInt(tmp, &timer_IntOneSecond);
 
     tmp.seconds = 0;
     tmp.microseconds = 1000;
-    Dev_CounterTimeToInt(tmp, &timer_IntOneMillisecond);
+    ConvertTimeToInt(tmp, &timer_IntOneMillisecond);
 
     timer_IntZeroSeconds	= 0;
     timer_IntOneMinute		= timer_IntOneSecond * 60;
     timer_IntOneHour		= timer_IntOneSecond * 3600;
 
-    Byte_Zero(sizeof(timer_TicksZeroSeconds), (Address)&timer_TicksZeroSeconds);
+
+
 }
 
 
@@ -212,45 +261,21 @@ Timer_AddIntervalToTicks(absolute, interval, resultPtr)
     unsigned int	interval;	/* Addend 2 */
     Timer_Ticks		*resultPtr;	/* Sum */
 {
-    unsigned int	overflow;
+    unsigned	int	intervalLow;
+    unsigned	int	intervalHigh;
 
-    Dev_CounterAddIntToCount(absolute,interval,resultPtr,&overflow);
-    if (overflow != 0) {
-	Sys_Panic(SYS_WARNING,"Timer_AddIntervalToTicks: overflow != 0\n");
+    intervalLow = INTERVAL_LOW(interval);  
+    intervalHigh = INTERVAL_HIGH(interval);
+    resultPtr->low = absolute.low + intervalLow; 
+    resultPtr->high = absolute.high + intervalHigh;
+
+    if (resultPtr->low < intervalLow) {
+	 resultPtr->high++;
+    } 
+    if (resultPtr->high < intervalHigh) {
+	Sys_Panic(SYS_WARNING,"Timer_AddIntervalToTicks: overflow\n");
     }
 
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- *  Timer_GetCurrentTicks --
- *
- *  	Computes the number of ticks since the system was booted
- *	by reading the free-running counter.
- *
- *
- *  Results:
- *	The system up-time in ticks.
- *
- *  Side effects:
- *	None
- *
- *----------------------------------------------------------------------
- */
-
-
-void
-Timer_GetCurrentTicks(ticksPtr)
-    Timer_Ticks	*ticksPtr;	/* Buffer to place current time. */
-{
-
-    DISABLE_INTR();
-
-    Dev_CounterRead(ticksPtr);
-
-    ENABLE_INTR();
 }
 
 
@@ -277,10 +302,55 @@ Timer_TicksToTime(tick, timePtr)
     Timer_Ticks	tick;		/* Value to be converted. */
     Time	*timePtr;	/* Buffer to hold converted value. */
 {
-    Time  tmp;
+#ifdef FLOATING_POINT_CONVERT
+    extern	double	modf();
+    double	countDouble;
 
-    Dev_CounterCountToTime(tick, timePtr);
+    countDouble = (count.low + TWO_TO_32 * count.high) / TIMER_FREQ;
+    resultPtr->microseconds = (int)
+			((1000000.0 * modf(countDouble,&countDouble)) + 0.5);
+    resultPtr->seconds = (int) countDouble;
+
+#else
+    unsigned int	low, frac;
+
+    timePtr->seconds = timeHigh.seconds * tick.high;
+    if (tick.high > maxMicrosecondMutiple) { 
+	timePtr->seconds += (tick.high / maxMicrosecondMutiple) * 
+				secondsPerMicrosecondMultiple;
+	low = (tick.high % maxMicrosecondMutiple) * timeHigh.microseconds;
+    } else {
+	low = tick.high * timeHigh.microseconds;
+    }
+    if (low > ONE_SECOND) {
+	timePtr->seconds += low/ONE_SECOND;
+        timePtr->microseconds = low % ONE_SECOND; 
+    } else {
+        timePtr->microseconds = low; 
+    }
+
+    timePtr->seconds += tick.low / TIMER_FREQ;
+    frac = tick.low % TIMER_FREQ;
+    if (frac < MAX_MICROSEC_MULTIPLE) {
+	timePtr->microseconds += (frac * ONE_SECOND) / TIMER_FREQ;
+    } else if (frac < MAX_MICROSEC_MULTIPLE*10) {
+	timePtr->microseconds += ((frac * (ONE_SECOND/10)) / (TIMER_FREQ/10));
+    } else if (frac < MAX_MICROSEC_MULTIPLE*100) {
+	timePtr->microseconds += ((frac * (ONE_SECOND/100))/(TIMER_FREQ/100));
+    } else if (frac <MAX_MICROSEC_MULTIPLE*1000 ) {
+	timePtr->microseconds += ((frac * (ONE_SECOND/1000)) / 	
+						(TIMER_FREQ/1000));
+    } else {
+	timePtr->microseconds += ((frac * (ONE_SECOND/10000)) /
+						(TIMER_FREQ/10000));
+    }
+    if (timePtr->microseconds > ONE_SECOND) {
+	timePtr->microseconds -= ONE_SECOND;
+	timePtr->seconds++;
+    }
+#endif
 }
+
 
 
 /*
@@ -289,7 +359,7 @@ Timer_TicksToTime(tick, timePtr)
  *  Timer_TimeToTicks --
  *
  *  	Converts a Time value into a Timer_Ticks value.
-  *
+ *
  *  Results:
  *	A time value in ticks.
  *
@@ -305,6 +375,113 @@ Timer_TimeToTicks(time, ticksPtr)
     Time	time;		/* Value to be converted. */
     Timer_Ticks	*ticksPtr;	/* Buffer to hold converted value. */
 {
-    Dev_CounterTimeToCount(time,ticksPtr);
+
+#ifdef FLOATING_POINT_CONVERT
+
+    double	countDouble;
+
+
+    countDouble = (time.seconds + (time.microseconds / 1000000.0)) 
+			* (double)TIMER_FREQ;
+
+    ticksPtr->high =  (int) (countDouble / TWO_TO_32 );
+    ticksPtr->low = (int)((countDouble - (ticksPtr->high * TWO_TO_32)) + 0.5);
+#else
+    Time	newtime;
+    unsigned  	int	ticks;
+
+    if (time.seconds > timeHigh.seconds) {
+	unsigned int	high;
+	ticksPtr->high = high = (time.seconds / (timeHigh.seconds+1));
+	ticksPtr->low = 0;
+	Timer_TicksToTime(*ticksPtr,&newtime);
+	Time_Subtract(time, newtime, &time);
+	Timer_TimeToTicks(time,ticksPtr);
+	ticksPtr->high += high; 
+	return; 
+    } else {
+	ticksPtr->high = 0;
+    }
+    ticks = time.seconds * TIMER_FREQ;
+    ticksPtr->low =  (time.microseconds / 100) * (TIMER_FREQ/10000) + ticks;
+    if (ticksPtr->low < ticks) {
+	ticksPtr->high++;
+    }
+#endif
 
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  ConvertTimeToInt --
+ *
+ *      Converts a standard time value into an interval  value.
+ *
+ *  Results:
+ *	None.
+ *
+ *  Side Effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ConvertTimeToInt(time, resultPtr)
+    Time time;
+    unsigned int *resultPtr;
+{
+    Timer_Ticks		tmp;
+
+    /*
+     * Convert time to a ticks value 
+     */
+    Timer_TimeToTicks(time,&tmp);
+
+    /*
+     * Check to see if value is too bit for an interval.
+     */
+    if (tmp.high > INTERVAL_HIGH(MAXINT) || 
+       ((tmp.high == INTERVAL_HIGH(MAXINT)) && 
+	(tmp.low > INTERVAL_LOW(MAXINT)))) {
+	Sys_Panic(SYS_WARNING, "ConvertTimeToInt: time value too large\n");
+	*resultPtr = MAXINT;
+    } else {
+        *resultPtr = COUNTER_TO_INTERVAL(tmp);
+    }
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  ConvertIntToTime --
+ *
+ *      Converts an interval value into a standard time value.
+ *
+ *  Results:
+ *	None.
+ *
+ *  Side Effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ConvertIntToTime(interval, resultPtr)
+    unsigned int interval;
+    Time *resultPtr;
+{
+    Timer_Ticks		tmp;
+    unsigned int	overflow;
+
+    Timer_AddIntervalToTicks(timer_TicksZeroSeconds, interval, &tmp);
+    Timer_TicksToTime(tmp,resultPtr);
+
+}
+
+
