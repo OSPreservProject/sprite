@@ -277,6 +277,8 @@ typedef struct FsObjectStats {
     int directory;
     int dirFlushed;		/* Directories that were flushed */
     int lruChecks;		/* Number of handles checked for reclaimation */
+    int lruEntries;		/* Number of handles in LRU list */
+    int fileClients;		/* Number of consist.clientList entries */
 } FsObjectStats;
 
 /*
