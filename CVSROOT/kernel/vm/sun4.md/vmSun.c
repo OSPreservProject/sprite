@@ -258,8 +258,16 @@ static	VmMachPTE		*refModMap;
 /*
  * Macro to get a pointer into a software segment's hardware segment table.
  */
+#ifdef CLEAN
 #define GetHardSegPtr(machPtr, segNum) \
     ((machPtr)->segTablePtr + (segNum) - (machPtr)->offset)
+#else
+#define GetHardSegPtr(machPtr, segNum) \
+    ( ((unsigned)((segNum) - (machPtr)->offset) > (machPtr)->numSegs) ? \
+    (panic("Invalid segNum\n"),(machPtr)->segTablePtr) : \
+    ((machPtr)->segTablePtr + (segNum) - (machPtr)->offset) )
+#endif
+
 
 /*
  * The maximum amount of kernel code + data available.  This is set to however
@@ -1383,6 +1391,7 @@ VmMach_ProcInit(vmPtr)
     }
     vmPtr->machPtr->contextPtr = (VmMach_Context *)NIL;
     vmPtr->machPtr->mapSegPtr = (struct Vm_Segment *)NIL;
+    vmPtr->machPtr->sharedData.allocVector = (int *)NIL;
 }
 
 
@@ -1776,7 +1785,15 @@ SetupContext(procPtr)
 	bcopy((Address)segDataPtr->segTablePtr, 
 		(Address) (contextPtr->map + segDataPtr->offset),
 		segDataPtr->numSegs * sizeof (VMMACH_SEG_NUM));
-
+	if (vmPtr->sharedSegs != (List_Links *)NIL) {
+	    Vm_SegProcList *segList;
+	    LIST_FORALL(vmPtr->sharedSegs,(List_Links *)segList) {
+		segDataPtr = segList->segTabPtr->segPtr->machPtr;
+		bcopy((Address)segDataPtr->segTablePtr, 
+			(Address) (contextPtr->map+PageToSeg(segList->offset)),
+			segDataPtr->numSegs);
+	    }
+	}
 	if (vmPtr->machPtr->mapSegPtr != (struct Vm_Segment *)NIL) {
 	    contextPtr->map[MAP_SEG_NUM] = vmPtr->machPtr->mapHardSeg;
 	} else {
@@ -2972,7 +2989,8 @@ VmMach_SetPageProt(virtAddrPtr, softPTE)
     MASTER_LOCK(vmMachMutexPtr);
 
     machPtr = virtAddrPtr->segPtr->machPtr;
-    pmegNum = *GetHardSegPtr(machPtr, PageToSeg(virtAddrPtr->page));
+    pmegNum = *GetHardSegPtr(machPtr, PageToSeg(virtAddrPtr->page-
+	    segOffset(virtAddrPtr)+virtAddrPtr->segPtr->offset));
     if (pmegNum != VMMACH_INV_PMEG) {
 	virtAddr = ((virtAddrPtr->page << VMMACH_PAGE_SHIFT) & 
 			VMMACH_PAGE_MASK) + vmMachPTESegAddr;	
@@ -3058,7 +3076,8 @@ VmMach_AllocCheck(virtAddrPtr, virtFrameNum, refPtr, modPtr)
     *modPtr = refModMap[virtFrameNum] & VMMACH_MODIFIED_BIT;
     if (!*refPtr || !*modPtr) {
 	machPtr = virtAddrPtr->segPtr->machPtr;
-	pmegNum = *GetHardSegPtr(machPtr, PageToSeg(virtAddrPtr->page));
+	pmegNum = *GetHardSegPtr(machPtr, PageToSeg(virtAddrPtr->page-
+		segOffset(virtAddrPtr)+virtAddrPtr->segPtr->offset));
 	if (pmegNum != VMMACH_INV_PMEG) {
 	    hardPTE = 0;
 	    virtAddr = 
@@ -3131,7 +3150,8 @@ VmMach_GetRefModBits(virtAddrPtr, virtFrameNum, refPtr, modPtr)
     *modPtr = refModMap[virtFrameNum] & VMMACH_MODIFIED_BIT;
     if (!*refPtr || !*modPtr) {
 	machPtr = virtAddrPtr->segPtr->machPtr;
-	pmegNum = *GetHardSegPtr(machPtr, PageToSeg(virtAddrPtr->page));
+	pmegNum = *GetHardSegPtr(machPtr, PageToSeg(virtAddrPtr->page-
+		segOffset(virtAddrPtr)+virtAddrPtr->segPtr->offset));
 	if (pmegNum != VMMACH_INV_PMEG) {
 	    hardPTE = 0;
 	    virtAddr = 
@@ -3186,7 +3206,8 @@ VmMach_ClearRefBit(virtAddrPtr, virtFrameNum)
 
     refModMap[virtFrameNum] &= ~VMMACH_REFERENCED_BIT;
     machPtr = virtAddrPtr->segPtr->machPtr;
-    pmegNum = *GetHardSegPtr(machPtr, PageToSeg(virtAddrPtr->page));
+    pmegNum = *GetHardSegPtr(machPtr, PageToSeg(virtAddrPtr->page-
+	    segOffset(virtAddrPtr)+virtAddrPtr->segPtr->offset));
     if (pmegNum != VMMACH_INV_PMEG) {
 	virtAddr = ((virtAddrPtr->page << VMMACH_PAGE_SHIFT) & 
 			VMMACH_PAGE_MASK) + vmMachPTESegAddr;
@@ -3246,7 +3267,8 @@ VmMach_ClearModBit(virtAddrPtr, virtFrameNum)
 
     refModMap[virtFrameNum] &= ~VMMACH_MODIFIED_BIT;
     machPtr = virtAddrPtr->segPtr->machPtr;
-    pmegNum = *GetHardSegPtr(machPtr, PageToSeg(virtAddrPtr->page));
+    pmegNum = *GetHardSegPtr(machPtr, PageToSeg(virtAddrPtr->page-
+	    segOffset(virtAddrPtr)+virtAddrPtr->segPtr->offset));
     if (pmegNum != VMMACH_INV_PMEG) {
 	virtAddr = ((virtAddrPtr->page << VMMACH_PAGE_SHIFT) & 
 			VMMACH_PAGE_MASK) + vmMachPTESegAddr;
@@ -3293,6 +3315,7 @@ VmMach_ClearModBit(virtAddrPtr, virtFrameNum)
  *
  * ----------------------------------------------------------------------------
  */
+
 ENTRY void
 VmMach_PageValidate(virtAddrPtr, pte) 
     register	Vm_VirtAddr	*virtAddrPtr;
@@ -3322,7 +3345,8 @@ VmMach_PageValidate(virtAddrPtr, pte)
     /*
      * Find out the hardware segment that has to be mapped.
      */
-    hardSeg = PageToSeg(virtAddrPtr->page);
+    hardSeg = PageToSeg(virtAddrPtr->page - segOffset(virtAddrPtr) +
+	    segPtr->offset);
     segTablePtr = (VMMACH_SEG_NUM *) GetHardSegPtr(segPtr->machPtr, hardSeg);
 
     if (*segTablePtr == VMMACH_INV_PMEG) {
@@ -3346,10 +3370,12 @@ VmMach_PageValidate(virtAddrPtr, pte)
 	     * of someone stealing this empty pmeg.  Now we have to move
 	     * it off of the free list.
 	     */
+	    VmCheckListIntegrity((List_Links *)pmegPtr);
 	    if (pmegPtr->flags & PMEG_DONT_ALLOC) {
 		List_Remove((List_Links *)pmegPtr);
 	    } else {
 		List_Move((List_Links *)pmegPtr, LIST_ATREAR(pmegInuseList));
+		VmCheckListIntegrity((List_Links *)pmegPtr);
 	    }
 	}
     }
@@ -3385,7 +3411,8 @@ VmMach_PageValidate(virtAddrPtr, pte)
 	VmMachSetSegMap(addr, (int)*segTablePtr);
 	procPtr = Proc_GetCurrentProc();
 	procPtr->vmPtr->machPtr->contextPtr->map[hardSeg] = *segTablePtr;
-	if (pte & (VM_COW_BIT | VM_READ_ONLY_PROT)) {
+	if ((pte & (VM_COW_BIT | VM_READ_ONLY_PROT)) ||
+		(virtAddrPtr->flags & VM_READONLY_SEG)) {
 	    hardPTE |= VMMACH_UR_PROT;
 	} else {
 	    hardPTE |= VMMACH_URW_PROT;
@@ -3469,7 +3496,8 @@ PageInvalidate(virtAddrPtr, virtPage, segDeletion)
 	return;
     }
     machPtr = virtAddrPtr->segPtr->machPtr;
-    pmegNum = *GetHardSegPtr(machPtr, PageToSeg(virtAddrPtr->page));
+    pmegNum = *GetHardSegPtr(machPtr, PageToSeg(virtAddrPtr->page-
+	    segOffset(virtAddrPtr)+virtAddrPtr->segPtr->offset));
     if (pmegNum == VMMACH_INV_PMEG) {
 	return;
     }
@@ -3504,6 +3532,7 @@ PageInvalidate(virtAddrPtr, virtPage, segDeletion)
 
         flushSegPtr = virtAddrPtr->segPtr;
         if (flushSegPtr != (Vm_Segment *) NIL) {
+	    VmCheckListIntegrity((List_Links *)flushSegPtr->procList);
             LIST_FORALL(flushSegPtr->procList, (List_Links *)flushProcLinkPtr) {
                 flushVmPtr = flushProcLinkPtr->procPtr->vmPtr;
                 if (flushVmPtr != (Vm_ProcInfo *) NIL) {
@@ -3551,6 +3580,7 @@ PageInvalidate(virtAddrPtr, virtPage, segDeletion)
 		List_Move((List_Links *)pmegPtr, 
 			  LIST_ATREAR(pmegFreeList));
 	    }
+	    VmCheckListIntegrity((List_Links *)pmegPtr);
 	}
     }
 }
@@ -3617,8 +3647,10 @@ VmMach_PinUserPages(mapType, virtAddrPtr, lastPage)
 
     machPtr = virtAddrPtr->segPtr->machPtr;
 
-    firstSeg = PageToSeg(virtAddrPtr->page);
-    lastSeg = PageToSeg(lastPage);
+    firstSeg = PageToSeg(virtAddrPtr->page-segOffset(virtAddrPtr)+
+	    virtAddrPtr->segPtr->offset);
+    lastSeg = PageToSeg(lastPage-segOffset(virtAddrPtr)+
+	    virtAddrPtr->segPtr->offset);
     /*
      * Lock down the PMEG behind the first segment.
      */
@@ -3674,8 +3706,10 @@ VmMach_UnpinUserPages(virtAddrPtr, lastPage)
     MASTER_LOCK(vmMachMutexPtr);
 
     machPtr = virtAddrPtr->segPtr->machPtr;
-    firstSeg = PageToSeg(virtAddrPtr->page);
-    lastSeg = PageToSeg(lastPage);
+    firstSeg = PageToSeg(virtAddrPtr->page-segOffset(virtAddrPtr)+
+	    virtAddrPtr->segPtr->offset);
+    lastSeg = PageToSeg(lastPage-segOffset(virtAddrPtr)+
+	    virtAddrPtr->segPtr->offset);
     for (; firstSeg <= lastSeg; firstSeg++) {
 	pmegNum = *GetHardSegPtr(machPtr, firstSeg);
 	if (pmegNum == VMMACH_INV_PMEG) {
@@ -4501,35 +4535,6 @@ ByteFill(fillByte, numBytes, destPtr)
     }
 }
 #endif
-
-/*
- * ----------------------------------------------------------------------------
- *
- * VmMach_SharedStartAddr --
- *
- *      Determine the starting address for a shared segment.
- *
- * Results:
- *      Returns the proper start address for the segment.
- *
- * Side effects:
- *      None.
- *
- * ----------------------------------------------------------------------------
- */
-/*ARGSUSED*/
-ReturnStatus
-VmMach_SharedStartAddr(procPtr,size,reqAddr)
-Proc_ControlBlock	*procPtr;
-int		size;		/* Length of shared segment. */
-Address		*reqAddr;	/* Requested start address. */
-{
-    return SUCCESS;
-}
-
-void VmMach_SharedSegFinish() {}
-void VmMach_SharedProcStart() {}
-void VmMach_SharedProcFinish() {}
 
 #ifndef sun4c
 
@@ -4764,3 +4769,228 @@ VmMach_32BitDMAFree(numBytes, mapAddr)
 }
 
 #endif /* not sun4c */
+
+
+#define ALLOC(x,s)	(sharedData->allocVector[(x)]=s)
+#define FREE(x)		(sharedData->allocVector[(x)]=0)
+#define SIZE(x)		(sharedData->allocVector[(x)])
+#define ISFREE(x)	(sharedData->allocVector[(x)]==0)
+
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmMach_Alloc --
+ *
+ *      Allocates a region of shared memory;
+ *
+ * Results:
+ *      SUCCESS if the region can be allocated.
+ *	The starting address is returned in addr.
+ *
+ * Side effects:
+ *      The allocation vector is updated.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static ReturnStatus
+VmMach_Alloc(sharedData, regionSize, addr)
+    VmMach_SharedData	*sharedData;	/* Pointer to shared memory info.  */
+    int			regionSize;	/* Size of region to allocate. */
+    Address		*addr;		/* Address of region. */
+{
+    int numBlocks = (regionSize+VMMACH_SHARED_BLOCK_SIZE-1) /
+	    VMMACH_SHARED_BLOCK_SIZE;
+    int i, blockCount, firstBlock;
+
+    if (sharedData->allocVector == (int *)NULL || sharedData->allocVector ==
+	    (int *)NIL) {
+	dprintf("VmMach_Alloc: allocVector uninitialized!\n");
+    }
+
+    /*
+     * Loop through the alloc vector until we find numBlocks free blocks
+     * consecutively.
+     */
+    blockCount = 0;
+    for (i=sharedData->allocFirstFree;
+	    i<=VMMACH_SHARED_NUM_BLOCKS-1 && blockCount<numBlocks;i++) {
+	if (ISFREE(i)) {
+	    blockCount++;
+	} else {
+	    blockCount = 0;
+	    if (i==sharedData->allocFirstFree) {
+		sharedData->allocFirstFree++;
+	    }
+	}
+    }
+    if (blockCount < numBlocks) {
+	dprintf("VmMach_Alloc: got %d blocks of %d of %d total\n",
+		blockCount,numBlocks,VMMACH_SHARED_NUM_BLOCKS);
+	return VM_NO_SEGMENTS;
+    }
+    firstBlock = i-blockCount;
+    if (firstBlock == sharedData->allocFirstFree) {
+	sharedData->allocFirstFree += blockCount;
+    }
+    *addr = (Address)(firstBlock*VMMACH_SHARED_BLOCK_SIZE +
+	    VMMACH_SHARED_START_ADDR);
+    for (i = firstBlock; i<firstBlock+numBlocks; i++) {
+	ALLOC(i,numBlocks);
+    }
+    dprintf("VmMach_Alloc: got %d blocks at %d (%x)\n",
+	    numBlocks,firstBlock,*addr);
+    return SUCCESS;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmMach_Unalloc --
+ *
+ *      Frees a region of shared address space.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      The allocation vector is updated.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+static void
+VmMach_Unalloc(sharedData, addr)
+    VmMach_SharedData	*sharedData;	/* Pointer to shared memory info. */
+    Address	addr;		/* Address of region. */
+{
+    int firstBlock = ((int)addr-VMMACH_SHARED_START_ADDR) /
+	    VMMACH_SHARED_BLOCK_SIZE;
+    int numBlocks = SIZE(firstBlock);
+    int i;
+
+    dprintf("VmMach_Unalloc: freeing %d blocks at %x\n",firstBlock,addr);
+    if (firstBlock < sharedData->allocFirstFree) {
+	sharedData->allocFirstFree = firstBlock;
+    }
+    for (i=0;i<numBlocks;i++) {
+	if (ISFREE(i+firstBlock)) {
+	    printf("Freeing free shared address %d %d %d\n",i,i+firstBlock,
+		    (int)addr);
+	    return;
+	}
+	FREE(i+firstBlock);
+    }
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmMach_SharedStartAddr --
+ *
+ *      Determine the starting address for a shared segment.
+ *
+ * Results:
+ *      Returns the proper start address for the segment.
+ *
+ * Side effects:
+ *      Allocates part of the shared address space.
+ *
+ * ----------------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+VmMach_SharedStartAddr(procPtr,size,reqAddr)
+    Proc_ControlBlock	*procPtr;
+    int             size;           /* Length of shared segment. */
+    Address         *reqAddr;        /* Requested start address. */
+{
+    return VmMach_Alloc(&procPtr->vmPtr->machPtr->sharedData, size, reqAddr);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmMach_SharedProcStart --
+ *
+ *      Perform machine dependent initialization of shared memory
+ *	for this process.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      The storage allocation structures are initialized.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+VmMach_SharedProcStart(procPtr)
+    Proc_ControlBlock	*procPtr;
+{
+    VmMach_SharedData	*sharedData = &procPtr->vmPtr->machPtr->sharedData;
+    dprintf("VmMach_SharedProcStart: initializing proc's allocVector\n");
+    if (sharedData->allocVector != (int *)NIL) {
+	panic("VmMach_SharedProcStart: allocVector not NIL\n");
+    }
+    sharedData->allocVector =
+	    (int *)malloc(VMMACH_SHARED_NUM_BLOCKS*sizeof(int));
+    sharedData->allocFirstFree = 0;
+    bzero((Address) sharedData->allocVector, VMMACH_SHARED_NUM_BLOCKS*
+	    sizeof(int));
+    procPtr->vmPtr->sharedStart = (Address) VMMACH_SHARED_START_ADDR;
+    procPtr->vmPtr->sharedEnd = (Address) VMMACH_SHARED_START_ADDR +
+	    VMMACH_USER_SHARED_PAGES*VMMACH_PAGE_SIZE;
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmMach_SharedSegFinish --
+ *
+ *      Perform machine dependent cleanup of shared memory
+ *	for this segment.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      The storage allocation structures are freed.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+VmMach_SharedSegFinish(procPtr,addr)
+    Proc_ControlBlock	*procPtr;
+    Address		addr;
+{
+    VmMach_Unalloc(&procPtr->vmPtr->machPtr->sharedData,addr);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmMach_SharedProcFinish --
+ *
+ *      Perform machine dependent cleanup of shared memory
+ *	for this process.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      The storage allocation structures are freed.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+VmMach_SharedProcFinish(procPtr)
+    Proc_ControlBlock	*procPtr;
+{
+    dprintf("VmMach_SharedProcFinish: freeing process's allocVector\n");
+    free((Address)procPtr->vmPtr->machPtr->sharedData.allocVector);
+    procPtr->vmPtr->machPtr->sharedData.allocVector;
+    procPtr->vmPtr->machPtr->sharedData.allocVector = (int *)NIL;
+}
