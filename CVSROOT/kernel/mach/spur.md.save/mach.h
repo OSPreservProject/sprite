@@ -55,6 +55,11 @@ typedef enum {
     }
 
 /*
+ * Macro to get level of nesting of disabled interrupts.
+ */
+#define Mach_IntrNesting(cpu) (mach_NumDisableIntrsPtr[(cpu)])
+
+/*
  * Delay for N microseconds.
  */
 #define	MACH_DELAY(n)	{ register int N = (n)>>1; N--; while (N > 0) {N--;} }
