@@ -369,13 +369,6 @@ VmMach_BootInit(pageSizePtr, pageShiftPtr, pageTableIncPtr, kernMemSizePtr,
      * the max.
      */
     *maxSegsPtr = -1;
-#ifdef NOTDEF
-    /*
-     * Turn on caching.
-     */
-    VmMachClearCacheTags();
-    VmMachInitSystemEnableReg();
-#endif NOTDEF
 }
 
 
@@ -469,12 +462,6 @@ VmMach_Init(firstFreePage)
     Address			lastCodeAddr;
     extern	int		etext;
 
-#ifdef NOTDEF
-    /*
-     * Will this flush enough?
-     */
-    VmMachFlushCurrentContext();
-#endif NOTDEF
     /*
      * Initialize the kernel's hardware segment table.
      */
@@ -530,18 +517,12 @@ VmMach_Init(firstFreePage)
 	    }
 #endif /* sun4 */
         }
-#ifdef NOTDEF
-	VmMachFlushPage(virtAddr);
-#endif NOTDEF
 	SET_ALL_PAGE_MAP(virtAddr, pte);
     }
 
     /*
      * Protect the bottom of the kernel stack.
      */
-#ifdef NOTDEF
-    VmMachFlushPage((Address)mach_StackBottom);
-#endif NOTDEF
     SET_ALL_PAGE_MAP((Address)mach_StackBottom, (VmMachPTE)0);
 
     /*
@@ -549,9 +530,6 @@ VmMach_Init(firstFreePage)
      */
     for (;virtAddr < (Address) (firstFreeSegment << VMMACH_SEG_SHIFT);
 	 virtAddr += VMMACH_PAGE_SIZE) {
-#ifdef NOTDEF
-	VmMachFlushPage(virtAddr);
-#endif NOTDEF
 	SET_ALL_PAGE_MAP(virtAddr, (VmMachPTE)0);
     }
 
@@ -697,9 +675,6 @@ MMUInit(firstFreeSegment)
 	    VmMachSetUserContext(j);
 	    addr = (Address) (i << VMMACH_SEG_SHIFT);
 	    /* Yes, do this here since user stuff would be double mapped. */
-#ifdef NOTDEF
-	    VmMachFlushSegment(addr);
-#endif NOTDEF
 	    VmMachSetSegMap(addr, VMMACH_INV_PMEG);
 	}
     }
@@ -727,9 +702,6 @@ MMUInit(firstFreeSegment)
 	Address	addr;
 	/* Yes, do this here, since user stuff would be double-mapped. */
 	addr = (Address) (i << VMMACH_SEG_SHIFT);
-#ifdef NOTDEF
-	VmMachFlushSegment(addr);
-#endif NOTDEF
 	VmMachSetSegMap(addr, VMMACH_INV_PMEG);
     }
 
@@ -782,9 +754,6 @@ MMUInit(firstFreeSegment)
 			    inusePMEG = TRUE;
 			}
 		    } else {
-#ifdef NOTDEF
-			VmMachFlushPage(virtAddr);
-#endif NOTDEF
 			VmMachSetPageMap(virtAddr, (VmMachPTE)0);
 		    }
 		}
@@ -802,9 +771,6 @@ MMUInit(firstFreeSegment)
 		    for (z = 0; z < 100000; z++) {
 		    }
 #endif
-#ifdef NOTDEF
-		    VmMachFlushSegment(virtAddr);
-#endif NOTDEF
 		    VmMachSetSegMap(virtAddr, VMMACH_INV_PMEG);
 		    pageCluster = VMMACH_INV_PMEG;
 		}
@@ -1292,6 +1258,7 @@ PMEGFree(pmegNum)
     int 	pmegNum;	/* Which pmeg to free */
 {
     register	PMEG	*pmegPtr;
+    int		flushedIt = 0;
 
     pmegPtr = &pmegArray[pmegNum];
     /*
@@ -1322,7 +1289,10 @@ PMEGFree(pmegNum)
 		addr = (Address) (pmegPtr->hardSegNum << VMMACH_SEG_SHIFT);
 		for (j = 0; j < VMMACH_NUM_CONTEXTS; j++) {
 		    VmMachSetContextReg(j);
-		    VmMachFlushSegment(addr);
+		    if (!flushedIt) {
+			VmMachFlushSegment(addr);
+			flushedIt = TRUE;
+		    }
 		}
 		VmMachSetContextReg(oldContext);
 		break;
