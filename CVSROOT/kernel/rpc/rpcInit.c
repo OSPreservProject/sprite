@@ -20,6 +20,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "timer.h"
 #include "net.h"
 
+
 
 /*
  *----------------------------------------------------------------------
@@ -99,7 +100,7 @@ Rpc_Init()
 	 * scatter/gather elements that point to the RPC header can
 	 * be set up once here.  Similarly, the channel
 	 * of the request RPC header is set up once here as it
-	 * is always the same.  Finally, the conditionPtr that is part
+	 * is always the same.  Finally, the mutexPtr that is part
 	 * of the scatter/gather element is cleared because we don't
 	 * use this feature of the network module.
 	 */
@@ -107,32 +108,32 @@ Rpc_Init()
 	bufferPtr = &chanPtr->request.rpcHdrBuffer;
 	bufferPtr->bufAddr = (Address)&chanPtr->requestRpcHdr;
 	bufferPtr->length = sizeof(RpcHdr);
-	bufferPtr->conditionPtr = (Sync_Condition *)NIL;
+	bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
 	chanPtr->requestRpcHdr.version = RPC_NATIVE_VERSION;
 	chanPtr->requestRpcHdr.channel = chanPtr->index;
-	chanPtr->request.paramBuffer.conditionPtr = (Sync_Condition *)NIL;
-	chanPtr->request.dataBuffer.conditionPtr = (Sync_Condition *)NIL;
+	chanPtr->request.paramBuffer.mutexPtr = (Sync_Semaphore *)NIL;
+	chanPtr->request.dataBuffer.mutexPtr = (Sync_Semaphore *)NIL;
 
 	for (frag=0 ; frag < RPC_MAX_NUM_FRAGS ; frag++) {
 
 	    bufferPtr = &chanPtr->fragment[frag].rpcHdrBuffer;
 	    bufferPtr->bufAddr = (Address)&chanPtr->fragRpcHdr[frag];
 	    bufferPtr->length = sizeof(RpcHdr);
-	    bufferPtr->conditionPtr = (Sync_Condition *)NIL;
+	    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
 	    chanPtr->fragRpcHdr[frag].version = RPC_NATIVE_VERSION;
 	    chanPtr->fragRpcHdr[frag].channel = chanPtr->index;
-	    chanPtr->fragment[frag].paramBuffer.conditionPtr =
-			(Sync_Condition *)NIL;
-	    chanPtr->fragment[frag].dataBuffer.conditionPtr =
-			(Sync_Condition *)NIL;
+	    chanPtr->fragment[frag].paramBuffer.mutexPtr =
+			(Sync_Semaphore *)NIL;
+	    chanPtr->fragment[frag].dataBuffer.mutexPtr =
+			(Sync_Semaphore *)NIL;
 	}
 
 	bufferPtr = &chanPtr->reply.rpcHdrBuffer;
 	bufferPtr->bufAddr = (Address)&chanPtr->replyRpcHdr;
 	bufferPtr->length = sizeof(RpcHdr);
-	bufferPtr->conditionPtr = (Sync_Condition *)NIL;
-	chanPtr->reply.paramBuffer.conditionPtr = (Sync_Condition *)NIL;
-	chanPtr->reply.dataBuffer.conditionPtr = (Sync_Condition *)NIL;
+	bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
+	chanPtr->reply.paramBuffer.mutexPtr = (Sync_Semaphore *)NIL;
+	chanPtr->reply.dataBuffer.mutexPtr = (Sync_Semaphore *)NIL;
     }
 
     /*
@@ -232,32 +233,32 @@ RpcInitServerState(index)
     bufferPtr = &srvPtr->reply.rpcHdrBuffer;
     bufferPtr->bufAddr = (Address)&srvPtr->replyRpcHdr;
     bufferPtr->length = sizeof(RpcHdr);
-    bufferPtr->conditionPtr = (Sync_Condition *)NIL;
-    srvPtr->reply.paramBuffer.conditionPtr = (Sync_Condition *)NIL;
-    srvPtr->reply.dataBuffer.conditionPtr = (Sync_Condition *)NIL;
+    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
+    srvPtr->reply.paramBuffer.mutexPtr = (Sync_Semaphore *)NIL;
+    srvPtr->reply.dataBuffer.mutexPtr = (Sync_Semaphore *)NIL;
     for (frag=0 ; frag < RPC_MAX_NUM_FRAGS ; frag++) {
 	bufferPtr = &srvPtr->fragment[frag].rpcHdrBuffer;
 	bufferPtr->bufAddr = (Address)&srvPtr->fragRpcHdr[frag];
 	bufferPtr->length = sizeof(RpcHdr);
-	bufferPtr->conditionPtr = (Sync_Condition *)NIL;
-	srvPtr->fragment[frag].paramBuffer.conditionPtr = (Sync_Condition *)NIL;
-	srvPtr->fragment[frag].dataBuffer.conditionPtr = (Sync_Condition *)NIL;
+	bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
+	srvPtr->fragment[frag].paramBuffer.mutexPtr = (Sync_Semaphore *)NIL;
+	srvPtr->fragment[frag].dataBuffer.mutexPtr = (Sync_Semaphore *)NIL;
     }
 
     bufferPtr = &srvPtr->ack.rpcHdrBuffer;
     bufferPtr->bufAddr = (Address)&srvPtr->ackRpcHdr;
     bufferPtr->length = sizeof(RpcHdr);
-    bufferPtr->conditionPtr = (Sync_Condition *)NIL;
+    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
 
     bufferPtr = &srvPtr->ack.paramBuffer;
     bufferPtr->bufAddr = (Address)NIL;
     bufferPtr->length = 0;
-    bufferPtr->conditionPtr = (Sync_Condition *)NIL;
+    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
 
     bufferPtr = &srvPtr->ack.dataBuffer;
     bufferPtr->bufAddr = (Address)NIL;
     bufferPtr->length = 0;
-    bufferPtr->conditionPtr = (Sync_Condition *)NIL;
+    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
 
     /*
      * Set up the scatter vector for input requests to the server.
@@ -267,17 +268,17 @@ RpcInitServerState(index)
     bufferPtr = &srvPtr->request.rpcHdrBuffer;
     bufferPtr->bufAddr = (Address)&srvPtr->requestRpcHdr;
     bufferPtr->length = sizeof(RpcHdr);
-    bufferPtr->conditionPtr = (Sync_Condition *)NIL;
+    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
 
     bufferPtr = &srvPtr->request.paramBuffer;
     bufferPtr->bufAddr = Vm_RawAlloc(RPC_MAX_PARAM_SIZE);
     bufferPtr->length = RPC_MAX_PARAM_SIZE;
-    bufferPtr->conditionPtr = (Sync_Condition *)NIL;
+    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
 
     bufferPtr = &srvPtr->request.dataBuffer;
     bufferPtr->bufAddr = Vm_RawAlloc(RPC_MAX_DATA_SIZE);
     bufferPtr->length = RPC_MAX_DATA_SIZE;
-    bufferPtr->conditionPtr = (Sync_Condition *)NIL;
+    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
 
     /*
      * Initialize temporaries.
