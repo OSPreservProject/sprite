@@ -1,0 +1,27 @@
+
+1.043	Tue Nov 28 09:19:03 PST 1989
+This has fixes to the Rpc_Daemon for all hosts.
+This has a large kernel & FS cache for the DS3100
+This has FPU hack for DS3100 that kills user-process instead of kernel.
+This has process migraiton and other VM fixes for the sun4s.
+This has UNIX-compatible Proc_Exec arg lengths
+This has Mary's recovery tracing stuff.
+This has FPU enable for sun4 and sun4c.
+Known Major Bugs Left Outstanding:
+	Sun PMEG Stealing still happens
+	FS wedge on locked file handle left by Proc_ServerProc
+	FS disk corruption (fragmenting bug?)
+
+
+1.044	Thu Nov 30 12:08:38 PST 1989
+
+1.045	Thu Nov 30 13:10:22 PST 1989
+The horrible bug that's been causing the sparc stations to be unstable is fixed.
+Although the PMEG stealing bug fixed in 1.043 was part of it, the rest of it
+turned out to be in the new floating point code.  This affects both the sun4
+and sun4c.  Also fixed:  user processes killed on the sun4(c)'s due to
+bad stack pointers in the underflow and overflow handlers should now be put on
+the debug list rather than just being killed.
+
+1.046	Thu Dec 14 14:38:13 PST 1989
+    New files linked in from the net library.
