@@ -43,10 +43,12 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsStream.h"
 #include "fsLock.h"
 #include "fsMigrate.h"
+#include "fsOpTable.h"
+#include "fsNameOps.h"
+
 #include "dev.h"
 #include "rpc.h"
 #include "fsStat.h"
-#include "fsNameOps.h"
 
 /*
  * Parameters for RPC_FS_DEV_OPEN remote procedure call.
