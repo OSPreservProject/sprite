@@ -413,6 +413,7 @@ Mach_StartUserProc(procPtr, entryPoint)
     excStackPtr->pc = (int)entryPoint;
     excStackPtr->vor.stackFormat = MACH_SHORT;
     MachUserReturn(procPtr);
+
     MachRunUserProc();
     /* THIS DOES NOT RETURN */
 }
@@ -1071,7 +1072,7 @@ MachUserReturn(procPtr)
 	    break;
 	}
     }
-
+    
     if ((procPtr->genFlags & PROC_SINGLE_STEP_FLAG) ||
 	(procPtr->schedFlags & SCHED_CONTEXT_SWITCH_PENDING)) {
 	/*
@@ -1083,6 +1084,14 @@ MachUserReturn(procPtr)
 	procPtr->machStatePtr->userState.excStackPtr->statusReg |= 
 							MACH_SR_TRACEMODE;
     }
+
+    /*
+     * It is possible for Sig_Handle to mask the migration signal
+     * if a process is not in a state where it can be migrated.
+     * As soon as we return to user mode, though, we will allow migration.
+     */
+    Sig_AllowMigration(procPtr);
+
 }
 
 
