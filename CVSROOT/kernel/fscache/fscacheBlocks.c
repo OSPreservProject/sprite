@@ -2359,7 +2359,10 @@ Fscache_GetDirtyBlock(cacheInfoPtr, blockMatchProc, clientData,
 		fs_Stats.blockCache.dirBlocksWrittenThru++;
 		break;
 	    default:
-		printf( "Ofs_CleanBlocks: Unknown block type\n");
+		printf( "Fscache_GetDirtyBlock: Unknown block type 0x%x\n",
+		    blockPtr->flags &
+		(FSCACHE_DATA_BLOCK | FSCACHE_IND_BLOCK |
+		 FSCACHE_DESC_BLOCK | FSCACHE_DIR_BLOCK));
 	}
 	if (blockPtr->blockSize < 0) {
 	    panic( "Fscache_GetDirtyBlock: uninitialized block size\n");
