@@ -44,6 +44,7 @@
  */
 .globl	_Dev_VidEnable
 _Dev_VidEnable:
+#ifndef sun4c
 	set	VMMACH_SYSTEM_ENABLE_REG, %OUT_TEMP1
 	lduba	[%OUT_TEMP1] VMMACH_CONTROL_SPACE, %OUT_TEMP2
 	tst	%o0
@@ -60,3 +61,21 @@ LeaveVidEnable:
 	set	SUCCESS, %o0
 	retl
 	nop
+#else
+	set	0xffd1c001, %OUT_TEMP1
+	ldub	[%OUT_TEMP1], %OUT_TEMP2
+	tst	%o0
+	be	VidOff
+	nop
+	or	%OUT_TEMP2, 0x40, %OUT_TEMP2
+	b	LeaveVidEnable
+	nop
+VidOff:
+	set	~0x40, %o0
+	and	%OUT_TEMP2, %o0, %OUT_TEMP2
+LeaveVidEnable:
+	stb	%OUT_TEMP2, [%OUT_TEMP1]
+	set	SUCCESS, %o0
+	retl
+	nop
+#endif
