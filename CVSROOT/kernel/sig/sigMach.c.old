@@ -103,24 +103,14 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 
 Boolean		
-Sig_Handle(trapStackPtr, pcPtr)
-    Exc_TrapStack	*trapStackPtr;	/* The trap stack that was created
-					 * when the user process entered the
-					 * kernel. */
-    int			*pcPtr;		/* Program counter of where to start
-					 * executing the signal handler. */
-{
+Sig_Handle(procPtr)
     register	Proc_ControlBlock	*procPtr;
+{
     int					sigs;
     int					sigNum;
     unsigned	int			*bitMaskPtr;
-    int					usp;
-    SigStack				sigStack;
-    int					oldSp;
     int					sigBitMask;
-    short				trapInst;
-
-    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    Sig_Stack				*sigStackPtr;
 
     /*
      * Find out which signals are pending.
@@ -174,35 +164,12 @@ Sig_Handle(trapStackPtr, pcPtr)
 	     * only be debugged by a debugger that specifically asks for
 	     * it.
 	     *
-	     * Save the state of the process.
-	     */
-	    Byte_Copy(sizeof(procPtr->genRegs), 
-		     (Address) trapStackPtr->genRegs,
-		     (Address) procPtr->genRegs);
-	    procPtr->genRegs[SP] = trapStackPtr->userStackPtr;
-	    procPtr->progCounter = trapStackPtr->excStack.pc;
-
-	    /*
 	     * Suspend the process.
 	     */
 	    Proc_SuspendProcess(procPtr,
 			procPtr->sigActions[sigNum] == SIG_DEBUG_ACTION,
 			PROC_TERM_SIGNALED, sigNum, 
-			procPtr->sigCodes[sigNum],
-			trapStackPtr->excStack.statusReg);
-
-	    /*
-	     * Copy the state back because it might have gotten modified
-	     * while it was suspended.
-	     */
-	    trapStackPtr->excStack.pc = procPtr->progCounter;
-	    oldSp = trapStackPtr->genRegs[SP];
-	    Byte_Copy(sizeof(procPtr->genRegs), 
-		     (Address) procPtr->genRegs,
-		     (Address) trapStackPtr->genRegs);
-	    trapStackPtr->genRegs[SP] = oldSp;
-	    trapStackPtr->userStackPtr = procPtr->genRegs[SP];
-
+			procPtr->sigCodes[sigNum]);
 	    return(FALSE);
 
 	case SIG_MIGRATE_ACTION:
@@ -211,7 +178,7 @@ Sig_Handle(trapStackPtr, pcPtr)
 		    Sys_Printf("Sig_Handle calling Proc_MigrateTrap for process %x.\n",
 			       procPtr->processID);
 		}
-		Proc_MigrateTrap(procPtr, trapStackPtr);
+		Proc_MigrateTrap(procPtr);
 	    }
 	    return(FALSE);
 
@@ -220,19 +187,8 @@ Sig_Handle(trapStackPtr, pcPtr)
 		 "Sig_Handle: SIG_DEFAULT_ACTION found in array of actions?\n");
     }
 
-    /*
-     * If got this far then we must call a users signal handler.  What must
-     * be done is to set up the user stack and modify the trap stack.
-     */
-    usp = trapStackPtr->userStackPtr - sizeof(SigStack);
-
-    sigStack.retAddr = (Address) (usp + (int) &(sigStack.sigStack.trapInst) - 
-				      (int) &(sigStack));
-    sigStack.sigStack.sigNum = sigNum;
-    sigStack.sigStack.sigCode = procPtr->sigCodes[sigNum];
-    Byte_Copy(Exc_GetTrapStackSize(trapStackPtr), (Address) trapStackPtr, 
-				   (Address) &(sigStack.sigStack.trapStack));
-
+    sigStack.sigNum = sigNum;
+    sigStack.sigCode = procPtr->sigCodes[sigNum];
     /*
      * If this signal handler is being called after a call to Sig_Pause then
      * the real signal hold mask has to be restored after the handler returns.
@@ -241,28 +197,11 @@ Sig_Handle(trapStackPtr, pcPtr)
      */
     if (procPtr->sigFlags & SIG_PAUSE_IN_PROGRESS) {
 	procPtr->sigFlags &= ~SIG_PAUSE_IN_PROGRESS;
-	sigStack.sigStack.oldHoldMask = procPtr->oldSigHoldMask;
+	sigStack.oldHoldMask = procPtr->oldSigHoldMask;
     } else {
-	sigStack.sigStack.oldHoldMask = procPtr->sigHoldMask;
-    }
-    trapInst = 0x4e42;
-    Byte_Copy(sizeof(trapInst), (Address)&trapInst, 
-		(Address)&(sigStack.sigStack.trapInst));
-
-    if (Vm_CopyOut(sizeof(SigStack), 
-		   (Address) &sigStack, (Address) usp) != SUCCESS) {
-	Sys_Panic(SYS_WARNING,
-		  "Sig_Handle: No room on stack for signal, PID=%x.\n",
-		  procPtr->processID);
-	Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
+	sigStack.oldHoldMask = procPtr->sigHoldMask;
     }
 
-    /*
-     * Return the program counter of where to start executing, set the new
-     * user stack pointer, and block this signal.
-     */
-    *pcPtr = procPtr->sigActions[sigNum];
-    trapStackPtr->userStackPtr = usp;
     procPtr->sigHoldMask |= procPtr->sigMasks[sigNum];
     sigBitMask = sigBitMasks[sigNum];
     if (sigBitMask & ~sigCanHoldMask) {
@@ -273,7 +212,7 @@ Sig_Handle(trapStackPtr, pcPtr)
 	procPtr->sigHoldMask |= sigBitMask;
     }
     procPtr->specialHandling = 1;
-
+    Mach_HandleSig(procPtr, &sigStack, (Address)procPtr->sigActions[sigNum];
     return(TRUE);
 }
 
@@ -293,32 +232,12 @@ Sig_Handle(trapStackPtr, pcPtr)
  *
  *----------------------------------------------------------------------
  */
-
 void		
-Sig_Return(procPtr, trapStackPtr, oldStackAddrPtr)
+Sig_Return(procPtr, sigStackPtr)
     Proc_ControlBlock	*procPtr;	/* Process that is returning from
 					 * a signal. */
-    Exc_TrapStack	*trapStackPtr;	/* The trap stack that was created
-					   when the user process entered the
-					   kernel. */
-					/* Location of stack before the user
-					 * took this signal. */
-    Address		*oldStackAddrPtr;
+    Sig_StackInt	*sigStackPtr;	/* Signal stack. */
 {
-    SigStack	sigStack;
-    int		sigStackSize;
-
-    sigStackSize = sizeof(SigStack) - sizeof(Exc_TrapStack);
-    if (Vm_CopyIn(sigStackSize,
-		  (Address) (trapStackPtr->userStackPtr - 4), 
-	          (Address) &sigStack) != SUCCESS) {
-	Sys_Panic(SYS_WARNING,
-	      "Sig_Return: Stack too small to extract trap info, PID=%x.\n",
-	      procPtr->processID);
-	Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
-    }
-
-    *oldStackAddrPtr = (Address)(trapStackPtr->userStackPtr - 4 + sigStackSize);
-    procPtr->sigHoldMask = sigStack.sigStack.oldHoldMask;
+    procPtr->sigHoldMask = sigStackPtr->sigStack.oldHoldMask;
     procPtr->specialHandling = 1;
 }
