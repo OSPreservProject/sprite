@@ -62,16 +62,6 @@ static int daemonState = DAEMON_DEAD;
  */
 int		 rpcNoServers = 0;
 
-/*
- * Forward declarations.
- */
-void RpcReclaimServers();
-void RpcReclaim();
-void RpcDaemonWakeup();
-void RpcDaemonWait();
-void RpcResetNoServers();
-void RpcCrashCallBack();
-
 
 /*
  *----------------------------------------------------------------------
@@ -442,11 +432,10 @@ RpcDaemonWait(queueEntryPtr)
     if (daemonState & DAEMON_DEAD) {
 	daemonState &= ~DAEMON_DEAD;
     }
-    if (daemonState & DAEMON_TIMEOUT) {
-	panic("RpcDaemonWait: timeout element already on timer queue.\n");
+    if ((daemonState & DAEMON_TIMEOUT) == 0) {
+	daemonState |= DAEMON_TIMEOUT;
+	Timer_ScheduleRoutine(queueEntryPtr, TRUE);
     }
-    daemonState |= DAEMON_TIMEOUT;
-    Timer_ScheduleRoutine(queueEntryPtr, TRUE);
     while ((daemonState & DAEMON_POKED) == 0) {
 	Sync_MasterWait(&rpcDaemon, &serverMutex, FALSE);
 	if (sys_ShuttingDown) {
