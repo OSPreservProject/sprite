@@ -1196,7 +1196,7 @@ WakeupCallers()
 /*
  *----------------------------------------------------------------------
  *
- * Proc_MigrationStartTracing --
+ * Proc_MigrateStartTracing --
  *
  *	Initialize the tracing variables for process migration.
  *
