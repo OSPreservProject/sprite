@@ -290,8 +290,7 @@ FsFileSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	     * collect the client to retreat to a known bookkeeping point.
 	     */
 	    int ref, write, exec;
-	    printf( "Consistency failed %x on <%d,%d>\n",
-		status,
+	    printf("Consistency failed %x on <%d,%d>\n", status,
 		handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor);
 	    FsHandleLock(handlePtr);
 	    FsConsistKill(&handlePtr->consist, clientID, &ref, &write, &exec);
@@ -509,9 +508,8 @@ FsFileClose(streamPtr, clientID, procID, flags, dataSize, closeData)
      * Update the client state to reflect the close by the client.
      */
     if (!FsConsistClose(&handlePtr->consist, clientID, flags, &wasCached)) {
-	printf(
-		  "FsFileClose, client %d unknown for file <%d,%d>\n",
-		  clientID, handlePtr->hdr.fileID.major,
+	printf("FsFileClose, client %d pid %x unknown for file <%d,%d>\n",
+		  clientID, procID, handlePtr->hdr.fileID.major,
 		  handlePtr->hdr.fileID.minor);
 	FsHandleUnlock(handlePtr);
 	return(FS_STALE_HANDLE);
@@ -810,8 +808,7 @@ FsFileMigEnd(migInfoPtr, size, data, hdrPtrPtr)
     handlePtr = FsHandleFetchType(FsLocalFileIOHandle,
 		&migInfoPtr->ioFileID);
     if (handlePtr == (FsLocalFileIOHandle *)NIL) {
-	printf( 
-	    "FsFileMigEnd, file <%d,%d> from client %d not found\n",
+	printf("FsFileMigEnd, file <%d,%d> from client %d not found\n",
 	    migInfoPtr->ioFileID.major, migInfoPtr->ioFileID.minor,
 	    migInfoPtr->srcClientID);
 	status = FS_FILE_NOT_FOUND;
@@ -878,7 +875,7 @@ FsFileMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
     migInfoPtr->ioFileID.type = FS_LCL_FILE_STREAM;
     handlePtr = FsHandleFetchType(FsLocalFileIOHandle, &migInfoPtr->ioFileID);
     if (handlePtr == (FsLocalFileIOHandle *)NIL) {
-	panic( "FsFileMigrate, no I/O handle");
+	panic("FsFileMigrate, no I/O handle");
 	status = FS_STALE_HANDLE;
     } else {
 
@@ -1055,10 +1052,10 @@ FsFileBlockRead(hdrPtr, flags, buffer, offsetPtr,  lenPtr, remoteWaitPtr)
 
     numBytes = *lenPtr;
     if ((offset & FS_BLOCK_OFFSET_MASK) != 0) {
-	panic( "FsFileBlockRead: Non-block aligned offset\n");
+	panic("FsFileBlockRead: Non-block aligned offset\n");
     }
     if (numBytes > FS_BLOCK_SIZE) {
-	panic( "FsFileBlockRead: Reading more than block\n");
+	panic("FsFileBlockRead: Reading more than block\n");
     }
 
     domainPtr = FsDomainFetch(handlePtr->hdr.fileID.major, FALSE);
@@ -1092,7 +1089,7 @@ FsFileBlockRead(hdrPtr, flags, buffer, offsetPtr,  lenPtr, remoteWaitPtr)
 	status = FsGetFirstIndex(handlePtr, offset / FS_BLOCK_SIZE, 
 				 &indexInfo, 0);
 	if (status != SUCCESS) {
-	    printf( "FsFileRead: Could not setup indexing\n");
+	    printf("FsFileRead: Could not setup indexing\n");
 	    FsDomainRelease(handlePtr->hdr.fileID.major);
 	    return(status);
 	}

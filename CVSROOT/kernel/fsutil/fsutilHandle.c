@@ -612,7 +612,7 @@ FsHandleUnlockHdr(hdrPtr)
     if ((hdrPtr->flags & FS_HANDLE_LOCKED) == 0) {
 	UNLOCK_MONITOR;
 	panic( "HandleUnlock, un-locked handle\n");
-	return;
+	return(FALSE);
     }
     UNLOCK_HANDLE(hdrPtr);
 
