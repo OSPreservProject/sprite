@@ -1052,6 +1052,7 @@ FsCacheTrunc(cacheInfoPtr, length, flags)
 {
     int firstBlock;
     int lastBlock;
+    int firstByte, lastByte;	/* For debugging */
 
     LOCK_MONITOR;
 
@@ -1096,6 +1097,8 @@ FsCacheTrunc(cacheInfoPtr, length, flags)
 		firstBlock = (length - 1) / FS_BLOCK_SIZE + 1;
 	    }
 	    lastBlock = cacheInfoPtr->attr.lastByte / FS_BLOCK_SIZE;
+	    firstByte = cacheInfoPtr->attr.firstByte;
+	    lastByte = cacheInfoPtr->attr.lastByte;
             if (length - 1 < cacheInfoPtr->attr.firstByte) {
                 cacheInfoPtr->attr.lastByte = -1;
 	        cacheInfoPtr->attr.firstByte = -1;
@@ -1112,11 +1115,13 @@ FsCacheTrunc(cacheInfoPtr, length, flags)
 		register FsCacheBlock *blockPtr;
 		register List_Links *listItem;
 		Sys_Panic(SYS_WARNING, 
-    "File \"%s\" <%d,%d>: %d cache blocks left after delete of blocks %d->%d\n",
+    "File \"%s\" <%d,%d>: %d cache blocks left after delete blocks %d->%d\n",
 		    FsHandleName(cacheInfoPtr->hdrPtr),
 		    cacheInfoPtr->hdrPtr->fileID.major,
 		    cacheInfoPtr->hdrPtr->fileID.minor,
 		    cacheInfoPtr->blocksInCache, firstBlock, lastBlock);
+		Sys_Printf("FirstByte %d LastByte %d Blocks left: ",
+		    firstByte, lastByte);
 		while (!List_IsEmpty(&cacheInfoPtr->blockList)) {
 		    listItem = List_First(&cacheInfoPtr->blockList);
 		    blockPtr = FILE_LINKS_TO_BLOCK(listItem);
