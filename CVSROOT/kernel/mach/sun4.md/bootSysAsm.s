@@ -226,6 +226,39 @@ copyingTable:
 	sethi	%hi(_machRomVectorPtr), %g6
 	st	%g7, [%g6 + %lo(_machRomVectorPtr)] /* save romvec pointer */
 #endif
+        /*
+         * Initialize first word of restart table to show it hasn't yet
+         * been set up (this is a hard reboot).
+         */
+        set     reservedSpace2, %g1
+        add     %g1, VMMACH_PAGE_SIZE, %g1
+        and     %g1, ~(VMMACH_PAGE_SIZE - 1), %g1
+        set     _mach_RestartTablePtr, %g2
+        st      %g1, [%g2]
+        st      %g0, [%g1]
+        /*
+         * Now copy initialized data segment to storedData and set
+         * storedDataSize in both places to correct value.  Is etext the right
+         * place to start copying?  I really want the beginning of the data area
+         * instead.  %g1 is the src, %g2 is the destination, and %g3 is the
+         * amount to copy.
+         */
+CopyInitData:
+        set     _etext, %g1
+        set     _edata, %g2
+        sub     %g2, %g1, %g3
+        set     _storedDataSize, %g4
+        st      %g3, [%g4]
+        set     _storedData, %g2
+MoreCopying:
+        ldd     [%g1], %g4
+        std     %g4, [%g2]
+        add     %g1, 8, %g1
+        add     %g2, 8, %g2
+        subcc   %g3, 8, %g3
+        bg      MoreCopying
+        nop
+
 	call	_main
 	nop
 
@@ -267,3 +300,11 @@ machProtoLevel15Intr:
 
 .align	8
 reserveSpace:	.skip	0x2000
+
+/*
+ * The actual space for the fast restart copy of the kernel's initialized data.
+ */
+.align 8
+.globl  _storedData
+_storedData:    .skip   MACH_RESTART_DATA_SIZE
+reservedSpace2: .skip   MACH_RESTART_TABLE_SIZE + VMMACH_PAGE_SIZE

@@ -442,7 +442,7 @@ Mach_Init()
      * Keep clock rate precision to 1 decimal place.
      */
     machClockRate /= 100000;
-    printf("PROM: Clock rate is %d.%dMHz\n",
+    Mach_MonPrintf("PROM: Clock rate is %d.%dMHz\n",
 	machClockRate / 10, machClockRate % 10);
 
     if (Mach_MonSearchProm("interrupt-enable", "address",
@@ -450,7 +450,7 @@ Mach_Init()
 	    sizeof machInterruptReg) != sizeof machInterruptReg) {
 	panic("Interrupt register not found.\n");
     }
-    printf("PROM: Interrupt register is at %x\n", machInterruptReg);
+    Mach_MonPrintf("PROM: Interrupt register is at %x\n", machInterruptReg);
 
     /*
      * This gets turned on by the profiler init when it is called.
