@@ -218,12 +218,14 @@ Lfs_BlockAllocate(domainPtr, handlePtr, offset, numBytes, flags, blockAddrPtr,
      * cache. We only need worry about files, directory updates get stopped by
      * the dirlog mechanism. In fact, waiting for a checkpoint for a 
      * directory block allocate causes a possible deadlock because the
-     * checkpoint waits for directory operations to finish.
+     * checkpoint waits for directory operations to finish. We also
+     * use this mechanism to keep from filling up the cache with blocks
+     * that we can't write out.
      */
     descPtr = handlePtr->descPtr;
     if (descPtr->fileType != FS_DIRECTORY) {
-	LfsWaitForCheckPoint(lfsPtr);
-    }
+	LfsWaitForCleanSegments(lfsPtr);
+    } 
     /*
      * First check to see if we can just allocate the bytes.
      */
