@@ -175,6 +175,10 @@ Vm_DestroyVA(address, size)
 static int	copySize = 4096;
 static char	buffer[8192];
 
+void	SetVal();
+
+#define SETVAR(var, val) SetVal("var", val, &(var))
+
 
 /*
  *----------------------------------------------------------------------
@@ -243,22 +247,22 @@ Vm_Cmd(command, arg)
 	    break;
 	}
 	case VM_SET_FREE_WHEN_CLEAN:
-	    vmFreeWhenClean = (Boolean)arg;
+	    SETVAR(vmFreeWhenClean, arg);
 	    break;
 	case VM_SET_MAX_DIRTY_PAGES:
-	    vmMaxDirtyPages = arg;
+	    SETVAR(vmMaxDirtyPages, arg);
 	    break;
 	case VM_SET_PAGEOUT_PROCS:
-	    vmMaxPageOutProcs = arg;
+	    SETVAR(vmMaxPageOutProcs, arg);
 	    break;
         case VM_SET_CLOCK_PAGES:
-            vmPagesToCheck = arg;
+            SETVAR(vmPagesToCheck, arg);
             break;
         case VM_SET_CLOCK_INTERVAL:
-	    vmClockSleep = arg * timer_IntOneSecond;
+	    SETVAR(vmClockSleep, arg * timer_IntOneSecond);
             break;
 	case VM_SET_COPY_SIZE:
-	    copySize = arg;
+	    SETVAR(copySize, arg);
 	    break;
 	case VM_DO_COPY_IN:
 	    (void)Vm_CopyIn(copySize, (Address) arg, buffer);
@@ -287,49 +291,49 @@ Vm_Cmd(command, arg)
 	    }
 	    break;
 	case VM_SET_COW:
-	    vm_CanCOW = arg;
+	    SETVAR(vm_CanCOW, arg);
 	    break;
 	case VM_SET_FS_PENALTY:
 	    if (arg < 0) {
 		/*
 		 * Caller is setting an absolute penalty.
 		 */
-		vmCurPenalty = -arg;
+		SETVAR(vmCurPenalty, -arg);
 	    } else {
-		vmFSPenalty = arg;
-		vmCurPenalty = (vmStat.fsMap - vmStat.fsUnmap) / 
-					vmPagesPerGroup * vmFSPenalty;
+		SETVAR(vmFSPenalty, arg);
+		SETVAR(vmCurPenalty, (vmStat.fsMap - vmStat.fsUnmap) / 
+					vmPagesPerGroup * vmFSPenalty);
 	    }
 	    break;
 	case VM_SET_NUM_PAGE_GROUPS: {
 	    int	numPages;
 	    int curGroup;
 	    numPages = vmPagesPerGroup * vmNumPageGroups;
-	    vmNumPageGroups = arg;
-	    vmPagesPerGroup = numPages / vmNumPageGroups;
+	    SETVAR(vmNumPageGroups, arg);
+	    SETVAR(vmPagesPerGroup, numPages / vmNumPageGroups);
 	    curGroup = (vmStat.fsMap - vmStat.fsUnmap) / vmPagesPerGroup;
-	    vmCurPenalty = curGroup * vmFSPenalty;
-	    vmBoundary = (curGroup + 1) * vmPagesPerGroup;
+	    SETVAR(vmCurPenalty, curGroup * vmFSPenalty);
+	    SETVAR(vmBoundary, (curGroup + 1) * vmPagesPerGroup);
 	    break;
 	}
 	case VM_SET_ALWAYS_REFUSE:
-	    vmAlwaysRefuse = arg;
+	    SETVAR(vmAlwaysRefuse, arg);
 	    break;
 	case VM_SET_ALWAYS_SAY_YES:
-	    vmAlwaysSayYes = arg;
+	    SETVAR(vmAlwaysSayYes, arg);
 	    break;
 	case VM_RESET_FS_STATS:
 	    vmStat.maxFSPages = vmStat.fsMap - vmStat.fsUnmap;
 	    vmStat.minFSPages = vmStat.fsMap - vmStat.fsUnmap;
 	    break;
 	case VM_SET_COR_READ_ONLY:
-	    vmCORReadOnly = arg;
+	    SETVAR(vmCORReadOnly, arg);
 	    break;
 	case VM_SET_PREFETCH:
-	    vmPrefetch = arg;
+	    SETVAR(vmPrefetch, arg);
 	    break;
 	case VM_SET_USE_FS_READ_AHEAD:
-	    vmUseFSReadAhead = arg;
+	    SETVAR(vmUseFSReadAhead, arg);
 	    break;
         default:
             Sys_Panic(SYS_WARNING, "Vm_Cmd: Unknown command.\n");
@@ -337,4 +341,30 @@ Vm_Cmd(command, arg)
     }
  
     return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetVal --
+ *
+ *      Set a given VM variable.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      The given variable is set.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+SetVal(descript, newVal, valPtr)
+    char	*descript;
+    int		newVal;
+    int		*valPtr;
+{
+    Sys_Printf("%s val was %d, is %d\n", descript, *valPtr, newVal);
+    *valPtr = newVal;
 }
