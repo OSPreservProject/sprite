@@ -45,10 +45,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 
 void
-Trace_Init(traceHdrPtr, numRecords, size)
+Trace_Init(traceHdrPtr, numRecords, size, flags)
     register Trace_Header *traceHdrPtr;	/* pointer to tracing info */
     int numRecords;			/* number of records to allocate */
     int size;				/* size of each client-specific area */
+    int flags;				/* TRACE_NO_TIMES */
 {
     register Address clientPtr;
     register Trace_Record *recordPtr;
@@ -56,7 +57,7 @@ Trace_Init(traceHdrPtr, numRecords, size)
     
     traceHdrPtr->numRecords = numRecords;
     traceHdrPtr->currentRecord = 0;
-    traceHdrPtr->inhibitTracing = FALSE;
+    traceHdrPtr->flags = flags & ~TRACE_INHIBIT;
     traceHdrPtr->dataSize = size;
 
     recordPtr = (Trace_Record *) Mem_Alloc(numRecords * sizeof(Trace_Record));
@@ -105,13 +106,15 @@ Trace_Insert(traceHdrPtr, event, dataPtr)
     Timer_Ticks ticks;
     
     if (traceHdrPtr == (Trace_Header *)NIL ||
-	traceHdrPtr->inhibitTracing) {
+	(traceHdrPtr->flags & TRACE_INHIBIT)) {
 	return;
     }
 
     recordPtr = &(traceHdrPtr->recordArray[traceHdrPtr->currentRecord]);
-    Timer_GetCurrentTicks(&ticks);
-    Timer_TicksToTime(ticks, &(recordPtr->time));
+    if ( ! (traceHdrPtr->flags & TRACE_NO_TIMES)) {
+	Timer_GetCurrentTicks(&ticks);
+	Timer_TicksToTime(ticks, &(recordPtr->time));
+    }
     size = traceHdrPtr->dataSize;
     if ((size > 0) && (dataPtr != (ClientData *) NIL)) {
 	Byte_Copy(size, (Address) dataPtr, (Address) recordPtr->traceData);
@@ -169,7 +172,7 @@ Trace_Dump(traceHdrPtr, numRecs, addr)
 	return(status);
     }
 
-    traceHdrPtr->inhibitTracing = TRUE;
+    traceHdrPtr->flags |= TRACE_INHIBIT;
 
     if (numRecs > traceHdrPtr->numRecords) {
 	numRecs = traceHdrPtr->numRecords;
@@ -250,7 +253,7 @@ Trace_Dump(traceHdrPtr, numRecs, addr)
     }
 
 done:
-    traceHdrPtr->inhibitTracing = FALSE;
+    traceHdrPtr->flags &= ~TRACE_INHIBIT;
     return(SUCCESS);
     
 }
@@ -293,7 +296,7 @@ Trace_Print(traceHdrPtr, numRecs, printProc)
     Time baseTime;		/* Used to calculate deltaTime */
     Trace_Record *recordPtr;
 
-    traceHdrPtr->inhibitTracing = TRUE;
+    traceHdrPtr->flags |= TRACE_INHIBIT;
 
     baseTime.seconds = 0;
     baseTime.microseconds = 0;
@@ -314,19 +317,22 @@ Trace_Print(traceHdrPtr, numRecs, printProc)
 	if (recordPtr->flags & TRACE_UNUSED) {
 	    continue;
 	}
-	Time_Subtract(recordPtr->time, baseTime, &deltaTime);
-	if (baseTime.seconds + baseTime.microseconds > 0) {
-	    Sys_Printf("%2d.%06d ", deltaTime.seconds, deltaTime.microseconds);
-	} else {
-	    Sys_Printf("           ");
+	if ( ! (traceHdrPtr->flags & TRACE_NO_TIMES)) {
+	    Time_Subtract(recordPtr->time, baseTime, &deltaTime);
+	    if (baseTime.seconds + baseTime.microseconds > 0) {
+		Sys_Printf("%2d.%04d ", deltaTime.seconds,
+				    deltaTime.microseconds / 100);
+	    } else {
+		Sys_Printf("           ");
+	    }
+	    baseTime = recordPtr->time;
 	}
-	baseTime = recordPtr->time;
 	(*printProc)(recordPtr->traceData, recordPtr->event, FALSE);
 	Sys_Printf("\n");
     }
     (*printProc)((ClientData *)NIL, TRUE);
 
-    traceHdrPtr->inhibitTracing = FALSE;
+    traceHdrPtr->flags &= ~TRACE_INHIBIT;
     return(SUCCESS);
 }
 
