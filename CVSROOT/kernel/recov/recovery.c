@@ -98,7 +98,7 @@ typedef struct RecovHostState {
 
 #define RECOV_INIT_HOST(hostPtr, zspriteID, zstate, zbootID) \
     hostPtr = Mem_New(RecovHostState); \
-    (void)Byte_Zero(sizeof(RecovHostState), (Address)hostPtr); \
+    (void)bzero((Address)hostPtr, sizeof(RecovHostState)); \
     List_Init(&(hostPtr)->rebootList); \
     (hostPtr)->spriteID = zspriteID; \
     (hostPtr)->state = zstate; \
@@ -109,42 +109,6 @@ typedef struct RecovHostState {
  */
 static Sync_Lock recovLock = {0, 0};
 #define LOCKPTR (&recovLock)
-
-/*
- * Host state:
- *	RECOV_STATE_UNKNOWN	Initial state.
- *	RECOV_HOST_ALIVE	Set when we receive a message from the host
- *	RECOV_HOST_DYING	Set when an RPC times out.
- *	RECOV_HOST_DEAD		Set when crash callbacks have been started.
- *	RECOV_HOST_BOOTING	Set in the limbo period when a host is booting
- *				and talking to the world, but isn't ready
- *				for full recovery actions yet.
- *
- *	RECOV_CRASH_CALLBACKS	Set during the crash call-backs, this is used
- *				to block RPC server processes until the
- *				crash recovery actions have completed.
- *	RECOV_WANT_RECOVERY	Set if another module wants a callback at reboot
- *	RECOV_PINGING_HOST	Set while we ping a host to see when it reboots
- *	RECOV_REBOOT_CALLBACKS	Set while reboot callbacks are pending.	
- *
- *	RECOV_WAITING		artificial state to trace Rpc_WaitForHost
- *	RECOV_CRASH		artificial state to trace RecovCrashCallBacks
- *	RECOV_REBOOT		artificial state to trace RecovRebootCallBacks
- */
-#define RECOV_STATE_UNKNOWN	0x0
-#define RECOV_HOST_ALIVE	0x1
-#define RECOV_HOST_DYING	0x2
-#define RECOV_HOST_DEAD		0x4
-#define RECOV_HOST_BOOTING	0x10
-
-#define RECOV_CRASH_CALLBACKS	0x0100
-#define RECOV_WANT_RECOVERY	0x0200
-#define RECOV_PINGING_HOST	0x0400
-#define RECOV_REBOOT_CALLBACKS	0x0800
-
-#define RECOV_WAITING		0x10
-#define RECOV_CRASH		0x20
-#define RECOV_REBOOT		0x40
 
 /*
  * A host is "pinged" (to see when it reboots) at an interval determined by
@@ -213,7 +177,6 @@ void RecovDelayedCrashCallBacks();
 void CallBacksDone();
 void MarkRecoveryComplete();
 void MarkHostDead();
-int  GetHostState();
 void GetRebootList();
 void CheckHost();
 char *RecovState();
@@ -362,7 +325,7 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
     state = hostPtr->state;
     /*
      * Have to read the clock in order to suppress repeated pings,
-     * see GetHostState and Recov_IsHostDown.
+     * see Recov_GetHostState and Recov_IsHostDown.
      */
     Timer_GetTimeOfDay(&hostPtr->time, (int *)NIL, (Boolean *)NIL);
     /*
@@ -600,7 +563,7 @@ Recov_IsHostDown(spriteID)
 	Sys_Panic(SYS_WARNING, "Recov_IsHostDown, got broadcast address\n");
 	return(SUCCESS);
     }
-    switch (GetHostState(spriteID)) {
+    switch (Recov_GetHostState(spriteID)) {
 	case RECOV_STATE_UNKNOWN:
 	    RECOV_TRACE(spriteID, RECOV_STATE_UNKNOWN, RECOV_CUZ_PING_ASK);
 	    status = Rpc_Ping(spriteID);
@@ -863,12 +826,13 @@ RecovRebootCallBacks(data, callInfoPtr)
     register NotifyElement *notifyPtr;
     register int spriteID = (int)data;
 
+    /* GetRebootList copies out list under locking, so we're okay here. */
     GetRebootList(&notifyList, spriteID);
     while (!List_IsEmpty(&notifyList)) {
 	notifyPtr = (NotifyElement *)List_First(&notifyList);
 	(*notifyPtr->proc)(spriteID, notifyPtr->data);
 	List_Remove((List_Links *)notifyPtr);
-	Mem_Free((Address)notifyPtr);
+	free((Address)notifyPtr);
     }
     CallBacksDone(spriteID);
 }
@@ -941,7 +905,7 @@ RecovDelayedCrashCallBacks(data, callInfoPtr)
     register int spriteID = (int)data;
     int state;
 
-    state = GetHostState(spriteID);
+    state = Recov_GetHostState(spriteID);
     if (state & RECOV_HOST_DYING) {
 	Sys_HostPrint(spriteID, "considered dead\n");
 	MarkHostDead(spriteID);
@@ -1034,7 +998,7 @@ MarkHostDead(spriteID)
 /*
  *----------------------------------------------------------------------
  *
- * GetHostState --
+ * Recov_GetHostState --
  *
  *	This looks into	the host table to see and provides a guess
  *	as to the host's current state.  It uses a timestamp kept in
@@ -1056,7 +1020,7 @@ MarkHostDead(spriteID)
  */
 
 ENTRY int
-GetHostState(spriteID)
+Recov_GetHostState(spriteID)
     int spriteID;
 {
     register Hash_Entry *hashPtr;
@@ -1117,7 +1081,7 @@ CheckHost(data, callInfoPtr)
     register int spriteID = (int)data;
     register int state;
 
-    state = GetHostState(spriteID);
+    state = Recov_GetHostState(spriteID);
     switch (state) {
 	case RECOV_HOST_DEAD:
 	case RECOV_HOST_BOOTING:
