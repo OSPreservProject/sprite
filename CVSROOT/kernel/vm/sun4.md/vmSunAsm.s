@@ -928,11 +928,11 @@ ClearTags:
 /*
  * ----------------------------------------------------------------------------
  *
- * VmMachFlushCurrentContext --
+ * VmMach_FlushCurrentContext --
  *
  *     	Flush the current context from the cache.
  *
- *	void VmMachFlushCurrentContext()
+ *	void VmMach_FlushCurrentContext()
  *
  * Results:
  *     None.
@@ -942,8 +942,8 @@ ClearTags:
  *
  * ----------------------------------------------------------------------------
  */
-.globl	_VmMachFlushCurrentContext
-_VmMachFlushCurrentContext:
+.globl	_VmMach_FlushCurrentContext
+_VmMach_FlushCurrentContext:
     /* Start prologue */
     set		(-MACH_SAVED_WINDOW_SIZE), %OUT_TEMP1
     save	%sp, %OUT_TEMP1, %sp

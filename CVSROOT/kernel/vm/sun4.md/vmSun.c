@@ -2687,7 +2687,7 @@ VmMach_CopyInProc(numBytes, fromProcPtr, fromAddr, virtAddrPtr,
      * has been flushed to the stack from our windows so that we don't
      * miss stuff on the stack not yet flushed. 
      */
-    MachFlushWindowsToStack();
+    Mach_FlushWindowsToStack();
 #endif
 
     /*
@@ -2815,7 +2815,7 @@ VmMach_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr,
      * get stuff from windows overwriting stuff we copy to the stack later
      * when they're flushed.
      */
-    MachFlushWindowsToStack();
+    Mach_FlushWindowsToStack();
 #endif
 
     /*
