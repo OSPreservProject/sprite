@@ -78,7 +78,6 @@ extern FslclHashTable	fslclNameTable;
 extern FslclHashTable	*fslclNameTablePtr;
 extern Boolean		fslclNameCaching;
 
-extern void 		FslclNameHashInit();
 extern void		FslclNameHashStats();
 extern FslclHashEntry 	*FslclHashLookOnly();
 extern void 		FslclHashDelete();

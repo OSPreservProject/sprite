@@ -52,7 +52,6 @@ extern	void		FsdmFragFind();
 extern	void		FsdmFragFree();
 
 extern  int		FsdmBlockRealloc();
-extern  void	 	FsdmRecordDeletionStats();
 extern  ReturnStatus	FsdmWriteBackSummaryInfo();
 
 
