@@ -394,6 +394,7 @@ extern int			Mach_GetExcStackSize();
 extern Mach_ProcessorStates	Mach_ProcessorState();
 extern ReturnStatus		Mach_SetJump();
 extern void			Mach_UnsetJump();
+extern int			Mach_GetNumProcessors();
 
 /*
  * Machine dependent routines.
