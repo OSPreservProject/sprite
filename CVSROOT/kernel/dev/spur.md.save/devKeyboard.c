@@ -370,7 +370,7 @@ Dev_KbdServiceInterrupt()
 	Dev_UartWriteReg(kbdUartAddr, 0, WRITE0_CLEAR_INTR); 
 	Dev_UartWriteReg(mouseUartAddr, 0, WRITE0_CLEAR_INTR); 
 #endif notdef
-    
+
     Dev_UartWriteReg(ADDR_OFFSET(uartAddr, CHANNEL_A_OFFSET),
 		     COMMAND, RESET_RX|RESET_TX);
     Dev_UartWriteReg(ADDR_OFFSET(uartAddr, CHANNEL_B_OFFSET),
@@ -383,3 +383,31 @@ Dev_KbdServiceInterrupt()
     MASTER_UNLOCK(&devKbdMutex);
 
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_KbdConsole --
+ *
+ *      Read the EEPROM to determine which device is used as
+ *      the system console.
+ *
+ * Results:
+ *      Returns the device number.  A -1 is returned if the
+ *      device can't be determined.
+ * 
+ * Side effects:
+ *      None.
+ *  
+ *----------------------------------------------------------------------
+ */ 
+
+int
+Dev_KbdConsole()
+{
+    /* this is just a dummy routine for the spur */
+
+    return -1;
+}
+
