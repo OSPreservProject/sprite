@@ -181,8 +181,12 @@ DoPrefetch(data, callInfoPtr)
 	goto exit;
     }
     *ptePtr |= virtFrameNum;
-    if (*ptePtr & VM_ON_SWAP_BIT) {
+    if (*ptePtr & VM_ON_SWAP_BIT ||
+	    prefetchInfoPtr->virtAddr.segPtr->type == VM_SHARED) {
 	vmStat.psFilled++;
+	if ( prefetchInfoPtr->virtAddr.segPtr->type == VM_SHARED) {
+	    printf("Prefetching shared page\n");
+        }
 	status = VmPageServerRead(&prefetchInfoPtr->virtAddr, virtFrameNum);
     } else {
 	vmStat.fsFilled++;
