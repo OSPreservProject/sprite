@@ -374,8 +374,16 @@ Sched_ContextSwitchInt(state)
 	if (newProcPtr == curProcPtr) {
 	    curProcPtr->schedQuantumTicks = quantumTicks;
 	    return;
-	}
+	} 
 	curProcPtr->state = PROC_READY;
+	/*
+ 	 * Don't run this process if another processor is already using
+	 * its stack.
+	 */
+	if (newProcPtr->schedFlags & SCHED_STACK_IN_USE) {
+		(void) Sched_InsertInQueue(newProcPtr, FALSE);
+		newProcPtr = IdleLoop();
+	} 
     } else {
 	if (state == PROC_WAITING) {
 	    curProcPtr->numWaitEvents++; 
@@ -551,10 +559,9 @@ IdleLoop()
 		 * being used by another processor in the idle loop.
 		 */
 		procPtr = (Proc_ControlBlock *) List_First(queuePtr);
-		if (~(procPtr->schedFlags & SCHED_STACK_IN_USE) ||
+		if (!(procPtr->schedFlags & SCHED_STACK_IN_USE) ||
 		           (procPtr == lastProcPtr)) {
 		    lastProcPtr->schedFlags &= ~SCHED_STACK_IN_USE;
-
 		    break; 
 		}
 	    }
