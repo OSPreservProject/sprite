@@ -85,7 +85,6 @@ Sched_MoveInQueue(procPtr)
     List_Links			*followingItemPtr;
     Boolean 			insert;
     Boolean 			foundInsertPoint;
-    ReturnStatus 		status;
 
     if (procPtr->schedFlags & SCHED_CLEAR_USAGE) {
 	procPtr->recentUsage = 0;

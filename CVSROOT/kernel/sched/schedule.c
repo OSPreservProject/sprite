@@ -307,7 +307,7 @@ Sched_GatherProcessInfo()
 	 */
 	if ((curProcPtr->genFlags & PROC_USER) && 
 	    (curProcPtr->billingRate != PROC_NO_INTR_PRIORITY)) {
-	    if (curProcPtr->schedQuantumTicks > 0) {
+	    if (curProcPtr->schedQuantumTicks != 0) {
 		curProcPtr->schedQuantumTicks--;
 	    }
 	    if (curProcPtr->schedQuantumTicks == 0) {
@@ -580,7 +580,7 @@ Sched_TimeTicks()
     Time_Multiply(time_OneSecond, 5, &time);
     Sys_Printf("Idling for 5 seconds...");
     lowTicks = sched_Instrument.idleTicksLow;
-    Sync_WaitTime(time);
+    (void) Sync_WaitTime(time);
     lowTicks = sched_Instrument.idleTicksLow - lowTicks;
     Sys_Printf(" %d ticks\n", lowTicks);
     sched_Instrument.idleTicksPerSecond = lowTicks / 5;
