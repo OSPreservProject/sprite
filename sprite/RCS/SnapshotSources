@@ -9,7 +9,7 @@ endif
 set insDir = '/sprite/src/kernel/Snapshots'
 set srcDir = '/sprite/src/kernel'
 set version = $1
-if (-e $insDir/$version/.ssdone) then
+if (-e "$insDir/$version/.ssdone") then
     echo "$insDir/$version already exists. Skipping snapshot of sources."
     exit
 endif
