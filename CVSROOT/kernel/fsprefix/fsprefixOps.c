@@ -228,11 +228,11 @@ FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
 			 * loop again.
 			 */
 			status = FS_LOOKUP_REDIRECT;
-		    } else if ((status == FS_STALE_HANDLE) &&
-				(fileName[0] == '/')) {
+		    } else if (fileName[0] == '/') {
 			/*
 			 * Recovery failed, so we clear handle of the prefix
-			 * used to get to the server and try again.
+			 * used to get to the server and try again in case
+			 * the prefix is served elsewhere.
 			 */
 			PrefixHandleClear(prefixPtr);
 			status = FS_LOOKUP_REDIRECT;
@@ -360,7 +360,7 @@ retry:
 	    status = FsWaitForRecovery(staleHdrPtr, status);
 	    if (status == SUCCESS) {
 		goto retry;
-	    } else if (status == FS_STALE_HANDLE) {
+	    } else {
 		/*
 		 * Recovery failed.  On absolute paths clear handle of the
 		 * prefix used to get to the server and try again.
@@ -474,12 +474,10 @@ getAttr:
 		    status2 = FsWaitForRecovery(dstHdrPtr, status2);
 		    if (status2 == SUCCESS) {
 			goto getAttr;
-		    } else if (status2 == FS_STALE_HANDLE) {
-			if (dstName[0] == '/') {
-			    PrefixHandleClear(dstPrefixPtr);
-			    status = FS_LOOKUP_REDIRECT;
-			    srcNameError = FALSE;
-			}
+		    } else if (dstName[0] == '/') {
+			PrefixHandleClear(dstPrefixPtr);
+			status = FS_LOOKUP_REDIRECT;
+			srcNameError = FALSE;
 		    }
 		    break;
 		}
@@ -1449,9 +1447,11 @@ FsPrefixOpenCheck(prefixHdrPtr)
 		     * Wait was interrupted by a signal.
 		     */
 		    status = FS_DOMAIN_UNAVAILABLE;
+		    Sys_Printf("FsPrefixOpenCheck aborted\n");
 		} else {
 		    prefixPtr->activeOpens++;
 		    status = SUCCESS;
+		    Sys_Printf("FsPrefixOpenCheck ok\n");
 		}
 	    } else {
 		prefixPtr->activeOpens++;
