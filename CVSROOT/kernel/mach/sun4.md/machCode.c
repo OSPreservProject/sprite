@@ -1262,7 +1262,7 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
 #endif
 	/* Kill user process */
 	Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL, procPtr->processID, FALSE,
-	       addrErrReg);
+	       (Address)busErrorReg);
 	return;
     }
     return;
@@ -1563,7 +1563,7 @@ MachHandleWeirdoInstruction(trapType, pcValue, trapPsr)
 	break;
     case MACH_MEM_ADDR_ALIGN:
 	(void) Sig_Send(SIG_ADDR_FAULT, SIG_ADDR_ERROR, procPtr->processID,
-		FALSE, busErrReg);
+		FALSE, (Address)0);
 	break;
     case MACH_FP_EXCEP: {
          unsigned int fsr;
