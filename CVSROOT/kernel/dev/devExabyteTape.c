@@ -63,6 +63,7 @@ typedef struct {
      * Error bits that are command dependent.  0 is ok, 1 means error.
      * These are defined on pages 37-38 of the User Manual, Rev.03
      */
+#if BYTE_ORDER == BIG_ENDIAN
     unsigned char PF		:1;	/* Power failure */
     unsigned char BPE		:1;	/* SCSI Bus Parity Error */
     unsigned char FPE		:1;	/* Formatted buffer parity error */
@@ -84,6 +85,31 @@ typedef struct {
     unsigned char pad21		:6;	/* Reserved */
     unsigned char WSEB		:1;	/* Write Splice Error, hit blank tape */
     unsigned char WSEO		:1;	/* Write Splice Error, overshoot */
+#else /* BYTE_ORDER == LITTLE_ENDIAN */
+
+    unsigned char BOT		:1;	/* Set when tape is at BOT */
+    unsigned char TNP		:1;	/* Tape not present */
+    unsigned char TME		:1;	/* Tape motion error */
+    unsigned char ECO		:1;	/* Error counter overflow */
+    unsigned char ME		:1;	/* Media error */
+    unsigned char FPE		:1;	/* Formatted buffer parity error */
+    unsigned char BPE		:1;	/* SCSI Bus Parity Error */
+    unsigned char PF		:1;	/* Power failure */
+
+    unsigned char FE		:1;	/* Formatter error.  Catastrophic */
+    unsigned char SSE		:1;	/* Servo System error.  Catastrophic */
+    unsigned char WE1		:1;	/* Max write retries attempted */
+    unsigned char URE		:1;	/* Data flow underrun. Media error. */
+    unsigned char FMKE		:1;	/* File Mark Error */
+    unsigned char WP		:1;	/* Write Protect */
+    unsigned char TMD		:1;	/* Tape Mark Detect Error */
+    unsigned char XFR		:1;	/* Transfer Abort Error */
+
+    unsigned char WSEO		:1;	/* Write Splice Error, overshoot */
+    unsigned char WSEB		:1;	/* Write Splice Error, hit blank tape */
+    unsigned char pad21		:6;	/* Reserved */
+
+#endif /* BYTE_ORDER */
 
     unsigned char pad22;		/* Reserved */
     unsigned char highRemainingTape;	/* High byte of remaining tape len */
@@ -116,6 +142,7 @@ typedef struct ExabyteModeSelBlock {
 typedef struct ExabyteModeSelParams {
     ScsiTapeModeSelectHdr	header;
     ExabyteModeSelBlock	block;
+#if BYTE_ORDER == BIG_ENDIAN
     unsigned char cartidgeType	:1;	/* 1 == p5 European.
 					 * 0 == P6 Domestic */
     unsigned char		:3;	/* Reserved */
@@ -125,6 +152,21 @@ typedef struct ExabyteModeSelParams {
 					 * 1 == Even Byte disconnect */
     unsigned char parityEnable	:1;	/* 0 == Parity disabled (default) */
     unsigned char noAutoLoad	:1;	/* 0 == Auto load enabled (default) */
+#else /* BYTE_ORDER == LITTLE_ENDIAN */
+
+    unsigned char noAutoLoad	:1;	/* 0 == Auto load enabled (default) */
+    unsigned char parityEnable	:1;	/* 0 == Parity disabled (default) */
+
+    unsigned char evenByteDscnct :1;	/* 0 == Even or Odd byte disconnect
+					 * 1 == Even Byte disconnect */
+    unsigned char noBusyEnable	:1;	/* 0 == Report Busy Status (default)
+					 * 1 == No Busy Enable, cmd queued */
+
+    unsigned char		:3;	/* Reserved */
+    unsigned char cartidgeType	:1;	/* 1 == p5 European.
+					 * 0 == P6 Domestic */
+
+#endif /* BYTE_ORDER */
     unsigned char pad1;			/* RESERVED */
     /*
      * The Motion threashold must exceed the Reconnect threshold.
@@ -147,7 +189,8 @@ typedef struct ExabyteModeSelParams {
 					 * SCSI bus. */
 } ModeSelParams;
 
-static ReturnStatus ExabyteError();
+static ReturnStatus ExabyteError _ARGS_((ScsiTape *tapePtr, 
+	unsigned int statusByte, int senseLength, char *senseDataPtr));
 
 
 /*
@@ -180,8 +223,7 @@ DevExabyteAttach(devicePtr, devPtr, tapePtr)
      */
     inquiryPtr = (ScsiInquiryData *) (devPtr->inquiryDataPtr);
     if ( (devPtr->inquiryLength < sizeof(ScsiInquiryData)) ||
-	 (inquiryPtr->length != 0x2f ) ||
-	 (strncmp((char *) inquiryPtr->vendorID, "EXABYTE ", 8) != 0) ) {
+	 (strncmp((char *) (inquiryPtr->vendorID), "EXABYTE ",8) != 0) ) {
 	 return DEV_NO_DEVICE;
     }
     /*
@@ -190,7 +232,13 @@ DevExabyteAttach(devicePtr, devPtr, tapePtr)
      */
     tapePtr->blockSize = EXABYTE_BLOCK_SIZE;
     tapePtr->errorProc = ExabyteError;
-    tapePtr->name = "Exabyte 8200";
+    if (!(strncmp(inquiryPtr->productID, "EXB-8200",8))) {
+	tapePtr->name = "Exabyte 8200";
+    } else if (!(strncmp(inquiryPtr->productID, "EXB-8500",8))) {
+	tapePtr->name = "Exabyte 8500";
+    } else {
+	tapePtr->name = "Exabyte UNKNOWN";
+    }
     return SUCCESS;
 }
 
@@ -212,7 +260,7 @@ DevExabyteAttach(devicePtr, devPtr, tapePtr)
 static ReturnStatus
 ExabyteError(tapePtr, statusByte, senseLength, senseDataPtr)
     ScsiTape	 *tapePtr;	/* SCSI Tape that's complaining. */
-    unsigned char statusByte;	/* The status byte of the command. */
+    unsigned int statusByte;	/* The status byte of the command. */
     int		 senseLength;	/* Length of SCSI sense data in bytes. */
     char	 *senseDataPtr;	/* Sense data. */
 {
