@@ -144,6 +144,14 @@ static Sync_Semaphore volatile *vmMachMutexPtr = &vmMachMutex;
 #define SegToPage(seg) ((seg) << (VMMACH_SEG_SHIFT - VMMACH_PAGE_SHIFT))
 
 /*
+ * Convert from page to hardware segment, with correction for
+ * any difference between virtAddrPtr offset and segment offset.
+ * (This difference will only happen for shared segments.)
+*/
+#define PageToOffSeg(page,virtAddrPtr) (PageToSeg((page)- \
+	segOffset(virtAddrPtr)+(virtAddrPtr->segPtr->offset)))
+
+/*
  * Macro to set all page map entries for the given virtual address.
  */
 #define	SET_ALL_PAGE_MAP(virtAddr, pte) { \
@@ -2110,7 +2118,8 @@ VmMach_SetPageProt(virtAddrPtr, softPTE)
     MASTER_LOCK(vmMachMutexPtr);
 
     machPtr = virtAddrPtr->segPtr->machPtr;
-    pmegNum = *GetHardSegPtr(machPtr, PageToSeg(virtAddrPtr->page-segOffset(virtAddrPtr)+virtAddrPtr->segPtr->offset));
+    pmegNum = *GetHardSegPtr(machPtr, PageToOffSeg(virtAddrPtr->page,
+	    virtAddrPtr));
     if (pmegNum != VMMACH_INV_PMEG) {
 	virtAddr = ((virtAddrPtr->page << VMMACH_PAGE_SHIFT) & 
 			VMMACH_PAGE_MASK) + vmMachPTESegAddr;	
@@ -2182,7 +2191,8 @@ VmMach_AllocCheck(virtAddrPtr, virtFrameNum, refPtr, modPtr)
     *modPtr = refModMap[virtFrameNum] & VMMACH_MODIFIED_BIT;
     if (!*refPtr || !*modPtr) {
 	machPtr = virtAddrPtr->segPtr->machPtr;
-	pmegNum = *GetHardSegPtr(machPtr, PageToSeg(virtAddrPtr->page-segOffset(virtAddrPtr)+virtAddrPtr->segPtr->offset));
+	pmegNum = *GetHardSegPtr(machPtr, PageToOffSeg(virtAddrPtr->page,
+		virtAddrPtr));
 	if (pmegNum != VMMACH_INV_PMEG) {
 	    hardPTE = 0;
 	    virtAddr = 
@@ -2255,8 +2265,8 @@ VmMach_GetRefModBits(virtAddrPtr, virtFrameNum, refPtr, modPtr)
     *modPtr = refModMap[virtFrameNum] & VMMACH_MODIFIED_BIT;
     if (!*refPtr || !*modPtr) {
 	machPtr = virtAddrPtr->segPtr->machPtr;
-	pmegNum = *GetHardSegPtr(machPtr, PageToSeg(virtAddrPtr->page-
-		segOffset(virtAddrPtr)+virtAddrPtr->segPtr->offset));
+	pmegNum = *GetHardSegPtr(machPtr, PageToOffSeg(virtAddrPtr->page,
+		virtAddrPtr));
 	if (pmegNum != VMMACH_INV_PMEG) {
 	    hardPTE = 0;
 	    virtAddr = 
@@ -2311,8 +2321,8 @@ VmMach_ClearRefBit(virtAddrPtr, virtFrameNum)
 
     refModMap[virtFrameNum] &= ~VMMACH_REFERENCED_BIT;
     machPtr = virtAddrPtr->segPtr->machPtr;
-    pmegNum = *GetHardSegPtr(machPtr, PageToSeg(virtAddrPtr->page-
-	    segOffset(virtAddrPtr)+virtAddrPtr->segPtr->offset));
+    pmegNum = *GetHardSegPtr(machPtr, PageToOffSeg(virtAddrPtr->page,
+	    virtAddrPtr));
     if (pmegNum != VMMACH_INV_PMEG) {
 	virtAddr = ((virtAddrPtr->page << VMMACH_PAGE_SHIFT) & 
 			VMMACH_PAGE_MASK) + vmMachPTESegAddr;
@@ -2371,8 +2381,8 @@ VmMach_ClearModBit(virtAddrPtr, virtFrameNum)
 
     refModMap[virtFrameNum] &= ~VMMACH_MODIFIED_BIT;
     machPtr = virtAddrPtr->segPtr->machPtr;
-    pmegNum = *GetHardSegPtr(machPtr, PageToSeg(virtAddrPtr->page-
-	    segOffset(virtAddrPtr)+virtAddrPtr->segPtr->offset));
+    pmegNum = *GetHardSegPtr(machPtr, PageToOffSeg(virtAddrPtr->page,
+	    virtAddrPtr));
     if (pmegNum != VMMACH_INV_PMEG) {
 	virtAddr = ((virtAddrPtr->page << VMMACH_PAGE_SHIFT) & 
 			VMMACH_PAGE_MASK) + vmMachPTESegAddr;
@@ -2441,8 +2451,7 @@ VmMach_PageValidate(virtAddrPtr, pte)
     /*
      * Find out the hardware segment that has to be mapped.
      */
-    hardSeg = PageToSeg(virtAddrPtr->page-segOffset(virtAddrPtr)+
-	    segPtr->offset);
+    hardSeg = PageToOffSeg(virtAddrPtr->page,virtAddrPtr);
     segTablePtr = GetHardSegPtr(segPtr->machPtr, hardSeg);
 
     if (*segTablePtr == VMMACH_INV_PMEG) {
@@ -2572,8 +2581,8 @@ PageInvalidate(virtAddrPtr, virtPage, segDeletion)
 	return;
     }
     machPtr = virtAddrPtr->segPtr->machPtr;
-    pmegNum = *GetHardSegPtr(machPtr, PageToSeg(virtAddrPtr->page-
-	    segOffset(virtAddrPtr)+virtAddrPtr->segPtr->offset));
+    pmegNum = *GetHardSegPtr(machPtr, PageToOffSeg(virtAddrPtr->page,
+	    virtAddrPtr));
     if (pmegNum == VMMACH_INV_PMEG) {
 	return;
     }
@@ -2680,10 +2689,8 @@ VmMach_PinUserPages(mapType, virtAddrPtr, lastPage)
 
     machPtr = virtAddrPtr->segPtr->machPtr;
 
-    firstSeg = PageToSeg(virtAddrPtr->page-segOffset(virtAddrPtr)+
-	    virtAddrPtr->segPtr->offset);
-    lastSeg = PageToSeg(lastPage-segOffset(virtAddrPtr)+
-	    virtAddrPtr->segPtr->offset);
+    firstSeg = PageToOffSeg(virtAddrPtr->page,virtAddrPtr);
+    lastSeg = PageToOffSeg(lastPage,virtAddrPtr);
     /*
      * Lock down the PMEG behind the first segment.
      */
@@ -2705,6 +2712,9 @@ VmMach_PinUserPages(mapType, virtAddrPtr, lastPage)
 	    dummy = *intPtr;
 	}
     }
+#ifdef lint
+    dummy = dummy;
+#endif
 }
 
 
@@ -2736,10 +2746,8 @@ VmMach_UnpinUserPages(virtAddrPtr, lastPage)
     MASTER_LOCK(vmMachMutexPtr);
 
     machPtr = virtAddrPtr->segPtr->machPtr;
-    firstSeg = PageToSeg(virtAddrPtr->page -
-	    segOffset(virtAddrPtr)+virtAddrPtr->segPtr->offset);
-    lastSeg = PageToSeg(lastPage -
-	    segOffset(virtAddrPtr)+virtAddrPtr->segPtr->offset);
+    firstSeg = PageToOffSeg(virtAddrPtr->page, virtAddrPtr);
+    lastSeg = PageToOffSeg(lastPage, virtAddrPtr);
     for (; firstSeg <= lastSeg; firstSeg++) {
 	pmegNum = *GetHardSegPtr(machPtr, firstSeg);
 	if (pmegNum == VMMACH_INV_PMEG) {
