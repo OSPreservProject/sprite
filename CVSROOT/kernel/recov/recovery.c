@@ -437,7 +437,6 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
 {
     register Hash_Entry *hashPtr;
     register RecovHostState *hostPtr;
-    register state;
 
     LOCK_MONITOR;
     if (spriteID == NET_BROADCAST_HOSTID || bootID == 0 || sys_ShuttingDown) {
@@ -468,7 +467,6 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
     } else {
 	hostPtr = (RecovHostState *)hashPtr->value;
     }
-    state = hostPtr->state;
     /*
      * Have to read the clock in order to suppress repeated pings,
      * see Recov_GetHostState and Recov_IsHostDown.
@@ -487,23 +485,26 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
 	     */
 	}
 	hostPtr->bootID = bootID;
-	RECOV_TRACE(spriteID, state, RECOV_CUZ_REBOOT);
-	if (state & (RECOV_HOST_ALIVE|RECOV_HOST_DYING|RECOV_HOST_BOOTING)) {
+	RECOV_TRACE(spriteID, hostPtr->state, RECOV_CUZ_REBOOT);
+	if (hostPtr->state &
+		(RECOV_HOST_ALIVE|RECOV_HOST_DYING|RECOV_HOST_BOOTING)) {
 	    /*
 	     * A crash occured un-detected.  We do the crash call-backs
 	     * first, and block server processes in the meantime.
 	     * RECOV_CRASH_CALLBACKS flag is cleared by RecovCrashCallBacks.
 	     */
 	    RECOV_TRACE(spriteID, RECOV_CRASH, RECOV_CUZ_REBOOT);
-	    state &= ~(RECOV_HOST_ALIVE|RECOV_HOST_DYING|RECOV_HOST_DEAD);
-	    state |= RECOV_HOST_BOOTING;
-	    if ((state & RECOV_CRASH_CALLBACKS) == 0) {
-		state |= RECOV_CRASH_CALLBACKS;
+	    hostPtr->state &=
+		    ~(RECOV_HOST_ALIVE|RECOV_HOST_DYING|RECOV_HOST_DEAD);
+	    hostPtr->state |= RECOV_HOST_BOOTING;
+	    if ((hostPtr->state & RECOV_CRASH_CALLBACKS) == 0) {
+		hostPtr->state |= RECOV_CRASH_CALLBACKS;
 		Proc_CallFunc(RecovCrashCallBacks, (ClientData)spriteID, 0);
 	    }
 	}
-    } else  if ( ! (state & (RECOV_CRASH_CALLBACKS|RECOV_WANT_RECOVERY)) &&
-		(state & RECOV_HOST_ALIVE)) {
+    } else  if ( ! (hostPtr->state &
+	    (RECOV_CRASH_CALLBACKS|RECOV_WANT_RECOVERY)) &&
+	    (hostPtr->state & RECOV_HOST_ALIVE)) {
 	/*
 	 * Fast path.  We already think the other host is up, it didn't
 	 * reboot, we don't want recovery, and there are no pending
@@ -517,7 +518,6 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
      * recovery actions complete.
      */
     if (! asyncRecovery) {
-	hostPtr->state = state;
 	while (hostPtr->state & RECOV_CRASH_CALLBACKS) {
 	    (void)Sync_Wait(&hostPtr->recovery, FALSE);
 	    if (sys_ShuttingDown) {
@@ -526,7 +526,6 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
 	    }
 	}
     }
-    state = hostPtr->state;
     /*
      * Now that we've taken care of crash recovery, we see if the host
      * is newly up.  If so, invoke any reboot call-backs and notify
@@ -535,7 +534,7 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
      * as clientA (us) is closing files that serverB had had open.
      * ie. both the crash and reboot call backs may proceed in parallel.
      */
-    switch(state &
+    switch(hostPtr->state &
        (RECOV_HOST_ALIVE|RECOV_HOST_BOOTING|RECOV_HOST_DEAD|RECOV_HOST_DYING)) {
         case RECOV_STATE_UNKNOWN:	/* This is zero, no bits set */
 	    /*
@@ -543,9 +542,9 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
 	     */
 	    RecovHostPrint(RECOV_PRINT_IF_UP, spriteID, "is up\n");
 	    if (rpcNotActive) {
-		state |= RECOV_HOST_BOOTING;
+		hostPtr->state |= RECOV_HOST_BOOTING;
 	    } else {
-		state |= RECOV_HOST_ALIVE;
+		hostPtr->state |= RECOV_HOST_ALIVE;
 	    }
 	    break;
 	case RECOV_HOST_ALIVE:
@@ -559,8 +558,8 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
 	     * See if a booting host is ready yet.
 	     */
 	    if (! rpcNotActive) {
-		state &= ~RECOV_HOST_BOOTING;
-		state |= RECOV_HOST_ALIVE|RECOV_WANT_RECOVERY;
+		hostPtr->state &= ~RECOV_HOST_BOOTING;
+		hostPtr->state |= RECOV_HOST_ALIVE|RECOV_WANT_RECOVERY;
 	    }
 	    break;
 	case RECOV_HOST_DYING:
@@ -569,14 +568,14 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
 	     * See if the host is newly booting or back from a net partition.
 	     */
 	    if (rpcNotActive) {
-		state |= RECOV_HOST_BOOTING;
+		hostPtr->state |= RECOV_HOST_BOOTING;
 	    } else {
-		state |= (RECOV_HOST_ALIVE|RECOV_WANT_RECOVERY);
+		hostPtr->state |= (RECOV_HOST_ALIVE|RECOV_WANT_RECOVERY);
 	    }
-	    state &= ~(RECOV_HOST_DEAD|RECOV_HOST_DYING);
+	    hostPtr->state &= ~(RECOV_HOST_DEAD|RECOV_HOST_DYING);
 	    break;
 	default:
-	    printf("Unexpected recovery state <%x> for ", state);
+	    printf("Unexpected recovery state <%x> for ", hostPtr->state);
 	    Sys_HostPrint(spriteID, "\n");
 	    break;
     }
@@ -584,14 +583,13 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
      * After a host comes up enough to support RPC service, we
      * initiate reboot recovery if needed.
      */
-    if ((state & RECOV_WANT_RECOVERY) &&
-	(state & RECOV_HOST_ALIVE) &&
-	(state & RECOV_REBOOT_CALLBACKS) == 0) {
-	state &= ~RECOV_WANT_RECOVERY;
-	state |= RECOV_REBOOT_CALLBACKS;
+    if ((hostPtr->state & RECOV_WANT_RECOVERY) &&
+	(hostPtr->state & RECOV_HOST_ALIVE) &&
+	(hostPtr->state & RECOV_REBOOT_CALLBACKS) == 0) {
+	hostPtr->state &= ~RECOV_WANT_RECOVERY;
+	hostPtr->state |= RECOV_REBOOT_CALLBACKS;
 	Proc_CallFunc(RecovRebootCallBacks, (ClientData)spriteID, 0);
     }
-    hostPtr->state = state;
 exit:
     UNLOCK_MONITOR;
     return;
