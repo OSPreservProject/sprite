@@ -202,7 +202,7 @@ static SysCallEntry sysCalls[] = {
     Sys_SetTimeOfDay,	       Proc_DoRemoteCall,  FALSE,	3,   NILPARM,
     Sys_DoNothing,	       Sys_DoNothing,      TRUE,	0,   NILPARM,
     Proc_GetPCBInfo,	       Proc_DoRemoteCall,  FALSE,	4,   NILPARM,
-    Vm_GetSegInfo,	       Proc_RemoteDummy,   TRUE,	2,   NILPARM,
+    Vm_GetSegInfo,	       Proc_RemoteDummy,   TRUE,	3,   NILPARM,
     Proc_GetResUsage,	       Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
     Proc_GetPriority,	       Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
     Proc_SetPriority,	       Proc_DoRemoteCall,  FALSE,	3,   NILPARM,
