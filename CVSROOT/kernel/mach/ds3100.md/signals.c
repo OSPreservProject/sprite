@@ -273,6 +273,7 @@ MachUNIXSigPause(mask)
  *
  *----------------------------------------------------------------------
  */
+/*ARGSUSED*/
 ReturnStatus
 MachUNIXSigStack(ss, oss)
     struct sigstack *ss, *oss;

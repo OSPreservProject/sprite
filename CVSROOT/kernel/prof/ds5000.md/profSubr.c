@@ -281,9 +281,11 @@ Prof_Dump(dumpName)
     Fs_Stream		*streamPtr;
     int			fileOffset;
     int			writeLen;
+#ifdef MCOUNT
     int			index;
     ProfArc		arc;
     ProfRawArc		*rawArcPtr;
+#endif
     SampleHdr		sampleHdr;
 
     status = Fs_Open(dumpName, FS_WRITE|FS_CREATE, FS_FILE, 0666, &streamPtr);

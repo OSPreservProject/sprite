@@ -217,11 +217,11 @@ Compat_GetSigHoldMask(maskPtr)
 
     usp = (Address) (machCurStatePtr->userState.regState.regs[SP] - 4);
 
-    status = Sig_SetHoldMask((int) MASK_ALL_SIGNALS, usp);
+    status = Sig_SetHoldMask((int) MASK_ALL_SIGNALS, (int *) usp);
     if (status != SUCCESS) {
 	return(status);
     }
-    (void)Vm_CopyIn(sizeof(int), usp, (Address)maskPtr);
+    (void)Vm_CopyIn(sizeof(int), usp, (Address) maskPtr);
     status = Sig_SetHoldMask(*maskPtr, (int *) NULL);
     return(status);
 }

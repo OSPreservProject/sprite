@@ -20,7 +20,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (DECWRL)";
-#endif not lint
+#endif
 
 
 #include "sprite.h"
@@ -44,7 +44,9 @@ static Boolean inMcount = FALSE;
  * of the storage for its arcs.
  */
 
+#ifndef lint
 static int	mcountMutex;
+#endif
 
 
 /*
@@ -70,8 +72,10 @@ static int	mcountMutex;
  *----------------------------------------------------------------------
  */
 
+void
 mcount()
 {
+#ifdef notdef
     register unsigned int calleePC;	/* PC of instr. that called mcount */
     register unsigned int callerPC;	/* PC of instr. that called mcount's 
 					 * caller */
@@ -82,7 +86,6 @@ mcount()
 	return;
     }
 
-#ifdef notdef
 /*
     if (inMcount) {
 	return;

@@ -222,21 +222,9 @@ Boolean
 Mach_CanMigrate(procPtr)
     Proc_ControlBlock *procPtr;		/* pointer to process to check */
 {
-    int stackFormat;
     Boolean okay;
 
     okay = TRUE;
-
-#ifdef sun2
-    /*
-     * We have trouble getting the pc from the 68010 bus fault stack,
-     * but it seems okay for others.
-     */
-    stackFormat = procPtr->machStatePtr->userState.excStackPtr->vor.stackFormat;
-    if (stackFormat == MACH_MC68010_BUS_FAULT) {
-	okay = FALSE;
-    }
-#endif
 
 #ifdef sun3
     /*
@@ -255,8 +243,7 @@ Mach_CanMigrate(procPtr)
 
     if (proc_MigDebugLevel > 4) {
 	printf("Mach_CanMigrate called. PC %x, stackFormat %x, returning %d.\n",
-		   procPtr->machStatePtr->userState.excStackPtr->pc,
-		   stackFormat, okay);
+		   procPtr->machStatePtr->userState.excStackPtr->pc, okay);
     }
     return(okay);
 }    

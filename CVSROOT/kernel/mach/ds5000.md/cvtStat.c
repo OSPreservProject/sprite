@@ -61,7 +61,8 @@ CvtSpriteToUnixAtts(spriteAttsPtr, unixAttsPtr)
     unixAtts.st_serverID = spriteAttsPtr->serverID;
     unixAtts.st_version	= spriteAttsPtr->version;
 
-    return(Vm_CopyOut(sizeof(unixAtts), &unixAtts, unixAttsPtr));
+    return(Vm_CopyOut(sizeof(unixAtts), (Address) &unixAtts,
+        (Address) unixAttsPtr));
 }
 
 /*

@@ -28,21 +28,6 @@ static char rcsid[] = "$Header$";
  */
 int Prof_InterruptPC;
 
-#ifdef __STDC__
-extern ReturnStatus Prof_Profil(short *buffer,
-    int bufSize, int offset, int scale);
-extern void Prof_Tick(Timer_Ticks time, 
-    ClientData clientData);
-extern void Prof_Disable(Proc_ControlBlock *procPtr);
-extern void Prof_Enable(Proc_ControlBlock *procPtr, short *buffer, int bufSize,
-    int offset, int scale);
-#else
-extern ReturnStatus Prof_Profil();
-extern void Prof_Tick();
-extern void Prof_Disable();
-extern void Prof_Enable();
-#endif
-
 /*
  * Monitor lock for this module.
  */
@@ -240,12 +225,14 @@ Prof_RecordPC(procPtr)
     /*
      * Copy the counter in, increment it, and copy it back out.
      */
-    if (Vm_CopyInProc(sizeof(short), procPtr, ptr, u.c, 1) != SUCCESS) {
+    if (Vm_CopyInProc(sizeof(short), procPtr, (Address) ptr, u.c, 1)
+      != SUCCESS) {
 	Prof_Disable(procPtr);
 	return;
     }
     ++u.shrt;
-    if (Vm_CopyOutProc(sizeof(short), u.c, 1, procPtr, ptr) != SUCCESS){
+    if (Vm_CopyOutProc(sizeof(short), u.c, 1, procPtr, (Address) ptr)
+      != SUCCESS) {
 	Prof_Disable(procPtr);
 	return;
     }

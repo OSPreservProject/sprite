@@ -29,6 +29,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "dbg.h"
 #include "proc.h"
 #include "procMigrate.h"
+#include "prof.h"
 #include "sched.h"
 #include "vm.h"
 #include "vmMachInt.h"
@@ -232,7 +233,7 @@ Mach_Init()
      * Clear out the line input buffer to the prom so we don't get extra
      * characters at the end of shorter reboot strings.
      */
-    bzero(romVectorPtr->lineBuf, *romVectorPtr->lineSize);
+    bzero((Address) romVectorPtr->lineBuf, *romVectorPtr->lineSize);
     /*
      * Initialize the vector table.
      */
@@ -309,7 +310,7 @@ Mach_InitFirstProc(procPtr)
     Proc_ControlBlock	*procPtr;
 {
     procPtr->machStatePtr = (Mach_State *)Vm_RawAlloc(sizeof(Mach_State));
-    bzero(procPtr->machStatePtr, sizeof(*procPtr->machStatePtr));
+    bzero((Address) procPtr->machStatePtr, sizeof(*procPtr->machStatePtr));
     procPtr->machStatePtr->kernStackStart = mach_StackBottom;
     machCurStatePtr = procPtr->machStatePtr;
 }
@@ -353,7 +354,7 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
     if (procPtr->machStatePtr == (Mach_State *)NIL) {
 	procPtr->machStatePtr = (Mach_State *)Vm_RawAlloc(sizeof(Mach_State));
     }
-    bzero(procPtr->machStatePtr, sizeof(*procPtr->machStatePtr));
+    bzero((Address) procPtr->machStatePtr, sizeof(*procPtr->machStatePtr));
     statePtr = procPtr->machStatePtr;
     /* 
      * Allocate a kernel stack for this process.
@@ -890,19 +891,20 @@ MachTrap(trapStack)
 		     * to access a user process.
 		     */
 
-		    if ((((unsigned) trapStack.excStack.pc) >= (unsigned) Vm_CopyIn)
-			    && (((unsigned) trapStack.excStack.pc)
-				< (unsigned) VmMachCopyEnd)) {
+		    if ((((Address) trapStack.excStack.pc) >=
+		        (Address) Vm_CopyIn)
+			    && (((Address) trapStack.excStack.pc)
+				< (Address) VmMachCopyEnd)) {
 			copyInProgress = TRUE;
-		    } else if ((((unsigned) trapStack.excStack.pc)
-				>= (unsigned) MachFetchArgs)
-			    && (((unsigned) trapStack.excStack.pc)
-				<= (unsigned) MachFetchArgsEnd)) {
+		    } else if ((((Address) trapStack.excStack.pc)
+				>= (Address) MachFetchArgs)
+			    && (((Address) trapStack.excStack.pc)
+				<= (Address) MachFetchArgsEnd)) {
 			copyInProgress = TRUE;
-		    } else if ((((unsigned) trapStack.excStack.pc)
-				>= (unsigned) MachProbeStart)
-			    && (((unsigned) trapStack.excStack.pc)
-				<= (unsigned) MachProbeEnd)) {
+		    } else if ((((Address) trapStack.excStack.pc)
+				>= (Address) MachProbeStart)
+			    && (((Address) trapStack.excStack.pc)
+				<= (Address) MachProbeEnd)) {
 			return(MACH_USER_ERROR);
 		    } else if (procPtr->vmPtr->numMakeAcc == 0) {
 			return(MACH_KERN_ERROR);
@@ -938,10 +940,10 @@ MachTrap(trapStack)
 		     * in Mach_Probe() return MACH_USER_ERROR to force 
 		     * Mach_Probe() to return FAILURE.
 		     */
-		    if ((((unsigned) trapStack.excStack.pc)
-				>= (unsigned) MachProbeStart)
-			  && (((unsigned) trapStack.excStack.pc)
-				<= (unsigned) MachProbeEnd)) {
+		    if ((((Address) trapStack.excStack.pc)
+				>= (Address) MachProbeStart)
+			  && (((Address) trapStack.excStack.pc)
+				<= (Address) MachProbeEnd)) {
 			return(MACH_USER_ERROR);
 		    } else { 
 			return(MACH_KERN_ERROR);
