@@ -70,6 +70,8 @@ extern	Address	vmMemEnd;	/* The end of allocated kernel memory. */
 
 extern Mach_DebugState	mach_DebugState;
 
+extern int	sysPanicOK;	/* 1 if ok to panic. */
+
 
 /*
  *----------------------------------------------------------------------
@@ -208,6 +210,7 @@ MachStringTable *argv;
     /*
      * Sys_Printfs are not allowed before this point.
      */  
+    sysPanicOK++;
     printf("Sprite kernel: %s\n", SpriteVersion());
 
     /*

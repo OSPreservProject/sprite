@@ -62,6 +62,8 @@ int main_PrintInitRoutines = FALSE;/* print out each routine as it's called? */
 
 extern	Address	vmMemEnd;	/* The end of allocated kernel memory. */
 
+extern int	sysPanicOK;	/* 1 if ok to panic. */
+
 
 /*
  *----------------------------------------------------------------------
@@ -172,6 +174,7 @@ main()
     /*
      * Sys_Printfs are not allowed before this point.
      */  
+    sysPanicOK++;
     printf("Sprite kernel: %s\n", SpriteVersion());
 
     /*
