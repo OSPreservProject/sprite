@@ -56,15 +56,11 @@
 #define	DEV_SCSI_HBA		9
 #define	DEV_RAID		10
 #define	DEV_DEBUG		11
-#ifndef ds3100
-#define DEV_MOUSE		12
-#endif /* not ds3100 */
-#define DEV_GRAPHICS		13
-#define DEV_PLACEHOLDER_3	13	/* for ds3100 unused graphics device */
-#define DEV_AUDIO		15
-#define DEV_VMELINK		16
 
-#ifdef ds3100
+#if (!defined(ds3100)) && (!defined(ds5000))
+#define DEV_MOUSE		12
+#define DEV_GRAPHICS		13
+#else
 #define	DEV_CONSOLE		0
 #define DEV_GRAPHICS		9
 /*
@@ -77,7 +73,17 @@
  * SCSI HBA's attached to the system.
  */
 #define DEV_SII_HBA	0
-#endif /* ds3100 */
+#endif 
+
+#define DEV_AUDIO		15
+#define DEV_VMELINK		16
+
+/*
+ * "Standard" frame buffer. The idea is that this device behave the same on
+ * machine types, unlike the mouse or graphics device.
+ */
+
+#define DEV_STDFB 17
 
 /*
  * Following device(s) exist only on Sequent Symmetry
