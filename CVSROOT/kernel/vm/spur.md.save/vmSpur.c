@@ -38,6 +38,8 @@ static int	NumPageFrames;
 typedef struct {
     unsigned int	endVirPfNum;	/* Ending virtual page frame number
 					 * on board. */
+    unsigned int	startVirPfNum;  /* Starting virtual page frame number
+					 * on board. */
     unsigned int	physStartAddr;	/* Physical address of page frame. */
     unsigned int	physEndAddr;	/* End Physical address of page frame.*/
 } Memory_Board;
@@ -62,7 +64,7 @@ static Memory_Board Mboards[16];
 		break; \
 	    } \
 	} \
-	(mb->physStartAddr + pfNum); })
+	(mb->physStartAddr + pfNum - mb->startVirPfNum); })
 
 #define	PhysToVirtPage(pfNum) ({\
 	register Memory_Board 	*mb; \
@@ -72,7 +74,7 @@ static Memory_Board Mboards[16];
 		break; \
 	    } \
 	} \
-	(pfNum - mb->physStartAddr); })
+	(pfNum - mb->physStartAddr + mb->startVirPfNum); })
 
 /*
  * Macro to go from a virtual page number within a segment to the page
@@ -113,16 +115,6 @@ VmMach_SegData	kernSegData;
  *					the mapping segment.
  */
 #define	USING_MAPPED_SEG	0x100
-
-static void FlushSegment();
-static void SetCreateTime();
-static void FlushAllCaches();
-
-/*
- * Variable to control cache flushing on segment creation.
- */
-static unsigned createTime = 0;
-static unsigned flushTime = 0;
 
 /*
  * Variable to tell whether have initialized VM or not.
@@ -199,6 +191,7 @@ VmMach_BootInit(pageSizePtr, pageShiftPtr, pageTableIncPtr, kernMemSizePtr,
 		break;
 	} 
 	numFrames = Mach_ConfigMemSize(board) / VMMACH_PAGE_SIZE;
+	LastMboard->startVirPfNum = nextVframeNum;
 	LastMboard->endVirPfNum = nextVframeNum + numFrames;
 	nextVframeNum += numFrames;
 	LastMboard->physStartAddr = (Mach_ConfigInitMem(board) >> 
@@ -511,12 +504,9 @@ VmMach_SegInit(segPtr)
 	segDataPtr->pt2BasePtr =
 		    kernPT2Ptr + segPtr->segNum * (VMMACH_SEG_PT2_SIZE / 4); 
 	segDataPtr->RPTPM = rootPTPageNum + segPtr->segNum / 4;
-	segDataPtr->createTime = 0;
     } else {
 	segDataPtr = segPtr->machPtr;
     }
-
-    SetCreateTime(segDataPtr);
 
     segDataPtr->firstPTPage = 0x7fffffff;
     segDataPtr->lastPTPage = -1;
@@ -603,11 +593,10 @@ VmMach_SegDelete(segPtr)
 	 firstPage++, ptePtr++, virtAddr.page++) {
 	if (*ptePtr & VMMACH_RESIDENT_BIT) {
 	    /*
-	     * The page table page was resident so free it.  No need to
-	     * flush the page here because we will zero it out before we
-	     * use it next time anyway.
+	     * The page table page was resident so free it and flush it out
+	     * of the cache.
 	     */
-	    VmMach_FlushPage(&virtAddr);
+	    VmMach_FlushPage(&virtAddr, TRUE);
 	    Vm_KernPageFree((unsigned)PhysToVirtPage(GetPageFrame(*ptePtr)));
 	    *ptePtr = 0;
 	}
@@ -1018,7 +1007,7 @@ VmMach_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr,
  *----------------------------------------------------------------------
  */
 
-Sync_Lock		ptLock;
+Sync_Lock		ptLock = SYNC_LOCK_INIT_STATIC();
 #define	LOCKPTR		&ptLock
 
 
@@ -1052,6 +1041,7 @@ VmMach_SetSegProt(segPtr, firstPage, lastPage, makeWriteable)
 {
     register	VmMachPTE	*ptePtr;
     register	VmMach_SegData	*segDataPtr;
+    VmMachPTE			machPTE;
 
     LOCK_MONITOR;
 
@@ -1061,12 +1051,14 @@ VmMach_SetSegProt(segPtr, firstPage, lastPage, makeWriteable)
     ptePtr = GetPageTablePtr(segDataPtr, firstPage);
     for (; firstPage <= lastPage; firstPage++, ptePtr++) {
 	if (*ptePtr & VMMACH_RESIDENT_BIT) {
-	    *ptePtr &= ~VMMACH_PROTECTION_FIELD;
-	    *ptePtr |= 
+	    machPTE = *ptePtr;
+	    machPTE &= ~VMMACH_PROTECTION_FIELD;
+	    machPTE |= 
 		makeWriteable ? VMMACH_KRW_URW_PROT : VMMACH_KRW_URO_PROT;
+	    *ptePtr = machPTE;
+	    VmMachFlushPage(segPtr, firstPage, FALSE);
 	}
     }
-    FlushSegment(segPtr);
 
     UNLOCK_MONITOR;
 }
@@ -1098,6 +1090,7 @@ VmMach_SetPageProt(virtAddrPtr, softPTE)
     register	VmMachPTE	*ptePtr;
     register	Vm_Segment	*segPtr;
     unsigned int		page;
+    VmMachPTE			machPTE;
 
     LOCK_MONITOR;
 
@@ -1105,10 +1098,12 @@ VmMach_SetPageProt(virtAddrPtr, softPTE)
     segDataPtr = segPtr->machPtr;
     page = virtAddrPtr->page & ~(VMMACH_SEG_REG_MASK >> VMMACH_PAGE_SHIFT);
     ptePtr = GetPageTablePtr(segDataPtr, page);
-    *ptePtr &= ~VMMACH_PROTECTION_FIELD;
-    *ptePtr |= (softPTE & (VM_COW_BIT | VM_READ_ONLY_PROT)) ? 
+    machPTE = *ptePtr;
+    machPTE &= ~VMMACH_PROTECTION_FIELD;
+    machPTE |= (softPTE & (VM_COW_BIT | VM_READ_ONLY_PROT)) ? 
 				VMMACH_KRW_URO_PROT : VMMACH_KRW_URW_PROT;
-    VmMachFlushPage(segPtr, page);
+    *ptePtr = machPTE;
+    VmMachFlushPage(segPtr, page, FALSE);
 
     UNLOCK_MONITOR;
 }
@@ -1167,6 +1162,68 @@ VmMach_SetProtForDbg(readWrite, numBytes, addr)
     VmMachFlushBlock(
 		(Address)((unsigned)addr & ~(VMMACH_CACHE_BLOCK_SIZE-1)));
    
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmMach_AllocCheck --
+ *
+ *      Determine if this page can be reallocated.  A page can be reallocated
+ *	if it has not been referenced or modified.
+ *  
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      The given page will be invalidated in the hardware if it has not
+ *	been referenced and *refPtr and *modPtr will have the hardware 
+ *	reference and modify bits or'd in.
+ *
+ * ----------------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ENTRY void
+VmMach_AllocCheck(virtAddrPtr, virtFrameNum, refPtr, modPtr)
+    register	Vm_VirtAddr	*virtAddrPtr;
+    unsigned	int		virtFrameNum;
+    register	Boolean		*refPtr;
+    register	Boolean		*modPtr;
+{
+    register VmMach_SegData	*segDataPtr;
+    int				page;
+    VmMachPTE			*ptePtr;
+
+    LOCK_MONITOR;
+
+    segDataPtr = virtAddrPtr->segPtr->machPtr;
+    page = virtAddrPtr->page & ~(VMMACH_SEG_REG_MASK >> VMMACH_PAGE_SHIFT);
+    ptePtr = GetPageTablePtr(segDataPtr, page);
+    if (useHardRefBit) {
+	*refPtr |= *ptePtr & VMMACH_REFERENCED_BIT;
+    }
+    *modPtr |= *ptePtr & VMMACH_MODIFIED_BIT;
+    if (!*refPtr) {
+	/*
+	 * Invalidate the page so that it will force a fault if it is
+	 * referenced.  Since our caller has blocked all faults on this
+	 * page, by invalidating it we can guarantee that the reference and
+	 * modify information that we are returning will be valid until
+	 * our caller reenables faults on this page.
+	 */
+	VmMachFlushPage(virtAddrPtr->segPtr, page, TRUE);
+	*ptePtr = 0;
+	if (*modPtr && !(*ptePtr & VMMACH_MODIFIED_BIT)) {
+	    /*
+	     * This page had the modify bit set in software but not in
+	     * hardware.
+	     */
+	    vmStat.notHardModPages++;
+	}
+    }
+
+    UNLOCK_MONITOR;
 }
 
 
@@ -1246,7 +1303,7 @@ VmMach_ClearRefBit(virtAddrPtr, virtFrameNum)
 	ptePtr = GetPageTablePtr(segDataPtr, page);
 	*ptePtr &= ~VMMACH_REFERENCED_BIT;
 	if (flushOnRefBitClear) {
-	    VmMachFlushPage(virtAddrPtr->segPtr, page);
+	    VmMachFlushPage(virtAddrPtr->segPtr, page, FALSE);
 	}	
     }
 
@@ -1298,10 +1355,12 @@ VmMach_SetRefBit(addr)
         page = ((unsigned int)(addr) & ~VMMACH_SEG_REG_MASK) >> 
 							VMMACH_PAGE_SHIFT;
         ptePtr = GetPageTablePtr(segDataPtr, page);
-        *ptePtr |= VMMACH_REFERENCED_BIT;
-	if ((vmWriteableRefPageout || vmWriteablePageout) && 
-	    segPtr->type != VM_CODE) {
-	    *ptePtr |= VMMACH_MODIFIED_BIT;
+	if (*ptePtr & VMMACH_RESIDENT_BIT) {
+	    *ptePtr |= VMMACH_REFERENCED_BIT;
+	    if ((vmWriteableRefPageout || vmWriteablePageout) && 
+		segPtr->type != VM_CODE) {
+		*ptePtr |= VMMACH_MODIFIED_BIT;
+	    }
 	}
     }
 
@@ -1341,7 +1400,7 @@ VmMach_ClearModBit(virtAddrPtr, virtFrameNum)
     if ((!vmWriteableRefPageout && !vmWriteablePageout) || 
 	!(*ptePtr & VMMACH_REFERENCED_BIT)) {
 	*ptePtr &= ~VMMACH_MODIFIED_BIT;
-	VmMachFlushPage(virtAddrPtr->segPtr, page);
+	VmMachFlushPage(virtAddrPtr->segPtr, page, FALSE);
     }
 
     UNLOCK_MONITOR;
@@ -1389,13 +1448,15 @@ VmMach_SetModBit(addr)
     segDataPtr = segPtr->machPtr;
     page = ((unsigned int)(addr) & ~VMMACH_SEG_REG_MASK) >> VMMACH_PAGE_SHIFT;
     ptePtr = GetPageTablePtr(segDataPtr, page);
-    *ptePtr |= VMMACH_MODIFIED_BIT;
-    /*
-     * Flush the block from the cache so that David Wood can get better
-     * cache stats.
-     */
-    VmMachFlushBlock(
-		(Address)((unsigned)addr & ~(VMMACH_CACHE_BLOCK_SIZE-1)));
+    if (*ptePtr & VMMACH_RESIDENT_BIT) {
+	*ptePtr |= VMMACH_MODIFIED_BIT;
+	/*
+	 * Flush the block from the cache so that David Wood can get better
+	 * cache stats.
+	 */
+	VmMachFlushBlock(
+		    (Address)((unsigned)addr & ~(VMMACH_CACHE_BLOCK_SIZE-1)));
+    }
 
     UNLOCK_MONITOR;
 }
@@ -1424,32 +1485,34 @@ VmMach_PageValidate(virtAddrPtr, pte)
     register  VmMach_SegData	*segDataPtr;
     int				page;
     VmMachPTE			*ptePtr;
+    VmMachPTE			machPTE;
 
     LOCK_MONITOR;
 
     segDataPtr = virtAddrPtr->segPtr->machPtr;
     page = virtAddrPtr->page & ~(VMMACH_SEG_REG_MASK >> VMMACH_PAGE_SHIFT);
     ptePtr = GetPageTablePtr(segDataPtr, page);
-    *ptePtr = VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | 
-	     VMMACH_REFERENCED_BIT |
+    machPTE = VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | 
+	      VMMACH_REFERENCED_BIT |
               SetPageFrame(VirtToPhysPage(Vm_GetPageFrame(pte)));
     if (virtAddrPtr->segPtr == vm_SysSegPtr) {
-	*ptePtr |= VMMACH_KRW_URO_PROT | VMMACH_MODIFIED_BIT;
+	machPTE |= VMMACH_KRW_URO_PROT | VMMACH_MODIFIED_BIT;
     } else {
 	if (pte & (VM_COW_BIT | VM_READ_ONLY_PROT)) {
-	    *ptePtr |= VMMACH_KRW_URO_PROT;
+	    machPTE |= VMMACH_KRW_URO_PROT;
 	} else {
-	    *ptePtr |= VMMACH_KRW_URW_PROT;
+	    machPTE |= VMMACH_KRW_URW_PROT;
 	}
 	if (virtAddrPtr->segPtr->type != VM_CODE) {
 	    if (ownStackAndHeap) {
-		*ptePtr |= VMMACH_COHERENCY_BIT;
+		machPTE |= VMMACH_COHERENCY_BIT;
 	    }
 	    if (vmWriteablePageout || vmWriteableRefPageout) {
-		*ptePtr |= VMMACH_MODIFIED_BIT;
+		machPTE |= VMMACH_MODIFIED_BIT;
 	    }
 	}
     }
+    *ptePtr = machPTE;
 
     UNLOCK_MONITOR;
 }
@@ -1486,7 +1549,7 @@ VmMach_PageInvalidate(virtAddrPtr, virtPage, segDeletion)
     segDataPtr = virtAddrPtr->segPtr->machPtr;
     page = virtAddrPtr->page & ~(VMMACH_SEG_REG_MASK >> VMMACH_PAGE_SHIFT);
     ptePtr = GetPageTablePtr(segDataPtr, page);
-    VmMachFlushPage(virtAddrPtr->segPtr, page);
+    VmMachFlushPage(virtAddrPtr->segPtr, page, TRUE);
     *ptePtr = 0;
 
     UNLOCK_MONITOR;
@@ -2001,14 +2064,17 @@ VmMachCopyEnd()
  *----------------------------------------------------------------------
  */
 ENTRY void
-VmMach_FlushPage(virtAddrPtr)
-    register	Vm_VirtAddr	*virtAddrPtr;
+VmMach_FlushPage(virtAddrPtr, invalidate)
+    register	Vm_VirtAddr	*virtAddrPtr;	/* Virtual address of page. */
+    Boolean			invalidate;	/* Should invalidate the pte
+						 * after flushing. */
 {
     LOCK_MONITOR;
 
     VmMachFlushPage(virtAddrPtr->segPtr, 
 		    (unsigned int)(virtAddrPtr->page &
-			~(VMMACH_SEG_REG_MASK >> VMMACH_PAGE_SHIFT)));
+			~(VMMACH_SEG_REG_MASK >> VMMACH_PAGE_SHIFT)),
+		    invalidate);
 
     UNLOCK_MONITOR;
 }
@@ -2036,9 +2102,11 @@ VmMach_FlushPage(virtAddrPtr)
  *----------------------------------------------------------------------
  */
 INTERNAL void
-VmMachFlushPage(segPtr, pageNum)
+VmMachFlushPage(segPtr, pageNum, invalidate)
     register	Vm_Segment	*segPtr; /* Segment to flush. */
     unsigned	int		pageNum; /* Page within segment to flush. */
+    Boolean			invalidate;	/* Should invalidate the pte
+						 * after flushing. */
 {
     register	Address		pageAddr;
     register	Address		addr;
@@ -2076,7 +2144,13 @@ VmMachFlushPage(segPtr, pageNum)
 	VmMachFlushBlock(addr);
     }
     *ptePtr &= ~VMMACH_REFERENCED_BIT;
-    *ptePtr |= (VMMACH_RESIDENT_BIT | refBit);
+    if (!invalidate) {
+	/*
+	 * We are not invalidating this page so restore the reference and
+	 * modify bits.
+	 */
+	*ptePtr |= (VMMACH_RESIDENT_BIT | refBit);
+    }
     if (segPtr->segNum > 0) {
 	(void) VmMachSetSegReg1(origSegNum, origSegNum / 4 + rootPTPageNum);
     }
@@ -2115,132 +2189,8 @@ VmMachFlushBytes(segPtr, startAddr, numBytes)
     lastPage = (unsigned int)(startAddr + numBytes - 1) >> VMMACH_PAGE_SHIFT;
     lastPage &= ~(VMMACH_SEG_REG_MASK >> VMMACH_PAGE_SHIFT);
     for (; firstPage <= lastPage; firstPage++) {
-	VmMachFlushPage(segPtr, firstPage);
+	VmMachFlushPage(segPtr, firstPage, FALSE);
     }
-
-    UNLOCK_MONITOR;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * VmMachFlushSegment --
- *
- *	Flush the given page from all caches.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The given page is flushed from the caches.
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-void
-VmMachFlushSegment(segPtr)
-    Vm_Segment	*segPtr;
-{
-    LOCK_MONITOR;
-
-    FlushSegment(segPtr);
-
-    UNLOCK_MONITOR;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * FlushSegment --
- *
- *	Flush the given page from all caches.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The given page is flushed from the caches.
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-INTERNAL static void
-FlushSegment(segPtr)
-    Vm_Segment	*segPtr;
-{
-    int		i;
-
-    /*
-     * Uni-processor solution.  Flush the entire cache on this machine.
-     */
-    for (i = 0; i < VMMACH_CACHE_SIZE; i += VMMACH_CACHE_BLOCK_SIZE) {
-	VmMachFlushBlock((Address)i);
-    }
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * FlushAllCaches --
- *
- *	Flush the caches on all processors.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The caches on all processors are flushed.
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-INTERNAL static void
-FlushAllCaches()
-{
-    int		i;
-
-    /*
-     * Uni-processor solution.  Flush the entire cache on this machine.
-     */
-    for (i = 0; i < VMMACH_CACHE_SIZE; i += VMMACH_CACHE_BLOCK_SIZE) {
-	VmMachFlushBlock((Address)i);
-    }
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * SetCreateTime --
- *
- *	Set the creation time of the segment and flush all of the caches
- *	if necessary.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	createTime incremented and the createTime field is set in the
- *	segment data struct.  Also the cache may be flushed and flushTime
- *	incremented.
- *
- *----------------------------------------------------------------------
- */
-ENTRY static void
-SetCreateTime(segDataPtr)
-    register	VmMach_SegData	*segDataPtr;
-{
-    LOCK_MONITOR;
-
-    if (segDataPtr->createTime > flushTime) {
-	createTime++;
-	flushTime = createTime;
-	FlushAllCaches();
-    }
-    createTime++;
-    segDataPtr->createTime = createTime;
 
     UNLOCK_MONITOR;
 }
