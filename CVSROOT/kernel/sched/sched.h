@@ -60,6 +60,7 @@ extern Sched_Instrument sched_Instrument;   /* Counters for instrumentation. */
 
 extern void			Sched_MakeReady();
 extern void			Sched_StartUserProc();
+extern void			Sched_StartKernProc();
 extern void 			Sched_ContextSwitch();
 extern void 			Sched_ContextSwitchInt();
 extern void 			Sched_ForgetUsage();
