@@ -1060,7 +1060,6 @@ FsPfsRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr,
  *
  *----------------------------------------------------------------------
  */
-/*ARGSUSED*/
 ReturnStatus
 FsPfsRename(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
 	lookupArgsPtr, newNameInfoPtrPtr, name1ErrorPtr)
@@ -1075,7 +1074,8 @@ FsPfsRename(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
 				 * condition if for the first pathname,
 				 * FALSE means error is on second pathname. */
 {
-    return(FAILURE);
+    return(FsPfs2Path(PFS_RENAME, prefixHandle1, relativeName1, prefixHandle2,
+	    relativeName2, lookupArgsPtr, newNameInfoPtrPtr, name1ErrorPtr));
 }
 
 /*
@@ -1107,5 +1107,78 @@ FsPfsHardLink(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
     Boolean *name1ErrorPtr;	/* TRUE if redirect info or other error is
 				 * for first path, FALSE if for the second. */
 {
-    return(FAILURE);
+    return(FsPfs2Path(PFS_HARD_LINK, prefixHandle1, relativeName1,prefixHandle2,
+	    relativeName2, lookupArgsPtr, newNameInfoPtrPtr, name1ErrorPtr));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsPfs2Path --
+ *
+ *	Rename or Hardlink a file is a pseudo-filesystem.  This bundles the
+ *	arguments up for shipment to the server.  The prefix fileIDs are
+ *	mapped to the server's version of them.
+ *
+ * Results:
+ *	A return status.
+ *
+ * Side effects:
+ *	Either a rename or a link.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+FsPfs2Path(operation,prefixHandle1, relativeName1, prefixHandle2, relativeName2,
+	lookupArgsPtr, newNameInfoPtrPtr, name1ErrorPtr)
+    Pdev_Op operation;			/* PFS_RENAME or PFS_HARD_LINK */
+    FsHandleHeader *prefixHandle1;	/* Handle from the prefix table */
+    char *relativeName1;		/* The new name of the file. */
+    FsHandleHeader *prefixHandle2;	/* Token from the prefix table */
+    char *relativeName2;		/* The new name of the file. */
+    FsLookupArgs *lookupArgsPtr;	/* Contains IDs */
+    FsRedirectInfo **newNameInfoPtrPtr;	/* We return this if the server leaves 
+					 * its domain during the lookup. */
+    Boolean *name1ErrorPtr;	/* TRUE if redirect info or other error
+				 * condition if for the first pathname,
+				 * FALSE means error is on second pathname. */
+{
+    register PdevServerIOHandle	*pdevHandlePtr;
+    register PdevServerIOHandle	*pdevHandle2Ptr;
+    Fs2PathParams		params;
+    Fs2PathData			*dataPtr;
+    Pfs_Request			request;
+    register ReturnStatus	status;
+    int				resultSize;
+
+    pdevHandlePtr = ((PdevClientIOHandle *)prefixHandle1)->pdevHandlePtr;
+
+    request.hdr.operation = operation;
+    pdevHandlePtr = PfsGetUserLevelIDs(pdevHandlePtr,
+			    &lookupArgsPtr->prefixID, &lookupArgsPtr->rootID);
+    if (pdevHandlePtr == (PdevServerIOHandle *)NIL) {
+	return(FS_FILE_NOT_FOUND);
+    }
+    request.param.rename.lookup = *lookupArgsPtr;
+    if ((prefixHandle2->fileID.type != prefixHandle1->fileID.type) ||
+	(prefixHandle2->fileID.major != prefixHandle1->fileID.major) ||
+	(prefixHandle2->fileID.minor != prefixHandle1->fileID.minor)) {
+	/*
+	 * Second prefix isn't it the same pseudo-domain. We continue with the
+	 * operation in case the first pathname leaves the pseudo-domain.
+	 */
+	request.param.rename.prefixID2.type = -1;
+    } else {
+	pdevHandle2Ptr = ((PdevClientIOHandle *)prefixHandle2)->pdevHandlePtr;
+	request.param.rename.prefixID2 = pdevHandle2Ptr->userLevelID;
+    }
+    dataPtr = (Fs2PathData *)Mem_Alloc(sizeof(Fs2PathData));
+    (void)String_Copy(relativeName1, dataPtr->path1);
+    (void)String_Copy(relativeName2, dataPtr->path2);
+
+    resultSize = sizeof(Fs2PathReply);
+    status = FsPseudoStream2Path(pdevHandlePtr, &request, dataPtr,
+		name1ErrorPtr, newNameInfoPtrPtr);
+    Mem_Free((Address)dataPtr);
+    return(status);
 }
