@@ -245,9 +245,9 @@ Vm_OpenSwapDirectory(data, callInfoPtr)
     status = Fs_Open(fileName, FS_FOLLOW, FS_DIRECTORY, 0, &vmSwapStreamPtr);
     if (status != SUCCESS) {
 	/*
-	 * It didn't work, retry in 10 seconds.
+	 * It didn't work, retry in 20 seconds.
 	 */
-	callInfoPtr->interval = 10 * timer_IntOneSecond;
+	callInfoPtr->interval = 20 * timer_IntOneSecond;
 	vmSwapStreamPtr = (Fs_Stream *)NIL;
     }
 }
@@ -303,9 +303,9 @@ VmOpenSwapFile(segPtr)
      * is a symbolic link and the swap open fails we know that it failed
      * because the swap server is down, not the server of the symbolic link.
      */
-    origCwdPtr = procPtr->cwdPtr;
+    origCwdPtr = procPtr->fsPtr->cwdPtr;
     if (vmSwapStreamPtr != (Fs_Stream *)NIL) {
-	procPtr->cwdPtr = vmSwapStreamPtr;
+	procPtr->fsPtr->cwdPtr = vmSwapStreamPtr;
 	Cvt_UtoA((unsigned) segPtr->segNum, 10, fileName);
 	swapFileNamePtr = fileName;
     } else {
@@ -317,7 +317,7 @@ VmOpenSwapFile(segPtr)
     if (origID != NIL) {
 	procPtr->effectiveUserID = origID;
     }
-    procPtr->cwdPtr = origCwdPtr;
+    procPtr->fsPtr->cwdPtr = origCwdPtr;
     if (status != SUCCESS) {
 	segPtr->swapFilePtr = (Fs_Stream *)NIL;
 	Sys_Panic(SYS_WARNING, 
