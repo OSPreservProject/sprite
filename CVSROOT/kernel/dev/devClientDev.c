@@ -22,30 +22,36 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <sprite.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <hostd.h>
 #include <sync.h>
 #include <devClientDev.h>
 #include <procTypes.h>
 #include <timer.h>
 #include <fsioDevice.h>
+#include <recov.h>
+#include <fsutil.h>
 
 #define	MAX_INDEX 100
 
 typedef struct	DeviceState {
-    ClientInfo		toUserQueue[MAX_INDEX];		/* Data to daemon. */
-    ClientInfo		toKernelQueue[MAX_INDEX];	/* Data from daemon. */
+    Dev_ClientInfo	toUserQueue[MAX_INDEX];		/* Data to daemon. */
+    Dev_ClientInfo	toKernelQueue[MAX_INDEX];	/* Data from daemon. */
     int			userUnreadIndex;		/* Unread by daemon. */
     int			userUnusedIndex;		/* Unwritten by os. */
     int			kernelUnreadIndex;		/* Unread by os. */
     int			kernelUnusedIndex;		/* Unwritten by d. */
     Fs_NotifyToken	dataReadyToken;			/* Read/write notify. */
     Sync_Condition	waitForDaemon;			/* Wait for daemon. */
+    Boolean		recovInProgress;		/* Only one instance. */
+    Boolean		waitingForRecov;		/* Condition check. */
+    Sync_Condition	waitForRecovResponse;		/* Wait for reopen to
+							 * client to return. */
 } DeviceState;
 
 static Boolean		deviceOpen = FALSE;
 static Fs_Device	*theDevicePtr = (Fs_Device *) NULL;
 #define	INC_QUEUEPTR(theIndex)	\
     ((theIndex) == (MAX_INDEX - 1) ? (theIndex) = 0 :  (theIndex)++)
+int			currentUnreadIndex;
 
 
 /*
@@ -53,51 +59,8 @@ static Fs_Device	*theDevicePtr = (Fs_Device *) NULL;
  * all filled up!
  */
 
-    
-
-
 static	Sync_Lock	clientStateLock;
 #define	LOCKPTR		(&clientStateLock)
-
-
-void
-RecoverFunc(clientData, callInfoPtr)
-    ClientData		clientData;
-    Proc_CallInfo	*callInfoPtr;
-{
-    Fs_Device		*devicePtr;
-    DeviceState		*statePtr;
-    int			currentUnreadIndex;
-
-    LOCK_MONITOR;
-    if (!deviceOpen) {
-	/* Don't reschedule - device is closed. */
-	UNLOCK_MONITOR;
-	return;
-    }
-    devicePtr = (Fs_Device *) clientData;
-    statePtr = (DeviceState *) devicePtr->data;
-    /* Start removing stuff from queue of hosts to recover with. */
-    printf("RecoverFunc called.\n");
-    printf("Setting hostNumber for index %d\n", statePtr->userUnusedIndex);
-    statePtr->toUserQueue[statePtr->userUnusedIndex].hostNumber = 66;
-    statePtr->toUserQueue[statePtr->userUnusedIndex].hostState =
-	    DEV_CLIENT_STATE_NEW_HOST;
-
-    INC_QUEUEPTR(statePtr->userUnusedIndex);
-    printf("Index is now %d\n", statePtr->userUnusedIndex);
-    printf("Notifying waiters on token.\n");
-    currentUnreadIndex = statePtr->userUnreadIndex;
-    Fsio_DevNotifyReader(statePtr->dataReadyToken);
-    while (statePtr->userUnreadIndex == currentUnreadIndex) {
-	(void) Sync_Wait(&(statePtr->waitForDaemon), FALSE);
-    }
-    printf("RecovFunc calling RecovFunc\n");
-    Proc_CallFunc(RecoverFunc, (ClientData) devicePtr, 10 * timer_IntOneSecond);
-    UNLOCK_MONITOR;
-    return;
-
-}
 
 
 /*
@@ -145,10 +108,18 @@ DevClientStateOpen(devicePtr, useFlags, data, flagsPtr)
     statePtr->userUnreadIndex = 0;
     statePtr->userUnusedIndex = 0;
     statePtr->dataReadyToken = data;
+    statePtr->recovInProgress = FALSE;
+    statePtr->waitingForRecov = FALSE;
 
+    /*
+     * We're receiving recovery list from user-level daemon if the device
+     * is opened for write as well as read.
+     */
+    if (useFlags & FS_WRITE) {
+	Recov_InitServerDriven();
+    }
     deviceOpen = TRUE;
-    printf("Open calling RecovFunc\n");
-    Proc_CallFunc(RecoverFunc, (ClientData) devicePtr, 10 * timer_IntOneSecond);
+    /* Should put in timeout here for getting recov info from client daemon. */
     UNLOCK_MONITOR;
     return SUCCESS;
 }
@@ -186,6 +157,7 @@ DevClientStateClose(devicePtr, useFlags, openCount, writerCount)
     free((char *) devicePtr->data);
 
     deviceOpen = FALSE;
+    Recov_StopServerDriven();
     UNLOCK_MONITOR;
     return SUCCESS;
 }
@@ -219,27 +191,23 @@ DevClientStateRead(devicePtr, readPtr, replyPtr)
 
     LOCK_MONITOR;
 
-    printf("Read called.\n");
     statePtr = (DeviceState *) devicePtr->data;
     if (statePtr->userUnreadIndex == statePtr->userUnusedIndex) {
-	printf("Would block: unused at %d, unread at %d\n",
-		statePtr->userUnusedIndex, statePtr->userUnreadIndex);
 	status = FS_WOULD_BLOCK;
 	UNLOCK_MONITOR;
 	return status;
     }
 
-    if (sizeof (ClientInfo) > readPtr->length) {
+    if (sizeof (Dev_ClientInfo) > readPtr->length) {
 	status = GEN_INVALID_ARG;
 	UNLOCK_MONITOR;
 	return status;
     }
     bcopy(&(statePtr->toUserQueue[statePtr->userUnreadIndex]), readPtr->buffer,
-	    sizeof (ClientInfo));
+	    sizeof (Dev_ClientInfo));
 
-    replyPtr->length = sizeof (ClientInfo);
+    replyPtr->length = sizeof (Dev_ClientInfo);
     INC_QUEUEPTR(statePtr->userUnreadIndex);
-    printf("Unread is now %d\n", statePtr->userUnreadIndex);
     UNLOCK_MONITOR;
     return(status);
 }
@@ -249,7 +217,8 @@ DevClientStateRead(devicePtr, readPtr, replyPtr)
  *
  * DevClientStateWrite --
  *
- *	A user process writes info to kernel on device.
+ *	A user process writes info to kernel on device about state of hosts
+ *	before crash.
  *
  * Results:
  *	SUCCESS or invalid arg.
@@ -271,63 +240,91 @@ DevClientStateWrite(devicePtr, writePtr, replyPtr)
 
     LOCK_MONITOR;
 
-    printf("Write called.\n");
     statePtr = (DeviceState *) devicePtr->data;
-    if (writePtr->length - writePtr->offset > sizeof (ClientInfo)) {
-	printf("Write info too large.\n");
+    if (statePtr->recovInProgress) {
+	panic("DevClientStateWrite: only one instance of recovery allowed.\n");
+    }
+    if (writePtr->offset != 0) {
+	printf("DevClientStateWrite: write offset didn't start at 0: %d.\n",
+		writePtr->offset);
+    }
+    if ((writePtr->length % sizeof (Dev_ClientInfo)) != 0) {
+	printf(
+	"DevClientStateWrite: Write info not multiple of client structure.\n");
 	UNLOCK_MONITOR;
 	return GEN_INVALID_ARG;
     }
 
-    bcopy(writePtr->buffer + writePtr->offset, &(statePtr->toKernelQueue[0]),
-	    sizeof (ClientInfo));
+    statePtr->recovInProgress = TRUE;
+    bcopy(writePtr->buffer, &(statePtr->toKernelQueue[0]), writePtr->length);
+    statePtr->kernelUnreadIndex = 0;
+    statePtr->kernelUnusedIndex = writePtr->length / sizeof (Dev_ClientInfo);
+    if (statePtr->kernelUnusedIndex > MAX_INDEX) {
+	panic("DevClientStateWrite: too many clients!\n");
+    }
 
-    replyPtr->length = sizeof (ClientInfo);
-    /* Show that daemon did read data and poked us about it. */
-    Sync_Broadcast(&(statePtr->waitForDaemon));
+    Recov_ServerStartingRecovery();
+    while (statePtr->kernelUnreadIndex != statePtr->kernelUnusedIndex) {
+	int	clientID;
+
+	clientID =
+		statePtr->toKernelQueue[statePtr->kernelUnreadIndex].hostNumber;
+	if (statePtr->toKernelQueue[statePtr->kernelUnreadIndex].hostState !=
+		DEV_CLIENT_STATE_NEW_HOST) {
+	    panic("DevClientStateWrite: Bad host state from daemon.");
+	}
+	Recov_MarkDoingServerRecovery(clientID);
+	status = Fsutil_DoServerRecovery(clientID);
+#ifdef NOTDEF
+	XX Mark going through recovery.
+	Proc_CallFunc(Fsutil_DoServerRecovery, (ClientData) clientID, 0);
+	statePtr->waitingForRecov = TRUE;
+	while (statePtr->waitingForRecov) {
+	    (void) Sync_Wait(&(statePtr->waitForRecovResponse), FALSE);
+	}
+	XX Mark not going through recovery.
+#endif NOTDEF
+	Recov_UnmarkDoingServerRecovery(clientID);
+
+	INC_QUEUEPTR(statePtr->kernelUnreadIndex);
+    }
+    Recov_ServerFinishedRecovery();
+
+    statePtr->recovInProgress = FALSE;
+    replyPtr->length = writePtr->length;
     UNLOCK_MONITOR;
-    return(status);
+
+    return SUCCESS;
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * DevClientStateSelect --
+ * Dev_ClientStateWakeRecovery --
  *
- *	Perform device-specific select functions on the device.
+ *	Call-back for another module to rewaken us for us to keep on
+ *	doing recovery.
  *
  * Results:
- *	SUCCESS		- the operation was successful.
+ *	None.
  *
  * Side effects:
- *	None.
+ *	Wakeup signal.
  *
  *----------------------------------------------------------------------
  */
-
-/*ARGSUSED*/
-ReturnStatus
-DevClientStateSelect(devicePtr, readPtr, writePtr, exceptPtr)
-    Fs_Device		*devicePtr;
-    int			*readPtr;
-    int			*writePtr;
-    int			*exceptPtr;
+void
+Dev_ClientStateWakeRecovery()
 {
     DeviceState		*statePtr;
 
-    statePtr = (DeviceState *) (devicePtr->data);
+    statePtr = (DeviceState *) theDevicePtr->data;
+    statePtr->waitingForRecov = FALSE;
+    Sync_Broadcast(&(statePtr->waitForRecovResponse));
 
-    LOCK_MONITOR;
-
-    if (*readPtr) {
-	if (statePtr->userUnreadIndex == statePtr->userUnusedIndex) {
-	    *readPtr = 0;
-	}
-    }
-    *exceptPtr = 0;
-    UNLOCK_MONITOR;
-    return SUCCESS;
+    return;
 }
+    
 
 /*
  *----------------------------------------------------------------------
@@ -355,10 +352,29 @@ DevClientStateIOControl(devicePtr, ioctlPtr, replyPtr)
 {
     DeviceState		*statePtr;
     ReturnStatus	status = SUCCESS;
+    int			numEntries;
 
     statePtr = (DeviceState *) (devicePtr->data);
 
     switch (ioctlPtr->command) {
+    case DEV_CLIENT_START_LIST:
+	/*
+	 * Write out state of hosts as we know it to user process.
+	 * To do this, we put stuff into the queue starting with a
+	 * DEV_CLIENT_START_LIST and ending with a DEV_CLIENT_END_LIST
+	 * so that the user process knows when it has the whole list.
+	 */
+	numEntries = Recov_GetCurrentHostStates(&(statePtr->toUserQueue[1]),
+		MAX_INDEX - 2);
+	if (numEntries < 0) {
+	    panic("DevClientStateIOControl: too many hosts for buffer.");
+	}
+	statePtr->toUserQueue[0].hostState = DEV_CLIENT_START_LIST;
+	statePtr->userUnreadIndex = 0;
+	statePtr->userUnusedIndex = numEntries + 2;
+	statePtr->toUserQueue[numEntries + 1].hostState = DEV_CLIENT_END_LIST;
+
+	break;
     case DEV_CLIENT_END_LIST:
 	/* Show that daemon did read data and poked us about it. */
 	Sync_Broadcast(&(statePtr->waitForDaemon));
@@ -368,6 +384,48 @@ DevClientStateIOControl(devicePtr, ioctlPtr, replyPtr)
     }
 
     return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimeoutFunc
+ *
+ *	The user-level daemon hasn't responded quickly enough in writing
+ *	our state to disk.  It's probably dead.  Since this must all
+ *	happen synchronously, we panic.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	May panic.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+TimeoutFunc(clientData, callInfoPtr)
+    ClientData		clientData;
+    Proc_CallInfo	*callInfoPtr;
+{
+    DeviceState		*statePtr;
+
+    statePtr = (DeviceState *) theDevicePtr->data;
+
+    LOCK_MONITOR;
+    if (!deviceOpen) {
+	UNLOCK_MONITOR;
+	return;
+    }
+    if (statePtr->userUnreadIndex == currentUnreadIndex) {
+	printf("Timeout func for host state device called:\n");
+	printf("\tcurrentUnreadIndex is still %d, userUnreadIndex %d\n",
+		currentUnreadIndex, statePtr->userUnreadIndex);
+	UNLOCK_MONITOR;
+	panic("User-level daemon must be dead.");
+    }
+    UNLOCK_MONITOR;
+    return;
 }
 
 /*
@@ -391,9 +449,7 @@ Dev_ClientHostUp(spriteID)
     int		spriteID;
 {
     DeviceState	*statePtr;
-    int		currentUnreadIndex;
 
-    printf("Dev_ClientHostUp called.\n");
     LOCK_MONITOR;
     if (!deviceOpen) {
 	UNLOCK_MONITOR;
@@ -405,14 +461,15 @@ Dev_ClientHostUp(spriteID)
 	    DEV_CLIENT_STATE_NEW_HOST;
 
     INC_QUEUEPTR(statePtr->userUnusedIndex);
-    printf("Index is now %d\n", statePtr->userUnusedIndex);
-    printf("Notifying waiters on token.\n");
     currentUnreadIndex = statePtr->userUnreadIndex;
     Fsio_DevNotifyReader(statePtr->dataReadyToken);
     /*
      * This test is good enough if the daemon promises to read all
-     * available data whenever it reads data.
+     * available data whenever it reads data.  We also set a timer in
+     * case the user-level daemon has died and doesn't respond.
      */
+    Proc_CallFunc(TimeoutFunc, (ClientData) theDevicePtr,
+	    5 * timer_IntOneSecond);
     while (statePtr->userUnreadIndex == currentUnreadIndex) {
 	(void) Sync_Wait(&(statePtr->waitForDaemon), FALSE);
     }
@@ -441,9 +498,7 @@ Dev_ClientHostDown(spriteID)
     int		spriteID;
 {
     DeviceState	*statePtr;
-    int		currentUnreadIndex;
 
-    printf("Dev_ClientHostDown called.\n");
     LOCK_MONITOR;
     if (!deviceOpen) {
 	UNLOCK_MONITOR;
@@ -455,14 +510,21 @@ Dev_ClientHostDown(spriteID)
 	    DEV_CLIENT_STATE_DEAD_HOST;
 
     INC_QUEUEPTR(statePtr->userUnusedIndex);
-    printf("Index is now %d\n", statePtr->userUnusedIndex);
-    printf("Notifying waiters on token.\n");
     currentUnreadIndex = statePtr->userUnreadIndex;
     Fsio_DevNotifyReader(statePtr->dataReadyToken);
     /*
      * This test is good enough if the daemon promises to read all
-     * available data whenever it reads data.
+     * available data whenever it reads data.  We also set a timer in
+     * case the user-level daemon has died and doesn't respond.
      */
+#ifdef NOTDEF
+XX Increase timeout time?  Or make timeout function understand that
+if client is still marked as going through recovery, it should allow more
+time?
+#endif NOTDEF
+    printf("userUnread and currentUnread at %d\n", currentUnreadIndex);
+    Proc_CallFunc(TimeoutFunc, (ClientData) theDevicePtr,
+	    5 * timer_IntOneSecond);
     while (statePtr->userUnreadIndex == currentUnreadIndex) {
 	(void) Sync_Wait(&(statePtr->waitForDaemon), FALSE);
     }

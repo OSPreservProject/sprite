@@ -26,11 +26,12 @@ extern ReturnStatus DevClientStateClose _ARGS_((Fs_Device *devicePtr,
 	int useFlags, int openCount, int writerCount));
 extern ReturnStatus DevClientStateRead _ARGS_((Fs_Device *devicePtr,
 	Fs_IOParam *readPtr, Fs_IOReply *replyPtr));
-extern ReturnStatus DevClientStateSelect _ARGS_((Fs_Device *devicePtr,
-	int *readPtr, int *writePtr, int *exceptPtr));
 extern ReturnStatus DevClientStateIOControl _ARGS_((Fs_Device *devicePtr,
 	Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
 extern void Dev_ClientHostUp _ARGS_((int spriteID));
 extern void Dev_ClientHostDown _ARGS_((int spriteID));
+extern void Dev_ClientStateWakeRecovery _ARGS_((void));
+    extern ReturnStatus DevClientStateWrite _ARGS_((Fs_Device *devicePtr,
+	    Fs_IOParam *writePtr, Fs_IOReply *replyPtr));
 
 #endif /* _DEVCLIENTDEV */
