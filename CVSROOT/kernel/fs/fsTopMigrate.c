@@ -40,7 +40,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "mem.h"
 #include "rpc.h"
 
-Boolean fsMigDebug = TRUE;
+Boolean fsMigDebug = FALSE;
 #define DEBUG( format ) \
 	if (fsMigDebug) { Sys_Printf format ; }
 
@@ -146,7 +146,7 @@ Fs_EncapStream(streamPtr, bufPtr)
      * associated with the I/O handle, and to do local book-keeping.
      */
     status = (*fsStreamOpTable[ioHandlePtr->fileID.type].migStart) (ioHandlePtr,
-		    streamPtr->flags, rpc_SpriteID, migInfoPtr->data);
+		    streamPtr->flags, rpc_SpriteID, &migInfoPtr->flags);
 
     if (status == SUCCESS) {
 	/*
@@ -208,8 +208,8 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
      * Allocate and set up the stream.  We note if this is the first
      * occurence of the stream on this host so the server can
      * do the right thing.  If we're the server, we have to distinguish
-     * between a stream that's in use on this host and a "shadow stream"
-     * that has no reference counts associated with it.  DisposeOnError
+     * between a stream that's in use on this host and a "shadow stream".
+     * DisposeOnError
      * is used to keep track of the original value of "found", since
      * we want to dispose if we hit an error if & only if FsStreamFind
      * created a new stream (found == FALSE).
@@ -424,7 +424,7 @@ Fs_RpcStartMigration(srvToken, clientID, command, storagePtr)
     migInfoPtr = (FsMigInfo *) storagePtr->requestParamPtr;
 
     hdrPtr = (*fsStreamOpTable[migInfoPtr->ioFileID.type].clientVerify)
-		(&migInfoPtr->ioFileID, migInfoPtr->srcClientID);
+		(&migInfoPtr->ioFileID, migInfoPtr->srcClientID, (int *)NIL);
     if (hdrPtr == (FsHandleHeader *) NIL) {
 	Sys_Panic(SYS_WARNING, "Fs_RpcStartMigration, unknown I/O handle <%d,%d,%d>\n",
 	    migInfoPtr->ioFileID.type,
@@ -581,6 +581,7 @@ Fs_EncapFileState(procPtr, bufPtr, sizePtr, numEncapPtr)
 	Mem_Free(*bufPtr);
 	return(status);
     }
+    fsPtr->cwdPtr = (Fs_Stream *) NIL;
     ptr += sizeof(FsMigInfo);
     numEncap += 1;
 
@@ -597,6 +598,7 @@ Fs_EncapFileState(procPtr, bufPtr, sizePtr, numEncapPtr)
 		Mem_Free(*bufPtr);
 		return(status);
 	    }
+	    fsPtr->streamList[i] = (Fs_Stream *) NIL;
 	} else {
 	    Byte_FillBuffer(ptr, int, NIL);
 	    Byte_Zero(sizeof(FsMigInfo), ptr);
@@ -619,6 +621,11 @@ Fs_EncapFileState(procPtr, bufPtr, sizePtr, numEncapPtr)
  *
  *	Clear the file state associated with a process after it has
  *	been migrated.  FIXME: Perhaps things should be freed here instead?
+ *
+ *	Actually, the streams are closed as they are encapsulated, so they
+ *	can be nil'ed out as they are encapsulated as well.  This routine
+ *	is here only for compatibility with the installed proc and can
+ *	be removed after proc is reinstalled.  FD
  *
  * Results:
  *	None.
@@ -647,7 +654,6 @@ Fs_ClearFileState(procPtr)
     }
     fsPtr->cwdPtr = (Fs_Stream *) NIL;
 }
-
 
 /*
  *----------------------------------------------------------------------
