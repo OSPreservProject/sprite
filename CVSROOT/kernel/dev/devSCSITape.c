@@ -471,13 +471,12 @@ Dev_SCSITapeClose(devicePtr, useFlags, openCount, writerCount)
     DevSCSITape			*tapePtr;
     int 			count = 0;
 
-    if (openCount > 0) {
-	return(SUCCESS);
-    }
-
     devPtr = scsiTape[devicePtr->unit / DEV_TAPES_PER_CNTRLR];
     if (devPtr == (DevSCSIDevice *)0 || devPtr == (DevSCSIDevice *)NIL) {
 	return(DEV_NO_DEVICE);
+    }
+    if (openCount > 0) {
+	return(SUCCESS);
     }
     tapePtr = (DevSCSITape *)devPtr->data;
     if (tapePtr->state & SCSI_TAPE_WRITTEN) {
