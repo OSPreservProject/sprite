@@ -455,7 +455,6 @@ FsDescTrunc(handlePtr, size)
     Boolean			dirty;
     int				fragsToFree;
     int				bytesToFree;
-    int				(*warningProc)();
 
     domainPtr = FsDomainFetch(handlePtr->hdr.fileID.major, FALSE);
     if (domainPtr == (FsDomain *)NIL) {
@@ -624,7 +623,7 @@ exit:
      */
     if (size == 0) {
 	register int index;
-	int (*warningProc)();
+	void (*warningProc)();
 
 	if (status == SUCCESS) {
 	    warningProc = panic;
