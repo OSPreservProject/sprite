@@ -250,8 +250,8 @@ sun3: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	@size $@
 	update -f -s sun3 /sprite/boot/sun3.md/new
 	rcp /sprite/boot/sun3.md/new ${GINGER}:/sprite3/sun3.new
-	rcp sun3 rosemary:/tmp/sprite/sun3.sprite
-	rsh rosemary -n "(cd /tmp/sprite ; ./Save sun3.sprite)"
+	rcp sun3 ginger:/home/ginger/sprite/kernels/sun3.sprite
+	rsh ginger -n "(cd /home/ginger/sprite/kernels ; ./Save sun3.sprite)"
 	nm -n sun3 > sun3.nm
 	-Save sun3
 
@@ -267,8 +267,8 @@ sun4: ${OBJS_SUN4} Makefile .PRECIOUS .NOEXPORT
 	@ls -l $@
 	@size $@
 	update -f -s sun4 /sprite/boot/sun4.md/new
-	rcp sun4 rosemary:/tmp/sprite/sun4.sprite
-	rsh rosemary -n "(cd /tmp/sprite ; ./Save sun4.sprite)"
+	rcp sun4 ginger:/home/ginger/sprite/kernels/sun4.sprite
+	rsh ginger -n "(cd /home/ginger/sprite/kernels ; ./Save sun4.sprite)"
 	nm -n sun4 > sun4.nm
 	update -f sun4 /allspiceA/vmsprite
 	strip /allspiceA/vmsprite
@@ -286,8 +286,8 @@ sun4c: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	@ls -l $@
 	@size $@
 	update -f -s sun4c /sprite/boot/sun4c.md/new
-	rcp sun4c rosemary:/tmp/sprite/sun4c.sprite
-	rsh rosemary -n "(cd /tmp/sprite ; ./Save sun4c.sprite)"
+	rcp sun4c ginger:/home/ginger/sprite/kernels/sun4c.sprite
+	rsh ginger -n "(cd /home/ginger/sprite/kernels ; ./Save sun4c.sprite)"
 	nm -n sun4c > sun4c.nm
 	-Save sun4c
 
@@ -306,8 +306,8 @@ ds3100: ${OBJS} .PRECIOUS .NOEXPORT
 	strip /sprite/boot/ds3100.md/new
 	rm -f ds3100.nm
 	nm -n ds3100 > ds3100.nm
-	rcp /sprite/src/kernel/sprite/ds3100 rosemary:/tmp/sprite/ds3100
-	rsh rosemary -n "(cd /tmp/sprite; Save ds3100)"
+	rcp /sprite/src/kernel/sprite/ds3100 ginger:/home/ginger/sprite/kernels/ds3100
+	rsh ginger -n "(cd /home/ginger/sprite/kernels; Save ds3100)"
 	update -f ds3100 /assaultA/new
 	strip /assaultA/new
 	-Save ds3100
