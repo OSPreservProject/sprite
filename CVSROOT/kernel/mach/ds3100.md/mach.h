@@ -105,8 +105,10 @@ typedef struct {
  * The user state for a process.
  */
 typedef struct {
-    Mach_RegState	regState		/* State of a process after
+    Mach_RegState	regState;		/* State of a process after
 						 * a trap. */
+    int			unixRetVal;		/* Return value from a 
+						 * UNIX system call. */
 } Mach_UserState;
 
 /*

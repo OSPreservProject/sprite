@@ -1552,8 +1552,8 @@ sysCallRestore:
 UNIXSyscall:
 /*
  * If we are tracing system calls are we have a signal or long jump return
- * do it the slow way.  Signal returns are done the slow way because they
- * have to do a full restore.
+ * do it the slow way.  Signal and long jump returns are done the slow way
+ * because they have to do a full restore.
  */
     lw		k0, machUNIXSyscallTrace
     beq		v0, MACH_UNIX_LONG_JUMP_RETURN, Mach_UserGenException
@@ -1587,7 +1587,9 @@ UNIXSyscall:
     rfe
 /* 
  * Now we know that we have a good system call number so go ahead and
- * save state and switch to the kernel's stack.
+ * save state and switch to the kernel's stack.  Note that we save 
+ * a0 - a2 and v1 because UNIX system call stubs assume that these
+ * won't get modified unless a value is returned in v1.
  */
 1:
     lw		t1, machCurStatePtr
@@ -1605,6 +1607,9 @@ UNIXSyscall:
     sw		s7, MACH_TRAP_REGS_OFFSET + (S7 * 4)(t1)
     sw		s8, MACH_TRAP_REGS_OFFSET + (S8 * 4)(t1)
     sw		ra, MACH_TRAP_REGS_OFFSET + (RA * 4)(t1)
+    sw		a0, MACH_TRAP_REGS_OFFSET + (A0 * 4)(t1)
+    sw		a1, MACH_TRAP_REGS_OFFSET + (A1 * 4)(t1)
+    sw		a2, MACH_TRAP_REGS_OFFSET + (A2 * 4)(t1)
     sw		v1, MACH_TRAP_REGS_OFFSET + (V1 * 4)(t1)
     sw		t3, MACH_USER_PC_OFFSET(t1)
 /*
@@ -1642,7 +1647,7 @@ UNIXSyscall:
  * We got the args now call the routine.
  */
     lw		t3, 8(t0)	# t3 <= routine to call.
-    nop		
+    sw		zero, MACH_TRAP_UNIX_RET_VAL_OFFSET(s0)
     jal		t3		# Call the routine.
     nop
 
@@ -1673,13 +1678,20 @@ unixSyscallReturn:
  *	s8:	status register
  */
 /*
- * Set up the registers correctly.  
+ * Set up the registers correctly:
+ *
+ *	1) Restore a0, a1, a2 and v1
+ *	2) If status == 0 then regs[a3] <= 0 and v0 <= return value.
+ *	   Else regs[A3] <= 1 and v0 <= Compat_MapCode(status).
  */
 1:
     bne		v0, zero, 1f
     nop
     lw		v0, MACH_TRAP_UNIX_RET_VAL_OFFSET(s0)
     lw		v1, MACH_TRAP_REGS_OFFSET + (V1 * 4)(s0)
+    lw		a0, MACH_TRAP_REGS_OFFSET + (A0 * 4)(s0)
+    lw		a1, MACH_TRAP_REGS_OFFSET + (A1 * 4)(s0)
+    lw		a2, MACH_TRAP_REGS_OFFSET + (A2 * 4)(s0)
     add		a3, zero, zero
     sw		v0, MACH_TRAP_REGS_OFFSET + (V0 * 4)(s0)
     sw		a3, MACH_TRAP_REGS_OFFSET + (A3 * 4)(s0)
@@ -1690,6 +1702,9 @@ unixSyscallReturn:
     add		a0, v0, zero
     sw		v0, MACH_TRAP_UNIX_RET_VAL_OFFSET(s0)
     lw		v1, MACH_TRAP_REGS_OFFSET + (V1 * 4)(s0)
+    lw		a0, MACH_TRAP_REGS_OFFSET + (A0 * 4)(s0)
+    lw		a1, MACH_TRAP_REGS_OFFSET + (A1 * 4)(s0)
+    lw		a2, MACH_TRAP_REGS_OFFSET + (A2 * 4)(s0)
     li		a3, 1
     sw		a3, MACH_TRAP_REGS_OFFSET + (A3 * 4)(s0)
     j		sysCallReturn

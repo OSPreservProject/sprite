@@ -41,8 +41,7 @@ extern Mach_State	*machCurStatePtr;
  */
 
 int
-MachUNIXFcntl(retValPtr, fd, cmd, arg)
-    int *retValPtr;
+MachUNIXFcntl(fd, cmd, arg)
     int fd;		/* File to operate on. */
     int cmd;		/* Type of command. */
     int arg;		/* Optional argument to the command. */
@@ -62,7 +61,8 @@ MachUNIXFcntl(retValPtr, fd, cmd, arg)
 	    }
 	    status = Fs_GetNewIDStub(fd, (int *)usp);
 	    if (status == SUCCESS) {
-		(void)Vm_CopyIn(sizeof(int), usp, (Address)retValPtr);
+		(void)Vm_CopyIn(sizeof(int), usp,
+			    (Address)&machCurStatePtr->userState.unixRetVal);
 	    }
 	    break;
 
@@ -71,8 +71,10 @@ MachUNIXFcntl(retValPtr, fd, cmd, arg)
 	    status = Fs_IOControlStub(fd, IOC_GET_FLAGS, 
 				0, (Address) NULL, sizeof(value), usp);
 	    if (status == SUCCESS) {
-		(void)Vm_CopyIn(sizeof(int), usp, (Address)retValPtr);
-		*retValPtr = (*retValPtr & IOC_CLOSE_ON_EXEC) ? 1 : 0;
+		(void)Vm_CopyIn(sizeof(int), usp, 
+			(Address)&machCurStatePtr->userState.unixRetVal);
+		machCurStatePtr->userState.unixRetVal = 
+	    (machCurStatePtr->userState.unixRetVal & IOC_CLOSE_ON_EXEC) ? 1 : 0;
 	    }
 	    break;
 
@@ -102,15 +104,15 @@ MachUNIXFcntl(retValPtr, fd, cmd, arg)
 		    break;
 		}
 		(void)Vm_CopyIn(sizeof(temp), usp, (Address)&temp);
-		*retValPtr = 0;
+		machCurStatePtr->userState.unixRetVal = 0;
 		if (temp & IOC_APPEND) {
-		    *retValPtr |= FAPPEND;
+		    machCurStatePtr->userState.unixRetVal |= FAPPEND;
 		}
 		if (temp & IOC_NON_BLOCKING) {
-		    *retValPtr |= FNDELAY;
+		    machCurStatePtr->userState.unixRetVal |= FNDELAY;
 		}
 		if (temp & IOC_ASYNCHRONOUS) {
-		    *retValPtr |= FASYNC;
+		    machCurStatePtr->userState.unixRetVal |= FASYNC;
 		}
 	    }
 	    break;
@@ -151,9 +153,9 @@ MachUNIXFcntl(retValPtr, fd, cmd, arg)
 		}
 		(void)Vm_CopyIn(sizeof(owner), usp, &owner);
 		if (owner.procOrFamily == IOC_OWNER_FAMILY) {
-		    *retValPtr = -owner.id;
+		    machCurStatePtr->userState.unixRetVal = -owner.id;
 		} else {
-		    *retValPtr = owner.id;
+		    machCurStatePtr->userState.unixRetVal = owner.id;
 		}
 	    }
 	    break;

@@ -72,8 +72,7 @@ static char 	rawDevice[100];
  */
 
 ReturnStatus
-MachUNIXAccept(retValPtr, socketID, addrPtr, addrLenPtr)
-    int			*retValPtr;
+MachUNIXAccept(socketID, addrPtr, addrLenPtr)
     int			socketID;	/* Socket to listen on. */
     struct sockaddr_in	*addrPtr;	/* Address of newly-accepted 
 					 * connection. (out) */
@@ -185,7 +184,7 @@ MachUNIXAccept(retValPtr, socketID, addrPtr, addrLenPtr)
 	addr.sin_family = AF_INET;
 	(void)Vm_CopyOut(addrLen, (Address)&addr, (Address)addrPtr);
     }
-    *retValPtr = newSocket;
+    machCurStatePtr->userState.unixRetVal = newSocket;
 
     return(SUCCESS);
 }
@@ -212,8 +211,7 @@ MachUNIXAccept(retValPtr, socketID, addrPtr, addrLenPtr)
  */
 
 ReturnStatus
-MachUNIXBind(retValPtr, socketID, namePtr, nameLen)
-    int			*retValPtr;
+MachUNIXBind(socketID, namePtr, nameLen)
     int			socketID;	/* Stream ID of unnamed socket. */
     struct sockaddr	*namePtr;	/* Local address,port for this socket.*/
     int			nameLen;	/* Size of *namePtr. */
@@ -264,8 +262,7 @@ MachUNIXBind(retValPtr, socketID, namePtr, nameLen)
  */
 
 ReturnStatus
-MachUNIXConnect(retValPtr, socketID, namePtr, nameLen)
-    int			*retValPtr;
+MachUNIXConnect(socketID, namePtr, nameLen)
     int			socketID;	/* Stream ID of socket. */
     struct sockaddr	*namePtr;	/* Remote address,port to connect to.*/
     int			nameLen;	/* Size of *namePtr. */
@@ -363,8 +360,7 @@ MachUNIXConnect(retValPtr, socketID, namePtr, nameLen)
  */
 
 ReturnStatus
-MachUNIXGetPeerName(retValPtr, socketID, namePtr, nameLenPtr)
-    int			*retValPtr;
+MachUNIXGetPeerName(socketID, namePtr, nameLenPtr)
     int			socketID;	/* Stream ID of socket connected to 
 					 * remote peer. */
     struct sockaddr	*namePtr;	/* Upon return, <addr,port> for 
@@ -423,8 +419,7 @@ MachUNIXGetPeerName(retValPtr, socketID, namePtr, nameLenPtr)
  */
 
 ReturnStatus
-MachUNIXGetSockName(retValPtr, socketID, namePtr, nameLenPtr)
-    int			*retValPtr;
+MachUNIXGetSockName(socketID, namePtr, nameLenPtr)
     int			socketID;	/* Stream ID of socket to get name of.*/
     struct sockaddr	*namePtr;	/* Upon return, current <addr,port> for
 					 * this socket. */
@@ -480,8 +475,7 @@ MachUNIXGetSockName(retValPtr, socketID, namePtr, nameLenPtr)
  */
 
 ReturnStatus
-MachUNIXGetSockOpt(retValPtr, socketID, level, optName, optVal, optLenPtr)
-    int		*retValPtr;
+MachUNIXGetSockOpt(socketID, level, optName, optVal, optLenPtr)
     int		socketID;	/* Stream ID of socket to get options on. */
     int		level;		/* Socket or protocol level to get the option.*/
     int		optName;	/* Type of option to get. */
@@ -556,8 +550,7 @@ MachUNIXGetSockOpt(retValPtr, socketID, level, optName, optVal, optLenPtr)
 
 /*VARARGS  (makes lint happy) */
 ReturnStatus
-MachUNIXSetSockOpt(retValPtr, socketID, level, optName, optVal, optLen)
-    int		*retValPtr;
+MachUNIXSetSockOpt(socketID, level, optName, optVal, optLen)
     int		socketID;	/* Stream ID of socket to set options on. */
     int		level;		/* Socket or protocol level to get the option.*/
     int		optName;	/* Type of option to get. */
@@ -625,8 +618,7 @@ MachUNIXSetSockOpt(retValPtr, socketID, level, optName, optVal, optLen)
  */
 
 ReturnStatus
-MachUNIXListen(retValPtr, socketID, backlog)
-    int *retValPtr;
+MachUNIXListen(socketID, backlog)
     int	socketID;	/* Stream ID of socket to be put in listen mode. */
     int	backlog;	/* How many connection requests to queue. */
 {
@@ -664,8 +656,7 @@ MachUNIXListen(retValPtr, socketID, backlog)
  */
 
 ReturnStatus
-MachUNIXRecv(retValPtr, socketID, bufPtr, bufSize, flags)
-    int		*retValPtr;
+MachUNIXRecv(socketID, bufPtr, bufSize, flags)
     int		socketID;
     char	*bufPtr;	/* Address of buffer to place the data in. */
     int		bufSize;	/* Size of *bufPtr. */
@@ -696,9 +687,8 @@ MachUNIXRecv(retValPtr, socketID, bufPtr, bufSize, flags)
  */
 
 ReturnStatus
-MachUNIXRecvFrom(retValPtr, socketID, bufPtr, bufSize, flags, senderPtr, 
+MachUNIXRecvFrom(socketID, bufPtr, bufSize, flags, senderPtr, 
 		 senderLenPtr)
-    int			*retValPtr;
     int			socketID;	/* Socket to read. */
     char		*bufPtr;	/* Buffer to place the data in. */
     int			bufSize;	/* Size of *bufPtr. */
@@ -748,7 +738,8 @@ MachUNIXRecvFrom(retValPtr, socketID, bufPtr, bufSize, flags, senderPtr,
 	DebugMsg(status, "recvfrom (read)");
 	return(status);
     }
-    (void)Vm_CopyIn(sizeof(int), (Address)intPtr, (Address)retValPtr);
+    (void)Vm_CopyIn(sizeof(int), (Address)intPtr,
+		   (Address)&machCurStatePtr->userState.unixRetVal);
 
     /*
      * If the caller wants the address of the sender, ask the server for it.
@@ -788,8 +779,7 @@ MachUNIXRecvFrom(retValPtr, socketID, bufPtr, bufSize, flags, senderPtr,
  */
 
 ReturnStatus
-MachUNIXRecvMsg(retValPtr, socketID, msgPtr, flags)
-    int			*retValPtr;
+MachUNIXRecvMsg(socketID, msgPtr, flags)
     int			socketID;	/* Sokect to read data from. */
     struct msghdr	*msgPtr;	/* I/O vector of buffers to store the
 					 * data. */
@@ -836,11 +826,11 @@ MachUNIXRecvMsg(retValPtr, socketID, msgPtr, flags)
 	    return(status);
 	}
     }
-    status = MachUNIXReadv(retValPtr, socketID, msg.msg_iov, msg.msg_iovlen);
+    status = MachUNIXReadv(socketID, msg.msg_iov, msg.msg_iovlen);
     if (status != SUCCESS) {
 	return(status);
     }
-    if (*retValPtr < 0) {
+    if (machCurStatePtr->userState.unixRetVal < 0) {
 	DebugMsg(errno, "recvmsg (readv)");
     }
     
@@ -877,15 +867,14 @@ MachUNIXRecvMsg(retValPtr, socketID, msgPtr, flags)
  */
 
 ReturnStatus
-MachUNIXSend(retValPtr, socketID, bufPtr, bufSize, flags)
-    int		*retValPtr;
+MachUNIXSend(socketID, bufPtr, bufSize, flags)
     int		socketID;	/* Socket to send data on. */
     char	*bufPtr;	/* Address of buffer to send. */
     int		bufSize;	/* Size of *bufPtr. */
     int		flags;		/* Type of operatrion: OR of 
 				 *  MSG_OOB, MSG_PEEK, MSG_DONTROUTE. */
 {
-    return(MachUNIXSendTo(retValPtr, socketID, bufPtr, bufSize, flags,
+    return(MachUNIXSendTo(socketID, bufPtr, bufSize, flags,
 			  (struct sockaddr *)NULL, 0));
 }
 
@@ -912,8 +901,7 @@ MachUNIXSend(retValPtr, socketID, bufPtr, bufSize, flags)
  */
 
 ReturnStatus
-MachUNIXSendTo(retValPtr, socketID, bufPtr, bufSize, flags, destPtr, destLen)
-    int		*retValPtr;
+MachUNIXSendTo(socketID, bufPtr, bufSize, flags, destPtr, destLen)
     int		socketID;	/* Socket to send data on. */
     char	*bufPtr;	/* Address of buffer to send. */
     int		bufSize;	/* Size of *bufPtr. */
@@ -974,7 +962,8 @@ MachUNIXSendTo(retValPtr, socketID, bufPtr, bufSize, flags, destPtr, destLen)
 	DebugMsg(status, "sendto (write)");
 	return(status);
     }
-    (void)Vm_CopyIn(sizeof(int), (Address)intPtr, (Address)retValPtr);
+    (void)Vm_CopyIn(sizeof(int), (Address)intPtr,
+		    (Address)&machCurStatePtr->userState.unixRetVal);
     return(SUCCESS);
 }
 
@@ -1002,8 +991,7 @@ MachUNIXSendTo(retValPtr, socketID, bufPtr, bufSize, flags, destPtr, destLen)
  */
 
 ReturnStatus
-MachUNIXSendMsg(retValPtr, socketID, msgPtr, flags)
-    int			*retValPtr;
+MachUNIXSendMsg(socketID, msgPtr, flags)
     int			socketID;	/* Socket to send data on. */
     struct msghdr	*msgPtr;	/* I/O vector of buffers containing
 					 * data to send. */
@@ -1064,7 +1052,7 @@ MachUNIXSendMsg(retValPtr, socketID, msgPtr, flags)
 	}
     }
 
-    status = MachUNIXWritev(retValPtr, socketID, msg.msg_iov, msg.msg_iovlen);
+    status = MachUNIXWritev(socketID, msg.msg_iov, msg.msg_iovlen);
     if (status != SUCCESS) {
 	DebugMsg(errno, "sendmsg (writev)");
     }
@@ -1091,8 +1079,7 @@ MachUNIXSendMsg(retValPtr, socketID, msgPtr, flags)
  */
 
 ReturnStatus
-MachUNIXSocket(retValPtr, domain, type, protocol)
-    int	*retValPtr;
+MachUNIXSocket(domain, type, protocol)
     int	domain;		/* Type of communications domain */
     int	type;		/* Type of socket: SOCK_STREAM, SOCK_DGRAM, SOCK_RAW. */
     int	protocol;	/* Specific protocol to use. */
@@ -1160,7 +1147,7 @@ MachUNIXSocket(retValPtr, domain, type, protocol)
 	}
     }
 
-    *retValPtr = streamID;
+    machCurStatePtr->userState.unixRetVal = streamID;
     return(SUCCESS);
 }
 
@@ -1181,8 +1168,7 @@ MachUNIXSocket(retValPtr, domain, type, protocol)
  */
 
 ReturnStatus
-MachUNIXShutdown(retValPtr, socketID, action)
-    int		*retValPtr;
+MachUNIXShutdown(socketID, action)
     int		socketID;	/* Socket to shut down. */
     int		action;		/* 0 -> disallow further recvs, 
 				 * 1 -> disallow further sends,

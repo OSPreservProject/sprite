@@ -41,8 +41,7 @@ extern Mach_State	*machCurStatePtr;
  *----------------------------------------------------------------------
  */
 ReturnStatus
-MachUNIXSigvec(retValPtr, sig, newVectorPtr, oldVectorPtr)
-    int			*retValPtr;
+MachUNIXSigvec(sig, newVectorPtr, oldVectorPtr)
     int 		sig;		/* Signal to set the vector for. */
     struct sigvec	*newVectorPtr;	/* New vector. */
     struct sigvec	*oldVectorPtr;	/* Old vector. */
@@ -146,8 +145,7 @@ MachUNIXSigvec(retValPtr, sig, newVectorPtr, oldVectorPtr)
  */
 
 ReturnStatus
-MachUNIXBlock(retValPtr, mask)
-    int	*retValPtr;
+MachUNIXBlock(mask)
     int mask;			/* additional bits to mask */
 {
     int spriteMask = 0;		/* equivalent mask for Sprite */
@@ -167,7 +165,8 @@ MachUNIXBlock(retValPtr, mask)
     if (status != SUCCESS) {
 	return(status);
     } else {
-	status = Compat_SpriteSigMaskToUnix(oldSpriteMask, retValPtr);
+	status = Compat_SpriteSigMaskToUnix(oldSpriteMask, 
+					&machCurStatePtr->userState.unixRetVal);
 	if (status == FAILURE) {
 	    return(SYS_INVALID_ARG);
 	}
@@ -194,8 +193,7 @@ MachUNIXBlock(retValPtr, mask)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-MachUNIXSigSetmask(retValPtr, mask)
-    int *retValPtr;
+MachUNIXSigSetmask(mask)
     int mask;			/* new mask */
 {
     int spriteMask = 0;		/* equivalent mask for Sprite */
@@ -214,7 +212,8 @@ MachUNIXSigSetmask(retValPtr, mask)
 	return(status);
     } else {
 	(void)Vm_CopyIn(sizeof(oldSpriteMask), usp, (Address)&oldSpriteMask);
-	status = Compat_SpriteSigMaskToUnix(oldSpriteMask, retValPtr);
+	status = Compat_SpriteSigMaskToUnix(oldSpriteMask,
+				    &machCurStatePtr->userState.unixRetVal);
 	if (status == FAILURE) {
 	    return(SYS_INVALID_ARG);
 	}
@@ -242,8 +241,7 @@ MachUNIXSigSetmask(retValPtr, mask)
  */
 
 ReturnStatus
-MachUNIXSigPause(retValPtr, mask)
-    int *retValPtr;
+MachUNIXSigPause(mask)
     int mask;			/* new mask */
 {
     int spriteMask = 0;		/* equivalent mask for Sprite */
@@ -278,8 +276,7 @@ MachUNIXSigPause(retValPtr, mask)
  *----------------------------------------------------------------------
  */
 ReturnStatus
-MachUNIXSigStack(retValPtr, ss, oss)
-    int	*retValPtr;
+MachUNIXSigStack(ss, oss)
     struct sigstack *ss, *oss;
 {
     struct sigstack oldStack;

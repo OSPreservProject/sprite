@@ -79,8 +79,7 @@ unsigned ifcBuf[16] = {
  *----------------------------------------------------------------------
  */
 int
-MachUNIXIoctl(retValPtr, fd, request, buf)
-    int		*retValPtr;
+MachUNIXIoctl(fd, request, buf)
     int		fd;
     int		request;
     char *	buf;

@@ -124,7 +124,7 @@ int machMaxSysCall;			/* Highest defined system call. */
  * Tables to determine where to go to fetch the arguments for a system call.
  */
 ReturnStatus (*machArgDispatch[MAXCALLS])();
-ReturnStatus (*argDispatchTable[])() = {
+ReturnStatus (*machArgDispatchTable[])() = {
     MachFetch0Args,
     MachFetch0Args,
     MachFetch0Args,
@@ -778,7 +778,7 @@ Mach_InitSyscall(callNum, numArgs, normalHandler, migratedHandler)
     if (numArgs > MAXARGS) {
 	panic("too many arguments to kernel call");
     }
-    machArgDispatch[machMaxSysCall] = argDispatchTable[numArgs];
+    machArgDispatch[machMaxSysCall] = machArgDispatchTable[numArgs];
     mach_NormalHandlers[machMaxSysCall] = normalHandler;
     mach_MigratedHandlers[machMaxSysCall] = migratedHandler;
 }
