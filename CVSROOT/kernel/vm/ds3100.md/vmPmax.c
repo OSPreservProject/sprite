@@ -64,10 +64,10 @@ static Sync_Semaphore *vmMachMutexPtr = &vmMachMutex;
 
 /*
  * The maximum amount of kernel code + data available.  The amount available
- * 1 Gig + 4 Meg.  We need 1 Gig to cover the gap between physical mapped
+ * 1 Gig + 8 Meg.  We need 1 Gig to cover the gap between physical mapped
  * and virtually mapped memory.
  */
-int	vmMachKernMemSize = 0x40000000 + 0x400000;
+int	vmMachKernMemSize = 0x40000000 + 0x800000;
 
 /*
  * Table of info about each physical page on the machine.
