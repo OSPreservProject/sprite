@@ -1158,8 +1158,15 @@ FsRemoteGetIOAttr(fileIDPtr, clientID, attrPtr)
 
     status = Rpc_Call(fileIDPtr->serverID, RPC_FS_GET_IO_ATTR, &storage);
     /*
-     * I/O Server recovery??	TODO
+     * We punt on I/O server recovery, and mask errors so a stat() works.
      */
+    if (status != SUCCESS) {
+	Sys_Panic(SYS_WARNING,
+	    "FsRemoteGetIOAttr failed <%x>: device <%d,%d> at server %d\n",
+	    status, fileIDPtr->major, fileIDPtr->minor, fileIDPtr->serverID);
+	status = SUCCESS;
+    }
+
     return(status);
 }
 
@@ -1209,7 +1216,11 @@ Fs_RpcGetIOAttr(srvToken, clientID, command, storagePtr)
 
     hdrPtr = VerifyIOHandle(fileIDPtr);
     if (hdrPtr == (FsHandleHeader *) NIL) {
-	return(FS_STALE_HANDLE);
+	/*
+	 * Noone has the I/O device open so we don't have a handle.
+	 * Return SUCCESS but no reply data.
+	 */
+	return(SUCCESS);
     } 
     FsHandleUnlock(hdrPtr);
 
@@ -1277,8 +1288,14 @@ FsRemoteSetIOAttr(fileIDPtr, attrPtr, flags)
 
     status = Rpc_Call(fileIDPtr->serverID, RPC_FS_SET_IO_ATTR, &storage);
     /*
-     * I/O Server recovery??	TODO
+     * We punt on I/O server recovery, and mask errors so a chmod() works.
      */
+    if (status != SUCCESS) {
+	Sys_Panic(SYS_WARNING,
+	    "FsRemoteSetIOAttr failed <%x>: device <%d,%d> at server %d\n",
+	    status, fileIDPtr->major, fileIDPtr->minor, fileIDPtr->serverID);
+	status = SUCCESS;
+    }
     return(status);
 }
 
@@ -1328,7 +1345,11 @@ Fs_RpcSetIOAttr(srvToken, clientID, command, storagePtr)
 
     hdrPtr = VerifyIOHandle(fileIDPtr);
     if (hdrPtr == (FsHandleHeader *) NIL) {
-	return(FS_STALE_HANDLE);
+	/*
+	 * Noone has the I/O device open so we don't have a handle.
+	 * Return SUCCESS but take no action.
+	 */
+	return(SUCCESS);
     } 
     FsHandleUnlock(hdrPtr);
 
