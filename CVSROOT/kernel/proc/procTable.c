@@ -534,6 +534,7 @@ ProcGetUnusedPCB()
     }
     procPtr = *procPtrPtr;
     procPtr->genFlags = PROC_LOCKED;
+    procPtr->migFlags = 0;
     procPtr->state = PROC_NEW;
     /*
      *  The PCB entry has a generation number that is incremented each time
