@@ -1711,7 +1711,7 @@ ClientCommand(consistPtr, clientPtr, flags)
 	printf("ClientCommand, %s msg to client %d file \"%s\" <%d,%d> failed %x\n",
 	    ConsistType(flags), clientID, Fsutil_HandleName(consistPtr->hdrPtr),
 	    consistRpc.fileID.major, consistRpc.fileID.minor, status);
-	if (status == RPC_TIMEOUT) {
+	if (status == RPC_TIMEOUT || status == FS_STALE_HANDLE) {
 	    /*
 	     * If its really down, then nuke it from the
 	     * list of clients using the file.
