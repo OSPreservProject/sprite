@@ -144,6 +144,8 @@ int	machSigTrapInstOffsetOnStack;	/* offset of trapInst field in
 					 * MachSignalStack on user stack. */
 int	machSigNumOffsetInSig;		/* offset of sigNum field in
 					 * Sig_Stack structure. */
+int	machSigAddrOffsetInSig;		/* offset of sigAddr field in
+					 * Sig_Stack structure. */
 int	machSigCodeOffsetInSig;		/* offset of sigCode field in
 					 * Sig_Stack structure. */
 int	machSigPCOffsetOnStack;		/* offset of pcValue field in
@@ -316,6 +318,7 @@ Mach_Init()
     machSigTrapInstOffsetOnStack = offsetof(MachSignalStack,
         sigContext.machContext.trapInst);
     machSigNumOffsetInSig = offsetof(Sig_Stack, sigNum);
+    machSigAddrOffsetInSig = offsetof(Sig_Stack, sigAddr);
     machSigCodeOffsetInSig = offsetof(Sig_Stack, sigCode);
     machSigPCOffsetOnStack = offsetof(MachSignalStack, 
         sigContext.machContext.pcValue);
