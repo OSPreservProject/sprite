@@ -197,7 +197,8 @@ InitTapeDevice(devicePtr, devPtr)
 		return status;
 	    }
 	    descPtr = (ScsiBlockDesc *) &modeSense[1];
-	    length = (descPtr->len2 << 16) | (descPtr->len1 << 8) |
+	    length = ((unsigned int) descPtr->len2 << 16) | 
+			((unsigned int) descPtr->len1 << 8) |
 			descPtr->len0;
 	    if (length != 0) {
 	    } else {
@@ -360,8 +361,8 @@ DevSCSITapeError(devPtr, scsiCmdPtr)
 	    register int class = (sensePtr->error & 0x70) >> 4;
 	    register int code = sensePtr->error & 0xF;
 	    register int addr;
-	    addr = (sensePtr->highAddr << 16) |
-		    (sensePtr->midAddr << 8) |
+	    addr = ((unsigned int) sensePtr->highAddr << 16) |
+		    ((unsigned int) sensePtr->midAddr << 8) |
 		    sensePtr->lowAddr;
 	    printf("Warning: %s at %s: Sense error (%d-%d) at <%x> ",
 			     tapePtr->name, name, class, code, addr);
@@ -940,9 +941,9 @@ DevSCSITapeIOControl(devicePtr, ioctlPtr, replyPtr)
 		status = DevScsiReadPosition(tapePtr->devPtr, 0, &position);
 		if ((status == SUCCESS) && (position.bpu == 0)) {
 		    tapeStatus.position = 
-			    (position.firstBlock3 << 24) |
-			    (position.firstBlock2 << 16) |
-			    (position.firstBlock1 << 8) |
+			    ((unsigned int) position.firstBlock3 << 24) |
+			    ((unsigned int) position.firstBlock2 << 16) |
+			    ((unsigned int) position.firstBlock1 << 8) |
 			    (position.firstBlock0);
 		}
 	    }

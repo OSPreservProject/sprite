@@ -436,7 +436,9 @@ DevScsiReadBlockLimits(scsiDevicePtr, minPtr, maxPtr)
     cmd.buffer = (char *) &limits;
     len = 0;
     status = DevScsiSendCmdSync(scsiDevicePtr,&cmd, &len);
-    *maxPtr = (limits.max2 << 16) | (limits.max1 << 8) | limits.max0;
+    *maxPtr = ((unsigned int) limits.max2 << 16) | 
+		((unsigned int) limits.max1 << 8) | 
+		limits.max0;
     *minPtr = (limits.min1 << 8) | limits.min0;
     return status;
 }

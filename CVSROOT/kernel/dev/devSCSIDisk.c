@@ -612,8 +612,8 @@ DiskError(devPtr, scsiCmdPtr)
 	int class = (sensePtr->error & 0x70) >> 4;
 	int code = sensePtr->error & 0xF;
 	int addr;
-	addr = (sensePtr->highAddr << 16) |
-		(sensePtr->midAddr << 8) |
+	addr = ((unsigned int) sensePtr->highAddr << 16) |
+		((unsigned int) sensePtr->midAddr << 8) |
 		sensePtr->lowAddr;
 	printf("Warning: SCSI disk at %s sense error (%d-%d) at <%x> ",
 			name, class, code, addr);
@@ -677,8 +677,8 @@ DiskHBATestDoneProc(scsiCmdPtr, status, statusByte, byteCount, senseLength,
 	int class = (sensePtr->error & 0x70) >> 4;
 	int code = sensePtr->error & 0xF;
 	int addr;
-	addr = (sensePtr->highAddr << 16) |
-		(sensePtr->midAddr << 8) |
+	addr = ((unsigned int) sensePtr->highAddr << 16) |
+		((unsigned int) sensePtr->midAddr << 8) |
 		sensePtr->lowAddr;
 	printf("Warning: SCSI disk sense error (%d-%d) at <%x> ",
 			class, code, addr);

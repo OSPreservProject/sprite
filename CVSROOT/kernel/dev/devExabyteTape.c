@@ -354,12 +354,12 @@ DevExabyteStatus(tapePtr, statusPtr, readPositionPtr)
 	}
 	sensePtr = &sense.sense8200;
 	statusPtr->remaining = 
-		(sensePtr->highRemainingTape << 16) |
-		(sensePtr->midRemainingTape << 8) |
+		((unsigned int) sensePtr->highRemainingTape << 16) |
+		((unsigned int) sensePtr->midRemainingTape << 8) |
 		(sensePtr->lowRemainingTape);
 	statusPtr->dataError = 
-		(sensePtr->highErrorCnt << 16) |
-		(sensePtr->midErrorCnt << 8) |
+		((unsigned int) sensePtr->highErrorCnt << 16) |
+		((unsigned int) sensePtr->midErrorCnt << 8) |
 		(sensePtr->lowErrorCnt);
 	bufSize = sizeof(buffer);
 	status = DevScsiModeSense(tapePtr->devPtr, 0, 0, 0, 0, &bufSize, 
@@ -386,12 +386,12 @@ DevExabyteStatus(tapePtr, statusPtr, readPositionPtr)
 	}
 	sensePtr = &sense.sense8500;
 	statusPtr->remaining = 
-		(sensePtr->highRemainingTape << 16) |
-		(sensePtr->midRemainingTape << 8) |
+		((unsigned int) sensePtr->highRemainingTape << 16) |
+		((unsigned int) sensePtr->midRemainingTape << 8) |
 		(sensePtr->lowRemainingTape);
 	statusPtr->dataError = 
-		(sensePtr->highErrorCnt << 16) |
-		(sensePtr->midErrorCnt << 8) |
+		((unsigned int) sensePtr->highErrorCnt << 16) |
+		((unsigned int) sensePtr->midErrorCnt << 8) |
 		(sensePtr->lowErrorCnt);
 	statusPtr->readWriteRetry = sensePtr->readWriteRetry;
 	statusPtr->trackingRetry = sensePtr->trackingRetry;
