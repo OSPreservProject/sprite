@@ -93,7 +93,7 @@ typedef struct Sync_Semaphore {
     /*
      * The value field must be first.
      */
-    int value;				/* value of semaphore */
+    volatile int value;			/* value of semaphore */
 
 #ifdef LOCKREG
     int miss;				/* count of misses on lock */
@@ -128,7 +128,7 @@ typedef struct Sync_KernelLock{
     /*
      * The inUse and waiting fields must be first and in this order.
      */
-    Boolean inUse;			/* 1 while the lock is busy */
+    volatile Boolean inUse;		/* 1 while the lock is busy */
     Boolean waiting;	        	/* 1 if someone wants the lock */
 #ifdef LOCKREG
     int hit;				/* number of times lock is grabbed */
