@@ -90,6 +90,12 @@ MachStringTable *argv;
 	Mach_MonPrintf("Calling Mach_Init().\n");
     }
     Mach_Init(argc, argv);
+
+    /*
+     * Initialize variables again, since Mach_Init clobbered them.
+     */
+    Main_InitVars();
+
     if (main_PrintInitRoutines) {
 	Mach_MonPrintf("Calling Sync_Init().\n");
     }
