@@ -18,4 +18,4 @@ extern 	void 	SyncSlowBroadcast();
 extern	void	SyncEventWakeupInt();
 extern	Boolean	SyncEventWaitInt();
 
-#endif _SYNCINT
+#endif /* _SYNCINT */

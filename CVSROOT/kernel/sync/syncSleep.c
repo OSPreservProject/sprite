@@ -10,7 +10,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif /* not lint */
 
 
 #include "sprite.h"
@@ -180,7 +180,7 @@ WaitTimeSubr(wakeupTime)
 	    sync_Instrument.numSpuriousWakeups++;
 #ifdef DEBUG
 	    Sys_Printf("Sync_WaitTime: woke up for wrong reason.\n");
-#endif DEBUG
+#endif /* DEBUG */
 	}
 	sigPending = SyncEventWaitInt((unsigned int) procPtr, TRUE);
 	wokeUp = TRUE;
