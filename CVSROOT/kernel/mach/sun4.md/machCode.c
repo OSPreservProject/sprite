@@ -1126,6 +1126,7 @@ Mach_GetNumProcessors()
 	return (mach_NumProcessors);
 }
 
+
 
 /*
  *----------------------------------------------------------------------
@@ -1198,12 +1199,30 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
      */
     {
 	static timeoutRetryCount = 0;
+	extern void MachVectoredInterruptLoad();
+
 	if ((trapPsr & MACH_PS_BIT) && (busErrorReg == MACH_TIMEOUT_ERROR)) {
+	    /*
+	     * If the error occurred on a the load of the interrupt
+	     * vector make the routine return.
+	     */
+	    if (pcValue == (Address) MachVectoredInterruptLoad) {
+		/*
+		 * This doesn't return to here.  It erases the fact that the
+		 * page fault happened and makes the MachVectoredInterrupt
+		 * routine that got the page fault return FAILURE 
+		 * to its caller.  
+		 */
+		Mach_MonPrintf(
+"MachPageFault: Bus timeout error on VME interrupt vector load pc:0x%x, addr:0x%x\n",
+		     pcValue, addrErrorReg);
+		MachHandleBadQuickCopy();
+	    }
+	    Mach_MonPrintf(
+ "MachPageFault: Bus timeout error retry %d at pc:0x%x, addr:0x%x\n",
+		    timeoutRetryCount, pcValue, addrErrorReg);
 	    if (timeoutRetryCount < 10) {
 		timeoutRetryCount++;
-		Mach_MonPrintf(
-"MachPageFault: Bus timeout error retry %d at pc:0x%x, addr:0x%x\n",
-		    timeoutRetryCount, pcValue, addrErrorReg);
 		return;
 	    }
 	}

@@ -116,6 +116,8 @@ LeaveInterruptLevel:
 _MachVectoredInterrupt:
 	/* We need to return to a leaf routine, so we need to save a frame */
 	save	%sp, -MACH_FULL_STACK_FRAME, %sp
+.globl	_MachVectoredInterruptLoad
+_MachVectoredInterruptLoad:
 	lduba	[%i0] VMMACH_CONTROL_SPACE, %VOL_TEMP1	/* got vector */
 	sll	%VOL_TEMP1, 2, %VOL_TEMP1		/* convert to index */
 	set	_machInterruptArgs, %VOL_TEMP2
@@ -126,9 +128,10 @@ _MachVectoredInterrupt:
 	ld	[%VOL_TEMP2], %VOL_TEMP2
 	call	%VOL_TEMP2				/* %o0 is arg */
 	nop
-
 	ret
 	restore
+
+
 
 /*
  * ----------------------------------------------------------------------
