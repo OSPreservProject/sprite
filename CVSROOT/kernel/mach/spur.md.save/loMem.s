@@ -14,28 +14,6 @@
 #include "machAsmDefs.h"
 
 /*
- * REGISTER CONVENTIONS
- *
- * The routines in this file use the following conventions for using
- * registers (see reg.h for symbolic names):
- *
- *	1) r1-r8:	Globals used by the Lisp system and are left untouched.
- *	2) r9:		Global that we can use as a temporary.
- *	3) r10:		Where the PC to return to when a trap occurs is stored
- *	4) r11-r15:	Off limits because these are the previous windows
- *			output registers and it might be in the middle
- *			of using them.  If one of these registers is used
- *			then it must be saved and restored.
- *	5) r16:		Where the 2nd PC is stored when a trap occurs.
- *	6) r17-r25:	Temporaries.  r17-r19 can be changed by the macros
- *			in machAsmDefs.h and r23-r25 are off limits to the
- *			interrupt handler for reasons described under
- *			"SWITCHING TO KERNEL MODE" below.
- *	7) r26:		Callers return PC.
- *	8) r27-r31:	Output registers.  Generally unused in here except
- *			by the instruction parsing routines and to pass args
- *			to C routines.
- *
  * SAVED WINDOW STACK CONVENTIONS
  *
  * When user processes trap into the kernel the kernel uses the user saved
@@ -105,13 +83,6 @@
 	.set rt7, 23
 	.set rt8, 24
 	.set rt9, 25
-
-/*
- * Temporary global registers.  Note that the only one that we can use is r9
- * because r1 through r8 are redquired by the Lisp system.  If these need to
- * be used then they have to be saved first.
- */
-#define	GLOB_TMP1	r9
 
 /*
  * Trap table.  The hardware jumps to virtual 0x1000 when any type of trap
@@ -297,7 +268,6 @@ winOvFlow_SaveWindow:
      * user mode then we have to make sure that we have at least one page
      * of overflow stack available.
      */
-
 	cmp_br_delayed	eq, SAFE_TEMP1, $0, winOvFlow_Return
 	Nop
 	ld_32		VOL_TEMP1, r0, $curStatePtr
