@@ -215,6 +215,9 @@ typedef struct Fs_Stream {
  *		I/O client book-keeping correctly.
  *	FS_WB_ON_LDB - Write this file back to disk if this is the last dirty
  *		       block.
+ *	FS_LAST_WRITER - Migration related.  This tells the I/O server to
+ *		decrement its write count even if the stream is still
+ *		referenced on the host from which it is migrating.
  */
 #define FS_KERNEL_FLAGS		0xfffff000
 #define FS_FOLLOW		0x00001000
@@ -233,6 +236,7 @@ typedef struct Fs_Stream {
 #define FS_RMT_SHARED		0x04000000
 #define FS_NEW_STREAM		0x08000000
 #define	FS_WB_ON_LDB		0x10000000
+#define	FS_LAST_WRITER		0x20000000
 
 
 /*
