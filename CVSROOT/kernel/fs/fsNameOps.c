@@ -513,6 +513,9 @@ Fs_TruncStream(streamPtr, length)
     Fs_IOCParam ioctl;
     Fs_IOReply reply;
 
+    if (length < 0) {
+	return(GEN_INVALID_ARG);
+    }
     ioctl.command = IOC_TRUNCATE;
     ioctl.inBuffer = (Address)&length;
     ioctl.inBufSize = sizeof(int);
