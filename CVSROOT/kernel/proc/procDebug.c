@@ -6,14 +6,14 @@
  *	are responsible for the following fields in the proc table:
  *
  *	    1) Process state can go to PROC_DEBUGABLE.
- *	    2) PROC_DEBUGGED, PROC_SINGLE_STEP_FLAG, and PROC_DEBUG_WAIT
- *	       can be set in the genFlags field.
+ *	    2) PROC_DEBUGGED, PROC_ON_DEBUG_LIST, PROC_SINGLE_STEP_FLAG,
+ *	       and PROC_DEBUG_WAIT can be set in the genFlags field.
  *
  *	The PROC_DEBUGGED flag is set when a process is being actively debugged
- *	by a debugger.  When this flag is set, the process is removed from
- *	the debug queue.  Thus when a process is in the state PROC_DEBUGABLE
- *	it is on the debug list iff the PROC_DEBUGGED flag isn't set in the
- *	genFlags field.
+ *	by a debugger.  It is not cleared until a debugger issues the
+ *	PROC_DETACH_DEBUGGER debug command.  The PROC_ON_DEBUG_LIST flag is
+ *	set when a process is put onto the debug queue and cleared when
+ *	it is taken off.
  *
  * Copyright 1986, 1988 Regents of the University of California
  * Permission to use, copy, modify, and distribute this
@@ -121,6 +121,7 @@ Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
 	procPtr = Proc_LockPID(pid);
 	if (procPtr == (Proc_ControlBlock *) NIL || 
 	    !(procPtr->genFlags & PROC_DEBUGGED) ||
+	    (procPtr->genFlags & PROC_ON_DEBUG_LIST) ||
 	    (procPtr->state != PROC_SUSPENDED && 
 	     procPtr->state != PROC_DEBUGABLE)) {
 	    if (procPtr != (Proc_ControlBlock *) NIL) {
@@ -140,10 +141,10 @@ Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
 	    while (TRUE) {
 		procPtr = Proc_LockPID(pid);
 		if (procPtr == (Proc_ControlBlock *) NIL ||
-		    (procPtr->genFlags & (PROC_DIEING | PROC_DEBUGGED))) {
+		    (procPtr->genFlags & PROC_DIEING)) {
 		    /*
-		     * The pid they gave us either doesn't exist, is exiting,
-		     * or is already being debugged.
+		     * The pid they gave us either doesn't exist or the
+		     * corresponding process is exiting.
 		     */
 		    if (procPtr != (Proc_ControlBlock *) NIL) {
 			Proc_Unlock(procPtr);
@@ -167,7 +168,10 @@ Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
 		} else if (procPtr->state == PROC_DEBUGABLE) {
 		    procPtr->genFlags &= ~PROC_DEBUG_WAIT;
 		    procPtr->genFlags |= PROC_DEBUGGED;
-		    List_Remove((List_Links *) procPtr);
+		    if (procPtr->genFlags & PROC_ON_DEBUG_LIST) {
+			List_Remove((List_Links *) procPtr);
+			procPtr->genFlags &= ~PROC_ON_DEBUG_LIST;
+		    }
 		    break;
 		}
 
@@ -195,6 +199,7 @@ Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
 		    Proc_Lock(procPtr);
 		    procPtr->genFlags |= PROC_DEBUGGED;
 		    List_Remove((List_Links *) procPtr);
+		    procPtr->genFlags &= ~PROC_ON_DEBUG_LIST;
 		    break;
 		}
 		sigPending = Sync_Wait(&debugListCondition, TRUE);
@@ -216,7 +221,6 @@ Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
 	    /* Fall through to ... */
 	    
 	case PROC_CONTINUE:
-	    procPtr->genFlags 	&= ~PROC_DEBUGGED;
 	    Sched_MakeReady(procPtr);
 	    break;
 
@@ -298,6 +302,11 @@ Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
 
 	    break;
 
+	case PROC_DETACH_DEBUGGER:
+	    procPtr->genFlags &= ~PROC_DEBUGGED;
+	    Sched_MakeReady(procPtr);
+	    break;
+
 	default:
 	    status = SYS_INVALID_ARG;
 	    break;
@@ -330,21 +339,22 @@ Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
  */
  
 void
-Proc_PutOnDebugList(procPtr, sigNum, statusReg)
+Proc_PutOnDebugList(procPtr, termReason, termStatus, termCode, statusReg)
     register	Proc_ControlBlock	*procPtr;	/* Process to put on the
 							 * debug list. */
-    int					sigNum;		/* Signal that caused 
-							 * process to go on 
-							 * list. */
+    int					termReason;	/* Reason why process
+							 * went on list. */
+    int					termStatus;	/* Termination status.*/
+    int					termCode;	/* Termination code. */
     short				statusReg;	/* Status register of
 							 * the process. */
 {
     LOCK_MONITOR;
 
     procPtr->statusReg	= statusReg;
-    procPtr->termReason	= PROC_TERM_SIGNALED;
-    procPtr->termStatus	= sigNum;
-    procPtr->termCode	= procPtr->sigCodes[sigNum];
+    procPtr->termReason	= termReason;
+    procPtr->termStatus	= termStatus;
+    procPtr->termCode	= termCode;
 
     if (procPtr->genFlags & PROC_FOREIGN) {
 	Sys_Panic(SYS_WARNING,
@@ -357,6 +367,9 @@ Proc_PutOnDebugList(procPtr, sigNum, statusReg)
     }
 
     List_Insert((List_Links *) procPtr, LIST_ATREAR(debugList));
+    Proc_Lock(procPtr);
+    procPtr->genFlags |= PROC_ON_DEBUG_LIST;
+    Proc_Unlock(procPtr);
     Sync_Broadcast(&debugListCondition);
 
     UNLOCK_MONITOR_AND_SWITCH(PROC_DEBUGABLE);
@@ -390,19 +403,11 @@ Proc_TakeOffDebugList(procPtr)
     LOCK_MONITOR;
 
     if (procPtr->state == PROC_DEBUGABLE) {
-	if (procPtr->genFlags & PROC_DEBUGGED) {
-	    /*
-	     * If the process is being actively debugged, then it is not
-	     * on the debug list so don't remove it.
-	     */
-	    procPtr->genFlags &= ~PROC_DEBUGGED;
-	} else {
-	    /*
-	     * The process is not being debugged so remove it from the
-	     * debug list.
-	     */
+	if (procPtr->genFlags & PROC_ON_DEBUG_LIST) {
 	    List_Remove((List_Links *) procPtr);
+	    procPtr->genFlags &= ~PROC_ON_DEBUG_LIST;
 	}
+	procPtr->genFlags &= ~PROC_DEBUGGED;
 	Sched_MakeReady(procPtr);
 	Sync_Broadcast(&debugListCondition);
     }
