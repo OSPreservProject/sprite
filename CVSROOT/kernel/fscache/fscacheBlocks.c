@@ -1037,7 +1037,6 @@ Fscache_FetchBlock(cacheInfoPtr, blockNum, flags, blockPtrPtr, foundPtr)
     Fscache_Block		*newBlockPtr;
     int				refTime;
     register Boolean		dontBlock = (flags & FSCACHE_DONT_BLOCK);
-    Boolean			doubleInsert = FALSE;
 
     LOCK_MONITOR;
 
@@ -1059,12 +1058,6 @@ Fscache_FetchBlock(cacheInfoPtr, blockNum, flags, blockPtrPtr, foundPtr)
 		panic("Fscache_FetchBlock hashing error\n");
 		*foundPtr = FALSE;
 		return;
-	    }
-	    if (doubleInsert && blockNum != -2) {
-		printf("Fscache_FetchBlock: double insert avoided file <%d,%d> block %d\n",
-		    blockPtr->cacheInfoPtr->hdrPtr->fileID.major,
-		    blockPtr->cacheInfoPtr->hdrPtr->fileID.minor,
-		    blockPtr->blockNum);
 	    }
 	    if (((flags & FSCACHE_IO_IN_PROGRESS) && 
 		 blockPtr->refCount > 0) ||
@@ -1154,15 +1147,13 @@ Fscache_FetchBlock(cacheInfoPtr, blockNum, flags, blockPtrPtr, foundPtr)
 	    /*
 	     * If blockPtr is NIL we waited for room in the cache or
 	     * for a busy cache block.  Now we'll retry all the various
-	     * ploys to get a free block.
-	     * We set the doubleInsert flag here to catch the old bug
-	     * case where the first hash didn't find the block, FetchBlock
+	     * ploys to get a free block. There used to be a bug
+	     * where the first hash didn't find the block, FetchBlock
 	     * waited for room in the cache, and the block reappeared
 	     * in the cache but FetchBlock was called to get a new block
 	     * anyway - the hash was not redone so a block could have
 	     * been put into the hash table twice.
 	     */
-	    doubleInsert = TRUE;
 	}
     } while ((blockPtr == (Fscache_Block *)NIL) && !dontBlock);
 
@@ -1197,7 +1188,6 @@ Fscache_FetchBlock(cacheInfoPtr, blockNum, flags, blockPtrPtr, foundPtr)
 	}
     }
     *blockPtrPtr = blockPtr;
-
     UNLOCK_MONITOR;
     return;
 }
@@ -1404,7 +1394,6 @@ Fscache_UnlockBlock(blockPtr, timeDirtied, diskBlock, blockSize, flags)
 	    }
 	}
     }
-
     UNLOCK_MONITOR;
 }
 
