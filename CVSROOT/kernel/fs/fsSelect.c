@@ -182,8 +182,8 @@ Fs_SelectStub(numStreams, userTimeoutPtr, userReadMaskPtr, userWriteMaskPtr,
      */
     if (numStreams < 0) {
 	return(SYS_INVALID_ARG);
-    } else if (numStreams > MAX_NUM_STREAMS) {
-	numStreams = MAX_NUM_STREAMS;
+    } else if (numStreams >= MAX_NUM_STREAMS) {
+	numStreams = MAX_NUM_STREAMS-1;
     }
 
     if (userTimeoutPtr == (Time *) USER_NIL) {
