@@ -321,6 +321,19 @@ PutOnAllocList(virtAddrPtr, page)
     }
 
     corePtr->virtPage = *virtAddrPtr;
+    /*
+     * Change page numbering from segOffset base to segPtr->offset base.
+     * This is so the number is constant with shared memory.
+     * The problem is that to convert to a page table offset, we take
+     * the page # - the start of the page table.  Normally we use segOffset
+     * to get the appropriate offset for the segment, which may be mapped
+     * into different places.  However, this screws up the corePtr's value.
+     * So we fix it to be an index from segPtr->offset, which doesn't depend
+     * on the shared memory mapping.
+     */
+    corePtr->virtPage.page = corePtr->virtPage.page - segOffset(virtAddrPtr)
+	    + virtAddrPtr->segPtr->offset;
+    corePtr->virtPage.sharedPtr = (Vm_SegProcList *)NIL;
     corePtr->flags = 0;
     corePtr->lockCount = 1;
     corePtr->lastRef = curTime.seconds;
@@ -407,6 +420,13 @@ VmGetReservePage(virtAddrPtr)
     List_Remove((List_Links *) corePtr);
     vmStat.numReservePages--;
     corePtr->virtPage = *virtAddrPtr;
+    /*
+     * Change page numbering from segOffset base to segPtr->offset base.
+     * This is so the number is constant with shared memory.
+     */
+    corePtr->virtPage.page = corePtr->virtPage.page - segOffset(virtAddrPtr)
+	    + virtAddrPtr->segPtr->offset;
+    corePtr->virtPage.sharedPtr = (Vm_SegProcList *)NIL;
 
     return(corePtr - coreMap);
 }
@@ -1220,6 +1240,13 @@ again:
 	PutOnAllocListRear(corePtr);
     }
     corePtr->virtPage = *virtAddrPtr;
+    /*
+     * Change page numbering from segOffset base to segPtr->offset base.
+     * This is so the number is constant with shared memory.
+     */
+    corePtr->virtPage.page = corePtr->virtPage.page - segOffset(virtAddrPtr)
+	    + virtAddrPtr->segPtr->offset;
+    corePtr->virtPage.sharedPtr = (Vm_SegProcList *)NIL;
     corePtr->flags = 0;
     corePtr->lockCount = 1;
     corePtr->wireCount = 0;
@@ -2445,7 +2472,7 @@ Vm_Clock(data, callInfoPtr)
 	    continue;
 	}
 
-	ptePtr = VmGetAddrPTEPtr(&corePtr->virtPage, corePtr->virtPage.page);
+	ptePtr = VmGetPTEPtr(corePtr->virtPage.segPtr, corePtr->virtPage.page);
 	/*
 	 * If the page has been referenced, then put it on the end of the
 	 * allocate list.
