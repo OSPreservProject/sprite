@@ -370,4 +370,10 @@ fixed bug doing lseek on pseudo-filesystems
 
 fsStreamOps.c
 doesn't get attributes when doing an lseek unless it has to.
+
+1.081
+I fixed a couple bugs in fslclLookup.c and fsrmtAttributes.c.  These were
+SOSP tracing problems.
+
+1.081	Thu Jan 10 14:26:33 PST 1991
     New files linked in from the net library.
