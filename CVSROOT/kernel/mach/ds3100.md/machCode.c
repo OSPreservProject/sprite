@@ -1200,8 +1200,11 @@ Interrupt(statusReg, causeReg, pc)
      * These values may have changed in the registers, during a call to
      * another interrupt handler, so we have to hand the routine the original
      * values.
+     *
+     * Interrupt 3, the timer interrupt, requires this stuff too, so it
+     * can record the pc for profiling.
      */
-	    if (n==5) {
+	    if (n == 3 || n==5) {
 		machInterruptRoutines[n](statusReg, causeReg, pc);
 	    } else {
 		machInterruptRoutines[n](machInterruptArgs[n]);
