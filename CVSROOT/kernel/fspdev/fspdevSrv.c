@@ -1989,7 +1989,7 @@ FsPseudoStreamRead(streamPtr, readPtr, waitPtr, replyPtr)
 	request.param.read		= *readPtr;
 
 	if (readPtr->flags & FS_USER) {
-	    pdevHandlePtr->flags |= FS_USER_IN;
+	    pdevHandlePtr->flags |= FS_USER_OUT;
 	}
 	status = RequestResponse(pdevHandlePtr, sizeof(Pdev_Request),
 	    &request.hdr, 0, (Address) NIL, readPtr->length, readPtr->buffer,
@@ -2011,7 +2011,7 @@ exit:
 	status = SUCCESS;
 	replyPtr->length = 0;
     }
-    pdevHandlePtr->flags &= ~(PDEV_BUSY|FS_USER_IN);
+    pdevHandlePtr->flags &= ~(PDEV_BUSY|FS_USER_OUT);
 exitNoServer:
     Sync_Broadcast(&pdevHandlePtr->access);
     UNLOCK_MONITOR;
@@ -2075,7 +2075,7 @@ FsPseudoStreamWrite(streamPtr, writePtr, waitPtr, replyPtr)
     }
     pdevHandlePtr->flags |= PDEV_BUSY;
     if (writePtr->flags & FS_USER) {
-	pdevHandlePtr->flags |= FS_USER_OUT;
+	pdevHandlePtr->flags |= FS_USER_IN;
     }
 
 #ifdef notdef
@@ -2171,7 +2171,7 @@ exit:
     if (replyPtr->signal != 0) {
 	printf("PdevWrite: signal %d\n", replyPtr->signal);
     }
-    pdevHandlePtr->flags &= ~(PDEV_BUSY|FS_USER_OUT);
+    pdevHandlePtr->flags &= ~(PDEV_BUSY|FS_USER_IN);
 exitNoServer:
     Sync_Broadcast(&pdevHandlePtr->access);
     UNLOCK_MONITOR;
