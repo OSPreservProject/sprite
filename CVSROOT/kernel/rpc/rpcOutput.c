@@ -259,7 +259,7 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 		    if (sendFragMask == 0) {
 			fragRpcHdrPtr->flags |= RPC_LASTFRAG;
 		    }
-		    fragRpcHdrPtr->version =	RPC_NATIVE_VERSION;
+		    fragRpcHdrPtr->version =	rpc_NativeVersion;
 		    fragRpcHdrPtr->flags =	rpcHdrPtr->flags;
 		    fragRpcHdrPtr->clientID =	rpcHdrPtr->clientID;
 		    fragRpcHdrPtr->serverID =	rpcHdrPtr->serverID;

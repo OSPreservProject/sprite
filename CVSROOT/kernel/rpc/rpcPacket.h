@@ -92,6 +92,14 @@ typedef struct RpcHdr {
 #define RPC_SWAPPED_VERSION	0x03000e0f
 
 /*
+ * These are the version variables actually used in the kernel. You can
+ * change them early in the boot if you want a different version number.
+ */
+
+extern int 	rpc_NativeVersion;
+extern int	rpc_SwappedVersion;
+
+/*
  * The flags field is used to type packets and for flags that
  * modify the packet type.
  *

@@ -705,7 +705,7 @@ RpcSrvInitHdr(srvPtr, rpcHdrPtr, requestHdrPtr)
     RpcHdr		*rpcHdrPtr;	/* header of outgoing message */
     RpcHdr		*requestHdrPtr;	/* header of client's request */
 {
-    rpcHdrPtr->version = RPC_NATIVE_VERSION;
+    rpcHdrPtr->version = rpc_NativeVersion;
     rpcHdrPtr->clientID = requestHdrPtr->clientID;
     rpcHdrPtr->serverID = rpc_SpriteID;
     rpcHdrPtr->channel = requestHdrPtr->channel;

@@ -20,6 +20,14 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "timer.h"
 #include "net.h"
 
+/*
+ * These are the rpc version numbers, both in native format and in
+ * byte-swapped format. 
+ */
+
+int	rpc_NativeVersion = RPC_NATIVE_VERSION;
+int	rpc_SwappedVersion = RPC_SWAPPED_VERSION;
+
 
 
 /*
@@ -119,7 +127,7 @@ Rpc_Init()
 	bufferPtr->bufAddr = (Address)&chanPtr->requestRpcHdr;
 	bufferPtr->length = sizeof(RpcHdr);
 	bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
-	chanPtr->requestRpcHdr.version = RPC_NATIVE_VERSION;
+	chanPtr->requestRpcHdr.version = rpc_NativeVersion;
 	chanPtr->requestRpcHdr.channel = chanPtr->index;
 	chanPtr->request.paramBuffer.mutexPtr = (Sync_Semaphore *)NIL;
 	chanPtr->request.dataBuffer.mutexPtr = (Sync_Semaphore *)NIL;
@@ -135,7 +143,7 @@ Rpc_Init()
 	    bufferPtr->bufAddr = (Address)&chanPtr->fragRpcHdr[frag];
 	    bufferPtr->length = sizeof(RpcHdr);
 	    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
-	    chanPtr->fragRpcHdr[frag].version = RPC_NATIVE_VERSION;
+	    chanPtr->fragRpcHdr[frag].version = rpc_NativeVersion;
 	    chanPtr->fragRpcHdr[frag].channel = chanPtr->index;
 	    chanPtr->fragment[frag].paramBuffer.mutexPtr =
 			(Sync_Semaphore *)NIL;

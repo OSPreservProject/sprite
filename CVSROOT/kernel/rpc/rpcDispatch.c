@@ -103,7 +103,7 @@ Rpc_Dispatch(headerType, headerPtr, rpcHdrPtr, packetLength)
 {
     register int expectedLength;
 
-    if (rpcHdrPtr->version == RPC_SWAPPED_VERSION) {
+    if (rpcHdrPtr->version == rpc_SwappedVersion) {
 	/*
 	 * Byte swap the packet header and the parameter block.
 	 */
@@ -111,22 +111,22 @@ Rpc_Dispatch(headerType, headerPtr, rpcHdrPtr, packetLength)
 	    printf("Warning: Rpc_Dispatch failed byte-swap.");
 	    return;
 	}
-    } else if (rpcHdrPtr->version != RPC_NATIVE_VERSION) {
+    } else if (rpcHdrPtr->version != rpc_NativeVersion) {
 	if (rpc_PrintMismatch) {
 	    printf(
 	    "Warning: Rpc_Dispatch version mismatch: %x not %x from client(?) %d\n",
-		rpcHdrPtr->version, RPC_NATIVE_VERSION, rpcHdrPtr->clientID);
+		rpcHdrPtr->version, rpc_NativeVersion, rpcHdrPtr->clientID);
 	} else {
 	    if (mismatchErrors < 5) {
 		printf("Warning: %s %x not %x from client(?) %d\n",
 		    "Rpc_Dispatch version mismatch:",
-		    rpcHdrPtr->version, RPC_NATIVE_VERSION,
+		    rpcHdrPtr->version, rpc_NativeVersion,
 		    rpcHdrPtr->clientID);
 		mismatchErrors++;
 	    } else if (mismatchErrors == 5) {
 		printf("Warning: %s %x not %x from client(?) %d\n%s\n",
 		    "Rpc_Dispatch version mismatch:",
-		    rpcHdrPtr->version, RPC_NATIVE_VERSION,
+		    rpcHdrPtr->version, rpc_NativeVersion,
 		    rpcHdrPtr->clientID,
 		    "I'll report no more version mismatches for a while.");
 		mismatchErrors++;

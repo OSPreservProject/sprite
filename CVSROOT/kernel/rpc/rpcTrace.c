@@ -268,7 +268,7 @@ Rpc_DumpTrace(firstRec, lastRec, fileName)
     /*
      * Set up the header.
      */
-    rpcFileHdr.version = RPC_TRACE_VERSION;
+    rpcFileHdr.version = rpc_NativeVersion;
     rpcFileHdr.numRecords = lastRec - firstRec + 1;
     rpcFileHdr.rpcDeltaTime = rpcDeltaTime;
     rpcFileHdr.emptyStampMicroseconds = rpcEmptyStampTime.microseconds;
