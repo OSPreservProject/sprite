@@ -297,6 +297,7 @@ typedef struct {
   
 extern	NetLEState	netLEState;
 
+extern	NetLEState	netLEDebugState;
 
 /*
  * General routines.

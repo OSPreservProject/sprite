@@ -116,10 +116,8 @@ Rpc_Dispatch(interPtr, protocol, headerPtr, rpcHdrAddr, packetLength)
     rpcHdrPtr = (RpcHdr *) rpcHdrAddr;
     if (packetLength < sizeof(RpcHdr)) {
 	rpcCltStat.shorts++;
-	printf("Rpc_Dispatch: SHORT packet, (%d) not (%d) ",
+	printf("Rpc_Dispatch: SHORT packet, (%d) less than RpcHdr\n",
 				  packetLength, sizeof(RpcHdr));
-	printf("srv %d clt %d rpc %d\n", rpcHdrPtr->serverID,
-		    rpcHdrPtr->clientID, rpcHdrPtr->command);
 	printf("Resetting network interface %s\n",
 	    interPtr->name);
 	Net_Reset(interPtr);
@@ -130,8 +128,8 @@ Rpc_Dispatch(interPtr, protocol, headerPtr, rpcHdrAddr, packetLength)
 	/*
 	 * Byte swap the packet header and the parameter block.
 	 */
-	if (!RpcByteSwapInComing(rpcHdrPtr)) {
-	    printf("Warning: Rpc_Dispatch failed byte-swap.");
+	if (!RpcByteSwapInComing(rpcHdrPtr, packetLength)) {
+	    printf("Warning: Rpc_Dispatch failed byte-swap.\n");
 	    return;
 	}
     } else if (rpcHdrPtr->version != rpc_NativeVersion &&
@@ -144,12 +142,22 @@ Rpc_Dispatch(interPtr, protocol, headerPtr, rpcHdrAddr, packetLength)
 	VersionMismatch(interPtr, protocol, headerPtr, rpcHdrPtr, packetLength);
 	return;
     }
+    if (rpc_SanityCheck) {
+	Net_ScatterGather	scatter;
+	ReturnStatus		status;
+	scatter.bufAddr = (Address) rpcHdrAddr;
+	scatter.length = packetLength;
+	status = Rpc_SanityCheck(1, &scatter, packetLength);
+	if (status != SUCCESS) {
+	    return;
+	}
+    }
     expectedLength =  sizeof(RpcHdr) +
 		     rpcHdrPtr->paramSize +
 		     rpcHdrPtr->dataSize;
     if (packetLength < expectedLength) {
 	rpcCltStat.shorts++;
-	printf("Rpc_Dispatch: SHORT packet, (%d) not (%d) ",
+	printf("Rpc_Dispatch: SHORT packet, (%d) not (%d), ",
 				  packetLength, expectedLength);
 	printf("srv %d clt %d rpc %d\n", rpcHdrPtr->serverID,
 		    rpcHdrPtr->clientID, rpcHdrPtr->command);

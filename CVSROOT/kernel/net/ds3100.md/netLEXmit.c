@@ -56,6 +56,7 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength, statePtr)
     register int		length;
     unsigned	char		*leftOverBytePtr = (unsigned char *)NIL;
     int				totLen;
+    int				i;
 
     descPtr = statePtr->xmitDescFirstPtr;
 
@@ -86,10 +87,11 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength, statePtr)
     *(outBufPtr + 12) = *(inBufPtr + 6);
     outBufPtr += 14;
     totLen = sizeof(Net_EtherHdr);
+
     /*
      * Now do each element of the scatter/gather array.
      */
-    for (; scatterGatherLength > 0; scatterGatherLength--,scatterGatherPtr++ ) {
+    for (i = 0; i < scatterGatherLength; i++,scatterGatherPtr++ ) {
 	unsigned char *bufAddr;
 
 	length = scatterGatherPtr->length;
@@ -195,6 +197,15 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength, statePtr)
      */
     if (totLen < NET_ETHER_MIN_BYTES) {
 	totLen = NET_ETHER_MIN_BYTES;
+    }
+    if ((rpc_SanityCheck) && (etherHdrPtr->type == NET_ETHER_SPRITE)) {
+	ReturnStatus	status;
+	status = Rpc_SanityCheck(scatterGatherLength, scatterGatherPtr, totLen);
+	if (status != SUCCESS) {
+	    netLEDebugState = *statePtr;
+	    NetLEReset(statePtr->interPtr);
+	    panic("Sanity check failed.\n");
+	}
     }
     *BUF_TO_ADDR(descPtr,NET_LE_XMIT_BUF_SIZE) = -totLen;
     *BUF_TO_ADDR(descPtr,NET_LE_XMIT_BUF_ADDR_LOW) = 

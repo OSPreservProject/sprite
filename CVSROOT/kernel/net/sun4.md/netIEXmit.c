@@ -217,6 +217,14 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength, statePtr)
      * Finish off the packet.
      */
 
+    if (rpc_SanityCheck && (etherHdrPtr->type == NET_ETHER_SPRITE)) {
+	ReturnStatus 	status;
+	status = Rpc_SanityCheck(scatterGatherLength, 
+		    statePtr->curScatGathPtr, totalLength);
+	if (status != SUCCESS) {
+	    panic("Sanity check failed on outgoing packet.\n");
+	}
+    }
     NetBfShortSet(xmitBufDescPtr->bits, Eof, 1);
     xmitCBPtr->destEtherAddr = etherHdrPtr->destination;
     xmitCBPtr->type = etherHdrPtr->type;

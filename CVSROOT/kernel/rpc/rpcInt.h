@@ -44,6 +44,8 @@ extern unsigned int rpcBootID;
 extern unsigned int rpcCompleteMask[];
 
 extern void RpcScatter _ARGS_((register RpcHdr *rpcHdrPtr, RpcBufferSet *bufferPtr));
+extern ReturnStatus RpcSanityCheck _ARGS_((int length, 
+		    Net_ScatterGather *scatterPtr, int packetLength));
 
 
 /*
@@ -51,7 +53,8 @@ extern void RpcScatter _ARGS_((register RpcHdr *rpcHdrPtr, RpcBufferSet *bufferP
  */
 extern	Boolean	rpcTestByteSwap;
 
-extern Boolean RpcByteSwapInComing _ARGS_((RpcHdr *rpcHdrPtr));
+extern Boolean RpcByteSwapInComing _ARGS_((RpcHdr *rpcHdrPtr, 
+    int packetLength));
 extern int RpcSetTestByteSwap _ARGS_((void));
 extern int RpcUnsetTestByteSwap _ARGS_((void));
 extern void RpcPrintHdr _ARGS_((RpcHdr *rpcHdrPtr));

@@ -30,6 +30,8 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 
 Address	NetLEMemAlloc();
 
+NetLEState	netLEDebugState;
+
 
 /*
  *----------------------------------------------------------------------

@@ -98,14 +98,15 @@ RpcByteSwapBuffer(bufferPtr, numInts)
  *----------------------------------------------------------------------
  */
 Boolean
-RpcByteSwapInComing(rpcHdrPtr)
+RpcByteSwapInComing(rpcHdrPtr, packetLength)
     RpcHdr	*rpcHdrPtr;		/* The Rpc Header as it sits in the
 					 * network's buffer.  The data follows
 					 * the header directly. */
+    int		packetLength;		/* Length of the network packet. */
 {
     int	numInts;
     int	paramSize;
-	
+
     /*
      * First byte-swap the rpc header itself.  The header had better be an
      * integral number of integers long!
@@ -120,11 +121,24 @@ RpcByteSwapInComing(rpcHdrPtr)
     paramSize = rpcHdrPtr->paramSize;
 
     /*
+     * Make sure the parameter block is all there.
+     */
+    if (packetLength < sizeof(RpcHdr) + rpcHdrPtr->paramSize) {
+	printf("RpcByteSwapInComing: SHORT packet %d < %d, ", 
+	    packetLength, sizeof(RpcHdr) + rpcHdrPtr->paramSize);
+	printf("srv %d clt %d rpc %d\n", rpcHdrPtr->serverID,
+		    rpcHdrPtr->clientID, rpcHdrPtr->command);
+	return FALSE;
+    }
+    /*
      * Now byte-swap the parameter block.  If it isn't an integral number of
      * integers long, something is wrong.
      */
     numInts = paramSize / sizeof (int);
     if ((paramSize % sizeof (int)) != 0) {
+	printf("RpcByteSwapInComing: bad paramSize %d, ", paramSize);
+	printf("srv %d clt %d rpc %d\n", rpcHdrPtr->serverID,
+		    rpcHdrPtr->clientID, rpcHdrPtr->command);
 	return FALSE;
     }
     /*
