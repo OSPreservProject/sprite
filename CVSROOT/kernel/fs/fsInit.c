@@ -197,9 +197,9 @@ Fs_Init()
 void
 Fs_Bin()
 {
-    Mem_Bin(FS_BLOCK_SIZE);
     Mem_Bin(sizeof(FsLocalFileIOHandle));
     Mem_Bin(sizeof(FsRmtFileIOHandle));
+    Mem_Bin(sizeof(FsFileDescriptor));
 }
 
 
@@ -477,6 +477,7 @@ Fs_CloseState(procPtr)
 	    }
 	}
 	Mem_Free((Address) fsPtr->streamList);
+	Mem_Free((Address) fsPtr->streamFlags);
 	fsPtr->streamList = (Fs_Stream **)NIL;
     }
 
@@ -485,4 +486,6 @@ Fs_CloseState(procPtr)
 	fsPtr->groupIDs = (int *) NIL;
 	fsPtr->numGroupIDs = 0;
     }
+    Mem_Free((Address)fsPtr);
+    procPtr->fsPtr = (Fs_ProcessState *)NIL;
 }

@@ -261,6 +261,8 @@ FsFileSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 		*streamIDPtr = streamPtr->hdr.fileID;
 		FsHandleRelease(streamPtr, TRUE);
 	    }
+	} else {
+	    Mem_Free((Address)fileStatePtr);
 	}
     } else {
 	/*
@@ -362,6 +364,7 @@ FsFileReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 		&fileStatePtr->cacheable, &useChange,
 		&fileStatePtr->openTimeStamp);
     if (status != SUCCESS) {
+	Mem_Free((Address)fileStatePtr);
 	FsHandleRelease(handlePtr, FALSE);
     } else {
 	/*

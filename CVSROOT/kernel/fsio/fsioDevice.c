@@ -112,6 +112,7 @@ FsDeviceHandleInit(fileIDPtr, newHandlePtrPtr)
 	devHandlePtr->accessTime = 0;
 	List_Init(&devHandlePtr->readWaitList);
 	List_Init(&devHandlePtr->writeWaitList);
+	List_Init(&devHandlePtr->exceptWaitList);
 	devHandlePtr->readNotifyScheduled = FALSE;
 	devHandlePtr->writeNotifyScheduled = FALSE;
     }
@@ -724,6 +725,9 @@ FsDeviceScavenge(hdrPtr)
 	/*
 	 * Remove handles for devices with no users.
 	 */
+	FsWaitListDelete(&handlePtr->readWaitList);
+	FsWaitListDelete(&handlePtr->writeWaitList);
+	FsWaitListDelete(&handlePtr->exceptWaitList);
 	FsHandleRemove(handlePtr);
     } else {
         FsHandleUnlock(handlePtr);

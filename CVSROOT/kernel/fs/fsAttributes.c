@@ -579,14 +579,16 @@ Fs_RpcGetAttrPath(srvToken, clientID, command, storagePtr)
 	storagePtr->replyParamSize = sizeof(Fs_Attributes);
 	storagePtr->replyDataPtr = (Address) getAttrResults.fileIDPtr;
 	storagePtr->replyDataSize = sizeof(FsFileID);
-    } else if (status == FS_LOOKUP_REDIRECT) {
-	/*
-	 * The file is not found on this server.
-	 */
+    } else {
 	Mem_Free((Address) getAttrResults.attrPtr);
 	Mem_Free((Address) getAttrResults.fileIDPtr);
-	storagePtr->replyDataPtr = (Address)newNameInfoPtr;
-	storagePtr->replyDataSize = sizeof(FsRedirectInfo);
+	if (status == FS_LOOKUP_REDIRECT) {
+	    /*
+	     * The file is not found on this server, but somewhere else.
+	     */
+	    storagePtr->replyDataPtr = (Address)newNameInfoPtr;
+	    storagePtr->replyDataSize = sizeof(FsRedirectInfo);
+	}
     }
     if (status == SUCCESS || status == FS_LOOKUP_REDIRECT) {
 	Rpc_ReplyMem	*replyMemPtr;
@@ -729,13 +731,15 @@ Fs_RpcSetAttrPath(srvToken, clientID, command, storagePtr)
 	storagePtr->replyParamSize = sizeof(FsFileID);
 	storagePtr->replyDataPtr = (Address) NIL;
 	storagePtr->replyDataSize = 0;
-    } else if (status == FS_LOOKUP_REDIRECT) {
-	/*
-	 * The file is not found on this server.
-	 */
+    } else {
 	Mem_Free((Address) ioFileIDPtr);
-	storagePtr->replyDataPtr = (Address)newNameInfoPtr;
-	storagePtr->replyDataSize = sizeof(FsRedirectInfo);
+	if (status == FS_LOOKUP_REDIRECT) {
+	    /*
+	     * The file is not found on this server.
+	     */
+	    storagePtr->replyDataPtr = (Address)newNameInfoPtr;
+	    storagePtr->replyDataSize = sizeof(FsRedirectInfo);
+	}
     }
     if (status == SUCCESS || status == FS_LOOKUP_REDIRECT) {
 	Rpc_ReplyMem	*replyMemPtr;

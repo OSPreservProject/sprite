@@ -246,8 +246,14 @@ ENTRY void
 FsStreamDispose(streamPtr)
     Fs_Stream *streamPtr;
 {
+    if (!List_IsEmpty(&streamPtr->clientList)) {
+	Sys_Panic(SYS_FATAL, "FsStreamDispose, client list not empty\n");
+    }
     FsHandleRelease(streamPtr, TRUE);
     if (streamPtr->nameInfoPtr != (FsNameInfo *)NIL) {
+	if (streamPtr->nameInfoPtr->name != (char *)NIL) {
+	    Mem_Free((Address)streamPtr->nameInfoPtr->name);
+	}
 	Mem_Free((Address)streamPtr->nameInfoPtr);
     }
     FsHandleRemove(streamPtr);

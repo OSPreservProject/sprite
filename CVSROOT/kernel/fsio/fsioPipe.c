@@ -230,6 +230,8 @@ FsPipeClose(streamPtr, clientID, flags, dataSize, closeData)
 	FsHandleRelease(handlePtr, TRUE);
 	if (handlePtr->flags == (PIPE_WRITER_GONE|PIPE_READER_GONE)) {
 	    Mem_Free(handlePtr->buffer);
+	    FsWaitListDelete(&handlePtr->readWaitList);
+	    FsWaitListDelete(&handlePtr->writeWaitList);
 	    FsHandleRemove(handlePtr);
 	}
     }
@@ -1140,6 +1142,8 @@ FsPipeScavenge(hdrPtr)
     register FsPipeIOHandle *handlePtr = (FsPipeIOHandle *)hdrPtr;
     if (List_IsEmpty(&handlePtr->clientList) &&
 	(handlePtr->flags == (PIPE_WRITER_GONE|PIPE_READER_GONE))) {
+	FsWaitListDelete(&handlePtr->readWaitList);
+	FsWaitListDelete(&handlePtr->writeWaitList);
 	FsHandleRemove(hdrPtr);
     } else {
 	FsHandleUnlock(hdrPtr);
