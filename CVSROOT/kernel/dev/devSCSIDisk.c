@@ -107,8 +107,6 @@ FillInLabel(devPtr,diskPtr)
 #ifdef DEBUG
     printLabel = TRUE;
 #endif
-    printLabel = TRUE;
-    printf("Getting a label\n");
 
     /*
      * The label of a SCSI disk normally resides in the first sector. Format
@@ -128,7 +126,6 @@ FillInLabel(devPtr,diskPtr)
 	status = DEV_EARLY_CMD_COMPLETION;
     }
     if (status != SUCCESS) {
-	printf("Disk: error: %x\n",status);
 	return(status);
     }
     sunLabelPtr = (Sun_DiskLabel *) labelBuffer;
@@ -209,7 +206,6 @@ FillInLabel(devPtr,diskPtr)
 	status = DEV_EARLY_CMD_COMPLETION;
     }
     if (status != SUCCESS) {
-	printf("Disk: error: %x\n",status);
 	return(status);
     }
     decLabelPtr = (Dec_DiskLabel *) labelBuffer;
