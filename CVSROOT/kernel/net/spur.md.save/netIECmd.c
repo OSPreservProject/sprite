@@ -17,7 +17,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 #include "sprite.h"
-#include "sys.h"
 #include "list.h"
 #include "vm.h"
 #include "sync.h"
@@ -55,12 +54,12 @@ NetIECheckSCBCmdAccept(scbPtr)
 	NET_IE_DELAY((*cmdWordPtr == 0));
 
 	if ( *cmdWordPtr != 0) {
-	    Sys_Panic(SYS_WARNING, "Intel: scb command not accepted\n");
+	    printf("Warning: Intel: scb command not accepted\n");
 	} else {
 	    return;
 	}
     }
-    Sys_Panic(SYS_FATAL, "Intel: scb command not accepted\n");
+    panic("NetIECmd: scb command not accepted\n");
 }
 
 
@@ -111,7 +110,7 @@ NetIEExecCommand(cmdPtr)
     if (!cmdPtr->cmdDone ||
         !netIEState.scbPtr->cmdDone ||
 	!netIEState.scbPtr->cmdUnitNotActive) {
-	Sys_Panic(SYS_FATAL, "Intel: Could not execute a simple command: %d %d %d\n", 
+	panic("Intel: Could not execute a simple command: %d %d %d\n", 
 			cmdPtr->cmdDone, netIEState.scbPtr->cmdDone,
 			netIEState.scbPtr->cmdUnitNotActive);
 	return;
