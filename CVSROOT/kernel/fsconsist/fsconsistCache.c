@@ -1015,13 +1015,17 @@ FsDeleteLastWriter(consistPtr, clientID)
  * FsClientRemoveCallback --
  *
  *      Called when a file is deleted.  Send an rpc to everyone who has
- *      this file cached telling them to delete it from their cache.
+ *      dirty blocks cached telling them to delete them from their cache.
+ *	We may have forgotten about clients with clean blocks so we can't
+ *	call them back.  Instead we depend on the version number being
+ *	incremented (by 1 when opened for writing, by 2 when creating)
+ *	to catch old blocks left in caches.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Any remotely cached data is invalidated.
+ *	Any remotely cached dirty data is invalidated.
  *	All the entries in the client list are deleted.
  *
  * ----------------------------------------------------------------------------
