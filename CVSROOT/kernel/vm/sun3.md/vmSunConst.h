@@ -196,6 +196,14 @@
 #define	VMMACH_NUM_PAGES_PER_SEG (VMMACH_NUM_PAGES_PER_SEG_INT / VMMACH_CLUSTER_SIZE)
 
 /*
+ * Sun3's don't have a cache.
+ */
+
+#define VMMACH_CACHE_LINE_SIZE	0
+#define VMMACH_NUM_CACHE_LINES	0
+#define VMMACH_CACHE_SIZE 	0
+
+/*
  * The size that page tables are to be allocated in.  This grows software
  * segments in 256K chunks.  The page tables must grow in chunks that are 
  * multiples of the hardware segment size.  This is because the heap and 

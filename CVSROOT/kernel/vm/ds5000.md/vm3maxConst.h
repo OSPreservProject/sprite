@@ -47,9 +47,19 @@
 #define VMMACH_TLB_INDEX_SHIFT		8
 
 /*
- * The cache block size.
+ * The cache block size. This is a guess.
  */
-#define VMMACH_CACHE_BLOCK_SIZE		32
+#define VMMACH_CACHE_LINE_SIZE		32
+
+/*
+ * Size of the cache.
+ */
+#define VMMACH_CACHE_SIZE 0x10000
+
+/*
+ * Number of cache lines.
+ */
+#define VMMACH_NUM_CACHE_LINES	(VMMACH_CACHE_SIZE / VMMACH_CACHE_LINE_SIZE)
 
 /*
  * Hardware dependent constants for pages and segments:
