@@ -1234,16 +1234,14 @@ FsCacheTrunc(cacheInfoPtr, length, flags)
 	    if (flags & FS_TRUNC_DELETE) {
 		if (!List_IsEmpty(&cacheInfoPtr->blockList)) {
 		    printf("FirstByte %d LastByte %d\n", firstByte, lastByte);
-		    panic("File \"%s\" <%d,%d>: %d cache blocks left after delete blocks %d->%d\n",
+		    printf("File \"%s\" <%d,%d>: %d cache blocks left after delete blocks %d->%d\n",
 			FsHandleName(cacheInfoPtr->hdrPtr),
 			cacheInfoPtr->hdrPtr->fileID.major,
 			cacheInfoPtr->hdrPtr->fileID.minor,
 			cacheInfoPtr->blocksInCache, firstBlock, lastBlock);
-#ifdef notdef
 		    /*
-		     * Use this loop to recover if above panic is
-		     * changed to a warning.  The bug leaving blocks
-		     * in the cache has been fixed, however.
+		     * Use this loop to recover.  Apparently disk full
+		     * conditions can cause file truncations to fail.
 		     */
 		    while (!List_IsEmpty(&cacheInfoPtr->blockList)) {
 			register FsCacheBlock *blockPtr;
@@ -1261,7 +1259,6 @@ FsCacheTrunc(cacheInfoPtr, length, flags)
 				blockPtr->blockNum);
 		    }
 		    printf("\n");
-#endif notdef
 		}
 		if (!List_IsEmpty(&cacheInfoPtr->dirtyList)) {
 		    register FsCacheBlock *blockPtr;
