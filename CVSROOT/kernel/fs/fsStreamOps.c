@@ -431,8 +431,7 @@ Fs_PageRead(streamPtr, pageAddr, offset, numBytes, pageType)
 			    return(status);
 		    }
 		} else if (bytesRead != FS_BLOCK_SIZE) {
-		    printf(
-			    "FsPageRead: Short read of length %d\n", bytesRead);
+		    printf("FsPageRead: Short read of length %d\n", bytesRead);
 		    if (blockPtr != (Fscache_Block *)NIL) {
 			Fscache_UnlockBlock(blockPtr, 0, -1, 0,
 					   FSCACHE_DELETE_BLOCK);
@@ -919,6 +918,14 @@ Fs_Close(streamPtr)
 	return(FS_INVALID_ARG);
     }
     Fsutil_HandleLock(streamPtr);
+
+    /*
+     * Look after any shared memory pages.
+     */
+    procPtr = Proc_GetEffectiveProc();
+    if (procPtr->vmPtr->sharedSegs != (List_Links *)NIL) {
+	Vm_CleanupSharedFile(procPtr,streamPtr);
+    }
     if (streamPtr->hdr.refCount > 1) {
 	/*
 	 * There are other copies of the stream (due to fork/dup) so
@@ -931,8 +938,8 @@ Fs_Close(streamPtr)
 	 * Call the stream type close routine to clean up this reference
 	 * to the I/O handle.
 	 */
-	procPtr = Proc_GetEffectiveProc();
 	Fsutil_HandleLock(streamPtr->ioHandlePtr);
+
 	status = (fsio_StreamOpTable[streamPtr->ioHandlePtr->fileID.type].close)
 		(streamPtr, rpc_SpriteID, procPtr->processID, streamPtr->flags,
 		0, (ClientData)NIL);
@@ -962,6 +969,7 @@ Fs_Close(streamPtr)
     }
     return(status);
 }
+
 
 /*
  *----------------------------------------------------------------------
