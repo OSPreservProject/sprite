@@ -378,6 +378,21 @@ LocalSend(procPtr, sigNum, code)
 	return;
     }
 
+    if ((procPtr->sigActions[sigNum] == SIG_DEBUG_ACTION) &&
+	proc_KillMigratedDebugs && (procPtr->genFlags & PROC_FOREIGN)) {
+	/*
+	 * Kill the process rather than letting it go silently into that
+	 * good night (on the wrong machine).   Debugging migrated
+	 * processes is nasty.  It would be nice if we could redirect
+	 * the printf to the process's home node, too.
+	 */
+	sigNum = SIG_KILL;
+	if (proc_MigDebugLevel > 1) {
+	    printf("Warning: killing a migrated process that would have gone into the debugger, pid %x.\n",
+		   procPtr->processID);
+	}
+    }
+
     /*
      * Only send the signal if it shouldn't be ignored and if it isn't
      * a signal to migrate an unmigrated process.  (The latter can easily
