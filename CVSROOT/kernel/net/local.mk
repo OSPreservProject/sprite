@@ -15,5 +15,7 @@ NAME = net
 NOOPTIMIZATION	= no -O please
 #endif
 
+CFLAGS += -DNEW_NET
+
 #include	<$(SYSMAKEFILE)>
 

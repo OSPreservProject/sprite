@@ -13,7 +13,7 @@
  *
  *	Operations on routes are:
  *		Net_InstallRoute - Set the Sprite ID for an ethernet address
- *		Net_AddrToID - Get the Sprite ID for an ethernet address
+ *		Net_AddrToID - Get the Sprite ID for a network address
  *		Net_IDToRoute - Return the route for a Sprite host.
  *	Furthermore, the Test_Stats system call will return a route
  *	to a user program with the NET_GET_ROUTE command.
@@ -46,6 +46,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <rpc.h>
 #include <string.h>
 #include <vm.h>
+#include <rpcPacket.h>
 
 /*
  * Wildcard address for the Ultranet.  This address matches any address.
@@ -74,9 +75,16 @@ Sync_Semaphore	netFreeRouteMutex = Sync_SemInitStatic("netFreeRouteMutex");
     *shortPtr = Net_HostToNetShort(*shortPtr); \
 } 
 
-static	void		FillRouteInfo _ARGS_((Net_Route *routePtr,
-					Net_RouteInfo *infoPtr));
+static	void		FillUserRoute _ARGS_((Net_Route *routePtr,
+					Net_UserRoute *userRoutePtr));
+static	void		FillRouteInfoOld _ARGS_((Net_Route *routePtr,
+					Net_RouteInfoOld *infoPtr));
 
+/*
+ * This variable is only needed for backwards compatibility with netroute.
+ * Once the need for the OLD_NET stuff goes away so can this variable.
+ */
+static Boolean		oldMode;
 
 /*
  *----------------------------------------------------------------------
@@ -108,6 +116,7 @@ Net_RouteInit()
      */
     for (spriteID=0 ; spriteID<netNumHosts ; spriteID++) {
 	List_Init(&netRouteArray[spriteID]);
+	bzero((char *) &netHostInfo[spriteID], sizeof(NetHostInfo));
     }
     /*
      * Install the broadcast route(s) so we can do our first broadcast rpcs.
@@ -121,6 +130,7 @@ Net_RouteInit()
 	    status = Net_InstallRoute(NET_BROADCAST_HOSTID, 
 			    interPtr, &interPtr->broadcastAddress, 
 			    NET_PROTO_RAW, "broadcast", "unknown", 
+			    0, RPC_MAX_SIZE,
 			    (ClientData) 0);
 	    if (status != SUCCESS) {
 		printf(
@@ -137,7 +147,9 @@ Net_RouteInit()
  *
  * Net_InstallRouteStub --	
  *
- *	System call stub for Net_InstallRoute
+ *	System call stub for Net_InstallRoute. The Net_RouteInfoOld
+ *	stuff is for backwards compatibility and can be removed
+ *	once the NEW_NET stuff is gone from /sprite/lib/include/net.h.
  *
  * Results:
  *	A return status.
@@ -148,44 +160,113 @@ Net_RouteInit()
  *----------------------------------------------------------------------
  */
 ReturnStatus
-Net_InstallRouteStub(size, routeInfoPtr)
+Net_InstallRouteStub(size, userRoutePtr)
     int		  size;
-    Net_RouteInfo *routeInfoPtr;	/* Route data */
+    Net_UserRoute *userRoutePtr;	/* Route data */
 {
-    ReturnStatus 	status;
-    Net_RouteInfo 	routeInfo;
+    ReturnStatus 	status = SUCCESS;
     Net_Interface 	*interPtr;
+    Net_UserRoute 	userRoute;
 
-    if (routeInfoPtr == USER_NIL) {
+    if (userRoutePtr == USER_NIL) {
 	return (SYS_ARG_NOACCESS);
     }
-    if (size != sizeof(Net_RouteInfo)) {
+    /*
+     * This stuff allows the new version of Net_Address and Net_UserRoute
+     * to work with old applications. 
+     */
+    if (size == sizeof(Net_RouteInfoOld)) {
+	Net_RouteInfoOld	routeInfoOld;
+	status = Vm_CopyIn(sizeof(Net_RouteInfoOld), (Address)userRoutePtr, 
+			  (Address)&routeInfoOld);
+	if (status != SUCCESS) {
+	    return(status);
+	}
+#define _COPY(field) userRoute.field = routeInfoOld.field
+	_COPY(version);
+	_COPY(spriteID);
+	_COPY(protocol);
+	_COPY(flags);
+	_COPY(refCount);
+	_COPY(routeID);
+	_COPY(netType);
+	_COPY(userData);
+
+#undef _COPY
+#define _COPY(field) bcopy(routeInfoOld.field, userRoute.field, sizeof(routeInfoOld.field))
+	_COPY(desc);
+	_COPY(hostname);
+	_COPY(machType);
+
+#undef _COPY
+	userRoute.minPacket = routeInfoOld.minBytes;
+	userRoute.maxPacket = routeInfoOld.maxBytes;
+	userRoute.minRpc = 0;
+	userRoute.maxRpc = RPC_MAX_SIZE;
+	switch(userRoute.netType) {
+	    case NET_NETWORK_ETHER: 
+		status = Net_SetAddress(NET_ADDRESS_ETHER, 
+		    (Address) &routeInfoOld.netAddress[NET_PROTO_RAW].ether,
+		    &userRoute.netAddress[NET_PROTO_RAW]);
+		break;
+	    case NET_NETWORK_ULTRA: 
+		status = Net_SetAddress(NET_ADDRESS_ULTRA, 
+		    (Address) &routeInfoOld.netAddress[NET_PROTO_RAW].ultra,
+		    &userRoute.netAddress[NET_PROTO_RAW]);
+		break;
+	    case NET_NETWORK_FDDI: 
+		status = Net_SetAddress(NET_ADDRESS_FDDI, 
+		    (Address) &routeInfoOld.netAddress[NET_PROTO_RAW].fddi,
+		    &userRoute.netAddress[NET_PROTO_RAW]);
+		break;
+	}
+	if (status != SUCCESS) {
+	    panic("Net_InstallRouteStub: Net_SetAddress failed\n");
+	}
+	if (userRoute.protocol == NET_PROTO_INET) {
+	    status = Net_SetAddress(NET_ADDRESS_INET, 
+		(Address) &routeInfoOld.netAddress[NET_PROTO_INET].inet,
+		&userRoute.netAddress[NET_PROTO_INET]);
+	    if (status != SUCCESS) {
+		panic("Net_InstallRouteStub: Net_SetAddress failed\n");
+	    }
+	}
+	interPtr = Net_GetInterface(routeInfoOld.netType, 
+			routeInfoOld.interface);
+	if (interPtr == (Net_Interface *) NIL) {
+	    printf("Net_InstallRouteStub: can't find interface %d\n",
+		routeInfoOld.interface);
+	    return(GEN_INVALID_ARG);
+	}
+	userRoute.interAddress = interPtr->netAddress[NET_PROTO_RAW];
+	oldMode = TRUE;
+    } else if (size == sizeof(Net_UserRoute)) {
+	status = Vm_CopyIn(sizeof(Net_UserRoute), (Address)userRoutePtr, 
+			  (Address)&userRoute);
+	if (status != SUCCESS) {
+	    return(status);
+	}
+	if (userRoute.version != NET_ROUTE_VERSION) {
+	    return GEN_INVALID_ARG;
+	}
+	oldMode = FALSE;
+    } else {
 	return (GEN_INVALID_ARG);
     }
-    status = Vm_CopyIn(sizeof(Net_RouteInfo), (Address)routeInfoPtr, 
-		      (Address)&routeInfo);
-    if (status != SUCCESS) {
-	return(status);
-    }
-    if (routeInfo.version != NET_ROUTE_VERSION) {
-	return GEN_INVALID_ARG;
-    }
-    if (routeInfo.interface < 0 || routeInfo.interface >= netNumInterfaces) {
-	printf("Net_InstallRouteStub: interface %d does not exist\n",
-	    routeInfo.interface);
-	return(GEN_INVALID_ARG);
-    }
-    interPtr = Net_GetInterface(routeInfo.netType, routeInfo.interface);
+    interPtr = Net_GetInterfaceByAddr(&userRoute.interAddress);
     if (interPtr == (Net_Interface *) NIL) {
-	printf("Net_InstallRouteStub: can't find interface %d\n",
-	    routeInfo.interface);
+	char	buf[20];
+	Net_AddrToString(&userRoute.interAddress, buf);
+	printf("Net_InstallRouteStub: can't find interface with address %s\n",
+	    buf);
 	return(GEN_INVALID_ARG);
     }
-    status = Net_InstallRoute(routeInfo.spriteID,
-		    interPtr, routeInfo.netAddress, 
-		    routeInfo.protocol,
-		    routeInfo.hostname, routeInfo.machType, 
-		    routeInfo.userData);
+    status = Net_InstallRoute(userRoute.spriteID,
+		    interPtr, userRoute.netAddress, 
+		    userRoute.protocol,
+		    userRoute.hostname, userRoute.machType, 
+		    userRoute.minRpc, userRoute.maxRpc,
+		    userRoute.userData);
     return(status);
 }
 
@@ -210,7 +291,7 @@ Net_InstallRouteStub(size, routeInfoPtr)
 
 ReturnStatus
 Net_InstallRoute(spriteID, interPtr, netAddressPtr, protocol, 
-	hostname, machType, clientData)
+	hostname, machType, minRpc, maxRpc, clientData)
     int 		spriteID;	/* Sprite Host ID */
     Net_Interface	*interPtr;	/* Interface route is for. */
     Net_Address 	*netAddressPtr;	/* Network addresses (indexed by
@@ -218,10 +299,12 @@ Net_InstallRoute(spriteID, interPtr, netAddressPtr, protocol,
     int			protocol;	/* Protocol to use with route. */
     char 		*hostname;	/* Human recognizable name */
     char 		*machType;  	/* Machine type to expand $MACHINE */
+    int			minRpc;		/* Minimum RPC size for route. */
+    int			maxRpc;		/* Maximum RPC size for route. */
     ClientData		clientData; 	/* Data for user-level program. */
 {
     register Net_Route 	*routePtr;
-    Net_Route		*oldRoutePtr;
+    Net_Route		*oldRoutePtr = (Net_Route *) NIL;
     ReturnStatus status = SUCCESS;
     char	*headerPtr;
 
@@ -239,8 +322,8 @@ Net_InstallRoute(spriteID, interPtr, netAddressPtr, protocol,
      * if we can learn it from the route.
      */
     if (rpc_SpriteID == 0) {
-	if (!NET_ADDRESS_COMPARE(interPtr->netAddress[protocol],
-		netAddressPtr[protocol])) {
+	if (Net_AddrCmp(&interPtr->netAddress[protocol],
+		&netAddressPtr[protocol]) == 0) {
 	    rpc_SpriteID = spriteID;
 	}
     }
@@ -251,22 +334,18 @@ Net_InstallRoute(spriteID, interPtr, netAddressPtr, protocol,
     if ((rpc_SpriteID > 0) && (rpc_SpriteID == spriteID)) {
 	char buffer[128];
 
-	if (!(NET_ADDRESS_COMPARE(interPtr->netAddress[protocol],
-		netZeroAddress))) {
+	if (interPtr->netAddress[protocol].type == 0) {
 	    interPtr->netAddress[protocol] = netAddressPtr[protocol];
-	    Net_AddrToString(&interPtr->netAddress[protocol], protocol, 
-		    interPtr->netType, buffer);
+	    Net_AddrToString(&interPtr->netAddress[protocol], buffer);
 	    printf("Setting address to %s\n", buffer);
-	} else if (NET_ADDRESS_COMPARE(interPtr->netAddress[protocol], 
-			netAddressPtr[protocol])) {
-	    Net_AddrToString(&interPtr->netAddress[protocol], protocol, 
-		interPtr->netType, buffer);
+	} else if (Net_AddrCmp(&interPtr->netAddress[protocol], 
+			&netAddressPtr[protocol])) {
+	    Net_AddrToString(&interPtr->netAddress[protocol], buffer);
 	    printf(
 		"Warning: address on interface \"%s\" is currently %s\n",
 		interPtr->name,
 		buffer);
-	    Net_AddrToString(&netAddressPtr[protocol], protocol, 
-		interPtr->netType, buffer);
+	    Net_AddrToString(&netAddressPtr[protocol], buffer);
 	    printf("Attempt to install route using address %s ignored.\n",
 		buffer);
 	    status = FAILURE;
@@ -280,7 +359,7 @@ Net_InstallRoute(spriteID, interPtr, netAddressPtr, protocol,
      * In order to install internet routes our internet address must be set.
      */
     if ((protocol == NET_PROTO_INET) && 
-	(interPtr->netAddress[protocol].inet == netZeroAddress.inet)) {
+	(!Net_AddrCmp(&interPtr->netAddress[protocol], &netZeroAddress))) {
 
 	Boolean 	found = FALSE;
 	int		addr;
@@ -311,7 +390,8 @@ Net_InstallRoute(spriteID, interPtr, netAddressPtr, protocol,
 	    MASTER_UNLOCK(&netRouteMutex);
 	    return FAILURE;
 	}
-	interPtr->netAddress[protocol].inet = addr;
+	interPtr->netAddress[protocol].type = NET_ADDRESS_INET;
+	interPtr->netAddress[protocol].address.inet = addr;
     }
     if (spriteID >= NET_NUM_SPRITE_HOSTS) {
 	printf("Net route table too small!\n");
@@ -319,14 +399,16 @@ Net_InstallRoute(spriteID, interPtr, netAddressPtr, protocol,
 	return FAILURE;
     } else {
 	Net_Route 	*tmpPtr;
-	oldRoutePtr = (Net_Route *)NIL;
-	LIST_FORALL(&netRouteArray[spriteID], (List_Links *) tmpPtr) {
-	    if ((tmpPtr->interPtr == interPtr) &&
-		(tmpPtr->protocol == protocol)) {
-
-		tmpPtr->flags &= ~NET_RFLAGS_VALID;
-		oldRoutePtr = tmpPtr;
-		break;
+	if (oldMode) {
+	    oldRoutePtr = (Net_Route *)NIL;
+	    LIST_FORALL(&netRouteArray[spriteID], (List_Links *) tmpPtr) {
+		if ((tmpPtr->interPtr == interPtr) &&
+		    (tmpPtr->protocol == protocol)) {
+    
+		    tmpPtr->flags &= ~NET_RFLAGS_VALID;
+		    oldRoutePtr = tmpPtr;
+		    break;
+		}
 	    }
 	}
 	List_InitElement((List_Links *) routePtr);
@@ -339,10 +421,12 @@ Net_InstallRoute(spriteID, interPtr, netAddressPtr, protocol,
 	routePtr->refCount = 0;
 	routePtr->spriteID = spriteID;
 	routePtr->interPtr = interPtr;
-	routePtr->maxBytes = interPtr->maxBytes;
-	routePtr->minBytes = interPtr->minBytes;
+	routePtr->maxPacket = interPtr->maxBytes;
+	routePtr->minPacket = interPtr->minBytes;
+	routePtr->minRpc = minRpc;
+	routePtr->maxRpc = maxRpc;
 	routePtr->protocol = protocol;
-	routePtr->routeID |= spriteID << 16;
+	routePtr->routeID = (spriteID << 16) | netHostInfo[spriteID].routes++;
 	routePtr->userData = clientData;
 	(void) sprintf(routePtr->desc, "Route to %s - ", hostname);
     }
@@ -354,20 +438,36 @@ Net_InstallRoute(spriteID, interPtr, netAddressPtr, protocol,
     switch(interPtr->netType) {
 	case NET_NETWORK_ETHER: {
 	    Net_EtherHdr *etherHdrPtr;
+	    Net_EtherAddress	etherAddress;
+
+	    status = Net_GetAddress(&netAddressPtr[NET_PROTO_RAW], 
+		(Address) &etherAddress);
+	    if (status != SUCCESS) {
+		panic("Net_InstallRoute: Net_GetAddress failed\n");
+	    }
 	    (void) strcat(routePtr->desc, "ethernet, ");
-	    /*
-	     * Fill in an ethernet header for the route.
-	     * The drivers fill in the source part of the ethernet header 
-	     * each time they send out a packet.
-	     */
-	    if (oldRoutePtr != (Net_Route *) NIL) {
-		etherHdrPtr = (Net_EtherHdr *)oldRoutePtr->headerPtr;
-		if (NET_ETHER_COMPARE(
-		    NET_ETHER_HDR_DESTINATION(*etherHdrPtr),
-		    netAddressPtr[NET_PROTO_RAW].ether)) {
-		    printf(
-		"Warning: Net_InstallRoute, host <%d> changing ethernet addr\n",
-			    spriteID);
+	    if (oldMode) {
+		/*
+		 * Fill in an ethernet header for the route.
+		 * The drivers fill in the source part of the ethernet header 
+		 * each time they send out a packet.
+		 */
+		if (oldRoutePtr != (Net_Route *) NIL) {
+		    etherHdrPtr = (Net_EtherHdr *)
+				    oldRoutePtr->headerPtr[NET_PROTO_RAW];
+		    if (Net_EtherAddrCmp(etherAddress,
+			NET_ETHER_HDR_DESTINATION(*etherHdrPtr))) {
+			char buf[20];
+    
+			Net_EtherAddrToString(
+			    &NET_ETHER_HDR_DESTINATION(*etherHdrPtr), buf);
+			printf(
+		    "Warning: Net_InstallRoute: host <%d> changing ethernet addr\n",
+				spriteID);
+			printf("\tOld: %s, ",buf);
+			Net_EtherAddrToString(&etherAddress, buf);
+			printf("New: %s\n", buf);
+		    }
 		}
 	    }
 	    if (protocol == NET_PROTO_RAW) {
@@ -386,12 +486,17 @@ Net_InstallRoute(spriteID, interPtr, netAddressPtr, protocol,
 				    Net_HostToNetShort(NET_ETHER_IP);
 	    }
 	    routePtr->headerPtr[NET_PROTO_RAW] = (Address)etherHdrPtr;
-	    NET_ETHER_ADDR_COPY(netAddressPtr[NET_PROTO_RAW].ether,
-				NET_ETHER_HDR_DESTINATION(*etherHdrPtr));
-	    NET_ETHER_ADDR_COPY(interPtr->netAddress[NET_PROTO_RAW].ether,
-				NET_ETHER_HDR_SOURCE(*etherHdrPtr));
-	    routePtr->netAddress[NET_PROTO_RAW].ether = 
-		netAddressPtr[NET_PROTO_RAW].ether;
+	    status = Net_GetAddress(&netAddressPtr[NET_PROTO_RAW],
+			(Address) &NET_ETHER_HDR_DESTINATION(*etherHdrPtr));
+	    if (status != SUCCESS) {
+		panic("Net_InstallRoute: Net_GetAddress failed\n");
+	    }
+	    status = Net_GetAddress(&interPtr->netAddress[NET_PROTO_RAW],
+			(Address) &NET_ETHER_HDR_SOURCE(*etherHdrPtr));
+	    if (status != SUCCESS) {
+		panic("Net_InstallRoute: Net_GetAddress failed\n");
+	    }
+	    routePtr->netAddress[NET_PROTO_RAW] = netAddressPtr[NET_PROTO_RAW];
 	    headerPtr = (char *) etherHdrPtr;
 	    break;
 	}
@@ -406,18 +511,23 @@ Net_InstallRoute(spriteID, interPtr, netAddressPtr, protocol,
 	    ultraHdrPtr->remoteAddress.tsapSize=2;
 	    ultraHdrPtr->remoteAddress.tsap[0]=0xff;
 	    ultraHdrPtr->remoteAddress.tsap[1]=0xff;
-	    ultraHdrPtr->remoteAddress.address = 
-		netAddressPtr[NET_PROTO_RAW].ultra;
+	    status = Net_GetAddress(&netAddressPtr[NET_PROTO_RAW], 
+		(Address) &ultraHdrPtr->remoteAddress.address);
+	    if (status != SUCCESS) {
+		panic("Net_InstallRoute: Net_GetAddress failed\n");
+	    }
 	    ultraHdrPtr->localAddress = wildcardAddress;
 	    ultraHdrPtr->localAddress.tsapSize=2;
 	    ultraHdrPtr->localAddress.tsap[0]=0xff;
 	    ultraHdrPtr->localAddress.tsap[1]=0xff;
-	    ultraHdrPtr->localAddress.address = 
-		interPtr->netAddress[NET_PROTO_RAW].ultra;
+	    status = Net_GetAddress(&interPtr->netAddress[NET_PROTO_RAW],
+		(Address) &ultraHdrPtr->localAddress.address);
+	    if (status != SUCCESS) {
+		panic("Net_InstallRoute: Net_GetAddress failed\n");
+	    }
 	    ultraHdrPtr->cmd = NET_ULTRA_DGRAM_SEND_REQ;
 	    headerPtr = (char *) ultraHdrPtr;
-	    routePtr->netAddress[NET_PROTO_RAW].ultra = 
-		netAddressPtr[NET_PROTO_RAW].ultra;
+	    routePtr->netAddress[NET_PROTO_RAW] = netAddressPtr[NET_PROTO_RAW];
 	    break;
 	}
 	default:
@@ -449,8 +559,16 @@ Net_InstallRoute(spriteID, interPtr, netAddressPtr, protocol,
 	    SWAP_FRAG_OFFSET_HOST_TO_NET(ipHeader);
 	    ipHeader->timeToLive = NET_IP_MAX_TTL;
 	    ipHeader->protocol = NET_IP_PROTOCOL_SPRITE;
-	    ipHeader->source = interPtr->netAddress[protocol].inet;
-	    ipHeader->dest = netAddressPtr[NET_PROTO_INET].inet;
+	    status = Net_GetAddress(&interPtr->netAddress[protocol], 
+		(Address) &ipHeader->source);
+	    if (status != SUCCESS) {
+		panic("Net_InstallRoute: Net_GetAddress failed\n");
+	    }
+	    status = Net_GetAddress(&netAddressPtr[protocol], 
+		(Address) &ipHeader->dest);
+	    if (status != SUCCESS) {
+		panic("Net_InstallRoute: Net_GetAddress failed\n");
+	    }
 	    /*
 	     * Precompute the checksum for the ipHeader. This must be
 	     * corrected when the totalLen field is updated. Note we
@@ -460,28 +578,35 @@ Net_InstallRoute(spriteID, interPtr, netAddressPtr, protocol,
 	    ipHeader->checksum = Net_InetChecksum(sizeof(Net_IPHeader),
 					       (Address) ipHeader);
 	    ipHeader->checksum = ~ipHeader->checksum;
-	    routePtr->maxBytes -= sizeof(Net_IPHeader);
-	    routePtr->minBytes -= sizeof(Net_IPHeader);
-	    if (routePtr->minBytes < 0) {
-		routePtr->minBytes = 0;
+	    routePtr->maxPacket -= sizeof(Net_IPHeader);
+	    routePtr->minPacket -= sizeof(Net_IPHeader);
+	    if (routePtr->minPacket < 0) {
+		routePtr->minPacket = 0;
 	    }
-	    routePtr->netAddress[NET_PROTO_INET].inet = 
-		netAddressPtr[NET_PROTO_INET].inet;
+	    routePtr->netAddress[NET_PROTO_INET] = 
+		netAddressPtr[NET_PROTO_INET];
 	    break;
 	}
 	default: {
-	    if (oldRoutePtr != (Net_Route *) NIL) {
-		oldRoutePtr->flags |= NET_RFLAGS_VALID;
+	    if (oldMode) {
+		if (oldRoutePtr != (Net_Route *) NIL) {
+		    oldRoutePtr->flags |= NET_RFLAGS_VALID;
+		}
 	    }
-	    routePtr->flags &= ~NET_RFLAGS_VALID;
-	    oldRoutePtr = routePtr;
 	    printf("Warning: Unsupported route type in Net_InstallRoute\n");
+	    routePtr->flags &= ~NET_RFLAGS_VALID;
+	    status = FAILURE;
 	    break;
 	}
     }
     MASTER_UNLOCK(&netRouteMutex);
-    if (oldRoutePtr != (Net_Route *) NIL) {
-	Net_DeleteRoute(oldRoutePtr);
+    if (oldMode) {
+	if (oldRoutePtr != (Net_Route *) NIL) {
+	    Net_DeleteRoute(oldRoutePtr);
+	}
+    }
+    if ((status != SUCCESS) && (routePtr != (Net_Route *) NIL)) {
+	Net_DeleteRoute(routePtr);
     }
     return(SUCCESS);
 }
@@ -529,16 +654,59 @@ exit:
 /*
  *----------------------------------------------------------------------
  *
- * Net_DeleteRoute --
+ * Net_DeleteRouteStub --
  *
- *	Deletes a route.
+ *	System call interface for Net_DeleteRoute.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	The route is marked as invalid if it has a positive reference
- *	count, otherwise it is deleted.
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Net_DeleteRouteStub(routeID)
+    int		routeID;	/* ID of the route to be deleted. */
+{
+    int		spriteID;
+    Net_Route	*routePtr;
+    Boolean	found = FALSE;
+
+    spriteID = routeID >> 16;
+    if (spriteID < 0 || spriteID >= netNumHosts) {
+	return GEN_INVALID_ARG;
+    }
+    MASTER_LOCK(&netRouteMutex);
+    LIST_FORALL(&netRouteArray[spriteID],(List_Links *) routePtr) {
+	if (routePtr->routeID == routeID) {
+	    found = TRUE;
+	    break;
+	}
+    }
+    MASTER_UNLOCK(&netRouteMutex);
+    if (!found) {
+	return GEN_INVALID_ARG;
+    }
+    Net_DeleteRoute(routePtr);
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_DeleteRoute --
+ *
+ *	Deletes a route.
+ *
+ * Results:
+ *	A return status.
+ *
+ * Side effects:
+ *	The indicated route is deleted.
  *
  *----------------------------------------------------------------------
  */
@@ -569,10 +737,11 @@ exit:
 /*
  *----------------------------------------------------------------------
  *
- * Net_IDToRouteStub --
+ * Net_IDToRouteOldStub --
  *
  *	Stub for the Test_Stats system call, NET_GET_ROUTE command.
  *	This gets a route and copies it out to user space.
+ *	This routine is made obsolete by Net_GetRoutes.
  *
  * Results:
  *	A return status.
@@ -583,7 +752,7 @@ exit:
  *----------------------------------------------------------------------
  */
 ReturnStatus
-Net_IDToRouteStub(spriteID, size, argPtr)
+Net_IDToRouteOldStub(spriteID, size, argPtr)
     int spriteID;		/* option parameter to Test_Stats */
     int	size;			/* Size of user buffer. */
     Address argPtr;		/* User space buffer to hold route */
@@ -593,7 +762,7 @@ Net_IDToRouteStub(spriteID, size, argPtr)
 
     ReturnStatus status;
     Net_Route *routePtr;
-    Net_RouteInfo routeInfo;
+    Net_RouteInfoOld routeInfo;
     int toCopy;
 
     if (spriteID < 0 || spriteID >= netNumHosts) {
@@ -604,9 +773,9 @@ Net_IDToRouteStub(spriteID, size, argPtr)
 	routeInfo.version = NET_ROUTE_VERSION;
 	routeInfo.flags = 0;
     } else {
-	FillRouteInfo(routePtr, &routeInfo);
+	FillRouteInfoOld(routePtr, &routeInfo);
     }
-    toCopy = MIN(size, sizeof(Net_RouteInfo) - sizeof(Net_Header));
+    toCopy = MIN(size, sizeof(Net_RouteInfoOld) - sizeof(Net_Header));
     status = Vm_CopyOut(toCopy, (Address)&routeInfo, argPtr);
     if (routePtr == (Net_Route *) NIL) {
 	return status;
@@ -640,6 +809,86 @@ Net_IDToRouteStub(spriteID, size, argPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * Net_GetRoutes --
+ *
+ *	System call to return routes to user-level. If the firstID and
+ *	lastID are both -1 then all routes are returned, otherwise
+ *	only those routes for hosts with IDs between firstID and
+ *	lastID, inclusive, are returned. 
+ *
+ * Results:
+ *	A return status.
+ *
+ * Side effects:
+ *	Copies to user space.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Net_GetRoutes(firstID, lastID, infoSize, bufferPtr, buffersUsedPtr)
+    int 	firstID;		/* ID of first host. */
+    int 	lastID;			/* ID of last host. */
+    int 	infoSize;		/* The size of Net_RouteInfo. */
+    Address	bufferPtr;		/* Buffer for route info. */
+    int		*buffersUsedPtr;	/* Number of buffers used. */
+{
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
+
+    ReturnStatus 	status = SUCCESS;
+    Net_Route 		*routePtr;
+    Net_UserRoute	userRoute;
+    int			i, j;
+    int			size;
+    int			count = 0;
+
+    if ((firstID < -1) || (firstID >= netNumHosts)) {
+	return SYS_INVALID_ARG;
+    }
+    if ((lastID < -1) || (lastID >= netNumHosts)) {
+	return SYS_INVALID_ARG;
+    }
+    if (lastID < firstID) {
+	return SYS_INVALID_ARG;
+    }
+    if (bufferPtr == USER_NIL) {
+	return SYS_ARG_NOACCESS;
+    }
+    if (firstID == -1) {
+	if (lastID != -1) {
+	    return SYS_INVALID_ARG;
+	} else {
+	    firstID = 0;
+	    lastID = netNumHosts - 1;
+	}
+    }
+    size = MIN(infoSize, sizeof(Net_UserRoute));
+    for (i = firstID; i <= lastID; i++) {
+	for (j = 0;; j++) {
+	    routePtr = Net_IDToRoute(i, j, FALSE, (Sync_Semaphore *) NIL, 0);
+	    if (routePtr == (Net_Route *) NIL) {
+		break;
+	    }
+	    FillUserRoute(routePtr, &userRoute);
+	    Net_ReleaseRoute(routePtr);
+	    status = Vm_CopyOut(size, (Address)&userRoute, bufferPtr);
+	    if (status != SUCCESS) {
+		goto done;
+	    }
+	    bufferPtr += size;
+	    count++;
+	}
+    }
+done:
+    if (buffersUsedPtr != USER_NIL) {
+	status = Vm_CopyOut(sizeof(int), (Address) &count, 
+	    (Address) buffersUsedPtr);
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Net_IDToRoute --
  *
  *	Return the route to the host specified by the input sprite id.
@@ -656,10 +905,11 @@ Net_IDToRouteStub(spriteID, size, argPtr)
 Net_Route *
 Net_IDToRoute(spriteID, index, doArp, mutexPtr, size)
     int 	spriteID;	/* Sprite id to find route for. */
-    int 	index;		/* Which route of many. */
+    int 	index;		/* If >= 0 then the index of the route,
+				 * otherwise use the size. */
     Boolean	doArp;		/* Do an arp to find a route? */
     Sync_Semaphore *mutexPtr;	/* Mutex to release when doing arp. */
-    int 	size;		/* Size of data to send (not used yet). */
+    int 	size;		/* Size of RPC to be sent. */
 {
     Net_Route 	*routePtr = (Net_Route *) NIL;
     register	Net_Route *tmpPtr;
@@ -670,15 +920,25 @@ Net_IDToRoute(spriteID, index, doArp, mutexPtr, size)
 	while (1) {
 	    i = 0;
 	    MASTER_LOCK(&netRouteMutex);
-	    LIST_FORALL(&netRouteArray[spriteID],(List_Links *) tmpPtr) {
-		if (tmpPtr->flags & NET_RFLAGS_VALID) {
-		    if (index >= 0 && i == index) {
-			tmpPtr->refCount++;
+	    if (index >= 0) {
+		LIST_FORALL(&netRouteArray[spriteID],(List_Links *) tmpPtr) {
+		    if ((i == index) && (tmpPtr->flags & NET_RFLAGS_VALID)) {
 			routePtr = tmpPtr;
 			break;
-		    } 
+		    }
 		    i++;
 		}
+	    } else {
+		LIST_FORALL(&netRouteArray[spriteID],(List_Links *) tmpPtr) {
+		    if ((tmpPtr->minRpc <= size) && (tmpPtr->maxRpc >= size) &&
+			(tmpPtr->flags & NET_RFLAGS_VALID)) {
+			routePtr = tmpPtr;
+			break;
+		    }
+		}
+	    }
+	    if (routePtr != (Net_Route *) NIL) {
+		routePtr->refCount++;
 	    }
 	    MASTER_UNLOCK(&netRouteMutex);
 	    if (routePtr == (Net_Route *) NIL && doArp) {
@@ -700,7 +960,7 @@ Net_IDToRoute(spriteID, index, doArp, mutexPtr, size)
  *
  * Net_AddrToID --
  *
- *      Determine the Sprite host ID from a physical address.  This is
+ *      Determine the Sprite host ID from a network address.  This is
  *      used by a server, or Reverse Arp, to determine a client's Sprite
  *      ID from the client's network address.
  *
@@ -717,23 +977,30 @@ Net_IDToRoute(spriteID, index, doArp, mutexPtr, size)
  *----------------------------------------------------------------------
  */
 int
-Net_AddrToID(netType, protocol, addressPtr)
-    Net_NetworkType netType;
-    int		protocol;
+Net_AddrToID(addressPtr)
     Net_Address	*addressPtr;		/* Physical address */
 {
     register Net_Route 	*routePtr;
     register int 	i;
     register int 	ID = -1;
+    int			protocol;
+
+    switch(addressPtr->type) {
+	case NET_ADDRESS_INET: 
+	    protocol = NET_PROTO_INET;
+	    break;
+	default:
+	    protocol = NET_PROTO_RAW;
+	    break;
+    }
 
     MASTER_LOCK(&netRouteMutex);
 
     for (i=0 ; i<netNumHosts ; i++) {
 	LIST_FORALL(&netRouteArray[i],(List_Links *) routePtr) {
 	    if ((routePtr->protocol == protocol) &&
-		(routePtr->interPtr->netType == netType) &&
-		(!NET_ADDRESS_COMPARE(routePtr->netAddress[protocol], 
-			*addressPtr))) {
+		(Net_AddrCmp(&routePtr->netAddress[protocol], 
+			addressPtr) == 0)) {
 		ID = routePtr->spriteID;
 		break;
 	    }
@@ -746,16 +1013,83 @@ Net_AddrToID(netType, protocol, addressPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * Net_HdrToAddr --
+ *
+ *	Determine the Sprite host ID from a transport header. 
+ *
+ * Results:
+ *	SUCCESS if the Sprite ID was found ok, FAILURE otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Net_HdrToAddr(netType, protocol, headerPtr, netAddressPtr) 
+    Net_NetworkType	netType;		/* Type of network. */
+    int			protocol;		/* Network protocol. */
+    Address		headerPtr;		/* The transport header. */
+    Net_Address		*netAddressPtr;		/* The network address. */
+{
+    Address 		offsetPtr;
+    ReturnStatus	status = SUCCESS;
+
+    if (protocol == NET_PROTO_RAW) {
+	switch(netType) {
+	    case NET_NETWORK_ETHER: {
+		status = Net_SetAddress(NET_ADDRESS_ETHER, 
+		    (Address) 
+			&NET_ETHER_HDR_SOURCE(*((Net_EtherHdr *) headerPtr)),
+		    netAddressPtr);
+		break;
+	    }
+	    case NET_NETWORK_ULTRA: {
+		status = Net_SetAddress(NET_ADDRESS_ULTRA, 
+		    (Address) &((Net_UltraHeader *) headerPtr)->remoteAddress,
+		    netAddressPtr);
+		break;
+	    }
+	    default:
+		printf("Net_HdrToAddr: unknown netType %d\n", netType);
+		return FAILURE;
+	}
+	if (status != SUCCESS) {
+	    panic("Net_HdrToAddr: Net_SetAddress failed\n");
+	}
+    } else {
+	offsetPtr = headerPtr + net_NetworkHeaderSize[netType];
+	switch(protocol) {
+	    case NET_PROTO_INET : {
+		Net_InetAddress	inetAddress;
+		inetAddress = (Net_InetAddress) 
+		    Net_NetToHostInt(((Net_IPHeader *) offsetPtr)->dest);
+		status = Net_SetAddress(NET_ADDRESS_INET, 
+		    (Address) &inetAddress, netAddressPtr);
+		break;
+	    }
+	    default:
+		printf("Net_HdrToAddr: unknown protocol %d\n", protocol);
+		return FAILURE;
+	}
+	if (status != SUCCESS) {
+	    panic("Net_HdrToAddr: Net_SetAddress failed\n");
+	}
+    }
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Net_HdrToID --
  *
  *      Determine the Sprite host ID from a transport header.  This is
  *      used by a server to determine a client's Sprite
  *      ID from the transport header.
  *
- *      This routine scans the route table looking for an address
- *      match with the input address.  If the flags field of the route
- *      specifies that the address is a broadcast address, this will
- *      return the correct hostid to use for a broadcast.
  *
  * Results:
  *      A Sprite hostid for the host at the address.  If the physical
@@ -772,41 +1106,15 @@ Net_HdrToID(netType, protocol, headerPtr)
     int			protocol;
     Address headerPtr;	/* Transport header. */
 {
-    Address 		offsetPtr;
     Net_Address 	netAddress;
+    ReturnStatus	status;
 
-    bzero((char *) &netAddress, sizeof(Net_Address));
-    if (protocol == NET_PROTO_RAW) {
-	switch(netType) {
-	    case NET_NETWORK_ETHER: {
-		NET_ETHER_ADDR_COPY(
-		    NET_ETHER_HDR_SOURCE(*((Net_EtherHdr *) headerPtr)), 
-		    netAddress.ether);
-		break;
-	    }
-	    case NET_NETWORK_ULTRA: {
-		netAddress.ultra = 
-		    ((Net_UltraHeader *) headerPtr)->remoteAddress.address;
-		break;
-	    }
-	    default:
-		printf("Net_HdrToID: unknown netType %d\n", netType);
-		return -1;
-	}
-    } else {
-	offsetPtr = headerPtr + net_NetworkHeaderSize[netType];
-	switch(protocol) {
-	    case NET_PROTO_INET : {
-		netAddress.inet = 
-		    Net_NetToHostInt(((Net_IPHeader *) offsetPtr)->dest);
-		break;
-	    }
-	    default:
-		printf("Net_HdrToID: unknown protocol %d\n", protocol);
-		return -1;
-	}
+    status = Net_HdrToAddr(netType, protocol, headerPtr, &netAddress);
+    if (status != SUCCESS) {
+	printf("Net_HdrToID: unable to get address from header\n");
+	return -1;
     }
-    return Net_AddrToID(netType, protocol, &netAddress);
+    return Net_AddrToID(&netAddress);
 }
 
 
@@ -836,42 +1144,17 @@ Net_HdrDestString(netType, protocol, headerPtr, bufferLen, buffer)
     char *buffer;	/* Destination memory for destination string. */
 
 {
-    Address 		offsetPtr;
     Net_Address 	netAddress;
     static char		tmpBuffer[128];
+    ReturnStatus	status;
 
     *buffer = '\0';
-    if (protocol == NET_PROTO_RAW) {
-	switch(netType) {
-	    case NET_NETWORK_ETHER: {
-		NET_ETHER_ADDR_COPY(
-		    NET_ETHER_HDR_SOURCE(*((Net_EtherHdr *) headerPtr)), 
-		    netAddress.ether);
-		break;
-	    }
-	    case NET_NETWORK_ULTRA: {
-		netAddress.ultra = 
-		    ((Net_UltraHeader *) headerPtr)->remoteAddress.address;
-		break;
-	    }
-	    default:
-		printf("Net_HdrDestString: unknown netType %d\n", netType);
-		return;
-	}
-    } else {
-	offsetPtr = headerPtr + net_NetworkHeaderSize[netType];
-	switch(protocol) {
-	    case NET_PROTO_INET : {
-		netAddress.inet = 
-		    Net_NetToHostInt(((Net_IPHeader *) offsetPtr)->dest);
-		break;
-	    }
-	    default:
-		printf("Net_HdrDestString: unknown protocol %d\n", protocol);
-		return;
-	}
+    status = Net_HdrToAddr(netType, protocol, headerPtr, &netAddress);
+    if (status != SUCCESS) {
+	printf("Net_HdrDestString: unable to get address from header\n");
+	return;
     }
-    Net_AddrToString(&netAddress, netType, protocol, tmpBuffer);
+    Net_AddrToString(&netAddress, tmpBuffer);
     (void) strncpy(buffer, tmpBuffer, bufferLen-1);
     return;
 }
@@ -969,9 +1252,9 @@ Net_HostPrint(spriteID, string)
 /*
  *----------------------------------------------------------------------
  *
- * FillRouteInfo --
+ * FillUserRoute --
  *
- *	Converts from a Net_Route to a Net_RouteInfo. Net_RouteInfo
+ *	Converts from a Net_Route to a Net_UserRoute. Net_UserRoute
  * 	is the structure that is passed to user-level.
  *
  * Results:
@@ -984,11 +1267,61 @@ Net_HostPrint(spriteID, string)
  */
 
 static void
-FillRouteInfo(routePtr, infoPtr)
+FillUserRoute(routePtr, userRoutePtr)
     Net_Route		*routePtr; 	/* The route structure. */
-    Net_RouteInfo	*infoPtr;	/* The route info structure. */
+    Net_UserRoute	*userRoutePtr;	/* The user version of the route. */
 {
     int		i;
+
+    userRoutePtr->version = NET_ROUTE_VERSION;
+    userRoutePtr->spriteID = routePtr->spriteID;
+    userRoutePtr->protocol = routePtr->protocol;
+    userRoutePtr->interAddress = routePtr->interPtr->netAddress[NET_PROTO_RAW];
+    userRoutePtr->netType = routePtr->interPtr->netType;
+    userRoutePtr->refCount = routePtr->refCount;
+    userRoutePtr->routeID = routePtr->routeID;
+    userRoutePtr->flags = routePtr->flags;
+    userRoutePtr->maxPacket = routePtr->maxPacket;
+    userRoutePtr->minPacket = routePtr->minPacket;
+    userRoutePtr->maxRpc = routePtr->maxRpc;
+    userRoutePtr->minRpc = routePtr->minRpc;
+    userRoutePtr->userData = routePtr->userData;
+    for(i = 0; i < NET_MAX_PROTOCOLS; i++) {
+	userRoutePtr->netAddress[i] = routePtr->netAddress[i];
+    }
+    (void) strncpy(userRoutePtr->hostname, 
+		    netHostInfo[routePtr->spriteID].name, 20);
+    (void) strncpy(userRoutePtr->machType,
+	           netHostInfo[routePtr->spriteID].machType, 12);
+    (void) strncpy(userRoutePtr->desc, routePtr->desc, 64);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FillRouteInfoOld --
+ *
+ *	Converts from a Net_Route to a Net_RouteInfoOld. Net_RouteInfoOld
+ * 	is the structure that is passed to user-level.
+ *	This routine is here for backwards compatibility and can
+ *	be removed as soon as Net_IDToRouteStub is gone.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+FillRouteInfoOld(routePtr, infoPtr)
+    Net_Route		*routePtr; 	/* The route structure. */
+    Net_RouteInfoOld	*infoPtr;	/* The route info structure. */
+{
+    int			i;
+    ReturnStatus	status;
 
     infoPtr->version = NET_ROUTE_VERSION;
     infoPtr->spriteID = routePtr->spriteID;
@@ -998,11 +1331,15 @@ FillRouteInfo(routePtr, infoPtr)
     infoPtr->refCount = routePtr->refCount;
     infoPtr->routeID = routePtr->routeID;
     infoPtr->flags = routePtr->flags;
-    infoPtr->maxBytes = routePtr->maxBytes;
-    infoPtr->minBytes = routePtr->minBytes;
+    infoPtr->maxBytes = routePtr->maxPacket;
+    infoPtr->minBytes = routePtr->minPacket;
     infoPtr->userData = routePtr->userData;
     for(i = 0; i < NET_MAX_PROTOCOLS; i++) {
-	infoPtr->netAddress[i] = routePtr->netAddress[i];
+	status = Net_GetAddress(&routePtr->netAddress[i], 
+	    (Address) &infoPtr->netAddress[i]);
+	if (status != SUCCESS) {
+	    break;
+	}
     }
     (void) strncpy(infoPtr->hostname, netHostInfo[routePtr->spriteID].name, 20);
     (void) strncpy(infoPtr->machType,

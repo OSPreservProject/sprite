@@ -43,7 +43,12 @@ void
 NetEtherInit()
 {
     static Net_EtherAddress	tmp = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+    ReturnStatus status;
 
-    NET_ETHER_ADDR_COPY(tmp, netEtherBroadcastAddress.ether);
+    status = Net_SetAddress(NET_ADDRESS_ETHER, (Address) &tmp, 
+	&netEtherBroadcastAddress);
+    if (status != SUCCESS) {
+	panic("NetEtherInit: Net_SetAddress failed\n");
+    }
 }
 

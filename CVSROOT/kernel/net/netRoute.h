@@ -63,8 +63,10 @@ typedef struct Net_Route {
     Address		headerPtr[NET_MAX_PROTOCOLS]; /* Start of transport 
 						       * headers*/
     Net_Interface	*interPtr;	/* Which network interface to use. */
-    int			maxBytes;	/* Maximum transfer unit of route. */
-    int			minBytes;	/* Minimum transfer unit of route. */
+    int			minPacket;	/* Minimum packet size of route. */
+    int			maxPacket;	/* Maximum packet size of route. */
+    int			minRpc;		/* Minimum RPC size for route. */
+    int			maxRpc;		/* Maximum RPC size for route. */
     ClientData		userData;	/* Space available for user program
 					 * that manipulates routes. */
     char		buffer[NET_MAX_HEADER_SIZE];  /* Network packet 
@@ -107,6 +109,8 @@ extern	int	netMaxFreeRoutes;
 typedef struct NetHostInfo {
     char	name[20];		/* The host name. */
     char	machType[12];		/* Host machine type. */
+    int		routes;			/* Number of routes that have ever
+					 * been installed to this host. */
 } NetHostInfo;
 
 /*

@@ -95,6 +95,7 @@ Net_Init()
     ReturnStatus status;
     int		counter[NET_NUM_NETWORK_TYPES];
     Net_Interface	*interPtr;
+    int			j;
 
     NetEtherInit();
 
@@ -111,6 +112,9 @@ Net_Init()
     for (i = 0 ; i<netNumConfigInterfaces ; i++) {
 	interPtr = &netConfigInterfaces[i];
 	interPtr->flags = 0;
+	for (j = 0; j < NET_MAX_PROTOCOLS; j++) {
+	    bzero((char *) &interPtr->netAddress[j], sizeof(Net_Address));
+	}
 	(void) sprintf(buffer, "NetOutputMutex:%d", i);
 	Sync_SemInitDynamic(&interPtr->syncOutputMutex, 
 			    strdup(buffer));
@@ -850,6 +854,40 @@ Net_GetInterface(netType, number)
 	}
     }
     return interPtr;
+}
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_GetInterfaceByAddr --
+ *
+ *	Returns a pointer to the interface whose address matches the 
+ * 	given address. If the address is an IP address then the IP
+ *	address for the interface had better be set.
+ *
+ * Results:
+ *	A pointer to the desired Net_Interface if one is found, NIL
+ *	otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Net_Interface *
+Net_GetInterfaceByAddr(netAddressPtr)
+    Net_Address		*netAddressPtr;	/* Address to use. */
+{
+    register int	i, j;
+
+    for (i = 0; i < netNumInterfaces; i++) {
+	for (j = 0; j < NET_MAX_PROTOCOLS; j++) {
+	    if (!Net_AddrCmp(netAddressPtr, &netInterfaces[i]->netAddress[j])) {
+		return netInterfaces[i];
+	    }
+	}
+    }
+    return (Net_Interface *) NIL;
 }
 
 /*

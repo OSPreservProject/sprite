@@ -27,6 +27,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <netArp.h>
 #include <string.h>
 #include <stdio.h>
+#include <rpcClient.h>
 /*
  * This flag turns on print statements in the ARP protocol
  */
@@ -145,7 +146,8 @@ Net_Arp(spriteID, mutexPtr)
 	NetFillInArpRequest(NET_ARP_REQUEST, interPtr->netType,
 		NET_PROTO_RAW,
 		(ClientData) spriteID, (ClientData) rpc_SpriteID, 
-		&netZeroAddress, &interPtr->netAddress[NET_PROTO_RAW],
+		&interPtr->broadcastAddress, 
+		&interPtr->netAddress[NET_PROTO_RAW],
 		&request);
 	gather.bufAddr = (Address)&request;
 	gather.length = sizeof(NetSpriteArp);
@@ -158,11 +160,13 @@ Net_Arp(spriteID, mutexPtr)
 	if (status == SUCCESS) {
 	    Net_Address netAddress;
 
-	    bzero((char *) &netAddress, sizeof(Net_Address));
-	    NET_ETHER_ADDR_COPY(* ARP_SRC_ETHER_ADDR(&reply),
-		netAddress.ether);
+	    status = Net_SetAddress(NET_ADDRESS_ETHER, 
+			    (Address) ARP_SRC_ETHER_ADDR(&reply), &netAddress);
+	    if (status != SUCCESS) {
+		panic("Net_Arp: Net_SetAddress failed\n");
+	    }
 	    (void) Net_InstallRoute(spriteID, interPtr, &netAddress,
-			NET_PROTO_RAW, "noname", "unknown", 
+			NET_PROTO_RAW, "noname", "unknown", 0, RPC_MAX_SIZE,
 			(ClientData) 0);
 	    return status;
 	}
@@ -401,6 +405,7 @@ NetArpInput(interPtr, packetPtr, packetLength)
     register NetSpriteArp *arpDataPtr;
     Boolean	forKernel = TRUE;
     short opcode, type;
+    ReturnStatus status;
 
     switch(interPtr->netType) {
 	case NET_NETWORK_ETHER: {
@@ -444,7 +449,8 @@ NetArpInput(interPtr, packetPtr, packetLength)
 	    if (type == NET_ETHER_SPRITE) { 
 		forKernel = (id == rpc_SpriteID);
 	    } else {
-		forKernel = (id == interPtr->netAddress[NET_PROTO_INET].inet);
+		forKernel = 
+		    (id == interPtr->netAddress[NET_PROTO_INET].address.inet);
 	    }
 	    if (forKernel) { 
 		/*
@@ -467,16 +473,19 @@ NetArpInput(interPtr, packetPtr, packetLength)
 	case NET_ARP_REPLY: {
 	    ArpState *arpPtr;
 	    unsigned int id;
-	    Net_EtherAddress *targetEtherAddrPtr;
 
 	    /*
 	     * Make sure this REPLY is targeted for us.
 	     */
-	    targetEtherAddrPtr = 
-			(Net_EtherAddress *)ARP_TARGET_ETHER_ADDR(arpDataPtr);
-	    if (!NET_ETHER_COMPARE_PTR(
-		    &interPtr->netAddress[NET_PROTO_RAW].ether,
-		    targetEtherAddrPtr)) {
+	    if (Net_EtherAddrCmp(
+		    interPtr->netAddress[NET_PROTO_RAW].address.ether,
+		    (* ARP_TARGET_ETHER_ADDR(arpDataPtr)))) {
+		if (arpDebug) {
+		    char	buf[20];
+		    (void) Net_EtherAddrToString(
+			ARP_TARGET_ETHER_ADDR(arpDataPtr), buf);
+		    printf("Ignoring reply for %s\n", buf);
+		}
 		break;
 	    }
 
@@ -521,14 +530,14 @@ NetArpInput(interPtr, packetPtr, packetLength)
 	    int 	spriteID;
 	    Net_Address netAddress;
 
-	    bzero((char *) &netAddress, sizeof(Net_Address));
 	    if (type == NET_ETHER_SPRITE) { 
-		NET_ETHER_ADDR_COPY(* (Net_EtherAddress *) 
-		    ARP_TARGET_ETHER_ADDR(arpDataPtr),
-		    netAddress.ether);
+		status = Net_SetAddress(NET_ADDRESS_ETHER, 
+		    (Address) ARP_TARGET_ETHER_ADDR(arpDataPtr), &netAddress);
+		if (status != SUCCESS) {
+		    panic("NetArpInput: Net_SetAddress failed\n");
+		 }
 
-		spriteID = Net_AddrToID(interPtr->netType, NET_PROTO_RAW,
-			&netAddress);
+		spriteID = Net_AddrToID(&netAddress);
 		if (arpDebug) {
 		    printf("Got REV_ARP request for Sprite ID 0x%x\n",
 			    spriteID);
@@ -549,13 +558,10 @@ NetArpInput(interPtr, packetPtr, packetLength)
 	}
 	case NET_RARP_REPLY: {
 	    ArpState *arpPtr;
-	    Net_EtherAddress *targetEtherAddrPtr;
 
-	    targetEtherAddrPtr = 
-			(Net_EtherAddress *)ARP_TARGET_ETHER_ADDR(arpDataPtr);
-	    if (!NET_ETHER_COMPARE_PTR(
-		    &interPtr->netAddress[NET_PROTO_RAW].ether,
-		    targetEtherAddrPtr)) {
+	    if (Net_EtherAddrCmp(
+		    interPtr->netAddress[NET_PROTO_RAW].address.ether,
+		    (* ARP_TARGET_ETHER_ADDR(arpDataPtr)))) {
 		break;
 	    }
 	    /*
@@ -568,8 +574,8 @@ NetArpInput(interPtr, packetPtr, packetLength)
 	    MASTER_LOCK(&arpListMutex);
 	    LIST_FORALL(&revArpList, (List_Links *)arpPtr) {
 		if ((arpPtr->type == type) && 
-		    NET_ETHER_COMPARE_PTR(targetEtherAddrPtr,
-				     (Net_EtherAddress *) (arpPtr->id))) {
+		   (!Net_EtherAddrCmpPtr(ARP_TARGET_ETHER_ADDR(arpDataPtr),
+				     (Net_EtherAddress *) (arpPtr->id)))) {
 		    if ((arpPtr->state & ARP_HAVE_INPUT) == 0) {
 			arpPtr->packet = *arpDataPtr;
 			arpPtr->state |= ARP_HAVE_INPUT;
@@ -615,6 +621,7 @@ NetArpHandler(data, callInfoPtr)
     ArpInputQueue *arpInputPtr = (ArpInputQueue *)data;
     NetSpriteArp   *arpDataPtr, request;
     unsigned short opcode, type;
+    ReturnStatus	status;
 
     MASTER_LOCK(&arpInputMutex);
 
@@ -631,10 +638,11 @@ NetArpHandler(data, callInfoPtr)
     if (opcode == NET_ARP_REQUEST) {
 	Net_Address	netAddress;
 
-	bzero((char *) &netAddress, sizeof(Net_Address));
-	NET_ETHER_ADDR_COPY(
-	    * (Net_EtherAddress *) ARP_SRC_ETHER_ADDR(arpDataPtr), 
-	    netAddress.ether);
+	status = Net_SetAddress(NET_ADDRESS_ETHER, 
+		    (Address) ARP_SRC_ETHER_ADDR(arpDataPtr), &netAddress);
+	if (status != SUCCESS) {
+	    panic("NetArpHandler: Net_SetAddress failed\n");
+	}
 	if (type == NET_ETHER_SPRITE) {
 	    int	spriteID;
 	    bcopy(ARP_SRC_PROTO_ADDR(arpDataPtr),(char*)&spriteID,sizeof(int));
@@ -646,36 +654,40 @@ NetArpHandler(data, callInfoPtr)
 		&request);
 	} else {
 	    Net_Address		inetAddress;
-	    Net_InetAddress inetAddr;
-
-	    bzero((char *) &inetAddress, sizeof(Net_Address));
-	    bcopy(ARP_SRC_PROTO_ADDR(arpDataPtr), (char *)&inetAddress.inet, 
-			sizeof(inetAddr));
-
+	    Net_InetAddress 	tmp;
+	    bcopy(ARP_SRC_PROTO_ADDR(arpDataPtr), (char *)&tmp, 
+			sizeof(Net_InetAddress));
+	    status = Net_SetAddress(NET_ADDRESS_INET, (Address) &tmp, 
+		&inetAddress);
+	    if (status != SUCCESS) {
+		panic("NetArpHandler: Net_SetAddress failed\n");
+	    }
 	    NetFillInArpRequest(NET_ARP_REPLY, interPtr->netType, 
 		NET_PROTO_INET,
-		(ClientData) inetAddress.inet, 
-		(ClientData)  interPtr->netAddress[NET_PROTO_INET].inet, 
+		(ClientData) inetAddress.address.inet, 
+		(ClientData) interPtr->netAddress[NET_PROTO_INET].address.inet, 
 		&netAddress, &interPtr->netAddress[NET_PROTO_RAW],
 		&request);
 	}
-        NetArpOutput(interPtr, &netAddress.ether, NET_ETHER_ARP, &request);
+        NetArpOutput(interPtr, &netAddress.address.ether, NET_ETHER_ARP, 
+	    &request);
     } else if (opcode == NET_RARP_REQUEST) {
 	Net_Address netAddress;
 	int	spriteID;
 
-	bzero((char *) &netAddress, sizeof(Net_Address));
-	NET_ETHER_ADDR_COPY(
-		*(Net_EtherAddress *)ARP_TARGET_ETHER_ADDR(arpDataPtr),
-		netAddress.ether);
-	spriteID = Net_AddrToID(interPtr->netType, NET_PROTO_RAW, &netAddress);
+	status = Net_SetAddress(NET_ADDRESS_ETHER, 
+		(Address) ARP_TARGET_ETHER_ADDR(arpDataPtr), &netAddress);
+	if (status != SUCCESS) {
+	    panic("NetArpHandler: Net_SetAddress failed\n");
+	}
+	spriteID = Net_AddrToID(&netAddress);
 	if (spriteID > 0) { 
 	    NetFillInArpRequest(NET_RARP_REPLY, interPtr->netType,
 		    NET_PROTO_RAW,
 		    (ClientData) spriteID, (ClientData) rpc_SpriteID,
 		    &netAddress, &interPtr->netAddress[NET_PROTO_RAW],
 		    &request);
-	    NetArpOutput(interPtr, (Net_EtherAddress *) ARP_SRC_ETHER_ADDR(arpDataPtr),
+	    NetArpOutput(interPtr, ARP_SRC_ETHER_ADDR(arpDataPtr),
 			NET_ETHER_REVARP, &request);
 	}
     } else {
@@ -823,8 +835,9 @@ NetFillInArpRequest(command, netType, protocol, targetId, senderId,
     Net_Address	*senderAddrPtr; /* Sender'network address. */
     NetSpriteArp *requestPtr;	/* Arp request packet to fill in. */
 {
-    unsigned int tid;
-    unsigned int sid;
+    unsigned int 	tid;
+    unsigned int 	sid;
+    ReturnStatus	status;
 
     switch (netType) {
 	case NET_NETWORK_ETHER: {
@@ -851,10 +864,20 @@ NetFillInArpRequest(command, netType, protocol, targetId, senderId,
 		    panic("NetFillInArpRequest: Unknown protocol %d\n", 
 			protocol);
 	    }
-	    NET_ETHER_ADDR_COPY(targetAddrPtr->ether,
-			*(Net_EtherAddress *)ARP_TARGET_ETHER_ADDR(requestPtr));
-	    NET_ETHER_ADDR_COPY(senderAddrPtr->ether,
-			*(Net_EtherAddress *)ARP_SRC_ETHER_ADDR(requestPtr));
+	    status = Net_GetAddress(targetAddrPtr, 
+		(Address) ARP_TARGET_ETHER_ADDR(requestPtr));
+	    if (status != SUCCESS) {
+		printf(
+	    "NetFillInArpRequest: Net_GetAddress of target address failed\n");
+		return;
+	    }
+	    status = Net_GetAddress(senderAddrPtr, 
+		(Address) ARP_SRC_ETHER_ADDR(requestPtr));
+	    if (status != SUCCESS) {
+		printf(
+	    "NetFillInArpRequest: Net_GetAddress of sender address failed\n");
+		return;
+	    }
 	    break;
 	}
 	default: {

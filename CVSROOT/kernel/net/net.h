@@ -63,11 +63,15 @@ extern void Net_SetPacketHandler _ARGS_((Net_Interface *interPtr,
 			void (*handler)()));
 extern void Net_RemovePacketHandler _ARGS_((Net_Interface *interPtr));
 extern ReturnStatus Net_InstallRouteStub _ARGS_((int size, 
-			Net_RouteInfo *routeInfoPtr));
+			Net_UserRoute *userRoutePtr));
+extern ReturnStatus Net_GetRoutes _ARGS_((int firstID, int lastID, 
+			int infoSize, Address bufferPtr, int *buffersUsedPtr));
+
 #ifdef KERNEL
 extern ReturnStatus Net_InstallRoute _ARGS_((int spriteID, 
 			Net_Interface *interPtr, Net_Address *netAddressPtr, 
 			int protocol, char *hostname, char *machType, 
+			int minRpc, int maxRpc,
 			ClientData userData));
 #endif
 extern void Net_DeleteRoute _ARGS_((Net_Route *routePtr));
@@ -79,8 +83,7 @@ extern void Net_RouteInit _ARGS_((void));
 extern void Net_ReleaseRoute _ARGS_((Net_Route *routePtr));
 extern Net_Route *Net_IDToRoute _ARGS_((int spriteID, int index, Boolean doArp,
 			Sync_Semaphore *mutexPtr, int size));
-extern int Net_AddrToID _ARGS_((Net_NetworkType netType, int protocol, 
-			Net_Address *addressPtr));
+extern int Net_AddrToID _ARGS_((Net_Address *addressPtr));
 extern Net_Interface *Net_GetInterface _ARGS_((Net_NetworkType netType, 
 			int number));
 extern Net_Interface *Net_NextInterface _ARGS_((Boolean running, 
@@ -98,5 +101,8 @@ extern ReturnStatus	Net_IDToRouteStub _ARGS_((int spriteID, int size,
 			    Address argPtr));
 extern ReturnStatus	Net_GetStats _ARGS_((Net_NetworkType netType,
 			    Net_Stats *statPtr));
+extern Net_Interface	*Net_GetInterfaceByAddr _ARGS_((
+			    Net_Address *netAddressPtr));
+extern ReturnStatus	Net_DeleteRouteStub _ARGS_((int routeID));
 
 #endif /* _NET */
