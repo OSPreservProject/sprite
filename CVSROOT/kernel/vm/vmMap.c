@@ -20,7 +20,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <sched.h>
 #include <sync.h>
 #include <sys.h>
-
+#include <vmHack.h>
+#ifdef VM_CHECK_BSTRING_ACCESS
+#include <stdlib.h>
+#endif
 
 
 Sync_Condition	mappingCondition;
@@ -30,6 +33,39 @@ int	vmMapBasePage;
 int	vmMapEndPage;
 Address vmMapBaseAddr;
 Address vmMapEndAddr;
+
+
+#ifdef VM_CHECK_BSTRING_ACCESS
+/* 
+ * Temporary: keep a list of which processes have called 
+ * Vm_MakeAccessible.  bcopy et al will check the list to verify that 
+ * it's okay to access the user address space.
+ */
+
+typedef struct {
+    List_Links		links;
+    Proc_ControlBlock	*procPtr;
+    Address		startAddr; /* user address */
+    int			numBytes; /* as returned by Vm_MakeAccessible */
+} VmAccessInfo;
+
+List_Links	vmAccessListHdr;
+List_Links	*vmAccessList = &vmAccessListHdr;
+static Sync_Lock	vmAccessListLock;
+
+Boolean		vmDoAccessChecks = FALSE;
+
+/* Forward references: */
+
+static void RegisterAccess _ARGS_ ((Proc_ControlBlock *procPtr,
+				    Address startAddr, int numBytes));
+static void RemoveAccess _ARGS_ ((Proc_ControlBlock *procPtr,
+				  Address startAddr, int numBytes));
+static VmAccessInfo *
+FindAccessElement _ARGS_ ((Proc_ControlBlock *procPtr, Address startAddr,
+			   int numBytes));
+
+#endif /* VM_CHECK_BSTRING_ACCESS */
 
 
 /*
@@ -255,7 +291,7 @@ Vm_MakeAccessible(accessType, numBytes, startAddr, retBytesPtr, retAddrPtr)
     if (segPtr == (Vm_Segment *) NIL) {
 	*retBytesPtr = 0;
 	*retAddrPtr = (Address) NIL;
-	return;
+	goto done;
     }
 
     procPtr->vmPtr->numMakeAcc++;
@@ -286,7 +322,7 @@ Vm_MakeAccessible(accessType, numBytes, startAddr, retBytesPtr, retAddrPtr)
 	 * Since is the stack segment we know the whole range
 	 * of addresses is valid so just return.
 	 */
-	return;
+	goto done;
     }
 
     /*
@@ -302,7 +338,7 @@ Vm_MakeAccessible(accessType, numBytes, startAddr, retBytesPtr, retAddrPtr)
 	 * Code segments are mapped contiguously so we know the whole range
 	 * of pages is valid.
 	 */
-	return;
+	goto done;
     }
     /*
      * We are left with a heap segment.  Go through the page table and make
@@ -325,7 +361,7 @@ Vm_MakeAccessible(accessType, numBytes, startAddr, retBytesPtr, retAddrPtr)
 	procPtr->vmPtr->numMakeAcc--;
 	*retBytesPtr = 0;
 	*retAddrPtr = (Address) NIL;
-	return;
+	goto done;
     }
     /* 
      * If we couldn't make all of the requested pages accessible then return 
@@ -334,6 +370,15 @@ Vm_MakeAccessible(accessType, numBytes, startAddr, retBytesPtr, retAddrPtr)
     if (virtAddr.page <= lastPage) {
 	*retBytesPtr = (virtAddr.page << vmPageShift) - (int) startAddr;
     }
+
+ done:
+#ifdef VM_CHECK_BSTRING_ACCESS
+    if (vmDoAccessChecks && *retBytesPtr != 0) {
+	RegisterAccess(procPtr, startAddr, *retBytesPtr);
+    }
+#else 
+    ;
+#endif
 }
 
 
@@ -394,4 +439,228 @@ Vm_MakeUnaccessible(addr, numBytes)
     }
 
     UNLOCK_MONITOR;
+
+#ifdef VM_CHECK_BSTRING_ACCESS
+    if (vmDoAccessChecks && numBytes != 0) {
+	RemoveAccess(procPtr, addr, numBytes);
+    }
+#endif
 }
+
+#ifdef VM_CHECK_BSTRING_ACCESS
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RegisterAccess --
+ *
+ *	Record the fact that the given process has acquired access to 
+ *	the given range of addresses.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Adds an element to the access linked list.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+RegisterAccess(procPtr, startAddr, numBytes)
+    Proc_ControlBlock	*procPtr;
+    Address		startAddr; /* user address */
+    int			numBytes; /* as returned by Vm_MakeAccessible */
+{
+    VmAccessInfo *accessPtr;
+
+    Sync_GetLock(&vmAccessListLock);
+
+    accessPtr = FindAccessElement(procPtr, startAddr, numBytes);
+    if (accessPtr != (VmAccessInfo *)NIL) {
+	vmDoAccessChecks = FALSE;
+	panic("Vm_MakeAccessible: address range already registered");
+    }
+    accessPtr = (VmAccessInfo *)malloc(sizeof(VmAccessInfo));
+    accessPtr->procPtr = procPtr;
+    accessPtr->startAddr = startAddr;
+    accessPtr->numBytes = numBytes;
+    List_InitElement((List_Links *)accessPtr);
+    List_Insert((List_Links *)accessPtr, LIST_ATREAR(vmAccessList));
+
+    Sync_Unlock(&vmAccessListLock);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RemoveAccess --
+ *
+ *	Forget that the given process has access to the given range of 
+ *	addresses.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Removes the element from the linked list that corresponds to 
+ *	the given arguments.  We assume that the caller will surrender 
+ *	access to the entire range that was acquired, rather than 
+ *	surrendering only part of the range.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+RemoveAccess(procPtr, startAddr, numBytes)
+    Proc_ControlBlock	*procPtr;
+    Address		startAddr; /* user address */
+    int			numBytes; /* as returned by Vm_MakeAccessible */
+{
+    VmAccessInfo *accessPtr;
+
+    Sync_GetLock(&vmAccessListLock);
+
+    accessPtr = FindAccessElement(procPtr, startAddr, numBytes);
+    if (accessPtr == (VmAccessInfo *)NIL) {
+	vmDoAccessChecks = FALSE;
+	panic("Vm_MakeUnAccessible: address range not registered");
+    }
+    List_Remove((List_Links *)accessPtr);
+    free((char *)accessPtr);
+
+    Sync_Unlock(&vmAccessListLock);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FindAccessElement --
+ *
+ *	Find the element in the access list corresponding to the given 
+ *	arguments.  The caller should be holding the lock for the 
+ *	access list.
+ *
+ * Results:
+ *	Returns a pointer to the element if found, NIL if not found.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static VmAccessInfo *
+FindAccessElement(procPtr, startAddr, numBytes)
+    Proc_ControlBlock *procPtr;
+    Address	startAddr;
+    int		numBytes;
+{
+    VmAccessInfo *accessPtr;
+
+    LIST_FORALL(vmAccessList, (List_Links *)accessPtr) {
+	if (accessPtr->procPtr == procPtr
+		&& accessPtr->startAddr == startAddr
+		&& accessPtr->numBytes == numBytes) {
+	    return accessPtr;
+	}
+    }
+
+    return (VmAccessInfo *)NIL;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_IsAccessible --
+ *
+ *	Verify that Vm_MakeAccessible has been called for the given 
+ *	range of addresses.
+ *
+ * Results:
+ *	Returns if okay, panics if not.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Vm_CheckAccessible(startAddr, numBytes)
+    Address	startAddr;
+    int		numBytes;
+{
+    VmAccessInfo *accessPtr;
+    Proc_ControlBlock	*procPtr = Proc_GetCurrentProc();
+    Boolean okay = FALSE;
+
+    if (!vmDoAccessChecks) {
+	return;
+    }
+
+    /* 
+     * All accesses to kernel memory are okay.  Assume that the 
+     * requested region doesn't wrap around the end of memory.
+     */
+    if (startAddr > mach_LastUserAddr
+	    || startAddr + numBytes <= mach_FirstUserAddr) {
+	return;
+    }
+
+    Sync_GetLock(&vmAccessListLock);
+
+    LIST_FORALL(vmAccessList, (List_Links *)accessPtr) {
+	if (accessPtr->procPtr != procPtr) {
+	    continue;
+	}
+	/* 
+	 * Check the start and end of the given range against the 
+	 * range in the list element.  If the given range can't fit in 
+	 * the list element, go on to the next element.
+	 */
+	if (accessPtr->startAddr <= startAddr
+		&& (accessPtr->startAddr + accessPtr->numBytes >=
+		    startAddr + numBytes)) {
+	    okay = TRUE;
+	    break;
+	}
+    }
+
+    Sync_Unlock(&vmAccessListLock);
+
+    if (!okay) {
+	vmDoAccessChecks = FALSE;
+	panic("accessing user memory improperly");
+    }
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmMapInit --
+ *
+ *	Initialize the access list, lock, etc.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The access list and lock are intialized.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+VmMapInit()
+{
+    Sync_LockInitDynamic(&vmAccessListLock, "Vm:accessListLock");
+    List_Init(vmAccessList);
+}
+
+#endif /* VM_CHECK_BSTRING_ACCESS */

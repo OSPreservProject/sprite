@@ -25,6 +25,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <stdio.h>
 #include <bstring.h>
 #include <assert.h>
+#include <vmHack.h>
 #ifdef sun4
 #include <machMon.h>
 #endif
@@ -156,6 +157,13 @@ Vm_Init()
      * Now call the hardware dependent initialization routine.
      */
     VmMach_Init(vmFirstFreePage);
+
+#ifdef VM_CHECK_BSTRING_ACCESS
+    /* 
+     * Initialize the debugging structures in vmMap.c
+     */
+    VmMapInit();
+#endif
 }
 
 
