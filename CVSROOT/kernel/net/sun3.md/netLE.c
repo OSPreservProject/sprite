@@ -81,10 +81,17 @@ NetLEInit(name, number, ctrlAddr)
 #ifdef sun3
     allocFunc = VmMach_NetMemAlloc;
 #endif
+#ifdef sun4
+    allocFunc = VmMach_NetMemAlloc;
+#endif
 
     DISABLE_INTR();
 
+#ifdef sun4
+    Mach_SetHandler(6, Net_Intr, (ClientData) 0);
+#else
     Mach_SetHandler(27, Net_Intr, (ClientData) 0);
+#endif
     netLEState.running = FALSE;
 
     /*
