@@ -45,6 +45,7 @@ DevSysgenInit(tapePtr)
     DevSCSITape	*tapePtr;	/* Tape drive state */
 {
     tapePtr->type = SCSI_SYSGEN;
+    tapePtr->blockSize = DEV_SYSGEN_BLOCK_SIZE;
     tapePtr->setupProc = SysgenSetup;
     tapePtr->statusProc = SysgenStatus;
     tapePtr->errorProc = SysgenError;
@@ -96,7 +97,7 @@ SysgenSetup(tapePtr, commandPtr, controlBlockPtr, countPtr, dmaCountPtr)
 	    break;
 	case SCSI_READ:
 	case SCSI_WRITE:
-	    *dmaCountPtr = *countPtr * DEV_BYTES_PER_SECTOR;
+	    *countPtr /= tapePtr->blockSize;
 	    break;
 	case SCSI_WRITE_EOF:
 	    *dmaCountPtr = 0;
