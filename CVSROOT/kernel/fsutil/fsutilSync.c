@@ -269,8 +269,12 @@ Fs_PrintTrace(numRecs)
 }
 
 
-Timer_Ticks 	writeBackSleep;
-int		fsWriteBackInterval = 30;
+int		fsWriteBackInterval = 30;	/* How long blocks have to be
+						 * dirty before they are
+						 * written back. */
+int		fsWriteBackCheckInterval = 5;	/* How often to scan the
+						 * cache for blocks to write
+						 * back. */
 Boolean		fsShouldSyncDisks = TRUE;
 
 /*
@@ -298,7 +302,12 @@ Fs_SyncProc(data, callInfoPtr)
 	Fs_Sync((unsigned int) (fsTimeInSeconds - fsWriteBackInterval), 
 		FALSE);
     }
-    callInfoPtr->interval = fsWriteBackInterval * timer_IntOneSecond;
+    if (fsWriteBackCheckInterval < fsWriteBackInterval) {
+	callInfoPtr->interval = fsWriteBackCheckInterval * timer_IntOneSecond;
+    } else {
+	callInfoPtr->interval = fsWriteBackInterval * timer_IntOneSecond;
+    }
+
 }
 
 
