@@ -106,6 +106,12 @@ extern int rpc_SpriteID;
 #define RPC_RECOV_TRACE_STALE	0x1000
 
 /*
+ * Hooks exported so they can be set via Fs_Command...
+ */
+extern Boolean rpc_Tracing;
+extern Boolean rpc_NoTimeouts;
+
+/*
  * Forward declarations
  */
 ReturnStatus	Rpc_Call();
