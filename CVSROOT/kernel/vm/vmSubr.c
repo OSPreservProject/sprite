@@ -243,7 +243,16 @@ Vm_RawAlloc(numBytes)
     retAddr = (Address) (((unsigned)retAddr + 7) & ~7);
     vmMemEnd += (numBytes + 7) & ~7;	/* eight byte aligned for SPUR. */
 #else
+#if defined(symm)
+    /*
+     * Need 16-byte alignment on Sequent Symmetry.  See comments in
+     * mem/memory.c for details.
+     */
+    retAddr = (Address) (((unsigned)retAddr + 0xf) & ~0xf);
+    vmMemEnd += (numBytes + 0xf) & ~0xf;
+#else
     vmMemEnd += (numBytes + 3) & ~3;
+#endif    
 #endif
 
     /*
@@ -533,6 +542,7 @@ VmValidatePagesInt(segPtr,  firstPage, lastPage, zeroFill, clobber)
     }
 }
 
+#ifndef symm
 
 /*
  *----------------------------------------------------------------------
@@ -555,11 +565,12 @@ VmZeroPage(pfNum)
 {
     register	int	mappedAddr;
 
-	
+
     mappedAddr = (int) VmMapPage(pfNum);
     bzero((Address) mappedAddr, vm_PageSize);
     VmUnmapPage((Address) mappedAddr);
 }
+#endif /* !symm */
 
 
 /*
