@@ -45,9 +45,38 @@ typedef struct Mach_MonFuncs {
     int		(*gets)();
     int		(*puts)();
     int		(*printf)();
+    int		(*mem1)();
+    int		(*mem2)();
+    int		(*save_regs)();
+    int		(*load_regs)();
+    int		(*jump_s8)();
+    int		(*getenv2)();
+    int		(*setenv2)();
+    int		(*atonum)();
+    int		(*strcmp)();
+    int		(*strlen)();
+    int		(*strcpy)();
+    int		(*strcat)();
+    int		(*get_cmd)();
+    int		(*get_nums)();
+    int		(*argparse)();
+    int		(*help)();
+    int		(*dump)();
+    int		(*setenv)();
+    int		(*unsetenv)();
+    int		(*printenv)();
+    int		(*jump2_s8)();
+    int		(*enable)();
+    int		(*disable)();
+    int		(*zero_buf)();
 } Mach_MonFuncs;
 extern	Mach_MonFuncs	mach_MonFuncs;
 
+/*
+ * The nonvolatile ram has a flag to indicate it is usable.
+ */
+#define MACH_USE_NON_VOLATILE 	((char *)0xbd0000c0)
+#define MACH_NON_VOLATILE_FLAG	0x02
 /*
  * Each entry in the jump table is 8 bytes - 4 for the jump and 4 for a nop.
  */
@@ -78,6 +107,32 @@ extern	Mach_MonFuncs	mach_MonFuncs;
  *	MACH_MON_GETS		gets with editing.
  *	MACH_MON_PUTS		Put string to console.
  *	MACH_MON_PRINTF		Kernel style printf to console.
+ *
+ * The following are other prom routines:
+ *	MACH_MON_MEM1		Do something in memory.
+ *	MACH_MON_MEM2		Do something else in memory.
+ *	MACH_MON_SAVEREGS	Save registers in a buffer.
+ *	MACH_MON_LOADREGS	Get register back from buffer.
+ *	MACH_MON_JUMPS8		Jump to address in s8.
+ *	MACH_MON_GETENV2	Gets a string from system environment.
+ *	MACH_MON_SETENV2	Sets a string in system environment.
+ *	MACH_MON_ATONUM		Converts ascii string to number.
+ *	MACH_MON_STRCMP		Compares strings (strcmp).
+ *	MACH_MON_STRLEN		Length of string (strlen).
+ *	MACH_MON_STRCPY		Copies string (strcpy).
+ *	MACH_MON_STRCAT		Appends string (strcat).
+ *	MACH_MON_GETCMD		Gets a command.
+ *	MACH_MON_GETNUMS	Gets numbers.
+ *	MACH_MON_ARGPARSE	Parses string to argc,argv.
+ *	MACH_MON_HELP		Help on prom commands.
+ *	MACH_MON_DUMP		Dumps memory.
+ *	MACH_MON_SETENV		Sets a string in system environment.
+ *	MACH_MON_UNSETENV	Unsets a string in system environment
+ *	MACH_MON_PRINTENV	Prints system environment
+ *	MACH_MON_JUMP2S8	Jumps to s8
+ *	MACH_MON_ENABLE		Performs prom enable command.
+ *	MACH_MON_DISABLE	Performs prom disable command.
+ *	MACH_MON_ZEROB		Zeros a system buffer.
  */
 #define MACH_MON_RESET		MACH_MON_FUNC_ADDR(0)
 #define MACH_MON_EXEC		MACH_MON_FUNC_ADDR(1)
@@ -97,6 +152,30 @@ extern	Mach_MonFuncs	mach_MonFuncs;
 #define MACH_MON_GETS		MACH_MON_FUNC_ADDR(15)
 #define MACH_MON_PUTS		MACH_MON_FUNC_ADDR(16)
 #define MACH_MON_PRINTF		MACH_MON_FUNC_ADDR(17)
+#define MACH_MON_MEM1		MACH_MON_FUNC_ADDR(28)
+#define MACH_MON_MEM2		MACH_MON_FUNC_ADDR(29)
+#define MACH_MON_SAVEREGS	MACH_MON_FUNC_ADDR(30)
+#define MACH_MON_LOADREGS	MACH_MON_FUNC_ADDR(31)
+#define MACH_MON_JUMPS8		MACH_MON_FUNC_ADDR(32)
+#define MACH_MON_GETENV2	MACH_MON_FUNC_ADDR(33)
+#define MACH_MON_SETENV2	MACH_MON_FUNC_ADDR(34)
+#define MACH_MON_ATONUM		MACH_MON_FUNC_ADDR(35)
+#define MACH_MON_STRCMP		MACH_MON_FUNC_ADDR(36)
+#define MACH_MON_STRLEN		MACH_MON_FUNC_ADDR(37)
+#define MACH_MON_STRCPY		MACH_MON_FUNC_ADDR(38)
+#define MACH_MON_STRCAT		MACH_MON_FUNC_ADDR(39)
+#define MACH_MON_GETCMD		MACH_MON_FUNC_ADDR(40)
+#define MACH_MON_GETNUMS	MACH_MON_FUNC_ADDR(41)
+#define MACH_MON_ARGPARSE	MACH_MON_FUNC_ADDR(42)
+#define MACH_MON_HELP		MACH_MON_FUNC_ADDR(43)
+#define MACH_MON_DUMP		MACH_MON_FUNC_ADDR(44)
+#define MACH_MON_SETENV		MACH_MON_FUNC_ADDR(45)
+#define MACH_MON_UNSETENV	MACH_MON_FUNC_ADDR(46)
+#define MACH_MON_PRINTENV	MACH_MON_FUNC_ADDR(47)
+#define MACH_MON_JUMP2S8	MACH_MON_FUNC_ADDR(48)
+#define MACH_MON_ENABLE		MACH_MON_FUNC_ADDR(49)
+#define MACH_MON_DISABLE	MACH_MON_FUNC_ADDR(50)
+#define MACH_MON_ZEROB		MACH_MON_FUNC_ADDR(51)
 
 /*
  * Functions and defines to access the monitor.
