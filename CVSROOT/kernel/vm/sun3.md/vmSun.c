@@ -2913,6 +2913,25 @@ DevBufferInit()
     MASTER_UNLOCK(vmMachMutexPtr);
 }
 
+/*
+ * 32Bit DMA stubs for the sun3.  The 32-bit user dvma stuff isn't on the
+ * sun3's, just the sun4's.
+ */
+Address
+VmMach_32BitDMAAlloc(numBytes, srcAddr)
+    int		numBytes;		/* Number of bytes to map in. */
+    Address	srcAddr;	/* Kernel virtual address to start mapping in.*/
+{
+    panic("VmMach_32BitDMAAlloc: should never be called on a sun3!\n");
+}
+void
+VmMach_32BitDMAFree(numBytes, mapAddr)
+    int		numBytes;		/* Number of bytes to map in. */
+    Address	mapAddr;	/* Kernel virtual address to unmap.*/
+{
+    panic("VmMach_32BitDMAFree: should never be called on a sun3!\n");
+}
+
 
 static	Boolean	dmaPageBitMap[VMMACH_DMA_SIZE / VMMACH_PAGE_SIZE_INT];
 
@@ -2934,7 +2953,7 @@ static	Boolean	dmaPageBitMap[VMMACH_DMA_SIZE / VMMACH_PAGE_SIZE_INT];
  *----------------------------------------------------------------------
  */
 Address
-VmMach_DMAAlloc(numBytes, srcAddr)
+VMMach_DMAAlloc(numBytes, srcAddr)
     int		numBytes;		/* Number of bytes to map in. */
     Address	srcAddr;	/* Kernel virtual address to start mapping in.*/
 {
