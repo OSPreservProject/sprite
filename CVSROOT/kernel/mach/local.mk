@@ -9,6 +9,8 @@ NOOPTIMIZATION	= no -O please
 
 #if !empty(TM:Mds3100)
 DISTFILES   +=  ds3100.md/softfp.o
+# Can't migrate processes doing compatibility calls.
+CFLAGS += -DCANT_MIGRATE_COMPAT
 #endif
 
 #if !empty(TM:Msun4) || !empty(TM:Msun4c)
