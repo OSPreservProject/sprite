@@ -179,6 +179,12 @@ Boolean recovTracing = TRUE;
 Boolean	recov_Transparent = FALSE;
 
 /*
+ * TRUE if the clients should ignore the fact that a server is able to
+ * do transparent recovery.  This will be FALSE except for some testing.
+ */
+Boolean recov_ClientIgnoreTransparent = FALSE;
+
+/*
  * Forward declarations.
  */
 
