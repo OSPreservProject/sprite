@@ -1446,3 +1446,29 @@ Mach_CheckSpecialHandling(pnum)
     panic("Mach_CheckSpecialHandling called for processor %d\n",pnum);
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_GetNumProcessors() --
+ *
+ *	Return the number of processors in the system.  NOTE: This should
+ *	really be in a machine-independent area of the mach module.  Note
+ *	further: if this is used only as a system call, it should return
+ *	a ReturnStatus!
+ *
+ * Results:
+ *	The number of processors is returned.  
+ *
+ * Side effects:
+ *	None
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Mach_GetNumProcessors()
+{
+	return (mach_NumProcessors);
+}
+
