@@ -258,6 +258,7 @@ NetIEInit(name, number, slotId)
     netEtherFuncs.reset  = NetIERestart;
 
     ENABLE_INTR();
+    return (TRUE);
 }
 
 
@@ -535,9 +536,6 @@ NetIEReset()
 void
 NetIERestart()
 {
-    int 		i;
-    List_Links		*itemPtr;
-    NetXmitElement	*xmitElemPtr;
 
     DISABLE_INTR();
 
@@ -575,11 +573,9 @@ NetIEIntr(polling)
     Boolean	polling;	/* TRUE if are being polled instead of
 				 * processing an interrupt. */
 {
-    register	NetIEState	*netIEStatePtr;
     register	NetIESCB	*scbPtr;
     register	int		status;
 
-    netIEStatePtr = &netIEState;
     scbPtr = netIEState.scbPtr;
 
 

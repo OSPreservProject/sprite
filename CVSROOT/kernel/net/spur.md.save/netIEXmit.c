@@ -160,9 +160,7 @@ NetIEXmitInit()
 {
     register	NetIETransmitCB		*xmitCBPtr;
     register	NetIETransmitBufDesc	*xmitBufDescPtr;
-    NetIETransmitBufDesc		*newXmitBufDescPtr;
     NetXmitElement	                *xmitElementPtr;
-    int					i;
 
     /*
      * Initialize the transmit command header.
