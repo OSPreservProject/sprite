@@ -1241,8 +1241,6 @@ NetDFIntr(interPtr, polling)
 
     statePtr = (NetDFState *) interPtr->interfaceData;
 
-    MASTER_LOCK(&interPtr->mutex);
-
     if (statePtr->flags & NET_DF_FLAGS_RESETTING) {
 	test = *(statePtr->regEvent) & NET_DF_EVENT_STATE_CHANGE;
 	if (test) {
@@ -1439,7 +1437,6 @@ NetDFIntr(interPtr, polling)
 	}
     }
 exit:
-    MASTER_UNLOCK(&interPtr->mutex);
     return;
 }
 
