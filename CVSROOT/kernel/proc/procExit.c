@@ -159,6 +159,8 @@ static INTERNAL void AddWaiter();
 	} \
     }
 
+ReturnStatus	FindExitingChild();
+
 
 /*
  *----------------------------------------------------------------------

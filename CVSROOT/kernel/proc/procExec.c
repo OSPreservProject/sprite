@@ -283,7 +283,7 @@ Proc_KernExec(fileName, argPtrArray)
 }
 
 ReturnStatus	SetupInterpret();
-Boolean		CopyInArgs();
+Boolean		SetupVM();
 
 
 /*
