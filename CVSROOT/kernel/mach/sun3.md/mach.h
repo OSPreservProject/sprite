@@ -372,14 +372,59 @@ typedef struct {
  */
 #define	Mach_GetProcessorNumber() 	0
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_GetPC --
+ *
+ *	Returns the PC of the current instruction.
+ *
+ * Results:
+ *	Current PC
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 #ifdef lint
 #define Mach_GetPC() 	0
 #else
 #define Mach_GetPC() \
     ({\
 	register Address __pc; \
-	asm volatile ("1:\n\tlea\t1b,%1\n":"=a" (__pc):"a"(__pc));\
+	asm volatile ("1:\n\tlea\t1b,%0\n":"=a" (__pc));\
 	(__pc);\
+    })
+#endif
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_GetCallerPC --
+ *
+ *	Returns the PC of the caller of the current routine.
+ *
+ * Results:
+ *	Our caller's PC.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifdef lint
+#define Mach_GetCallerPC() 	0
+#else
+#define Mach_GetCallerPC() \
+    ({\
+	register Address __pc; \
+	asm volatile ("\tmovl a6@(4),%0\n":"=a" (__pc));\
+	__pc;\
     })
 #endif
 
