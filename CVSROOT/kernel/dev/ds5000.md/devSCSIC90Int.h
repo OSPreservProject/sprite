@@ -458,8 +458,12 @@ struct Controller {
 #define	IS_CTRL_FREE(ctrlPtr) \
                 ((ctrlPtr)->devPtr == (Device *)NIL)
 #define	SET_CTRL_FREE(ctrlPtr) \
+                PUTCIRCBUF(CSTR, "c free "); \
+                PUTCIRCNULL; \
                 (ctrlPtr)->devPtr = (Device *)NIL;
 #define	SET_CTRL_BUSY(ctrlPtr,devPtr) \
+                PUTCIRCBUF(CSTR, "c busy "); \
+                PUTCIRCNULL; \
                 (ctrlPtr)->devPtr = devPtr;
 #define	IS_INTERRUPT_DEV(cPtr,dPtr,rPtr) \
                 (((cPtr)->interruptDevPtr == (dPtr)) && \
@@ -468,9 +472,19 @@ struct Controller {
                 ((devPtr)->ctrlPtr->devQueuesMask & (1 << (devPtr)->targetID))
 #define	SET_DEV_FREE(devPtr) \
                 (devPtr)->ctrlPtr->devQueuesMask |= (1<<(devPtr)->targetID);\
+                PUTCIRCBUF(CSTR, "d free "); \
+                PUTCIRCBUF(CBYTE, (char *)((devPtr)->targetID)); \
+                PUTCIRCBUF(CSTR, "; mask "); \
+                PUTCIRCBUF(CBYTE, (char *)((devPtr)->ctrlPtr->devQueuesMask)); \
+                PUTCIRCNULL; \
 		(devPtr)->scsiCmdPtr = (ScsiCmd *) NIL;
 #define	SET_DEV_BUSY(devPtr,cmdPtr)  \
                 (devPtr)->ctrlPtr->devQueuesMask &= ~(1<<(devPtr)->targetID);\
+                PUTCIRCBUF(CSTR, "d busy "); \
+                PUTCIRCBUF(CBYTE, (char *)((devPtr)->targetID)); \
+                PUTCIRCBUF(CSTR, "; mask "); \
+                PUTCIRCBUF(CBYTE, (char *)((devPtr)->ctrlPtr->devQueuesMask)); \
+                PUTCIRCNULL; \
 		(devPtr)->scsiCmdPtr = (cmdPtr);
 
 void             DevReset _ARGS_ ((Controller *ctrlPtr));
@@ -500,6 +514,26 @@ extern Controller *Controllers[MAX_SCSIC90_CTRLS];
     (( ((x)*CLOCKCONV/50) * (50/CLOCKCONV) < (x)) ? 1 : 0)
 #define NCR_TO_SCSI(x) ((x)*50/CLOCKCONV)
 
+/*
+ * debugging junk
+ *
+ */
+
+#define CIRCBUFLEN (1024*10)
+
+extern int circhead;
+extern char circBuf[CIRCBUFLEN];
+extern char numTab[16];
+
+#define CSTR 0
+#define CBYTE 1
+#define CINT 2
+
+#define CVTHEX(num,bits)  numTab[((int)num >> bits) & 0x0f]
+#define PUTCIRCBUF(a,b) PutCircBuf(a,b)
+#define PUTCIRCNULL \
+                circBuf[circHead] = '\0'; \
+                circHead = (circHead + 1) % CIRCBUFLEN;
 #endif
 
 
