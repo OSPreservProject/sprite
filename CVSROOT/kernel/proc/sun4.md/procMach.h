@@ -24,10 +24,11 @@
 #define	NEW_PAGE_SIZE		0x2000
 #ifdef sun4
 #define	NEW_SEG_SIZE		0x40000
+#define SUN_SEG_SIZE		NEW_PAGE_SIZE
 #else
 #define	NEW_SEG_SIZE		0x20000
-#endif
 #define SUN_SEG_SIZE		NEW_SEG_SIZE
+#endif
 
 /*
  * Header prepended to each a.out file.
