@@ -78,6 +78,12 @@ typedef struct FsPrefixExport {
  *	FS_OVERRIDE_PREFIX		This flag, when passed to PrefixLoad,
  *					causes any existing flags to be
  *					sub-sumed by the passed-in flags.
+ *	FS_LINK_NOT_PREFIX		This indicates that the caller really
+ *					wants a handle on the link file, not
+ *					the file referenced by the link.  This
+ *					allows lstat() to get the remote link,
+ *					regardless if there is a corresponding
+ *					prefix installed.
  *	FS_PREFIX_OPEN_LOCK		Used to lock out a domain as part
  *					of bringing it offline.
  */
@@ -87,6 +93,7 @@ typedef struct FsPrefixExport {
 #define	FS_LOCAL_PREFIX			0x4
 #define	FS_EXACT_PREFIX			0x8
 #define	FS_OVERRIDE_PREFIX		0x10
+#define FS_LINK_NOT_PREFIX		0x20
 #define FS_PREFIX_OPEN_LOCK		0x100
 
 /*

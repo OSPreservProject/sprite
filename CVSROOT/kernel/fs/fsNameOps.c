@@ -88,11 +88,7 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
     if (useFlags & FS_NAMED_PIPE_OPEN) {
 	type = FS_NAMED_PIPE;
     }
-    if (useFlags & FS_MASTER) {
-	Sys_Panic(SYS_WARNING, "Fs_Open: FS_MASTER flag not supported\n");
-	type = FS_PSEUDO_DEV;
-    }
-    if (useFlags & FS_NEW_MASTER) {
+    if (useFlags & (FS_MASTER|FS_NEW_MASTER)) {
 	type = FS_PSEUDO_DEV;
     }
     /*
@@ -125,8 +121,8 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
     nameInfoPtr = Mem_New(FsNameInfo);
 
     FS_TRACE_NAME(FS_TRACE_OPEN_START, name);
-    status = FsLookupOperation(name, FS_DOMAIN_OPEN, (Address)&openArgs,
-				(Address)&openResults, nameInfoPtr);
+    status = FsLookupOperation(name, FS_DOMAIN_OPEN, useFlags & FS_FOLLOW,
+		    (Address)&openArgs, (Address)&openResults, nameInfoPtr);
     FS_TRACE_NAME(FS_TRACE_OPEN_DONE, name);
     /*
      * Call the stream type open routine to set up the I/O handle.
@@ -278,7 +274,7 @@ Fs_Remove(name)
     lookupArgs.useFlags = FS_DELETE;
     FsSetIDs((Proc_ControlBlock *)NIL, &lookupArgs.id);
     lookupArgs.clientID = rpc_SpriteID;
-    status = FsLookupOperation(name, FS_DOMAIN_REMOVE,
+    status = FsLookupOperation(name, FS_DOMAIN_REMOVE, 0,
 		     (Address)&lookupArgs, (Address)NIL, (FsNameInfo *)NIL);
     return(status);
 }
@@ -309,7 +305,7 @@ Fs_RemoveDir(name)
     lookupArgs.useFlags = FS_DELETE;
     FsSetIDs((Proc_ControlBlock *)NIL, &lookupArgs.id);
     lookupArgs.clientID = rpc_SpriteID;
-    status = FsLookupOperation(name, FS_DOMAIN_REMOVE_DIR,
+    status = FsLookupOperation(name, FS_DOMAIN_REMOVE_DIR, 0,
 			 (Address)&lookupArgs, (Address)NIL, (FsNameInfo *)NIL);
     return(status);
 }
@@ -352,7 +348,7 @@ Fs_MakeDevice(name, devicePtr, permissions)
     FsSetIDs(procPtr, &makeDevArgs.id);
     makeDevArgs.clientID	= rpc_SpriteID;
 
-    status = FsLookupOperation(name, FS_DOMAIN_MAKE_DEVICE,
+    status = FsLookupOperation(name, FS_DOMAIN_MAKE_DEVICE, 0,
 		     (Address)&makeDevArgs, (Address)NIL, (FsNameInfo *)NIL);
     return(status);
 }
@@ -389,8 +385,8 @@ Fs_MakeDir(name, permissions)
     FsSetIDs(procPtr, &openArgs.id);
     openArgs.clientID = rpc_SpriteID;
 
-    status = FsLookupOperation(name, FS_DOMAIN_MAKE_DIR, (Address)&openArgs,
-				    (Address)NIL, (FsNameInfo *)NIL);
+    status = FsLookupOperation(name, FS_DOMAIN_MAKE_DIR, FS_FOLLOW,
+		    (Address)&openArgs, (Address)NIL, (FsNameInfo *)NIL);
     return(status);
 }
 
@@ -521,7 +517,7 @@ Fs_GetAttributes(pathName, fileOrLink, attrPtr)
     /*
      * Get an initial version of the attributes from the name server.
      */
-    status = FsLookupOperation(pathName, FS_DOMAIN_GET_ATTR,
+    status = FsLookupOperation(pathName, FS_DOMAIN_GET_ATTR, openArgs.useFlags,
 		 (Address)&openArgs, (Address)&getAttrResults,
 		 (FsNameInfo *)NIL);
     if (status == SUCCESS) {
@@ -595,7 +591,7 @@ Fs_SetAttributes(pathName, fileOrLink, attrPtr, flags)
      * Set the attributes at the name server.  We get in return a fileID
      * for the actual device which specifies a serverID.
      */
-    status = FsLookupOperation(pathName, FS_DOMAIN_SET_ATTR,
+    status = FsLookupOperation(pathName, FS_DOMAIN_SET_ATTR, 0,
 		     (Address)&setAttrArgs, (Address)&ioFileID,
 		     (FsNameInfo *)NIL);
     if (status == SUCCESS) {

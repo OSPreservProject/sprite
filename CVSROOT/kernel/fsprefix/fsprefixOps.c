@@ -94,9 +94,12 @@ char *NameOp();
  *----------------------------------------------------------------------
  */
 ReturnStatus
-FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
+FsLookupOperation(fileName, operation, follow, argsPtr, resultsPtr, nameInfoPtr)
     char 	*fileName;	/* File name to lookup */
     int 	operation;	/* Operation to perform on the file */
+    Boolean	follow;		/* TRUE if lookup will follow links.  FALSE
+				 * means we won't indirect via a prefix which
+				 * matches the name exactly. */
     Address 	argsPtr;	/* Operation specific arguments.  NOTE: it
 				 * is assummed that the first thing in the
 				 * arguments is a prefix file ID, except on
@@ -137,7 +140,7 @@ FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
 	return(FAILURE);
     }
     do {
-	status = GetPrefix(fileName, &hdrPtr, &rootID, &lookupName,
+	status = GetPrefix(fileName, follow, &hdrPtr, &rootID, &lookupName,
 			    &domainType, &prefixPtr);
 	if (status == SUCCESS) {
 	    if (operation == FS_DOMAIN_OPEN) {
@@ -324,7 +327,7 @@ FsTwoNameOperation(operation, srcName, dstName, lookupArgsPtr)
     }
     numRedirects = 0;
 getSrcPrefix:
-    status = GetPrefix(srcName, &srcHdrPtr, &srcRootID, &srcLookupName,
+    status = GetPrefix(srcName, 0, &srcHdrPtr, &srcRootID, &srcLookupName,
 				    &srcDomain, &srcPrefixPtr);
     if (status != SUCCESS) {
 	goto exit;
@@ -332,7 +335,7 @@ getSrcPrefix:
     lookupArgsPtr->prefixID = srcHdrPtr->fileID;
     lookupArgsPtr->rootID = srcRootID;
 getDstPrefix:
-    status = GetPrefix(dstName, &dstHdrPtr, &dstRootID, &dstLookupName,
+    status = GetPrefix(dstName, 0, &dstHdrPtr, &dstRootID, &dstLookupName,
 				    &dstDomain, &dstPrefixPtr);
     if (status != SUCCESS) {
 	goto exit;
@@ -947,12 +950,17 @@ FsPrefixLookup(fileName, flags, clientID, hdrPtrPtr, rootIDPtr, lookupNamePtr,
     Boolean			exactMatch;	    /* TRUE the fileName has
 						     * to match the prefix in 
 						     * the table exactly */
+    Boolean			wantLink;	    /* TRUE if caller wants to
+						     * inhibit indirection via
+						     * a prefix so it can lstat
+						     * the link file itself. */
 
     LOCK_MONITOR;
 
     longestPrefixPtr = (FsPrefix *) NIL;
     exactMatch = (flags & FS_EXACT_PREFIX);
-    flags &= ~FS_EXACT_PREFIX;
+    wantLink = (flags & FS_LINK_NOT_PREFIX);
+    flags &= ~(FS_EXACT_PREFIX|FS_LINK_NOT_PREFIX);
     if (fileName[0] != '/') {
 	/*
 	 * For relative names just return the handle from the current
@@ -979,21 +987,33 @@ FsPrefixLookup(fileName, flags, clientID, hdrPtrPtr, rootIDPtr, lookupNamePtr,
 		char	lastChar;
 
 		if (!(flags & prefixPtr->flags)) {
+		    /*
+		     * Only hit on imported or exported prefixes, as requested.
+		     */
 		    continue;
 		}
-
-		/*
-		 * The string matches the prefix.  See if the prefix is
-		 * '/' (length == 1). If not, make sure that the prefix
-		 * matches the name up through a complete pathname
-		 * component by checking the next character in the fileName.
-		 * This implies that /spur is not a prefix of /spurious.
-		 */
 		lastChar = fileName[prefixPtr->prefixLength];
 		if (exactMatch && lastChar != '\0') {
+		    /*
+		     * Need an exact match, but there is more filename left.
+		     */
+		    continue;
+		} else if (wantLink && lastChar == '\0' &&
+			    prefixPtr->prefixLength != 1) {
+		    /*
+		     * The opposite of exact match.  We skip an exact match
+		     * if we are trying to open a remote link.  This makes
+		     * lstat() behave the same on all remote links, whether
+		     * or not there is an installed prefix for the link.
+		     */
 		    continue;
 		} else if ((prefixPtr->prefixLength == 1) ||
 			   (lastChar == '\0') || (lastChar == '/')) {
+		    /*
+		     * The prefix is "/", or the prefix matches up through
+		     * a complete pathname component.  This implis that
+		     * /spur is not a valid prefix of /spurios.
+		     */
 		    if (longestPrefixPtr == (FsPrefix *)NIL) {
 			longestPrefixPtr = prefixPtr;
 		    } else if (longestPrefixPtr->prefixLength <
@@ -1280,9 +1300,12 @@ LocatePrefix(fileName, domainTypePtr, hdrPtrPtr)
  *----------------------------------------------------------------------
  */
 static ReturnStatus
-GetPrefix(fileName, hdrPtrPtr, rootIDPtr, lookupNamePtr, domainTypePtr, prefixPtrPtr)
+GetPrefix(fileName, follow, hdrPtrPtr, rootIDPtr, lookupNamePtr, domainTypePtr,
+	    prefixPtrPtr)
     char 	*fileName;		/* File name that needs to be 
 					 * operated on */
+    Boolean	follow;			/* TRUE means lookup will follow links.
+					 * FALSE allows opening of links */
     FsHandleHeader **hdrPtrPtr;		/* Result, handle for the prefix */
     FsFileID	*rootIDPtr;		/* Result, ID of domain root */
     char 	**lookupNamePtr;	/* Result, remaining pathname to 
@@ -1291,13 +1314,16 @@ GetPrefix(fileName, hdrPtrPtr, rootIDPtr, lookupNamePtr, domainTypePtr, prefixPt
     FsPrefix 	**prefixPtrPtr;		/* Result, reference to prefix table */
 {
     ReturnStatus status;
+    register int flags = FS_IMPORTED_PREFIX;
+    if (!follow) {
+	flags |= FS_LINK_NOT_PREFIX;
+    }
     do {
 	if (fsFileNameTrace) {
 	    Sys_Printf("Lookup: %s,", fileName);
 	}
-	status = FsPrefixLookup(fileName, FS_IMPORTED_PREFIX,
-				FS_LOCALHOST_ID, hdrPtrPtr, rootIDPtr,
-				lookupNamePtr, domainTypePtr, prefixPtrPtr);
+	status = FsPrefixLookup(fileName, flags, FS_LOCALHOST_ID, hdrPtrPtr,
+			rootIDPtr, lookupNamePtr, domainTypePtr, prefixPtrPtr);
 	if (status == FS_NO_HANDLE) {
 	    /*
 	     * The prefix exists but there is not a valid file handle for it.
