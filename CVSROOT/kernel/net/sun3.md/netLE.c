@@ -77,6 +77,12 @@ NetLEInit(name, number, ctrlAddr)
     DISABLE_INTR();
 
 #ifdef sun4c
+    /*
+     * As of PROM Rev 1.1, the sparcStation PROM no longer maps the etherNet
+     * device at the "known" location of 0xffd10000. This requires us to 
+     * go map it ourselves. 
+     */
+    ctrlAddr = (unsigned int) VmMach_MapInDevice(0x8c00000, 1);
     Mach_SetHandler(5, Net_Intr, (ClientData) 0);
 #else
     Mach_SetHandler(27, Net_Intr, (ClientData) 0);
