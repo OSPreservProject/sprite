@@ -526,6 +526,7 @@ extern  ReturnStatus    Fs_DeencapFileState();
 extern	ReturnStatus	Fs_PageRead();
 extern	ReturnStatus	Fs_PageWrite();
 extern	ReturnStatus	Fs_PageCopy();
+extern	ReturnStatus	Fs_FileBeingMapped();
 
 /*
  * Routines that map to/from user-level streamIDs.
