@@ -41,6 +41,8 @@ static Sync_Lock traceLogLock = Sync_LockInitStatic("Utils:traceLog_Mutex");
 Sync_Condition bufferFullCondition; /* Condition that we have a full block
 				       to give the user. */
 
+extern int vmShmDebug;	/* Ken's handy debug flag. */
+
 /*
  * Global tracing inhibit flag so it is easy to turn off all system tracing.
  */
@@ -97,8 +99,8 @@ TraceLog_Init(tracePtr, numBuffers, size, flags)
     tracePtr->currentBuffer = 0;
     tracePtr->currentOffset = 0;
     tracePtr->blocked = 0;
+    tracePtr->lostRecords = 0;
     tracePtr->hdr.machineID = rpc_SpriteID;
-    tracePtr->hdr.lostRecords = 0;
     strncpy(tracePtr->hdr.machineType, mach_MachineType, SYS_TRACELOG_TYPELEN);
     strncpy(tracePtr->hdr.kernel, SpriteVersion(), SYS_TRACELOG_KERNELLEN);
     Timer_GetRealTimeOfDay(&time, (int *)NIL, (Boolean *)NIL);
@@ -112,6 +114,7 @@ TraceLog_Init(tracePtr, numBuffers, size, flags)
     for (i=0;i<numBuffers;i++) {
 	tracePtr->buffers[i].size = 0;
 	tracePtr->buffers[i].numRecords = 0;
+	tracePtr->buffers[i].lostRecords = 0;
 	tracePtr->buffers[i].data = (Address) malloc(size);
     }
     if (2*sizeof(int) < sizeof(Timer_Ticks)) {
@@ -158,6 +161,13 @@ TraceLog_Insert(tracePtr, dataPtr, size, flags)
 
     LOCK_MONITOR;
 
+    if (size+REC_HEADER_SIZE > tracePtr->dataSize) {
+	printf("Record too big: %d\n", size);
+	tracePtr->lostRecords++;
+	UNLOCK_MONITOR;
+	return;
+    }
+
     /*
      * Check if we've filled a buffer.
      */
@@ -183,8 +193,10 @@ TraceLog_Insert(tracePtr, dataPtr, size, flags)
 	return;
     }
 
-    printf("buf=%x, num=%d, bytes: %d\n", tracePtr->buffers,
+    if (vmShmDebug) {
+	printf("buf=%x, num=%d, bytes: %d\n", tracePtr->buffers,
 	    tracePtr->currentBuffer,size);
+    }
     traceDataAddr = tracePtr->buffers[tracePtr->currentBuffer].data +
 	    tracePtr->currentOffset;
 
@@ -198,7 +210,7 @@ TraceLog_Insert(tracePtr, dataPtr, size, flags)
     bcopy((Address)&traceRec, traceDataAddr, headerSize);
     bcopy(dataPtr, traceDataAddr+headerSize, size);
     tracePtr->buffers[tracePtr->currentBuffer].numRecords++;
-    tracePtr->currentOffset += traceRec.recordLen;
+    tracePtr->currentOffset += size+headerSize;
     UNLOCK_MONITOR;
 }
 
@@ -260,13 +272,21 @@ TraceLog_Dump(tracePtr, dataAddr, hdrAddr)
 	    tracePtr->buffers[tracePtr->firstNewBuffer].numRecords;
     tracePtr->hdr.lostRecords = 
 	    tracePtr->buffers[tracePtr->firstNewBuffer].lostRecords;
+    if (vmShmDebug) {
+	printf("Lost = %d\n", tracePtr->hdr.lostRecords);
+    }
     tracePtr->buffers[tracePtr->firstNewBuffer].numRecords=0;
+    tracePtr->buffers[tracePtr->firstNewBuffer].lostRecords=0;
 
     if (tracePtr->blocked) {
+	if (vmShmDebug) {
+	    printf("Unblocked: lost = %d\n", tracePtr->lostRecords);
+	}
 	tracePtr->blocked = 0;
 	tracePtr->buffers[tracePtr->currentBuffer].lostRecords=
 		tracePtr->lostRecords;
     }
+    tracePtr->lostRecords = 0;
 
     status = Vm_CopyOut(tracePtr->hdr.numBytes, tracePtr->buffers
 	    [tracePtr->firstNewBuffer].data, dataAddr);
@@ -284,7 +304,6 @@ TraceLog_Dump(tracePtr, dataAddr, hdrAddr)
 
     status = Vm_CopyOut(sizeof(Sys_TracelogHeader), (Address) &tracePtr->hdr,
 	    (Address)hdrAddr);
-    tracePtr->hdr.lostRecords = 0;
 
     UNLOCK_MONITOR;
     return status;
@@ -320,8 +339,8 @@ TraceLog_Reset(tracePtr)
     for (i=0;i<tracePtr->numBuffers;i++) {
 	tracePtr->buffers[i].size = 0;
 	tracePtr->buffers[i].numRecords = 0;
+	tracePtr->buffers[i].lostRecords = 0;
     }
-    tracePtr->hdr.lostRecords = 0;
     UNLOCK_MONITOR;
 }
 
