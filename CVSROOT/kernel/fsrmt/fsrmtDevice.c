@@ -827,7 +827,7 @@ Fs_RpcDevReopen(srvToken, clientID, command, storagePtr)
 				 	 * Rpc_Reply */
     int 		 clientID;	/* Sprite ID of client host */
     int 		 command;	/* Command identifier */
-    register Rpc_Storage *storagePtr;	/* The request fields refer to the 
+    Rpc_Storage		 *storagePtr;	/* The request fields refer to the 
 					 * request buffers and also indicate 
 					 * the exact amount of data in the 
 					 * request buffers.  The reply fields 
