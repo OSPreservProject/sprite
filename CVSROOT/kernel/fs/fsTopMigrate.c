@@ -245,12 +245,16 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
 	    nameInfoPtr->rootID = migInfoPtr->rootID;
 	    if (nameInfoPtr->fileID.serverID != rpc_SpriteID) {
 		nameInfoPtr->domainType = FS_REMOTE_SPRITE_DOMAIN;
-		LocalToRemoteDomain(&nameInfoPtr->fileID);
-		LocalToRemoteDomain(&nameInfoPtr->rootID);
+		nameInfoPtr->fileID.type =
+		    fsLclToRmtType[nameInfoPtr->fileID.type];
+		nameInfoPtr->rootID.type =
+		    fsLclToRmtType[nameInfoPtr->rootID.type];
 	    } else {
 		nameInfoPtr->domainType = FS_LOCAL_DOMAIN;
-		RemoteToLocalDomain(&nameInfoPtr->fileID);
-		RemoteToLocalDomain(&nameInfoPtr->rootID);
+		nameInfoPtr->fileID.type =
+		    fsRmtToLclType[nameInfoPtr->fileID.type];
+		nameInfoPtr->rootID.type =
+		    fsRmtToLclType[nameInfoPtr->rootID.type];
 	    }
 	    nameInfoPtr->prefixPtr = FsPrefixFromFileID(&migInfoPtr->rootID);
 	    if (nameInfoPtr->prefixPtr == (struct FsPrefix *)NIL) {
@@ -871,6 +875,7 @@ Fs_DeencapFileState(procPtr, buffer)
 }
 
 
+#ifdef notdef
 /*
  * ----------------------------------------------------------------------------
  *
@@ -902,8 +907,10 @@ LocalToRemoteDomain(fileIDPtr)
 		  fileIDPtr->serverID,  fileIDPtr->major,
 		  fileIDPtr->minor, fileIDPtr->type);
     }
-}    
+}
+#endif notdef
 
+#ifdef notdef
 /*
  * ----------------------------------------------------------------------------
  *
@@ -935,4 +942,5 @@ RemoteToLocalDomain(fileIDPtr)
 		  fileIDPtr->serverID,  fileIDPtr->major,
 		  fileIDPtr->minor, fileIDPtr->type);
     }
-}    
+}
+#endif notdef
