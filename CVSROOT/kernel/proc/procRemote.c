@@ -256,6 +256,8 @@ GetProcessState(buffer, hostID)
 	procPtr->kcallTable = mach_MigratedHandlers;
     }
     procPtr->genFlags &= ~(PROC_MIG_PENDING | PROC_MIGRATING);
+    procPtr->schedFlags &=
+	~(SCHED_STACK_IN_USE | SCHED_CONTEXT_SWITCH_PENDING);
 
     bcopy(buffer, (Address) &procPtr->billingRate,
 	    PROC_NUM_SCHED_FIELDS * sizeof (int));
