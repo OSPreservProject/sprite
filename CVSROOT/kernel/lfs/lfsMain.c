@@ -130,6 +130,7 @@ Lfs_AttachDisk(devicePtr, localName, flags, domainNumPtr)
     lfsPtr->activeFlags = 0;
     lfsPtr->cleanerProcPtr = (Proc_ControlBlock *) NIL;
     lfsPtr->dirModsActive = 0;
+    lfsPtr->numDirtyBlocks = 0;
     status = LfsLoadFileSystem(lfsPtr, flags); 
     if (status != SUCCESS) { 
 	free((char *)lfsPtr);

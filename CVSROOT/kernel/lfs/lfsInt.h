@@ -138,6 +138,8 @@ typedef struct Lfs {
 				    * completing or starting. */
     int		dirModsActive;	/* Number of processes inside directory 
 				 * modification code. */
+    int		numDirtyBlocks; /* Estimate of the number of dirty blocks
+				 * in the file cache. */
     LfsSegCache   segCache;	  /* Cache of recently read segments. */
     LfsDescCache  descCache;	  /* Cache of file desciptors. */
     Sync_Lock     logLock;	/* Lock protecting the directory log. */
@@ -254,6 +256,7 @@ extern void LfsSegCleanStart _ARGS_((Lfs *lfsPtr));
 extern void LfsWaitForCheckPoint _ARGS_((Lfs *lfsPtr));
 extern void LfsSegmentWriteProc _ARGS_((ClientData clientData,
 				Proc_CallInfo *callInfoPtr));
+extern void LfsWaitForCleanSegments _ARGS_((Lfs *lfsPtr));
 
 extern void Lfs_ReallocBlock _ARGS_((ClientData data, 
 				Proc_CallInfo *callInfoPtr));
