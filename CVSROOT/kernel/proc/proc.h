@@ -117,6 +117,17 @@ typedef struct {
     struct Proc_ControlBlock *procPtr;	/* Back pointer to this structure. */
 } Proc_PCBLink;
 
+/*
+ * Proc_Time is used to represent time such that it can be understood
+ * by users through Proc_GetPCBInfo in a machine independent format and
+ * by the kernel in a machine dependent ticks format.  Thus all users of
+ * Proc_Time in the kernel should always use the ticks field and user
+ * programs that call Proc_GetPCBInfo should use the time field.
+ */
+typedef union {
+    Timer_Ticks	ticks;	/* The kernel's notion of time. */
+    Time	time;	/* The user's notion of time. */
+} Proc_Time;
 
 /*
  *  The Proc_ControlBlock structure:
@@ -228,12 +239,12 @@ typedef struct Proc_ControlBlock {
      *-----------------------------------------------------------------
      */
 
-    Timer_Ticks kernelCpuUsage;	/* How much time has been spent in kernel mode*/
-    Timer_Ticks userCpuUsage;	/* How much time has been spent in user mode. */
+    Proc_Time kernelCpuUsage;	/* How much time has been spent in kernel mode*/
+    Proc_Time userCpuUsage;	/* How much time has been spent in user mode. */
 
-    Timer_Ticks childKernelCpuUsage;	/* Sum of time spent in kernel mode for 
+    Proc_Time childKernelCpuUsage;	/* Sum of time spent in kernel mode for 
 				 	 * all terminated children. */
-    Timer_Ticks childUserCpuUsage;	/* Sum of time spent in user mode for
+    Proc_Time childUserCpuUsage;	/* Sum of time spent in user mode for
 				 	 * all terminated children. */
     int 	numQuantumEnds;		/* number of times the process was 
 				 	 * context switched due to a quantum 
