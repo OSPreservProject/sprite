@@ -398,40 +398,4 @@
         ld_32           destReg, FIRST_PC_REG, $0
 #endif
 
-/*
- * SAVE_STATE_AND_SWITCH_STACK()
- *
- *	Save all user state into the current state structure and switch to
- *	the kernel stack.
- */
-#define SAVE_STATE_AND_SWITCH_STACK() \
-	ld_32		VOL_TEMP1, r0, $curStatePtr; \
-	Nop; \
-	ld_32		VOL_TEMP1, VOL_TEMP1, $0; \
-	st_32		SPILL_SP, VOL_TEMP1, $MACH_USER_STACK_PTR_OFFSET; \
-	rd_special	VOL_TEMP2, cwp; \
-	st_32		VOL_TEMP2, VOL_TEMP1, $MACH_CWP_OFFSET; \
-	rd_special	VOL_TEMP2, swp; \
-	st_32		VOL_TEMP2, VOL_TEMP1, $MACH_SWP_OFFSET; \
-	st_32		FIRST_PC_REG, VOL_TEMP1, $MACH_FIRST_PC_OFFSET; \
-	st_32		SECOND_PC_REG, VOL_TEMP1, $MACH_SECOND_PC_OFFSET; \
-	ld_32		SPILL_SP, VOL_TEMP1, $MACH_KERN_STACK_END; \
-	Nop
-
-
-/*
- * RESTORE_STATE()
- *
- *	Restore all user state from the current state structure.  This
- *	assumes that the state was saved with SAVE_STATE_AND_SWITCH_STACK
- *	and VOL_TEMP1 contains the pointer to the current processes state
- *	structure.
- */
-#define RESTORE_USER_STATE() \
-	ld_32		SPILL_SP, VOL_TEMP1, $MACH_USER_STACK_PTR_OFFSET; \
-	ld_32		VOL_TEMP2, VOL_TEMP1, $MACH_SWP_OFFSET; \
-	ld_32		FIRST_PC_REG, VOL_TEMP1, $MACH_FIRST_PC_OFFSET; \
-	ld_32		SECOND_PC_REG, VOL_TEMP1, $MACH_SECOND_PC_OFFSET; \
-	wr_special	swp, VOL_TEMP2
-
 #endif _MACHASMDEFS

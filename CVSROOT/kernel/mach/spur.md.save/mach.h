@@ -74,15 +74,38 @@ extern ReturnStatus (*(mach_MigratedHandlers[]))();
  */
 
 /*
+ * The register state for a process.
+ */
+typedef struct {
+    int		trapRegs[MACH_NUM_ACTIVE_REGS][2];	/* Registers at time
+							 * of trap.*/
+    int		kpsw;				/* Kernel psw. */
+    int		upsw;				/* User psw. */
+    int		curPC;				/* Current program counter. */
+    int		nextPC;				/* Next program counter. */
+    int		swp;				/* The saved window pointer. */
+    int		cwp;				/* Current window pointer. */
+} Mach_RegState;
+
+/*
  * The user state for a process.
  */
 typedef struct {
-    Address		userStackPtr;	/* User stack pointer. */
-    int			cwp;		/* Current window pointer. */
-    int			swp;		/* Saved window pointer. */
-    int			upsw;		/* User PSW. */
+    Mach_RegState	trapRegState;	/* State of process at trap. */
     Address		minSWP;		/* Min and max values for the saved */
     Address		maxSWP;		/* 	window pointer. */
+    /*
+     * Signal information.
+     */
+    Address		newCurPC;	/* Saved first PC for when calling a
+					 * signal handler. */
+    Address		newUserSP;	/* Saved user stack pointer for when
+					 * calling a signal handler. */
+    int			sigNum;		/* Signal number to pass to signal
+					 * handler. */
+    int			sigCode;	/* Signal code to pass to signal
+					 * handler. */
+    int			oldHoldMask;	/* The saved hold mask. */
 } Mach_UserState;
 
 /*
@@ -90,10 +113,8 @@ typedef struct {
  */
 typedef struct Mach_State {
     Mach_UserState	userState;		/* User state for a process. */
-						/* Where registers are saved
-						 * and restored to/from during
-						 * context switches. */
-    int			switchRegs[MACH_NUM_REGS_TO_SAVE];
+    Mach_RegState	switchRegState;		/* The state to save on the
+						 * switch. */
     Address		kernStackStart;		/* Address of the beginning of
 						 * the kernel stack. */
     Address		kernStackEnd;		/* Address of the end of the

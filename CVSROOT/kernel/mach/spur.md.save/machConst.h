@@ -16,6 +16,70 @@
 #define _MACHCONST
 
 /*
+ * The return codes from the C trap handler routines:
+ *
+ *	MACH_NORM_RETURN	No special action is required before continuing
+ *				execution.
+ *	MACH_FAILED_COPY	A cross-address space copy failed.
+ *	MACH_CALL_SIG_HANDLER	A signal handler should be called when the
+ *				user process continues execution.
+ *	MACH_USER_ERROR		A user process has to take a signal.
+ */
+#define	MACH_NORM_RETURN		0
+#define	MACH_FAILED_COPY		1
+#define	MACH_CALL_SIG_HANDLER		2
+#define	MACH_USER_ERROR			3
+#define	MACH_MAX_RETURN_CODE		3
+
+/*
+ * The different type of trap handler errors.  Note that the error types 
+ * start at one more thana the maximum return code.  Thus when a C trap
+ * handler returns a value that is greater than the maximum return code
+ * the assembly language trap handler knows that it is an error.
+ *
+ *	MACH_USER_FPU_EXCEPT	An fpu exception in user mode.
+ *	MACH_KERN_FPU_EXCEPT	An fpu exception in kernel mode.
+ *	MACH_USER_ILLEGAL	An illegal exception in user mode.
+ *	MACH_KERN_ILLEGAL	An illegal exception in kernel mode.
+ *	MACH_USER_FIXNUM	A fixnum exception in user mode.
+ *	MACH_KERN_FIXNUM	A fixnum exception in kernel mode.
+ *	MACH_USER_OVERFLOW	An overflow exception in user mode.
+ *	MACH_KERN_OVERFLOW	An overflow exception in kernel mode.
+ *	MACH_ERROR		A SPUR error exception.
+ *	MACH_BAD_FAULT		One of the fault types that we can't
+ *				handle.
+ *	MACH_BAD_SRC_REG	An invalid src register in a dissassembled
+ *				instruction.
+ *	MACH_USER_BAD_SWP	A user process had a bogus swp when it trapped
+ *				into the kernel.
+ *	MACH_BAD_TRAP_TYPE	An unknown compare trap type.
+ *	MACH_BAD_PROT_VIOL_FAULT A protection violation fault occured in the
+ *				 kernel.
+ *	MACH_BAD_PAGE_FAULT	A page fault occured in the kernel.
+ *	MACH_BAD_REF_FAULT	A reference fault occured which was an error.
+ *	MACH_BAD_DIRTY_FAULT	A dirty fault occured which was an error.
+ *	MACH_BOGUS_INTERRUPT	An interrupt occured that was an error.
+ */
+#define	MACH_USER_FPU_EXCEPT		(MACH_MAX_RETURN_CODE + 1)
+#define	MACH_KERN_FPU_EXCEPT		(MACH_MAX_RETURN_CODE + 2)
+#define	MACH_USER_ILLEGAL		(MACH_MAX_RETURN_CODE + 3)
+#define	MACH_KERN_ILLEGAL		(MACH_MAX_RETURN_CODE + 4)
+#define	MACH_USER_FIXNUM		(MACH_MAX_RETURN_CODE + 5)
+#define	MACH_KERN_FIXNUM		(MACH_MAX_RETURN_CODE + 6)
+#define	MACH_USER_OVERFLOW		(MACH_MAX_RETURN_CODE + 7)
+#define	MACH_KERN_OVERFLOW		(MACH_MAX_RETURN_CODE + 8)
+#define	MACH_ERROR			(MACH_MAX_RETURN_CODE + 9)
+#define	MACH_BAD_FAULT			(MACH_MAX_RETURN_CODE + 10)
+#define	MACH_BAD_SRC_REG		(MACH_MAX_RETURN_CODE + 11)
+#define	MACH_USER_BAD_SWP		(MACH_MAX_RETURN_CODE + 12)
+#define	MACH_BAD_TRAP_TYPE		(MACH_MAX_RETURN_CODE + 13)
+#define	MACH_BAD_PROT_VIOL_FAULT	(MACH_MAX_RETURN_CODE + 14)
+#define	MACH_BAD_PAGE_FAULT		(MACH_MAX_RETURN_CODE + 15)
+#define	MACH_BAD_REF_FAULT		(MACH_MAX_RETURN_CODE + 16)
+#define	MACH_BAD_DIRTY_FAULT		(MACH_MAX_RETURN_CODE + 17)
+#define	MACH_BOGUS_INTERRUPT		(MACH_MAX_RETURN_CODE + 18)
+
+/*
  * The hardware page size.
  */
 #define	MACH_PAGE_SIZE		4096
@@ -25,18 +89,11 @@
  */
 #define	MACH_NUM_GLOBAL_REGS		10
 #define	MACH_NUM_REGS_PER_WINDOW	16
+#define	MACH_NUM_NUM_ACTIVE_REGS	32
 #define	MACH_NUM_WINDOWS		8
-#define	MACH_NUM_REGS_TO_SAVE		15
 #define MACH_TOTAL_REGS			(MACH_NUM_GLOBAL_REGS + \
 					 MACH_NUM_REGS_PER_WINDOW * \
 					 MACH_NUM_WINDOWS)
-
-/*
- * Different user errors.
- */
-#define	MACH_USER_BAD_SWP		1
-#define	MACH_USER_BUS_ERROR		2
-#define	MACH_USER_ILLEGAL_INST		3
 
 /*
  * Error status bits in the FEStatus register (see page 32 of SPUR-MSA)
@@ -193,5 +250,57 @@
 #define	MACH_CO_RD_REG		0x08
 #define	MACH_CO_WR_REG		0x0C
 #define	MACH_CO_FLUSH		0x10
+
+/*
+ * Offset into the register state struct.
+ */
+#define	MACH_REG_STATE_REGS_OFFSET	0
+#define	MACH_REG_STATE_KPSW_OFFSET	(MACH_REG_STATE_REGS_OFFSET + MACH_NUM_ACTIVE_REGS * 8)
+#define	MACH_REG_STATE_UPSW_OFFSET	(MACH_REG_STATE_KPSW_OFFSET + 4)
+#define	MACH_REG_STATE_CUR_PC_OFFSET	(MACH_REG_STATE_UPSW_OFFSET + 4)
+#define	MACH_REG_STATE_NEXT_PC_OFFSET	(MACH_REG_STATE_CUR_PC_OFFSET + 4)
+#define	MACH_REG_STATE_SWP_OFFSET	(MACH_REG_STATE_NEXT_PC_OFFSET + 4)
+#define	MACH_REG_STATE_CWP_OFFSET	(MACH_REG_STATE_SWP_OFFSET + 4)
+
+/*
+ * Offsets into the process state structure "Mach_State".
+ *
+ * First: trapRegsState
+ */
+
+#define	MACH_TRAP_REG_STATE_OFFSET	0
+#define	MACH_TRAP_REGS_OFFSET		(MACH_TRAP_REG_STATE_OFFSET)
+#define	MACH_TRAP_KPSW_OFFSET		(MACH_TRAP_REGS_OFFSET + MACH_NUM_ACTIVE_REGS * 8)
+#define	MACH_TRAP_UPSW_OFFSET		(MACH_TRAP_KPSW_OFFSET + 4)
+#define	MACH_TRAP_CUR_PC_OFFSET		(MACH_TRAP_UPSW_OFFSET + 4)
+#define	MACH_TRAP_NEXT_PC_OFFSET	(MACH_TRAP_CUR_PC_OFFSET + 4)
+#define	MACH_TRAP_SWP_OFFSET		(MACH_TRAP_NEXT_PC_OFFSET + 4)
+#define	MACH_TRAP_CWP_OFFSET		(MACH_TRAP_SWP_OFFSET + 4)
+/*
+ * Other misc. fields of the user state structure.
+ */
+#define	MACH_MIN_SWP_OFFSET		(MACH_TRAP_CWP_OFFSET + 4)
+#define	MACH_MAX_SWP_OFFSET		(MACH_MIN_SWP_OFFSET + 4)
+#define	MACH_NEW_CUR_PC_OFFSET		(MACH_MAX_SWP_OFFSET + 4)
+#define	MACH_NEW_USER_SP_OFFSET		(MACH_NEW_CUR_PC_OFFSET + 4)
+#define	MACH_SIG_NUM_OFFSET		(MACH_NEW_USER_SP_OFFSET + 4)
+#define	MACH_SIG_CODE_OFFSET		(MACH_SIG_NUM_OFFSET + 4)
+#define	MACH_OLD_HOLD_MASK_OFFSET	(MACH_SIG_CODE_OFFSET + 4)
+/*
+ * switchRegsState.
+ */
+#define	MACH_SWITCH_REG_STATE_OFFSET	(MACH_OLD_HOLD_MASK_OFFSET + 4)
+#define	MACH_SWITCH_REGS_OFFSET		(MACH_SWITCH_REG_STATE_OFFSET)
+#define	MACH_SWITCH_KPSW_OFFSET		(MACH_SWITCH_REGS_OFFSET + 256)
+#define	MACH_SWITCH_UPSW_OFFSET		(MACH_SWITCH_KPSW_OFFSET + 4)
+#define	MACH_SWITCH_CUR_PC_OFFSET	(MACH_SWITCH_UPSW_OFFSET + 4)
+#define	MACH_SWITCH_NEXT_PC_OFFSET	(MACH_SWITCH_CUR_PC_OFFSET + 4)
+#define	MACH_SWITCH_SWP_OFFSET		(MACH_SWITCH_NEXT_PC_OFFSET + 4)
+#define	MACH_SWITCH_CWP_OFFSET		(MACH_SWITCH_SWP_OFFSET + 4)
+/*
+ * Kernel stack bounds.
+ */
+#define	MACH_KERN_STACK_START_OFFSET	(MACH_SWITCH_CWP_OFFSET + 4)
+#define	MACH_KERN_STACK_END_OFFSET	(MACH_KERN_STACK_START_OFFSET + 4)
 
 #endif _MACHCONST
