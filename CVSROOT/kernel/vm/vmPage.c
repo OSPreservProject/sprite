@@ -1129,7 +1129,10 @@ again:
 		pageCount = 0;
 		continue;
 	    }
-    
+
+	    if (corePtr->virtPage.segPtr->type != VM_CODE) {
+		vmStat.potModPages++;
+	    }
 	    /*
 	     * The page is available and it has not been referenced.  Now
 	     * it must be determined if it is dirty.  If it is then put it onto
@@ -1139,6 +1142,9 @@ again:
 		vmStat.dirtySearched++;
 		TakeOffAllocList(corePtr);
 		PutOnDirtyList(corePtr);
+		if (!modified) {
+		    vmStat.notHardModPages++;
+		}
 		if (vmFreeWhenClean) {
 		    /*
 		     * Invalidate the page in hardware.  This will force
@@ -1149,7 +1155,10 @@ again:
 		}
 		continue;
 	    }
-    
+
+	    if (corePtr->virtPage.segPtr->type != VM_CODE) {
+		vmStat.notModPages++;
+	    }
 	    /*
 	     * We can take this page.  Invalidate the page for the old segment.
 	     */
