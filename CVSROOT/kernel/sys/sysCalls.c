@@ -530,28 +530,68 @@ Sys_StatsStub(command, option, argPtr)
 	    status = Rpc_GetStats(command, option, argPtr);
 	    break;
 
-	case SYS_PROC_TRACE_STATS: {
-	    if (option <= 0) {
-		proc_MigDebugLevel = -option;
-	    } else {
-		switch(option) {
-		    case SYS_PROC_TRACING_PRINT:
-		        Sys_Panic(SYS_WARNING,
-			  "Printing of proc trace records not implemented.\n");
-			break;
-		    case SYS_PROC_TRACING_ON:
-			Proc_MigrateStartTracing();
-			break;
-		    case SYS_PROC_TRACING_OFF:
-			proc_DoTrace = FALSE;
-			break;
-		    default:
-			/*
-			 * The default is to copy 'option' trace records.
-			 */
-			status = Trace_Dump(proc_TraceHdrPtr, option, argPtr);
-			break;
+	case SYS_PROC_MIGRATION: {
+	    switch(option) {
+		case SYS_PROC_MIG_ALLOW: 
+		case SYS_PROC_MIG_REFUSE: {
+		    register Proc_ControlBlock *procPtr;
+		    procPtr = Proc_GetEffectiveProc();
+		    if (procPtr->effectiveUserID != 0) {
+			status = GEN_INVALID_ARG;
+		    } else {
+			proc_RefuseMigrations =
+				(option == SYS_PROC_MIG_REFUSE);
+		    }
 		}
+		break;
+
+	        case SYS_PROC_MIG_GET_STATUS: {
+		    if (argPtr != (Address) NIL) {
+			status = Vm_CopyOut(sizeof(Boolean),
+					    (Address)&proc_RefuseMigrations,
+					    argPtr);
+		    } else {
+			status = GEN_INVALID_ARG;
+		    }
+		}
+		break;
+		case SYS_PROC_MIG_SET_DEBUG: {
+		    int arg;
+		    status = Vm_CopyIn(sizeof(int), (Address)&arg, argPtr);
+		    if (status == SUCCESS && arg >= 0) {
+			proc_MigDebugLevel = option;
+		    } else if (status == SUCCESS) {
+			status = GEN_INVALID_ARG;
+		    }
+		}
+		break;
+
+		default:{
+		    status = GEN_INVALID_ARG;
+		}
+		break;
+	    }
+	    break;
+	}
+	
+	case SYS_PROC_TRACE_STATS: {
+	    switch(option) {
+		case SYS_PROC_TRACING_PRINT:
+		    Sys_Panic(SYS_WARNING,
+		      "Printing of proc trace records not implemented.\n");
+		    break;
+		case SYS_PROC_TRACING_ON:
+		    Proc_MigrateStartTracing();
+		    break;
+		case SYS_PROC_TRACING_OFF:
+		    proc_DoTrace = FALSE;
+		    break;
+		default:
+		    /*
+		     * The default is to copy 'option' trace records.
+		     */
+		    status = Trace_Dump(proc_TraceHdrPtr, option, argPtr);
+		    break;
 	    }
 	    break;
 	}
