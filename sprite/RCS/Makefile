@@ -248,12 +248,12 @@ sun3: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	    -L/sprite/lib/${RTM}.md
 	@ls -l $@
 	@size $@
-	update -f -s $@ /sprite/boot/$@.md/new
-	rcp /sprite/boot/$@.md/new ${GINGER}:/sprite3/$@.new
-	cp $@ /rosemary/tmp/sprite/$@.sprite
+	update -f -s sun3 /sprite/boot/sun3.md/new
+	rcp /sprite/boot/sun3.md/new ${GINGER}:/sprite3/sun3.new
+	rcp sun3 rosemary:/tmp/sprite/sun3.sprite
 	rsh rosemary -n "(cd /tmp/sprite ; ./Save sun3.sprite)"
-	nm -n $@ > $@.nm
-	-Save $@
+	nm -n sun3 > sun3.nm
+	-Save sun3
 
 sun4: ${OBJS_SUN4} Makefile .PRECIOUS .NOEXPORT
 	sed 's/MACHINE/$@/g' version.h.template > version.h
@@ -266,11 +266,13 @@ sun4: ${OBJS_SUN4} Makefile .PRECIOUS .NOEXPORT
 	    -L/sprite/lib/${RTM}.md
 	@ls -l $@
 	@size $@
-	update -f -s $@ /sprite/boot/$@.md/new
-	cp $@ /rosemary/tmp/sprite/$@.sprite
+	update -f -s sun4 /sprite/boot/sun4.md/new
+	rcp sun4 rosemary:/tmp/sprite/sun4.sprite
 	rsh rosemary -n "(cd /tmp/sprite ; ./Save sun4.sprite)"
-	nm -n $@ > $@.nm
-	-Save $@
+	nm -n sun4 > sun4.nm
+	update -f sun4 /allspiceA/vmsprite
+	strip /allspiceA/vmsprite
+	-Save sun4
 
 sun4c: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	sed 's/MACHINE/$@/g' version.h.template > version.h
@@ -283,11 +285,11 @@ sun4c: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	    -L/sprite/lib/sun4.md
 	@ls -l $@
 	@size $@
-	update -f -s $@ /sprite/boot/$@.md/new
-	cp $@ /rosemary/tmp/sprite/$@.sprite
+	update -f -s sun4c /sprite/boot/sun4c.md/new
+	rcp sun4c rosemary:/tmp/sprite/sun4c.sprite
 	rsh rosemary -n "(cd /tmp/sprite ; ./Save sun4c.sprite)"
-	nm -n $@ > $@.nm
-	-Save $@
+	nm -n sun4c > sun4c.nm
+	-Save sun4c
 
 ds3100: ${OBJS} .PRECIOUS .NOEXPORT
 	sed 's/MACHINE/$@/g' version.h.template > version.h
@@ -300,15 +302,15 @@ ds3100: ${OBJS} .PRECIOUS .NOEXPORT
 		-L/sprite/lib/${RTM}.md
 	@ls -l $@
 	@size $@
-	update -f $@ /sprite/boot/$@.md/new
-	strip /sprite/boot/$@.md/new
-	rm -f $@.nm
-	nm -n $@ > $@.nm
-	rcp /sprite/src/kernel/sprite/$@ dill:/sprite/src/kernel/nelson/$@
-	rsh dill -n "(cd /sprite/src/kernel/nelson ; Save $@)"
-	update -f $@ /assaultA/new
+	update -f ds3100 /sprite/boot/ds3100.md/new
+	strip /sprite/boot/ds3100.md/new
+	rm -f ds3100.nm
+	nm -n ds3100 > ds3100.nm
+	rcp /sprite/src/kernel/sprite/ds3100 rosemary:/tmp/sprite/ds3100
+	rsh rosemary -n "(cd /tmp/sprite; Save ds3100)"
+	update -f ds3100 /assaultA/new
 	strip /assaultA/new
-	-Save $@
+	-Save ds3100
 
 # profile2: ${PROFOBJS} Makefile .PRECIOUS
 #	sed 's/MACHINE/$@/g' version.h.template > version.h
@@ -356,64 +358,7 @@ clean:
 	rm -f $*.o
 	${CC} ${CFLAGS} -c $*.c
 
-ALL_MODULES = \
-dbg \
-dev \
-fs \
-fscache \
-fsconsist \
-fsdm \
-fsio \
-fslcl \
-fspdev \
-fsprefix \
-fsrmt \
-libc \
-main \
-mem \
-net \
-proc \
-prof \
-rpc \
-sched \
-sig \
-sync \
-sys \
-timer \
-utils \
-vm
-#fsutil
-#recov
 
-All:
-	for i in ${ALL_MODULES} ; do
-	    cd ../$i ; make
-	done
-
-All-install:
-	for i in ${ALL_MODULES} ; do
-	    cd ../$i ; make install
-	done
-
-All-installhdrs:
-	for i in ${ALL_MODULES} ; do
-	    cd ../$i ; make installhdrs
-	done
-
-All-lint:
-	for i in ${ALL_MODULES} ; do
-	    cd ../$i ; make ../Lint/$i.ln
-	done
-
-All-depend:
-	for i in ${ALL_MODULES} ; do
-	    cd ../$i ; make depend
-	done
-
-rcsinfo:
-	for i in ${ALL_MODULES} ; do
-	    cd ../$i ;  rcsinfo
-	done
 
 mainHook.o: ${H}/proc.h ${H}/fs.h
 # DO NOT DELETE THIS LINE -- make depend depends on it.
