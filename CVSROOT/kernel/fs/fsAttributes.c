@@ -92,7 +92,7 @@ Fs_GetAttrStream(streamPtr, attrPtr)
 	     * Get the initial version of the attributes from the file server
 	     * that has the name of the file.
 	     */
-	    status = (*fsAttrOpTable[nameInfoPtr->nameDomain].getAttr)
+	    status = (*fsAttrOpTable[nameInfoPtr->domainType].getAttr)
 			(&nameInfoPtr->fileID, rpc_SpriteID, attrPtr);
 	    if (status != SUCCESS) {
 		Sys_Panic(SYS_WARNING,
@@ -297,7 +297,7 @@ Fs_SetAttrStream(streamPtr, attrPtr, idPtr)
 	    /*
 	     * Set the attributes at the name server.
 	     */
-	    status = (*fsAttrOpTable[nameInfoPtr->nameDomain].setAttr)
+	    status = (*fsAttrOpTable[nameInfoPtr->domainType].setAttr)
 			(&nameInfoPtr->fileID, attrPtr, idPtr);
 	} else {
 	    status = SUCCESS;
