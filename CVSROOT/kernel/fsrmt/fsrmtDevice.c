@@ -614,7 +614,7 @@ FsDeviceClose(streamPtr, clientID, procID, flags, size, data)
      */
     FsLockClose(&devHandlePtr->lock, &streamPtr->hdr.fileID);
 
-    status = FsDeviceCloseInt(devHandlePtr, 1, (flags & FS_WRITE) != 0);
+    status = FsDeviceCloseInt(devHandlePtr, flags, 1, (flags & FS_WRITE) != 0);
     /*
      * We don't bother to remove the handle here if the device isn't
      * being used.  Instead we let the handle get scavenged.
@@ -644,19 +644,16 @@ FsDeviceClose(streamPtr, clientID, procID, flags, size, data)
  *
  */
 ReturnStatus
-FsDeviceCloseInt(devHandlePtr, refs, writes)
+FsDeviceCloseInt(devHandlePtr, useFlags, refs, writes)
     FsDeviceIOHandle *devHandlePtr;	/* Device handle */
+    int useFlags;			/* Flags from the stream */
     int refs;				/* Number of refs to close */
     int writes;				/* Number of these that were writing */
 {
-    int useFlags = 0;
-
     if (refs > 0) {
-	useFlags |= FS_READ;
 	devHandlePtr->use.ref -= refs;
     }
     if (writes > 0) {
-	useFlags |= FS_WRITE;
 	devHandlePtr->use.write -= writes;
     }
 
@@ -708,7 +705,12 @@ FsDeviceClientKill(hdrPtr, clientID)
     FsLockClientKill(&devHandlePtr->lock, clientID);
 
     if (refs > 0) {
-	(void)FsDeviceCloseInt(devHandlePtr, refs, writes);
+	int useFlags = FS_READ;		/* Have to assume this,
+					 * which might be wrong for syslog */
+	if (writes > 0) {
+	    useFlags |= FS_WRITE;
+	}
+	(void)FsDeviceCloseInt(devHandlePtr, useFlags, refs, writes);
     }
     FsHandleUnlock(devHandlePtr);
 }
@@ -948,9 +950,17 @@ FsDeviceReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	    }
 	} else {
 	    /*
-	     * Clean up closed connections.
+	     * Clean up closed connections.  Note, we assume that
+	     * the client was reading, even though it may have had
+	     * a write-only stream.  This could break syslog, which
+	     * is a single-reader/multiple-writer stream.  "ref" should
+	     * be changed to "read".
 	     */
-	    status = FsDeviceCloseInt(devHandlePtr, paramPtr->use.ref,
+	    int useFlags = FS_READ;
+	    if (paramPtr->use.write > 0) {
+		useFlags |= FS_WRITE;
+	    }
+	    status = FsDeviceCloseInt(devHandlePtr, useFlags, paramPtr->use.ref,
 						    paramPtr->use.write);
 	 }
     }
