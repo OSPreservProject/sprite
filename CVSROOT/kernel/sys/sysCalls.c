@@ -221,6 +221,11 @@ Sys_Shutdown(flags, rebootString)
 	Proc_Unlock(procPtr);
 	VmMach_ReinitContext(procPtr);
 
+	/*
+	 * Get rid of any migrated processes.
+	 */
+	(void) Proc_EvictForeignProcs();
+	
 	waitTime.seconds = 5;
 	waitTime.microseconds = 0;
 	while (TRUE) {
