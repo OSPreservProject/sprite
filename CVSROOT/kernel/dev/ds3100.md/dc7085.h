@@ -1,4 +1,4 @@
-/* 
+/*
  *  dc7085.h --
  *
  *     	Definitions for the dc7085 chip.
@@ -6,7 +6,7 @@
  *	Copyright (C) 1989 Digital Equipment Corporation.
  *	Permission to use, copy, modify, and distribute this software and
  *	its documentation for any purpose and without fee is hereby granted,
- *	provided that the above copyright notice appears in all copies.  
+ *	provided that the above copyright notice appears in all copies.
  *	Digital Equipment Corporation makes no representations about the
  *	suitability of this software for any purpose.  It is provided "as is"
  *	without express or implied warranty.
@@ -114,7 +114,7 @@
 #define	MOUSE_X_OFFSET		212
 #define	MOUSE_Y_OFFSET		 34
 
-/* 
+/*
  * Definitions for mouse buttons
  */
 #define RIGHT_BUTTON		0x01
@@ -123,7 +123,7 @@
 
 #define MOTION_BUFFER_SIZE 100
 
-/* 
+/*
  * Mouse report structure definition
  */
 typedef struct {
@@ -133,7 +133,7 @@ typedef struct {
 	char byteCount;			/* mouse report byte count	*/
 } MouseReport;
 
-/* 
+/*
  * Lk201/301 keyboard
  */
 #define LK_UPDOWN	0x86		/* bits for setting lk201 modes */
@@ -202,4 +202,4 @@ extern int		DevDC7085MouseGetCh();
 extern void		DevDC7085KBDPutc();
 extern char		DevDC7085TranslateKey();
 
-#endif _DC7085
+#endif /* _DC7085 */
