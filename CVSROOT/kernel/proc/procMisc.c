@@ -1034,7 +1034,8 @@ Proc_HasPermission(userID)
  *
  * Results:
  *	If anything "unexpected" happens, FAILURE will be returned, but in
- *	general SUCCESS is returned.
+ *	general SUCCESS is returned.  If numMatchedPtr is non-NIL, then
+ *	the number of processes matched is returned in *numMatchedPtr.
  *
  * Side effects:
  *	The process table is locked temporarily.  Otherwise, dependent on the
@@ -1044,12 +1045,13 @@ Proc_HasPermission(userID)
  */
 
 ReturnStatus
-Proc_DoForEveryProc(booleanFuncPtr, actionFuncPtr, ignoreStatus)
+Proc_DoForEveryProc(booleanFuncPtr, actionFuncPtr, ignoreStatus, numMatchedPtr)
     Boolean (*booleanFuncPtr)();	/* function to match */
     ReturnStatus (*actionFuncPtr)();	/* function to invoke on matches */
     Boolean ignoreStatus;		/* do not abort if bad ReturnStatus  */
+    int *numMatchedPtr;			/* number of matches in table, or NIL */
 {
-    ReturnStatus status;
+    ReturnStatus status = SUCCESS;
     Proc_PID *pidArray;
     int max;
     int i;
@@ -1066,6 +1068,12 @@ Proc_DoForEveryProc(booleanFuncPtr, actionFuncPtr, ignoreStatus)
 	}
     }
     free((Address) pidArray);
+    if (numMatchedPtr != (int *) NIL) {
+	*numMatchedPtr = numMatched;
+    }
+    if (ignoreStatus) {
+	return(SUCCESS);
+    }
     return(status);
 }
 
