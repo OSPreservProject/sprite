@@ -1684,8 +1684,6 @@ Fs_IOControlStub(streamID, command, inBufSize, inBuffer,
     Fs_ProcessState *fsPtr;
     Fs_Stream 	 *streamPtr;
     register ReturnStatus status = SUCCESS;
-    register Address localInBuffer;
-    register Address localOutBuffer;
     Fs_Buffer	inBuf;
     Fs_Buffer	outBuf;
 
