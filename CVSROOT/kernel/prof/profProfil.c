@@ -27,7 +27,7 @@ static char rcsid[] = "$Header$";
 /*
  * Program counter recorded by the interrupt handler.
  */
-int Prof_InterruptPC;
+/* int Prof_InterruptPC; */
 
 /*
  * Monitor lock for this module.
@@ -39,14 +39,16 @@ static Sync_Lock profilLock;
 #endif
 #define LOCKPTR &profilLock
 
+static void tick _ARGS_((Timer_Ticks time, ClientData clientData));
+
 /*
  * Information that is passed to Timer_ScheduleRoutine() to
- * queue Prof_Tick() for invocation by the call back timer
+ * queue tick() for invocation by the call back timer
  * interrupt handler.
  */
 Timer_QueueElement profTimer_QueueElement = {
     { NULL, NULL }, /* links */
-    Prof_Tick,      /* routine */
+    tick,           /* routine */
     0,              /* time */
     1234,           /* clientData */
     FALSE,          /* processed */
@@ -99,7 +101,7 @@ Prof_Profil(buffer, bufSize, offset, scale)
  *
  * Side effects:
  *      Changes the Profiling fields in the Proc_ControlBlock, increments
- *      or decrements ProfCount, and schedules or deschedules Prof_Tick
+ *      or decrements ProfCount, and schedules or deschedules tick()
  *      in the call back queue.
  *
  *----------------------------------------------------------------------
@@ -113,23 +115,31 @@ Prof_Enable(procPtr, buffer, bufSize, offset, scale)
     int offset;
     int scale;
 {
+
+
+#if 0
+    printf("Prof_Enable(p = %x, id = %x, buffer = %08x, bufSize = %d, offset = %d, scale = %d\n",
+	procPtr, procPtr->processID, buffer, bufSize, offset, scale);
+    printf("profCount = %d\n", profCount);
+#endif    
+
     assert(procPtr != (Proc_ControlBlock *) NIL);
     LOCK_MONITOR;
-    if (scale != 0 && procPtr->Prof_Scale == 0) {
+    if (scale != 0 && scale != 1 && procPtr->Prof_Scale == 0) {
 	/*
-	* If the profile routine has not already been scheduled for invocation
-	* by the call back timer, then schedule it.
-	*/
+	 * If the profile routine has not already been scheduled for invocation
+	 * by the call back timer, then schedule it.
+	 */
 	if (profCount == 0) {
 	    profTimer_QueueElement.interval = 20 * timer_IntOneMillisecond;
 	    Timer_ScheduleRoutine(&profTimer_QueueElement, TRUE);
 	}
 	++profCount;
-    } else if (scale == 0 && procPtr->Prof_Scale != 0) {
+    } else if ((scale == 0 || scale == 1) && procPtr->Prof_Scale != 0) {
 	assert(profCount > 0);
 	/*
 	 * Disable profiling.  If there are no other processes being profiled,
-	 * then remove Prof_Tick from the call back queue.
+	 * then remove tick() from the call back queue.
 	 */
 	--profCount;
 	if (profCount == 0) {
@@ -148,7 +158,7 @@ Prof_Enable(procPtr, buffer, bufSize, offset, scale)
 /*
  *----------------------------------------------------------------------
  *
- * Prof_Tick --
+ * tick --
  *
  *      If any processes are scheduled for profiling this routine
  *      is called on each call back timer interrupt.
@@ -166,24 +176,41 @@ Prof_Enable(procPtr, buffer, bufSize, offset, scale)
  */ 
 
 /*ARGSUSED*/
-void
-Prof_Tick(time, clientData)
+static void
+tick(time, clientData)
     Timer_Ticks time;
     ClientData clientData;
 {
     Proc_ControlBlock *curProcPtr;
 
+    LOCK_MONITOR;
+    assert(profCount != 0);
+#if 0    
+    if (profCount == 0) {
+	printf("Descheduling profil timer\n");
+	Timer_DescheduleRoutine(&profTimer_QueueElement);
+	return;
+    }
+#endif    
+#if 0
+    printf("Prof tick, mach_KernelMode = %d, profCount = %d\n",
+	mach_KernelMode, profCount);
+#endif
     assert(clientData == profTimer_QueueElement.clientData);
-    time = time;
     if (!mach_KernelMode) {
+	assert(profCount);
 	curProcPtr = Proc_GetCurrentProc();
 	assert(curProcPtr !=  (Proc_ControlBlock *) NIL);
+#if 0
+	printf("Prof tick, scale=%d, pc=%08x, profCount = %d\n",
+	    curProcPtr->Prof_Scale,	curProcPtr->Prof_PC, profCount);
+#endif
 	if (curProcPtr->Prof_Scale >= 2) {
-	    curProcPtr->Prof_PC = Prof_InterruptPC;
 	    curProcPtr->specialHandling = TRUE;
 	}
     }
     Timer_ScheduleRoutine(&profTimer_QueueElement, TRUE);
+    UNLOCK_MONITOR;
     return;
 }
 
@@ -212,6 +239,7 @@ Prof_RecordPC(procPtr)
 	short shrt;
 	char c[2];
     } u;
+
     assert(procPtr->Prof_Scale);
     ptr = &procPtr->Prof_Buffer[(((procPtr->Prof_PC -
         procPtr->Prof_Offset) * procPtr->Prof_Scale) >> 16) / sizeof(*ptr)];
@@ -232,6 +260,11 @@ Prof_RecordPC(procPtr)
 	return;
     }
     ++u.shrt;
+
+#if 0
+    printf("Prof_RecordPC(), shrt = %d,  profCount = %d\n", u.shrt, profCount);
+#endif    
+
     if (Vm_CopyOutProc(sizeof(short), u.c, 1, procPtr, (Address) ptr)
       != SUCCESS) {
 	Prof_Disable(procPtr);
