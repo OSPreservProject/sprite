@@ -47,7 +47,8 @@ extern	void			ProcFreePCB();
 extern	Proc_ControlBlock	*ProcGetUnusedPCB();
 extern	void			ProcFamilyRemove();
 extern	ReturnStatus		ProcFamilyInsert();
-extern ENTRY int		ProcTableMatch();
+
+extern	int			ProcTableMatch();
 extern	void			ProcAddToGroupList();
 #endif _PROCINT
 #endif /* _PROCINT */

@@ -35,10 +35,10 @@ typedef struct {
  * Values for flags field.  Lower 8 bits are for our use, next 8 bits are 
  * machine dependent.
  *
- *	VM_HEAP_NOT_EXPANDABLE	The heap segment for the current process has
- *				been made not expandable.
+ *	VM_HEAP_PT_IN_USE	The heap segment for the current process had
+ *				its page table marked as being in use.
  */
-#define	VM_HEAP_NOT_EXPANDABLE	0x1
+#define	VM_HEAP_PT_IN_USE	0x1
 
 /*
  * The type of segment.
@@ -109,13 +109,6 @@ extern	int	vm_PageSize;
 #define	VM_READWRITE_ACCESS		3
 
 /*
- * Values for the vm flags in the proc table.
- *
- * No flags currently but if there are these must be in the low order two
- * bytes because machine dependent ones are the high order two bytes.
- */
-
-/*
  * Structure that contains relevant info from the aout header to allow
  * reuse of sticky segments.
  */
@@ -128,6 +121,10 @@ typedef struct {
     int	entry;
 } Vm_ExecInfo;
 
+/*
+ * Length of the object file name that is embedded in each segment table
+ * entry.
+ */
 #define	VM_OBJ_FILE_NAME_LENGTH	50
 
 /*
@@ -173,9 +170,8 @@ typedef struct Vm_Segment {
 					 * sharing this segment. */
     List_Links		*procList;	/* Pointer to list of processes 
 					 * sharing this segment. */
-    int			notExpandCount;	/* The number of times that this 
-					 * segment has been prevented from
-					 * expanding. */
+    int			ptUserCount;	/* The number of current users of this
+					 * page table. */
     ClientData		fileHandle;	/* Handle for object file. */
     Vm_ExecInfo		execInfo;	/* Information to allow reuse of 
 					 * sticky segments. */
@@ -219,8 +215,9 @@ typedef struct Vm_ProcInfo {
 extern	Boolean	vm_CanCOW;
 
 /*
- * The initialization procedure.
+ * The initialization procedures.
  */
+extern	void	Vm_BootInit();
 extern	void	Vm_Init();
 
 /*

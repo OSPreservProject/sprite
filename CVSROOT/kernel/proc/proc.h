@@ -553,7 +553,7 @@ extern Proc_ControlBlock *	Proc_GetEffectiveProc();
 extern ReturnStatus		Proc_ByteCopy();
 extern ReturnStatus		Proc_MakeStringAccessible();
 extern void			Proc_MakeUnaccessible();
-extern void			Proc_MigrationStartTracing();
+extern void			Proc_MigrateStartTracing();
 extern void			Proc_DestroyMigratedProc();
 
 extern void			ProcInitMainEnviron();
