@@ -80,8 +80,7 @@ FsLocalFileHandleInit(fileIDPtr, name, newHandlePtrPtr)
 	 * All set.
 	 */
 	if ((*newHandlePtrPtr)->descPtr == (FsFileDescriptor *)NIL) {
-	    panic(
-		"FsLocalFileHandleInit, found handle with no descPtr\n");
+	    panic("FsLocalFileHandleInit, found handle with no descPtr\n");
 	}
 	return(SUCCESS);
     }
@@ -143,6 +142,7 @@ FsLocalFileHandleInit(fileIDPtr, name, newHandlePtrPtr)
 	free((Address)descPtr);
 	*newHandlePtrPtr = (FsLocalFileIOHandle *)NIL;
     } else {
+	fsStats.object.files++;
 	*newHandlePtrPtr = handlePtr;
     }
     return(status);
@@ -560,6 +560,7 @@ FsFileClose(streamPtr, clientID, procID, flags, dataSize, closeData)
 	status = FsDeleteFileDesc(handlePtr);
 	FsHandleRelease(handlePtr, TRUE);
 	FsHandleRemove(handlePtr);
+	fsStats.object.files--;
 	if (clientID != rpc_SpriteID && status == SUCCESS) {
 	    status = FS_FILE_REMOVED;
 	}
@@ -656,6 +657,7 @@ FsFileClientKill(hdrPtr, clientID)
 	/* No client remove callback here, please */
 	(void)FsDeleteFileDesc(handlePtr);
 	FsHandleRemove(handlePtr);
+	fsStats.object.files--;
     } else {
 	FsHandleUnlock(handlePtr);
     }
@@ -729,6 +731,7 @@ FsFileScavenge(hdrPtr)
 	 */
 	Vm_FileChanged(&handlePtr->segPtr);
 	FsHandleAttemptRemove(handlePtr);
+	fsStats.object.files--;
 	return(TRUE);
     } else {
 	FsHandleUnlock(hdrPtr);
