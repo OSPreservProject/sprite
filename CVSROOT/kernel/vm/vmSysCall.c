@@ -37,6 +37,21 @@ int vmShmDebug = 0;	/* Shared memory debugging flag. */
  */
 static ReturnStatus VmMunmapInt();
 
+/*
+ * VmVirtAddrParseUnlock calls VmVirtAddrParse and then unlocks
+ * the heap page table if necessary, since VmVirtAddrParse may
+ * lock it.
+ */
+#define VmVirtAddrParseUnlock(procPtr, startAddr, virtAddrPtr) \
+    {VmVirtAddrParse(procPtr,startAddr, virtAddrPtr); \
+    if ((virtAddrPtr)->flags & VM_HEAP_PT_IN_USE) \
+	    VmDecPTUserCount(procPtr->vmPtr->segPtrArray[VM_HEAP]);}
+
+/*
+ * Test if an address is not page aligned.
+ */
+#define BADALIGN(addr) (((int)(addr))&(vm_PageSize-1))
+
 
 /*
  *----------------------------------------------------------------------
@@ -182,7 +197,7 @@ Vm_DestroyVA(address, size)
 
     /*
      * Make pages between firstPage and lastPage not members of the segment's
-     * virtual address spac.e
+     * virtual address space.
      */
     return(Vm_DeleteFromSeg(segPtr, firstPage, lastPage));
 }
@@ -531,9 +546,9 @@ Vm_Mmap(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
     Vm_SegProcList		*sharedSeg;
     Fs_Stream 		*filePtr;
 
-    dprintf("Vm_Mmap: Entering\n");
-    if ( ((int)startAddr & (vm_PageSize-1)) ||
-	    ((int)fileAddr & (vm_PageSize-1))) {
+    dprintf("mmap( %x, %d, %d, %d, %d, %d)\n", startAddr, length,
+	    prot, share, streamID, fileAddr);
+    if (BADALIGN(startAddr) || BADALIGN(fileAddr)) {
 	printf("Vm_Mmap: Invalid start or offset\n");
 	return VM_WRONG_SEG_TYPE;
     }
@@ -580,6 +595,7 @@ Vm_Mmap(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
 	VmMach_SharedProcStart(procPtr);
 	dprintf("Vm_Mmap: sharedStart: %x\n",procPtr->vmPtr->sharedStart);
 	List_Init((List_Links *)procPtr->vmPtr->sharedSegs);
+	Proc_NeverMigrate(procPtr);
     }
     status = VmMach_SharedStartAddr(procPtr, length, &startAddr);
     if (status != SUCCESS) {
@@ -735,6 +751,11 @@ Vm_Munmap(startAddr, length, noError)
 {
     ReturnStatus status;
 
+    dprintf("munmap(%x, %d, %d)\n", startAddr, length, noError);
+    if (BADALIGN(startAddr) || BADALIGN(length)) {
+	printf("Vm_Munmap: Invalid start or offset\n");
+	return VM_WRONG_SEG_TYPE;
+    }
     LOCK_SHM_MONITOR;
     status = VmMunmapInt(startAddr,length, noError);
     UNLOCK_SHM_MONITOR;
@@ -861,7 +882,7 @@ VmMunmapInt(startAddr, length, noError)
 	    } else {
 		dprintf("Vm_Munmap: Removing mapped region\n");
 		/*
-		 * Remove the mapped region.
+		 * Remove the entire mapped region.
 		 */
 		Vm_DeleteSharedSegment(procPtr,segProcPtr);
 	    }
@@ -877,6 +898,14 @@ VmMunmapInt(startAddr, length, noError)
     return status ;
 }
 
+/* 
+ * Check if an address range is valid for the segment.
+ */
+#define CheckBounds(virtAddrPtr,startAddr,length) \
+	((unsigned)(((int)(startAddr)>>vmPageShift) - segOffset(virtAddrPtr)) \
+	< (virtAddrPtr)->segPtr->ptSize && \
+	((unsigned)((((int)(startAddr)+(length)-1)>>vmPageShift) - \
+	segOffset(virtAddrPtr)) < (virtAddrPtr)->segPtr->ptSize))
 /*
  *----------------------------------------------------------------------
  *
@@ -893,13 +922,33 @@ VmMunmapInt(startAddr, length, noError)
  *
  *----------------------------------------------------------------------
  */
-/*ARGSUSED*/
 ENTRY ReturnStatus
 Vm_Msync(startAddr, length)
     Address	startAddr;	/* Requested starting virt-addr. */
     int		length;		/* Length of region to page out. */
 {
-    return SUCCESS;
+    Vm_VirtAddr		virtAddr;
+    ReturnStatus	status;
+    Vm_PTE		*ptePtr;
+    int			lastPage;
+    Proc_ControlBlock	*procPtr;
+
+    dprintf("msync( %x, %d)\n", startAddr, length);
+    if (BADALIGN(startAddr) || BADALIGN(length)) {
+	printf("Vm_Munmap: Invalid start or offset\n");
+	return VM_WRONG_SEG_TYPE;
+    }
+    LOCK_SHM_MONITOR;
+    procPtr = Proc_GetCurrentProc();
+    VmVirtAddrParseUnlock(procPtr, startAddr, &virtAddr);
+    if (virtAddr.segPtr == (Vm_Segment *)NIL || !CheckBounds(&virtAddr,
+	    startAddr, length)) {
+	UNLOCK_SHM_MONITOR;
+	return SYS_INVALID_ARG;
+    }
+    status = VmPageFlush(&virtAddr, length, TRUE, TRUE);
+    UNLOCK_SHM_MONITOR;
+    return status;
 }
 
 /*
@@ -923,7 +972,29 @@ Vm_Mlock(startAddr, length)
     Address	startAddr;	/* Requested starting virt-addr. */
     int		length;		/* Length of region to lock. */
 {
-    return SUCCESS;
+    Vm_VirtAddr		virtAddr;
+    Proc_ControlBlock	*procPtr;
+    int			maptype = VM_READWRITE_ACCESS;
+    int			page;
+
+    dprintf("mlock( %x, %d)\n", startAddr, length);
+    if (BADALIGN(startAddr) || BADALIGN(length)) {
+	printf("Vm_Munmap: Invalid start or offset\n");
+	return VM_WRONG_SEG_TYPE;
+    }
+    procPtr = Proc_GetCurrentProc();
+    VmVirtAddrParseUnlock(procPtr, startAddr, &virtAddr);
+    if (virtAddr.segPtr == (Vm_Segment *)NIL || !CheckBounds(&virtAddr,
+	    startAddr, length)) {
+	return SYS_INVALID_ARG;
+    } else if (virtAddr.sharedPtr != (Vm_SegProcList *)NIL) {
+	maptype = virtAddr.sharedPtr->prot == VM_READONLY_SEG ?
+		VM_READONLY_ACCESS : VM_READWRITE_ACCESS;
+    } else {
+	maptype = virtAddr.segPtr->type == VM_CODE ? VM_READONLY_ACCESS :
+		VM_READWRITE_ACCESS;
+    }
+    return Vm_PinUserMem(maptype,length,startAddr);
 }
 
 /*
@@ -932,7 +1003,6 @@ Vm_Mlock(startAddr, length)
  * Vm_Munlock --
  *
  *	Unlocks a page.
- *	startAddr and length must be divisible by the page size.
  *
  * Results:
  *	Status from the unlock.
@@ -948,6 +1018,21 @@ Vm_Munlock(startAddr, length)
     Address	startAddr;	/* Requested starting virt-addr. */
     int		length;		/* Length of region to unlock. */
 {
+    Vm_VirtAddr	virtAddr;
+    Proc_ControlBlock	*procPtr;
+
+    dprintf("munlock( %x, %d)\n", startAddr, length);
+    if (BADALIGN(startAddr) || BADALIGN(length)) {
+	printf("Vm_Munmap: Invalid start or offset\n");
+	return VM_WRONG_SEG_TYPE;
+    }
+    procPtr = Proc_GetCurrentProc();
+    VmVirtAddrParseUnlock(procPtr, startAddr, &virtAddr);
+    if (virtAddr.segPtr == (Vm_Segment *)NIL || !CheckBounds(&virtAddr,
+	    startAddr, length)) {
+	return SYS_INVALID_ARG;
+    }
+    Vm_UnpinUserMem(length,startAddr);
     return SUCCESS;
 }
 
@@ -957,12 +1042,11 @@ Vm_Munlock(startAddr, length)
  * Vm_Mincore --
  *
  *	Returns residency vector.
- *	startAddr and length must be divisible by the page size.
  *
  * Results:
  *	The values of vec are 0 if the page is not virtually resident,
- *	1 if the page is paged out, 2 if the page is clean, and
- *	3 if the page is dirty.
+ *	1 if the page is paged out, 2 if the page is clean and
+ *	untouched, 3 if the page is referenced, and 4 if the page is dirty.
  *
  * Side effects:
  *	None.
@@ -970,58 +1054,67 @@ Vm_Munlock(startAddr, length)
  *----------------------------------------------------------------------
  */
 /*ARGSUSED*/
+
 ENTRY ReturnStatus
 Vm_Mincore(startAddr, length, retVec)
     Address	startAddr;	/* Requested starting virt-addr. */
     int		length;		/* Length of region. */
     char *	retVec;		/* Return vector. */
 {
-    return SUCCESS;
-}
-
-/*
- * Expansion of the segOffset and VmGetAddrPTEPtr macros for easier
- * debugging.
- */
-#ifdef NOTDEF
-segOffset(virtAddrPtr)
-Vm_VirtAddr *virtAddrPtr;
-{
-    Vm_Segment *segPr;
-    int off;
-    struct Vm_SegProcList *sharedPr;
+    char		*vec;
+    Address		checkAddr;
+    Vm_VirtAddr		virtAddr;
+    Proc_ControlBlock	*procPtr;
+    ReturnStatus	status;
+    int			len;
+    int			i;
+    Vm_PTE		*ptePtr;
+    Boolean		referenced;
+    Boolean		modified;
 
-    segPr = virtAddrPtr->segPtr;
-    off = segPr->offset;
-    sharedPr = virtAddrPtr->sharedPtr;
-    if (!vmShmDebug || virtAddrPtr->sharedPtr == (Vm_SegProcList *)NIL) {
-	return off;
-    } else {
-	if (sharedPr == NULL) {
-	    panic("null sharedPtr\n");
+    dprintf("mincore( %x, %d, %x)\n", startAddr, length, retVec);
+    if (BADALIGN(startAddr) || BADALIGN(length)) {
+	printf("Vm_Munmap: Invalid start or offset\n");
+	return VM_WRONG_SEG_TYPE;
+    }
+    procPtr = Proc_GetCurrentProc();
+    len = length>>vmPageShift;
+    vec = (char *)malloc(len);
+    checkAddr = startAddr;
+    for (i=0;i<len;i++) {
+	VmVirtAddrParseUnlock(procPtr, checkAddr, &virtAddr);
+	if (virtAddr.segPtr == (Vm_Segment *)NIL) {
+	    vec[i] = 0;
+	    dprintf("Vm_Mincore: no segment at address %x\n", checkAddr);
 	} else {
-	    off = sharedPr->offset;
-	    return off;
+	    ptePtr = VmGetAddrPTEPtr(&virtAddr, virtAddr.page);
+	    if (*ptePtr & VM_VIRT_RES_BIT) {
+		if (*ptePtr & VM_PHYS_RES_BIT) {
+		    VmMach_GetRefModBits(&virtAddr, Vm_GetPageFrame(*ptePtr),
+			    &referenced, &modified);
+		    if (modified || (*ptePtr & VM_MODIFIED_BIT)) {
+			vec[i] = 4;
+			dprintf("Vm_Mincore: modified at %x\n", checkAddr);
+		    } else if (referenced || (*ptePtr & VM_REFERENCED_BIT)) {
+			vec[i] = 3;
+			dprintf("Vm_Mincore: referenced at %x\n", checkAddr);
+		    } else {
+			vec[i] = 2;
+			dprintf("Vm_Mincore: present at %x\n", checkAddr);
+		    }
+		} else {
+		    vec[i] = 1;
+		    dprintf("Vm_Mincore: absent at %x\n", checkAddr);
+		}
+	    } else {
+		vec[i] = 0;
+		dprintf("Vm_Mincore: gone at %x\n", checkAddr);
+	    }
 	}
+	checkAddr += vm_PageSize;
+	dprintf("Vm_Mincore: i=%d v[i]=%d\n",i,vec[i]);
     }
+    status = Vm_CopyOut( len, (Address) vec, (Address) retVec);
+    free((char *)vec);
+    return status;
 }
-
-Vm_PTE * VmGetAddrPTEPtr(virtAddrPtr, page)
-Vm_VirtAddr	*virtAddrPtr;
-int		page;
-{
-    int segoff;
-    Vm_PTE *res;
-    int num;
-    segoff = segOffset(virtAddrPtr);
-    if (page-segoff < 0) {
-	panic("page # too small: %d %d\n",page,segoff);
-    } else if (page-segoff > virtAddrPtr->segPtr->ptSize) {
-	panic("page # too large: %d %d %d\n",page,segoff,
-		virtAddrPtr->segPtr->ptSize);
-    }
-    num = page-segoff;
-    res = &virtAddrPtr->segPtr->ptPtr[num];
-    return res;
-}
-#endif SEGOFFSETCODE
