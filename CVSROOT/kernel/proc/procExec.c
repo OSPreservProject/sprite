@@ -34,6 +34,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "procAOUT.h"
 #include "status.h"
 #include "string.h"
+#include "byte.h"
+#ifdef notdef
+#include "dbg.h"
+#endif
 
 static ReturnStatus	DoExec();
 extern char *malloc();
@@ -174,9 +178,9 @@ Proc_ExecEnv(fileName, argPtrArray, envPtrArray, debugMe)
 	newEnvPtrArray = (char **) NIL;
 	newEnvPtrArrayLength = 0;
     }
-    status = DoExec(execFileName, strLength, newArgPtrArray, 
-			   newArgPtrArrayLength / 4, newEnvPtrArray, 
-			   newEnvPtrArrayLength / 4, TRUE, debugMe);
+    status = DoExec(execFileName, newArgPtrArray, 
+			   newArgPtrArrayLength / sizeof(Address), newEnvPtrArray, 
+			   newEnvPtrArrayLength / sizeof(Address), TRUE, debugMe);
     if (status == SUCCESS) {
 	panic("Proc_ExecEnv: DoExec returned SUCCESS!!!\n");
     }
@@ -256,7 +260,7 @@ Proc_KernExec(fileName, argPtrArray)
 
     VmMach_ReinitContext(procPtr);
 
-    status = DoExec(fileName, strlen(fileName), argPtrArray,
+    status = DoExec(fileName, argPtrArray,
 		    PROC_MAX_EXEC_ARGS, (char **) NIL, 0, FALSE, FALSE);
     /*
      * If the exec failed, then delete the extra segments and fix up the
@@ -278,7 +282,406 @@ Proc_KernExec(fileName, argPtrArray)
 }
 
 static ReturnStatus	SetupInterpret();
+static ReturnStatus	SetupArgs();
+static ReturnStatus	GrabArgArray();
 static Boolean		SetupVM();
+
+/*
+ * Define the header of the structure to be copied onto the user's
+ * stack during an exec. The base & size are actually not copied onto
+ * the stack, and the remainder of the structure is variable-length.
+ */
+typedef struct {
+    Address base;		/* base of the structure in user space */
+    int size;			/* size of the entire structure */
+    /*
+     * User stack data starts here.
+     */
+    int argc;			/* Number of arguments */
+    /*
+     * argv[] goes here
+     * envp[] goes here
+     * *argv[] goes here
+     * *envp[] goes here
+     */
+} UserStackArgs;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetupArgs --
+ *
+ *	Chase through arrays of character strings (usually in user space)
+ *	and copy them into a contiguous array.  This array is later copied
+ *	onto the stack of the exec'd program, and it may be used to
+ *	pass the arguments to another host for a remote exec.  It
+ *	contains argc, argv, envp, and the strings referenced by argv and
+ *	envp.  All values in argv and envp are relative to the presumed
+ *	start of the data in user space, which is normally set up to end at
+ *	mach_MaxUserStackAddr.  If
+ *	the exec is performed on a different machine, the pointers in argv and
+ *	envp must be adjusted by the relative values of mach_MaxUserStackAddr.
+ *
+ *	The format of the structure is defined by UserStackArgs above.
+ *		
+ *
+ * Results:
+ *	A ReturnStatus is returned.  Any non-SUCCESS result indicates a failure
+ *	that should be returned to the user.
+ *	In addition, a pointer to the encapsulated stack is returned,
+ *	as well as its size.
+ *
+ * Side effects:
+ *	Memory is allocated for the argument stack.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+SetupArgs(argPtrArray, numArgs, envPtrArray,
+	  numEnvs, userProc, extraArgArray, argStackPtr, argStackSizePtr,
+	  argStringPtr)
+    char     **argPtrArray;	/* The array of argument pointers. */
+    int	     numArgs;		/* The number of arguments in the argArray. */
+    char     **envPtrArray;	/* The array of environment pointers. */
+    int	     numEnvs;		/* The number of arguments in the envArray. */
+    Boolean  userProc;		/* Set if the calling process is a user 
+	     			 * process. */
+    char     **extraArgArray;	/* Any arguments that should be
+	     		 	 * inserted prior to argv[1] */
+    Address  *argStackPtr; 	/* Pointer to contain address of encapsulated
+				 * stack. */
+    int      *argStackSizePtr; 	/* Pointer to contain size of encapsulated
+				 * stack. */
+    char     **argStringPtr;	/* Pointer to allocated buffer for argument
+				 * list as a single string (for ps) */
+{
+    register	ArgListElement		*argListPtr;
+    register	int			argNumber;
+    char				**newArgPtrArray;
+    char				**newEnvPtrArray;
+    List_Links				argList;
+    List_Links				envList;
+    char				*argBuffer;
+    char				*envBuffer;
+    register	char			*argString;
+    int					argStringLength;
+    ReturnStatus			status;
+    int					usp;
+    int					paddedArgLength;
+    int					paddedEnvLength;
+    int					bufSize;
+    Address				buffer;
+    UserStackArgs			*hdrPtr;
+
+    /*
+     * Initialize variables so when if we abort we know what to clean up.
+     */
+    *argStringPtr = (char *) NIL;
+    
+    List_Init(&argList);
+    List_Init(&envList);
+
+    /*
+     * Copy in the arguments.
+     */
+
+    status = GrabArgArray(PROC_MAX_EXEC_ARG_LENGTH + 1,
+			  userProc, extraArgArray, argPtrArray, &numArgs,
+			  &argList, &argStringLength,
+			  &paddedArgLength);
+
+
+    if (status != SUCCESS) {
+	goto execError;
+    }
+    /*
+     * Copy in the environment.
+     */
+
+    status = GrabArgArray(PROC_MAX_ENVIRON_LENGTH + 1, userProc, (char **) NIL,
+			  envPtrArray, &numEnvs, &envList, (int *) NIL,
+			  &paddedEnvLength);
+
+    if (status != SUCCESS) {
+	goto execError;
+    }
+
+    /*
+     * Now copy all of the arguments and environment variables into a buffer.
+     * Allocate the buffer and initialize pointers into it.
+     * The stack ends up in the following state:  the top word is argc.
+     * Right below this is the array of pointers to arguments (argv).  Right
+     * below this is the array of pointers to environment stuff (envp).  So,
+     * to figure out the address of argv, one simply adds a word to the address
+     * of the top of the stack.  To figure out the address of envp, one
+     * looks at argc and skips over the appropriate amount of space to jump
+     * over argc and argv = (1 + (argc + 1)) * 4 bytes.  The extra "1" is for
+     * the null argument at the end of argv.  Below all that stuff on the
+     * stack come the environment and argument strings themselves.
+     */
+    bufSize = sizeof(UserStackArgs) + (numArgs + numEnvs + 2) * sizeof(Address)
+	+ paddedArgLength + paddedEnvLength;
+    *argStackSizePtr = bufSize;
+    buffer = malloc(bufSize);
+    *argStackPtr = buffer;
+    hdrPtr = (UserStackArgs *) buffer;
+    hdrPtr->size = bufSize - ((Address) &hdrPtr->argc - buffer);
+    hdrPtr->base = mach_MaxUserStackAddr - hdrPtr->size;
+    hdrPtr->argc = numArgs;
+    newArgPtrArray = (char **) (buffer + sizeof(UserStackArgs));
+    newEnvPtrArray = (char **) ((int) newArgPtrArray +
+				(numArgs + 1) * sizeof(Address));
+    argBuffer = (Address) ((int) newEnvPtrArray +
+			   (numEnvs + 1) * sizeof(Address));
+    envBuffer =  (argBuffer + paddedArgLength);
+				
+    argNumber = 0;
+    usp = (int)hdrPtr->base + (int) argBuffer - (int) &hdrPtr->argc;
+    argString = malloc(argStringLength + 1);
+    *argStringPtr = argString;
+
+    while (!List_IsEmpty(&argList)) {
+	argListPtr = (ArgListElement *) List_First(&argList);
+	/*
+	 * Copy the argument.
+	 */
+	bcopy((Address) argListPtr->stringPtr, (Address) argBuffer,
+		    argListPtr->stringLen);
+	newArgPtrArray[argNumber] = (char *) usp;
+	argBuffer += Byte_AlignAddr(argListPtr->stringLen);
+	usp += Byte_AlignAddr(argListPtr->stringLen);
+	bcopy((Address) argListPtr->stringPtr, argString,
+		    argListPtr->stringLen - 1);
+	argString[argListPtr->stringLen - 1] = ' ';
+	argString += argListPtr->stringLen;
+	/*
+	 * Clean up
+	 */
+	List_Remove((List_Links *) argListPtr);
+	free((Address) argListPtr->stringPtr);
+	free((Address) argListPtr);
+	argNumber++;
+    }
+    argString[0] = '\0';
+    newArgPtrArray[argNumber] = (char *) USER_NIL;
+    
+    argNumber = 0;
+    while (!List_IsEmpty(&envList)) {
+	argListPtr = (ArgListElement *) List_First(&envList);
+	/*
+	 * Copy the environment variable.
+	 */
+	bcopy((Address) argListPtr->stringPtr, (Address) envBuffer,
+		    argListPtr->stringLen);
+	newEnvPtrArray[argNumber] = (char *) usp;
+	envBuffer += Byte_AlignAddr(argListPtr->stringLen);
+	usp += Byte_AlignAddr(argListPtr->stringLen);
+	/*
+	 * Clean up
+	 */
+	List_Remove((List_Links *) argListPtr);
+	free((Address) argListPtr->stringPtr);
+	free((Address) argListPtr);
+	argNumber++;
+    }
+    newEnvPtrArray[argNumber] = (char *) USER_NIL;
+
+    /*
+     * We're done here.  Leave it to the caller to free the copy of the
+     * stack after copying it to user space.
+     */
+    return(SUCCESS);
+    
+execError:
+    /*
+     * The exec failed while copying in the arguments.  Free any
+     * arguments or environment variables that were copied in.
+     */
+    while (!List_IsEmpty(&argList)) {
+	argListPtr = (ArgListElement *) List_First(&argList);
+	List_Remove((List_Links *) argListPtr);
+	free((Address) argListPtr->stringPtr);
+	free((Address) argListPtr);
+    }
+    while (!List_IsEmpty(&envList)) {
+	argListPtr = (ArgListElement *) List_First(&envList);
+	List_Remove((List_Links *) argListPtr);
+	free((Address) argListPtr->stringPtr);
+	free((Address) argListPtr);
+    }
+    return(status);
+
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GrabArgArray --
+ *
+ *	Copy a an array of strings from user space and put it in a
+ *	linked list of strings.  The terminology for "args" refers
+ *	to argv, but the same routine is used for environment variables
+ *	as well.
+ *
+ * Results:
+ *	A ReturnStatus indicates any sort of error, indicating immediate
+ *	failure that should be reported to the user.  Otherwise, the
+ *	arguments and their lengths are returned in the linked list
+ *	referred to by argListPtr, and the total length is returned
+ *	in *totalLengthPtr.
+ *
+ * Side effects:
+ *	Memory is allocated to hold the strings and the structures
+ *	pointing to them.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+GrabArgArray(maxLength, userProc, extraArgArray, argPtrArray, numArgsPtr,
+	     argList, realLengthPtr, paddedLengthPtr)
+    int	     maxLength;		/* The maximum length of one argument */
+    Boolean  userProc;		/* Set if the calling process is a user 
+	     			 * process. */
+    char     **extraArgArray;	/* Any arguments that should be
+	     		 	 * inserted prior to argv[1] */
+    char     **argPtrArray;	/* The array of argument pointers. */
+    int	     *numArgsPtr;	/* Pointer to the number of arguments in the
+				 * argArray. This is updated with the
+				 * actual number of arguments. */
+    List_Links *argList;	/* Pointer to header of list containing
+				 * copied data. Assumed to be initialized by
+				 * caller. */
+    int      *realLengthPtr; 	/* Pointer to contain combined size, without
+				 * padding. */
+    int      *paddedLengthPtr; 	/* Pointer to contain combined size, including
+				 * padding. */
+{
+    int 				totalLength = 0;
+    int 				paddedTotalLength = 0;
+    int 				extraArgs;
+    Boolean 				accessible;
+    register	ArgListElement		*argListPtr;
+    register	char			**argPtr;
+    register	int			argNumber;
+    ReturnStatus			status;
+    char				*stringPtr;
+    int					stringLength;
+    int					realLength;
+    
+    if (extraArgArray != (char **) NIL) {
+	for (extraArgs = 0; extraArgArray[extraArgs] != (char *)NIL;
+	     extraArgs++) {
+	}
+    } else {
+	extraArgs = 0;
+    }
+    
+    for (argNumber = 0, argPtr = argPtrArray; 
+	 argNumber < *numArgsPtr;
+	 argNumber++) {
+
+	accessible = FALSE;
+
+	if ((argNumber > 0 || argPtrArray == (char **) NIL) && extraArgs > 0) {
+	    stringPtr = extraArgArray[0];
+	    realLength = strlen(stringPtr) + 1;
+	    extraArgArray++;
+	    extraArgs--;
+	} else {
+	    if (!userProc) {
+		if (*argPtr == (char *) NIL) {
+		    break;
+		}
+		stringPtr = *argPtr;
+		stringLength = maxLength;
+	    } else {
+		if (*argPtr == (char *) USER_NIL) {
+		    break;
+		}
+		Vm_MakeAccessible(VM_READONLY_ACCESS,
+				  maxLength + 1, 
+				  (Address) *argPtr, 
+				  &stringLength,
+				  (Address *) &stringPtr);
+		if (stringLength == 0) {
+		    status = SYS_ARG_NOACCESS;
+		    goto execError;
+		}
+		accessible = TRUE;
+	    }
+	    /*
+	     * Find out the length of the argument.  Because of accessibility
+	     * limitations the whole string may not be available.
+	     */
+	    {
+		register char *charPtr;
+		for (charPtr = stringPtr, realLength = 0;
+		     (realLength < stringLength) && (*charPtr != '\0');
+		     charPtr++, realLength++) {
+		}
+		realLength++;
+	    }
+	    /*
+	     * Move to the next argument.
+	     */
+	    argPtr++;
+	}
+
+	/*
+	 * Put this string onto the argument list.
+	 */
+	argListPtr = (ArgListElement *)
+		malloc(sizeof(ArgListElement));
+	argListPtr->stringPtr =  malloc(realLength);
+	argListPtr->stringLen = realLength;
+	List_InitElement((List_Links *) argListPtr);
+	List_Insert((List_Links *) argListPtr, LIST_ATREAR(argList));
+	/*
+	 * Calculate the room on the stack needed for this string.
+	 * Make it double-word aligned to make access efficient on
+	 * all machines.  Increment the amount needed to save the argument
+	 * list (the same total length, but without the padding).
+	 */
+	paddedTotalLength += Byte_AlignAddr(realLength);
+	totalLength += realLength;
+	/*
+	 * Copy over the argument and ensure null termination.
+	 */
+	bcopy((Address) stringPtr, (Address) argListPtr->stringPtr, realLength);
+	argListPtr->stringPtr[realLength-1] = '\0';
+	/*
+	 * Clean up 
+	 */
+	if (accessible) {
+	    Vm_MakeUnaccessible((Address) stringPtr, stringLength);
+	}
+    }
+    if (realLengthPtr != (int *) NIL) {
+	*realLengthPtr = totalLength;
+    }
+    if (paddedLengthPtr != (int *) NIL) {
+	*paddedLengthPtr = paddedTotalLength;
+    }
+    *numArgsPtr = argNumber;
+    return(SUCCESS);
+    
+execError:
+    /*
+     * We hit an error while copying in the arguments.  Free any
+     * arguments that were copied in.
+     */
+    while (!List_IsEmpty(argList)) {
+	argListPtr = (ArgListElement *) List_First(argList);
+	List_Remove((List_Links *) argListPtr);
+	free((Address) argListPtr->stringPtr);
+	free((Address) argListPtr);
+    }
+    return(status);
+}
 
 
 /*
@@ -289,27 +692,22 @@ static Boolean		SetupVM();
  *	Exec a new program.  The current process image is overlayed by the 
  *	newly exec'd program.
  *
- *	Note: environments are now being added; after they work, I can
- *	think about coalescing some of the code rather than duplicating
- *	it.
- *
  * Results:
  *	This routine does not return unless an error occurs in which case the
  *	error code is returned.
  *
  * Side effects:
  *	The state of the calling process is modified for the new image and
- *	the argPtrArray and envPtrArray are made unaccessible if they this
+ *	the argPtrArray and envPtrArray are made unaccessible if this
  *	is a user process.
  *
  *----------------------------------------------------------------------
  */
 
 static ReturnStatus
-DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
+DoExec(fileName, argPtrArray, numArgs, envPtrArray, numEnvs,
        userProc, debugMe)
     char	fileName[];	/* The name of the file that is to be exec'd */
-    int		fileNameLength;	/* The length of the file name. */
     char	**argPtrArray;	/* The array of argument pointers. */
     int		numArgs;	/* The number of arguments in the argArray. */
     char	**envPtrArray;	/* The array of environment pointers. */
@@ -321,50 +719,33 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
     				 * executing its first instruction. */
 {
     register	Proc_ControlBlock	*procPtr;
-    register	ArgListElement	*argListPtr;
     register	Proc_AOUT		*aoutPtr;
-    register	char			**argPtr;
-    register	int			argNumber;
-    register	char			**envPtr;
-    ArgListElement			*envListPtr;
-    int					envNumber;
-    int					origNumArgs;
-    int					origNumEnvs;
     Vm_ExecInfo				*execInfoPtr;
-    char				**newArgPtrArray;
-    char				**newEnvPtrArray;
-    int					tArgNumber;
     Proc_AOUT				aout;
-    List_Links				argList;
-    List_Links				envList;
     Vm_Segment				*codeSegPtr = (Vm_Segment *) NIL;
-    char				*copyAddr;
-    int					copyLength;
-    register	char			*argString;
-    int					argStringLength;
+    char				*argString = (char *) NIL;
+    Address				argBuffer = (Address) NIL;
+    int					argBufferSize;
     Fs_Stream				*filePtr;
     ReturnStatus			status;
     char				buffer[PROC_MAX_INTERPRET_SIZE];
     int					extraArgs = 0;
     char				*shellArgPtr;
+    char				*extraArgsArray[2];
+    char				**extraArgsPtrPtr;
     int					argBytes;
     Address				userStackPointer;
-    int					usp;
     int					entry;
     Boolean				usedFile;
     int					uid = -1;
     int					gid = -1;
-    char				*stringPtr;
-    int					stringLength;
-    int					realLength;
-    Boolean 				accessible;
+    UserStackArgs			*hdrPtr;
 
-    origNumArgs = numArgs;
-    origNumEnvs = numEnvs;
+#ifdef notdef
+    DBG_CALL;
+#endif
 
     procPtr = Proc_GetActualProc();
-    List_Init(&argList);
-    List_Init(&envList);
 
     /* Turn off profiling */
     if (procPtr->Prof_Scale != 0) {
@@ -432,205 +813,42 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
     }
 
     /*
-     * The total number of arguments is the number passed in plus the
-     * number of extra arguments because is an interpreter file.
+     * Set up whatever special arguments we might have due to an
+     * interpreter file.  If the
      */
-    if (argPtrArray == (char **) NIL) {
-	numArgs = extraArgs;
-    } else {
-	numArgs += extraArgs;
-    }
-    argStringLength = 0;
-
-    /*
-     * Copy in all of the arguments.  If we are executing a normal
-     * program then we just copy in the arguments as is.  If this is
-     * an interpreter file then we do the following:
-     *
-     *	1) If the user passed in arguments, then arg[0] is left alone.
-     *	2) If arguments were passed to the interpreter program in the
-     *	   interpreter file then they are placed in arg[1].
-     *  3) The name of the interpreter file is placed in arg[1] or arg[2]
-     *	   depending if there were interpreter arguments from step 2.
-     *  3) Original arguments arg[1] through arg[n] are shifted over.
-     */
-    userStackPointer = mach_MaxUserStackAddr;
-#ifdef sun4
-    /*
-     * I'm requiring the user stack pointer to be double-word aligned, for now.
-     */
-    (unsigned int) userStackPointer &= ~7;
-#endif sun4
-    for (argNumber = 0, argPtr = argPtrArray; 
-	 argNumber < numArgs;
-	 argNumber++) {
-
-	accessible = FALSE;
-
-	if ((argNumber > 0 || argPtrArray == (char **) NIL) && extraArgs > 0) {
+    if (extraArgs > 0) {
+	int i;
+	int index;
+	
+	if (argPtrArray == (char **) NIL) {
+	    extraArgsArray[0] = fileName;
+	    index = 1;
+	} else {
+	    index = 0;
+	}
+	for (i = index; extraArgs > 0; i++, extraArgs--) {
 	    if (extraArgs == 2) {
-		stringPtr = shellArgPtr;
-		realLength = strlen(shellArgPtr) + 1;
+		extraArgsArray[i] = shellArgPtr;
 	    } else {
-		stringPtr = fileName;
-		realLength = fileNameLength + 1;
+		extraArgsArray[i] = fileName;
 	    }
-	    extraArgs--;
-	} else {
-	    if (!userProc) {
-		if (*argPtr == (char *) NIL) {
-		    break;
-		}
-		stringPtr = *argPtr;
-		stringLength = PROC_MAX_EXEC_ARG_LENGTH;
-	    } else {
-		if (*argPtr == (char *) USER_NIL) {
-		    break;
-		}
-		Vm_MakeAccessible(VM_READONLY_ACCESS,
-				  PROC_MAX_EXEC_ARG_LENGTH + 1, 
-				  (Address) *argPtr, 
-				  &stringLength,
-				  (Address *) &stringPtr);
-		if (stringLength == 0) {
-		    status = SYS_ARG_NOACCESS;
-		    goto execError;
-		}
-		accessible = TRUE;
-	    }
-	    /*
-	     * Find out the length of the argument.  Because of accessibility
-	     * limitations the whole string may not be available.
-	     */
-	    {
-		register char *charPtr;
-		for (charPtr = stringPtr, realLength = 0;
-		     (realLength < stringLength) && (*charPtr != '\0');
-		     charPtr++, realLength++) {
-		}
-		realLength++;
-	    }
-	    /*
-	     * Move to the next argument.
-	     */
-	    argPtr++;
 	}
-
-	/*
-	 * Put this string onto the argument list.
-	 */
-	argListPtr = (ArgListElement *)
-		malloc(sizeof(ArgListElement));
-	argListPtr->stringPtr =  malloc(realLength);
-	argListPtr->stringLen = realLength;
-	List_InitElement((List_Links *) argListPtr);
-	List_Insert((List_Links *) argListPtr, LIST_ATREAR(&argList));
-	/*
-	 * Make room on the stack for this string.  Make it 4 byte aligned.
-	 * Also up the amount needed to save the argument list.
-	 */
-#ifndef sun4
-	userStackPointer -= ((realLength) + 3) & ~3;
-#else
-	/*
-	 * For initial sun4 port, I'm requiring the user stack pointer to
-	 * be double-word aligned.
-	 */
-	userStackPointer -= ((realLength) + 7) & ~7;
-#endif /* sun4 */
-	argStringLength += realLength;
-	/*
-	 * Copy over the argument and ensure null termination.
-	 */
-	bcopy((Address) stringPtr, (Address) argListPtr->stringPtr, realLength);
-	argListPtr->stringPtr[realLength-1] = '\0';
-	/*
-	 * Clean up 
-	 */
-	if (accessible) {
-	    Vm_MakeUnaccessible((Address) stringPtr, stringLength);
-	}
+	extraArgsArray[i] = (char *) NIL;
+	extraArgsPtrPtr = extraArgsArray;
+    } else {
+	extraArgsPtrPtr = (char **) NIL;
     }
-
     /*
-     * Copy in the environment.
+     * Copy in the argument list and environment into a single contiguous
+     * buffer.
      */
-    for (envNumber = 0, envPtr = envPtrArray; 
-	 envNumber < numEnvs;
-	 envNumber++) {
-
-	accessible = FALSE;
-
-	if (!userProc) {
-	    if (*envPtr == (char *) NIL) {
-		break;
-	    }
-	    stringPtr = *envPtr;
-	    stringLength = PROC_MAX_ENVIRON_LENGTH;
-	} else {
-	    if (*envPtr == (char *) USER_NIL) {
-		break;
-	    }
-	    Vm_MakeAccessible(VM_READONLY_ACCESS,
-			      PROC_MAX_ENVIRON_LENGTH + 1, 
-			      (Address) *envPtr, 
-			      &stringLength,
-			      (Address *) &stringPtr);
-	    if (stringLength == 0) {
-		status = SYS_ARG_NOACCESS;
-		goto execError;
-	    }
-	    accessible = TRUE;
-	}
-	/*
-	 * Find out the length of the environment variable.  Because of
-	 * accessibility limits the whole string may not be available.
-	 */
-	{
-	    register char *charPtr;
-	    for (charPtr = stringPtr, realLength = 0;
-		 (realLength < stringLength) && (*charPtr != '\0');
-		 charPtr++, realLength++) {
-	    }
-	    realLength++;
-	}
-	/*
-	 * Move to the next environment variable.
-	 */
-	envPtr++;
-
-	/*
-	 * Put this string onto the environment variable list.
-	 */
-	envListPtr = (ArgListElement *) 
-		malloc(sizeof(ArgListElement));
-	envListPtr->stringPtr =  malloc(realLength);
-	envListPtr->stringLen = realLength;
-	List_InitElement((List_Links *) envListPtr);
-	List_Insert((List_Links *) envListPtr, LIST_ATREAR(&envList));
-	/*
-	 * Make room on the stack for this string.  Make it 4 byte aligned.
-	 */
-#ifndef sun4
-	userStackPointer -= ((realLength) + 3) & ~3;
-#else
-	/*
-	 * For the initial sun4 port, I'm requiring the user stack pointer
-	 * to be double-word aligned.
-	 */
-	userStackPointer -= ((realLength) + 7) & ~7;
-#endif /* sun4 */
-	/*
-	 * Copy over the environment variable and ensure null termination.
-	 */
-	bcopy((Address) stringPtr, (Address) envListPtr->stringPtr, realLength);
-	envListPtr->stringPtr[realLength-1] = '\0';
-	/*
-	 * Clean up 
-	 */
-	if (accessible) {
-	    Vm_MakeUnaccessible((Address) stringPtr, stringLength);
-	}
+    status = SetupArgs(argPtrArray, numArgs, envPtrArray,
+		       numEnvs, userProc, extraArgsPtrPtr,
+		       &argBuffer, &argBufferSize,
+		       &argString);
+    
+    if (status != SUCCESS) {
+	goto execError;
     }
 
     /*
@@ -638,11 +856,11 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
      */
     if (userProc) {
 	if (argPtrArray != (char **) NIL) {
-	    Vm_MakeUnaccessible((Address) argPtrArray, origNumArgs * 4);
+	    Vm_MakeUnaccessible((Address) argPtrArray, numArgs * 4);
 	    argPtrArray = (char **)NIL;
 	}
 	if (envPtrArray != (char **) NIL) {
-	    Vm_MakeUnaccessible((Address) envPtrArray, origNumEnvs * 4);
+	    Vm_MakeUnaccessible((Address) envPtrArray, numEnvs * 4);
 	    envPtrArray = (char **)NIL;
 	}
     }
@@ -664,100 +882,16 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
     /*
      * Now copy all of the arguments and environment variables onto the stack.
      */
-    argBytes = mach_MaxUserStackAddr - userStackPointer;
-    (void) Vm_MakeAccessible(VM_READWRITE_ACCESS,
-			  argBytes, userStackPointer,
-			  &copyLength, (Address *) &copyAddr);
-    newArgPtrArray = (char **) malloc((argNumber + 1) * sizeof(Address));
-    argNumber = 0;
-    usp = (int)userStackPointer;
-    argString = malloc(argStringLength + 1);
-    if (procPtr->argString != (char *) NIL) {
-	free(procPtr->argString);
-    }
-    procPtr->argString = argString;
-
-    while (!List_IsEmpty(&argList)) {
-	argListPtr = (ArgListElement *) List_First(&argList);
-	/*
-	 * Copy over the argument.
-	 */
-	bcopy((Address) argListPtr->stringPtr, (Address) copyAddr,
-		    argListPtr->stringLen);
-	newArgPtrArray[argNumber] = (char *) usp;
-	copyAddr += ((argListPtr->stringLen) + 3) & ~3;
-	usp += ((argListPtr->stringLen) + 3) & ~3;
-	bcopy((Address) argListPtr->stringPtr, argString,
-		    argListPtr->stringLen - 1);
-	argString[argListPtr->stringLen - 1] = ' ';
-	argString += argListPtr->stringLen;
-	/*
-	 * Clean up
-	 */
-	List_Remove((List_Links *) argListPtr);
-	free((Address) argListPtr->stringPtr);
-	free((Address) argListPtr);
-	argNumber++;
-    }
-    argString[0] = '\0';
-    
-    newEnvPtrArray = (char **) malloc((envNumber + 1) * sizeof(Address));
-    envNumber = 0;
-    while (!List_IsEmpty(&envList)) {
-	envListPtr = (ArgListElement *) List_First(&envList);
-	/*
-	 * Copy over the environment variable.
-	 */
-	bcopy((Address) envListPtr->stringPtr, (Address) copyAddr,
-		    envListPtr->stringLen);
-	newEnvPtrArray[envNumber] = (char *) usp;
-	copyAddr += ((envListPtr->stringLen) + 3) & ~3;
-	usp += ((envListPtr->stringLen) + 3) & ~3;
-	/*
-	 * Clean up 
-	 */
-	List_Remove((List_Links *) envListPtr);
-	free((Address) envListPtr->stringPtr);
-	free((Address) envListPtr);
-	envNumber++;
-    }
-    Vm_MakeUnaccessible(copyAddr - argBytes, argBytes);
-    /*
-     * The stack ends up in the following state:  the top word is argc.
-     * Right below this is the array of pointers to arguments (argv).  Right
-     * below this is the array of pointers to environment stuff (envp).  So,
-     * to figure out the address of argv, one simply adds a word to the address
-     * of the top of the stack.  To figure out the address of envp, one
-     * looks at argc and skips over the appropriate amount of space to jump
-     * over argc and argv = (1 + (argc + 1)) * 4 bytes.  The extra "1" is for
-     * the null argument at the end of argv.  Below all that stuff on the
-     * stack, but not necessarily immediately below, are the environment and
-     * argument stuff copied there earlier.
-     */
-    copyLength = (argNumber + envNumber + 2) * sizeof(Address) + sizeof(int);
-    newArgPtrArray[argNumber] = (char *) USER_NIL;
-    newEnvPtrArray[envNumber] = (char *) USER_NIL;
-#ifndef sun4
-    userStackPointer -= copyLength;
-#else /* sun4 */
-    userStackPointer -= ((copyLength) + 7) & ~7;
-#endif /* sun4 */
-    tArgNumber = argNumber;
-    (void) Vm_CopyOut(sizeof(int), (Address) &tArgNumber,
+    hdrPtr = (UserStackArgs *) argBuffer;
+    argBytes = hdrPtr->size;
+    userStackPointer = hdrPtr->base;
+    status = Vm_CopyOut(argBytes, (Address) &hdrPtr->argc,
 		      userStackPointer);
-    (void) Vm_CopyOut((argNumber + 1) * sizeof(Address),
-		      (Address) newArgPtrArray,
-		      userStackPointer + sizeof(int));
-    (void) Vm_CopyOut((envNumber + 1) * sizeof(Address),
-		      (Address) newEnvPtrArray,
-		      userStackPointer + sizeof(int) +
-		      (argNumber + 1) * sizeof(Address));
-    /*
-     * Free the arrays of arguments and environment variables.
-     */
-    free((Address) newArgPtrArray);
-    free((Address) newEnvPtrArray);
 
+    if (status != SUCCESS) {
+	goto execError;
+    }
+    
     /*
      * Close any streams that have been marked close-on-exec.
      */
@@ -786,8 +920,14 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
     if (procPtr->genFlags & PROC_FOREIGN) {
 	ProcRemoteExec(procPtr, uid);
     }
+    if (procPtr->argString != (char *) NIL) {
+	free(procPtr->argString);
+    }
+    procPtr->argString = argString;
     Proc_Unlock(procPtr);
 
+    free(argBuffer);
+    
     /*
      * Disable interrupts.  Note that we don't use the macro DISABLE_INTR 
      * because there is an implicit enable interrupts when we return to user 
@@ -819,23 +959,17 @@ execError:
     }
     if (userProc) {
 	if (argPtrArray != (char **) NIL) {
-	    Vm_MakeUnaccessible((Address) argPtrArray, origNumArgs * 4);
+	    Vm_MakeUnaccessible((Address) argPtrArray, numArgs * 4);
 	}
 	if (envPtrArray != (char **) NIL) {
-	    Vm_MakeUnaccessible((Address) envPtrArray, origNumEnvs * 4);
+	    Vm_MakeUnaccessible((Address) envPtrArray, numEnvs * 4);
 	}
     }
-    while (!List_IsEmpty(&argList)) {
-	argListPtr = (ArgListElement *) List_First(&argList);
-	List_Remove((List_Links *) argListPtr);
-	free((Address) argListPtr->stringPtr);
-	free((Address) argListPtr);
+    if (argBuffer != (Address) NIL) {
+	free(argBuffer);
     }
-    while (!List_IsEmpty(&envList)) {
-	envListPtr = (ArgListElement *) List_First(&envList);
-	List_Remove((List_Links *) envListPtr);
-	free((Address) envListPtr->stringPtr);
-	free((Address) envListPtr);
+    if (argString != (Address) NIL) {
+	free(argString);
     }
     return(status);
 }
