@@ -64,7 +64,7 @@ void TimerDumpElement();
  * The timer module mutex semaphore.  
  */
 
-Sync_Semaphore timerMutex = SYNC_SEM_INIT_STATIC("timerMutex");
+Sync_Semaphore timerMutex;
 
 /*
  *  Debugging routine and data.
@@ -115,6 +115,8 @@ Timer_Init()
 {
     static	Boolean	initialized	= FALSE;
 
+    Sync_SemInitDynamic(&timerMutex,"Timer:timerMutex");
+
     if (initialized) {
 	printf("Timer_Init: Timer module initialized more that once!\n");
     }
@@ -133,6 +135,30 @@ Timer_Init()
     TimerClock_Init();
     Timer_TimerInit(TIMER_CALLBACK_TIMER);
     Timer_TimerStart(TIMER_CALLBACK_TIMER);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Timer_LockRegister --
+ *
+ *	Used to register locks for the timer module. Must be called late
+ *  	in the initialization, after the vm module has been initialized.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Both mutex locks are registered.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Timer_LockRegister()
+{
+    Sync_SemRegister(&timerMutex); 
+    Sync_SemRegister(&timerClockMutex); 
 }
 
 
