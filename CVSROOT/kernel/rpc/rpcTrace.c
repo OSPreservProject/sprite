@@ -28,6 +28,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <fs.h>
 #include <timer.h>
 #include <string.h>
+#include <dump.h>
 
 /*
  * The circular buffer of trace records.
@@ -81,6 +82,7 @@ Rpc_PrintTrace(clientData)
     int c;		/* Used to identify record types in output */
     char flagString[8];	/* Used to format rpc header flags */
     int stringIndex;
+    int linesPrinted = 0;
 
     rpcTraceHdrPtr->flags |= TRACE_INHIBIT;
     if (numRecords > rpcTraceHdrPtr->numRecords) {
@@ -100,11 +102,13 @@ Rpc_PrintTrace(clientData)
     printf("%6s %4s %6s %5s %4s %4s %10s %5s %5s %5s %8s\n", \
 	"ID", "type", "time", "flags", "srvr", "clnt", "cmd   ", \
 	"psize", "dsize", "doff", "fragInfo")
-    PRINT_HEADER();
 
     baseTime.seconds = 0;
     baseTime.microseconds = 0;
     do {
+	if (linesPrinted % DUMP_LINES_PER_SCREEN == 0) {
+	    PRINT_HEADER();
+	}
 	recordPtr = &rpcTraceHdrPtr->recordArray[i];
 	Time_Subtract(recordPtr->time, baseTime, &deltaTime);
 
@@ -220,6 +224,7 @@ Rpc_PrintTrace(clientData)
 			   rpcHdrPtr->fragMask,
 			   rpcHdrPtr->delay);
 	printf("\n");
+	++linesPrinted;
 
 	i = (i + 1) % RPC_TRACE_LEN;
     } while (i != stopIndex);
