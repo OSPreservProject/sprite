@@ -127,6 +127,7 @@ MachLevel6Int:
 	.globl _MachVectoredInterrupt
 
 _MachVectoredInterrupt:
+	movl    sp@(2), _Prof_InterruptPC
 	moveml	#0xC0C0, sp@-
 	movw	#MACH_SR_HIGHPRIO, sr 
 	movw	sp@(INTR_SR_OFFSET), d0
