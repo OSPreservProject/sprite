@@ -730,9 +730,12 @@ FsFileScavenge(hdrPtr)
 	 * hash table.
 	 */
 	Vm_FileChanged(&handlePtr->segPtr);
-	FsHandleAttemptRemove(handlePtr);
-	fsStats.object.files--;
-	return(TRUE);
+	if (FsHandleAttemptRemove(handlePtr)) {
+	    fsStats.object.files--;
+	    return(TRUE);
+	} else {
+	    return(FALSE);
+	}
     } else {
 	FsHandleUnlock(hdrPtr);
 	return(FALSE);
