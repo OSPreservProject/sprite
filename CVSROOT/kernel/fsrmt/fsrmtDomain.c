@@ -1222,8 +1222,7 @@ Fs_RpcMakeDev(srvToken, clientID, command, storagePtr)
  */
 static ReturnStatus
 TwoNameOperation(command, prefixHandle1, relativeName1, prefixHandle2, 
-		 relativeName2, lookupArgsPtr, newNameInfoPtrPtr,
-		 name1RedirectPtr, name1StalePtr)
+	 relativeName2, lookupArgsPtr, newNameInfoPtrPtr, name1ErrorPtr)
     int			command;		/* Which Rpc: Mv or Ln */
     FsHandleHeader 	*prefixHandle1;		/* Handle from prefix table */
     char 		*relativeName1;		/* The new name of the file. */
@@ -1233,10 +1232,10 @@ TwoNameOperation(command, prefixHandle1, relativeName1, prefixHandle2,
     FsRedirectInfo	**newNameInfoPtrPtr;	/* We return this if the server
 						 * leaves its domain during the
 						 * lookup. */
-    Boolean 		*name1RedirectPtr;	/* TRUE if redirect info is for
-						 * first path */
-    Boolean 		*name1StalePtr;		/* TRUE if stale hdr or timeout
-						 * error is for first path */
+    Boolean 		*name1ErrorPtr;		/* If we return REDIRECT or
+						 * STALE_HANDLE this indicates
+						 * if that applies to the first
+						 * pathname or the second */
 {
     FsSprite2PathParams	params;
     FsSprite2PathData	*requestDataPtr;	/* too big for stack */
@@ -1265,18 +1264,11 @@ TwoNameOperation(command, prefixHandle1, relativeName1, prefixHandle2,
     storage.replyDataSize = sizeof(FsRedirectInfo);
 
     status = Rpc_Call(prefixHandle1->fileID.serverID, command, &storage);
+    *name1ErrorPtr = replyParams.name1ErrorP;
     if (status == FS_LOOKUP_REDIRECT) {
-	*name1RedirectPtr = replyParams.name1RedirectP;
 	*newNameInfoPtrPtr = Mem_New(FsRedirectInfo);
 	(*newNameInfoPtrPtr)->prefixLength = replyParams.prefixLength;
 	(void)String_Copy(redirectInfo.fileName, (*newNameInfoPtrPtr)->fileName);
-    } else if (status == FS_STALE_HANDLE) {
-	/*
-	 * Temporarily pretend that the source prefix handle was stale.
-	 * It is possible that a stale handle error could happend on
-	 * the destination prefix.  Need to fix the RPC interface. XXX
-	 */
-	*name1StalePtr = TRUE;
     }
     Mem_Free((Address)requestDataPtr);
 
@@ -1320,8 +1312,7 @@ Fs_Rpc2Path(srvToken, clientID, command, storagePtr)
     register	FsHandleHeader		*prefixHandle2Ptr;
     register	Rpc_ReplyMem		*replyMemPtr;
     FsRedirectInfo			*newNameInfoPtr;
-    Boolean				name1Redirect;
-    Boolean				name1Stale;
+    Boolean				name1Error = FALSE;
     FsSprite2PathReplyParams		*replyParamsPtr;
     FsSprite2PathData			*pathDataPtr;
     ReturnStatus			status;
@@ -1334,11 +1325,9 @@ Fs_Rpc2Path(srvToken, clientID, command, storagePtr)
 	    (&lookupArgsPtr->prefixID, clientID);
 
     if (prefixHandle1Ptr == (FsHandleHeader *)NIL) {
-	/*
-	 * Should set RPC parameter name1StaleP = TRUE
-	 * and fall through to Rpc_Reply call.
-	 */
-	return(FS_STALE_HANDLE);
+	name1Error = TRUE;
+	status = FS_STALE_HANDLE;
+	goto exit;
     } else {
 	FsHandleUnlock(prefixHandle1Ptr);
     }
@@ -1354,11 +1343,9 @@ Fs_Rpc2Path(srvToken, clientID, command, storagePtr)
 		(&paramsPtr->prefixID2, clientID);
 	if (prefixHandle2Ptr == (FsHandleHeader *)NIL) {
 	    FsHandleRelease(prefixHandle1Ptr, FALSE);
-	    /*
-	     * Should set RPC parameter name1StaleP = FALSE
-	     * and fall through to Rpc_Reply call.
-	     */
-	    return(FS_STALE_HANDLE);
+	    name1Error = FALSE;
+	    status = FS_STALE_HANDLE;
+	    goto exit;
 	} else {
 	    FsHandleUnlock(prefixHandle2Ptr);
 	}
@@ -1368,13 +1355,11 @@ Fs_Rpc2Path(srvToken, clientID, command, storagePtr)
     if (command == RPC_FS_RENAME) {
 	status = FsLocalRename(prefixHandle1Ptr, pathDataPtr->path1, 
 		  		prefixHandle2Ptr, pathDataPtr->path2,
-				lookupArgsPtr, &newNameInfoPtr, 
-				&name1Redirect, &name1Stale);
+				lookupArgsPtr, &newNameInfoPtr, &name1Error);
     } else if (command == RPC_FS_LINK) {
 	status = FsLocalHardLink(prefixHandle1Ptr, pathDataPtr->path1, 
 				prefixHandle2Ptr, pathDataPtr->path2, 
-				lookupArgsPtr, &newNameInfoPtr, 
-				&name1Redirect, &name1Stale);
+				lookupArgsPtr, &newNameInfoPtr, &name1Error);
     } else {
 	Sys_Panic(SYS_FATAL, "Fs_Rpc2Path: Bad command %d\n", command);
     }
@@ -1382,30 +1367,28 @@ Fs_Rpc2Path(srvToken, clientID, command, storagePtr)
     if (prefixHandle2Ptr != (FsHandleHeader *)NIL) {
 	FsHandleRelease(prefixHandle2Ptr, FALSE);
     }
-
+exit:
+    replyParamsPtr = (FsSprite2PathReplyParams *)
+	    Mem_Alloc(sizeof (FsSprite2PathReplyParams));
+    replyParamsPtr->name1ErrorP = name1Error;
+    storagePtr->replyParamPtr = (Address) replyParamsPtr;
+    storagePtr->replyParamSize = sizeof (FsSprite2PathReplyParams);
     if (status == FS_LOOKUP_REDIRECT) {
-	replyParamsPtr = (FsSprite2PathReplyParams *)
-		Mem_Alloc(sizeof (FsSprite2PathReplyParams));
-	replyParamsPtr->name1RedirectP = name1Redirect;
 	replyParamsPtr->prefixLength = newNameInfoPtr->prefixLength;
-
-	storagePtr->replyParamPtr = (Address) replyParamsPtr;
-	storagePtr->replyParamSize = sizeof (FsSprite2PathReplyParams);
 	storagePtr->replyDataPtr = (Address) newNameInfoPtr;
 	storagePtr->replyDataSize = sizeof(int) +
-				    String_Length(newNameInfoPtr->fileName) + 1;
-	replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
-	replyMemPtr->paramPtr = (Address) replyParamsPtr;
-	replyMemPtr->dataPtr = (Address) newNameInfoPtr;
-	Rpc_Reply(srvToken, status, storagePtr, 
-		  (int (*)()) Rpc_FreeMem, (ClientData) replyMemPtr);
+				String_Length(newNameInfoPtr->fileName) + 1;
     } else {
+	replyParamsPtr->prefixLength = 0;
 	/*
-	 * Put in check against FS_STALE_HANDLE and return name1StaleP.
+	 * Reply data ptr already set to NIL
 	 */
-	Rpc_Reply(srvToken, status, storagePtr, (int (*)())NIL,
-		(ClientData)NIL);
-    }
+     }
+    replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
+    replyMemPtr->paramPtr = (Address) replyParamsPtr;
+    replyMemPtr->dataPtr = (Address) storagePtr->replyDataPtr;
+    Rpc_Reply(srvToken, status, storagePtr, 
+	      (int (*)()) Rpc_FreeMem, (ClientData) replyMemPtr);
 
     return(SUCCESS);
 }
@@ -1428,7 +1411,7 @@ Fs_Rpc2Path(srvToken, clientID, command, storagePtr)
  */
 ReturnStatus
 FsSpriteRename(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
-	lookupArgsPtr, newNameInfoPtrPtr, name1redirectPtr, name1StalePtr)
+	lookupArgsPtr, newNameInfoPtrPtr, name1ErrorPtr)
     FsHandleHeader *prefixHandle1;	/* Handle from the prefix table */
     char *relativeName1;		/* The new name of the file. */
     FsHandleHeader *prefixHandle2;	/* Token from the prefix table */
@@ -1436,13 +1419,13 @@ FsSpriteRename(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
     FsLookupArgs *lookupArgsPtr;	/* Contains IDs */
     FsRedirectInfo **newNameInfoPtrPtr;	/* We return this if the server leaves 
 					 * its domain during the lookup. */
-    Boolean *name1redirectPtr;	/* TRUE if redirect info is for first path */
-    Boolean *name1StalePtr;	/* TRUE if stale error is for first path */
+    Boolean *name1ErrorPtr;	/* TRUE if redirect info or other error
+				 * condition if for the first pathname,
+				 * FALSE means error is on second pathname. */
 {
     return(TwoNameOperation(RPC_FS_RENAME, prefixHandle1, relativeName1, 
 		     	    prefixHandle2, relativeName2, lookupArgsPtr, 
-			    newNameInfoPtrPtr, name1redirectPtr,
-			    name1StalePtr));
+			    newNameInfoPtrPtr, name1ErrorPtr));
 }
 
 
@@ -1463,7 +1446,7 @@ FsSpriteRename(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
  */
 ReturnStatus
 FsSpriteHardLink(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
-	    lookupArgsPtr, newNameInfoPtrPtr, name1redirectPtr, name1StalePtr)
+	    lookupArgsPtr, newNameInfoPtrPtr, name1ErrorPtr)
     FsHandleHeader *prefixHandle1;	/* Token from the prefix table */
     char *relativeName1;		/* The new name of the file. */
     FsHandleHeader *prefixHandle2;	/* Token from the prefix table */
@@ -1471,12 +1454,11 @@ FsSpriteHardLink(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
     FsLookupArgs *lookupArgsPtr;	/* Contains IDs */
     FsRedirectInfo **newNameInfoPtrPtr;	/* We return this if the server 
 					 * leaves its domain during the lookup*/
-    Boolean *name1redirectPtr;	/* TRUE if redirect info is for first path */
-    Boolean *name1StalePtr;	/* TRUE if stale error is for first path */
+    Boolean *name1ErrorPtr;	/* TRUE if redirect info or other error is
+				 * for first path, FALSE if for the second. */
 {
     return(TwoNameOperation(RPC_FS_LINK, prefixHandle1, relativeName1, 
 		     	    prefixHandle2, relativeName2, lookupArgsPtr, 
-			    newNameInfoPtrPtr, name1redirectPtr,
-			    name1StalePtr));
+			    newNameInfoPtrPtr, name1ErrorPtr));
 }
 

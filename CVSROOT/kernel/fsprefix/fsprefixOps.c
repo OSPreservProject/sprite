@@ -115,10 +115,10 @@ FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
 					 * lookup */
     FsRedirectInfo 	*redirectInfoPtr;/* Returned from servers if their
 					 * lookup leaves their domain */
-    FsFileID		rootID;		/* ID of domain root */
     FsRedirectInfo 	*oldInfoPtr;	/* Needed to free up the new name
 					 * buffer allocated by the domain
 					 * lookup routine. */
+    FsFileID		rootID;		/* ID of domain root */
     FsPrefix 		*prefixPtr;	/* Returned from prefix table lookup 
 					 * and saved in the file handle */
     int 		numRedirects = 0;/* Number of iterations between 
@@ -127,6 +127,7 @@ FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
 					  * that are circular. */
 
     redirectInfoPtr = (FsRedirectInfo *) NIL;
+    oldInfoPtr = (FsRedirectInfo *) NIL;
 
     if (sys_ShuttingDown) {
 	/*
@@ -138,9 +139,6 @@ FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
 	status = GetPrefix(fileName, &hdrPtr, &rootID, &lookupName,
 			    &domainType, &prefixPtr);
 	if (status == SUCCESS) {
-	    /*
-	     * Prefix match, fork out to the domain lookup operation.
-	     */
 	    if (operation == FS_DOMAIN_OPEN) {
 		FS_TRACE_NAME(FS_TRACE_LOOKUP_START, lookupName);
 	    }
@@ -155,13 +153,8 @@ FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
 		lookupArgsPtr->rootID = rootID;
 	    }
 	    /*
-	     * The domain lookup routine may allocate a buffer for a re-directed
-	     * pathname.  This call to the lookup routine may be using a
-	     * buffer allocated the last time through this loop. We are
-	     * careful and free the buffer after there is no more use for it.
+	     * Fork out to the domain lookup operation.
 	     */
-	    oldInfoPtr = redirectInfoPtr;
-	    redirectInfoPtr = (FsRedirectInfo *)NIL;
 	    status = (*fsDomainLookup[domainType][operation])
 	       (hdrPtr, lookupName, argsPtr, resultsPtr, &redirectInfoPtr);
 	    if (fsFileNameTrace) {
@@ -173,7 +166,10 @@ FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
 		     * Lookup left the domain of the server chosen on the
 		     * basis of the prefix table.  Generate an absolute name
 		     * from the one returned by the server and loop back to
-		     * the prefix table lookup.
+		     * the prefix table lookup.  We are careful to save a
+		     * pointer to the redirect info because it contains the
+		     * current pathname.  We also free any redirect info
+		     * from previous iterations to prevent a core leak.
 		     */
 		    fsStats.prefix.redirects++; numRedirects++;
 		    if (numRedirects > FS_MAX_LINKS) {
@@ -182,6 +178,11 @@ FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
 		    } else {
 			status = FsLookupRedirect(redirectInfoPtr, prefixPtr,
 								  &fileName);
+			if (oldInfoPtr != (FsRedirectInfo *)NIL) {
+			    Mem_Free((Address)oldInfoPtr);
+			}
+			oldInfoPtr = redirectInfoPtr;
+			redirectInfoPtr = (FsRedirectInfo *)NIL;
 		    }
 		    break;
 		}
@@ -286,13 +287,10 @@ FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
 		default:
 		    break;
 	    }
-	    if (oldInfoPtr != (FsRedirectInfo *)NIL) {
-		Mem_Free((Address)oldInfoPtr);
-	    }
 	}
     } while (status == FS_LOOKUP_REDIRECT);
-    if (redirectInfoPtr != (FsRedirectInfo *)NIL) {
-	Mem_Free((Address) redirectInfoPtr);
+    if (oldInfoPtr != (FsRedirectInfo *)NIL) {
+	Mem_Free((Address) oldInfoPtr);
     }
 
     return(status);
@@ -314,7 +312,7 @@ FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
  *	the domain specific procedure along with our first guess as
  *	to the domain and relative name of the second pathname.  The
  *	domain specific procedure will abort with a CROSS_DOMAIN error
- *	if it thinks the second pathname is served elsewhere.  However,
+ *	if it thinks the second pathname is served elsewhere.  In this case
  *	this procedure has to verify that by getting the attributes of
  *	the parent directory of the second name.  This may cause more
  *	iteration over the prefix table to get the final prefix info
@@ -348,11 +346,21 @@ FsTwoNameOperation(operation, srcName, dstName, lookupArgsPtr)
     FsFileID		srcRootID;	/* ID of srcName domain root */
     FsFileID		dstRootID;
     int			numRedirects;	/* To detect loops in directories */
-    Boolean		srcNameRedirect;/* TRUE if redirect info for srcName */
-    Boolean		srcHandleStale;	/* TRUE if src prefix handle is stale */
-    FsRedirectInfo	*redirectInfoPtr;/* Returned from the server */
+    Boolean		srcNameError;	/* TRUE if redirect info or stale
+					 * handle error applies to srcName,
+					 * FALSE if it applies to dstName. */
+    /*
+     * The domain-lookup routine allocates a buffer for a redirected pathname.
+     * FsLookupRedirect() subsequently generates a new absolute pathname
+     * in this buffer.  We have to carefully hold onto this buffer during
+     * the next iteration of the lookup loop, and still be able to free
+     * it later to avoid core leaks.  The 'src' and 'dst' buffers are
+     * used for this reason.
+     */
+    FsRedirectInfo	*redirectInfoPtr = (FsRedirectInfo *) NIL;
+    FsRedirectInfo	*srcRedirectPtr = (FsRedirectInfo *) NIL;
+    FsRedirectInfo	*dstRedirectPtr = (FsRedirectInfo *) NIL;
 
-    redirectInfoPtr = (FsRedirectInfo *) NIL;
     if (sys_ShuttingDown) {
 	/*
 	 * Lock processes out of the filesystem during a shutdown.
@@ -377,20 +385,20 @@ getDstPrefix:
 retry:
     status = (*fsDomainLookup[srcDomain][operation])
        (srcHdrPtr, srcLookupName, dstHdrPtr, dstLookupName, lookupArgsPtr,
-		    &redirectInfoPtr, &srcNameRedirect, &srcHandleStale);
+		    &redirectInfoPtr, &srcNameError);
     if (fsFileNameTrace) {
 	Sys_Printf("\treturns <%x>\n", status);
     }
     switch(status) {
 	case RPC_SERVICE_DISABLED:
 	case RPC_TIMEOUT:
-	    srcHandleStale = TRUE;
+	    srcNameError = TRUE;
 	    /*
 	     * FALL THROUGH to regular recovery.
 	     */
 	case FS_STALE_HANDLE: {
 	    FsHandleHeader *staleHdrPtr;
-	    staleHdrPtr = (srcHandleStale ? srcHdrPtr : dstHdrPtr);
+	    staleHdrPtr = (srcNameError ? srcHdrPtr : dstHdrPtr);
 	    FsWantRecovery(staleHdrPtr);
 	    status = FsWaitForRecovery(staleHdrPtr, status);
 	    if (status == SUCCESS) {
@@ -399,23 +407,33 @@ retry:
 	    break;
 	}
 	case FS_LOOKUP_REDIRECT:
+	    /*
+	     * The pathname left the server's domain, and it has returned
+	     * us a new name.  We generate a new absolute pathname and
+	     * save the pointer to the buffer.  It is now safe to free
+	     * the buffer used during the last iteration as well.
+	     */
 	    fsStats.prefix.redirects++;
 	    numRedirects++;
 	    if (numRedirects > FS_MAX_LINKS) {
 		status = FS_NAME_LOOP;
 		fsStats.prefix.loops++;
-	    } else if (srcNameRedirect) {
+	    } else if (srcNameError) {
 		status = FsLookupRedirect(redirectInfoPtr, srcPrefixPtr,
 					  &srcName);
-		if (status == FS_LOOKUP_REDIRECT) {
-		    goto getSrcPrefix;
+		if (srcRedirectPtr != (FsRedirectInfo *)NIL) {
+		    Mem_Free((Address)srcRedirectPtr);
 		}
+		srcRedirectPtr = redirectInfoPtr;
+		redirectInfoPtr = (FsRedirectInfo *)NIL;
 	    } else {
 		status = FsLookupRedirect(redirectInfoPtr, dstPrefixPtr,
 					  &dstName);
-		if (status == FS_LOOKUP_REDIRECT) {
-		    goto getDstPrefix;
+		if (dstRedirectPtr != (FsRedirectInfo *)NIL) {
+		    Mem_Free((Address)dstRedirectPtr);
 		}
+		dstRedirectPtr = redirectInfoPtr;
+		redirectInfoPtr = (FsRedirectInfo *)NIL;
 	    }
 	    break;
 	case FS_CROSS_DOMAIN_OPERATION: {
@@ -440,15 +458,18 @@ retry:
 	    break;
     }
     if (status == FS_LOOKUP_REDIRECT) {
-	if (srcNameRedirect) {
+	if (srcNameError) {
 	    goto getSrcPrefix;
 	} else {
 	    goto getDstPrefix;
 	}
     }
 exit:
-    if (redirectInfoPtr != (FsRedirectInfo *) NIL) {
-	Mem_Free((Address) redirectInfoPtr);
+    if (srcRedirectPtr != (FsRedirectInfo *)NIL) {
+	Mem_Free((Address)srcRedirectPtr);
+    }
+    if (dstRedirectPtr != (FsRedirectInfo *)NIL) {
+	Mem_Free((Address)dstRedirectPtr);
     }
     return(status);
 }

@@ -515,7 +515,7 @@ FsLocalRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr,
  */
 ReturnStatus
 FsLocalRename(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
-	    lookupArgsPtr, newNameInfoPtrPtr, name1redirectPtr, name1StalePtr)
+	    lookupArgsPtr, newNameInfoPtrPtr, name1ErrorPtr)
     FsHandleHeader	*prefixHandle1;	/* Token from the prefix table */
     char		*relativeName1;	/* The new name of the file. */
     FsHandleHeader	*prefixHandle2;	/* Token from the prefix table */
@@ -524,17 +524,15 @@ FsLocalRename(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
     FsRedirectInfo	**newNameInfoPtrPtr;	/* We return this if the server
 						 * leaves its domain during
 						 * lookup. */
-    Boolean		*name1redirectPtr;	/* TRUE if newNameInfoPtr is
-						 * for the first name */
-    Boolean		*name1StalePtr;		/* TRUE if stale handle error
-						 * is for the first name */
+    Boolean		*name1ErrorPtr;	/* TRUE if redirect info or stale
+					 * handle error is for the first name,
+					 * FALSE if for the second. */
 {
     ReturnStatus status;
 
     lookupArgsPtr->useFlags = FS_LINK | FS_RENAME;
     status = FsLocalHardLink(prefixHandle1, relativeName1, prefixHandle2,
-	    relativeName2, lookupArgsPtr, newNameInfoPtrPtr, name1redirectPtr,
-	    name1StalePtr);
+	    relativeName2, lookupArgsPtr, newNameInfoPtrPtr, name1ErrorPtr);
     if (status == SUCCESS) {
 	lookupArgsPtr->useFlags = FS_DELETE | FS_RENAME;
 	status = FsLocalRemove(prefixHandle1, relativeName1, 
@@ -560,7 +558,7 @@ FsLocalRename(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
  */
 ReturnStatus
 FsLocalHardLink(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
-	    lookupArgsPtr, newNameInfoPtrPtr, name1redirectPtr, name1StalePtr)
+	    lookupArgsPtr, newNameInfoPtrPtr, name1ErrorPtr)
     FsHandleHeader	*prefixHandle1;	/* Token from the prefix table */
     char		*relativeName1;	/* The new name of the file. */
     FsHandleHeader	*prefixHandle2;	/* Token from the prefix table */
@@ -569,18 +567,15 @@ FsLocalHardLink(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
     FsRedirectInfo	**newNameInfoPtrPtr;	/* We return this if the server
 						 * leaves its domain during
 						 * lookup. */
-    Boolean		*name1redirectPtr;	/* TRUE if newNameInfoPtr is
-						 * for first name */
-    Boolean		*name1StalePtr;		/* TRUE if prefixHandle1
-						 * is stale, else second
-						 * prefix is stale. */
+    Boolean		*name1ErrorPtr;	/* TRUE if redirect-info or stale
+					 * handle error is for first pathname,
+					 * FALSE if for the second. */
 {
     ReturnStatus status;
     FsLocalFileIOHandle *handle1Ptr;
     FsLocalFileIOHandle *handle2Ptr;
 
-    *name1redirectPtr = FALSE;
-    *name1StalePtr = FALSE;
+    *name1ErrorPtr = FALSE;
 
     /*
      * This lookup gets a locked handle on the (presumably) existing file.
@@ -590,11 +585,7 @@ FsLocalHardLink(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
 	   lookupArgsPtr->clientID, &lookupArgsPtr->id,
 	   0, 0, (FsLocalFileIOHandle **)&handle1Ptr, newNameInfoPtrPtr);
     if (status != SUCCESS) {
-	if (status == FS_LOOKUP_REDIRECT) {
-	    *name1redirectPtr = TRUE;
-	} else if (status == FS_STALE_HANDLE) {
-	    *name1StalePtr = TRUE;
-	}
+	*name1ErrorPtr = TRUE;
 	return(status);
     }
     FsHandleUnlock(handle1Ptr);
@@ -624,8 +615,6 @@ FsLocalHardLink(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
     if (status == SUCCESS) {
 	FsHandleRelease(handle2Ptr, TRUE);
 	FsDomainRelease(handle2Ptr->hdr.fileID.major);
-    } else if (status == FS_LOOKUP_REDIRECT) {
-	*name1redirectPtr = FALSE;
     }
     FsHandleRelease(handle1Ptr, FALSE);
     FsDomainRelease(handle1Ptr->hdr.fileID.major);
