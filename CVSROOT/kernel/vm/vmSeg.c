@@ -217,12 +217,14 @@ FindCode(filePtr, procLinkPtr, usedFilePtr)
 {
     register	Vm_Segment	**segPtrPtr;
     register	Vm_Segment	*segPtr;
+    ClientData			fileHandle;
 
     LOCK_MONITOR;
 
     *usedFilePtr = FALSE;
 again:
-    segPtrPtr = Fs_RetSegPtr((ClientData) filePtr->handlePtr);
+    fileHandle = Fs_GetFileHandle(filePtr);
+    segPtrPtr = Fs_GetSegPtr(fileHandle);
     if (vm_NoStickySegments || *segPtrPtr == (Vm_Segment *) NIL) {
 	/*
 	 * There is no segment associated with this file.  Set the value to
@@ -240,8 +242,8 @@ again:
     } else {
 	segPtr = *segPtrPtr;
 	if (segPtr->flags & VM_SEG_INACTIVE) {
-	    if (segPtr->fileHandle != (ClientData) filePtr->handlePtr) {
-		Sys_Panic(SYS_FATAL, "FindCode: fileData != handlePtr\n");
+	    if (segPtr->fileHandle != fileHandle) {
+		Sys_Panic(SYS_FATAL, "FindCode: segFileData != fileHandle\n");
 	    }
 	    /*
 	     * The segment is inactive, so delete it from the inactive
@@ -297,7 +299,7 @@ Vm_InitCode(filePtr, segPtr, execInfoPtr)
 
     LOCK_MONITOR;
 
-    segPtrPtr = Fs_RetSegPtr((ClientData) filePtr->handlePtr);
+    segPtrPtr = Fs_GetSegPtr(Fs_GetFileHandle(filePtr));
     if (*segPtrPtr != (Vm_Segment *) 0) {
 	Sys_Panic(SYS_FATAL, "Vm_InitCode: Seg ptr = %x\n", *segPtrPtr);
     }
@@ -312,7 +314,7 @@ Vm_InitCode(filePtr, segPtr, execInfoPtr)
 	extern	char	*Fs_GetFileName();
 	
 	segPtr->execInfo = *execInfoPtr;
-	segPtr->fileHandle = (ClientData) filePtr->handlePtr;
+	segPtr->fileHandle = Fs_GetFileHandle(filePtr);
 	fileNamePtr = Fs_GetFileName(filePtr);
 	if (fileNamePtr != (char *)NIL) {
 	    length = String_Length(fileNamePtr);
@@ -810,7 +812,7 @@ CleanSegment(segPtr)
 	 * This segment is associated with a file.  Find out which one and
 	 * break the connection.
 	 */
-	segPtrPtr = Fs_RetSegPtr(segPtr->fileHandle);
+	segPtrPtr = Fs_GetSegPtr(segPtr->fileHandle);
 	*segPtrPtr = (Vm_Segment *) NIL;
 	segPtr->fileHandle = (ClientData) NIL;
     }
