@@ -173,6 +173,7 @@ vprintf(format, args)
 
 }
 #endif
+
 
 /* 
  *----------------------------------------------------------------------
@@ -211,18 +212,18 @@ panic(va_alist)
     va_start(args);
     format = va_arg(args, char *);
 
-    if (!main_PanicOK) {
+    if (!main_PanicOK || Mach_AtInterruptLevel()) {
 	Mach_MonPrintf("Fatal Error: ");
 	Mach_MonPrintf(format, args);
     }
     Dev_VidEnable(TRUE);	/* unblank the screen */
     Dev_SyslogDebug(TRUE);	/* divert /dev/syslog output to the screen */
     if (!sysPanicing) {
+	sysPanicing = TRUE;
 	printf("Fatal Error: ");
 	(void) vprintf(format, args);
 	va_end(args);
     }
-    sysPanicing = TRUE;
     DBG_CALL;
     Dev_SyslogDebug(FALSE);
 }
