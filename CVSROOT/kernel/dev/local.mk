@@ -4,10 +4,10 @@
 # variable SYSMAKEFILE is provided by Makefile;  it's a system Makefile
 # that must be included to set up various compilation stuff.
 #
-FIRSTHDRDIRS = ../fsio ../net ../dev ../vm\
-	../fsio/$(TM).md ../net/$(TM).md ../dev/$(TM).md ../vm/$(TM).md
+NAME = dev
 
-
-#XCFLAGS += -DDEBUG
+#if !empty(TM:Mds3100) || !empty(TM:Mjhh) || !empty(TM:Mcleands3100) || !empty(TM:Mds5000)
+NOOPTIMIZATION	= no -O please
+#endif
 
 #include	<$(SYSMAKEFILE)>
