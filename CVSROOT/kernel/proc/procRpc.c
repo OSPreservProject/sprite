@@ -409,7 +409,8 @@ RpcProcExit(procPtr, dataPtr, dataLength, replyDataPtr,
     Address *replyDataPtr;
     int *replyDataLengthPtr;
 {
-    Timer_Ticks ticks;
+    Timer_Ticks kernelTicks;
+    Timer_Ticks userTicks;
     int count;
     int reason;	/* Why the process is dying: EXITED, SIGNALED, DESTROYED  */
     int	status;	/* Exit status or signal # or destroy status */
@@ -421,12 +422,16 @@ RpcProcExit(procPtr, dataPtr, dataLength, replyDataPtr,
     }
 
     Proc_Lock(procPtr);
-    Byte_EmptyBuffer(dataPtr, Timer_Ticks,  ticks);
-    Timer_AddTicks(procPtr->kernelCpuUsage.ticks, ticks,
+    Byte_EmptyBuffer(dataPtr, Timer_Ticks,  kernelTicks);
+    Timer_AddTicks(procPtr->kernelCpuUsage.ticks, kernelTicks,
 		   &procPtr->kernelCpuUsage.ticks);
-    Byte_EmptyBuffer(dataPtr, Timer_Ticks,  ticks);
-    Timer_AddTicks(procPtr->kernelCpuUsage.ticks, ticks,
+    Byte_EmptyBuffer(dataPtr, Timer_Ticks,  userTicks);
+    Timer_AddTicks(procPtr->userCpuUsage.ticks, userTicks,
 		   &procPtr->userCpuUsage.ticks);
+#ifndef CLEAN
+    Timer_AddTicks(kernelTicks, userTicks, &userTicks);
+    ProcRecordUsage(userTicks, TRUE);
+#endif /* CLEAN */
     Byte_EmptyBuffer(dataPtr, int,  count);
     procPtr->numQuantumEnds += count;
     Byte_EmptyBuffer(dataPtr, int, count);

@@ -164,7 +164,7 @@ typedef struct {
 					   process migrate back to us */
     int			pagesWritten;	/* Number of pages flushed as a
 					   result of migration */
-    Time		timeToExport;	/* Cumulative time to migrate
+    Time		timeToMigrate;	/* Cumulative time to migrate
 					   running processes */
     Time		timeToExec;	/* Cumulative time to do remote
 					   exec's */
@@ -176,11 +176,18 @@ typedef struct {
     int			rpcKbytes; 	/* Total number of Kbytes sent during
 					   migration. */
     int			migrationsHome; /* Number of times processes migrate
-					   home, including evictions. */
+					   home, excluding evictions. */
     int			evictCalls; 	/* Number of times user-level daemon
 					   requested evictions. */
     int			evictsNeeded; 	/* Number of times requests resulted
 					   in >= 1 evictions. */
+    int			statsVersion;   /* Used to distinguish old structures.
+					   */
+    Proc_Time		totalCPUTime;   /* Cumulative time used by all
+					   processes belonging to this host. */
+    Proc_Time		remoteCPUTime;   /* Cumulative time used by all
+					   processes belonging to this host,
+					   while executing remotely. */
 					   
 } Proc_MigStats;
 
