@@ -101,8 +101,13 @@ Fs_SelectStub(numStreams, userTimeoutPtr, userReadMaskPtr, userWriteMaskPtr,
 	userExceptMaskPtr, numReadyPtr)
     int		numStreams;	/* The length in bits of the read and write 
 				 * masks. */
-    Time	*userTimeoutPtr;/* Timer value indicating timeout period or
-				 * USER_NIL if no timeout. (in/out) */
+    Time	*userTimeoutPtr;/* Timer value indicating timeout period.
+				 * If this is USER_NIL then we wait with
+				 * no timeout period.  If the timeout period
+				 * is <= 0 seconds then we poll the streams
+				 * and return immediately.  If we wait then
+				 * the amount of the timeout remaining is
+				 * returned. (in/out) */
     int		*userReadMaskPtr;
 				/* A bitmask indicating stream ID's to check
 				 * for readability. (in/out) */
@@ -120,7 +125,9 @@ Fs_SelectStub(numStreams, userTimeoutPtr, userReadMaskPtr, userWriteMaskPtr,
     Timer_QueueElement	wakeupElement;	/* Element for timeout. */
     WakeupInfo		wakeupInfo;	/* Passed to timeout routine. */
     Time		timeout;	/* Copy of *userTimeoutPtr. */
+    Boolean		copiedTimeout = FALSE;
     Sync_RemoteWaiter	waiter;
+    Sync_RemoteWaiter	*waitPtr;	/* NIL while polling */
     int			row;		/* Index of row of inReadMasks,
 					 * inWriteMasks, inExceptMasks. */
     register int	mask;		/* Selects bit within a row of
@@ -151,6 +158,7 @@ Fs_SelectStub(numStreams, userTimeoutPtr, userReadMaskPtr, userWriteMaskPtr,
 					 * has a exception pending, it is
 					 * only counted once. */
     int			s;		/* Temp copy of numStreams */
+    register Fs_Stream **streamList;	/* Process's array of streamPtr's */
     ReturnStatus	status = SUCCESS;
 
 
@@ -174,18 +182,14 @@ Fs_SelectStub(numStreams, userTimeoutPtr, userReadMaskPtr, userWriteMaskPtr,
 	numStreams = 0;
     }
 
+#ifdef notdef
     /*
      * See if a timeout period was given. If so, set up a timer
      * queue element to call TimeoutProc to wakeup the process.
      * If the timeout is 0 or negative, just poll the streams to
      * see if any are ready.
      */
-
-    if (userTimeoutPtr == (Time *) USER_NIL) {
-	poll = FALSE;
-	doTimeout = FALSE;
-    } else {
-
+    if (userTimeoutPtr != (Time *) USER_NIL) {
 	if (Vm_CopyIn(sizeof(Time), (Address) userTimeoutPtr, 
 				(Address) &timeout) != SUCCESS) {
 	    return(SYS_ARG_NOACCESS);
@@ -233,15 +237,28 @@ Fs_SelectStub(numStreams, userTimeoutPtr, userReadMaskPtr, userWriteMaskPtr,
 	    doTimeout = TRUE;
 	}
     }
+#endif notdef
 
+#ifdef notdef
     /*
      * Nothing to select and no timeout specified so just return.
      */
     if (numStreams == 0) {
 	goto allDone;
     }
+#endif notdef
 
-
+    procPtr = Proc_GetCurrentProc();
+    streamList = procPtr->fsPtr->streamList;
+    if (numStreams > procPtr->fsPtr->numStreams) {
+	numStreams = procPtr->fsPtr->numStreams;
+    }
+    if (numStreams > MAX_NUM_ROWS * BITS_PER_ROW) {
+	printf("Fs_Select: Too many streams (%d > %d) pid %x\n",
+	    numStreams, MAX_NUM_ROWS * BITS_PER_ROW,
+	    procPtr->processID);
+	numStreams = MAX_NUM_ROWS * BITS_PER_ROW;
+    }
     intsInMask = (numStreams + (BITS_PER_ROW -1)) / BITS_PER_ROW;
     bytesInMask = intsInMask * sizeof(inReadMask);
 
@@ -278,8 +295,8 @@ Fs_SelectStub(numStreams, userTimeoutPtr, userReadMaskPtr, userWriteMaskPtr,
 	inExceptMask = 0;
     }
 
-    procPtr = Proc_GetCurrentProc();
 
+#ifdef notdef
     /*
      * If a timeout period was specified, set up a callback from the Timer 
      * queue.
@@ -290,10 +307,24 @@ Fs_SelectStub(numStreams, userTimeoutPtr, userReadMaskPtr, userWriteMaskPtr,
 	wakeupInfo.procPtr = procPtr;
 	Timer_ScheduleRoutine(&wakeupElement, FALSE);
     }
+#endif notdef
 
+    /*
+     * We'll poll all the streams the first time through to optimize
+     * for the case where something is ready.  If the polling fails
+     * we'll iterate again going through all the work associated with waiting.
+     */
+    poll = TRUE;
+    if (userTimeoutPtr == (Time *) USER_NIL) {
+	doTimeout = FALSE;
+    } else {
+	doTimeout = TRUE;
+    }
+    wakeupInfo.timeOut = FALSE;
     waiter.hostID = rpc_SpriteID;
+    waitPtr = (Sync_RemoteWaiter *)NIL;
 
-    while (TRUE) {
+    while (status == SUCCESS) {
 
 	/*
 	 * Get the token to use for select waiting.  We must get the token
@@ -303,11 +334,16 @@ Fs_SelectStub(numStreams, userTimeoutPtr, userReadMaskPtr, userWriteMaskPtr,
 	 * is possible that a time out could come between checking the 
 	 * flag and getting the wait token and we could miss the time out.
 	 */
-	Sync_GetWaitToken(&waiter.pid, &waiter.waitToken);
+	if (!poll) {
+	    waitPtr = &waiter;
+	    Sync_GetWaitToken(&waiter.pid, &waiter.waitToken);
+	}
+#ifdef notdef
 	if (wakeupInfo.timeOut) {
 	    status = FS_TIMEOUT;
 	    break;
 	}
+#endif notdef
 
 	/*
 	 * The read, write and except bit masks can be considered as
@@ -332,7 +368,7 @@ Fs_SelectStub(numStreams, userTimeoutPtr, userReadMaskPtr, userWriteMaskPtr,
 	    if (userExceptMaskPtr != (int *) USER_NIL) {
 		inExceptMask = inExceptMasks[row];
 	    }
-	    if (inReadMask != 0 || inWriteMask != 0 || inExceptMask != 0) {
+	    if ((inReadMask | inWriteMask | inExceptMask) != 0) {
 		/*
 		 * At least one stream in this row was selected. Go through
 		 * the masks to find the stream number and see if it's ready.
@@ -348,10 +384,10 @@ Fs_SelectStub(numStreams, userTimeoutPtr, userReadMaskPtr, userWriteMaskPtr,
 		    int exceptBit = inExceptMask & mask;
 
 		    if (readBit | writeBit | exceptBit) {
-			Fs_Stream	*streamPtr;
+			register Fs_Stream	*streamPtr;
 
-			if (FsGetStreamPtr(procPtr, row * BITS_PER_ROW + bit, 
-						    &streamPtr) != SUCCESS) {
+			streamPtr = streamList[row * BITS_PER_ROW + bit];
+			if (streamPtr == (Fs_Stream *)NIL) {
 			    /*
 			     *  A stream was selected that probably 
 			     *  wasn't opened.
@@ -372,7 +408,7 @@ Fs_SelectStub(numStreams, userTimeoutPtr, userReadMaskPtr, userWriteMaskPtr,
 			     */
 			    status = 
 		(*fsStreamOpTable[streamPtr->ioHandlePtr->fileID.type].select)
-				(streamPtr->ioHandlePtr, &waiter,
+				(streamPtr->ioHandlePtr, waitPtr,
 				 &readBit, &writeBit, &exceptBit);
 			    if (status != SUCCESS) {
 				goto deschedule;
@@ -400,13 +436,75 @@ Fs_SelectStub(numStreams, userTimeoutPtr, userReadMaskPtr, userWriteMaskPtr,
 	 * stream(s) became ready.
 	 */
 
-	if (numReady > 0 || poll) {
+	if (numReady > 0) {
 	    break;
+	} else if (poll) {
+	    /*
+	     * We missed on the fast polling iteration and have to
+	     * go through again with the full waiting setup.  Now
+	     * each individual select routine will put us into their
+	     * wait lists and we'll get a wait token.
+	     */
+	    poll = FALSE;
 	} else {
+	    Timer_Ticks ticks;
+	    Timer_Ticks currentTicks;
+	    /*
+	     * We have polled all the streams (again) and our processID
+	     * is on wait lists associated with each selected object.
+	     * Now we wait, setting up a timeout if the user wants it.
+	     */
+	    if (doTimeout) {
+		if (!copiedTimeout) {
+		    if (Vm_CopyIn(sizeof(Time), (Address) userTimeoutPtr, 
+					    (Address) &timeout) != SUCCESS) {
+			return(SYS_ARG_NOACCESS);
+		    }
+		    copiedTimeout = TRUE;
+		}
+		if ((timeout.seconds < 0) || 
+		    ((timeout.seconds == 0) && (timeout.microseconds == 0))) {
+		    /*
+		     * User is polling the streams.  Break from while loop.
+		     */
+		    doTimeout = FALSE;
+		    break;
+		}
+		/*
+		 * Convert the user's timeout value from a relative Time to a 
+		 * an absolute time in the internal Timer_Ticks units.
+		 *
+		 * The value wakeupElement.time is used later
+		 * to return the amount of time remaining in the timeout.
+		 */
+		Timer_TimeToTicks(timeout, &ticks);
+		Timer_GetCurrentTicks(&currentTicks);
+		Timer_AddTicks(currentTicks, ticks, &(wakeupElement.time));
+    
+		wakeupElement.routine = TimeoutProc;
+		wakeupElement.clientData = (ClientData) &wakeupInfo;
+		wakeupInfo.procPtr = procPtr;
+		Timer_ScheduleRoutine(&wakeupElement, FALSE);
+	    }
+
+	    /*
+	     * Wait for a stream.  Remember that Sync_ProcWait guards against
+	     * wakeups that have come in since the last call to
+	     * Sync_GetWaitToken.
+	     */
 	    if (Sync_ProcWait((Sync_Lock *) NIL, TRUE)) {
 		status = GEN_ABORTED_BY_SIGNAL;
-		break;
+	    } else if (wakeupInfo.timeOut) {
+		status = FS_TIMEOUT;
 	    }
+	    if (doTimeout && !wakeupInfo.timeOut) {
+		Timer_DescheduleRoutine(&wakeupElement);
+	    }
+	    /*
+	     * If we got kicked by a stream notification then go back to
+	     * fast polling mode to find out what's ready.
+	     */
+	    poll = TRUE;
 	}
     }
 
@@ -416,10 +514,11 @@ Fs_SelectStub(numStreams, userTimeoutPtr, userReadMaskPtr, userWriteMaskPtr,
      * from the queue.
      */
 deschedule:
+#ifdef notdef
     if (!wakeupInfo.timeOut && doTimeout) {
 	Timer_DescheduleRoutine(&wakeupElement);
     }
-    
+#endif notdef
     /*
      * Only copy out the masks if there aren't any errors.
      */
@@ -469,9 +568,9 @@ deschedule:
 	    }
 	}
     }
-
+#ifdef notdef
 allDone:
-
+#endif notdef
     /*
      * We arrive here if status is SUCCESS or FS_TIMEOUT. 
      * Attempt to get a good value of numReady out to the user process.
