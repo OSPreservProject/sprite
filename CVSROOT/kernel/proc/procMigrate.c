@@ -359,6 +359,15 @@ Proc_Migrate(pid, hostID)
 	return(GEN_NO_PERMISSION);
     }
     
+    if (procPtr->argString == (char *) NIL) {
+	if (proc_MigDebugLevel > 0) {
+	    printf("Proc_Migrate: process %x has no argument string: can't migrate.\n",
+		       pid);
+	}
+	Proc_Unlock(procPtr);
+	return(PROC_INVALID_PID);
+    }
+    
     if (procPtr->userID == PROC_SUPER_USER_ID) {
 	permMask = PROC_MIG_EXPORT_ROOT;
     } else {
