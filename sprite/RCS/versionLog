@@ -51,8 +51,5 @@ fix the problem with data not being written back to disk.
 1.051	Sat Jan  6 13:48:22 PST 1990
 Added some hooks for gathering further recovery information on the servers.
 
-OOPS - It turns out that the dev module was installed between my links of
-the new sun3 kernel and the other kernels...  So the sun3 kernel contains
-the old dev module and the other kernels include the new dev module which has
-ouster's fix for the /dev/null ioctl that was messing up stty's for tx.
+Dev module includes fix for /dev/null ioctl's that were messing up tx stty's.
     New files linked in from the net library.
