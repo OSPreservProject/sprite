@@ -568,9 +568,9 @@ rewind:		    /*
 		    break;
 		}
 		case IOC_TAPE_SKIP_BLOCKS: {
-		    count = 1;
 		    while (cmdPtr->count) {
 			cmdPtr->count--;
+			count = 1;
 			status = DevSCSITapeIO(SCSI_SPACE_BLOCKS, devPtr,
 					(char *)0, &count);
 			if (status == DEV_END_OF_TAPE) {
@@ -579,9 +579,9 @@ rewind:		    /*
 		    }
 		    break;
 		case IOC_TAPE_SKIP_FILES:
-		    count = 1;
 		    while (cmdPtr->count) {
 			cmdPtr->count--;
+			count = 1;
 			status = DevSCSITapeIO(SCSI_SPACE_FILES, devPtr,
 					(char *)0, &count);
 			if (status == DEV_END_OF_TAPE) {
