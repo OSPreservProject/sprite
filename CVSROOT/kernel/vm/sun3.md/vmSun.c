@@ -3800,3 +3800,36 @@ VmMach_SharedProcFinish(procPtr)
     procPtr->vmPtr->machPtr->sharedData.allocVector;
     procPtr->vmPtr->machPtr->sharedData.allocVector = (int *)NIL;
 }
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmMach_CopySharedMem --
+ *
+ *      Copies machine-dependent shared memory data structures to handle
+ *      a fork.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      The new process gets a copy of the shared memory structures.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+VmMach_CopySharedMem(parentProcPtr, childProcPtr)
+    Proc_ControlBlock   *parentProcPtr; /* Parent process. */
+    Proc_ControlBlock   *childProcPtr;  /* Child process. */
+{
+    VmMach_SharedData   *childSharedData =
+            &childProcPtr->vmPtr->machPtr->sharedData;
+    VmMach_SharedData   *parentSharedData =
+            &parentProcPtr->vmPtr->machPtr->sharedData;
+
+    VmMach_SharedProcStart(childProcPtr);
+
+    bcopy(parentSharedData->allocVector, childSharedData->allocVector,
+            VMMACH_SHARED_NUM_BLOCKS*sizeof(int));
+    childSharedData->allocFirstFree = parentSharedData->allocFirstFree;
+}
