@@ -1,5 +1,5 @@
 /* 
- * fsFile.c --
+ * fsioFile.c --
  *
  *	Routines for operations on files.  A file handle is identified
  *	by using the <major> field of the Fs_FileID for the domain index,
@@ -21,32 +21,26 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsutil.h"
-#include "fsio.h"
-#include "fsioFile.h"
-#include "fslcl.h"
-#include "fsNameOps.h"
-#include "fscache.h"
-#include "fsconsist.h"
-#include "fsprefix.h"
-#include "fsioLock.h"
-#include "fsdm.h"
-#include "fsStat.h"
-#include "vm.h"
-#include "rpc.h"
-#include "recov.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsconsist.h>
+#include <fsio.h>
+#include <fsioFile.h>
+#include <fslcl.h>
+#include <fsNameOps.h>
+#include <fscache.h>
+#include <fsprefix.h>
+#include <fsioLock.h>
+#include <fsdm.h>
+#include <fsrmt.h>
+#include <fsStat.h>
+#include <vm.h>
+#include <rpc.h>
+#include <recov.h>
 
-void IncVersionNumber();
-
-static Fscache_IOProcs  lclFileIOProcs = {
-    Fsdm_BlockAllocate, 
-    Fsio_FileBlockRead, 
-    Fsio_FileBlockWrite,
-    Fsio_FileBlockCopy
-};
-
+#include <stdio.h>
+void IncVersionNumber _ARGS_((Fsio_FileIOHandle	*handlePtr));
 
 /*
  *----------------------------------------------------------------------
@@ -65,20 +59,25 @@ static Fscache_IOProcs  lclFileIOProcs = {
  *----------------------------------------------------------------------
  */
 ReturnStatus
-Fsio_LocalFileHandleInit(fileIDPtr, name, newHandlePtrPtr)
+Fsio_LocalFileHandleInit(fileIDPtr, name, descPtr, cantBlock, newHandlePtrPtr)
     Fs_FileID	*fileIDPtr;
     char	*name;
+    Fsdm_FileDescriptor *descPtr;
+    Boolean	cantBlock;
     Fsio_FileIOHandle	**newHandlePtrPtr;
 {
     register ReturnStatus status;
     register Fsio_FileIOHandle *handlePtr;
-    register Fsdm_FileDescriptor *descPtr;
     register Fsdm_Domain *domainPtr;
     register Boolean found;
+    Boolean allocated = FALSE;
 
     found = Fsutil_HandleInstall(fileIDPtr, sizeof(Fsio_FileIOHandle), name,
-		    (Fs_HandleHeader **)newHandlePtrPtr);
+		    cantBlock, (Fs_HandleHeader **)newHandlePtrPtr);
     if (found) {
+	if ((*newHandlePtrPtr) == (Fsio_FileIOHandle *) NIL) {
+	    return FS_WOULD_BLOCK;
+	}
 	/*
 	 * All set.
 	 */
@@ -87,9 +86,7 @@ Fsio_LocalFileHandleInit(fileIDPtr, name, newHandlePtrPtr)
 	}
 	return(SUCCESS);
     }
-    /*
-     * Get a hold of the disk file descriptor.
-     */
+    status = SUCCESS;
     handlePtr = *newHandlePtrPtr;
     domainPtr = Fsdm_DomainFetch(fileIDPtr->major, FALSE);
     if (domainPtr == (Fsdm_Domain *)NIL) {
@@ -97,15 +94,26 @@ Fsio_LocalFileHandleInit(fileIDPtr, name, newHandlePtrPtr)
 	Fsutil_HandleRemove(handlePtr);
 	return(FS_DOMAIN_UNAVAILABLE);
     }
-    descPtr = (Fsdm_FileDescriptor *)malloc(sizeof(Fsdm_FileDescriptor));
-    status = Fsdm_FileDescFetch(domainPtr, fileIDPtr->minor, descPtr);
-    Fsdm_DomainRelease(fileIDPtr->major);
-
-    if (status != SUCCESS) {
-	printf( "Fsio_LocalFileHandleInit: Fsdm_FileDescFetch failed");
-    } else if (!(descPtr->flags & FSDM_FD_ALLOC)) {
+    if (descPtr == (Fsdm_FileDescriptor *) NIL) { 
+	/*
+	 * Get a hold of the disk file descriptor.
+	 */
+	allocated = TRUE;
+	descPtr = (Fsdm_FileDescriptor *)malloc(sizeof(Fsdm_FileDescriptor));
+	status = Fsdm_FileDescFetch(domainPtr, fileIDPtr->minor, descPtr);
+	if (status == FS_FILE_NOT_FOUND) {
+	    status = FS_FILE_REMOVED;
+	}
+	if ((status != SUCCESS) && (status != FS_FILE_REMOVED)) {
+	    printf( 
+	    "Fsio_LocalFileHandleInit: Fsdm_FileDescFetch of %d failed 0x%x\n",
+				fileIDPtr->minor, status);
+	}
+    } 
+    if ((status == SUCCESS) && !(descPtr->flags & FSDM_FD_ALLOC)) {
 	status = FS_FILE_REMOVED;
-    } else {
+    }
+    if (status == SUCCESS) { 
 	Fscache_Attributes attr;
 
 	handlePtr->descPtr = descPtr;
@@ -130,8 +138,9 @@ Fsio_LocalFileHandleInit(fileIDPtr, name, newHandlePtrPtr)
 	attr.uid = descPtr->uid;
 	attr.gid = descPtr->gid;
 
-	Fscache_InfoInit(&handlePtr->cacheInfo, (Fs_HandleHeader *)handlePtr,
-		descPtr->version, TRUE, &attr, &lclFileIOProcs);
+	Fscache_FileInfoInit(&handlePtr->cacheInfo, 
+		(Fs_HandleHeader *)handlePtr,
+		descPtr->version, TRUE, &attr, domainPtr->backendPtr);
 
 	Fsconsist_Init(&handlePtr->consist, (Fs_HandleHeader *)handlePtr);
 	Fsio_LockInit(&handlePtr->lock);
@@ -142,7 +151,9 @@ Fsio_LocalFileHandleInit(fileIDPtr, name, newHandlePtrPtr)
     if (status != SUCCESS) {
 	Fsutil_HandleRelease(handlePtr, FALSE);
 	Fsutil_HandleRemove(handlePtr);
-	free((Address)descPtr);
+	if (allocated) {
+	    free((Address)descPtr);
+	 }
 	*newHandlePtrPtr = (Fsio_FileIOHandle *)NIL;
     } else {
 	if (descPtr->fileType == FS_DIRECTORY) {
@@ -152,6 +163,7 @@ Fsio_LocalFileHandleInit(fileIDPtr, name, newHandlePtrPtr)
 	}
 	*newHandlePtrPtr = handlePtr;
     }
+    Fsdm_DomainRelease(fileIDPtr->major);
     return(status);
 }
 
@@ -388,7 +400,7 @@ Fsio_FileReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	return(FS_DOMAIN_UNAVAILABLE);
     }
     status = Fsio_LocalFileHandleInit(&reopenParamsPtr->fileID, (char *)NIL,
-	&handlePtr);
+	(Fsdm_FileDescriptor *) NIL, FALSE, &handlePtr);
     if (status != SUCCESS) {
 	goto reopenReturn;
     }
@@ -490,7 +502,8 @@ Fsio_FileIoOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtrPt
 {
     register ReturnStatus	status;
 
-    status = Fsio_LocalFileHandleInit(ioFileIDPtr, name,
+    status = Fsio_LocalFileHandleInit(ioFileIDPtr, name, 
+		(Fsdm_FileDescriptor *) NIL, FALSE, 
 		(Fsio_FileIOHandle **)ioHandlePtrPtr);
     if (status == SUCCESS) {
 	/*
@@ -559,6 +572,7 @@ Fsio_FileClose(streamPtr, clientID, procID, flags, dataSize, closeData)
 	 */
 	Fscache_UpdateAttrFromClient(clientID, &handlePtr->cacheInfo,
 				(Fscache_Attributes *)closeData);
+	(void)Fsdm_UpdateDescAttr(handlePtr, &handlePtr->cacheInfo.attr, -1);
     }
 
     Fsio_LockClose(&handlePtr->lock, &streamPtr->hdr.fileID);
@@ -588,12 +602,17 @@ Fsio_FileClose(streamPtr, clientID, procID, flags, dataSize, closeData)
 		    handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
 		    Fsutil_HandleName(handlePtr), status);
 	    }
+#ifdef notdef
+    /*
+     * Fscache_FileWriteBack now write back the descriptor.
+     */
 	    status = Fsdm_FileDescWriteBack(handlePtr, TRUE);
 	    if (status != SUCCESS) {
 		printf("Fsio_FileClose: desc write <%d,%d> \"%s\" err <%x>\n",
 		    handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
 		    Fsutil_HandleName(handlePtr), status);
 	    }
+#endif
 	} else {
 	    status = SUCCESS;
 	}
@@ -751,31 +770,11 @@ Fsio_FileScavenge(hdrPtr)
     Fs_HandleHeader	*hdrPtr;	/* File to clean up */
 {
     register Fsio_FileIOHandle *handlePtr = (Fsio_FileIOHandle *)hdrPtr;
-    register Fsdm_FileDescriptor *descPtr = handlePtr->descPtr;
     register Boolean noUsers;
-    Fsdm_Domain *domainPtr;
-    ReturnStatus status;
 
     /*
-     * Write back the descriptor in case we decide below to remove the handle.
-     */
-    if (descPtr->flags & FSDM_FD_DIRTY) {
-	descPtr->flags &= ~FSDM_FD_DIRTY;
-	domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, FALSE);
-	if (domainPtr == (Fsdm_Domain *)NIL ){
-	    panic("Fsio_FileScavenge: Dirty descriptor in detached domain.\n");
-	} else {
-	    status = Fsdm_FileDescStore(domainPtr, handlePtr->hdr.fileID.minor, 
-				      descPtr);
-	    Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
-	    if (status != SUCCESS) {
-		printf("Fsio_FileScavenge: Could not store file desc <%x>\n",
-			status);
-	    }
-	}
-    }
-    /*
      * We can reclaim the handle if the following holds.
+     *  0. The descriptor is not dirty.
      *	1. There are no active users of the file.
      *  2. The file is not undergoing deletion
      *		(The deletion will remove the handle soon)
@@ -783,23 +782,11 @@ Fsio_FileScavenge(hdrPtr)
      *		the last writer might not be active, but we can't
      *		nuke the handle until after it writes back.
      */
-    noUsers = (handlePtr->use.ref == 0) &&
+    noUsers = ((handlePtr->descPtr->flags & FSDM_FD_DIRTY) == 0) &&
+               (handlePtr->use.ref == 0) &&
 	     ((handlePtr->flags & (FSIO_FILE_DESC_DELETED|
 				   FSIO_FILE_NAME_DELETED)) == 0) &&
 	      (Fsconsist_NumClients(&handlePtr->consist) == 0);
-    if (noUsers && handlePtr->descPtr->fileType == FS_DIRECTORY) {
-	/*
-	 * Flush unused directories, otherwise they linger for a long
-	 * time.  They may still be in the name cache, in which case
-	 * HandleAttemptRemove won't delete them.
-	 */
-	int blocksSkipped;
-	status = Fscache_FileWriteBack(&handlePtr->cacheInfo,
-		0, FSCACHE_LAST_BLOCK,
-		FSCACHE_FILE_WB_WAIT | FSCACHE_WRITE_BACK_INDIRECT |
-		FSCACHE_WRITE_BACK_AND_INVALIDATE, &blocksSkipped);
-	noUsers = (status == SUCCESS) && (blocksSkipped == 0);
-    }
     if (noUsers && Fscache_OkToScavenge(&handlePtr->cacheInfo)) {
 	register Boolean isDir;
 #ifdef CONSIST_DEBUG
@@ -819,7 +806,7 @@ Fsio_FileScavenge(hdrPtr)
 	 */
 	Vm_FileChanged(&handlePtr->segPtr);
 	isDir = (handlePtr->descPtr->fileType == FS_DIRECTORY);
-	if (Fsutil_HandleAttemptRemove(handlePtr)) {
+	if (Fsutil_HandleAttemptRemove(hdrPtr)) {
 	    if (isDir) {
 		fs_Stats.object.directory--;
 		fs_Stats.object.dirFlushed++;
@@ -893,7 +880,7 @@ Fsio_FileMigClose(hdrPtr, flags)
 /*ARGSUSED*/
 ReturnStatus
 Fsio_FileMigOpen(migInfoPtr, size, data, hdrPtrPtr)
-    FsMigInfo	*migInfoPtr;	/* Migration state */
+    Fsio_MigInfo	*migInfoPtr;	/* Migration state */
     int		size;		/* sizeof(Fsio_FileState), IGNORED */
     ClientData	data;		/* referenced to Fsio_FileState */
     Fs_HandleHeader **hdrPtrPtr;	/* Return - I/O handle for the file */
@@ -948,7 +935,7 @@ Fsio_FileMigOpen(migInfoPtr, size, data, hdrPtrPtr)
 /*ARGSUSED*/
 ReturnStatus
 Fsio_FileMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
-    FsMigInfo	*migInfoPtr;	/* Migration state */
+    Fsio_MigInfo	*migInfoPtr;	/* Migration state */
     int		dstClientID;	/* ID of target client */
     int		*flagsPtr;	/* In/Out Stream usage flags */
     int		*offsetPtr;	/* Return - correct stream offset */
@@ -1050,6 +1037,23 @@ Fsio_FileRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
 
     status = Fscache_Read(&handlePtr->cacheInfo, readPtr->flags,
 	    readPtr->buffer, readPtr->offset, &readPtr->length, remoteWaitPtr);
+    if ((status == SUCCESS) || (readPtr->length > 0)) { 
+	(void)Fsdm_UpdateDescAttr(handlePtr, &handlePtr->cacheInfo.attr,
+				FSDM_FD_ACCESSTIME_DIRTY);
+	if (readPtr->flags & FS_SWAP) {
+	    int hostID = Proc_GetHostID(readPtr->procID);
+	    if (hostID == rpc_SpriteID)  {
+		/*
+		 * While page-ins on the file server come from its cache, we
+		 * inform the cache that these pages are good canidicates
+		 * for replacement.
+		 */
+		Fscache_BlocksUnneeded(streamPtr, savedOffset, savedLength, 
+				FALSE);
+	    }
+	}
+
+    }
     replyPtr->length = readPtr->length;
     return(status);
 }
@@ -1097,310 +1101,34 @@ Fsio_FileWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
 			  writePtr->buffer, writePtr->offset,
 			  &writePtr->length, remoteWaitPtr);
     replyPtr->length = writePtr->length;
-#ifdef WANT_CLIENT_SWAPPING_TO_KILL_ALLSPICE
-    /*
-     * Note that client swap files come over with the FS_SWAP flag set and
-     * these files should not be ejected from the cache.  
-     */
     if (status == SUCCESS) {
+	if (replyPtr->length > 0) {
+	    (void)Fsdm_UpdateDescAttr(handlePtr, &handlePtr->cacheInfo.attr, 
+			FSDM_FD_MODTIME_DIRTY);
+	}
 	if (writePtr->flags & FS_SWAP) {
-	    /*
-	     * While page-outs on the file server go to its cache, we
-	     * inform the cache that these pages are good canidicates
-	     * for replacement.
-	     */
-	    Fscache_BlocksUnneeded(streamPtr, savedOffset, savedLength, FALSE);
+	    int hostID = Proc_GetHostID(writePtr->procID);
+	    if (hostID == rpc_SpriteID)  {
+		/*
+		 * While page-outs on the file server go to its cache, we
+		 * inform the cache that these pages are good canidicates
+		 * for replacement.
+		 */
+		 Fscache_BlocksUnneeded(streamPtr, savedOffset, savedLength, 
+				FALSE);
+	    }
 	} else if (fsutil_WriteThrough || fsutil_WriteBackASAP) {
 	    /*
 	     * When in write-through or asap mode we have to force the
 	     * descriptor to disk on every write.
 	     */
-	    status = Fsdm_FileDescWriteBack(handlePtr, FALSE);
+	    status = Fsdm_FileDescStore(handlePtr, FALSE);
+
 	}
     }
-#endif
+
     Fscache_AllowReadAhead(&handlePtr->readAhead);
     Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
-    return(status);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Fsio_FileBlockRead --
- *
- *	Read in a cache block.  This does a direct disk read if the
- *	file is the 'physical file' used for file descriptors and
- *	indirect blocks.  If it is a regular file data block, then
- *	the indexing structure is used to locate the file on disk.
- *	This always attempts to read in a full block, but will read
- *	less if at the last block and it isn't full.  In this case,
- *	the remainder of the cache block is zero-filled.
- *
- * Results:
- *	The results of the disk read.
- *
- * Side effects:
- *	The buffer is filled with the number of bytes indicated by
- *	the bufSize parameter.  The blockPtr->blockSize is modified to
- *	reflect how much data was actually read in.  The unused part
- *	of the block is filled with zeroes so that higher levels can
- *	always assume the block has good stuff in all parts of it.
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-ReturnStatus
-Fsio_FileBlockRead(hdrPtr, blockPtr, remoteWaitPtr)
-    Fs_HandleHeader	*hdrPtr;	/* Handle on a local file. */
-    Fscache_Block	*blockPtr;	/* Cache block to read in.  This assumes
-					 * the blockNum, blockAddr (buffer area)
-					 * and blockSize are set.  This modifies
-					 * blockSize if less bytes were read
-					 * because of EOF. */
-    Sync_RemoteWaiter *remoteWaitPtr;	/* NOTUSED */
-{
-    register Fsio_FileIOHandle *handlePtr =
-	    (Fsio_FileIOHandle *)hdrPtr;
-    register	Fsdm_Domain	 *domainPtr;
-    register	Fsdm_FileDescriptor *descPtr;
-    register			 offset;
-    register int		 numBytes;
-    ReturnStatus		 status;
-    Fsdm_BlockIndexInfo		 indexInfo;
-
-    status = SUCCESS;
-    blockPtr->blockSize = 0;
-    numBytes = FS_BLOCK_SIZE;
-    offset = blockPtr->blockNum * FS_BLOCK_SIZE;
-
-    domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, FALSE);
-    if (domainPtr == (Fsdm_Domain *) NIL) {
-	return(FS_DOMAIN_UNAVAILABLE);
-    }
-
-    if (handlePtr->hdr.fileID.minor == 0) {
-	/*
-	 * If is a physical block address then read it in directly.
-	 */
-	status = Fsio_DeviceBlockIO(FS_READ, &domainPtr->headerPtr->device,
-			   offset / FS_FRAGMENT_SIZE, FS_FRAGMENTS_PER_BLOCK, 
-			   blockPtr->blockAddr);
-	fs_Stats.gen.physBytesRead += FS_BLOCK_SIZE;
-    } else {
-	/*
-	 * Is a logical file read. Round the size down to the actual
-	 * last byte in the file.
-	 */
-
-	descPtr = handlePtr->descPtr;
-	if (offset > descPtr->lastByte) {
-	    goto exit;
-	} else if (offset + numBytes - 1 > descPtr->lastByte) {
-	    numBytes = descPtr->lastByte - offset + 1;
-	}
-
-	status = Fsdm_GetFirstIndex(handlePtr, offset / FS_BLOCK_SIZE, 
-				 &indexInfo, 0);
-	if (status != SUCCESS) {
-	    printf("Fsio_FileRead: Could not setup indexing\n");
-	    goto exit;
-	}
-
-	if (indexInfo.blockAddrPtr != (int *) NIL &&
-	    *indexInfo.blockAddrPtr != FSDM_NIL_INDEX) {
-	    /*
-	     * Read in the block.  Specify the device, the fragment index,
-	     * the number of fragments, and the memory buffer.
-	     */
-	    status = Fsio_DeviceBlockIO(FS_READ, &domainPtr->headerPtr->device,
-		      *indexInfo.blockAddrPtr +
-		      domainPtr->headerPtr->dataOffset * FS_FRAGMENTS_PER_BLOCK,
-		      (numBytes - 1) / FS_FRAGMENT_SIZE + 1,
-		      blockPtr->blockAddr);
-	} else {
-	    /*
-	     * Zero fill the block.  We're in a 'hole' in the file.
-	     */
-	    fs_Stats.blockCache.readZeroFills++;
-	    bzero(blockPtr->blockAddr, numBytes);
-	}
-	Fsdm_EndIndex(handlePtr, &indexInfo, FALSE);
-	Fs_StatAdd(numBytes, fs_Stats.gen.fileBytesRead,
-		   fs_Stats.gen.fileReadOverflow);
-#ifndef CLEAN
-	if (fsdmKeepTypeInfo) {
-	    int fileType;
-	
-	    fileType = Fsdm_FindFileType(&handlePtr->cacheInfo);
-	    fs_TypeStats.diskBytes[FS_STAT_READ][fileType] += numBytes;
-	}
-#endif CLEAN
-    }
-exit:
-    /*
-     * Define the block size and error fill leftover space.
-     */
-    if (status == SUCCESS) {
-	blockPtr->blockSize = numBytes;
-    }
-    if (blockPtr->blockSize < FS_BLOCK_SIZE) {
-	fs_Stats.blockCache.readZeroFills++;
-	bzero(blockPtr->blockAddr + blockPtr->blockSize,
-		FS_BLOCK_SIZE - blockPtr->blockSize);
-    }
-    Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
-    return(status);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Fsio_FileBlockWrite --
- *
- *	Write out a cache block.  This understands about physical
- *	block writes as opposed to file block writes, and it understands
- *	that negative block numbers are used for indirect blocks (gag).
- *	Physical blocks are numbered from the beginning of the disk,
- *	and they are used for file descriptors and indirect blocks.
- *	File blocks are numbered from the beginning of the data block
- *	area, so an offset must be used to calculate their true address.
- *
- * Results:
- *	The return code from the driver, or FS_DOMAIN_UNAVAILABLE if
- *	the domain has been un-attached.
- *
- * Side effects:
- *	The device write.
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-ReturnStatus
-Fsio_FileBlockWrite(hdrPtr, blockPtr, flags)
-    Fs_HandleHeader *hdrPtr;	/* I/O handle for the file. */
-    Fscache_Block *blockPtr;	/* Cache block to write out. */
-    int		flags;		/* IGNORED */
-{
-    register Fsio_FileIOHandle *handlePtr =
-	    (Fsio_FileIOHandle *)hdrPtr;
-    register	Fsdm_Domain	 *domainPtr;
-    ReturnStatus		status;
-    int				diskBlock;
-
-    domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, TRUE);
-    if (domainPtr == (Fsdm_Domain *)NIL) {
-	return(FS_DOMAIN_UNAVAILABLE);
-    }
-
-    if (handlePtr->hdr.fileID.minor == 0 || blockPtr->diskBlock < 0) {
-	/*
-	 * The block number is a raw block number counting from the
-	 * beginning of the domain.
-	 * Descriptor blocks are indicated by a handle with a 0 file number 
-	 * and indirect a negative block number (indirect blocks).
-	 */
-	if (blockPtr->diskBlock < 0) {
-	    diskBlock = -blockPtr->diskBlock;
-	} else {
-	    diskBlock = blockPtr->diskBlock;
-	}
-	fs_Stats.gen.physBytesWritten += blockPtr->blockSize;
-	status = Fsio_DeviceBlockIO(FS_WRITE, &domainPtr->headerPtr->device,
-		     diskBlock, FS_FRAGMENTS_PER_BLOCK, blockPtr->blockAddr);
-    } else {
-	/*
-	 * The block number is relative to the start of the data blocks.
-	 */
-	status = FsioVerifyBlockWrite(blockPtr);
-	if (status == SUCCESS) {
-	    status = Fsio_DeviceBlockIO(FS_WRITE, &domainPtr->headerPtr->device,
-		   blockPtr->diskBlock + 
-		   domainPtr->headerPtr->dataOffset * FS_FRAGMENTS_PER_BLOCK,
-		   (blockPtr->blockSize - 1) / FS_FRAGMENT_SIZE + 1,
-		   blockPtr->blockAddr);
-        }
-	if (status == SUCCESS) {
-	    Fs_StatAdd(blockPtr->blockSize, fs_Stats.gen.fileBytesWritten,
-		       fs_Stats.gen.fileWriteOverflow);
-#ifndef CLEAN
-	    if (fsdmKeepTypeInfo) {
-		int fileType;
-	    
-		fileType = Fsdm_FindFileType(&handlePtr->cacheInfo);
-		fs_TypeStats.diskBytes[FS_STAT_WRITE][fileType] +=
-			    blockPtr->blockSize;
-	    }
-#endif CLEAN
-	}
-    }
-    Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
-    return(status);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * FsioVerifyBlockWrite --
- *
- *	Double check this block to make sure it seems like were writing
- *	it to the right place.
- *
- * Results:
- *	Error code if an inconsistency was detected.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-ReturnStatus
-FsioVerifyBlockWrite(blockPtr)
-    Fscache_Block *blockPtr;		/* Block about to be written out */
-{
-    ReturnStatus status = SUCCESS;
-    Fs_HandleHeader *hdrPtr = blockPtr->cacheInfoPtr->hdrPtr;
-    Fsdm_BlockIndexInfo		 indexInfo;
-
-    if (blockPtr->fileNum != hdrPtr->fileID.minor) {
-	printf("FsioVerifyBlockWrite: block being written to wrong file\n");
-	printf("	Logical block %d block's file %d owning file %d \"%s\"\n",
-	    blockPtr->blockNum, blockPtr->fileNum,
-	    hdrPtr->fileID.minor, Fsutil_HandleName(hdrPtr));
-	return(FS_INVALID_ARG);
-    }
-    status = Fsdm_GetFirstIndex(hdrPtr, blockPtr->blockNum, 
-			     &indexInfo, FSCACHE_DONT_BLOCK);
-    if (status == FS_WOULD_BLOCK) {
-	/*
-	 * No room in the cache for the index blocks needed to check.
-	 * assume the write is ok.
-	 */
-	return(SUCCESS);
-    } else if (status != SUCCESS) {
-	return(status);
-    }
-    if (indexInfo.blockAddrPtr == (int *)NIL ||
-	*indexInfo.blockAddrPtr == FSDM_NIL_INDEX) {
-	printf("FsioVerifyBlockWrite: no block index\n");
-	printf("	Logical block %d owning file %d \"%s\"\n",
-	    blockPtr->blockNum, hdrPtr->fileID.minor, Fsutil_HandleName(hdrPtr));
-	status = FS_INVALID_ARG;
-	goto exit;
-    }
-    if (*indexInfo.blockAddrPtr != blockPtr->diskBlock) {
-	printf("FsioVerifyBlockWrite: disk block mismatch\n");
-	printf("	Logical block %d old disk block %d new %d owning file %d \"%s\"\n",
-	    blockPtr->blockNum, *indexInfo.blockAddrPtr,
-	    blockPtr->diskBlock,
-	    hdrPtr->fileID.minor, Fsutil_HandleName(hdrPtr));
-	status = FS_INVALID_ARG;
-	goto exit;
-    }
-
-exit:
-    Fsdm_EndIndex(hdrPtr, &indexInfo, FALSE);
     return(status);
 }
 
@@ -1474,8 +1202,12 @@ Fsio_FileBlockCopy(srcHdrPtr, dstHdrPtr, blockNum)
 
     Fscache_UnlockBlock(cacheBlockPtr, 0, -1, 0, FSCACHE_CLEAR_READ_AHEAD);
 
-    srcHandlePtr->cacheInfo.attr.accessTime = fsutil_TimeInSeconds;
-    dstHandlePtr->cacheInfo.attr.modifyTime = fsutil_TimeInSeconds;
+    srcHandlePtr->cacheInfo.attr.accessTime = Fsutil_TimeInSeconds();
+    dstHandlePtr->cacheInfo.attr.modifyTime = Fsutil_TimeInSeconds();
+    (void)Fsdm_UpdateDescAttr(srcHandlePtr, &srcHandlePtr->cacheInfo.attr, 
+			FSDM_FD_ACCESSTIME_DIRTY);
+    (void)Fsdm_UpdateDescAttr(dstHandlePtr, &dstHandlePtr->cacheInfo.attr, 
+			FSDM_FD_MODTIME_DIRTY);
 
     return(status);
 }
@@ -1508,8 +1240,10 @@ Fsio_FileIOControl(streamPtr, ioctlPtr, replyPtr)
     register Fsio_FileIOHandle *handlePtr =
 	    (Fsio_FileIOHandle *)streamPtr->ioHandlePtr;
     register ReturnStatus status = SUCCESS;
+    Boolean	unLock;
 
     Fsutil_HandleLock(handlePtr);
+    unLock = TRUE;
     switch(ioctlPtr->command) {
 	case IOC_REPOSITION:
 	    break;
@@ -1558,9 +1292,9 @@ Fsio_FileIOControl(streamPtr, ioctlPtr, replyPtr)
 		    }
 		} else {
 		    Fsutil_HandleUnlock(handlePtr);
+		    unLock = FALSE;
 		    status = Fsconsist_MappedConsistency(handlePtr,
 			    ioctlPtr->uid, arg);
-		    Fsutil_HandleLock(handlePtr);
 		}
 	    }
 	    break;
@@ -1677,6 +1411,13 @@ Fsio_FileIOControl(streamPtr, ioctlPtr, replyPtr)
 		    lastBlock = FSCACHE_LAST_BLOCK;
 		}
 		cacheInfoPtr->flags |= FSCACHE_WB_ON_LDB;
+		/*
+		 * Release the handle lock during the FileWriteBack to 
+		 * avoid hanging up everyone who stumbles over the handle
+		 * during the writeback.
+		 */
+		Fsutil_HandleUnlock(handlePtr);
+		unLock = FALSE;
 		status = Fscache_FileWriteBack(cacheInfoPtr, firstBlock,
 			lastBlock, flags, &blocksSkipped);
 	    }
@@ -1686,7 +1427,9 @@ Fsio_FileIOControl(streamPtr, ioctlPtr, replyPtr)
 	    status = GEN_INVALID_ARG;
 	    break;
     }
-    Fsutil_HandleUnlock(handlePtr);
+    if (unLock) { 
+	Fsutil_HandleUnlock(handlePtr);
+    }
     return(status);
 }
 
@@ -1699,7 +1442,7 @@ Fsio_FileIOControl(streamPtr, ioctlPtr, replyPtr)
  *	the cacheInfo and the fileDescriptor.
  *
  * Results:
- *	Error status from Fsdm_FileDescTrunc.
+ *	Error status from Fsdm_FileTrunc.
  *
  * Side effects:
  *	None.
@@ -1714,10 +1457,10 @@ Fsio_FileTrunc(handlePtr, size, flags)
     int			flags;		/* FSCACHE_TRUNC_DELETE */
 {
     ReturnStatus status;
-    Fscache_Trunc(&handlePtr->cacheInfo, size, flags);
-    status = Fsdm_FileDescTrunc(handlePtr, size);
-    if (flags & FSCACHE_TRUNC_DELETE) {
-	Fscache_DeleteFile(&handlePtr->cacheInfo);
+    status = Fscache_Trunc(&handlePtr->cacheInfo, size, flags);
+    if ((flags & FSCACHE_TRUNC_DELETE) == 0) {
+	(void)Fsdm_UpdateDescAttr(handlePtr, &handlePtr->cacheInfo.attr, 
+			FSDM_FD_MODTIME_DIRTY);
     }
     return(status);
 }
@@ -1773,19 +1516,12 @@ IncVersionNumber(handlePtr)
     Fsio_FileIOHandle	*handlePtr;
 {
     Fsdm_FileDescriptor	*descPtr;
-    Fsdm_Domain		*domainPtr;
 
     descPtr = handlePtr->descPtr;
     descPtr->version++;
     handlePtr->cacheInfo.version = descPtr->version;
-    domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, FALSE);
-    if (domainPtr == (Fsdm_Domain *)NIL) {
-	printf( "FsIncVersionNumber: Domain gone.\n");
-    } else {
-	(void)Fsdm_FileDescStore(domainPtr, handlePtr->hdr.fileID.minor,
-			descPtr);
-	Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
-    }
+    descPtr->flags |= FSDM_FD_VERSION_DIRTY;
+    (void)Fsdm_FileDescStore(handlePtr, FALSE);
     Vm_FileChanged(&handlePtr->segPtr);
 }
 
