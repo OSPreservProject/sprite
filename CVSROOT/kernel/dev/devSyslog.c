@@ -12,21 +12,22 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "dev.h"
-#include "fs.h"
-#include "fsio.h"
-#include "sys.h"
-#include "machMon.h"
-#include "sig.h"
-#include "stdlib.h"
-#include "sync.h"
-#include "sched.h"
-#include "proc.h"
-#include "timer.h"
-#include "dbg.h"
-#include "list.h"
-#include "bstring.h"
+#include <sprite.h>
+#include <dev.h>
+#include <fs.h>
+#include <fsio.h>
+#include <fsioDevice.h>
+#include <sys.h>
+#include <machMon.h>
+#include <sig.h>
+#include <stdlib.h>
+#include <sync.h>
+#include <sched.h>
+#include <proc.h>
+#include <timer.h>
+#include <dbg.h>
+#include <list.h>
+#include <bstring.h>
 
 /*
  * Definition of mutual exclusion variable.
