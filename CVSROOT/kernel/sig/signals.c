@@ -1121,7 +1121,7 @@ Sig_Handle(procPtr, sigStackPtr, pcPtr)
 	    if (procPtr->genFlags & PROC_DONT_MIGRATE) {
 		if (proc_MigDebugLevel > 0) {
 		    printf("Proc_Migrate: process %x is not allowed to migrate.\n",
-			       pid);
+			       procPtr->processID);
 		}
 		return(FALSE);
 	    }
