@@ -887,7 +887,7 @@ FsPfsMakeDir(prefixHandle, relativeName, argsPtr, resultsPtr,
     resultSize = 0;
 
     status = FsPseudoStreamLookup(pdevHandlePtr, &request,
-		String_Length(relativeName), (Address)relativeName,
+		String_Length(relativeName) + 1, (Address)relativeName,
 		&resultSize, resultsPtr, newNameInfoPtrPtr);
     return(status);
 }
@@ -938,7 +938,7 @@ FsPfsMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
     resultSize = 0;
 
     status = FsPseudoStreamLookup(pdevHandlePtr, &request,
-		String_Length(relativeName), (Address)relativeName,
+		String_Length(relativeName) + 1, (Address)relativeName,
 		&resultSize, resultsPtr, newNameInfoPtrPtr);
     return(status);
 }
@@ -989,7 +989,7 @@ FsPfsRemove(prefixHandle, relativeName, argsPtr, resultsPtr,
     resultSize = 0;
 
     status = FsPseudoStreamLookup(pdevHandlePtr, &request,
-		String_Length(relativeName), (Address)relativeName,
+		String_Length(relativeName) + 1, (Address)relativeName,
 		&resultSize, resultsPtr, newNameInfoPtrPtr);
     return(status);
 }
@@ -1040,7 +1040,7 @@ FsPfsRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr,
     resultSize = 0;
 
     status = FsPseudoStreamLookup(pdevHandlePtr, &request,
-		String_Length(relativeName), (Address)relativeName,
+		String_Length(relativeName) + 1, (Address)relativeName,
 		&resultSize, resultsPtr, newNameInfoPtrPtr);
     return(status);
 }
