@@ -130,9 +130,10 @@ typedef struct RpcServerState {
  * no server available, this stuff isn't part of the server state.
  */
 typedef struct  NackData {
-    RpcHdr              rpcHdr;
-    RpcBufferSet        bufferSet;
-    Sync_Semaphore      mutex;
+    RpcHdr              rpcHdr;			/* header to transmit */
+    RpcBufferSet        bufferSet;		/* buffers for transmission */
+    Sync_Semaphore      mutex;			/* protect nack data */
+    Boolean		busy;			/* check if free */
 } NackData;
 extern	NackData	rpcNack;
 

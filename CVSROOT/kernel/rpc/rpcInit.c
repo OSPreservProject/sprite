@@ -179,8 +179,11 @@ Rpc_Init()
 
     }
     /*
-     * Initiallize server nack buffers.
+     * Initialize server nack buffers.
      */
+    Sync_SemInitDynamic(&rpcNack.mutex,"Rpc:RpcNackData.mutex");
+    Sync_SemRegister(&rpcNack.mutex);
+    rpcNack.busy = FALSE;
     RpcBufferInit(&(rpcNack.rpcHdr), &(rpcNack.bufferSet), -1, -1);
 
     /*

@@ -203,9 +203,14 @@ Rpc_Dispatch(headerType, headerPtr, rpcHdrAddr, packetLength)
 	 */
 	srvPtr = RpcServerAlloc(rpcHdrPtr);
 	if (srvPtr == (RpcServerState *)NIL) {
-	    rpcSrvStat.noAlloc++;
-	    if (rpcSendNegAcks) {
-		RpcServerDispatch(srvPtr, rpcHdrPtr);
+	    /*
+	     * Is it okay to check this here?
+	     */
+	    if (rpcServiceEnabled) {
+		rpcSrvStat.noAlloc++;
+		if (rpcSendNegAcks) {
+		    RpcServerDispatch(srvPtr, rpcHdrPtr);
+		}
 	    }
 	} else {
 	    RpcServerDispatch(srvPtr, rpcHdrPtr);

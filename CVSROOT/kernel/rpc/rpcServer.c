@@ -412,7 +412,19 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
      */
     if (srvPtr == (RpcServerState *) NIL) {
 	MASTER_LOCK(&(rpcNack.mutex));
-	rpcNack.rpcHdr.flags = RPC_NACK;
+	if (rpcNack.busy) {
+	    /*
+	     * Just drop the nack for now.  We can't sleep at interrupt
+	     * level for it to be free, and this is no worse than our
+	     * dropping the request entirely if there were no servers
+	     * available which is what we did before...
+	     */
+	    MASTER_UNLOCK(&(rpcNack.mutex));
+	    return;
+	}
+
+	rpcNack.busy = TRUE;
+	rpcNack.rpcHdr.flags = RPC_NACK | RPC_ACK;
 	/* RpcSrvInitHdr takes srvrPtr as first arg and ignores it. */
 	RpcSrvInitHdr(NIL, &(rpcNack.rpcHdr), rpcHdrPtr);
 	/*
@@ -425,6 +437,7 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 	(void) RpcOutput(rpcHdrPtr->clientID, &(rpcNack.rpcHdr),
 		&(rpcNack.bufferSet),
 		(RpcBufferSet *) NIL, 0, (Sync_Semaphore *) NIL);
+	rpcNack.busy = FALSE;
 	MASTER_UNLOCK(&(rpcNack.mutex));
 	return;
     }
@@ -816,6 +829,15 @@ RpcSrvInitHdr(srvPtr, rpcHdrPtr, requestHdrPtr)
     rpcHdrPtr->command = requestHdrPtr->command;
     rpcHdrPtr->paramSize = 0;
     rpcHdrPtr->dataSize = 0;
+
+    if (srvPtr == (RpcServerState *) NIL) {
+	/*
+	 * If this is a negative ack due to no server proc being available,
+	 * make sure the serverHint value is reasonable so we don't mess up
+	 * the client.
+	 */
+	rpcHdrPtr->serverHint = 0;
+    }
 }
 
 /*

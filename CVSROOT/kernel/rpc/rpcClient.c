@@ -221,6 +221,14 @@ RpcDoCall(serverID, chanPtr, storagePtr, command, srvBootIDPtr, notActivePtr)
 		rpcCltStat.oldInputs++;
 
 	    } else if (rpcHdrPtr->flags & RPC_NACK) {
+		/*
+		 * NOTE: for now we must handle a NACK before an ACK because
+		 * I'm OR'ing in an ACK with the NACK so that old kernels on
+		 * clients won't freak if they receive a NACK.  This backwards
+		 * compatibility should be removed later.  The changes that go
+		 * with it are setting the serverHint in RpcSrvInitHdr() and
+		 * the OR'ing itself of the ACK with the NACK in rpcServer.c.
+		 */
 		rpcCltStat.nacks++;
 		/*
 		 * Try out different nack-handling policies.  
