@@ -22,6 +22,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <stdlib.h>
 #include <sync.h>
 #include <fsStat.h>
+#include <fsrecov.h>
 
 #define	LOCKPTR	&lfsPtr->lock
 
@@ -1263,6 +1264,9 @@ DoOutCallBacks(type, segPtr, flags, checkPointPtr, sizePtr, clientDataPtr)
 					sizeof(LfsCheckPointRegion));
     }
 
+    if (recov_Transparent) {
+	Fsrecov_UpdateLog((int) NIL);
+    }
     return full;
 }
 
