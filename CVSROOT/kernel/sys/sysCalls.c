@@ -825,7 +825,11 @@ Sys_StatsStub(command, option, argPtr)
 		status = GEN_INVALID_ARG;
 		break;
 	    }
-	    resultPtr = (Address) malloc(length);
+	    if (length > 0) {
+		resultPtr = (Address) malloc(length);
+	    } else {
+		resultPtr = (Address) NIL;
+	    }
 	    status = Fsutil_FsRecovInfo(length, resultPtr, &lengthNeeded);
 	    if (status != SUCCESS) {
 		break;
