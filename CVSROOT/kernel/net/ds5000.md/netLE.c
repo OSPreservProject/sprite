@@ -208,7 +208,6 @@ NetLEReset()
 	MACH_DELAY(200);
 	*dmaReg = 0x10;
 	MACH_DELAY(200);
-	printf("DMA reg = 0x%x\n", *dmaReg);
     }
 #endif
 
@@ -421,7 +420,8 @@ NetLEIntr(polling)
 	 * (sending oversize ethernet packets). 
 	 */
 	if (csr0 & NET_LE_CSR0_BABBLE) {
-	    panic("LE ethernet: Transmit babble.\n");
+	    NetLEReset();
+	    panic("LE ethernet: Transmit babble\n");
 	}
 	if (csr0 & NET_LE_CSR0_MEMORY_ERROR) {
 #ifdef sun4c
