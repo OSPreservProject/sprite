@@ -57,4 +57,11 @@ typedef struct {
     int 	token;      /* token to use for remote notify call */
 } ProcRemoteWaitCmd;
 
+/*
+ * Number of times to try an RPC before giving up due to RPC_TIMEOUT, while
+ * waiting for the host to come up.
+ */
+
+#define PROC_MAX_RPC_RETRIES 2
+
 #endif /* _MIGRATE */
