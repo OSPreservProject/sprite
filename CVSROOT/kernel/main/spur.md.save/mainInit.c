@@ -35,6 +35,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 extern void Fs_WakeupProc();
 extern void Fs_HandleScavenge();
 
+static void StartSlaveProcessors();
+
 /*
  *  Pathname of the Init program.
  */
@@ -188,10 +190,10 @@ main()
     Sync_Init();
 
     /*
-     * Sys_Printfs are not allowed before this point.
+     * printfs are not allowed before this point.
      */  
 
-    Sys_Printf("Sprite kernel: %s\n", SpriteVersion());
+    printf("Sprite kernel: %s\n", SpriteVersion());
 
     /*
      * Set up bins for the memory allocator.
@@ -386,13 +388,13 @@ main()
      */
 
     if (main_NumRpcServers > 0) {
-        Sys_Printf("Creating %d RPC servers", main_NumRpcServers);
+        printf("Creating %d RPC servers", main_NumRpcServers);
 	for (i=0 ; i<main_NumRpcServers ; i++) {
 	    Rpc_CreateServer(&pid);
 	}
-        Sys_Printf(" and Rpc_Daemon\n");
+        printf(" and Rpc_Daemon\n");
     } else {
-	Sys_Printf("Creating Rpc_Daemon\n");
+	printf("Creating Rpc_Daemon\n");
     }
     Proc_NewProc((Address) Rpc_Daemon, PROC_KERNEL, FALSE, &pid, "Rpc_Daemon");
 
@@ -419,61 +421,35 @@ main()
     /*
      * Print out the amount of memory used.
      */
-    Sys_Printf("%d bytes of memory allocated for kernel\n", 
+    printf("%d bytes of memory allocated for kernel\n", 
 		vmMemEnd - mach_KernStart);
 
     /*
-     * Start up the first user process.
+     * Start up the slave processors.
      */
 
     if (main_PrintInitRoutines) {
-	Mach_MonPrintf("Creating Init\n");
+	Mach_MonPrintf("Starting slave processors.\n");
     }
     bootProgress = 25;
     led_display(bootProgress,0,0);
-/*
-    Init_ProcFsState();
-*/
-    Proc_NewProc((Address) Init, PROC_KERNEL, FALSE, &pid, "Init");
+    StartSlaveProcessors();
 
     bootProgress = 26;
     led_display(bootProgress,0,0);
-
-#ifdef notdef
-    {
-	Fs_Stream	*filePtr;
-	ReturnStatus	status;
-	static char	maryBuf[128];
-	int		len;
-
-	status = Fs_Open("/etc/spritehosts", FS_READ, FS_FILE, 0, &filePtr);
-	if (status != SUCCESS) {
-	    Sys_Panic(SYS_FATAL, "Can't open file\n");
-	}
-	
-	len = 127;
-	status = Fs_Read(filePtr, maryBuf, 0, &len);
-	if (status != SUCCESS || len != 127) {
-	    Sys_Panic(SYS_FATAL, "Read returned %x %d\n", status, len);
-	}
-	status = Fs_Close(filePtr);
-	if (status != SUCCESS) {
-	    Sys_Panic(SYS_FATAL, "Close returned %x\n", status);
-	}
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Creating Init\n");
     }
-#endif
+    /*
+     * Start up the first user process.
+     */
+    Proc_NewProc((Address) Init, PROC_KERNEL, FALSE, &pid, "Init");
+
     (void) Sync_WaitTime(time_OneYear);
-    Sys_Printf("Main exiting\n");
+    printf("Main exiting\n");
     Proc_Exit(0);
 }
 
-static void	t1();
-static void	t2();
-Sync_Lock	tagLock = {0, 0};
-Sync_Condition	t1Cond;
-Sync_Condition	t2Cond;
-
-#define	LOCKPTR &tagLock
 
 
 /*
@@ -506,100 +482,116 @@ Init()
      * Indicate that we are alive.
      */
     led_display(0x00, 0, 0);
-#ifdef notdef
-    for (i = 0; i <= 5; i += 3) {
-	Sync_WaitTime(time_OneSecond);
-	led_display(0xe0 | i, 0, 0);
-    }
-#endif
-#ifdef notdef
-    /*
-     * Fork a new process and then play tag with it.
-     */
-    Proc_NewProc((Address) t2, PROC_KERNEL, FALSE, &pid, "t2");
-    t1();
-#endif
 
     if (main_PrintInitRoutines) {
 	Mach_MonPrintf("In Init\n");
     }
-#ifdef notdef
-    if (main_AltInit != 0) {
-	altInitArgs[0] = main_AltInit;
-	Sys_Printf("Execing \"%s\"\n", altInitArgs[0]);
-	status = Proc_KernExec(altInitArgs[0], initArgs);
-	Sys_Panic(SYS_WARNING, "Init: Could not exec %s.\n", altInitArgs[0]);
-    }
-#endif
     Rpc_GetStats(SYS_RPC_ENABLE_SERVICE,1,0);
     status = Proc_KernExec(initArgs[0], initArgs);
-    Sys_Panic(SYS_WARNING, "Init: Could not exec %s.\n", initArgs[0]);
+    printf("Warning: Init: Could not exec %s.\n", initArgs[0]);
 
     Proc_Exit(1);
 }
 
-void t1()
-{
-    int	i;
-    LOCK_MONITOR;
 
-    i = 0;
-    while (TRUE) {
-	Sync_WaitTime(time_OneSecond);
-	led_display(0xa0 | (i & 0xf), 0, 0);
-	i++;
-	Sync_Broadcast(&t2Cond);
-	(void)Sync_Wait(&t1Cond, TRUE);
+static Proc_ControlBlock *startupProcess; /* Used in RecordProcessAndWait. */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  RecordProcessAndWait --
+ *
+ *	This routine records the current process and exits.
+ *
+ * Results:
+ *	None.
+ * Side effects:
+ *	startupProcess is set to point at the current process. 
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+RecordProcessAndWait() 
+{
+	startupProcess = Proc_GetCurrentProc();
+	Sched_ContextSwitch(PROC_WAITING);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  StartSlaveProcessors --
+ *
+ *	This routine starts all the configured slave processors.
+ *
+ * Results:
+ *	None.
+ * Side effects:
+ *	Initial processes for each slave processors are started and the
+ *	processors Spun Up.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+StartSlaveProcessors()
+{
+
+    int		pnum;
+    Proc_PID	pid;
+    char	procName[128];
+    ReturnStatus status;
+
+    for (pnum = 1; pnum < MACH_MAX_NUM_PROCESSORS; pnum++) {
+	/*
+	 * Fork a new process process and wait for it notify us. 
+	 * This new process will be the first process of the
+	 * processor pnum.
+         */
+	sprintf(procName,"Processor%d",pid);
+	startupProcess = (Proc_ControlBlock *) NIL;
+	Proc_NewProc((Address)RecordProcessAndWait, PROC_KERNEL, FALSE, &pid,
+					procName);
+	while (startupProcess == (Proc_ControlBlock *) NIL) {
+	    (void) Sync_WaitTimeInterval(10 * timer_IntOneMillisecond);
+	}
+
+	printf("Starting processor %d with pid 0x%x\n",pnum,pid);
+	status = Mach_SpinUpProcessor(pnum,startupProcess);
+	if (status != SUCCESS) { 
+	    printf("Warning: Processor %d not started.\n");
+	}
     }
-
-    UNLOCK_MONITOR;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  mainSlaveStart --
+ *
+ *	This routine is called when a slave processor first starts.
+ *
+ * Results:
+ *	None.
 
-static unsigned int lockVal;
-
-void t2()
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+void
+mainSlaveStart()
 {
-    int	i;
 
-    lockVal = tagLock.inUse;
+    /*
+     * Initialize the machine state of the processor. 
+     */
+    Mach_InitSlaveProcessor();
 
-    LOCK_MONITOR;
-
-    i = 0;
-    while (TRUE) {
-	Sync_WaitTime(time_OneSecond);
-	led_display(0xb0 | (i & 0xf), 0, 0);
-	i++;
-	Sync_Broadcast(&t1Cond);
-	(void)Sync_Wait(&t2Cond, TRUE);
-    }
-
-    UNLOCK_MONITOR;
+    printf("Slave processor %d started\n",Mach_GetProcessorNumber());
+    /*
+     * Enter the scheduler by calling Proc_Exit.
+     */
+    Proc_Exit(0);	
 }
-
-
-
-
-
-Init_ProcFsState()
-{
-    Proc_ControlBlock   *procPtr;       /* Main process's proc table entry */
-    ReturnStatus        status;         /* General status code return */
-    register Fs_ProcessState    *fsPtr; /* FS state ref'ed from proc table */
-    static Fs_ProcessState fsState;
-
-    procPtr = Proc_GetCurrentProc();
-    procPtr->fsPtr = fsPtr =  &fsState;
-
-    fsPtr->numGroupIDs  = 0;
-    fsPtr->groupIDs     =  (int *) NIL;
-
-    fsPtr->cwdPtr = (Fs_Stream *) NIL;
-
-    fsPtr->numStreams = 0;
-    fsPtr->streamList = (Fs_Stream **)NIL;
- 
-    return;
-}
-	
