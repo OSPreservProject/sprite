@@ -755,6 +755,8 @@ VmCheckBounds(virtAddrPtr)
 {
     register	Vm_Segment	*segPtr;
 
+    if (vmShmDebug) printf("VmCheckBounds: %x, %x\n", virtAddrPtr,
+	    virtAddrPtr->sharedPtr);
     segPtr = virtAddrPtr->segPtr;
     if (segPtr == (Vm_Segment *) NIL) {
 	dprintf("VmCheckBounds: NIL failure\n");
@@ -763,11 +765,20 @@ VmCheckBounds(virtAddrPtr)
     if (segPtr->type == VM_STACK) {
 	return(virtAddrPtr->page > mach_LastUserStackPage - segPtr->numPages);
     } else {
-	if (!(segPtr->ptPtr[virtAddrPtr->page - segOffset(virtAddrPtr)] &
+	if (virtAddrPtr->page - segOffset(virtAddrPtr) < 0 ||
+		virtAddrPtr->page - segOffset(virtAddrPtr) >
+		virtAddrPtr->segPtr->ptSize) {
+	    printf("VmCheckBounds: out of bounds: page %x offset %x\n",
+		    virtAddrPtr->page, segOffset(virtAddrPtr));
+	    return(FALSE);
+	}
+#if 0
+	if (!((*VmGetAddrPTEPtr(virtAddrPtr,virtAddrPtr->page)) &
 		VM_VIRT_RES_BIT)) {
 	    dprintf("VmCheckBounds: page absent failure\n");
 	}
-	return (segPtr->ptPtr[virtAddrPtr->page - segOffset(virtAddrPtr)] &
+#endif
+	return ((*VmGetAddrPTEPtr(virtAddrPtr,virtAddrPtr->page)) &
 		VM_VIRT_RES_BIT);
     }
 }
