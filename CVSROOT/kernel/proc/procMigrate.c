@@ -1754,6 +1754,7 @@ Proc_FlagMigration(procPtr, hostID, exec)
 {
 
     procPtr->genFlags |= PROC_MIG_PENDING;
+    procPtr->genFlags &= ~PROC_MIGRATION_DONE;
     if (exec) {
 	/*
 	 * We flag the process specially so we know to copy over exec
