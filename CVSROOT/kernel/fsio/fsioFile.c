@@ -600,6 +600,25 @@ Fsio_FileClose(streamPtr, clientID, procID, flags, dataSize, closeData,
     /*
      * Update the client state to reflect the close by the client.
      */
+
+    /*
+     * This code is to track down a problem with clients sending bad
+     * data.
+     */
+    if (flags & FS_EXECUTE) {
+	List_Links *clientList = &(handlePtr->consist.clientList);
+	Fsconsist_ClientInfo *clientPtr;
+	LIST_FORALL(clientList, (List_Links *)clientPtr) {
+	    if (clientPtr->clientID == clientID) {
+	       if (clientPtr->use.exec==0) {
+		   printf("***ERROR***:Client %d: bad close on %s\n",
+			   clientID, Fsutil_HandleName(handlePtr));
+		  return(FAILURE);
+	       }
+	    }
+        }
+    }
+
 #ifdef SOSP91
     didCloseConsist = Fsconsist_Close(&handlePtr->consist, clientID, flags,
 	    &wasCached);
