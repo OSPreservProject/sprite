@@ -114,6 +114,25 @@ typedef struct {
 } SignalStack;
 
 /*
+ * The format of a Unix signal stack.
+ */
+typedef struct sigcontext {
+    int sc_onstack;
+    int sc_mask;
+    int sc_sp;
+    int sc_pc;
+    int sc_ps;
+} sigcontext;
+
+typedef struct UnixSignalStack {
+    int sigNum;
+    int sigCode;
+    struct sigcontext *sigContextPtr;
+    int sigAddr;
+    struct sigcontext sigContext;
+} UnixSignalStack;
+
+/*
  * Machine dependent variables.
  */
 Address	mach_KernStart;
@@ -427,11 +446,13 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
  *----------------------------------------------------------------------
  */ 
 void
-Mach_SetReturnVal(procPtr, retVal)
+Mach_SetReturnVal(procPtr, retVal, retVal2)
     Proc_ControlBlock	*procPtr;	/* Process to set return value for. */
     int			retVal;		/* Value for process to return. */
+    int			retVal2;	/* Second return value. */
 {
     procPtr->machStatePtr->userState.trapRegs[D0] = retVal;
+    procPtr->machStatePtr->userState.trapRegs[D1] = retVal2;
 }
 
 
@@ -1029,6 +1050,7 @@ MachTrap(trapStack)
 	    }
 	    break;
 	}
+	case MACH_UNIX_SYSCALL_TRAP:
 	case MACH_SYSCALL_TRAP:
 	    /*
 	     * It used to be that all system calls passed through here, but
@@ -1298,37 +1320,81 @@ SetupSigHandler(procPtr, sigStackPtr, pc)
     Address			usp;
     int				excStackSize;
     Mach_ExcStack		*excStackPtr;
+    struct UnixSignalStack	unixSigStack;
+    int				unixSignal;
 
     statePtr = procPtr->machStatePtr;
-    usp = statePtr->userState.userStackPtr - sizeof(SignalStack);
-    sigStackPtr->sigStack.contextPtr =
-	(Sig_Context *)(usp + (unsigned int)(&sigStackPtr->sigContext) -
-			      (unsigned int)sigStackPtr);
-    sigStackPtr->sigContext.machContext.trapInst = 0x4e424e42;
-    sigStackPtr->retAddr =
-	usp + (unsigned int)(&sigStackPtr->sigContext.machContext.trapInst) -
-	      (unsigned int)sigStackPtr;
-    /*
-     * Copy the exception stack onto the signal stack.
-     */
     excStackSize = Mach_GetExcStackSize(statePtr->userState.excStackPtr);
-    bcopy((Address)statePtr->userState.excStackPtr,
-	      (Address)&(sigStackPtr->sigContext.machContext.excStack),
-	      excStackSize);
-    /*
-     * Copy the user state onto the signal stack.
-     */
-    bcopy((Address)&statePtr->userState,
-	      (Address)&(sigStackPtr->sigContext.machContext.userState),
-	      sizeof(Mach_UserState));
-    /*
-     * Copy the stack out to user space.
-     */
-    if (Vm_CopyOut(sizeof(SignalStack), (Address)sigStackPtr, 
-			(Address)usp) != SUCCESS) {
-        printf("Warning: HandleSig: No room on stack for signal, PID=%x.\n",
-                  procPtr->processID);
-        Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
+
+    if (procPtr->unixProgress == 0x11beef22) {
+	printf("This is a Unix signal to %x.  Things should be different.\n",
+		procPtr->processID);
+	usp = (Address)statePtr->userState.userStackPtr -
+		sizeof(UnixSignalStack);
+	if (Compat_SpriteSigToUnix(sigStackPtr->sigStack.sigNum, &unixSignal)
+		!= SUCCESS) {
+	    printf("Signal %d invalid in SetupSigHandler\n",
+		    sigStackPtr->sigStack.sigNum);
+	    return;
+	}
+	unixSigStack.sigNum = unixSignal;
+	unixSigStack.sigCode = sigStackPtr->sigStack.sigCode;
+	unixSigStack.sigContextPtr = (sigcontext *)(usp + 4*sizeof(int));
+	unixSigStack.sigAddr = sigStackPtr->sigStack.sigAddr;
+	unixSigStack.sigContext.sc_onstack = 0;
+	unixSigStack.sigContext.sc_mask = 0;
+	unixSigStack.sigContext.sc_sp = (int) statePtr->userState.userStackPtr;
+	unixSigStack.sigContext.sc_pc = (int) pc;
+	unixSigStack.sigContext.sc_ps = 0;
+	printf("sp = %x, pc = %x, len = %d to %x\n",
+		statePtr->userState.userStackPtr, pc,
+		sizeof(UnixSignalStack), (Address)usp);
+	/*
+	 * Copy the stack out to user space.
+	 */
+	if (Vm_CopyOut(sizeof(UnixSignalStack), (Address)&unixSigStack, 
+			    (Address)usp) != SUCCESS) {
+	    printf("Warning: HandleSig: No room on stack for signal, PID=%x.\n",
+		      procPtr->processID);
+	    Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
+	}
+    } else {
+	if (procPtr->unixProgress != -1) {
+	    printf("Warning: process %x has unixProgress = %x\n",
+		    procPtr->processID, procPtr->unixProgress);
+	}
+	usp = statePtr->userState.userStackPtr - sizeof(SignalStack);
+	sigStackPtr->sigStack.contextPtr =
+	    (Sig_Context *)(usp + (unsigned int)(&sigStackPtr->sigContext) -
+				  (unsigned int)sigStackPtr);
+	/*
+	 * Instruction = TRAP 2 ; TRAP 2 (?)
+	 */
+	sigStackPtr->sigContext.machContext.trapInst = 0x4e424e42;
+	sigStackPtr->retAddr =
+	    usp + (unsigned int)(&sigStackPtr->sigContext.machContext.trapInst) -
+		  (unsigned int)sigStackPtr;
+	/*
+	 * Copy the exception stack onto the signal stack.
+	 */
+	bcopy((Address)statePtr->userState.excStackPtr,
+		  (Address)&(sigStackPtr->sigContext.machContext.excStack),
+		  excStackSize);
+	/*
+	 * Copy the user state onto the signal stack.
+	 */
+	bcopy((Address)&statePtr->userState,
+		  (Address)&(sigStackPtr->sigContext.machContext.userState),
+		  sizeof(Mach_UserState));
+	/*
+	 * Copy the stack out to user space.
+	 */
+	if (Vm_CopyOut(sizeof(SignalStack), (Address)sigStackPtr, 
+			    (Address)usp) != SUCCESS) {
+	    printf("Warning: HandleSig: No room on stack for signal, PID=%x.\n",
+		      procPtr->processID);
+	    Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
+	}
     }
     /*
      * We need to make a short stack to allow the process to start executing.
@@ -1627,3 +1693,60 @@ Mach_GetBootArgs(argc, bufferSize, argv, buffer)
     return i;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_SigreturnStub --
+ *
+ *	Procedure to map from Unix sigreturn system call to Sprite.
+ *	On the suns, this is used for returning from a longjmp.
+ *
+ * Results:
+ *	Error code is returned upon error.  Otherwise SUCCESS is returned.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Mach_SigreturnStub()
+{
+
+    Proc_ControlBlock *procPtr = Proc_GetActualProc();
+    Mach_ExcStack *excStackPtr;
+    int excStackSize;
+    int bufVals[4];
+    int *jmpBuf;
+
+    Vm_CopyIn(sizeof(int), procPtr->machStatePtr->userState.userStackPtr,
+	    (Address)&jmpBuf);
+    if (Vm_CopyIn(4*sizeof(int), (Address)jmpBuf, (Address)bufVals) !=
+	    SUCCESS) {
+	printf("JmpBuf copy in failure\n");
+	return -1;
+    }
+    if (Sig_SigsetmaskStub(bufVals[1])<0) {
+	printf("Sig_SigsetmaskStub error in Sigreturn on %x\n", bufVals[1]);
+    }
+    procPtr->machStatePtr->userState.userStackPtr = (Address)bufVals[2];
+    procPtr->specialHandling = 1;
+
+    /*
+     * We need to make a short stack to allow the process to start executing.
+     * The current exception stack is at least as big, maybe bigger than we
+     * need.  Since we saved the true exception stack above, we can just
+     * overwrite the current stack with a short stack and point the stack
+     * pointer at it.
+     */
+    excStackSize = Mach_GetExcStackSize(procPtr->machStatePtr->
+	    userState.excStackPtr);
+    excStackPtr = (Mach_ExcStack *) ((Address)procPtr->machStatePtr
+	    ->userState.excStackPtr + excStackSize - MACH_SHORT_SIZE);
+    procPtr->machStatePtr->userState.trapRegs[SP] = (int)excStackPtr;
+    excStackPtr->statusReg = 0;
+    excStackPtr->vor.stackFormat = MACH_SHORT;
+    excStackPtr->pc = (int)bufVals[3];
+    return procPtr->machStatePtr->userState.trapRegs[D0];
+}
