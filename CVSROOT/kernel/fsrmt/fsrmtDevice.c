@@ -1421,7 +1421,7 @@ FsDeviceSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
     register Fs_Device	*devicePtr = &devHandlePtr->device;
     register ReturnStatus status;
     register int inFlags;		/* Until we fix the device drivers */
-    int outFlags;
+    int outFlags = 0;
 
     FsHandleLock(devHandlePtr);
     inFlags = 0;
