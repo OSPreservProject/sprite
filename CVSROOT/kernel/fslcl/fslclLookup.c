@@ -1071,6 +1071,7 @@ haveASlot:
     dirEntryPtr->nameLength = compLen;
     (void)strcpy(dirEntryPtr->fileName, component);
 
+    blockOffset = (((char *)dirEntryPtr) - (char *)(cacheBlockPtr->blockAddr));
     *dirOffsetPtr = dirBlockNum * FSLCL_DIR_BLOCK_SIZE + blockOffset;
     status = CacheDirBlockWrite(curHandlePtr,cacheBlockPtr,dirBlockNum,length);
     return(status);
