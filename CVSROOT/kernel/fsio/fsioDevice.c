@@ -30,31 +30,33 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
+#include <sprite.h>
 
-#include "fs.h"
-#include "fsutil.h"
-#include "fsio.h"
-#include "fsNameOps.h"
-#include "fsdm.h"
-#include "fsconsist.h"
-#include "fsioLock.h"
-#include "fsprefix.h"
-#include "dev.h"
-#include "rpc.h"
-#include "fsStat.h"
-#include "fsioDevice.h"
-#include "devFsOpTable.h"
+#include <fs.h>
+#include <fsutil.h>
+#include <fsconsist.h>
+#include <fsio.h>
+#include <fsNameOps.h>
+#include <fsdm.h>
+#include <fsioLock.h>
+#include <fsprefix.h>
+#include <fsrmt.h>
+#include <dev.h>
+#include <rpc.h>
+#include <fsStat.h>
+#include <fsioDevice.h>
+#include <devFsOpTable.h>
+#include <devTypes.h>
 
-#include "devTypes.h"
+#include <stdio.h>
 
 /*
  * INET is defined so a file server can be used to open the
  * special device file corresponding to a kernel-based ipServer
  */
-#define INET
+#undef INET
 #ifdef INET
-#include "netInet.h"
+#include <netInet.h>
 /*
  * DEV_PLACEHOLDER_2	is defined in devTypesInt.h, which is not exported.
  *	This is an ugly hack, anyway, so we just define it here.  3/89
@@ -65,10 +67,15 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 static int sockCounter = 0;
 #endif
 
+static void ReadNotify _ARGS_((ClientData data, Proc_CallInfo *callInfoPtr));
+static void WriteNotify _ARGS_((ClientData data, Proc_CallInfo *callInfoPtr));
+static void ExceptionNotify _ARGS_((ClientData data, 
+				Proc_CallInfo *callInfoPtr));
 
-static void ReadNotify();
-static void WriteNotify();
-static void ExceptionNotify();
+extern ReturnStatus FsioDeviceCloseInt _ARGS_((
+		Fsio_DeviceIOHandle *devHandlePtr, int useFlags, int refs, 
+		int writes));
+
 
 
 /*
@@ -97,7 +104,7 @@ FsioDeviceHandleInit(fileIDPtr, name, newHandlePtrPtr)
     register Fsio_DeviceIOHandle *devHandlePtr;
 
     found = Fsutil_HandleInstall(fileIDPtr, sizeof(Fsio_DeviceIOHandle), name,
-		    (Fs_HandleHeader **)newHandlePtrPtr);
+		    FALSE, (Fs_HandleHeader **)newHandlePtrPtr);
     if (!found) {
 	devHandlePtr = *newHandlePtrPtr;
 	List_Init(&devHandlePtr->clientList);
@@ -601,7 +608,7 @@ Fsio_DeviceMigClose(hdrPtr, flags)
 /*ARGSUSED*/
 ReturnStatus
 Fsio_DeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
-    FsMigInfo	*migInfoPtr;	/* Migration state */
+    Fsio_MigInfo	*migInfoPtr;	/* Migration state */
     int		dstClientID;	/* ID of target client */
     int		*flagsPtr;	/* In/Out Stream usage flags */
     int		*offsetPtr;	/* Return - new stream offset */
@@ -677,7 +684,7 @@ Fsio_DeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPt
 /*ARGSUSED*/
 ReturnStatus
 Fsio_DeviceMigOpen(migInfoPtr, size, data, hdrPtrPtr)
-    FsMigInfo	*migInfoPtr;	/* Migration state */
+    Fsio_MigInfo	*migInfoPtr;	/* Migration state */
     int		size;		/* Zero */
     ClientData	data;		/* NIL */
     Fs_HandleHeader **hdrPtrPtr;	/* Return - handle for the file */
@@ -729,6 +736,7 @@ Fsio_DeviceRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
     Boolean copy;
 
 
+    userBuffer = (Address) NIL;
     flags = devHandlePtr->flags;
     /*
      * Don't lock if the device driver informed us upon open that 
@@ -771,7 +779,7 @@ Fsio_DeviceRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
     if (status != FS_WOULD_BLOCK) {
 	Fsutil_WaitListRemove(&devHandlePtr->readWaitList, remoteWaitPtr);
     }
-    devHandlePtr->accessTime = fsutil_TimeInSeconds;
+    devHandlePtr->accessTime = Fsutil_TimeInSeconds();
     fs_Stats.gen.deviceBytesRead += replyPtr->length;
     if (!(flags & FS_DEV_DONT_LOCK)) { 
 	Fsutil_HandleUnlock(devHandlePtr);
@@ -810,6 +818,7 @@ Fsio_DeviceWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
     int			flags;
     Boolean		copy;
 
+    userBuffer = (Address) NIL;
     flags = devHandlePtr->flags;
     /*
      * Don't lock if the device driver informed us upon open that 
@@ -845,7 +854,7 @@ Fsio_DeviceWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
 	if (status != FS_WOULD_BLOCK) {
 	    Fsutil_WaitListRemove(&devHandlePtr->writeWaitList, remoteWaitPtr);
 	}
-	devHandlePtr->modifyTime = fsutil_TimeInSeconds;
+	devHandlePtr->modifyTime = Fsutil_TimeInSeconds();
 	fs_Stats.gen.deviceBytesWritten += replyPtr->length;
     }
 
@@ -1199,102 +1208,6 @@ ExceptionNotify(data, callInfoPtr)
     Fsutil_WaitListNotify(&devHandlePtr->exceptWaitList);
     callInfoPtr->interval = 0;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * Fsio_DeviceBlockIO --
- *
- *	Map a file system block address to a block device block address 
- *	perform the requested operation.
- *
- * NOTE: This routine is temporary and should be replaced when the file system
- *	 is converted to use the async block io interface.
- *
- * Results:
- *	The return status of the operation.
- *
- * Side effects:
- *	Blocks may be written or read.
- *
- *----------------------------------------------------------------------
- */
-
-ReturnStatus
-Fsio_DeviceBlockIO(readWriteFlag, devicePtr, fragNumber, numFrags, buffer)
-    int readWriteFlag;		/* FS_READ or FS_WRITE */
-    Fs_Device *devicePtr;	/* Specifies device type to do I/O with */
-    int fragNumber;		/* CAREFUL, fragment index, not block index.
-				 * This is relative to start of device. */
-    int numFrags;		/* CAREFUL, number of fragments, not blocks */
-    Address buffer;		/* I/O buffer */
-{
-    ReturnStatus status;	/* General return code */
-    int firstSector;		/* Starting sector of transfer */
-    DevBlockDeviceRequest	request;
-    DevBlockDeviceHandle	*handlePtr;
-    int				transferCount;
-
-    handlePtr = (DevBlockDeviceHandle *) (devicePtr->data);
-    if ((fragNumber % FS_FRAGMENTS_PER_BLOCK) != 0) {
-	/*
-	 * The I/O doesn't start on a block boundary.  Transfer the
-	 * first few extra fragments to get things going on a block boundary.
-	 */
-	register int extraFrags;
-
-	extraFrags = FS_FRAGMENTS_PER_BLOCK -
-		    (fragNumber % FS_FRAGMENTS_PER_BLOCK);
-	if (extraFrags > numFrags) {
-	    extraFrags = numFrags;
-	}
-	firstSector = Fsdm_BlocksToSectors(fragNumber, handlePtr->clientData);
-	request.operation = readWriteFlag;
-	request.startAddress = firstSector * DEV_BYTES_PER_SECTOR;
-	request.startAddrHigh = 0;
-	request.bufferLen = extraFrags * FS_FRAGMENT_SIZE;
-	request.buffer = buffer;
-	status = Dev_BlockDeviceIOSync(handlePtr, &request, &transferCount);
-	extraFrags = transferCount / FS_FRAGMENT_SIZE;
-	fragNumber += extraFrags;
-	buffer += transferCount;
-	numFrags -= extraFrags;
-	if (status != SUCCESS) {
-	    return(status);
-	}
-    }
-    while (numFrags >= FS_FRAGMENTS_PER_BLOCK) {
-	/*
-	 * Transfer whole blocks.
-	 */
-	firstSector = Fsdm_BlocksToSectors(fragNumber, handlePtr->clientData);
-	request.operation = readWriteFlag;
-	request.startAddress = firstSector * DEV_BYTES_PER_SECTOR;
-	request.startAddrHigh = 0;
-	request.bufferLen = FS_BLOCK_SIZE;
-	request.buffer = buffer;
-	status = Dev_BlockDeviceIOSync(handlePtr, &request, &transferCount);
-	fragNumber += FS_FRAGMENTS_PER_BLOCK;
-	buffer += FS_BLOCK_SIZE;
-	numFrags -= FS_FRAGMENTS_PER_BLOCK;
-	if (status != SUCCESS) {
-	    return(status);
-	}
-    }
-    if (numFrags > 0) {
-	/*
-	 * Transfer the left over fragments.
-	 */
-	firstSector = Fsdm_BlocksToSectors(fragNumber, handlePtr->clientData);
-	request.operation = readWriteFlag;
-	request.startAddress = firstSector * DEV_BYTES_PER_SECTOR;
-	request.startAddrHigh = 0;
-	request.bufferLen = numFrags * FS_FRAGMENT_SIZE;
-	request.buffer = buffer;
-	status = Dev_BlockDeviceIOSync(handlePtr, &request, &transferCount);
-    }
-    return(status);
-}
 
 
 /*
@@ -1367,12 +1280,12 @@ Fsio_BootTimeTtyOpen()
     if (DEV_TYPE_INDEX(devHandlePtr->device.type) >= devNumDevices) {
 	status = FS_DEVICE_OP_INVALID;
     } else {
-	  int flags;
+	int flags = 0;
 /* XXX */ printf("Fsio_BootTimeTtyOpen: spriteID %d devHandle <%x>\n",
 			rpc_SpriteID, devHandlePtr);
 	status = (*devFsOpTable[DEV_TYPE_INDEX(devHandlePtr->device.type)].open)
 		    (&devHandlePtr->device, FS_READ|FS_WRITE, 
-		     (Fs_NotifyToken)devHandlePtr, &flags);
+		      (Fs_NotifyToken)devHandlePtr, &flags);
     }
     /*
      * Unlock the handle.  This leaves an extra reference just
@@ -1425,3 +1338,4 @@ Fsio_DeviceMmap(streamPtr, startAddr, length, offset, newAddrPtr)
 
     return status;
 }
+
