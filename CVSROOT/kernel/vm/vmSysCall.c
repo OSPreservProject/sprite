@@ -112,9 +112,10 @@ Vm_CreateVA(address, size)
      * Make sure that the ending page is not greater than the highest
      * possible page.  Since there must be one stack page and one page
      * between the stack and the heap, the highest possible heap page is
-     * mach_LastUserStackPage - 2.
+     * mach_LastUserStackPage - 2 or segPtr->maxAddr, whichever is lower.
      */
-    if (lastPage > mach_LastUserStackPage - 2) {
+    if (lastPage > mach_LastUserStackPage - 2 ||
+        address + size - 1 > segPtr->maxAddr) {
 	return(VM_SEG_TOO_LARGE);
     }
 

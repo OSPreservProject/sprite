@@ -53,7 +53,7 @@ Vm_BootInit()
     vmMemEnd = (Address) (((int) vmMemEnd + 3) & ~3);
 
     VmMach_BootInit(&vm_PageSize, &vmPageShift, &vmPageTableInc,
-		    &vmKernMemSize, &vmStat.numPhysPages);
+		    &vmKernMemSize, &vmStat.numPhysPages, &vmMaxMachSegs);
 }
 
 

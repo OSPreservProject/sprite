@@ -37,8 +37,17 @@ int		vmKernMemSize;
 int		vmMaxProcesses = 80;
 Address		vmBlockCacheBaseAddr;
 Address 	vmBlockCacheEndAddr;
+int		vmMaxMachSegs;
 
 Boolean		vmDebugLargeAllocs = FALSE;
+
+/*
+ * The maximum amount that a stack is allowed to grow.  We have to make it
+ * real big because of the current configuration of SPUR.  This can be made
+ * smaller once the exec stuff has changed.
+ */
+#define	MAX_STACK_GROWTH_SIZE	(1024 * 1024 * 2)
+int		vmMaxStackPagesGrowth;
 
 /*
  * ----------------------------------------------------------------------------
@@ -63,7 +72,10 @@ Vm_Init()
 #ifdef notdef
     unsigned int	virtPage;
 #endif
-
+    /*
+     * Set up the maximum number of pages that a stack can grow.
+     */
+    vmMaxStackPagesGrowth = MAX_STACK_GROWTH_SIZE / vm_PageSize;
     /*
      * Partition up the kernel virtual address space.
      */
@@ -604,9 +616,12 @@ VmVirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
 							    vmPageTableInc;
 	    /* 
 	     * We are going to have to grow the stack to cover this so
-	     * make sure that the heap and stack segments don't overlap.
+	     * make sure that the heap and stack segments don't overlap and
+	     * we aren't trying to grow too much.
 	     */
-	    if (seg1Ptr->offset + seg1Ptr->ptSize >=
+	    if ((Address) (page << vmPageShift) < seg2Ptr->minAddr ||
+	        seg2Ptr->offset - page > vmMaxStackPagesGrowth ||
+	        seg1Ptr->offset + seg1Ptr->ptSize >=
 		     mach_LastUserStackPage - newPTSize + 1) {
 		transVirtAddrPtr->segPtr = (Vm_Segment *) NIL;
 		UNLOCK_MONITOR;

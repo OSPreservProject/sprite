@@ -73,6 +73,12 @@ int	vmNumSegments = 256;
 void
 VmSegTableAlloc()
 {
+    if (vmMaxMachSegs > 0) {
+	if (vmMaxMachSegs < vmNumSegments) {
+	    vmNumSegments = vmMaxMachSegs;
+	}
+    }
+
     segmentTable = 
 	    (Vm_Segment *) Vm_BootAlloc(sizeof(Vm_Segment) * vmNumSegments);
     Byte_Zero(vmNumSegments * sizeof(Vm_Segment), (Address)segmentTable);

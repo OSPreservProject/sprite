@@ -215,7 +215,8 @@ extern	int	vmMapBasePage;		/* First page to use for mapping. */
 extern	int	vmMapEndPage;		/* Last page to use for mapping. */
 extern	Address	vmBlockCacheBaseAddr;	/* Base of the file system cache. */
 extern	Address	vmBlockCacheEndAddr;	/* End of the file system cache. */
-
+extern	int	vmMaxMachSegs;		/* Maximum number of machine segments
+					 * that the hardware will allow. */
 extern	Boolean	vmFreeWhenClean;	/* TRUE if pages should be freed after 
 					 * they have been cleaned. */
 extern	Boolean	vmAlwaysRefuse;		/* TRUE if VM should always refuse the
