@@ -130,7 +130,7 @@ LfsFileLayoutProc(segPtr, cleaning, clientDataPtr)
     LfsFileLayout    *layoutPtr = &(lfsPtr->fileLayout);
     Fscache_FileInfo	*cacheInfoPtr;
     Boolean	    full, fsyncOnly;
-    FileSegLayout  segLayoutData;
+    FileSegLayout  *segLayoutDataPtr;
 
      /*
       * Next spill the file with dirty blocks into the segment. 
@@ -138,16 +138,23 @@ LfsFileLayoutProc(segPtr, cleaning, clientDataPtr)
 
      full = FALSE;
      fsyncOnly = !cleaning;
-     bzero((char *) &segLayoutData, sizeof(segLayoutData));
+     if (*clientDataPtr == (ClientData) NIL) {
+	 segLayoutDataPtr = (FileSegLayout *) malloc(sizeof(FileSegLayout));
+	 bzero((char *)segLayoutDataPtr, sizeof(FileSegLayout));
+	 *clientDataPtr = (ClientData) segLayoutDataPtr;
+     } else {
+	 segLayoutDataPtr = (FileSegLayout *) *clientDataPtr;
+     }
      (void) Fscache_GetDirtyFiles(lfsPtr->domainPtr->backendPtr, fsyncOnly,
 			 FileMatch, (ClientData) cleaning, 1, &cacheInfoPtr);
      while (!full && (cacheInfoPtr != (Fscache_FileInfo *) NIL)) {
 	   full = PlaceFileInSegment(lfsPtr, segPtr, cacheInfoPtr, layoutPtr,
-			cleaning, &segLayoutData);
+			cleaning, segLayoutDataPtr);
 	   if (full) {
 	       break;
 	   }
-	 (void) Fscache_GetDirtyFiles(lfsPtr->domainPtr->backendPtr, FALSE,
+	 (void) Fscache_GetDirtyFiles(lfsPtr->domainPtr->backendPtr, 
+			layoutPtr->writeBackEverything,
 			 FileMatch, (ClientData) cleaning, 1, &cacheInfoPtr);
      }
      return full;
@@ -224,6 +231,10 @@ LfsFileLayoutWriteDone(segPtr, flags, clientDataPtr)
     char	 *summaryPtr =  LfsSegGetSummaryPtr(segPtr);
     char	 *limitPtr;
 
+    if (*clientDataPtr != (ClientData) NIL) {
+	free((char *) *clientDataPtr);
+	*clientDataPtr = (ClientData) NIL;
+    }
     limitPtr = summaryPtr + LfsSegSummaryBytesLeft(segPtr); 
      while (summaryPtr < limitPtr) { 
 	switch (*(unsigned short *) summaryPtr) {
@@ -242,6 +253,7 @@ LfsFileLayoutWriteDone(segPtr, flags, clientDataPtr)
 					LfsSegDiskAddress(segPtr,bufferPtr));
 	     }
 #endif
+	     free(bufferPtr->address);
 	     bufferPtr++;
 	     summaryPtr += sizeof(LfsFileLayoutDesc);
 	     break;
@@ -283,7 +295,6 @@ LfsFileLayoutWriteDone(segPtr, flags, clientDataPtr)
 	}
     }
     LfsSegSetBufferPtr(segPtr, bufferPtr);
-    LfsSegSetSummaryPtr(segPtr, summaryPtr);
     return;
 
 }
@@ -316,12 +327,13 @@ LfsFileLayoutClean(segPtr, sizePtr, numCacheBlocksPtr, clientDataPtr)
     LfsFileLayout  *layoutPtr = &(lfsPtr->fileLayout);
     LfsFileLayoutSummary  *fileSumPtr;
     char	*summaryPtr, *limitPtr;
-    int address, blockOffset;
+    int address, blockOffset, fsBlocks;
     Fscache_FileInfo	*cacheInfoPtr;
     ReturnStatus	status;
     Boolean	error;
 
      error = FALSE;
+     fsBlocks = LfsBytesToBlocks(lfsPtr, FS_BLOCK_SIZE);
      summaryPtr =  LfsSegGetSummaryPtr(segPtr);
      limitPtr = summaryPtr + LfsSegSummaryBytesLeft(segPtr);
      address = LfsSegDiskAddress(segPtr, LfsSegGetBufferPtr(segPtr));
@@ -332,7 +344,7 @@ LfsFileLayoutClean(segPtr, sizePtr, numCacheBlocksPtr, clientDataPtr)
 	case LFS_FILE_LAYOUT_DESC: {
 	    int diskAddr;
 	    int		fileNumber;
-	    int		slot;
+	    int		slot, size;
 	    LfsFileDescriptor	*descPtr;
 	    char		*blockStartPtr;
 	    Fscache_Block *descCacheblockPtr = (Fscache_Block *) NIL;
@@ -341,9 +353,10 @@ LfsFileLayoutClean(segPtr, sizePtr, numCacheBlocksPtr, clientDataPtr)
 	     * (being pointed to by the descriptor map) we bring it into
 	     * the system and mark it as dirty. 
 	     */
-	    blockStartPtr = LfsSegFetchBytes(segPtr, blockOffset, 
-			    layoutPtr->params.descPerBlock * 
-				sizeof(LfsFileDescriptor));
+	    size = layoutPtr->params.descPerBlock * sizeof(LfsFileDescriptor);
+	    blockOffset += LfsBytesToBlocks(lfsPtr, size);
+	    blockStartPtr = LfsSegFetchBytes(segPtr, 
+				segPtr->curBlockOffset + blockOffset, size);
 	    descPtr = (LfsFileDescriptor *)blockStartPtr;
 	    for (slot = 0; slot < layoutPtr->params.descPerBlock; slot++) {
 		Fs_FileID fileID;
@@ -364,7 +377,7 @@ LfsFileLayoutClean(segPtr, sizePtr, numCacheBlocksPtr, clientDataPtr)
 		 */
 		if ((status == FS_FILE_NOT_FOUND) ||
 		    ((status == SUCCESS) && 
-				(diskAddr != address + blockOffset))) {
+				(diskAddr != address - blockOffset))) {
 		    continue;
 		}
 		if (status != SUCCESS) {
@@ -427,8 +440,6 @@ LfsFileLayoutClean(segPtr, sizePtr, numCacheBlocksPtr, clientDataPtr)
 	     * Skip over the summary bytes describing this block. 
 	     */
 	    summaryPtr += sizeof(LfsFileLayoutDesc);
-	    blockOffset += LfsBytesToBlocks(lfsPtr, 
-		(layoutPtr->params.descPerBlock * sizeof(LfsFileDescriptor)));
 	    break;
 	}
 	case LFS_FILE_LAYOUT_DATA: {
@@ -478,11 +489,18 @@ LfsFileLayoutClean(segPtr, sizePtr, numCacheBlocksPtr, clientDataPtr)
 		 */
 		blockArray = (int *)(summaryPtr + sizeof(LfsFileLayoutSummary));
 		for (i = 0; i < fileSumPtr->numDataBlocks; i++) {
+		    int numBlocks;
+		    numBlocks = (fileSumPtr->numBlocks - 
+					  (blockOffset - startBlockOffset));
+		    if (numBlocks > fsBlocks) {
+			numBlocks = fsBlocks;
+		    }
+		    blockOffset += numBlocks;
 		    status = LfsFile_GetIndex(newHandlePtr, blockArray[i],
 						TRUE, &diskAddress);
 		    if ((status == SUCCESS) &&
-			(diskAddress == address + blockOffset)) { 
-			int	blockSize, bytesLeft, flags, blocksLeft;
+			(diskAddress == address - blockOffset)) { 
+			int	blockSize, flags, blocksLeft;
 			Boolean	 found;
 			Fscache_Block *blockPtr;
 			/*
@@ -490,11 +508,7 @@ LfsFileLayoutClean(segPtr, sizePtr, numCacheBlocksPtr, clientDataPtr)
 			 * cleaning, bring it into the cache. Be a little
 			 * careful about short blocks.
 			 */
-			blocksLeft = (fileSumPtr->numBlocks - 
-					  (blockOffset - startBlockOffset));
-		        bytesLeft = LfsBlocksToBytes(lfsPtr, blocksLeft);
-			blockSize = (bytesLeft < FS_BLOCK_SIZE) ? bytesLeft :
-								  FS_BLOCK_SIZE;
+		        blockSize = LfsBlocksToBytes(lfsPtr, numBlocks);
 			flags = (FSCACHE_IO_IN_PROGRESS | FSCACHE_CANT_BLOCK |
 			          ((blockArray[i] >= 0) ? FSCACHE_DATA_BLOCK :
 							  FSCACHE_IND_BLOCK));
@@ -526,7 +540,7 @@ LfsFileLayoutClean(segPtr, sizePtr, numCacheBlocksPtr, clientDataPtr)
 				panic("Illegal sized block.\n");
 			    }
 
-			    dPtr = LfsSegFetchBytes(segPtr, blockOffset, 
+			    dPtr = LfsSegFetchBytes(segPtr, segPtr->curBlockOffset + blockOffset, 
 					blockSize);
 			    bcopy(dPtr, blockPtr->blockAddr, blockSize);
 			    bzero(blockPtr->blockAddr + blockSize,
@@ -543,7 +557,7 @@ LfsFileLayoutClean(segPtr, sizePtr, numCacheBlocksPtr, clientDataPtr)
 #ifdef ERROR_CHECK
 			    char *dPtr;
 			    Boolean bad;
-			    dPtr = LfsSegFetchBytes(segPtr, blockOffset, 
+			    dPtr = LfsSegFetchBytes(segPtr, blockOffset + segPtr->curBlockOffset, 
 					blockSize);
 			    bad = bcmp(dPtr, blockPtr->blockAddr, 
 					blockPtr->blockSize);
@@ -558,7 +572,6 @@ LfsFileLayoutClean(segPtr, sizePtr, numCacheBlocksPtr, clientDataPtr)
 			*sizePtr += blockSize;
 			*numCacheBlocksPtr++;
 		    }
-		    blockOffset += LfsBytesToBlocks(lfsPtr, FS_BLOCK_SIZE);
 		}
 		Fsutil_HandleRelease(newHandlePtr, TRUE);
 	    }
@@ -585,8 +598,6 @@ LfsFileLayoutClean(segPtr, sizePtr, numCacheBlocksPtr, clientDataPtr)
 	}
       }
     }
-    LfsSegSetSummaryPtr(segPtr, summaryPtr);
-    LfsSegSetCurBlockOffset(segPtr,blockOffset);
 
     return error;
 
@@ -652,14 +663,15 @@ PlaceFileInSegment(lfsPtr, segPtr, cacheInfoPtr, layoutPtr, cleaning,
 		 * summary block describing it. 
 		 */
 		descBufferPtr = LfsSegAddDataBuffer(segPtr, descBlocks,
-					   (char *)NIL, (ClientData) NIL);
+				malloc(LfsBlocksToBytes(lfsPtr, descBlocks)),
+				(ClientData) NIL);
 		descSumPtr = (LfsFileLayoutDesc *) summaryPtr;
     
 		descSumPtr->blockType = LFS_FILE_LAYOUT_DESC;
 		descSumPtr->numBlocks = descBlocks;
 
 		summaryPtr += sizeof(LfsFileLayoutDesc);
-		LfsSegSetSummaryPtr(segPtr,	summaryPtr);
+		LfsSegSetSummaryPtr(segPtr, summaryPtr);
 
 		segLayoutDataPtr->numDescSlotsLeft = 
 						layoutPtr->params.descPerBlock;
