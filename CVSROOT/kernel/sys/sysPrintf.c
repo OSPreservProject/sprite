@@ -113,7 +113,15 @@ doVprintf(format, args)
 {
     static Boolean	initialized = FALSE;
     static FILE		stream;
+    static int	recursiveCallP = 0;	/* prevent recursive calls
+					 * that could occur if doVprintf
+					 * fails, etc.  */
 
+    if (recursiveCallP != 0) {
+	return;
+    }
+    recursiveCallP = 1;
+    MASTER_LOCK(sysPrintMutex);
     if (!initialized) {
 	Stdio_Setup(&stream, 0, 1, streamBuffer, STREAM_BUFFER_SIZE,
 		(void (*)()) 0, writeProc,  (int (*)()) 0, (ClientData) 0);
@@ -123,6 +131,8 @@ doVprintf(format, args)
     bytesWritten = 0;
     vfprintf(&stream, format, *args);
     fflush(&stream);
+    MASTER_UNLOCK(sysPrintMutex);
+    recursiveCallP = 0;
     return (bytesWritten);
 
 }
@@ -157,9 +167,7 @@ Sys_DoPrintf(va_alist)
 
 	va_start(args);
 	format = va_arg(args, char *);
-	MASTER_LOCK(sysPrintMutex);
 	count = doVprintf(format, &args);
-	MASTER_UNLOCK(sysPrintMutex);
 	va_end(args);
 
 	return (count);
@@ -196,25 +204,16 @@ panic(va_alist)
 {
     char *format;
     va_list args;
-    static int	recursiveCallP = 0;	/* prevent recursive calls to panic
-					 * that could occur if doVprintf
-					 * fails, etc.  */
 
     va_start(args);
     format = va_arg(args, char *);
 
-    if (recursiveCallP != 0) {
-	return;
-    }
-    recursiveCallP = 1;
-	
     Dev_SyslogDebug(TRUE);
     printf("Fatal Error: ");
-    MASTER_LOCK(sysPrintMutex);
     (void) doVprintf(format,&args);
+    MASTER_LOCK(sysPrintMutex);
     sysPanicing = TRUE;
     MASTER_UNLOCK(sysPrintMutex);
-    recursiveCallP = 0;
     DBG_CALL;
     Dev_SyslogDebug(FALSE);
 }
@@ -249,19 +248,12 @@ Sys_Panic(va_alist)
     Sys_PanicLevel 	level;
     char 		*format;
     va_list 		args;
-    static int	recursiveCallP = 0;	/* prevent recursive calls to panic
-					 * that could occur if doVprintf
-					 * fails, etc.  */
 
     va_start(args);
 
     level = va_arg(args, Sys_PanicLevel);
     format = va_arg(args, char *);
 
-    if (recursiveCallP != 0) {
-	return;
-    }
-    recursiveCallP = 1;
     if (level == SYS_WARNING) {
         printf("Warning: ");
     } else {
@@ -269,18 +261,15 @@ Sys_Panic(va_alist)
         printf("Fatal Error: ");
     }
 
-    MASTER_LOCK(sysPrintMutex);
     (void) doVprintf(format,&args);
 
     if (level != SYS_FATAL) {
-	MASTER_UNLOCK(sysPrintMutex);
-	recursiveCallP = 0;
 	return;
     }
 
+    MASTER_LOCK(sysPrintMutex);
     sysPanicing = TRUE;
     MASTER_UNLOCK(sysPrintMutex);
-    recursiveCallP = 0;
     DBG_CALL;
     Dev_SyslogDebug(FALSE);
     return;
@@ -345,21 +334,11 @@ printf(va_alist)
 {
     char *format;
     va_list	args;
-    static int	recursiveCallP = 0;	/* prevent recursive calls to panic
-					 * that could occur if doVprintf
-					 * fails, etc.  */
 
     va_start(args);
     format = va_arg(args, char *);
 
-    if (recursiveCallP != 0) {
-	return;
-    }
-    recursiveCallP = 1;
-    MASTER_LOCK(sysPrintMutex);
     (void) doVprintf(format, &args);
-    MASTER_UNLOCK(sysPrintMutex);
-    recursiveCallP = 0;
     va_end(args);
 }
 
@@ -374,20 +353,10 @@ Sys_Printf(va_alist)
 {
     char *format;
     va_list	args;
-    static int	recursiveCallP = 0;	/* prevent recursive calls to panic
-					 * that could occur if doVprintf
-					 * fails, etc.  */
 
     va_start(args);
     format = va_arg(args, char *);
 
-    if (recursiveCallP != 0) {
-	return;
-    }
-    recursiveCallP = 1;
-    MASTER_LOCK(sysPrintMutex);
     (void) doVprintf(format, &args);
-    MASTER_UNLOCK(sysPrintMutex);
-    recursiveCallP = 0;
     va_end(args);
 }
