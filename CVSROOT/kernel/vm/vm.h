@@ -359,7 +359,7 @@ extern ReturnStatus Vm_CopyInProc _ARGS_((int numBytes,
 extern ReturnStatus Vm_CopyOutProc _ARGS_((int numBytes, Address fromAddr,
 	Boolean fromKernel, register Proc_ControlBlock *toProcPtr,
 	Address toAddr));
-extern ReturnStatus VmMach_StringNCopy _ARGS_((register int numBytes,
+extern ReturnStatus Vm_StringNCopy _ARGS_((int numBytes,
 	Address sourcePtr, Address destPtr, int *bytesCopiedPtr));
 extern void Vm_MakeAccessible _ARGS_((int accessType, int numBytes,
 	Address startAddr, register int *retBytesPtr,
