@@ -47,7 +47,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif /* not lint */
 
 #include "sprite.h"
 #include "sys.h"
@@ -65,7 +65,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 /* For CallBack call */
 #include "timer.h"
 
-static TimerDevice *timerRegsPtr = (TimerDevice *) DEV_TIMER_ADDR;
+static volatile TimerDevice *timerRegsPtr = 
+    (volatile TimerDevice *) DEV_TIMER_ADDR;
 
 /*
  * Flags to indicate whether a timer is enabled or not.
@@ -469,7 +470,7 @@ Timer_TimerServiceInterrupt(clientData, stack)
     timerStatus = timerRegsPtr->interruptReg;
 #ifdef lint
     timerRegsPtr->interruptReg = timerStatus;
-#endif lint
+#endif
     /*
      * End in-lined Timer_TimerGetStatus
      */
@@ -697,5 +698,4 @@ TimeToCounters(time, counterPtr)
     counterPtr->hundredths = 
 		(time.microseconds % TENTH_SECOND) / HUNDREDTH_SECOND;
 }
-#endif NOT_USED
-
+#endif /* NOT_USED */

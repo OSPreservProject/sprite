@@ -120,4 +120,4 @@ typedef struct {
     unsigned char		commandReg;
 } TimerDevice;
 
-#endif _DEVTIMERINT
+#endif /* _DEVTIMERINT */
