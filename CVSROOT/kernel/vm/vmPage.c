@@ -63,7 +63,7 @@ static	VmCore          *coreMap;	/* Pointer to core map that is
  * maximum possible number that can be working at a time.
  */
 static	int	numPageOutProcs = 0;
-int		vmMaxPageOutProcs = 3;
+int		vmMaxPageOutProcs = VM_MAX_PAGE_OUT_PROCS;
 
 /*
  * Page lists.  There are four different lists and a page can be on at most
@@ -1415,7 +1415,7 @@ Vm_PageIn(virtAddr, protFault)
     VmVirtAddrParse(procPtr, virtAddr, &transVirtAddr);
     segPtr = transVirtAddr.segPtr;
     page = transVirtAddr.page;
-    if (segPtr == (Vm_Segment *) NIL) {
+    if ((segPtr == (Vm_Segment *) NIL) || (segPtr->flags & VM_SEG_IO_ERROR)) {
 	return(FAILURE);
     }
 
@@ -1491,7 +1491,7 @@ Vm_PageIn(virtAddr, protFault)
 		    dprintf("Vm_PageIn: VmCOR failure\n");
 		}
 		status = FAILURE;
-		goto pageinDone;
+		goto pageinError;
 	    }
 	} else if (result == IS_COW) {
 	    VmCOW(&transVirtAddr);
@@ -1571,6 +1571,7 @@ Vm_PageIn(virtAddr, protFault)
      * Now check to see if the read succeeded.  If not destroy all processes
      * that are sharing the code segment.
      */
+pageinError:
     if (status != SUCCESS) {
 	if (transVirtAddr.segPtr->type == VM_SHARED) {
 	    dprintf("Vm_PageIn: Page read failed.  Invalidating pages.\n");
@@ -1774,6 +1775,7 @@ KillCallback(data)
  *
  * Side effects:
  *     All processes sharing this segment are destroyed.
+ *	Marks the segment as having an I/O error.
  *
  * ----------------------------------------------------------------------------
  */
@@ -1786,10 +1788,12 @@ VmKillSharers(segPtr)
 
     LOCK_MONITOR;
 
-    LIST_FORALL(segPtr->procList, (List_Links *) procLinkPtr) {
-	Proc_CallFunc(KillCallback,
-		      (ClientData) procLinkPtr->procPtr->processID,
-		      0);
+    if ((segPtr->flags & VM_SEG_IO_ERROR) == 0) {
+	LIST_FORALL(segPtr->procList, (List_Links *) procLinkPtr) {
+	    Proc_CallFunc(KillCallback,
+			  (ClientData) procLinkPtr->procPtr->processID,
+			  0);
+	}
     }
     segPtr->flags |= VM_SEG_IO_ERROR;
 
