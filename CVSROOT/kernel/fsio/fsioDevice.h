@@ -70,7 +70,7 @@ typedef struct FsDeviceIOHandle {
 					 * exceptions (is this needed?). */
     Boolean	readNotifyScheduled;	/* Used to optimize out notifies; */
     Boolean	writeNotifyScheduled;	/*  important for serial lines, etc. */
-} FsDeviceIOHandle;			/* 80 BYTES */
+} FsDeviceIOHandle;			/* 88 BYTES */
 
 /*
  * Data transferred when a local device stream migrates.

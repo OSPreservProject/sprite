@@ -79,7 +79,7 @@ typedef struct FsLocalFileIOHandle {
 					 * with other I/O and closes/deletes. */
     struct Vm_Segment	*segPtr;	/* Reference to code segment needed
 					 * to flush VM cache. */
-} FsLocalFileIOHandle;			/* 232 BYTES */
+} FsLocalFileIOHandle;			/* 240 BYTES */
 
 /*
  * Flags for local I/O handles.

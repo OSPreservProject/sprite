@@ -89,7 +89,8 @@ typedef struct FsLockState {
     List_Links	waitList;	/* List of processes to wakeup when the
 				 * file gets unlocked */
     int		numShared;	/* Number of shared lock holders */
-} FsLockState;			/* 16 BYTES */
+    List_Links	ownerList;	/* List of processes responsible for locks */
+} FsLockState;			/* 24 BYTES */
 
 /*
  * (The following lock bits are defined in user/fs.h)
