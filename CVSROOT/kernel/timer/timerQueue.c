@@ -454,8 +454,10 @@ Timer_DescheduleRoutine(elementPtr)
  *----------------------------------------------------------------------
  */
 
+/*ARGSUSED*/
 void
-Timer_DumpQueue()
+Timer_DumpQueue(data)
+    ClientData	data;	/* Not used. */
 {
     Timer_Ticks	ticks;
     Time	time;
