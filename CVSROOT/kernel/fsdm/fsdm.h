@@ -22,7 +22,7 @@
  * disk is divided into domains.
  *
  * FS_NUM_DISK_PARTS defines how many different domains there could be
- *	on a disk.  Generally, not all the domains are defined.  
+ *	on a disk.  Generally, not all the domains are defined.
  */
 #define FS_NUM_DISK_PARTS	8
 
@@ -46,7 +46,7 @@ typedef struct FsDiskPartition {
  *      NOTE: we are temporarily using Sun's format of the Disk Header,
  *      not the following typedef.  Sun's label is defined in
  *      "../sun/sunDiskLabel.h".  We assume that sector zero contains a
- *      Sun format label, and the boot program starts at sector 1. 
+ *      Sun format label, and the boot program starts at sector 1.
  *	Sun3's read 16 boot sectors and Sun4's read 64.
  */
 
@@ -209,7 +209,7 @@ typedef struct FsDomainHeader {
 				 * from numFileDesc */
     int		numFileDesc;	/* The number of FsDescriptors in the domain.
 				 * This is an upper limit on the number of
-				 * files that be kept in the domain */ 
+				 * files that be kept in the domain */
     /*
      * A large bitmap is used to record the status of all the data blocks
      * in the domain.
@@ -261,7 +261,7 @@ typedef struct FsSummaryInfo {
 					 * marked NOT_SAFE then this field
 					 * is undefined, but attachTime is ok
 					 * as long as TIMES_VALID is set. */
-    int		fixCount;		/* Number of consecutive times that 
+    int		fixCount;		/* Number of consecutive times that
 					 * fscheck has found an error in this
 					 * domain. Used to prevent infinite
 					 * looping.
@@ -373,10 +373,10 @@ typedef struct FsFileDescriptor {
 /*
  * The special index value FS_NIL_INDEX for direct[] and indirect[]
  * means there is no block allocated for that index.
- */ 
+ */
 #define FS_NIL_INDEX	-1
 /*
- * The bad block file, the root directory of a domain and the lost and found 
+ * The bad block file, the root directory of a domain and the lost and found
  * directory have well known file numbers.
  */
 #define FS_BAD_BLOCK_FILE_NUMBER	1
@@ -418,4 +418,4 @@ typedef struct FsDirEntry {
     (FS_DIR_ENTRY_HEADER + \
     ((stringLength / FS_REC_LEN_GRAIN) + 1) * FS_REC_LEN_GRAIN)
 
-#endif _FSDISK
+#endif /* _FSDISK */

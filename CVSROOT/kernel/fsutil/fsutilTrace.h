@@ -119,7 +119,7 @@ extern int fsTracedFile;
     if (fsTracing) {							\
 	Trace_Insert(fsTraceHdrPtr, event, (ClientData)pathName);	\
     }
-#endif notdef
+#endif /* notdef */
 #define FS_TRACE_NAME(event, pathName)
 
 #define FS_TRACE_HANDLE(event, hdrPtr) \
@@ -165,6 +165,6 @@ extern int fsTracedFile;
 #define	FS_TRACE_READ_AHEAD(event, blockNum)
 #define FS_TRACE_BLOCK(event, blockPtr)
 
-#endif not CLEAN
+#endif /* not CLEAN */
 
-#endif _FSTRACE
+#endif /* _FSTRACE */

@@ -167,4 +167,4 @@ typedef struct Fs2PathRedirectInfo {
  */
 extern void FsSetIDs();
 
-#endif _FSNAMEOPS
+#endif /* _FSNAMEOPS */

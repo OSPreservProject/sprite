@@ -78,7 +78,7 @@
  *	FS_LCL_NAMED_PIPE_STREAM Stream to a named pipe whose backing file
  *				is on the local host.
  *	FS_RMT_NAMED_PIPE_STREAM Stream to a named pipe whose backing file
- *				is remote. 
+ *				is remote.
  */
 #define FS_STREAM			0
 #define FS_LCL_FILE_STREAM		1
@@ -209,7 +209,7 @@ typedef struct FsCacheFileInfo {
     int		   blocksInCache;  /* The number of blocks that this file has
 				      in the cache. */
     int		   blocksWritten;  /* The number of blocks that have been
-				    * written in a row without requiring a 
+				    * written in a row without requiring a
 				    * sync of the servers cache. */
     int		   numDirtyBlocks; /* The number of dirty blocks in the cache.*/
     Sync_Condition noDirtyBlocks;  /* Notified when all write backs done. */
@@ -253,7 +253,7 @@ typedef struct FsConsistInfo {
 				 * consistency actions have replied. */
 } FsConsistInfo;
 
-/* 
+/*
  * The I/O descriptor for remote streams.  This is all that is needed for
  *	remote devices, remote pipes, and named pipes that are not cached
  *	on the local machine.  This structure is also embedded into the
@@ -298,7 +298,7 @@ extern Boolean fsShouldSyncDisks;
  * TRUE once the file system has been initialized, so we
  * know we can sync the disks safely.
  */
-extern  Boolean fsInitialized;		
+extern  Boolean fsInitialized;
 
 /*
  * The directory that temporary files will live in.
@@ -313,7 +313,7 @@ extern	int	fsTmpDirNum;
  * FS_USER_TYPE_OBJECT were mapped into FS_FILE_TYPE_DERIVED before they
  * were separated into two categories.  It would be possible to flag other
  * derived files (text formatting output, for example) to be in the DERIVED
- * category as well.  
+ * category as well.
  */
 #define FS_FILE_TYPE_TMP 0
 #define FS_FILE_TYPE_SWAP 1
@@ -436,4 +436,4 @@ extern  void	 	FsRecordDeletionStats();
 
 #define mnew(type)	(type *)malloc(sizeof(type))
 
-#endif _FSINT
+#endif /* _FSINT */

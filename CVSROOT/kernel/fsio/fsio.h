@@ -354,4 +354,4 @@ typedef struct FsStreamTypeOps {
 
 extern FsStreamTypeOps fsStreamOpTable[];
 
-#endif _FSOPTABLE
+#endif /* _FSOPTABLE */

@@ -81,4 +81,4 @@ extern void		FsFetchDirtyBlocks();
 extern ReturnStatus	Fs_RpcConsist();
 extern ReturnStatus	Fs_RpcConsistReply();
 
-#endif _FSCONSIST
+#endif /* _FSCONSIST */

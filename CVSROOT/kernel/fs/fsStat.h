@@ -451,4 +451,4 @@ FsTypeStats fsTypeStats;
 
 extern	FsStats	fsStats;
 
-#endif _FSSTAT
+#endif /* _FSSTAT */

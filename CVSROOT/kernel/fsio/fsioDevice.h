@@ -106,4 +106,4 @@ extern ReturnStatus FsRemoteIOClose();
 
 extern ReturnStatus FsDeviceBlockIO();
 
-#endif _FSDEVICE
+#endif /* _FSDEVICE */

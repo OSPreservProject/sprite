@@ -18,7 +18,7 @@
 #include "fsFile.h"
 
 /*
- * Stuff for block allocation 
+ * Stuff for block allocation
  */
 
 #define	FS_NUM_FRAG_SIZES	3
@@ -41,7 +41,7 @@ typedef struct FsCylinder {
  */
 
 typedef struct FsFragment {
-    List_Links	links;		/* Links to put in list of free fragments of 
+    List_Links	links;		/* Links to put in list of free fragments of
 				   this size. */
     int		blockNum;	/* Block that this fragment comes from. */
 } FsFragment;
@@ -69,7 +69,7 @@ typedef struct FsDomain {
 					 * information. */
     List_Links	*fragLists[FS_NUM_FRAG_SIZES];	/* Lists of fragments. */
     Sync_Lock	dataBlockLock;		/* Lock for data block allocation. */
-    int		minKFree;		/* The minimum number of kbytes that 
+    int		minKFree;		/* The minimum number of kbytes that
 					 * must be free at all times. */
     /*
      * File descriptor allocation.
@@ -78,7 +78,7 @@ typedef struct FsDomain {
 					 * map.*/
     Sync_Lock	fileDescLock;		/* Lock for file descriptor
 					 * allocation. */
-    int		flags;		/* Flags defined below. */		
+    int		flags;		/* Flags defined below. */
     int		refCount;	/* Number of active users of the domain. */
     Sync_Condition condition;	/* Condition to wait on. */
 } FsDomain;
@@ -104,11 +104,11 @@ extern FsDomain *fsDomainTable[];
 
 /*
  * Types of indexing.  Order is important here because the indirect and
- * double indirect types can be used to index into the indirect block 
+ * double indirect types can be used to index into the indirect block
  * pointers in the file descriptor.
  */
 
-#define	FS_INDIRECT		0 
+#define	FS_INDIRECT		0
 #define	FS_DBL_INDIRECT		1
 #define	FS_DIRECT		2
 
@@ -124,7 +124,7 @@ typedef struct FsIndirectInfo {
     	int		index;		/* An index into the indirect block. */
     	Boolean	 	blockDirty;	/* TRUE if the block has been
 					   modified. */
-    	int	 	deleteBlock;	/* FS_DELETE_BLOCK bit set if should 
+    	int	 	deleteBlock;	/* FS_DELETE_BLOCK bit set if should
 					   delete the block when are
 					   done with it. */
 } FsIndirectInfo;
@@ -142,7 +142,7 @@ typedef struct FsBlockIndexInfo {
 					   block. */
     int		*blockAddrPtr;		/* Pointer to pointer to block. */
     int		directIndex;		/* Index into direct block pointers. */
-    FsIndirectInfo indInfo[2];		/* Used to keep track of the two 
+    FsIndirectInfo indInfo[2];		/* Used to keep track of the two
 					   indirect blocks. */
     int		 flags;			/* Flags defined below. */
     FsDomain	*domainPtr;		/* Domain that the file is in. */
@@ -180,7 +180,7 @@ extern ReturnStatus	FsStoreFileDesc();
 extern ReturnStatus	FsFreeFileDesc();
 
 /*
- * Declarations for the local Domain data block allocation routines and 
+ * Declarations for the local Domain data block allocation routines and
  * indexing routines.
  */
 
@@ -235,4 +235,4 @@ ReturnStatus FsLocalSetFirstByte();
 extern	FsDomain	*FsDomainFetch();
 extern	void		FsDomainRelease();
 
-#endif _FSLOCALDOMAIN
+#endif /* _FSLOCALDOMAIN */

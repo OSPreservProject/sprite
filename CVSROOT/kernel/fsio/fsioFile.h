@@ -59,7 +59,7 @@ typedef struct FsFileReopenParams {
  *		client could open for reading and possibly see stale data.
  *	FS_SWAP	This stream flag is passed along so the server doesn't
  *		erroneously grant cacheability to swap files.
- *			
+ *
  */
 #define FS_HAVE_BLOCKS		0x1
 /*resrv FS_SWAP			0x4000 */
@@ -160,4 +160,4 @@ extern Boolean		FsRmtFileScavenge();
 extern ReturnStatus	FsRmtFileClose();
 
 extern void		FsFileSyncLockCleanup();
-#endif _FSFILE
+#endif /* _FSFILE */

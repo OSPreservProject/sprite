@@ -67,12 +67,12 @@
 
 
 /*
- * Structure to represent a cache block in the fileservers cache block 
+ * Structure to represent a cache block in the fileservers cache block
  * list and the core map list.
  */
 
 typedef struct FsCacheBlock {
-    List_Links	cacheLinks;	/* Links to put block into list of unused 
+    List_Links	cacheLinks;	/* Links to put block into list of unused
 				   cache blocks or LRU list of cache blocks.
 				   THIS MUST BE FIRST in the struct. */
     List_Links	dirtyLinks;	/* Links to put block into list of dirty
@@ -89,7 +89,7 @@ typedef struct FsCacheBlock {
     FsCacheFileInfo *cacheInfoPtr;	/* Reference to file's cache info. */
     int		fileNum;	/* For consistency checks */
     int		blockNum;	/* The number of this block in the file. */
-    int		diskBlock;	/* The block number on disk for this block. 
+    int		diskBlock;	/* The block number on disk for this block.
 				   For remote blocks this equals blockNum. */
     int		blockSize;	/* The number of valid bytes in this block. */
     int		refCount;	/* Number of times that the block is referenced.
@@ -106,9 +106,9 @@ typedef struct FsCacheBlock {
 
 #define FILE_LINKS_TO_BLOCK(ptr) \
 		((FsCacheBlock *) ((int) (ptr) - 2 * sizeof(List_Links)))
-/* 
- * Flags for a FsCacheBlock: 
- * 
+/*
+ * Flags for a FsCacheBlock:
+ *
  *   FS_BLOCK_FREE		The block is not being used.
  *   FS_BLOCK_ON_DIRTY_LIST	The block is on the dirty list.
  *   FS_BLOCK_BEING_WRITTEN	The block is in the process of being written to
@@ -119,15 +119,15 @@ typedef struct FsCacheBlock {
  *				been cleaned.
  *   FS_MOVE_TO_FRONT		After this block has finished being cleaned
  *				move it to the front of the LRU list.
- *   FS_WRITE_BACK_WAIT		This block is being written out by 
- *				FsCacheWriteBack which is waiting for all 
+ *   FS_WRITE_BACK_WAIT		This block is being written out by
+ *				FsCacheWriteBack which is waiting for all
  *				such blocks to be written out.
  *   FS_BLOCK_WRITE_LOCKED	This block is being modified.
  *   FS_BLOCK_NEW		This block was just created.
  *   FS_BLOCK_CLEANER_WAITING	The block cleaner is waiting for this
  *				block to become unlocked in order to write
  *				it out.
- *   FS_NOT_MAPPED		This cache block does not have physical memory 
+ *   FS_NOT_MAPPED		This cache block does not have physical memory
  *				behind it.
  *   FS_IND_CACHE_BLOCK		This block is an indirect block.
  *   FS_DESC_CACHE_BLOCK	This block is a file descriptor block.
@@ -136,7 +136,7 @@ typedef struct FsCacheBlock {
  *   FS_READ_AHEAD_BLOCK	This block was read ahead.
  *   FS_IO_IN_PROGRESS		IO is in progress on this block.
  *   FS_CACHE_DONT_BLOCK	Don't block if the cache block is already
- *				locked.	
+ *				locked.
  *   FS_PIPE_BLOCK		This is a block that is permanently locked
  *				so that it can serve as the data area for
  *				a pipe.
@@ -208,17 +208,17 @@ typedef struct FsCacheBlock {
  */
 extern	int	fsCacheDebug;		/* Debug flag */
 extern	int	fsNumCacheBlocks;	/* Number of blocks in the cache */
-extern	Boolean	fsLargeFileMode;	/* TRUE => are in mode where large 
+extern	Boolean	fsLargeFileMode;	/* TRUE => are in mode where large
 					 * files cannot occupy too large a
 					 * portion of the cache. */
 extern	int	fsMaxFilePortion;	/* Number to divide maximum number of
 					 * cache blocks by determine size of
 					 * file that puts it into large file
 					 * mode. */
-extern	int	fsMaxFileSize;		/* Maximum size of a file before 
+extern	int	fsMaxFileSize;		/* Maximum size of a file before
 					 * changing to large file mode. */
 /*
- * Cache routines. 
+ * Cache routines.
  */
 extern	void		Fs_CacheWriteBack();
 extern	ReturnStatus	FsCacheFileWriteBack();
@@ -239,4 +239,4 @@ extern	void		FsBlockCacheInit();
 extern	int		FsPreventWriteBacks();
 extern	void		FsAllowWriteBacks();
 
-#endif _FSBLOCKCACHE
+#endif /* _FSBLOCKCACHE */

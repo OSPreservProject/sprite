@@ -39,4 +39,4 @@ typedef struct FsPdevState {
 				 * matching stream here on the server */
 } FsPdevState;
 
-#endif _FSPDEVSTATE
+#endif /* _FSPDEVSTATE */

@@ -40,7 +40,7 @@ typedef struct FsPrefix {
     int		serverID;	/* re-establish a prefix table entry. */
 				/* serverID is also used to find a prefix.
 				 * It contains the server id if it is
-				 * known, otherwise it contains the 
+				 * known, otherwise it contains the
 				 * broadcast id. */
     int		flags;		/* One of the flags defined below. */
     /*
@@ -134,4 +134,4 @@ extern	void		FsPrefixOpenDone();
 extern	FsPrefix *	FsPrefixFromFileID();
 extern	void		FsPrefixHandleClose();
 
-#endif _FSPREFIX
+#endif /* _FSPREFIX */

@@ -72,4 +72,4 @@ extern ReturnStatus FsRmtPipeMigrate();
 extern ReturnStatus FsRmtPipeReopen();
 extern ReturnStatus FsRmtPipeClose();
 
-#endif _FSPIPE
+#endif /* _FSPIPE */

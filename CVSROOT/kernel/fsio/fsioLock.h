@@ -28,4 +28,4 @@ extern ReturnStatus	FsLock();
 extern ReturnStatus	FsUnlock();
 extern void		FsLockClose();
 extern void		FsLockClientKill();
-#endif _FSLOCK
+#endif /* _FSLOCK */

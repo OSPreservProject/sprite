@@ -60,4 +60,4 @@ typedef struct  FsMigParam {
 extern ReturnStatus	FsMigrateUseCounts();
 extern void		FsIOClientMigrate();
 extern ReturnStatus	FsNotifyOfMigration();
-#endif _FSMIGRATE
+#endif /* _FSMIGRATE */

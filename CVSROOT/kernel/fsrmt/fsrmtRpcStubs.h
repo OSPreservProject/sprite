@@ -42,4 +42,4 @@ extern Fs_RpcReleaseStream();
 extern Fs_RpcReopen();
 extern Fs_RpcRecovery();
 extern Fs_RpcDomainInfo();
-#endif _FS_RPC_STUBS
+#endif /* _FS_RPC_STUBS */

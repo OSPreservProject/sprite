@@ -38,4 +38,4 @@ typedef	struct	FsOpenResultsParam {
     FsUnionData		openData;
 } FsOpenResultsParam;
 
-#endif _FSNAMEOPSINT
+#endif /* _FSNAMEOPSINT */

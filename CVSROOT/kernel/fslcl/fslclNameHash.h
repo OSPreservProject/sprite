@@ -14,7 +14,7 @@
 
 #include "list.h"
 
-/* 
+/*
  * The hash table includes an array of bucket list headers,
  * and some administrative information that affects the hash
  * function and comparison functions.  The table is contrained to
@@ -25,7 +25,7 @@ typedef struct FsHashTable {
     List_Links		lruList;	/* The header of the LRU list */
     int 		size;		/* Actual size of array. */
     int 		numEntries;	/* Number of entries in the table. */
-    int 		downShift;	/* Shift count, used in hashing 
+    int 		downShift;	/* Shift count, used in hashing
 					 * function. */
     int 		mask;		/* Used to select bits for hashing. */
 } FsHashTable;
@@ -44,8 +44,8 @@ typedef struct FsHashBucket {
     List_Links	list;
 } FsHashBucket;
 
-/* 
- * The following defines one entry in the hash table. 
+/*
+ * The following defines one entry in the hash table.
  */
 
 typedef struct FsHashEntry {
@@ -104,4 +104,4 @@ extern FsHashEntry	*FsHashNext();
 	FsHashDelete(table, string, (FsHandleHeader *)keyHandle); \
     }
 
-#endif _FSNAMEHASH
+#endif /* _FSNAMEHASH */
