@@ -13,6 +13,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "machConst.h"
+#include "machMon.h"
 #include "machInt.h"
 #include "mach.h"
 #include "sys.h"
@@ -159,6 +160,8 @@ int machSpecialHandlingOffset;		/* Byte offset of the specialHandling
  */
 Mach_State	*machCurStatePtr = (Mach_State *)NIL;
 
+MachMonBootParam	machMonBootParam;
+
 void	SetupSigHandler();
 void	ReturnFromSigHandler();
 void	MachUserReturn();
@@ -186,6 +189,7 @@ Mach_Init()
     int	*vecTablePtr;
     int	*protoVecTablePtr;
     int	i;
+    int	offset;
 
     /*
      * Set exported machine dependent variables.
@@ -200,6 +204,23 @@ Mach_Init()
     mach_MaxUserStackAddr = (Address)MACH_MAX_USER_STACK_ADDR;
     mach_LastUserStackPage = (MACH_MAX_USER_STACK_ADDR - 1) / VMMACH_PAGE_SIZE;
 
+    /*
+     * Copy the boot parameter structure. The original location will get
+     * unmapped during vm initialization so we need to get our own copy.
+     */
+    machMonBootParam = **(romVectorPtr->bootParam);
+    offset = (int) *(romVectorPtr->bootParam) - (int) &(machMonBootParam);
+    for (i = 0; i < 8; i++) {
+	if (machMonBootParam.argPtr[i] != (char *) 0 &&
+	 machMonBootParam.argPtr[i] != (char *) NIL) {
+	    machMonBootParam.argPtr[i] -= (char *) offset;
+	}
+    }
+    /*
+     * Clear out the line input buffer to the prom so we don't get extra
+     * characters at the end of shorter reboot strings.
+     */
+    bzero(romVectorPtr->lineBuf, *romVectorPtr->lineSize);
     /*
      * Initialize the vector table.
      */
@@ -252,6 +273,7 @@ Mach_Init()
      * We start off with interrupts disabled.
      */
     mach_NumDisableInterrupts[0] = 1;
+
 }
 
 
@@ -1475,5 +1497,45 @@ int
 Mach_GetNumProcessors()
 {
 	return (mach_NumProcessors);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_GetBootArgs --
+ *
+ *	Returns the arguments out of the boot parameter structure. 
+ *
+ * Results:
+ *	Number of elements returned in argv.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Mach_GetBootArgs(argc, bufferSize, argv, buffer)
+	int	argc;			/* Number of elements in argv */
+	int	bufferSize;		/* Size of buffer */
+	char	**argv;			/* Ptr to array of arg pointers */
+	char	*buffer;		/* Storage for arguments */
+{
+    int		i;
+    int		offset;
+
+    bcopy(machMonBootParam.strings, buffer, 
+	  (bufferSize < 100) ? bufferSize : 100);
+    offset = (int) machMonBootParam.strings - (int) buffer;
+    for(i = 0; i < argc; i++) {
+	if (machMonBootParam.argPtr[i] == (char *) 0 ||
+	    machMonBootParam.argPtr[i] == (char *) NIL) {
+	    break;
+	}
+	argv[i] = (char *) (machMonBootParam.argPtr[i] - (char *) offset);
+    }
+    return i;
 }
 
