@@ -20,7 +20,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vmMachInt.h"
 #include "vm.h"
 #include "vmInt.h"
-#include "sunMon.h"
+#include "machMon.h"
 #include "net.h"
 #include "netEther.h"
 #include "netInet.h"
@@ -198,8 +198,8 @@ DbgCheckNmis()
     int	oldContext;
     oldContext = VmMachGetKernelContext(); 
     VmMachSetKernelContext(VMMACH_KERN_CONTEXT);
-    Mon_StartNmi();
-    Mon_StopNmi();
+    Mach_MonStartNmi();
+    Mach_MonStopNmi();
     VmMachSetKernelContext(oldContext);
 #endif
 }
@@ -433,7 +433,7 @@ DbgComplain(trapStack)
 			TranslateException(trapStack.trapType), 
 				trapStack.excStack.pc,
 				trapStack.excStack.tail.addrBusErr.faultAddr);
-    Mon_Abort();
+    Mach_MonAbort();
 }
 
 
@@ -462,7 +462,7 @@ Dbg_Init()
     dbgPanic = FALSE;
     dbg_BeingDebugged = FALSE;
     machineType = Mach_GetMachineType();
-    Mon_Printf("Machine type %d\n", machineType);
+    Mach_MonPrintf("Machine type %d\n", machineType);
 }
 
 
@@ -741,7 +741,7 @@ Dbg_Main(stackHole, dbgStack)
     /*
      * Turn on non-maskable interrupts.
      */
-    Mon_StartNmi();
+    Mach_MonStartNmi();
 #endif
     /*
      * Switch to kernel context so that we can access the monitor.
@@ -753,8 +753,8 @@ Dbg_Main(stackHole, dbgStack)
      * Put us at interrupt level so that Sys_Printf won't accidently enable
      * interrupts.
      */
-    atInterruptLevel = sys_AtInterruptLevel;
-    sys_AtInterruptLevel = TRUE;
+    atInterruptLevel = mach_AtInterruptLevel;
+    mach_AtInterruptLevel = TRUE;
 
     /*
      * Force system log output to the console.
@@ -1038,7 +1038,7 @@ Dbg_Main(stackHole, dbgStack)
 		    PutReplyBytes(4, (Address) &dummy);
 		    SendReply();
 		}
-		Mon_Reboot(rebootString);
+		Mach_MonReboot(rebootString);
 	    }
 	    case DBG_INST_WRITE:
 	    case DBG_DATA_WRITE: {
@@ -1291,7 +1291,7 @@ Dbg_Main(stackHole, dbgStack)
     Byte_Copy(dbgStackLength, (Address) &dbgGlobalStack, (Address) dbgSavedSP);
 
     VmMachSetKernelContext(oldContext);
-    sys_AtInterruptLevel = atInterruptLevel;
+    mach_AtInterruptLevel = atInterruptLevel;
     dbg_UsingNetwork = FALSE;
 
     /*
@@ -1304,6 +1304,6 @@ Dbg_Main(stackHole, dbgStack)
     /*
      * Turn off non-maskable interrupts.
      */
-    Mon_StopNmi();
+    Mach_MonStopNmi();
 #endif
 }

@@ -18,7 +18,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "dbgRs232.h"
 #include "dbgInt.h"
 #include "sys.h"
-#include "sunMon.h"
 #include "mach.h"
 
 /*
