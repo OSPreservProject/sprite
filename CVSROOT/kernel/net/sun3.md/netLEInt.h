@@ -404,6 +404,8 @@ typedef struct {
 					 * current transmit is done. */
     int			lastRecvCnt;	/* Number of packets done during
 					 * last receive interrupt. */
+    int			lateCollisions;	/* Number of transmit late collision
+					 * errors. */
 #ifdef ds5000
     char		*bufAddr;	/* Network buffer. */
     char		*bufAllocPtr;	/* Current allocation address in

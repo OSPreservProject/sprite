@@ -441,9 +441,6 @@ NetLEXmitDone(statePtr)
 
 	if (NetBfByteTest(descPtr->bits1, Error, 1)) {
 	    statePtr->stats.xmitPacketsDropped++;
-	    if (NetBfShortTest(descPtr->bits2, LateCollision, 1)) {
-		printf("LE ethernet: Transmit late collision.\n");
-	    }
 	    if (NetBfShortTest(descPtr->bits2, LostCarrier, 1)) {
 		printf("LE ethernet: Lost carrier.\n");
 	    }
@@ -453,12 +450,18 @@ NetLEXmitDone(statePtr)
 	     */
 	    if ((NetBfShortTest(descPtr->bits2, LateCollision, 1)) &&
 		(NetBfShortTest(descPtr->bits2, LostCarrier, 0))) {
-		printf("LE ethernet: Transmit late collision.\n");
+		statePtr->lateCollisions++;
+		if ((statePtr->lateCollisions % 100) == 0) {
+		    printf("LE ethernet: 100 transmit late collisions.\n");
+		}
 	    }
 	    if (NetBfShortTest(descPtr->bits2, RetryError, 1)) {
 		statePtr->stats.xmitCollisionDrop++;
 		statePtr->stats.collisions += 16;
-		printf("LE ethernet: Too many collisions.\n");
+		if ((statePtr->stats.xmitCollisionDrop % 100) == 0) {
+		    printf(
+	    "LE ethernet: 100 packets dropped due to too many collisions.\n");
+		}
 	    }
 	    if (NetBfShortTest(descPtr->bits2, UnderflowError, 1)) {
 		printf("LE ethernet: Memory underflow error.\n");

@@ -278,13 +278,17 @@ NetLERecvProcess(dropPackets, statePtr)
 		tossPacket = TRUE;	/* Throw away packet on error. */
 		if (NetBfByteTest(descPtr->bits, FramingError, 1)) {
 		    statePtr->stats.frameErrors++;
-		    printf(
-		       "LE ethernet: Received packet with framing error.\n");
+		    if ((statePtr->stats.frameErrors % 100) == 0) {
+			printf(
+		   "LE ethernet: Received 100 packets with framing errors.\n");
+		    }
 		}
 		if (NetBfByteTest(descPtr->bits, CrcError, 1)) {
 		    statePtr->stats.crcErrors++;
-		    printf(
-		       "LE ethernet: Received packet with CRC error.\n");
+		    if ((statePtr->stats.crcErrors % 100) == 0) {
+			printf(
+		       "LE ethernet: Received 100 packets with CRC errors.\n");
+		   }
 		}
 
 	     } 
