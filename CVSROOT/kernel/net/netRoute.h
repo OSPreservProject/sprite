@@ -79,7 +79,9 @@ extern Net_Route *netRouteArray[];
  * address used to reach that Sprite host.  The Reverse Arp protocol is
  * similar.  A host broadcasts a request that contains a a physical
  * (ethernet) address and waits for a reply that specifies the matching
- * Sprite ID.
+ * Sprite ID. 
+ *
+ * NOTE: This packet appears on the wire in network byte ordering.
  */
 typedef struct NetSpriteArp {
     int			flags;

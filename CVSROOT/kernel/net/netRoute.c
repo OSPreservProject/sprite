@@ -344,7 +344,8 @@ Net_InstallRoute(spriteID, flags, type, clientData, hostname, machType)
 	    etherHdrPtr = (Net_EtherHdr *)Mem_Alloc(sizeof(Net_EtherHdr));
 	    NET_ETHER_ADDR_COPY(*(Net_EtherAddress *)clientData,
 				NET_ETHER_HDR_DESTINATION(*etherHdrPtr));
-	    NET_ETHER_HDR_TYPE(*etherHdrPtr) = NET_ETHER_SPRITE;
+	    NET_ETHER_HDR_TYPE(*etherHdrPtr) = 
+			Net_HostToNetShort(NET_ETHER_SPRITE);
 	    routePtr->data = (Address)etherHdrPtr;
 	    break;
 	}
@@ -873,7 +874,8 @@ NetDoArp(mutexPtr, command, gatherPtr, packetPtr)
     etherHdrPtr = (Net_EtherHdr *)routePtr->data;
     NET_ETHER_ADDR_COPY(NET_ETHER_HDR_DESTINATION(*etherHdrPtr),
 			NET_ETHER_HDR_DESTINATION(etherHdr));
-    NET_ETHER_HDR_TYPE(etherHdr) = NET_ETHER_SPRITE_ARP;
+    NET_ETHER_HDR_TYPE(etherHdr) = 
+			Net_HostToNetShort(NET_ETHER_SPRITE_ARP);
 
     /*
      * Use a simple retry loop to get our reply.  The ARP protocol state
@@ -892,6 +894,8 @@ NetDoArp(mutexPtr, command, gatherPtr, packetPtr)
     List_InitElement((List_Links *) &arp);
     List_Insert((List_Links *)&arp, LIST_ATREAR(listPtr));
 
+    requestPtr->spriteHostID = Net_HostToNetInt(requestPtr->spriteHostID);
+    requestPtr->flags = Net_HostToNetInt(requestPtr->flags);
     while (retries < 4 && ((arp.state & ARP_HAVE_INPUT) == 0)) {
 	retries++;
 	if (command == NET_SPRITE_ARP_REQUEST) {
@@ -916,6 +920,8 @@ NetDoArp(mutexPtr, command, gatherPtr, packetPtr)
 	} while (((arp.state & ARP_HAVE_INPUT) == 0) &&
 		 (arp.state & ARP_IN_TIMEOUT_QUEUE));
     }
+    requestPtr->spriteHostID = Net_NetToHostInt(requestPtr->spriteHostID);
+    requestPtr->flags = Net_NetToHostInt(requestPtr->flags);
     List_Remove((List_Links *)&arp);
     if (arp.state & ARP_IN_TIMEOUT_QUEUE) {
 	Timer_DescheduleRoutine(&arp.timeout);
@@ -960,7 +966,9 @@ NetArpInput(packetPtr, packetLength)
     register Net_EtherHdr *inputEtherHdrPtr = (Net_EtherHdr *)packetPtr;
     register NetSpriteArp *arpDataPtr;
 
-    arpDataPtr = (NetSpriteArp *)((int)packetPtr + sizeof(Net_EtherHdr));
+    arpDataPtr = (NetSpriteArp *)(packetPtr + sizeof(Net_EtherHdr));
+    arpDataPtr->flags = Net_NetToHostInt(arpDataPtr->flags);
+    arpDataPtr->spriteHostID = Net_NetToHostInt(arpDataPtr->spriteHostID);
     switch (arpDataPtr->flags) {
 	case NET_SPRITE_ARP_REQUEST: {
 	    /*
@@ -1198,7 +1206,8 @@ NetArpOutput(spriteID, destPtr, flags)
 	NET_ETHER_ADDR_COPY(NET_ETHER_HDR_DESTINATION(*routeEtherHdrPtr),
 			    *destPtr);
     }
-    NET_ETHER_HDR_TYPE(*etherHdrPtr) = NET_ETHER_SPRITE_ARP;
+    NET_ETHER_HDR_TYPE(*etherHdrPtr) = 
+			Net_HostToNetShort(NET_ETHER_SPRITE_ARP);
 
     if (arpDebug) {
 	Sys_Printf("Sending%sARP reply for Sprite ID %d\n",
