@@ -156,4 +156,9 @@ extern	Address	VmMach_NetMemAlloc();
 extern	void	VmMach_NetMapPacket();
 #endif
 
+/*
+ * Shared memory.
+ */
+extern  Address         VmMach_SharedStart();
+
 #endif /* _VMMACH */

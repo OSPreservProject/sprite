@@ -123,4 +123,9 @@ extern	ReturnStatus	VmMach_Cmd();
 extern	void		VmMach_Trace();
 extern	void		VmMach_MakeNonCacheable();
 
+/*
+ * Shared memory.
+ */ 
+extern  Address         VmMach_SharedStart(); 
+
 #endif /* _VMMACH */
