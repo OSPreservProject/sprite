@@ -121,18 +121,10 @@ typedef struct FsRecoveryInfo {
     Sync_Lock		lock;		/* This struct is monitored */
     Sync_Condition	reopenComplete;	/* Notified when the handle has been
 					 * re-opened at the I/O server */
-    int			flags;		/* WANT_RECOVERY, RECOVERY_FAILED. */
+    int			flags;		/* defined in fsRecovery.c */
     ReturnStatus	status;		/* Recovery status */
     FsUseCounts		use;		/* Client's copy of use state */
 } FsRecoveryInfo;			/* 32 BYTES */
-
-/*
- * Values for the recovery info flags field.
- *	FS_WANT_RECOVERY	The handle needs to be re-opened at the server.
- *	FS_RECOVERY_FAILED	The last re-open attempt failed.
- */
-#define FS_WANT_RECOVERY	0x1
-#define FS_RECOVERY_FAILED	0x2
 
 
 /*
