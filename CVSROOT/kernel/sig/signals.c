@@ -431,11 +431,15 @@ LocalSend(procPtr, sigNum, code)
 	     * If the process is waiting then wake it up.
 	     */
 	    Sync_WakeWaitingProcess(procPtr);
-	    if (sigNum == SIG_KILL) {
+	    if (sigNum == SIG_KILL || sigNum == SIG_MIGRATE_TRAP ||
+		sigNum == SIG_MIGRATE_HOME) {
 		/*
-		 * Resume the process so that we can kill it.
+		 * Resume the process so that we can perform the signal.
+		 * If we're killing it, we tell Proc_ResumeProcess so it
+		 * will even wake up a debugged process.
 		 */
-		Proc_ResumeProcess(procPtr, TRUE);
+		Proc_ResumeProcess(procPtr,
+				   (sigNum == SIG_KILL) ? TRUE : FALSE);
 	    }
 	}
     }
