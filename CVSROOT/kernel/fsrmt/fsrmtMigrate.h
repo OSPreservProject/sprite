@@ -36,6 +36,9 @@ typedef struct FsMigInfo {
 extern Boolean fsMigDebug;	/* enable migration debugging statements? */
 
 /*
- * File migration routines.
+ * File migration utilities.
  */
+extern ReturnStatus	FsMigrateUseCounts();
+extern void		FsIOClientMigrate();
+extern ReturnStatus	FsNotifyOfMigration();
 #endif _FSMIGRATE
