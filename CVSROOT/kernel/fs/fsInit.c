@@ -45,7 +45,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 /*
  * A list of disk device types that is used when probing for a disk.
  */
-int fsDefaultDiskTypes[] = { FS_DEV_SCSI_DISK, FS_DEV_XYLOGICS };
+int fsDefaultDiskTypes[] = { FS_DEV_SCSI_DISK, FS_DEV_XYLOGICS,
+			     FS_DEV_SBC_DISK };
 static int numDiskTypes = sizeof(fsDefaultDiskTypes) / sizeof(int);
 
 /*
@@ -75,6 +76,12 @@ FsStats	fsStats;
  */
 
 Timer_QueueElement	fsTimeOfDayElement;
+
+/* 
+ * Flag to make sure we only do certain things, such as syncing the disks,
+ * after the file system has been initialized.
+ */
+Boolean fsInitialized = FALSE;
 
 
 /*
@@ -164,18 +171,12 @@ Fs_Init()
 
 	status = FsAttachDisk(&defaultDisk, LOCAL_DISK_NAME, FS_ATTACH_LOCAL);
 	if (status == SUCCESS) {
-	    Sys_Printf("Attached disk <%d, %d> to \"%s\"\n",
+	    Sys_Printf("Attached disk type %d unit %d to \"%s\"\n",
 		     defaultDisk.type, defaultDisk.unit, LOCAL_DISK_NAME);
-	    /*
-	     * Initialize the hash table used to speed lookups.
-	     * This hash table is fixed in size.  It is only needed
-	     * on diskful machines.
-	     */
-	    FsNameHashInit(fsNameTablePtr, fsNameHashSize);
-	
 	    break;
 	}
     }
+    fsInitialized = TRUE;
 }
 
 
