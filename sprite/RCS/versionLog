@@ -75,4 +75,13 @@ Only the sun4 and sun4c are affected by this change:  I fixed a bug
 in the new window underflow trap handler that caused some processes to hang.
 Note: the files mach/sun4.md/{machAsmDefs.h,machTraps.s} will have the wrong
 RCSID, since I forgot to check them in before doing the install.
+
+1.056	Thu Feb  8 18:22:52 PST 1990
+Improved Fsio_StreamReopen
+Improved FsrmtFilePageRead (OMAGIC support)
+fsync() implemented via IOC_WRITE_BACK and supported by nfsmount
+Proc_Exec supports OMAGIC
+dev supports 3/50 DMA correctly
+fsprefix does't forget hard-wired prefixes
+Partial VM hack for 3/60 color frame buffer (something better is coming later)
     New files linked in from the net library.
