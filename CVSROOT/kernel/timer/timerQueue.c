@@ -203,6 +203,7 @@ Timer_CallBack()
 	    Vm_StoreTraceTime(timerTimeOfDay);
 	}
 	Sched_GatherProcessInfo();
+	Dev_GatherDiskStats();
 
 	if (!List_IsEmpty(timerQueueList)) {
 
