@@ -545,6 +545,15 @@ Fsrmt_RpcReopen(srvToken, clientID, command, storagePtr)
 
     extern int fsutil_NumRecovering; /* XXX put in fsutil.h */
 
+    if (storagePtr->requestParamSize <= 0) {
+	/*
+	 * Check to make sure our parameter size is big enough to be
+	 * a proper reopen request.  (As of 1/91, we've been suffering
+	 * from a 0 paramSize bug in reopen requests.)
+	 */
+	Net_HostPrint(clientID, "Zero-length parameters to reopen request!\n");
+	return FAILURE;
+    }
     if ((Recov_GetClientState(clientID) & CLT_RECOV_IN_PROGRESS) == 0) {
 	Recov_SetClientState(clientID, CLT_RECOV_IN_PROGRESS);
 	fsutil_NumRecovering++;

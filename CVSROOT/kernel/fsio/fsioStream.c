@@ -993,7 +993,9 @@ Fsio_StreamReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
      * the bug is fixed.
      * JHH 12/10/90
      */
-    } else if (((StreamReopenParams *) inData)->ioFileID.type < 0) {
+    } else if (((StreamReopenParams *) inData)->ioFileID.type < 0 ||
+	    ((StreamReopenParams *) inData)->ioFileID.type >=
+	    FSIO_NUM_STREAM_TYPES) {
 	printf("Fsio_StreamReopen: fileID type = 0x%x from client %d\n",
 		((StreamReopenParams *) inData)->ioFileID.type, clientID);
 	status = FAILURE;
