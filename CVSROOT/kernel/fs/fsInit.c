@@ -259,19 +259,22 @@ Fs_ProcInit()
      */
     standalone = FALSE;
     if (fsDiskAttached) {
-	int	dummy;
-	int	argc;
-	char	*argv[10];
-	char	argBuffer[100];
-	int	i;
+	Fs_Attributes	attr;
+	int		argc;
+	char		*argv[10];
+	char		argBuffer[100];
+	int		i;
 
 	standalone = TRUE;
 	sprintf(buffer, "%s/boot", LOCAL_DISK_NAME);
-	status = Fs_Open(buffer, FS_READ, FS_DIRECTORY, 0, &dummy);
+	status = Fs_GetAttributes(buffer, FS_ATTRIB_FILE, &attr);
 	if (status != SUCCESS) {
-	    printf("Can't open %s <0x%x>\n", buffer, status);
 	    standalone = FALSE;
-	} else {
+	} else if ((attr.type != FS_DIRECTORY)) {
+		printf("%s/boot is not a directory!\n", LOCAL_DISK_NAME);
+		standalone = FALSE;
+	}
+	if (standalone) {
 	    argc = Mach_GetBootArgs(10, 100, argv, argBuffer);
 	    for (i = 0; i < argc; i++) {
 		if (!strcmp(argv[i], "-c")) {
