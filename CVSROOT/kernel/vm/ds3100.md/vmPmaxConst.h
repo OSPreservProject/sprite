@@ -1,14 +1,14 @@
 /*
  * vmSunConst.h --
  *
- *     	Virtual memory constants for the PMAX.  See the "R2000 Risc 
+ *     	Virtual memory constants for the PMAX.  See the "R2000 Risc
  *	Architecture" manual or the "PMAX Desktop Workstation Functional
  *	Specification" for the definitions of these constants.
  *
  * Copyright (C) 1989 Digital Equipment Corporation.
  * Permission to use, copy, modify, and distribute this software and
  * its documentation for any purpose and without fee is hereby granted,
- * provided that the above copyright notice appears in all copies.  
+ * provided that the above copyright notice appears in all copies.
  * Digital Equipment Corporation makes no representations about the
  * suitability of this software for any purpose.  It is provided "as is"
  * without express or implied warranty.
@@ -84,7 +84,7 @@
 #define	VMMACH_PAGE_SIZE	(VMMACH_CLUSTER_SIZE * VMMACH_PAGE_SIZE_INT)
 #define	VMMACH_PAGE_SIZE_INT	4096
 #define VMMACH_PAGE_SHIFT	(VMMACH_CLUSTER_SHIFT + VMMACH_PAGE_SHIFT_INT)
-#define VMMACH_PAGE_SHIFT_INT	12	
+#define VMMACH_PAGE_SHIFT_INT	12
 #define VMMACH_OFFSET_MASK	0xfff
 #define VMMACH_OFFSET_MASK_INT	0xfff
 
@@ -185,4 +185,4 @@
 #define VMMACH_MOD_COUNT_OFFSET		VMMACH_STAT_BASE_OFFSET + 12
 #define VMMACH_MOD_HIT_OFFSET		VMMACH_STAT_BASE_OFFSET + 16
 
-#endif _VMPMAXCONST
+#endif /* _VMPMAXCONST */

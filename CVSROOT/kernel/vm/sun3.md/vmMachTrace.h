@@ -20,4 +20,4 @@ typedef struct {
     int		pmegsChecked;
 } VmMach_TraceStats;
 
-#endif _VMMACHTRACE
+#endif /* _VMMACHTRACE */

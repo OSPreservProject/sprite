@@ -6,7 +6,7 @@
  *	Copyright (C) 1989 Digital Equipment Corporation.
  *	Permission to use, copy, modify, and distribute this software and
  *	its documentation for any purpose and without fee is hereby granted,
- *	provided that the above copyright notice appears in all copies.  
+ *	provided that the above copyright notice appears in all copies.
  *	Digital Equipment Corporation makes no representations about the
  *	suitability of this software for any purpose.  It is provided "as is"
  *	without express or implied warranty.
@@ -36,7 +36,7 @@ extern	Boolean	dbg_UsingNetwork;
  */
 extern	Boolean	dbg_BeingDebugged;
 
-/* 
+/*
  * Variable that indicates that we are in the debugger command loop.
  */
 extern	Boolean	dbg_InDebugger;
@@ -66,7 +66,7 @@ extern	Boolean	dbg_UsingSyslog;
  */
 extern	Boolean	dbgPanic;
 
-/* 
+/*
  * Macro to call the debugger from kernel code.
  */
 extern	void Dbg_Call();
@@ -81,4 +81,4 @@ extern	void Dbg_Call();
 extern	void	Dbg_Init();
 extern	void	Dbg_InputPacket();
 
-#endif _DBG
+#endif /* _DBG */

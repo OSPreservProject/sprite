@@ -36,4 +36,4 @@ extern	void		VmMachSetUserContext();
 extern	void		VmMachSetKernelContext();
 extern	void		VmMachSetContextReg();
 
-#endif _VMMACHINT
+#endif /* _VMMACHINT */
