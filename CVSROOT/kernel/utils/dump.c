@@ -408,7 +408,7 @@ DumpPCB(procPtr)
 	char cmd[30];
 	char *space;
 
-	String_NCopy(30, procPtr->argString, cmd);
+	(void) String_NCopy(30, procPtr->argString, cmd);
 	space = String_FindChar(cmd, ' ');
 	if (space != (char *) NULL) {
 	    *space = '\0';

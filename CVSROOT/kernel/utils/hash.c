@@ -194,7 +194,7 @@ ChainSearch(table, key, hashList)
 	    case 2:
 		hashKeyPtr = hashEntryPtr->key.words;
 		keyPtr = (unsigned *) key;
-		if (*hashKeyPtr++ == *keyPtr++ && *hashKeyPtr == *keyPtr) {
+		if (hashKeyPtr[0] == keyPtr[0] && hashKeyPtr[1] == keyPtr[1]) {
 		    return(hashEntryPtr);
 		}
 		break;
@@ -303,7 +303,7 @@ Hash_Find(table, key)
 	case 0:
 	    hashEntryPtr = (Hash_Entry *) Mem_Alloc(sizeof(Hash_Entry) + 
 				String_Length((Address) keyPtr) - 3);
-	    String_Copy((char *) keyPtr, (char *) hashEntryPtr->key.name);
+	    (void)String_Copy((char *) keyPtr, (char *) hashEntryPtr->key.name);
 	    break;
 	case 1:
 	    hashEntryPtr = (Hash_Entry *) Mem_Alloc(sizeof(Hash_Entry));

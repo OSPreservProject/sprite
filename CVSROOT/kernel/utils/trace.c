@@ -288,10 +288,10 @@ Trace_Print(traceHdrPtr, numRecs, printProc)
     int (*printProc)();		/* See above doc. for this call-back */
 {
     register int traceLength;
-    int lastRec;		/* Index of last record to be printed */
-    int firstRec;		/* Index of first record to be printed */
+/*    int lastRec; */		/* Index of last record to be printed */
+/*    int firstRec; */		/* Index of first record to be printed */
     int index;
-    Boolean printHeader;	/* Passed to output routine */
+/*    Boolean printHeader; */	/* Passed to output routine */
     Time deltaTime;		/* Time difference between trace records */
     Time baseTime;		/* Used to calculate deltaTime */
     Trace_Record *recordPtr;
