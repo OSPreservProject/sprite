@@ -1657,7 +1657,7 @@ DevGraphicsIOControl(devicePtr, ioctlPtr, replyPtr)
 	    /*
 	     * Map the events into the user's address space.
 	     */
-	    status = VmMach_UserMap(sizeof(events), (Address) NIL, 
+	    status = VmMach_UserMap(sizeof(eventsCached), (Address) NIL, 
 			(Address)events, FALSE, &addr); 
 	    if (status != SUCCESS) {
 		goto mapError;
@@ -1666,8 +1666,8 @@ DevGraphicsIOControl(devicePtr, ioctlPtr, replyPtr)
 	    /*
 	     * Map the tcs into the user's address space.
 	     */
-	    status = VmMach_UserMap(sizeof(tcs), (Address) NIL, (Address)tcs, 
-		FALSE, &addr);
+	    status = VmMach_UserMap(sizeof(tcsCached), (Address) NIL,
+				(Address)tcs, FALSE, &addr);
 	    if (status != SUCCESS) {
 		goto mapError;
 	    }
