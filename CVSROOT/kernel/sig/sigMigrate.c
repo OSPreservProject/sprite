@@ -172,7 +172,7 @@ DeferSignal(data)
 	goto failure;
     }
     procPtr = Proc_LockPID(infoPtr->processID);
-    if (procPtr == NULL) {
+    if (procPtr == (Proc_ControlBlock *) NIL) {
 	goto failure;
     }
     (void) SigMigSend(procPtr, infoPtr->sigNum, infoPtr->code);
