@@ -49,6 +49,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <fsio.h>
 #include <fsrmt.h>
 #include <stdio.h>
+#ifdef SOSP91
+#include <fsStat.h>
+#endif SOSP91
 
 Boolean	vmDebug	= FALSE;
 
@@ -1409,8 +1412,26 @@ Vm_PageIn(virtAddr, protFault)
     Proc_ControlBlock		*procPtr;
     unsigned	int		virtFrameNum;
     PrepareResult		result;
+#ifdef SOSP91
+    Boolean			isForeign = FALSE;
+#endif SOSP91
+
+#ifdef SOSP91
+    if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
+	if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
+		(proc_RunningProcesses[0]->genFlags &
+		(PROC_FOREIGN | PROC_MIGRATING))) {
+	    isForeign = TRUE;
+	}
+    }
+#endif SOSP91
 
     vmStat.totalFaults++;
+#ifdef SOSP91
+	if (isForeign) {
+	    fs_MoreStats.totalFaultsM++;
+	}
+#endif SOSP91
 
     procPtr = Proc_GetCurrentProc();
     /*
@@ -1534,6 +1555,11 @@ Vm_PageIn(virtAddr, protFault)
      */
     if (*ptePtr & VM_ZERO_FILL_BIT) {
 	vmStat.zeroFilled++;
+#ifdef SOSP91
+	if (isForeign) {
+	    fs_MoreStats.zeroFilledM++;
+	}
+#endif SOSP91
 	VmZeroPage(virtFrameNum);
 	*ptePtr |= VM_MODIFIED_BIT;
 	status = SUCCESS;
@@ -1549,6 +1575,11 @@ Vm_PageIn(virtAddr, protFault)
     } else if (*ptePtr & VM_ON_SWAP_BIT ||
 	    transVirtAddr.segPtr->type == VM_SHARED) {
 	vmStat.psFilled++;
+#ifdef SOSP91
+	if (isForeign) {
+	    fs_MoreStats.psFilledM++;
+	}
+#endif SOSP91
 	if (transVirtAddr.segPtr->type == VM_SHARED) {
 	    dprintf("Vm_PageIn: paging in shared page %d\n",transVirtAddr.page);
 	}
@@ -1564,6 +1595,11 @@ Vm_PageIn(virtAddr, protFault)
 	}
     } else {
 	vmStat.fsFilled++;
+#ifdef SOSP91
+	if (isForeign) {
+	    fs_MoreStats.fsFilledM++;
+	}
+#endif SOSP91
 	status = VmFileServerRead(&transVirtAddr, virtFrameNum);
 	if (vm_Tracing && transVirtAddr.segPtr->type == VM_HEAP) {
 	    Vm_TracePageFault	faultRec;

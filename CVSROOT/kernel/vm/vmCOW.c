@@ -93,6 +93,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <stdlib.h>
 #include <stdio.h>
 #include <bstring.h>
+#ifdef SOSP91
+#include <fsStat.h>
+#endif SOSP91
 
 #ifdef sun4
 /*
@@ -741,6 +744,9 @@ COR(virtAddrPtr, ptePtr)
 	CopyPage(mastVirtPF, virtFrameNum);
 	VmUnlockPage(mastVirtPF);
     } else {
+#ifdef SOSP91
+	Boolean	isForeign = FALSE;
+#endif SOSP91
 	/*
 	 * Load the page off of swap space.
 	 */
@@ -751,6 +757,19 @@ COR(virtAddrPtr, ptePtr)
 	virtAddr.flags = 0;
 	virtAddr.sharedPtr = virtAddrPtr->sharedPtr;
 	status = VmPageServerRead(&virtAddr, virtFrameNum);
+#ifdef SOSP91
+	fs_MoreStats.CORPageServerRead++;
+	if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
+	    if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
+		    (proc_RunningProcesses[0]->genFlags &
+		    (PROC_FOREIGN | PROC_MIGRATING))) {
+		isForeign = TRUE;
+	    }
+	}
+	if (isForeign) {
+	    fs_MoreStats.CORPageServerReadM++;
+	}
+#endif SOSP91
 	if (status != SUCCESS) {
 	    printf("Warning: VmCOR: Couldn't read page, status <%x>\n", status);
 	    VmPageFree(virtFrameNum);
