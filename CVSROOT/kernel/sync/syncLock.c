@@ -700,9 +700,11 @@ Sync_ProcWakeup(pid, token)
     Proc_ControlBlock 	*procPtr;
 
     procPtr = Proc_GetPCB(pid);
-    MASTER_LOCK(sched_Mutex);
-    ProcessWakeup(procPtr, token);
-    MASTER_UNLOCK(sched_Mutex);
+    if (procPtr != (Proc_ControlBlock *)NIL) {
+	MASTER_LOCK(sched_Mutex);
+	ProcessWakeup(procPtr, token);
+	MASTER_UNLOCK(sched_Mutex);
+    }
 }
 
 
@@ -715,6 +717,9 @@ Sync_ProcWakeup(pid, token)
  *	host.  It is possible that the wakeup message has raced and
  *	won against the local process's call to Sync_ProcWait.  This
  *	protected against with a token and a wakeup complete flag.
+ *	(The token provides extra protection against spurious wakeups.
+ *	 As we don't make any guarantees about the correctness of a
+ *	 wakeup anyway, we ignore the token here.)
  *
  * Results:
  *	None.
@@ -728,38 +733,25 @@ Sync_ProcWakeup(pid, token)
 static INTERNAL void
 ProcessWakeup(procPtr, waitToken)
     register	Proc_ControlBlock 	*procPtr;	/* Process to wake up.*/
-    int					waitToken;	/* Token to use. */
+    int					waitToken;	/* Token to use. Now
+							 * this is ignored. */
 {
-#ifdef notdef
-    if (procPtr->waitToken == waitToken || waitToken == SYNC_BROADCAST_TOKEN) 
-#endif notdef
+    procPtr->syncFlags |= SYNC_WAIT_COMPLETE;
+    if (procPtr->state == PROC_WAITING) {
 	/*
-	 * Token matches process's token.
+	 * Only wakeup if are doing a 'process wait' and not an 'event wait'.
 	 */
-	procPtr->syncFlags |= SYNC_WAIT_COMPLETE;
-	if (procPtr->state == PROC_WAITING) {
-	    if (procPtr->event == NIL) {
-		/*
-		 * Only wakeup if are doing this type of wait and not an
-		 * event wait.
-		 */
-		procPtr->state = PROC_READY;
-		Sched_MoveInQueue(procPtr);
-	    }
-	} else {
-	    /*
-	     * This is a notify message which has raced (and won) with the 
-	     * process's call to Sync_ProcWait.
-	     */
-	    syncProcWakeupRaces++;
+	if (procPtr->event == NIL) {
+	    procPtr->state = PROC_READY;
+	    Sched_MoveInQueue(procPtr);
 	}
-#ifdef notdef
     } else {
 	/*
-	 * Wakeup pertains to an old event.
+	 * This is a notify message which has raced (and won) with the 
+	 * process's call to Sync_ProcWait.
 	 */
+	syncProcWakeupRaces++;
     }
-#endif notdef
 }
 
 
