@@ -51,7 +51,7 @@ etherloop:
 
 |*---------------------------------------------------------------------
 |*
-|* Mach_ContextSwitch -
+|* MachContextSwitch -
 |*
 |*	Mach_ContextSwitch(switchToRegs, switchFromRegs)
 |*
@@ -60,16 +60,17 @@ etherloop:
 |*      begin switched to and a pointer to the saved registers of the process
 |*      that is being switched from.  It goes through the following steps:
 |*
-|*	1) Push the status register and the
+|*	1) Change to the new context.
+|*	2) Push the status register and the
 |*	   user stack pointer onto the stack.
-|*	2) Push the source and destination function codes onto the stack.
-|*	2) Push a magic number onto the stack to see if it gets trashed.
-|*	3) Save all of the registers d0-d7, a0-a7 for the process being
+|*	3) Push the source and destination function codes onto the stack.
+|*	4) Push a magic number onto the stack to see if it gets trashed.
+|*	5) Save all of the registers d0-d7, a0-a7 for the process being
 |*	   switched from.
-|*	4) Restore general registers and the status register of the process 
+|*	6) Restore general registers and the status register of the process 
 |*	   being switched to.
-|*	5) Verify the magic number.
-|*	6) Return in the new process.
+|*	7) Verify the magic number.
+|*	8) Return in the new process.
 |*	
 |*	The kernel stack is changed implicitly when the registers are restored.
 |*
@@ -82,23 +83,31 @@ etherloop:
 |*
 |*---------------------------------------------------------------------
 
-ENTRY(Mach_ContextSwitch, 0, 0)
-    
+    .globl _MachContextSwitch
+_MachContextSwitch:
+    movl	sp, a1
+|*
+|* Set the hardware context register for the destination process.
+|*
+    movl	a1@(12),d0		| Get context value to set into a 
+					|     register
+#ifdef SUN3
+    movsb	d0, VMMACH_CONTEXT_OFF
+#else 
+    movsb	d0,VMMACH_USER_CONTEXT_OFF:w 
+    movsb	d0,VMMACH_KERN_CONTEXT_OFF:w
+#endif
+
     movw	sr, sp@-		| Save the current value of the status
 					|     register on the stack.
     movw	#SUN_SR_HIGHPRIO, sr	| Lock out interrupts.
-
     movl	usp, a0  		| Push the user stack pointer onto 
     movl	a0, sp@-		|     the stack.
-
     movl	#MAGIC, sp@-		| Put the magic number on the stack.
-
-    movl	a6@(12), a0		| Save all of the registers for the 
+    movl	a1@(4), a0		| Save all of the registers for the 
     moveml	#0xffff, a0@		|    process being switched from.
-
-    movl	a6@(8), a0		| Restore all of the registers for the
+    movl	a1@(8), a0		| Restore all of the registers for the
     moveml	a0@, #0xffff		|    process being switched to.
-
     movl	#MAGIC, d0		| Check against the magic number
     cmpl	sp@, d0			|
     beq		1$			|
@@ -106,13 +115,11 @@ ENTRY(Mach_ContextSwitch, 0, 0)
 
 1$:
     addql	#4, sp			| Pop the magic number.
-
     movl	sp@+, a0		| Restore the user stack pointer.
     movl	a0, usp
-
     movw	sp@+, sr		| Restore the status register.
 
-RETURN
+    rts
 
 |*---------------------------------------------------------------------
 |*
