@@ -517,8 +517,6 @@ Sig_Send(sigNum, code, id, familyID)
 				   group id. */
 {
     register	Proc_ControlBlock	*procPtr;
-    register	Proc_ControlBlock	*curProcPtr;
-    register	Proc_ControlBlock	*famProcPtr;
     Proc_PCBLink			*procLinkPtr;
     ReturnStatus			status;
     List_Links				*familyList;
@@ -830,13 +828,13 @@ Sig_SetAction(sigNum, newActionPtr, oldActionPtr)
      */
 
     if (action.action == SIG_HANDLE_ACTION) {
-	if (Vm_CopyIn(4, (Address) action.handler, 
+	if (Vm_CopyIn(4, (Address) ((unsigned int) (action.handler)), 
 			(Address) &dummy) != SUCCESS) {
 	    return(SYS_ARG_NOACCESS);
 	}
 	procPtr->sigMasks[sigNum] = 
 		(sigBitMasks[sigNum] | action.sigHoldMask) & sigCanHoldMask;
-	procPtr->sigActions[sigNum] = (int) action.handler;
+	procPtr->sigActions[sigNum] = (unsigned int) action.handler;
     } else if (action.action == SIG_IGNORE_ACTION) {
 
 	/*
