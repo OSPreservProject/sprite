@@ -53,6 +53,7 @@
  */
 
 static void blockIODoneProc();
+static void nonInterruptLevelCallBackProc();
 
 static void 
 InitiateIORequests(reqControlPtr, doneProc, clientData)
@@ -163,12 +164,38 @@ blockIODoneProc(reqPtr, status, amountTransferred)
     IOControlPtr->numIO--;
     if (IOControlPtr->numIO == 0) {
         MASTER_UNLOCK(&IOControlPtr->mutex);
-        IOControlPtr->doneProc(IOControlPtr->clientData,
-		IOControlPtr->numFailed, IOControlPtr->failedReqPtr);
-	FreeIOControl(IOControlPtr);
+	/*
+	 * this forces the call-back to happen at non-interrupt level
+	 */
+	Proc_CallFunc(nonInterruptLevelCallBackProc,(ClientData)IOControlPtr,0);
     } else {
         MASTER_UNLOCK(&IOControlPtr->mutex);
     }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * nonInterruptLevelCallBackProc --
+ *
+ *	None-interrupt level callback procedure for InitiateIORequests.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+nonInterruptLevelCallBackProc(IOControlPtr)
+    RaidIOControl	*IOControlPtr;
+{
+    IOControlPtr->doneProc(IOControlPtr->clientData,
+	    IOControlPtr->numFailed, IOControlPtr->failedReqPtr);
+    FreeIOControl(IOControlPtr);
 }
 
 
@@ -556,7 +583,7 @@ InitiateStripeRead(stripeIOControlPtr)
 	    firstSector, nthSector, buffer, ctrlData);
     switch (reqControlPtr->numFailed) {
     case 0:
-        InitiateIORequests(stripeIOControlPtr->reqControlPtr,
+        InitiateIORequests(reqControlPtr,
 		stripeReadDoneProc, (ClientData) stripeIOControlPtr);
 	break;
     case 1:
