@@ -233,10 +233,6 @@ ReopenHandles(serverID)
 	    } else if (RecoveryFailed(&rmtHandlePtr->recovery)) {
 		FsHandleInvalidate((FsHandleHeader *)streamPtr);
 	    } else {
-		if (!printed) {
-		    Net_HostPrint(serverID, "- recovering handles\n");
-		    printed = TRUE;
-		}
 		status = FsStreamReopen((FsHandleHeader *)streamPtr,
 				rpc_SpriteID, (ClientData)NIL, (int *)NIL,
 				(ClientData *)NIL);
@@ -311,7 +307,29 @@ FsRecoveryInit(recovPtr)
     register FsRecoveryInfo	*recovPtr;	/* Recovery state */
 {
     bzero((Address) recovPtr, sizeof(FsRecoveryInfo));
-    SYNC_LOCK_INIT_DYNAMIC(&(recovPtr->lock));
+    Sync_LockInitDynamic(&recovPtr->lock, "fs:recoveryLock");
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsRecoverySyncLockCleanup --
+ *
+ *	This routine is called when removing a handle to .
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Zero's out the struct.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+FsRecoverySyncLockCleanup(recovPtr)
+    register FsRecoveryInfo	*recovPtr;	/* Recovery state */
+{
+    Sync_LockClear(&recovPtr->lock);
 }
 
 /*
@@ -556,6 +574,9 @@ RecoveryComplete(recovPtr, status)
 	case RPC_SERVICE_DISABLED:
 	    fsStats.recovery.timeout++;
 	    break;
+	case FS_DOMAIN_UNAVAILABLE:
+	    fsStats.recovery.failed++;
+	    break;
 	default:
 	    recovPtr->flags |= RECOVERY_FAILED|RECOVERY_COMPLETE;
 	    fsStats.recovery.failed++;
@@ -680,6 +701,9 @@ FsRemoteHandleScavenge(hdrPtr)
     FsHandleHeader *hdrPtr;
 {
     if (OkToScavenge(&((FsRemoteIOHandle *)hdrPtr)->recovery)) {
+	printf("FsRemoteHandleScavenge: removing handle for \"%s\"\n",
+	    FsHandleName(hdrPtr));
+	FsRecoverySyncLockCleanup(&((FsRemoteIOHandle *)hdrPtr)->recovery);
 	FsHandleRemove(hdrPtr);
 	return(TRUE);
     } else {
