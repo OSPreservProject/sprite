@@ -329,7 +329,7 @@ DevNetEtherHandler(packetPtr, size)
 		     */
 		    Proc_CallFunc(protoPtr->inputProc, (ClientData)protoPtr, 0);
 		} else {
-		    Fs_DevNotifyReader(protoPtr->fsReadyToken);
+		    Fsio_DevNotifyReader(protoPtr->fsReadyToken);
 		}
 	    }
 	    break;

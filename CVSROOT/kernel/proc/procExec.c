@@ -1413,7 +1413,7 @@ SetupVM(procPtr, objInfoPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr)
     }
 
     if (usedFile || notFound) {
-	(void) Fs_StreamCopy(codeFilePtr, &heapFilePtr);
+	(void) Fsio_StreamCopy(codeFilePtr, &heapFilePtr);
     } else {
 	heapFilePtr = codeFilePtr;
     }

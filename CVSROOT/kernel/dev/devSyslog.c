@@ -292,7 +292,7 @@ Dev_SyslogWrite(devicePtr, writePtr, replyPtr)
 	}
     }
     if (!dbg_UsingSyslog) {
-	Fs_DevNotifyReader(notifyToken);
+	Fsio_DevNotifyReader(notifyToken);
 	MASTER_UNLOCK(&syslogMutex);
     }
     replyPtr->length = origSize - writePtr->length;
