@@ -40,7 +40,7 @@ typedef struct {
     void		(*func)();	/* Function to call. */
     ClientData		data;		/* Data to pass to function. */
     Boolean		allocated;	/* TRUE => Struct was allocated by
-					 *         Mem_Alloc. */
+					 *         malloc. */
     Timer_QueueElement	queueElement;	/* Element used to put onto timer
 					 * queue. */
 } FuncInfo;
@@ -219,7 +219,7 @@ Proc_CallFuncAbsTime(func, clientData, time)
 {
     register FuncInfo	*funcInfoPtr;
 
-    funcInfoPtr = Mem_New(FuncInfo);
+    funcInfoPtr = (FuncInfo *) malloc(sizeof (FuncInfo));
     funcInfoPtr->func = func;
     funcInfoPtr->data = clientData;
     funcInfoPtr->allocated = TRUE;
@@ -300,7 +300,7 @@ Proc_ServerProc()
     }
     if (i == proc_NumServers) {
 	MASTER_UNLOCK(serverMutex);
-	Sys_Panic(SYS_WARNING, "Proc_ServerProc: No server entries free.\n");
+	printf("Warning: Proc_ServerProc: No server entries free.\n");
 	Proc_Exit(0);
     }
 
@@ -355,7 +355,7 @@ Proc_ServerProc()
 	     * if was allocated for this function.
 	     */
 	    if (serverInfoPtr->info.funcInfoPtr != (FuncInfo *) NIL) {
-		Mem_Free((Address) serverInfoPtr->info.funcInfoPtr);
+		free((Address) serverInfoPtr->info.funcInfoPtr);
 	    }
 	}
 
@@ -366,7 +366,7 @@ Proc_ServerProc()
 	serverInfoPtr->flags &= ~SERVER_BUSY;
     }
     MASTER_UNLOCK(serverMutex);
-    Sys_Printf("Proc_ServerProc exiting.\n");
+    printf("Proc_ServerProc exiting.\n");
 }
 
 
@@ -398,7 +398,7 @@ ScheduleFunc(func, clientData, interval, funcInfoPtr)
 	/*
 	 * We have not allocated a structure yet for waiting.  Do it now.
 	 */
-	funcInfoPtr = Mem_New(FuncInfo);
+	funcInfoPtr = (FuncInfo *) malloc(sizeof (FuncInfo));
 	funcInfoPtr->func = func;
 	funcInfoPtr->data = clientData;
 	funcInfoPtr->allocated = TRUE;
@@ -509,7 +509,7 @@ CallFunc(funcInfoPtr)
 	    extern Boolean sys_ShouldSyncDisks;
 	    Mach_EnableIntr();
 	    sys_ShouldSyncDisks = FALSE;
-	    Sys_Panic(SYS_FATAL, "CallFunc: Process queue full.\n");
+	    panic("CallFunc: Process queue full.\n");
 	}
 	queueElementPtr = &queue[nextIndex];
 	queueElementPtr->func = funcInfoPtr->func;

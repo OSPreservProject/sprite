@@ -274,8 +274,8 @@ Proc_SetGroupIDs(numGIDs, gidArrayPtr)
 
     fsPtr = procPtr->fsPtr;
     if (fsPtr->numGroupIDs < numGIDs) {
-	Mem_Free((Address) fsPtr->groupIDs);
-	fsPtr->groupIDs = (int *) Mem_Alloc(numGIDs * sizeof(int));
+	free((Address) fsPtr->groupIDs);
+	fsPtr->groupIDs = (int *) malloc(numGIDs * sizeof(int));
     }
 
     for (i=0; i < numGIDs; i++) {
@@ -325,10 +325,10 @@ ProcAddToGroupList(procPtr, gid)
     /*
      * Have to add the new group ID to the list.
      */
-    newGidArrayPtr = (int *)Mem_Alloc((fsPtr->numGroupIDs + 1) * sizeof(int));
-    Byte_Copy(sizeof(int) * fsPtr->numGroupIDs,
-	      (Address)fsPtr->groupIDs, (Address)newGidArrayPtr);
-    Mem_Free((Address)fsPtr->groupIDs);
+    newGidArrayPtr = (int *)malloc((fsPtr->numGroupIDs + 1) * sizeof(int));
+    bcopy((Address)fsPtr->groupIDs, (Address)newGidArrayPtr,
+	    sizeof (int) * fsPtr->numGroupIDs);
+    free((Address)fsPtr->groupIDs);
     fsPtr->groupIDs = newGidArrayPtr;
     fsPtr->groupIDs[fsPtr->numGroupIDs] = gid;
     fsPtr->numGroupIDs++;

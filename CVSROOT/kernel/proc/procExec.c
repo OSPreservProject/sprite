@@ -143,7 +143,7 @@ Proc_ExecEnv(fileName, argPtrArray, envPtrArray, debugMe)
 	return(status);
     }
 
-    (void) String_Copy(fileName, execFileName);
+    strcpy(execFileName, fileName);
     Proc_MakeUnaccessible((Address) fileName, accessLength);
 
     /*
@@ -183,7 +183,7 @@ Proc_ExecEnv(fileName, argPtrArray, envPtrArray, debugMe)
 			   newArgPtrArrayLength / 4, newEnvPtrArray, 
 			   newEnvPtrArrayLength / 4, TRUE, debugMe);
     if (status == SUCCESS) {
-	Sys_Panic(SYS_FATAL, "Proc_ExecEnv: DoExec returned SUCCESS!!!\n");
+	panic("Proc_ExecEnv: DoExec returned SUCCESS!!!\n");
     }
 
     return(status);
@@ -258,9 +258,8 @@ Proc_KernExec(fileName, argPtrArray)
 
     VmMach_ReinitContext(procPtr);
 
-    status = DoExec(fileName, String_Length(fileName),
-		    argPtrArray, PROC_MAX_EXEC_ARGS, (char **) NIL, 0,
-		    FALSE, FALSE);
+    status = DoExec(fileName, strlen(fileName), argPtrArray,
+		    PROC_MAX_EXEC_ARGS, (char **) NIL, 0, FALSE, FALSE);
 
     /*
      * If the exec failed, then delete the extra segments and fix up the
@@ -457,7 +456,7 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
 	if ((argNumber > 0 || argPtrArray == (char **) NIL) && extraArgs > 0) {
 	    if (extraArgs == 2) {
 		stringPtr = shellArgPtr;
-		realLength = String_Length(shellArgPtr) + 1;
+		realLength = strlen(shellArgPtr) + 1;
 	    } else {
 		stringPtr = fileName;
 		realLength = fileNameLength + 1;
@@ -499,8 +498,8 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
 	 * Put this string onto the argument list.
 	 */
 	argListPtr = (ArgListElement *)
-		Mem_Alloc(sizeof(ArgListElement));
-	argListPtr->stringPtr = (char *) Mem_Alloc(realLength);
+		malloc(sizeof(ArgListElement));
+	argListPtr->stringPtr = (char *) malloc(realLength);
 	argListPtr->stringLen = realLength;
 	List_InitElement((List_Links *) argListPtr);
 	List_Insert((List_Links *) argListPtr, LIST_ATREAR(&argList));
@@ -513,8 +512,7 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
 	/*
 	 * Copy over the argument.
 	 */
-	Byte_Copy(realLength, (Address) stringPtr, 
-		  (Address) argListPtr->stringPtr);
+	bcopy((Address) stringPtr, (Address) argListPtr->stringPtr, realLength);
 	/*
 	 * Clean up 
 	 */
@@ -566,8 +564,8 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
 	 * Put this string onto the environment variable list.
 	 */
 	envListPtr = (ArgListElement *) 
-		Mem_Alloc(sizeof(ArgListElement));
-	envListPtr->stringPtr = (char *) Mem_Alloc(realLength);
+		malloc(sizeof(ArgListElement));
+	envListPtr->stringPtr = (char *) malloc(realLength);
 	envListPtr->stringLen = realLength;
 	List_InitElement((List_Links *) envListPtr);
 	List_Insert((List_Links *) envListPtr, LIST_ATREAR(&envList));
@@ -578,8 +576,7 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
 	/*
 	 * Copy over the environment variable.
 	 */
-	Byte_Copy(realLength, (Address) stringPtr, 
-		  (Address) envListPtr->stringPtr);
+	bcopy((Address) stringPtr, (Address) envListPtr->stringPtr, realLength);
 	/*
 	 * Clean up 
 	 */
@@ -623,12 +620,12 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
     (void) Vm_MakeAccessible(VM_READWRITE_ACCESS,
 			  argBytes, userStackPointer,
 			  &copyLength, (Address *) &copyAddr);
-    newArgPtrArray = (char **) Mem_Alloc((argNumber + 1) * sizeof(Address));
+    newArgPtrArray = (char **) malloc((argNumber + 1) * sizeof(Address));
     argNumber = 0;
     usp = (int)userStackPointer;
-    argString = Mem_Alloc(argStringLength + 1);
+    argString = malloc(argStringLength + 1);
     if (procPtr->argString != (char *) NIL) {
-	Mem_Free(procPtr->argString);
+	free(procPtr->argString);
     }
     procPtr->argString = argString;
 
@@ -637,37 +634,34 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
 	/*
 	 * Copy over the argument.
 	 */
-	Byte_Copy(argListPtr->stringLen, 
-		  (Address) argListPtr->stringPtr, 
-		  (Address) copyAddr);
+	bcopy((Address) argListPtr->stringPtr, (Address) copyAddr,
+		    argListPtr->stringLen);
 	newArgPtrArray[argNumber] = (char *) usp;
 	copyAddr += ((argListPtr->stringLen) + 3) & ~3;
 	usp += ((argListPtr->stringLen) + 3) & ~3;
-	Byte_Copy(argListPtr->stringLen - 1,
-		  (Address) argListPtr->stringPtr, 
-		  argString);
+	bcopy((Address) argListPtr->stringPtr, argString,
+		    argListPtr->stringLen - 1);
 	argString[argListPtr->stringLen - 1] = ' ';
 	argString += argListPtr->stringLen;
 	/*
 	 * Clean up
 	 */
 	List_Remove((List_Links *) argListPtr);
-	Mem_Free((Address) argListPtr->stringPtr);
-	Mem_Free((Address) argListPtr);
+	free((Address) argListPtr->stringPtr);
+	free((Address) argListPtr);
 	argNumber++;
     }
     argString[0] = '\0';
     
-    newEnvPtrArray = (char **) Mem_Alloc((envNumber + 1) * sizeof(Address));
+    newEnvPtrArray = (char **) malloc((envNumber + 1) * sizeof(Address));
     envNumber = 0;
     while (!List_IsEmpty(&envList)) {
 	envListPtr = (ArgListElement *) List_First(&envList);
 	/*
 	 * Copy over the environment variable.
 	 */
-	Byte_Copy(envListPtr->stringLen, 
-		  (Address) envListPtr->stringPtr, 
-		  (Address) copyAddr);
+	bcopy((Address) envListPtr->stringPtr, (Address) copyAddr,
+		    envListPtr->stringLen);
 	newEnvPtrArray[envNumber] = (char *) usp;
 	copyAddr += ((envListPtr->stringLen) + 3) & ~3;
 	usp += ((envListPtr->stringLen) + 3) & ~3;
@@ -675,8 +669,8 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
 	 * Clean up 
 	 */
 	List_Remove((List_Links *) envListPtr);
-	Mem_Free((Address) envListPtr->stringPtr);
-	Mem_Free((Address) envListPtr);
+	free((Address) envListPtr->stringPtr);
+	free((Address) envListPtr);
 	envNumber++;
     }
     Vm_MakeUnaccessible(copyAddr - argBytes, argBytes);
@@ -701,8 +695,8 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
     /*
      * Free the arrays of arguments and environment variables.
      */
-    Mem_Free((Address) newArgPtrArray);
-    Mem_Free((Address) newEnvPtrArray);
+    free((Address) newArgPtrArray);
+    free((Address) newEnvPtrArray);
 
     /*
      * Close any streams that have been marked close-on-exec.
@@ -737,7 +731,7 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
      * mode.
      */
     Mach_ExecUserProc(procPtr, userStackPointer, (Address) entry);
-    Sys_Panic(SYS_FATAL, "DoExec: Proc_RunUserProc returned.\n");
+    panic("DoExec: Proc_RunUserProc returned.\n");
 
 execError:
     /*
@@ -771,14 +765,14 @@ execError:
     while (!List_IsEmpty(&argList)) {
 	argListPtr = (ArgListElement *) List_First(&argList);
 	List_Remove((List_Links *) argListPtr);
-	Mem_Free((Address) argListPtr->stringPtr);
-	Mem_Free((Address) argListPtr);
+	free((Address) argListPtr->stringPtr);
+	free((Address) argListPtr);
     }
     while (!List_IsEmpty(&envList)) {
 	envListPtr = (ArgListElement *) List_First(&envList);
 	List_Remove((List_Links *) envListPtr);
-	Mem_Free((Address) envListPtr->stringPtr);
-	Mem_Free((Address) envListPtr);
+	free((Address) envListPtr->stringPtr);
+	free((Address) envListPtr);
     }
     return(status);
 }

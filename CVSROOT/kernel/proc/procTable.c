@@ -274,6 +274,7 @@ Proc_InitMainProc()
     Vm_ProcInit(procPtr);
     Sig_ProcInit(procPtr);
 
+    procPtr->processor = Mach_GetProcessorNumber();
     Proc_SetCurrentProc(procPtr);
 
     ProcInitMainEnviron(procPtr);
@@ -392,7 +393,7 @@ Proc_Unlock(procPtr)
     LOCK_MONITOR;
 
     if (!(procPtr->genFlags & PROC_LOCKED)) {
-	Sys_Panic(SYS_FATAL, "Proc_Unlock: PCB not locked.\n");
+	panic("Proc_Unlock: PCB not locked.\n");
     }
     procPtr->genFlags &= ~PROC_LOCKED;
     Sync_Broadcast(&procPtr->lockedCondition);
@@ -434,7 +435,7 @@ ProcGetUnusedPCB()
      */
     if (entriesInUse == proc_MaxNumProcesses) {
 	if (proc_MaxNumProcesses > realMaxProcesses - PROC_PCB_NUM_ALLOC) {
-	    Sys_Panic(SYS_FATAL, "ProcGetUnusedPCB: PCB table full!!\n");
+	    panic("ProcGetUnusedPCB: PCB table full!!\n");
 	}
 	for (i = 0; i < PROC_PCB_NUM_ALLOC; i++) {
 	    pcbArray[i] = (Proc_ControlBlock *)
@@ -466,7 +467,7 @@ ProcGetUnusedPCB()
 	 * Shouldn't hit this, but check to avoid infinite loop.
 	 */
 	if (i == procLastSlot) {
-	    Sys_Panic(SYS_FATAL, "ProcGetUnusedPCB: PCB table full!!\n");
+	    panic("ProcGetUnusedPCB: PCB table full!!\n");
 	}
     }
 

@@ -164,26 +164,27 @@ Proc_NewProc(PC, procType, shareHeap, pidPtr, procName, vforkFlag)
      */
     procPtr->kernelCpuUsage.ticks 	= timer_TicksZeroSeconds;
     procPtr->userCpuUsage.ticks 	= timer_TicksZeroSeconds;
-	Mem_Free((Address) procPtr->argString);
+    procPtr->childKernelCpuUsage.ticks = timer_TicksZeroSeconds;
     procPtr->childUserCpuUsage.ticks 	= timer_TicksZeroSeconds;
     procPtr->numQuantumEnds	= 0;
     procPtr->numWaitEvents	= 0;
     procPtr->event		= NIL;
 
     procPtr->kcallTable		= mach_NormalHandlers;
-     * list containing that name.  Note that String_Copy(..,NULL) allocates
-     * space dynamically.
+    procPtr->unixProgress	= parentProcPtr->unixProgress;
 
     /* 
-	procPtr->argString = String_Copy(procName, (char *) NULL);
+     * Free up the old argument list, if any.  Note, this could be put
+	strcpy(procPtr->argString, procName);
      * reinitializations of control block fields.  
 p     */
-		    String_Copy(parentProcPtr->argString, (char *) NULL);
+
+	strcpy(procPtr->argString, parentProcPtr->argString);
 	free((Address) procPtr->argString);
 	procPtr->argString = (Address) NIL;
     }
 
-	    Sys_Panic(SYS_FATAL, "Proc_NewProc: ProcFamilyInsert failed\n");
+    /*
      * Create the argument list for the child.  If no name specified, take
      * the list from the parent.  If one is specified, just make a one-element
      * list containing that name.

@@ -87,7 +87,7 @@ Proc_GetIntervalTimer(timerType, userTimerPtr)
 
     procPtr = Proc_GetEffectiveProc();
     if (procPtr == (Proc_ControlBlock *) NIL) {
-	Sys_Panic(SYS_FATAL, "Proc_GetIntervalTime: procPtr == NIL\n");
+	panic("Proc_GetIntervalTime: procPtr == NIL\n");
     }
     Proc_Lock(procPtr);
 
@@ -200,7 +200,7 @@ Proc_SetIntervalTimer(timerType, newTimerPtr, oldTimerPtr)
 
     procPtr = Proc_GetEffectiveProc();
     if (procPtr == (Proc_ControlBlock *) NIL) {
-	Sys_Panic(SYS_FATAL, "Proc_SetIntervalTime: procPtr == NIL\n");
+	panic("Proc_SetIntervalTime: procPtr == NIL\n");
     }
     Proc_Lock(procPtr);
 
@@ -214,7 +214,7 @@ Proc_SetIntervalTimer(timerType, newTimerPtr, oldTimerPtr)
 	 * PCB entry.
 	 */
 	procPtr->timerArray = (ProcIntTimerInfo  *)
-	    Mem_Alloc(sizeof(ProcIntTimerInfo) * (PROC_MAX_TIMER +1));
+	    malloc(sizeof(ProcIntTimerInfo) * (PROC_MAX_TIMER +1));
 
 	for (j = 0; j <= PROC_MAX_TIMER; j++) {
 	    procPtr->timerArray[j].token = (ClientData) NIL;
@@ -348,7 +348,7 @@ SendTimerSigFunc(data, infoPtr)
 		 * This should not happen: why did we get scheduled if
 		 * there aren't any timers?
 		 */
-		Sys_Panic(SYS_FATAL, "SendTimerSigFunc: null timer table!\n");
+		panic("SendTimerSigFunc: null timer table!\n");
 		break;
 	    }
 

@@ -122,7 +122,7 @@ Proc_Migrate(pid, nodeID)
 	migrateSelf = TRUE;
 	procPtr = Proc_GetActualProc();
 	if (procPtr == (Proc_ControlBlock *) NIL) {
-	    Sys_Panic(SYS_FATAL, "Proc_Migrate: procPtr == NIL\n");
+	    panic("Proc_Migrate: procPtr == NIL\n");
 	}
 	Proc_Lock(procPtr);
 #ifdef notdef
@@ -137,7 +137,7 @@ Proc_Migrate(pid, nodeID)
 
 
     if (proc_MigDebugLevel > 3) {
-	Sys_Printf("Proc_Migrate: migrate process %x to node %d.\n",
+	printf("Proc_Migrate: migrate process %x to node %d.\n",
 		   procPtr->processID, nodeID);
     }
 
@@ -146,14 +146,14 @@ Proc_Migrate(pid, nodeID)
      */
     if (procPtr->state == PROC_DEAD || procPtr->state == PROC_EXITING) {
 	if (proc_MigDebugLevel > 3) {
-	    Sys_Printf("Proc_Migrate: process %x has exited.\n",
+	    printf("Proc_Migrate: process %x has exited.\n",
 		       procPtr->processID);
 	}
 	return(PROC_INVALID_PID);
     }
     if (procPtr->state == PROC_MIGRATED) {
 	if (proc_MigDebugLevel > 1) {
-	    Sys_Printf("Proc_Migrate: process %x has already migrated.\n",
+	    printf("Proc_Migrate: process %x has already migrated.\n",
 		       procPtr->processID);
 	}
 	return(PROC_INVALID_PID);
@@ -279,19 +279,18 @@ Proc_MigrateTrap(procPtr)
      * one process will be migrated.
      */
     if (numSharers > 1) {
-	Sys_Panic(SYS_WARNING,
-		  "Proc_MigrateTrap: cannot handle shared heaps.\n");
+	printf("Warning: Proc_MigrateTrap: cannot handle shared heaps.\n");
 	return;
     }
     LIST_FORALL(sharersPtr, itemPtr) {
 	procLinkPtr = (Proc_PCBLink *) itemPtr;
 	procItemPtr = procLinkPtr->procPtr;
 	if (proc_MigDebugLevel > 7) {
-	    Sys_Printf("Proc_Migrate: Sending process state.\n");
+	    printf("Proc_Migrate: Sending process state.\n");
 	}
 	status = SendProcessState(procItemPtr, nodeID, foreign);
 	if (status != SUCCESS) {
-	    Sys_Panic(SYS_WARNING, "Error %x returned by SendProcessState.\n",
+	    printf("Warning: Error %x returned by SendProcessState.\n",
 		      status);
 	    goto failure;
 	}
@@ -303,26 +302,26 @@ Proc_MigrateTrap(procPtr)
 	
 	procItemPtr->genFlags |= PROC_NO_VM;
 	if (proc_MigDebugLevel > 7) {
-	    Sys_Printf("Proc_Migrate: Sending code.\n");
+	    printf("Proc_Migrate: Sending code.\n");
 	} 
 	status = SendSegment(procItemPtr, VM_CODE, nodeID, foreign);
 	if (status != SUCCESS) {
-	    Sys_Panic(SYS_WARNING, "Error %x returned by SendSegment on code.\n",
+	    printf("Warning: Error %x returned by SendSegment on code.\n",
 		      status);
 	    goto failure;
 	}
     }
     if (proc_MigDebugLevel > 7) {
-	Sys_Printf("Proc_Migrate: Sending stack.\n");
+	printf("Proc_Migrate: Sending stack.\n");
     }
     status = SendSegment(procItemPtr, VM_STACK, nodeID, foreign);
     if (status != SUCCESS) {
-	Sys_Panic(SYS_WARNING, "Error %x returned by SendSegment on stack.\n",
+	printf("Warning: Error %x returned by SendSegment on stack.\n",
 		  status);
 	goto failure;
     }
     if (proc_MigDebugLevel > 7) {
-	Sys_Printf("Proc_Migrate: Sending heap.\n");
+	printf("Proc_Migrate: Sending heap.\n");
     }
 #ifdef SHARED
     status = SendSharedSegment(sharersPtr, numSharers, VM_HEAP, nodeID,
@@ -331,28 +330,28 @@ Proc_MigrateTrap(procPtr)
     status = SendSegment(procPtr, VM_HEAP, nodeID, foreign);
 #endif /* SHARED */
     if (status != SUCCESS) {
-	Sys_Panic(SYS_WARNING, "Error %x returned by SendSegment on heap.\n",
+	printf("Warning: Error %x returned by SendSegment on heap.\n",
 		  status);
 	goto failure;
     }
 
     status = SendFileState(procPtr, nodeID, foreign);
     if (status != SUCCESS) {
-	Sys_Panic(SYS_WARNING, "Error in SendFileState.\n");
+	printf("Warning: Error in SendFileState.\n");
 	goto failure;
     }
 
     if (proc_MigDebugLevel > 4) {
-	Sys_Printf("Proc_MigrateTrap: calling ResumeExecution.\n");
+	printf("Proc_MigrateTrap: calling ResumeExecution.\n");
     }
     status = ResumeExecution(procPtr, nodeID, foreign);
     if (status != SUCCESS) {
-	Sys_Panic(SYS_WARNING, "Error %x returned by ResumeExecution.\n",
+	printf("Warning: Error %x returned by ResumeExecution.\n",
 		  status);
 #ifdef KILL_IT
 	goto failure;
 #else
-	Sys_Printf("Warning: not killing migrating process.\n");
+	printf("Warning: not killing migrating process.\n");
 #endif /* */
     }
     procPtr->genFlags = (procPtr->genFlags & ~PROC_MIGRATING) |
@@ -386,7 +385,7 @@ Proc_MigrateTrap(procPtr)
     } else {
 	Sched_ContextSwitch(PROC_MIGRATED);
     }
-    Sys_Panic(SYS_FATAL, "Proc_MigrateTrap: returned from context switch.\n");
+    panic("Proc_MigrateTrap: returned from context switch.\n");
     return;
 
 failure:
@@ -499,12 +498,12 @@ SendProcessState(procPtr, nodeID, foreign)
    
     machStateSize = Mach_GetEncapSize();
     
-    argStringLength = Byte_AlignAddr(String_Length(procPtr->argString) + 1);
+    argStringLength = Byte_AlignAddr(strlen(procPtr->argString) + 1);
     procBufferSize = 2 * sizeof(Proc_PID) +
 	    (PROC_NUM_ID_FIELDS + PROC_NUM_FLAGS +
 	     PROC_NUM_SCHED_FIELDS + 1) * sizeof(int) +
 	    SIG_INFO_SIZE + machStateSize + argStringLength;
-    procBuffer = Mem_Alloc(procBufferSize);
+    procBuffer = (Address) malloc(procBufferSize);
 
     ptr = procBuffer;
 
@@ -519,25 +518,23 @@ SendProcessState(procPtr, nodeID, foreign)
      * state.
      */
     Byte_FillBuffer(ptr, Proc_PID, procPtr->processID);
-    Byte_Copy(PROC_NUM_ID_FIELDS * sizeof(int),
-	      (Address) &procPtr->parentID, ptr);
+    bcopy((Address) &procPtr->parentID, ptr, PROC_NUM_ID_FIELDS * sizeof (int));
     ptr += PROC_NUM_ID_FIELDS * sizeof(int);
-    Byte_Copy(PROC_NUM_FLAGS * sizeof(int),
-	      (Address) &procPtr->genFlags, ptr);
+    bcopy((Address) &procPtr->genFlags, ptr, PROC_NUM_FLAGS * sizeof (int));
     ptr += PROC_NUM_FLAGS * sizeof(int);
 
-    Byte_Copy(PROC_NUM_SCHED_FIELDS * sizeof(int),
-	      (Address) &procPtr->billingRate, ptr);
+    bcopy((Address) &procPtr->billingRate, ptr,
+	    PROC_NUM_ID_FIELDS * sizeof (int));
     ptr += PROC_NUM_SCHED_FIELDS * sizeof(int);
 
-    Byte_Copy(SIG_INFO_SIZE, (Address) &procPtr->sigHoldMask, ptr);
+    bcopy((Address) &procPtr->sigHoldMask, ptr, SIG_INFO_SIZE);
     ptr += SIG_INFO_SIZE;
 
     Mach_EncapState(procPtr, ptr);
     ptr += machStateSize;
 
     Byte_FillBuffer(ptr, int, argStringLength);
-    Byte_Copy(argStringLength, (Address) procPtr->argString, ptr);
+    bcopy((Address) procPtr->argString, ptr, argStringLength);
     ptr += argStringLength;
 
     /*
@@ -559,7 +556,7 @@ SendProcessState(procPtr, nodeID, foreign)
 
     error = Rpc_Call(nodeID, RPC_PROC_MIG_INFO, &storage);
 
-    Mem_Free(procBuffer);
+    free(procBuffer);
 
     if (proc_DoTrace && proc_MigDebugLevel > 2) {
 	record.flags = (foreign ? 0 : PROC_MIGTRACE_HOME);
@@ -568,8 +565,8 @@ SendProcessState(procPtr, nodeID, foreign)
     }
    
     if (error != SUCCESS) {
-	Sys_Panic(SYS_WARNING,
-		  "SendProcessState:Error %x returned by Rpc_Call.\n", error);
+	printf("Warning: SendProcessState:Error %x returned by Rpc_Call.\n",
+		error);
 	return(error);
     } else {
 	if (!foreign) {
@@ -639,7 +636,7 @@ SendSegment(procPtr, type, nodeID, foreign)
             &segBufferSize, &numPages);
 
     if (proc_MigDebugLevel > 5) {
-	Sys_Printf("SendSegment: Vm_MigrateSegment(%d) wrote %d pages, returned %x.\n",
+	printf("SendSegment: Vm_MigrateSegment(%d) wrote %d pages, returned %x.\n",
 		   type, numPages, status);
     }
     if (status != SUCCESS) {
@@ -664,7 +661,7 @@ SendSegment(procPtr, type, nodeID, foreign)
 
     error = Rpc_Call(nodeID, RPC_PROC_MIG_INFO, &storage);
 
-    Mem_Free(segBuffer);
+    free(segBuffer);
 
     /*
      * Free up the segment on the home node.
@@ -678,8 +675,7 @@ SendSegment(procPtr, type, nodeID, foreign)
     }
    
     if (error != SUCCESS) {
-	Sys_Panic(SYS_WARNING,
-		  "SendSegment:Error %x returned by Rpc_Call.\n", error);
+	printf("Warning: SendSegment:Error %x returned by Rpc_Call.\n", error);
 	return(error);
     } else {
 	return(returnInfo.status);
@@ -737,13 +733,13 @@ SendFileState(procPtr, nodeID, foreign)
     }
 
     if (proc_MigDebugLevel > 6) {
-	Sys_Printf("SendFileState: calling Fs_EncapFileState.\n");
+	printf("SendFileState: calling Fs_EncapFileState.\n");
     }
     status = Fs_EncapFileState(procPtr, &buffer, &totalSize, &numEncap);
     if (status != SUCCESS) {
 	if (proc_MigDebugLevel > 6) {
-	    Sys_Panic(SYS_WARNING,
-		      "SendFileState: error %x returned by Fs_EncapFileState",
+	    printf(
+	    "Warning: SendFileState: error %x returned by Fs_EncapFileState",
 		      status);
 	}
 	return (status);
@@ -768,7 +764,7 @@ SendFileState(procPtr, nodeID, foreign)
 
     status = Rpc_Call(nodeID, RPC_PROC_MIG_INFO, &storage);
 
-    Mem_Free(buffer);
+    free(buffer);
 
     if (proc_DoTrace && proc_MigDebugLevel > 2) {
 	record.flags = (foreign ? 0 : PROC_MIGTRACE_HOME);
@@ -778,8 +774,8 @@ SendFileState(procPtr, nodeID, foreign)
     }
    
     if (status != SUCCESS) {
-	Sys_Panic(SYS_WARNING,
-		  "SendFileState:Error %x returned by Rpc_Call.\n", status);
+	printf("Warning: SendFileState:Error %x returned by Rpc_Call.\n",
+		status);
 	return(status);
     } else {
 #ifndef TO_BE_REMOVED
@@ -864,8 +860,8 @@ ResumeExecution(procPtr, nodeID, foreign)
     }
    
     if (status != SUCCESS) {
-	Sys_Panic(SYS_WARNING,
-		  "ResumeExecution:Error %x returned by Rpc_Call.\n", status);
+	printf("Warning: ResumeExecution:Error %x returned by Rpc_Call.\n",
+		status);
 	return(status);
     } else {
 	return(returnInfo.status);
@@ -967,12 +963,17 @@ InitiateMigration(procPtr, nodeID)
 	    (storage.replyParamSize != 0) ||
 	    (storage.replyDataPtr != (Address) NIL) ||
 	    (storage.replyDataSize != 0)) {
-	    Sys_Panic(SYS_FATAL, "InitiateMigration: Rpc_Storage corrupted.\n");
+	    panic("InitiateMigration: Rpc_Storage corrupted.\n");
 	} else {
 #endif /* SANITY_CHECK */
-	    Sys_Panic((proc_MigDebugLevel > 0) ? SYS_FATAL : SYS_WARNING,
-		  "InitiateMigration: Error %x returned by host %d.\n",
-		  status, nodeID);
+	    if (proc_MigDebugLevel > 0) {
+		panic("InitiateMigration: Error %x returned by host %d.\n",
+		    status, nodeID);
+	    } else {
+		printf(
+		    "%s InitiateMigration: Error %x returned by host %d.\n",
+		    "Warning:", status, nodeID);
+	    }
 #ifdef SANITY_CHECK
 	}
 #endif /* SANITY_CHECK */
@@ -1042,8 +1043,7 @@ Proc_SetEffectiveProc(procPtr)
 
     actualProcPtr = Proc_GetActualProc();
     if (actualProcPtr == (Proc_ControlBlock *) NIL) {
-	Sys_Panic(SYS_FATAL,
-		  "Proc_SetEffectiveProcess: current process is NIL.\n");
+	panic("Proc_SetEffectiveProcess: current process is NIL.\n");
     } else {
 	actualProcPtr->rpcClientProcess = procPtr;
     }
@@ -1110,7 +1110,7 @@ Proc_MigSendUserInfo(procPtr)
      * an int.
      */
     procBufferSize = PROC_NUM_USER_INFO_FIELDS * sizeof(int);
-    procBuffer = Mem_Alloc(procBufferSize);
+    procBuffer = (Address) malloc(procBufferSize);
 
     ptr = procBuffer;
 
@@ -1141,7 +1141,7 @@ Proc_MigSendUserInfo(procPtr)
 
     error = Rpc_Call(procPtr->peerHostID, RPC_PROC_MIG_INFO, &storage);
 
-    Mem_Free(procBuffer);
+    free(procBuffer);
 
     if (proc_DoTrace && proc_MigDebugLevel > 2) {
 	record.flags = PROC_MIGTRACE_HOME;
@@ -1150,8 +1150,8 @@ Proc_MigSendUserInfo(procPtr)
     }
    
     if (error != SUCCESS) {
-	Sys_Panic(SYS_WARNING,
-		  "Proc_MigSendUserInfo:Error %x returned by Rpc_Call.\n", error);
+	printf("%s Proc_MigSendUserInfo:Error %x returned by Rpc_Call.\n",
+		"Warning:", error);
 	return(error);
     } else {
 	return(returnInfo.status);
@@ -1292,8 +1292,7 @@ Proc_DestroyMigratedProc(pidData)
     procPtr = Proc_LockPID(pid);
     if (procPtr == (Proc_ControlBlock *) NIL) {
 	if (proc_MigDebugLevel > 0) {
-	    Sys_Panic(SYS_WARNING,
-		      "Proc_DestroyMigratedProc: process %x not found.\n",
+	    printf("Warning: Proc_DestroyMigratedProc: process %x not found.\n",
 		      (int) pid);
 	}
 	return;
@@ -1301,9 +1300,8 @@ Proc_DestroyMigratedProc(pidData)
     if ((procPtr->state != PROC_MIGRATED) &&
 	!(procPtr->genFlags & PROC_FOREIGN)) {
 	if (proc_MigDebugLevel > 0) {
-	    Sys_Panic(SYS_WARNING,
-		      "Proc_DestroyMigratedProc: process %x not migrated.\n",
-		      (int) pid);
+	    printf("%s Proc_DestroyMigratedProc: process %x not migrated.\n",
+		      "Warning:", (int) pid);
 	}
 	Proc_Unlock(procPtr);
 	return;

@@ -207,7 +207,7 @@ Proc_RpcRemoteCall(callPtr, dataPtr, dataLength, replyDataPtr,
     Proc_TraceRecord record;
 
     if (proc_MigDebugLevel > 4) {
-	Sys_Printf("Proc_RpcRemoteCall(%d) called.\n", callPtr->callNumber);
+	printf("Proc_RpcRemoteCall(%d) called.\n", callPtr->callNumber);
     }
 
     *replyDataLengthPtr = 0;
@@ -217,8 +217,8 @@ Proc_RpcRemoteCall(callPtr, dataPtr, dataLength, replyDataPtr,
     if (procPtr == (Proc_ControlBlock *) NIL
 	|| ((procPtr->state != PROC_MIGRATED) &&
 	    !(procPtr->genFlags & PROC_MIGRATION_DONE)))   {
- 	Sys_Panic(SYS_WARNING,
-		  "Proc_RpcRemoteCall: invalid pid: %x.\n", callPtr->processID);
+ 	printf("Warning: Proc_RpcRemoteCall: invalid pid: %x.\n",
+		callPtr->processID);
 	if (procPtr != (Proc_ControlBlock *) NIL) {
 	    Proc_Unlock(procPtr);
 	}
@@ -231,8 +231,7 @@ Proc_RpcRemoteCall(callPtr, dataPtr, dataLength, replyDataPtr,
     Proc_Unlock(procPtr);
     if (callBackVector[callPtr->callNumber].localPtr ==
 	    (ReturnStatus (*) ()) NIL) {
- 	Sys_Panic(SYS_FATAL,
-		  "Proc_RpcRemoteCall: can't handle call %d.\n",
+ 	panic("Proc_RpcRemoteCall: can't handle call %d.\n",
 		  callPtr->callNumber);
 	return(SYS_INVALID_SYSTEM_CALL);
     }
@@ -256,7 +255,7 @@ Proc_RpcRemoteCall(callPtr, dataPtr, dataLength, replyDataPtr,
 		(procPtr, dataPtr, dataLength, replyDataPtr,
 		 replyDataLengthPtr);
 	if (proc_MigDebugLevel > 4) {
-	    Sys_Printf("Proc_RpcRemoteCall: unparsed call %d returned %x.\n",
+	    printf("Proc_RpcRemoteCall: unparsed call %d returned %x.\n",
 		       callPtr->callNumber, status);
 	}
 
@@ -269,7 +268,7 @@ Proc_RpcRemoteCall(callPtr, dataPtr, dataLength, replyDataPtr,
 	return(status);
     }
 
-    *replyDataPtr = Mem_Alloc(callPtr->replySize);
+    *replyDataPtr = (Address) malloc(callPtr->replySize);
     *replyDataLengthPtr = callPtr->replySize;
     outputPtr = *replyDataPtr;
     inputPtr = dataPtr;
@@ -283,7 +282,7 @@ Proc_RpcRemoteCall(callPtr, dataPtr, dataLength, replyDataPtr,
 		args.argArray[i] = USER_NIL;
 	    } else if (disp & SYS_PARAM_OUT) {
 		if (disp & SYS_PARAM_IN) {
-		    Byte_Copy(size, inputPtr, outputPtr);
+		    bcopy(inputPtr, outputPtr, size);
 		    inputPtr += paddedSize;
 		}
 		args.argArray[i] = (int) outputPtr;
@@ -294,7 +293,7 @@ Proc_RpcRemoteCall(callPtr, dataPtr, dataLength, replyDataPtr,
 	    }
 	} else {
 	    if (size != sizeof(int)) {
-		Sys_Panic(SYS_FATAL, "Proc_RpcRemoteCall: size mismatch.\n");
+		panic("Proc_RpcRemoteCall: size mismatch.\n");
 	    }
 	    args.argArray[i] = * ((int *)inputPtr);
 	    inputPtr += sizeof(int);
@@ -303,7 +302,7 @@ Proc_RpcRemoteCall(callPtr, dataPtr, dataLength, replyDataPtr,
 
     status = (*(callBackVector[callPtr->callNumber].localPtr)) (args);
     if (proc_MigDebugLevel > 4) {
- 	Sys_Printf("Proc_RpcRemoteCall: parsed call %d returned %x.\n",
+ 	printf("Proc_RpcRemoteCall: parsed call %d returned %x.\n",
 		   callPtr->callNumber, status);
     }
     Proc_SetEffectiveProc((Proc_ControlBlock *) NIL);
@@ -353,7 +352,7 @@ RpcProcExit(procPtr, dataPtr, dataLength, replyDataPtr,
     int code;	/* Signal sub-status */
 
     if (proc_MigDebugLevel > 4) {
-	Sys_Printf("RpcProcExit called.\n");
+	printf("RpcProcExit called.\n");
     }
 
     Proc_Lock(procPtr);
@@ -382,7 +381,7 @@ RpcProcExit(procPtr, dataPtr, dataLength, replyDataPtr,
     ProcExitProcess(procPtr, reason, status, code, FALSE);
 
     if (proc_MigDebugLevel > 4) {
-	Sys_Printf("RpcProcExit returning SUCCESS.\n");
+	printf("RpcProcExit returning SUCCESS.\n");
     }
     return(SUCCESS);
 }
@@ -421,7 +420,7 @@ RpcProcFork(parentProcPtr, dataPtr, dataLength, replyDataPtr,
     Proc_ControlBlock 	*childProcPtr;	/* The new process being created */
 
     if (proc_MigDebugLevel > 3) {
-	Sys_Printf("RpcProcFork called.\n");
+	printf("RpcProcFork called.\n");
     }
     childProcPtr = ProcGetUnusedPCB();
     childProcPtr->state 		= PROC_MIGRATED;
@@ -448,14 +447,14 @@ RpcProcFork(parentProcPtr, dataPtr, dataLength, replyDataPtr,
     childProcPtr->familyID 		= parentProcPtr->familyID;
 
     if (childProcPtr->argString != (char *) NIL) {
-	Mem_Free(childProcPtr->argString);
+	free(childProcPtr->argString);
 	childProcPtr->argString	= (char *) NIL;
     }
 
     Vm_ProcInit(childProcPtr);
 
     if (ProcFamilyInsert(childProcPtr, childProcPtr->familyID) != SUCCESS) {
-	Sys_Panic(SYS_FATAL, "RpcProcFork: ProcFamilyInsert failed\n");
+	panic("RpcProcFork: ProcFamilyInsert failed\n");
     }
 
     /*
@@ -496,11 +495,11 @@ RpcProcFork(parentProcPtr, dataPtr, dataLength, replyDataPtr,
      */
     
     *replyDataLengthPtr = sizeof(Proc_PID);
-    *replyDataPtr = Mem_Alloc(sizeof(Proc_PID));
+    *replyDataPtr = (Address) malloc(sizeof(Proc_PID));
     * ((Proc_PID *) *replyDataPtr) = childProcPtr->processID;
     
     if (proc_MigDebugLevel > 3) {
-	Sys_Printf("RpcProcFork returning SUCCESS.\n");
+	printf("RpcProcFork returning SUCCESS.\n");
     }
     return(SUCCESS);
 }
@@ -535,7 +534,7 @@ Proc_ByteCopy(copyIn, numBytes, sourcePtr, destPtr)
     ReturnStatus status = SUCCESS;
     
     if (Proc_IsMigratedProcess()) {
-	Byte_Copy(numBytes, sourcePtr, destPtr);
+	bcopy(sourcePtr, destPtr, numBytes);
     } else if (copyIn) {
 	status = Vm_CopyIn(numBytes, sourcePtr, destPtr);
     } else {
@@ -550,7 +549,7 @@ Proc_ByteCopy(copyIn, numBytes, sourcePtr, destPtr)
  *
  * Proc_StringNCopy --
  *
- *	Combine the operations of String_NCopy and String_NLength.  Used
+ *	Combine the operations of strncpy and String_NLength.  Used
  *	by file system stubs when the file system operation is being done
  *	by an rpc server.  This routine is a parallel routine to 
  *	Vm_StringNCopy which is used for file system operations for 
@@ -574,7 +573,7 @@ Proc_StringNCopy(numBytes, srcStr, destStr, strLengthPtr)
 					 * string copied. */
 {
     *strLengthPtr = String_NLength(numBytes, srcStr);
-    (void) String_NCopy(numBytes, srcStr, destStr);
+    strncpy(destStr, srcStr, numBytes);
     return(SUCCESS);
 }
 
@@ -722,7 +721,7 @@ Proc_RpcRemoteWait(srvToken, clientID, command, storagePtr)
     Proc_ControlBlock *procPtr;
 
     if (proc_MigDebugLevel > 3) {
-	Sys_Printf("Proc_RpcRemoteWait entered.\n");
+	printf("Proc_RpcRemoteWait entered.\n");
 
     }
 
@@ -736,7 +735,7 @@ Proc_RpcRemoteWait(srvToken, clientID, command, storagePtr)
 	return (PROC_NO_PEER);
     }
     pidArray = (Proc_PID *) storagePtr->requestDataPtr;
-    childInfoPtr = (ProcChildInfo *) Mem_Alloc(sizeof(ProcChildInfo));
+    childInfoPtr = (ProcChildInfo *) malloc(sizeof(ProcChildInfo));
 
     status = ProcServiceRemoteWait(procPtr, cmdPtr->flags, cmdPtr->numPids,
 				    pidArray, cmdPtr->token,
@@ -746,18 +745,18 @@ Proc_RpcRemoteWait(srvToken, clientID, command, storagePtr)
     if (status == SUCCESS) {
 	storagePtr->replyDataPtr = (Address) childInfoPtr;
 	storagePtr->replyDataSize = sizeof(ProcChildInfo);
-	replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
+	replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
 	replyMemPtr->paramPtr = (Address) NIL;
 	replyMemPtr->dataPtr = storagePtr->replyDataPtr;
 
 	Rpc_Reply(srvToken, status, storagePtr, Rpc_FreeMem,
 		(ClientData) replyMemPtr);
     } else {
-	Mem_Free((Address) childInfoPtr);
+	free((Address) childInfoPtr);
     }
 
     if (proc_MigDebugLevel > 3) {
-	Sys_Printf("Proc_RpcRemoteWait: returning %x.\n", status);
+	printf("Proc_RpcRemoteWait: returning %x.\n", status);
     }
     return(status);
 }

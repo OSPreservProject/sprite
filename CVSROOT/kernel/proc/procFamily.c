@@ -113,7 +113,7 @@ again:
     hashEntryPtr = Hash_Find(famHashTable, (Address) familyID);
     famHdrPtr = (FamilyHeader *) Hash_GetValue(hashEntryPtr);
     if (famHdrPtr == (FamilyHeader *) NIL) {
-	famHdrPtr = (FamilyHeader *) Mem_Alloc(sizeof(FamilyHeader));
+	famHdrPtr = (FamilyHeader *) malloc(sizeof(FamilyHeader));
 	List_Init(&famHdrPtr->famList);
 	Hash_SetValue(hashEntryPtr, famHdrPtr);
 	famHdrPtr->locked = FALSE;
@@ -126,7 +126,7 @@ again:
 #ifdef CHECK_PROT
 	if (famHdrPtr->userID != procPtr->effectiveUserID &&
 	        procPtr->effectiveUserID != PROC_SUPER_USER_ID) {
-	    Sys_Printf("Uid-mismatch: pid %x puid %d fid %x fuid %d\n",
+	    printf("Uid-mismatch: pid %x puid %d fid %x fuid %d\n",
 		    procPtr->processID, procPtr->effectiveUserID,
 		    familyID, famHdrPtr->userID);
 	    UNLOCK_MONITOR;
@@ -175,7 +175,7 @@ ProcFamilyRemove(procPtr)
 
     hashEntryPtr = Hash_LookOnly(famHashTable, (Address) procPtr->familyID);
     if (hashEntryPtr == (Hash_Entry *) NIL) {
-	Sys_Panic(SYS_FATAL, "ProcFamilyRemove: Family not in hash table\n");
+	panic("ProcFamilyRemove: Family not in hash table\n");
     }
     famHdrPtr = (FamilyHeader *) Hash_GetValue(hashEntryPtr);
     while (famHdrPtr->locked) {
@@ -184,7 +184,7 @@ ProcFamilyRemove(procPtr)
 
     List_Remove((List_Links *) &(procPtr->familyElement));
     if (List_IsEmpty(&famHdrPtr->famList)) {
-	Mem_Free((Address) famHdrPtr);
+	free((Address) famHdrPtr);
 	Hash_Delete(famHashTable, hashEntryPtr);
     }
 
@@ -277,12 +277,12 @@ Proc_UnlockFamily(familyID)
 
     hashEntryPtr = Hash_LookOnly(famHashTable, (Address) familyID);
     if (hashEntryPtr == (Hash_Entry *) NIL) {
-	Sys_Panic(SYS_FATAL, "Proc_UnlockFamily: Family doesn't exist\n");
+	panic("Proc_UnlockFamily: Family doesn't exist\n");
     }
     famHdrPtr = (FamilyHeader *) Hash_GetValue(hashEntryPtr);
 
     if (!famHdrPtr->locked) {
-	Sys_Panic(SYS_FATAL, "Proc_UnlockFamily: Family isn't locked\n");
+	panic("Proc_UnlockFamily: Family isn't locked\n");
     }
 
     famHdrPtr->locked = FALSE;

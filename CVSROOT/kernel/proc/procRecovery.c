@@ -172,7 +172,7 @@ Proc_AddMigDependency(processID, hostID)
     
     LOCK_MONITOR;
 
-    dependPtr = Mem_New(DependInfo);
+    dependPtr = (DependInfo *) malloc(sizeof (DependInfo));
 
     dependPtr->processID = processID;
     dependPtr->hostID = hostID;
@@ -184,9 +184,14 @@ Proc_AddMigDependency(processID, hostID)
 #endif /* KERNEL_HASH */
     if (!new) {
 	if (proc_MigDebugLevel > 0) {
-	    Sys_Panic((proc_MigDebugLevel > 4) ? SYS_FATAL : SYS_WARNING,
-		      "Proc_AddMigDependency: process %x already registered.\n",
+	    if (proc_MigDebugLevel > 4) {
+		panic("Proc_AddMigDependency: process %x already registered.\n",
 		      processID);
+	    } else {
+		printf(
+		"%s Proc_AddMigDependency: process %x already registered.\n",
+		      "Warning:", processID);
+	    }
 	}
 	UNLOCK_MONITOR;
 	return;
@@ -231,9 +236,14 @@ Proc_RemoveMigDependency(processID)
     if (hashEntryPtr == (Hash_Entry *) NULL) {
 #endif /* KERNEL_HASH */
 	if (proc_MigDebugLevel > 0) {
-	    Sys_Panic((proc_MigDebugLevel > 4) ? SYS_FATAL : SYS_WARNING,
-		      "Proc_RemoveMigDependency: process %x not registered.\n",
+	    if (proc_MigDebugLevel > 4) {
+		panic("Proc_RemoveMigDependency: process %x not registered.\n",
 		      processID);
+	    } else {
+		printf(
+		    "%s Proc_RemoveMigDependency: process %x not registered.\n",
+		    "Warning:", processID);
+	    }
 	}
 	UNLOCK_MONITOR;
 	return;
@@ -244,7 +254,7 @@ Proc_RemoveMigDependency(processID)
 #else KERNEL_HASH
     Hash_DeleteEntry(dependHashTable, hashEntryPtr);
 #endif /* KERNEL_HASH */
-    Mem_Free ((Address) dependPtr);
+    free ((Address) dependPtr);
     UNLOCK_MONITOR;
 }
 

@@ -119,8 +119,8 @@ Proc_GetPCBInfo(firstPid, lastPid, hostID, bufferPtr, argsPtr,
 	 */
 	procPtr = Proc_GetCurrentProc();
 	if (!remote) {
-	    Byte_Copy(sizeof(Proc_ControlBlock), (Address)procPtr,
-		      (Address)&pcbEntry);
+	    bcopy((Address)procPtr, (Address)&pcbEntry,
+		    sizeof (Proc_ControlBlock));
 	} else {
 	    status = GetRemotePCB(hostID, processID, &pcbEntry,
 				       argString);
@@ -144,8 +144,8 @@ Proc_GetPCBInfo(firstPid, lastPid, hostID, bufferPtr, argsPtr,
 	if (argsPtr != (Proc_PCBArgString *) NIL) {
 	    if (!remote) {
 		if (procPtr->argString != (Address) NIL) {
-		    (void) String_NCopy(PROC_PCB_ARG_LENGTH - 1,
-					procPtr->argString, argString);
+		    (void) strncpy(argString, procPtr->argString,
+			    PROC_PCB_ARG_LENGTH - 1);
 		    argString[PROC_PCB_ARG_LENGTH - 1] = '\0';
 		} else {
 		    argString[0] = '\0';
@@ -171,12 +171,12 @@ Proc_GetPCBInfo(firstPid, lastPid, hostID, bufferPtr, argsPtr,
 		}
 		procPtr = Proc_GetPCB(i);
 		if (procPtr == (Proc_ControlBlock *) NIL) {
-		    Sys_Panic(SYS_FATAL, "Proc_GetInfo: procPtr == NIL!\n");
+		    panic("Proc_GetInfo: procPtr == NIL!\n");
 		    status = FAILURE;
 		    break;
 		}
-		Byte_Copy(sizeof(Proc_ControlBlock), (Address)procPtr,
-			  (Address)&pcbEntry);
+		bcopy((Address)procPtr, (Address)&pcbEntry,
+			sizeof (Proc_ControlBlock));
 	    } else {
 		status = GetRemotePCB(hostID, (Proc_PID) i, &pcbEntry,
 					   argString);
@@ -199,8 +199,8 @@ Proc_GetPCBInfo(firstPid, lastPid, hostID, bufferPtr, argsPtr,
 	    if (argsPtr != (Proc_PCBArgString *) NIL) {
 		if (!remote) {
 		    if (procPtr->argString != (Address) NIL) {
-			(void) String_NCopy(PROC_PCB_ARG_LENGTH - 1,
-					    procPtr->argString, argString);
+			strncpy(argString, procPtr->argString,
+				PROC_PCB_ARG_LENGTH - 1);
 			argString[PROC_PCB_ARG_LENGTH - 1] = '\0';
 		    } else {
 			argString[0] = '\0';
@@ -317,7 +317,7 @@ Proc_RpcGetPCB(srvToken, clientID, command, storagePtr)
     } else {
 	procPtr = Proc_GetPCB(*pidPtr);
 	if (procPtr == (Proc_ControlBlock *) NIL) {
-	    Sys_Panic(SYS_FATAL, "Proc_RpcGetPCB: found nil PCB!");
+	    panic("Proc_RpcGetPCB: found nil PCB!");
 	    status = FAILURE;
 	}
     }
@@ -327,20 +327,20 @@ Proc_RpcGetPCB(srvToken, clientID, command, storagePtr)
 	return(SUCCESS);
     }
 
-    pcbPtr = Mem_New(Proc_ControlBlock);
+    pcbPtr = (Proc_ControlBlock *) malloc(sizeof (Proc_ControlBlock));
     storagePtr->replyParamPtr = (Address) pcbPtr;
     storagePtr->replyParamSize = sizeof(Proc_ControlBlock);
-    Byte_Copy(sizeof(Proc_ControlBlock), (Address) procPtr, (Address) pcbPtr);
+    bcopy((Address) procPtr, (Address) pcbPtr, sizeof (Proc_ControlBlock));
     
     if (procPtr->argString != (Address) NIL) {
-	storagePtr->replyDataSize = String_Length(procPtr->argString + 1);
-	storagePtr->replyDataPtr = Mem_Alloc(storagePtr->replyDataSize);
-	String_Copy(procPtr->argString, storagePtr->replyDataPtr);
+	storagePtr->replyDataSize = strlen(procPtr->argString + 1);
+	storagePtr->replyDataPtr = (Address) malloc(storagePtr->replyDataSize);
+	strcpy(storagePtr->replyDataPtr, procPtr->argString);
     } else {
 	storagePtr->replyDataSize = 0;
 	storagePtr->replyDataPtr = (Address) NIL;
     }
-    replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
+    replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
     replyMemPtr->paramPtr = storagePtr->replyParamPtr;
     replyMemPtr->dataPtr = storagePtr->replyDataPtr;
 
@@ -382,7 +382,7 @@ Proc_GetResUsage(pid, bufferPtr)
     if (pid == PROC_MY_PID) {
 	procPtr = Proc_GetEffectiveProc();
 	if (procPtr == (Proc_ControlBlock *) NIL) {
-	    Sys_Panic(SYS_FATAL, "Proc_GetIDs: procPtr == NIL\n");
+	    panic("Proc_GetIDs: procPtr == NIL\n");
 	} 
 	Proc_Lock(procPtr);
     } else {
@@ -450,7 +450,7 @@ Proc_GetPriority(pid, priorityPtr)
     if (pid == PROC_MY_PID) {
 	procPtr = Proc_GetEffectiveProc();
 	if (procPtr == (Proc_ControlBlock *) NIL) {
-	    Sys_Panic(SYS_FATAL, "Proc_GetIDs: procPtr == NIL\n");
+	    panic("Proc_GetIDs: procPtr == NIL\n");
 	} 
 	Proc_Lock(procPtr);
     } else {
@@ -635,7 +635,7 @@ CheckIfUsed(procPtr)
 ReturnStatus
 Proc_Dump()
 {
-    Sys_Printf("%8s %5s %10s %10s %8s %8s   %s\n",
+    printf("%8s %5s %10s %10s %8s %8s   %s\n",
 	"ID", "wtd", "user", "kernel", "event", "state", "name");
     Proc_DoForEveryProc(CheckIfUsed, ProcDumpPCB, TRUE);
     return(SUCCESS);
@@ -699,15 +699,14 @@ ProcDumpPCB(procPtr)
 	    }
 	    break;
 	default:
-	    Sys_Panic(SYS_FATAL, 
-		      "DumpPCB: invalid process state: %x.\n", state);
+	    panic("DumpPCB: invalid process state: %x.\n", state);
     }
     /*
      * A header describing the fields has already been printed.
      */
     Timer_TicksToTime(procPtr->userCpuUsage.ticks, &userTime);
     Timer_TicksToTime(procPtr->kernelCpuUsage.ticks, &kernelTime);
-    Sys_Printf("%8x %5d [%1d,%6d] [%1d,%6d] %8x %8s",
+    printf("%8x %5d [%1d,%6d] [%1d,%6d] %8x %8s",
 	       procPtr->processID, 
 	       procPtr->weightedUsage, 
 	       userTime.seconds,
@@ -725,9 +724,9 @@ ProcDumpPCB(procPtr)
 	if (space != (char *) NULL) {
 	    *space = '\0';
 	}
-	Sys_Printf(" %s\n", cmd);
+	printf(" %s\n", cmd);
     } else {
-	Sys_Printf("\n");
+	printf("\n");
     }
     return (SUCCESS);
 }
@@ -891,7 +890,7 @@ Proc_DoForEveryProc(booleanFuncPtr, actionFuncPtr, ignoreStatus)
 
     max = proc_MaxNumProcesses;
 
-    pidArray = (Proc_PID *) Mem_Alloc(sizeof(Proc_PID) * max);
+    pidArray = (Proc_PID *) malloc(sizeof(Proc_PID) * max);
     numMatched = ProcTableMatch(max, booleanFuncPtr, pidArray);
     for (i = 0; i < numMatched; i++) {
 	status = (*actionFuncPtr)(pidArray[i]);
@@ -899,7 +898,7 @@ Proc_DoForEveryProc(booleanFuncPtr, actionFuncPtr, ignoreStatus)
 	    break;
 	}
     }
-    Mem_Free((Address) pidArray);
+    free((Address) pidArray);
     return(status);
 }
 

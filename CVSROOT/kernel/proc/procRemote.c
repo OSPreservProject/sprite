@@ -143,11 +143,11 @@ Proc_MigReceiveInfo(hostID, commandPtr, bufferSize, buffer, returnInfoPtr)
 
     if (commandPtr->command == PROC_MIGRATE_PROC) {
 	if (proc_MigDebugLevel > 5) {
-	    Sys_Printf("Calling GetProcessState.\n");
+	    printf("Calling GetProcessState.\n");
 	}
 	pid = GetProcessState(buffer, hostID);
 	if (proc_MigDebugLevel > 5) {
-	    Sys_Printf("GetProcessState returned pid %x.\n", pid);
+	    printf("GetProcessState returned pid %x.\n", pid);
 	}
 	if (pid != (Proc_PID) NIL) {
 	    returnInfoPtr->remotePID = pid;
@@ -160,7 +160,7 @@ Proc_MigReceiveInfo(hostID, commandPtr, bufferSize, buffer, returnInfoPtr)
 	PROC_GET_VALID_PCB(pid, procPtr);
 	if (procPtr == (Proc_ControlBlock *) NIL) {
 	    if (proc_MigDebugLevel > 3) {
-		Sys_Panic(SYS_FATAL, "Invalid pid: %x.\n", pid);
+		panic("Invalid pid: %x.\n", pid);
 	    }
 	    returnInfoPtr->status = PROC_INVALID_PID;
 	} else {
@@ -170,12 +170,12 @@ Proc_MigReceiveInfo(hostID, commandPtr, bufferSize, buffer, returnInfoPtr)
 		     * Get segment information and create local segment.
 		     */
 		     if (proc_MigDebugLevel > 7) {
-			 Sys_Printf("Proc_MigReceiveInfo: receiving segment.\n");
+			 printf("Proc_MigReceiveInfo: receiving segment.\n");
 		     } 
 		    returnInfoPtr->status =
 			    Vm_ReceiveSegmentInfo(procPtr, buffer);
 		     if (proc_MigDebugLevel > 7) {
-			 Sys_Printf("Proc_MigReceiveInfo: received segment.\n");
+			 printf("Proc_MigReceiveInfo: received segment.\n");
 		     } 
 		    break;
 		case PROC_MIGRATE_FILES:
@@ -183,12 +183,12 @@ Proc_MigReceiveInfo(hostID, commandPtr, bufferSize, buffer, returnInfoPtr)
 		     * Get stream information and set up file pointers.
 		     */
 		    if (proc_MigDebugLevel > 7) {
-	Sys_Printf("Proc_MigReceiveInfo: calling Fs_DeencapFileState.\n");
+	printf("Proc_MigReceiveInfo: calling Fs_DeencapFileState.\n");
 		    }
 		    returnInfoPtr->status =
 			    Fs_DeencapFileState(procPtr, buffer);
 		    if (proc_MigDebugLevel > 7) {
-			Sys_Printf("Fs_DeencapFileState returned status %x.\n",
+			printf("Fs_DeencapFileState returned status %x.\n",
 				   returnInfoPtr->status);
 		    }
 		    break;
@@ -198,7 +198,7 @@ Proc_MigReceiveInfo(hostID, commandPtr, bufferSize, buffer, returnInfoPtr)
 		     */
 		    returnInfoPtr->status = GetUserInfo(procPtr, buffer);
 		    if (proc_MigDebugLevel > 6) {
-			Sys_Printf("GetUserInfo returned status %x.\n",
+			printf("GetUserInfo returned status %x.\n",
 				   returnInfoPtr->status);
 		    }
 		    break;
@@ -208,7 +208,7 @@ Proc_MigReceiveInfo(hostID, commandPtr, bufferSize, buffer, returnInfoPtr)
 		     */
 		    returnInfoPtr->status = ContinueMigratedProc(procPtr);
 		    if (proc_MigDebugLevel > 6) {
-			Sys_Printf("ContinueMigratedProc returned status %x.\n",
+			printf("ContinueMigratedProc returned status %x.\n",
 				   returnInfoPtr->status);
 		    }
 		    break;
@@ -281,11 +281,9 @@ GetProcessState(buffer, hostID)
      * state.
      */
 
-    Byte_Copy(PROC_NUM_ID_FIELDS * sizeof(int), buffer,
-	       (Address) &procPtr->parentID);
+    bcopy((Address) &procPtr->parentID, PROC_NUM_ID_FIELDS * sizeof (int));
     buffer += PROC_NUM_ID_FIELDS * sizeof(int);
-    Byte_Copy(PROC_NUM_FLAGS * sizeof(int), buffer,
-	       (Address) &procPtr->genFlags);
+    bcopy(buffer, (Address) &procPtr->genFlags, PROC_NUM_FLAGS * sizeof (int));
     buffer += PROC_NUM_FLAGS * sizeof(int);
 
     procPtr->genFlags |= PROC_NO_VM;
@@ -298,11 +296,11 @@ GetProcessState(buffer, hostID)
     }
     procPtr->genFlags &= ~(PROC_MIG_PENDING | PROC_MIGRATING);
 
-    Byte_Copy(PROC_NUM_SCHED_FIELDS * sizeof(int), buffer,
-	       (Address) &procPtr->billingRate);
+    bcopy(buffer, (Address) &procPtr->billingRate,
+	    PROC_NUM_SCHED_FIELDS * sizeof (int));
     buffer += PROC_NUM_SCHED_FIELDS * sizeof(int);
 
-    Byte_Copy(SIG_INFO_SIZE, buffer, (Address) &procPtr->sigHoldMask);
+    bcopy(buffer, (Address) &procPtr->sigHoldMask, SIG_INFO_SIZE);
     buffer += SIG_INFO_SIZE;
     procPtr->sigPendingMask &=
 	    ~((1 << SIG_MIGRATE_TRAP) | (1 << SIG_MIGRATE_HOME));
@@ -313,8 +311,7 @@ GetProcessState(buffer, hostID)
     status = Mach_DeencapState(procPtr, buffer);
     if (status != SUCCESS) {
 	if (proc_MigDebugLevel > 0) {
-	    Sys_Panic(SYS_FATAL,
-		      "GetProcessState: error %x returned by Mach_DeencapState");
+	    panic("GetProcessState: error %x returned by Mach_DeencapState");
 	}
 	return((Proc_PID) NIL);
     }
@@ -327,10 +324,10 @@ GetProcessState(buffer, hostID)
     Byte_EmptyBuffer(buffer, int, argStringLength);
 
     if (procPtr->argString != (char *) NIL) {
-	Mem_Free(procPtr->argString);
+	free(procPtr->argString);
     }
-    procPtr->argString = Mem_Alloc(argStringLength);
-    Byte_Copy(argStringLength, buffer, (Address) procPtr->argString);
+    procPtr->argString = (char *) malloc(argStringLength);
+    bcopy(buffer, (Address) procPtr->argString, argStringLength);
     buffer += argStringLength;
 
     procPtr->state 		= PROC_NEW     ;
@@ -358,7 +355,7 @@ GetProcessState(buffer, hostID)
     Proc_Unlock(procPtr);
 
     if (proc_MigDebugLevel > 4) {
-	Sys_Printf("Received process state for process %x.\n", procPtr->processID);
+	printf("Received process state for process %x.\n", procPtr->processID);
     }
 
     return(pid);
@@ -429,7 +426,7 @@ ContinueMigratedProc(procPtr)
     Proc_ControlBlock 	*procPtr;	/* The process being migrated */
 {
     if (proc_MigDebugLevel > 10) {
-	Sys_Printf(">> Entering debugger before continuing process %x.\n", procPtr->processID);
+	printf(">> Entering debugger before continuing process %x.\n", procPtr->processID);
 	DBG_CALL;
     }
 
@@ -484,7 +481,7 @@ Proc_ResumeMigProc(pc)
      */
 
     Mach_StartUserProc(procPtr, (Address) pc);
-    Sys_Panic(SYS_FATAL, "ProcResumeMigProc: Mach_StartUserProc returned.\n");
+    panic("ProcResumeMigProc: Mach_StartUserProc returned.\n");
 }
 
 
@@ -570,7 +567,7 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
     status = Recov_IsHostDown(procPtr->peerHostID);
     if (status != SUCCESS) {
 	if (proc_MigDebugLevel > 0) {
-	    Sys_Printf("Proc_DoRemoteCall: host %d is down; killing process %x.\n",
+	    printf("Proc_DoRemoteCall: host %d is down; killing process %x.\n",
 		       procPtr->peerHostID, procPtr->processID);
 	}
 	Proc_ExitInt(PROC_TERM_DESTROYED, (int) PROC_NO_PEER, 0);
@@ -578,7 +575,7 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
 	 * This point should not be reached, but the N-O-T-R-E-A-C-H-E-D
 	 * directive causes a complaint when there's code after it.
 	 */
-	Sys_Panic(SYS_FATAL, "Proc_DoRemoteCall: Proc_ExitInt returned.\n");
+	panic("Proc_DoRemoteCall: Proc_ExitInt returned.\n");
 	return(PROC_NO_PEER);
     }
 
@@ -615,8 +612,7 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
 	type = specsPtr[i].type;
 	if ((disp & SYS_PARAM_OUT) &&
 	    !(disp & (SYS_PARAM_ACC | SYS_PARAM_COPY))) {
-	    Sys_Panic(SYS_FATAL,
-		      "Proc_DoRemoteCall: Illegal parameter information for call %d for output parameter %d",
+	    panic("Proc_DoRemoteCall: Illegal parameter information for call %d for output parameter %d",
 		      callNumber, i);
 	    return(GEN_INVALID_ARG);
 	}
@@ -677,8 +673,7 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
 					 & (SYS_PARAM_ARRAY))) {
 			size = lastArraySize;
 		    } else {
-			Sys_Panic(SYS_FATAL,
-			      "Proc_DoRemoteCall: bad parameter list.\n");
+			panic("Proc_DoRemoteCall: bad parameter list.\n");
 			status = FAILURE;
 			goto failure;
 		    }
@@ -699,7 +694,7 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
  		        (char **) &argsPtr[i], &numBytesAccessible[i], &size);
 		    if (status != SUCCESS) {
 			if (proc_MigDebugLevel > 6) {
-			    Sys_Panic(SYS_FATAL, "Proc_DoRemoteCall: status %x returned by Proc_MakeStringAccessible.\n", status);
+			    panic("Proc_DoRemoteCall: status %x returned by Proc_MakeStringAccessible.\n", status);
 			}
 			goto failure;
 		    }
@@ -710,7 +705,7 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
 		} else if ((disp & SYS_PARAM_COPY) && (disp & SYS_PARAM_OUT)) {
 		    size = sys_ParamSizes[type];
 		} else {
-		    Sys_Panic(SYS_FATAL, "Proc_DoRemoteCall: can't handle string parameter combination.\n");
+		    panic("Proc_DoRemoteCall: can't handle string parameter combination.\n");
 		    status = FAILURE;
 		    goto failure;
 		}
@@ -718,8 +713,7 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
 		break;				    
 	    case SYS_PARAM_STRING:
 	    default:
-		Sys_Panic(SYS_FATAL,
-			  "Proc_DoRemoteCall: can't handle argument type.\n");
+		panic("Proc_DoRemoteCall: can't handle argument type.\n");
 		status = FAILURE;
 		goto failure;
 	}
@@ -787,16 +781,16 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
     }
 #endif /* RPC_MIN_BUFFER_SIZE */
 	
-    dataBuffer = Mem_Alloc(dataSize);
+    dataBuffer = (Address) malloc(dataSize);
     ptr = dataBuffer;
-    replyDataBuffer = Mem_Alloc(replyDataSize);
+    replyDataBuffer = (Address) malloc(replyDataSize);
     call.replySize = replyDataSize;
 
     for (i = 0; i < numWords; i++) {
 	disp = call.info[i].disposition;
 	if ((disp & SYS_PARAM_IN) && ! (disp & SYS_PARAM_NIL)) {
 	    if (disp & SYS_PARAM_ACC) {
-		Byte_Copy(call.info[i].size, pointerArray[i], ptr);
+		bcopy(pointerArray[i], ptr, call.info[i].size);
 	    } else if (disp & SYS_PARAM_COPY) {
 		status = Vm_CopyIn(call.info[i].size, (Address) argsPtr[i],
 				   ptr);
@@ -804,7 +798,7 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
 		    goto failure;
 		}
 	    } else {
-		Byte_Copy(call.info[i].size, (Address) &argsPtr[i], ptr);
+		bcopy((Address) &argsPtr[i], ptr, call.info[i].size);
 	    }
 	ptr += Byte_AlignAddr(call.info[i].size);
 	}
@@ -825,7 +819,7 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
     storage.replyDataSize = replyDataSize;
 
     if (proc_MigDebugLevel > 4) {
-	Sys_Printf("Proc_DoRemoteCall: sending call %d home.\n", callNumber); 
+	printf("Proc_DoRemoteCall: sending call %d home.\n", callNumber); 
     }
 
     for (numTries = 0; numTries < MAX_RPC_RETRIES; numTries++) {
@@ -840,7 +834,7 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
 	}
     }
     if (proc_MigDebugLevel > 4) {
-	Sys_Printf("Proc_DoRemoteCall: status %x returned by Rpc_Call.\n",
+	printf("Proc_DoRemoteCall: status %x returned by Rpc_Call.\n",
 		   remoteCallStatus);
     }
     if (proc_DoTrace && proc_DoCallTrace) {
@@ -870,7 +864,7 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
 	disp = call.info[i].disposition;
 	if (disp & SYS_PARAM_ACC) {
 	    if ((disp & SYS_PARAM_OUT) && !(disp & SYS_PARAM_NIL)) {
-		Byte_Copy(call.info[i].size, ptr, pointerArray[i]);
+		bcopy(ptr, pointerArray[i], call.info[i].size);
 		ptr += Byte_AlignAddr(call.info[i].size);
 	    }
 	    if (numBytesAccessible[i] > 0) {
@@ -887,7 +881,7 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
 	    status = Vm_CopyOut(size, ptr, (Address) argsPtr[i]);
 	    if (status != SUCCESS) {
 		if (proc_MigDebugLevel > 6) {
-		    Sys_Panic(SYS_FATAL, "Proc_DoRemoteCall: status %x returned by Vm_CopyOut.\n",
+		    panic("Proc_DoRemoteCall: status %x returned by Vm_CopyOut.\n",
 			       status);
 		}
 
@@ -898,8 +892,8 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
 	}
     }
 
-    Mem_Free(dataBuffer);
-    Mem_Free(replyDataBuffer);
+    free(dataBuffer);
+    free(replyDataBuffer);
     
     return(remoteCallStatus);
 
@@ -919,8 +913,8 @@ failure:
 	}
     }
     if (dataBuffer != (Address) NIL) {
-	Mem_Free(dataBuffer);
-	Mem_Free(replyDataBuffer);
+	free(dataBuffer);
+	free(replyDataBuffer);
     }
     return(status);
 }
@@ -951,7 +945,7 @@ Proc_RemoteDummy(callNumber, numWords, argsPtr, specsPtr)
     Sys_ArgArray *argsPtr;
     Sys_CallParam *specsPtr;
 {
-    Sys_Panic(SYS_WARNING, "Call %d not yet implemented.\n", callNumber);
+    printf("Warning: Call %d not yet implemented.\n", callNumber);
     return(FAILURE);
 }
 
@@ -987,13 +981,13 @@ ProcRemoteFork(parentProcPtr, childProcPtr)
     int numTries;			/* number of times trying RPC */
 
     if (proc_MigDebugLevel > 3) {
-	Sys_Printf("ProcRemoteFork called.\n");
+	printf("ProcRemoteFork called.\n");
     }
 
     status = Recov_IsHostDown(parentProcPtr->peerHostID);
     if (status != SUCCESS) {
 	if (proc_MigDebugLevel > 0) {
-	    Sys_Printf("ProcRemoteFork: host %d is down; killing process %x.\n",
+	    printf("ProcRemoteFork: host %d is down; killing process %x.\n",
 		       parentProcPtr->peerHostID, parentProcPtr->processID);
 	}
 	Proc_ExitInt(PROC_TERM_DESTROYED, (int) PROC_NO_PEER, 0);
@@ -1001,7 +995,7 @@ ProcRemoteFork(parentProcPtr, childProcPtr)
 	 * This point should not be reached, but the N-O-T-R-E-A-C-H-E-D
 	 * directive causes a complaint when there's code after it.
 	 */
-	Sys_Panic(SYS_FATAL, "ProcRemoteFork: Proc_ExitInt returned.\n");
+	panic("ProcRemoteFork: Proc_ExitInt returned.\n");
 	return(PROC_NO_PEER);
     }
 
@@ -1060,7 +1054,7 @@ ProcRemoteFork(parentProcPtr, childProcPtr)
 			    parentProcPtr->processID, FALSE); 
 	}
 	if (proc_MigDebugLevel > 0) {
-	    Sys_Printf("Warning: ProcRemoteFork returning status %x.\n",
+	    printf("Warning: ProcRemoteFork returning status %x.\n",
 		       status);
 	}
 	return(status);
@@ -1075,7 +1069,7 @@ ProcRemoteFork(parentProcPtr, childProcPtr)
     Proc_AddMigDependency(childProcPtr->processID, childProcPtr->peerHostID);
 
     if (proc_MigDebugLevel > 3) {
-	Sys_Printf("ProcRemoteFork returning status %x.\n", status);
+	printf("ProcRemoteFork returning status %x.\n", status);
     }
     return(status);
 }
@@ -1116,7 +1110,7 @@ ProcRemoteExit(procPtr, reason, exitStatus, code)
     int numTries;			/* number of times trying RPC */
 
     if (proc_MigDebugLevel > 4) {
-	Sys_Printf("ProcRemoteExit(%x) called.\n", exitStatus);
+	printf("ProcRemoteExit(%x) called.\n", exitStatus);
     }
 
     /*
@@ -1127,7 +1121,7 @@ ProcRemoteExit(procPtr, reason, exitStatus, code)
     status = Recov_IsHostDown(procPtr->peerHostID);
     if (status != SUCCESS) {
 	if (proc_MigDebugLevel > 0) {
-	    Sys_Printf("ProcRemoteExit: host %d is down; ignoring exit for process %x.\n",
+	    printf("ProcRemoteExit: host %d is down; ignoring exit for process %x.\n",
 		       procPtr->peerHostID, procPtr->processID);
 	}
 	return;
@@ -1143,7 +1137,7 @@ ProcRemoteExit(procPtr, reason, exitStatus, code)
 
 
     bufferSize = 2 * sizeof(Timer_Ticks) + 5 * sizeof(int);
-    buffer = Mem_Alloc(bufferSize);
+    buffer = (Address) malloc(bufferSize);
 
     ptr = buffer;
     Byte_FillBuffer(ptr, Timer_Ticks,  procPtr->kernelCpuUsage.ticks);
@@ -1191,11 +1185,10 @@ ProcRemoteExit(procPtr, reason, exitStatus, code)
 		     (ClientData) &record);
     }
 
-    Mem_Free(buffer);
+    free(buffer);
 
     if ((status != SUCCESS) && (proc_MigDebugLevel > 0)) {
-	Sys_Printf("Warning: ProcRemoteExit received status %x.\n",
-		   status);
+	printf("Warning: ProcRemoteExit received status %x.\n", status);
     }
 }
 

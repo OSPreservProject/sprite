@@ -157,7 +157,7 @@ ReturnStatus	FindExitingChild();
 	status = Sig_SendProc(parentProcPtr, SIG_CHILD, 0); \
 	Proc_Unlock(parentProcPtr); \
 	if (status != SUCCESS) { \
-	    Sys_Panic(SYS_WARNING, "%s: Could not signal parent, status<%x>", \
+	    printf("Warning: %s: Could not signal parent, status<%x>", \
 				funcName, status); \
 	} \
     }
@@ -223,7 +223,7 @@ Proc_ExitInt(reason, status, code)
 
     curProcPtr = Proc_GetActualProc();
     if (curProcPtr == (Proc_ControlBlock *) NIL) {
-	Sys_Panic(SYS_FATAL, "Proc_ExitInt: bad procPtr.\n");
+	panic("Proc_ExitInt: bad procPtr.\n");
     }
 
     if (curProcPtr->genFlags & PROC_FOREIGN) {
@@ -247,7 +247,7 @@ Proc_ExitInt(reason, status, code)
     }
     ProcExitProcess(curProcPtr, reason, status, code, TRUE);
 
-    Sys_Panic(SYS_FATAL, "Proc_ExitInt: Exiting process still alive!!!\n");
+    panic("Proc_ExitInt: Exiting process still alive!!!\n");
 }
 
 
@@ -350,9 +350,15 @@ ExitProcessInt(exitProcPtr, migrated, contextSwitch)
      * isn't really an error after all.]
      */
     if (migrated && (exitProcPtr->event != NIL)) {
-	Sys_Panic((proc_MigDebugLevel > 0) ? SYS_FATAL : SYS_WARNING,
-		  "ExitProcessInt: exiting process still waiting on event %x.\n",
-		  exitProcPtr->event);
+	if (proc_MigDebugLevel > 0) {
+	    panic(
+		"ExitProcessInt: exiting process still waiting on event %x.\n",
+		exitProcPtr->event);
+	} else {
+	    printf(
+	      "%s ExitProcessInt: exiting process still waiting on event %x.\n",
+	      "Warning:", exitProcPtr->event);
+	}
     }
 
     /*
@@ -391,7 +397,7 @@ ExitProcessInt(exitProcPtr, migrated, contextSwitch)
     if (contextSwitch) {
 	Proc_Unlock(exitProcPtr);
 	UNLOCK_MONITOR_AND_SWITCH(newState);
-	Sys_Panic(SYS_FATAL, "ExitProcessInt: Exiting process still alive\n");
+	panic("ExitProcessInt: Exiting process still alive\n");
     } else {
 	UNLOCK_MONITOR;
     }
@@ -419,7 +425,6 @@ ExitProcessInt(exitProcPtr, migrated, contextSwitch)
  *
  *----------------------------------------------------------------------
  */
-
 void
 ProcExitProcess(exitProcPtr, reason, status, code, contextSwitch) 
     register Proc_ControlBlock 	*exitProcPtr;	/* Exiting process. */
@@ -524,8 +529,7 @@ Proc_Reaper(procPtr, callInfoPtr)
     LOCK_MONITOR;
 
     if (procPtr->state != PROC_DEAD) {
-	Sys_Panic(SYS_FATAL, 
-		"Proc_Reaper: non-DEAD proc on dead list.\n");
+	panic("Proc_Reaper: non-DEAD proc on dead list.\n");
     }
 
     /*
@@ -732,7 +736,7 @@ Proc_Detach(status)
 
     procPtr = Proc_GetEffectiveProc();
     if (procPtr == (Proc_ControlBlock *) NIL) {
-	Sys_Panic(SYS_FATAL, "Proc_Detach: procPtr == NIL\n");
+	panic("Proc_Detach: procPtr == NIL\n");
     }
 
     /*
@@ -818,7 +822,7 @@ Proc_Wait(numPids, pidArray, flags, procIDPtr, reasonPtr,
 
     curProcPtr = Proc_GetCurrentProc();
     if (curProcPtr == (Proc_ControlBlock *) NIL) {
-	Sys_Panic(SYS_FATAL, "Proc_Wait: curProcPtr == NIL.\n");
+	panic("Proc_Wait: curProcPtr == NIL.\n");
     }
 
     if (curProcPtr->genFlags & PROC_FOREIGN) {
@@ -840,11 +844,11 @@ Proc_Wait(numPids, pidArray, flags, procIDPtr, reasonPtr,
 	     *  the pids are in the proper range.
 	     */
 	    newPidSize = numPids * sizeof(Proc_PID);
-	    newPidArray = (Proc_PID *) Mem_Alloc(newPidSize);
+	    newPidArray = (Proc_PID *) malloc(newPidSize);
 	    status = Vm_CopyIn(newPidSize, (Address) pidArray,
 			       (Address) newPidArray);
 	    if (status != SUCCESS) {
-		Mem_Free((Address) newPidArray);
+		free((Address) newPidArray);
 		return(SYS_ARG_NOACCESS);
 	    }
 	}
@@ -858,7 +862,7 @@ Proc_Wait(numPids, pidArray, flags, procIDPtr, reasonPtr,
     }
 
     if (numPids > 0) {
-	Mem_Free((Address) newPidArray);
+	free((Address) newPidArray);
     }
 
     if (status == SUCCESS) {
@@ -1031,7 +1035,7 @@ ProcRemoteWait(procPtr, flags, numPids, pidArray, childInfoPtr)
     ReturnStatus status;
 
     if (proc_MigDebugLevel > 3) {
-	Sys_Printf("ProcRemoteWait(%x, ...) called.\n", procPtr->processID);
+	printf("ProcRemoteWait(%x, ...) called.\n", procPtr->processID);
     }
 
     /*
@@ -1095,9 +1099,9 @@ ProcRemoteWait(procPtr, flags, numPids, pidArray, childInfoPtr)
     }
 
     if (proc_MigDebugLevel > 3) {
-	Sys_Printf("ProcRemoteWait returning status %x.\n", status);
+	printf("ProcRemoteWait returning status %x.\n", status);
 	if (status == SUCCESS && proc_MigDebugLevel > 6) {
-	    Sys_Printf("Child's id is %x, status %x.\n",
+	    printf("Child's id is %x, status %x.\n",
 		       childInfoPtr->processID, childInfoPtr->termStatus);
 	}
     }
@@ -1147,10 +1151,10 @@ ProcServiceRemoteWait(curProcPtr, flags, numPids, pidArray, waitToken,
     status = FindExitingChild(curProcPtr, flags & PROC_WAIT_FOR_SUSPEND,
 			    numPids, pidArray, childInfoPtr);
     if (proc_MigDebugLevel > 3) {
-	Sys_Printf("pid %x got status %x from FindExitingChild\n",
+	printf("pid %x got status %x from FindExitingChild\n",
 		   curProcPtr->processID, status);
 	if (status == SUCCESS && proc_MigDebugLevel > 6) {
-	    Sys_Printf("Child's id is %x, status %x.\n",
+	    printf("Child's id is %x, status %x.\n",
 		       childInfoPtr->processID, childInfoPtr->termStatus);
 	}
     }
@@ -1431,14 +1435,12 @@ Proc_NotifyMigratedWaiters(pid, callInfoPtr)
     Proc_Unlock(procPtr);
 
     if (proc_MigDebugLevel > 3) {
-	Sys_Printf("Proc_NotifyMigratedWaiters: notifying process %x.\n",
+	printf("Proc_NotifyMigratedWaiters: notifying process %x.\n",
 		   waiter.pid);
     }
     status = Sync_RemoteNotify(&waiter);
     if (status != SUCCESS) {
-	Sys_Panic(SYS_WARNING,
-		  "Warning: received status %x notifying process.\n",
-		  status);
+	printf("Warning: received status %x notifying process.\n", status);
     }
 }
 
@@ -1466,7 +1468,7 @@ WakeupMigratedParent(pid)
 {
 
     if (proc_MigDebugLevel > 3) {
-	Sys_Printf("WakeupMigratedParent: inserting process %x.\n", pid);
+	printf("WakeupMigratedParent: inserting process %x.\n", pid);
     }
     Proc_CallFunc(Proc_NotifyMigratedWaiters, (ClientData) pid, 0);
 }

@@ -82,11 +82,11 @@ ProcInitMainEnviron(procPtr)
     LOCK_MONITOR;
 
     procPtr->environPtr =
-		(Proc_EnvironInfo *) Mem_Alloc(sizeof(Proc_EnvironInfo));
+		(Proc_EnvironInfo *) malloc(sizeof(Proc_EnvironInfo));
     procPtr->environPtr->refCount = 1;
     procPtr->environPtr->size = MIN_ENVIRON_SIZE;
     procPtr->environPtr->varArray = (ProcEnvironVar *) 
-		Mem_Alloc(sizeof(ProcEnvironVar) * MIN_ENVIRON_SIZE);
+		malloc(sizeof(ProcEnvironVar) * MIN_ENVIRON_SIZE);
     for (i = 0; i < MIN_ENVIRON_SIZE; i++) {
 	procPtr->environPtr->varArray[i].name = (char *) NIL;
 	procPtr->environPtr->varArray[i].value = (char *) NIL;
@@ -165,14 +165,14 @@ DoCopyEnviron(srcSize, srcVarPtr, destSize, destVarPtr)
 
     for (i = 0; i < srcSize; srcVarPtr++, destVarPtr++, i++) {
 	if (srcVarPtr->name != (char *) NIL) {
-	    destVarPtr->name = (char *) Mem_Alloc(srcVarPtr->nameLength + 1);
+	    destVarPtr->name = (char *) malloc(srcVarPtr->nameLength + 1);
 	    destVarPtr->nameLength = srcVarPtr->nameLength;
-	    destVarPtr->value = (char *) Mem_Alloc(srcVarPtr->valueLength + 1);
+	    destVarPtr->value = (char *) malloc(srcVarPtr->valueLength + 1);
 	    destVarPtr->valueLength = srcVarPtr->valueLength;
-	    Byte_Copy(srcVarPtr->nameLength + 1, (Address) srcVarPtr->name, 
-				(Address) destVarPtr->name);
-	    Byte_Copy(srcVarPtr->valueLength + 1, (Address) srcVarPtr->value, 
-				(Address) destVarPtr->value);
+	    bcopy((Address) srcVarPtr->name, (Address) destVarPtr->name,
+				srcVarPtr->nameLength + 1);
+	    bcopy((Address) srcVarPtr->value, (Address) destVarPtr->value,
+				srcVarPtr->valueLength + 1);
 	} else {
 	    destVarPtr->name = (char *) NIL;
 	    destVarPtr->value = (char *) NIL;
@@ -220,14 +220,14 @@ FreeEnviron(environPtr, size, freeEnvironInfo)
 
     for (i = 0, varPtr = environPtr->varArray; i < size; varPtr++, i++) {
 	if (varPtr->name != (char *) NIL) {
-	    Mem_Free((Address) varPtr->name);
-	    Mem_Free((Address) varPtr->value);
+	    free((Address) varPtr->name);
+	    free((Address) varPtr->value);
 	}
     }
-    Mem_Free((Address) environPtr->varArray);
+    free((Address) environPtr->varArray);
 
     if (freeEnvironInfo) {
-	Mem_Free((Address) environPtr);
+	free((Address) environPtr);
     }
 }
 
@@ -261,7 +261,7 @@ FindVar(environPtr, name)
 	 i < environPtr->size; 
 	 varPtr++, i++) {
 	if (varPtr->name != (char *) NIL && 
-	    String_Compare(varPtr->name, name) == 0) {
+	    strcmp(varPtr->name, name) == 0) {
 	    return(varPtr);
 	}
     }
@@ -323,7 +323,7 @@ InitializeVar(environPtr, name, nameLength)
 	    newSize = PROC_MAX_ENVIRON_SIZE;
 	}
 	varPtr = (ProcEnvironVar *) 
-			Mem_Alloc(sizeof(ProcEnvironVar) * newSize);
+			malloc(sizeof(ProcEnvironVar) * newSize);
 	DoCopyEnviron(environPtr->size, environPtr->varArray, 
 		      newSize, varPtr);
 	FreeEnviron(environPtr, environPtr->size, FALSE);
@@ -336,9 +336,9 @@ InitializeVar(environPtr, name, nameLength)
      * Store the name in the environment variable.
      */
 
-    varPtr->name = (char *) Mem_Alloc(nameLength + 1);
+    varPtr->name = (char *) malloc(nameLength + 1);
     varPtr->nameLength = nameLength;
-    Byte_Copy(nameLength + 1, (Address) name, (Address) varPtr->name);
+    bcopy((Address) name, (Address) varPtr->name, nameLength + 1);
 
     return(varPtr);
 }
@@ -481,9 +481,9 @@ Proc_SetEnvironStub(environVar)
      * Put the value of the variable into the environment.
      */
 
-    varPtr->value = (char *) Mem_Alloc(valueLength + 1);
+    varPtr->value = (char *) malloc(valueLength + 1);
     varPtr->valueLength = valueLength;
-    Byte_Copy(valueLength + 1, (Address) valuePtr, (Address) varPtr->value);
+    bcopy((Address) valuePtr, (Address) varPtr->value, valueLength + 1);
 
     Proc_MakeUnaccessible((Address) valuePtr, valueAccLength);
 
@@ -555,9 +555,9 @@ Proc_UnsetEnvironStub(environVar)
      * for it.
      */
 
-    Mem_Free((Address) varPtr->name);
+    free((Address) varPtr->name);
     varPtr->name = (char *) NIL;
-    Mem_Free((Address) varPtr->value);
+    free((Address) varPtr->value);
     varPtr->value = (char *) NIL;
 
     UNLOCK_MONITOR;
@@ -793,11 +793,11 @@ Proc_CopyEnvironStub()
 	return(SUCCESS);
     }
 
-    newEnvironPtr = (Proc_EnvironInfo *) Mem_Alloc(sizeof(Proc_EnvironInfo));
+    newEnvironPtr = (Proc_EnvironInfo *) malloc(sizeof(Proc_EnvironInfo));
     newEnvironPtr->refCount = 1;
     newEnvironPtr->size = procPtr->environPtr->size;
     newEnvironPtr->varArray = (ProcEnvironVar *) 
-		Mem_Alloc(sizeof(ProcEnvironVar) * newEnvironPtr->size);
+		malloc(sizeof(ProcEnvironVar) * newEnvironPtr->size);
 
     DoCopyEnviron(newEnvironPtr->size, procPtr->environPtr->varArray, 
 		  newEnvironPtr->size, newEnvironPtr->varArray);
@@ -877,7 +877,7 @@ Proc_InstallEnvironStub(environ, numVars)
      * Allocate a new environment of size at least MIN_ENVIRON_SIZE.
      */
 
-    newEnvironPtr = (Proc_EnvironInfo *) Mem_Alloc(sizeof(Proc_EnvironInfo));
+    newEnvironPtr = (Proc_EnvironInfo *) malloc(sizeof(Proc_EnvironInfo));
     newEnvironPtr->refCount = 1;
     if (numVars < MIN_ENVIRON_SIZE) {
 	newEnvironPtr->size = MIN_ENVIRON_SIZE;
@@ -885,7 +885,7 @@ Proc_InstallEnvironStub(environ, numVars)
 	newEnvironPtr->size = numVars;
     }
     newEnvironPtr->varArray = (ProcEnvironVar *) 
-		Mem_Alloc(sizeof(ProcEnvironVar) * newEnvironPtr->size);
+		malloc(sizeof(ProcEnvironVar) * newEnvironPtr->size);
 
     /*
      * Read in the users environment variables and store them in the
@@ -916,13 +916,13 @@ Proc_InstallEnvironStub(environ, numVars)
 		return(SYS_ARG_NOACCESS);
 	    }
 
-	    varPtr->name = (char *) Mem_Alloc(nameLength + 1);
+	    varPtr->name = (char *) malloc(nameLength + 1);
 	    varPtr->nameLength = nameLength;
-	    Byte_Copy(nameLength + 1, namePtr, varPtr->name);
+	    bcopy(namePtr, varPtr->name, nameLength + 1);
 
-	    varPtr->value = (char *) Mem_Alloc(valueLength + 1);
+	    varPtr->value = (char *) malloc(valueLength + 1);
 	    varPtr->valueLength = valueLength;
-	    Byte_Copy(valueLength + 1, valuePtr, varPtr->value);
+	    bcopy(valuePtr, varPtr->value, valueLength + 1);
 
 	    Proc_MakeUnaccessible((Address) namePtr, nameAccLength);
 	    Proc_MakeUnaccessible((Address) valuePtr, valueAccLength);
