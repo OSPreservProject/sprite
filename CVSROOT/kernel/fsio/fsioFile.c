@@ -709,7 +709,6 @@ FsFileScavenge(hdrPtr)
     register FsLocalFileIOHandle *handlePtr = (FsLocalFileIOHandle *)hdrPtr;
     register FsFileDescriptor *descPtr = handlePtr->descPtr;
     register Boolean noUsers;
-    Boolean dirFlushed = FALSE;
     FsDomain *domainPtr;
     ReturnStatus status;
 
@@ -746,7 +745,6 @@ FsFileScavenge(hdrPtr)
 		FS_FILE_WB_WAIT | FS_FILE_WB_INDIRECT | FS_FILE_WB_INVALIDATE,
 		&blocksSkipped);
 	noUsers = (status == SUCCESS) && (blocksSkipped == 0);
-	dirFlushed = TRUE;
     }
     if (noUsers && FsCacheOkToScavenge(&handlePtr->cacheInfo)) {
 	register Boolean isDir;
@@ -770,11 +768,7 @@ FsFileScavenge(hdrPtr)
 	if (FsHandleAttemptRemove(handlePtr)) {
 	    if (isDir) {
 		fsStats.object.directory--;
-		if (dirFlushed) {
-		    fsStats.object.dirFlushed++;
-		} else {
-		    fsStats.object.dirAged++;
-		}
+		fsStats.object.dirFlushed++;
 	    } else {
 		fsStats.object.files--;
 	    }
