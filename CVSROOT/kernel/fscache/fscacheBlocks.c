@@ -233,7 +233,7 @@ static Fscache_Block *FetchBlock _ARGS_((Boolean canWait, Boolean cantBlock));
 static void StartBackendWriteback _ARGS_((Fscache_Backend *backendPtr));
 static void PutOnFreeList _ARGS_((Fscache_Block *blockPtr));
 static void PutFileOnDirtyList _ARGS_((Fscache_FileInfo *cacheInfoPtr,
-			int oldestDirtyBlockTime));
+			time_t oldestDirtyBlockTime));
 static void PutBlockOnDirtyList _ARGS_((Fscache_Block *blockPtr, 
 			Boolean onFront));
 static Hash_Entry *GetUnlockedBlock _ARGS_((BlockHashKey *blockHashKeyPtr, 
@@ -570,7 +570,7 @@ Fscache_FetchBlock(cacheInfoPtr, blockNum, flags, blockPtrPtr, foundPtr)
     register	Fscache_Block	*blockPtr;
     Fscache_Block		*otherBlockPtr;
     Fscache_Block		*newBlockPtr;
-    int				refTime;
+    time_t			refTime;
     Boolean		cantBlock = (flags & FSCACHE_CANT_BLOCK);
     Boolean		dontBlock = (flags & FSCACHE_DONT_BLOCK);
 
@@ -806,7 +806,7 @@ ENTRY void
 Fscache_UnlockBlock(blockPtr, timeDirtied, diskBlock, blockSize, flags)
     Fscache_Block *blockPtr;	/* Pointer to block information for block
 				   that is to be released. */
-    unsigned int timeDirtied;	/* Time in seconds that the block was 
+    time_t	 timeDirtied;	/* Time in seconds that the block was 
 				   dirtied. */
     int		 diskBlock;	/* If not -1 is the block on disk where this
 				   block resides.  For remote blocks this 
@@ -1881,8 +1881,8 @@ Fscache_SetMaxSize(maxBlocks)
  */
 ENTRY void
 Fscache_GetPageFromFS(timeLastAccessed, pageNumPtr)
-    int	timeLastAccessed;
-    int	*pageNumPtr;
+    time_t	timeLastAccessed;
+    int		*pageNumPtr;
 {
     register	Fscache_Block	*blockPtr;
 
@@ -3187,7 +3187,7 @@ PutOnFreeList(blockPtr)
 INTERNAL static void
 PutFileOnDirtyList(cacheInfoPtr, oldestDirtyBlockTime)
     register Fscache_FileInfo	*cacheInfoPtr;	/* Cache info for a file */
-    int		oldestDirtyBlockTime;
+    time_t	oldestDirtyBlockTime;
 {
     register List_Links	*linkPtr;
     List_Links	*dirtyList, *place;
@@ -3249,7 +3249,7 @@ PutBlockOnDirtyList(blockPtr, onFront)
 		onFront ? LIST_ATFRONT(&cacheInfoPtr->dirtyList) :
 			  LIST_ATREAR(&cacheInfoPtr->dirtyList));
 
-    PutFileOnDirtyList(cacheInfoPtr, (int)(blockPtr->timeDirtied));
+    PutFileOnDirtyList(cacheInfoPtr, blockPtr->timeDirtied);
 }
 
 
@@ -3567,7 +3567,7 @@ Fscache_AddBlockToStats(cacheInfoPtr, blockPtr)
     Fscache_Block	*blockPtr;
 {
     int		now;
-    int		dirtyLifeTime;
+    time_t	dirtyLifeTime;
 
     now = Fsutil_TimeInSeconds();
     dirtyLifeTime = now - blockPtr->timeDirtied;
@@ -3637,8 +3637,8 @@ Fscache_AddCleanStats(flags, blockPtr)
     unsigned int	flags;
     Fscache_Block	*blockPtr;
 {
-    int		now;
-    int		lifeTime = 0;
+    time_t	now;
+    time_t	lifeTime = 0;
     Boolean	unrefed = FALSE;
 
     now = Fsutil_TimeInSeconds();

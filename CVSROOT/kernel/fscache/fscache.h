@@ -21,6 +21,7 @@
 #include <sync.h>
 #include <list.h>
 #include <fs.h>
+#include <user/time.h>
 
 /* data structures */	
 
@@ -200,9 +201,9 @@ typedef struct Fscache_Block {
     List_Links	fileLinks;	/* Links to put block into list of blocks
 				 * for the file.  There are two lists, either
 				 * regular or for indirect blocks. */
-    unsigned int timeDirtied;	/* Time in seconds that block was
+    time_t timeDirtied;		/* Time in seconds that block was
 				   dirtied if at all. */
-    unsigned int timeReferenced;/* Time in seconds that this block was
+    time_t timeReferenced;	/* Time in seconds that this block was
 				 * last referenced. */
     Address	blockAddr;	/* Kernel virtual address where data for
 				   cache block is at. */
@@ -483,7 +484,7 @@ extern void Fscache_SetMaxSize _ARGS_((int maxBlocks));
 extern void Fscache_BlocksUnneeded _ARGS_((Fs_Stream *streamPtr,
 				int offset, int numBytes, Boolean objectFile));
 extern void Fscache_DumpStats _ARGS_((ClientData dummy));
-extern void Fscache_GetPageFromFS _ARGS_((int timeLastAccessed, 
+extern void Fscache_GetPageFromFS _ARGS_((time_t timeLastAccessed, 
 				int *pageNumPtr));
 
 extern void Fscache_FileInfoInit _ARGS_((Fscache_FileInfo *cacheInfoPtr,
@@ -500,7 +501,7 @@ extern void Fscache_FetchBlock _ARGS_((Fscache_FileInfo *cacheInfoPtr,
 		Boolean *foundPtr));
 extern void Fscache_IODone _ARGS_((Fscache_Block *blockPtr));
 extern void Fscache_UnlockBlock _ARGS_((Fscache_Block *blockPtr, 
-		unsigned int timeDirtied, int diskBlock, int blockSize, 
+		time_t timeDirtied, int diskBlock, int blockSize, 
 		int flags));
 extern void Fscache_BlockTrunc _ARGS_((Fscache_FileInfo *cacheInfoPtr, 
 		int blockNum, int newBlockSize));
