@@ -259,6 +259,10 @@ VmMach_Init(firstFreePage)
          ptePtr++, i++) {
 	*ptePtr = (VmMachPTE) 0;
     }
+    /*
+     * Don't allow copy-on-write on SPUR.
+     */
+    vm_CanCOW = FALSE;
 }
 
 /*
@@ -458,9 +462,6 @@ VmMach_SegDelete(segPtr)
 	}
      }
     VmMachFlushSegment(segPtr);
-/*
-    VmMachFlushBytes(vm_SysSegPtr, segDataPtr->pt2BasePtr, VMMACH_SEG_PT2_SIZE);
-*/
     segPtr->machPtr = (VmMach_SegData *)NIL;
 }
 
@@ -1051,10 +1052,12 @@ VmMach_SetRefBit(addr)
     int				page;
     Vm_Segment			*segPtr;
     VmMachPTE			*ptePtr;
+    Proc_ControlBlock		*procPtr;
 
     LOCK_MONITOR;
 
-    segPtr = VmGetSegPtr((unsigned int)addr >> VMMACH_SEG_REG_SHIFT);
+    procPtr = Proc_GetCurrentProc();
+    segPtr = procPtr->vmPtr->segPtrArray[(unsigned int)addr >> VMMACH_SEG_REG_SHIFT];
     segDataPtr = segPtr->machPtr;
     page = ((unsigned int)(addr) & ~VMMACH_SEG_REG_MASK) >> VMMACH_PAGE_SHIFT;
     ptePtr = GetPageTablePtr(segDataPtr, page);
@@ -1122,10 +1125,12 @@ VmMach_SetModBit(addr)
     VmMachPTE			*ptePtr;
     int				page;
     Vm_Segment			*segPtr;
+    Proc_ControlBlock		*procPtr;
 
     LOCK_MONITOR;
 
-    segPtr = VmGetSegPtr((unsigned int)addr >> VMMACH_SEG_REG_SHIFT);
+    procPtr = Proc_GetCurrentProc();
+    segPtr = procPtr->vmPtr->segPtrArray[(unsigned int)addr >> VMMACH_SEG_REG_SHIFT];
     segDataPtr = segPtr->machPtr;
     page = ((unsigned int)(addr) & ~VMMACH_SEG_REG_MASK) >> VMMACH_PAGE_SHIFT;
     ptePtr = GetPageTablePtr(segDataPtr, page);
@@ -1167,7 +1172,7 @@ VmMach_PageValidate(virtAddrPtr, pte)
     *ptePtr = VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT |
               SetPageFrame(VirtToPhysPage(Vm_GetPageFrame(pte)));
     if (virtAddrPtr->segPtr == vm_SysSegPtr) {
-	*ptePtr |= VMMACH_KRW_UNA_PROT | VMMACH_REFERENCED_BIT | 
+	*ptePtr |= VMMACH_KRW_URO_PROT | VMMACH_REFERENCED_BIT | 
 		   VMMACH_MODIFIED_BIT;
     } else {
 	if (pte & (VM_COW_BIT | VM_READ_ONLY_PROT)) {
@@ -1640,10 +1645,43 @@ VmMachCopyEnd()
 /*
  *----------------------------------------------------------------------
  *
+ * VmMach_FlushPage --
+ *
+ *	Flush the page at the given virtual address from all caches.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The given page is flushed from the caches.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+VmMach_FlushPage(virtAddrPtr)
+    register	Vm_VirtAddr	*virtAddrPtr;
+{
+    LOCK_MONITOR;
+
+    VmMachFlushPage(virtAddrPtr->segPtr, 
+	virtAddrPtr->page & ~(VMMACH_SEG_REG_MASK >> VMMACH_PAGE_SHIFT));
+
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * VmMachFlushPage --
  *
  *	Flush the given page from all caches.  Note the page is relative
  *	to the beginning of the segment.
+ *
+ *	NOTE: This code assumes that it will not get involuntarily 
+ *	      context switch within it.  If we can get context switched
+ *	      then it will have to modify the segment register value
+ *	      stored in the machine dependent proc table struct.
  *
  * Results:
  *	None.
@@ -1655,32 +1693,39 @@ VmMachCopyEnd()
  */
 INTERNAL void
 VmMachFlushPage(segPtr, pageNum)
-    Vm_Segment	*segPtr;	/* Segment to flush. */
-    int		pageNum;	/* Page within segment to flush. */
+    register	Vm_Segment	*segPtr; /* Segment to flush. */
+    int				pageNum; /* Page within segment to flush. */
 {
-    register	Address	pageAddr;
-    register	Address	addr;
-    VmMachPTE		*ptePtr;
-    Boolean		setResBit = FALSE;
-    VmMach_SegData	*segDataPtr;
+    register	Address		pageAddr;
+    register	Address		addr;
+    register	VmMachPTE	*ptePtr;
+    VmMach_SegData		*segDataPtr;
+    int				origSegNum;
 
     segDataPtr = segPtr->machPtr;
-
     ptePtr = GetPageTablePtr(segDataPtr, pageNum);
-    if (*ptePtr & VMMACH_RESIDENT_BIT) {
-	*ptePtr &= ~VMMACH_RESIDENT_BIT;
-	setResBit = TRUE;
+    if (!(*ptePtr & VMMACH_RESIDENT_BIT)) {
+	return;
     }
-    pageAddr = (Address) ((segPtr->segNum << VMMACH_SEG_REG_SHIFT) + 
-			  (pageNum << VMMACH_PAGE_SHIFT));
+
+    if (segPtr->segNum > 0) {
+	origSegNum = VmMachSetSegReg1(segPtr->segNum, 
+				      segPtr->segNum / 4 + rootPTPageNum);
+	pageAddr = (Address) (0x40000000 | (pageNum << VMMACH_PAGE_SHIFT));
+    } else {
+	pageAddr = (Address) (pageNum << VMMACH_PAGE_SHIFT);
+    }
+
+    *ptePtr &= ~VMMACH_RESIDENT_BIT;
     for (addr = pageAddr; 
          addr < pageAddr + VMMACH_PAGE_SIZE;
 	 addr = addr + VMMACH_CACHE_BLOCK_SIZE) {
 	VmMachReadAnyways(addr);
 	VmMachFlushBlock(addr);
     }
-    if (setResBit) {
-	*ptePtr |= VMMACH_RESIDENT_BIT;
+    *ptePtr |= VMMACH_RESIDENT_BIT;
+    if (segPtr->segNum > 0) {
+	(void) VmMachSetSegReg1(origSegNum, origSegNum / 4 + rootPTPageNum);
     }
 }
 

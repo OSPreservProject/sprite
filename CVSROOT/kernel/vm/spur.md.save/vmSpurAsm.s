@@ -136,3 +136,91 @@ _VmMachSetSegRegisters:
 	return		RETURN_ADDR_REG, $8
 	Nop
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmMachSetSegReg1 --
+ *
+ *	void VmMachSetSegReg1(segNum, RPTPM)
+ *	    int	segNum;
+ *	    int RPTM;
+ *
+ *	Set the global segment register 1.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Set segment register 1.
+ *
+ *----------------------------------------------------------------------
+ */
+	.globl _VmMachSetSegReg1
+_VmMachSetSegReg1:
+	LD_GSN(SAFE_TEMP1, MACH_GSN_1)
+	ST_GSN(INPUT_REG1, MACH_GSN_1)
+	ST_RPTM_PAGE(INPUT_REG2, MACH_RPTM_1)
+	add_nt		RETURN_VAL_REG_CHILD, SAFE_TEMP1, $0
+	return		RETURN_ADDR_REG, $8
+	Nop
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmMachSetSegReg2 --
+ *
+ *	void VmMachSetSegReg2(segNum, RPTPM)
+ *	    int	segNum;
+ *	    int RPTM;
+ *
+ *	Set the global segment register 1.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Set segment register 1.
+ *
+ *----------------------------------------------------------------------
+ */
+	.globl _VmMachSetSegReg2
+_VmMachSetSegReg2:
+	LD_GSN(SAFE_TEMP1, MACH_GSN_2)
+	ST_GSN(INPUT_REG1, MACH_GSN_2)
+	ST_RPTM_PAGE(INPUT_REG2, MACH_RPTM_2)
+	add_nt		RETURN_VAL_REG_CHILD, SAFE_TEMP1, $0
+	return		RETURN_ADDR_REG, $8
+	Nop
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmMachSetSegReg3 --
+ *
+ *	void VmMachSetSegReg3(segNum, RPTPM)
+ *	    int	segNum;
+ *	    int RPTM;
+ *
+ *	Set the global segment register 1.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Set segment register 1.
+ *
+ *----------------------------------------------------------------------
+ */
+	.globl _VmMachSetSegReg3
+_VmMachSetSegReg3:
+	LD_GSN(SAFE_TEMP1, MACH_GSN_3)
+	ST_GSN(INPUT_REG1, MACH_GSN_3)
+	ST_RPTM_PAGE(INPUT_REG2, MACH_RPTM_3)
+	add_nt		RETURN_VAL_REG_CHILD, SAFE_TEMP1, $0
+	return		RETURN_ADDR_REG, $8
+	Nop
+
+
