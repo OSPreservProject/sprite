@@ -27,6 +27,8 @@ typedef struct TraceLog_Header {
     int dataSize;		/* The size of each buffer */
     int	lostRecords;		/* Records lost due to overflow. */
     int	blocked;		/* Set if we're blocked on buffer full. */
+    int totalNumRecords;	/* Total records given to record. */
+    int totalLostRecords;	/* Total records lost. */
     Sys_TracelogHeader hdr;	/* The header for the user. */
     struct TraceLog_Buffer *buffers;  /* pointer to array of buffers */
 } TraceLog_Header;
@@ -50,8 +52,13 @@ typedef struct TraceLog_Buffer {
 				/* Top byte = flags. */
     int numRecords;		/* Number of records. */
     int	lostRecords;		/* Records lost here due to overflow. */
+    int	mode;			/* Inuse, done, unused (for consistency) */
     Address data;		/* Pointer to the data */
 } TraceLog_Buffer;
+
+#define INUSE 1
+#define DONE 2
+#define UNUSED 3
 
 extern void		TraceLog_Init _ARGS_((TraceLog_Header *traceLogHdrPtr,
 					   int numBuffers, int size,
