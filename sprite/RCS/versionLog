@@ -686,5 +686,3 @@ Fixed a few compat bugs:
 	big enough.
     Fsprefix_Clear didn't unlock the monitor on one error condition. This
 	caused the machines in Cory to hang during recovery.
-
-
