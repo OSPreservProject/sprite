@@ -46,7 +46,7 @@ typedef struct {
  * the file has a reasonable magic number or offsets to text|symbols|strings.
  */
 #define	PROC_BAD_MAGIC_NUMBER(x) \
-    (((x).magic)!=PROC_OMAGIC && ((x).magic)!=PROC_NMAGIC && ((x).magic)!=PROC_ZMAGIC)
+    (((x).magic)!=PROC_ZMAGIC)
 
 #define	PROC_CODE_FILE_OFFSET(x) \
 	((x).magic==PROC_ZMAGIC ? 0 : sizeof (Proc_AOUT))
