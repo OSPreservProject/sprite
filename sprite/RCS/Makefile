@@ -17,9 +17,9 @@ SPRITEDIR =	..
 USERH=		/sprite/lib/include
 H =		${SPRITEDIR}/Include
 INSTALLED =	{SPRITEDIR}/Installed/${MODULE}
-LIB =		${SPRITEDIR}/Object/${MACHINE}
-PROFD =	${SPRITEDIR}/Profiled/${MACHINE}
-ODIR =		Object.${MACHINE}
+LIB =		${SPRITEDIR}/${MACHINE}.md
+PROFD =	${SPRITEDIR}/Profiled/${MACHINE}.md
+ODIR =		${MACHINE}.md
 IFLAGS=	-I. -I${H} -I${USERH}
 #PROFILE =	-p -DPROFILE
 PROFILE =
@@ -58,14 +58,14 @@ RECOV = ../recov/${ODIR}
 RPC = ../rpc/${ODIR}
 SCHED = ../sched/${ODIR}
 SIG = ../sig/${ODIR}
-SUN = ../sun/${ODIR}
+MACH = ../mach/${ODIR}
 SYNC = ../sync/${ODIR}
 SYS = ../sys/${ODIR}
 TIMER = ../timer/${ODIR}
 UTILS = ../utils/${ODIR}
 VM = ../vm/${ODIR}
 
-OBJS = 	${LIB}/sun.o \
+OBJS = 	${LIB}/mach.o \
 	${HOOK} \
 	${LIB}/dbg.o \
 	${LIB}/dev.o \
@@ -111,7 +111,7 @@ sun2: ${OBJS} ${ENDOBJ} Makefile
 	    ${CLIB} ${ENDOBJ} -lg
 	@ls -l $@
 	@size $@
-	cpstrip $@ /sprite/kernels/$@.sprite
+	update -f -s $@ /sprite/kernels/$@.sprite
 	rcp /sprite/kernels/$@.sprite ${ENVY}:/bnf2/sprite/sun2
 	nm $@ | sort > $@.nm
 
@@ -123,8 +123,9 @@ sun3: ${OBJS} ${ENDOBJ} Makefile
 	    ${CLIB} ${ENDOBJ} -lg
 	@ls -l $@
 	@size $@
-	cpstrip $@ /sprite/kernels/$@.sprite
+	update -f -s $@ /sprite/kernels/$@.sprite
 	rcp /sprite/kernels/$@.sprite allspice:/sprite/tmp/$@
+	rcp $@ rosemary:/sprite/brent/$@.sprite
 	nm $@ | sort > $@.nm
 
 profile2: ${PROFOBJS} ${ENDOBJ} Makefile
@@ -135,7 +136,7 @@ profile2: ${PROFOBJS} ${ENDOBJ} Makefile
 	    ${CLIB} ${ENDOBJ} -lg
 	@ls -l $@
 	@size $@
-	cpstrip $@ /sprite/kernels/$@.sprite
+	update -f -s $@ /sprite/kernels/$@.sprite
 	rcp /sprite/kernels/$@.sprite ${ENVY}:/bnf2/sprite/sun2
 	nm $@ | sort > $@.nm
 
@@ -147,7 +148,7 @@ profile3: ${PROFOBJS} ${ENDOBJ} Makefile
 	    ${CLIB} ${ENDOBJ} -lg
 	@ls -l $@
 	@size $@
-	cpstrip $@ /sprite/kernels/$@.sprite
+	update -f -s $@ /sprite/kernels/$@.sprite
 	rcp /sprite/kernels/$@.sprite allspice:/sprite/tmp/$@
 	nm $@ | sort > $@.nm
 
