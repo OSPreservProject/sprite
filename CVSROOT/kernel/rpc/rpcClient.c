@@ -53,16 +53,21 @@ int	rpcRetryFactor = 100;	/* rpcRetryWait is rpcRetryFactor times
 				 * reads and writes take a while */
 unsigned int	rpcMaxWait;	/* Maximum wait interval in ticks */
 int	rpcMaxFactor = 5000;	/* rpcMaxWait is rpcMaxFactor times
-				 * 1 millisecond */
+				 * 1 millisecond.  The wait period doubles
+				 * each retry (when receiving acks or not),
+				 * up to this maximum.  */
 
-int	rpcMaxTries = 8;	/* Number of times to re-send before aborting */
+int	rpcMaxTries = 7;	/* Number of times to re-send before aborting.
+				 * If the initial timeout is .1 sec, and it
+				 * doubles until 5 sec, 7 retries means a
+				 * total timeout period of about 10 seconds. */
 
 /*
  * Watchdog against lots of acknowledgments from a server.  This limit causes
  * a warning message to be printed every rpcMaxAcks, and if the RPC is
  * a broadcast it gets aborted.
  */
-int	rpcMaxAcks = 12;
+int	rpcMaxAcks = 10;
 
 /*
  * For debugging servers.  We allow client's to retry forever instead
