@@ -214,22 +214,36 @@ extern Mach_ProcessorStatus mach_ProcessorStatus[];
  *
  * ----------------------------------------------------------------------------
  */
+#ifdef lint
+#define	Mach_GetSlotId() 0
+
+#else 
+
 #define	Mach_GetSlotId() ({\
 	register unsigned int	__slot_id; \
 	asm volatile ("ld_external %1,r0,$0xf08\n\tNop\n ":" =r" (__slot_id) \
 				: "r" (__slot_id)); \
 	(__slot_id & 0xff); })
 
+#endif /* lint */
 /*
  * Macro to get processor number. The processor number is stored in the top
  * eight bits of the kpsw.
  * For testing uniprocessor, always return zero.
  */
+
+#ifdef lint
+#define	Mach_GetProcessorNumber()  0 
+
+#else
+
 #define	Mach_GetProcessorNumber() ({ \
 	register unsigned int	__pnum; \
 	asm volatile ("rd_kpsw	 %1\n\textract %1,%1,$3\n ":" =r" (__pnum) \
 				: "r" (__pnum)); \
 	(__pnum); })
+
+#endif /* lint */
 
 /*
  * A macro to test if the current processor is at interrupt level.
