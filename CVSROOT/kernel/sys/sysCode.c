@@ -21,6 +21,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vm.h"
 #include "net.h"
 
+/*
+ * Should be in some header file?
+ */
+extern	void	SysInitSysCall();
+
 
 
 /*

@@ -33,8 +33,8 @@ Test_PrintOut(args)
     int		i;
     char	*string;
 
-    Vm_MakeAccessible(VM_READONLY_ACCESS, 1024, args.argArray[0], 
-					  &len, &(nargs[0].arg));
+    Vm_MakeAccessible(VM_READONLY_ACCESS, 1024, (Address) (args.argArray[0]), 
+					  &len, (Address *) &(nargs[0].arg));
     if (len == 0) {
 	return(FAILURE);
     }
@@ -54,11 +54,13 @@ Test_PrintOut(args)
 	string++;
 	if (*string == 's') {
 	    Vm_MakeAccessible(VM_READONLY_ACCESS, 1024,
-	      		      args.argArray[i], &len, &(nargs[i].arg));
+	      		      (Address) args.argArray[i], &len,
+			      (Address *) &(nargs[i].arg));
 	    if (len == 0) {
 		for (i = 0; i < SYS_MAX_ARGS; i++) {
 		    if (nargs[i].mapped) {
-			Vm_MakeUnaccessible(nargs[i].arg, nargs[i].numBytes);
+			Vm_MakeUnaccessible((Address) (nargs[i].arg),
+				nargs[i].numBytes);
 		    }
 		}
 		return(FAILURE);
@@ -72,12 +74,12 @@ Test_PrintOut(args)
 	string++;
 	i++;
     }
-    Sys_SafePrintf(nargs[0].arg, nargs[1].arg, nargs[2].arg, nargs[3].arg, 
-		   nargs[4].arg, nargs[5].arg, nargs[6].arg, nargs[7].arg, 
-		   nargs[8].arg, nargs[9].arg);
+    Sys_SafePrintf((char *) nargs[0].arg, nargs[1].arg, nargs[2].arg,
+	    nargs[3].arg, nargs[4].arg, nargs[5].arg, nargs[6].arg,
+	    nargs[7].arg, nargs[8].arg, nargs[9].arg);
     for (i = 0; i < SYS_MAX_ARGS; i++) {
 	if (nargs[i].mapped) {
-	    Vm_MakeUnaccessible(nargs[i].arg, nargs[i].numBytes);
+	    Vm_MakeUnaccessible((Address) (nargs[i].arg), nargs[i].numBytes);
 	}
     }
     return(0);
@@ -90,7 +92,6 @@ Test_GetLine(string, length)
 {
     int		i, numBytes;
     char 	*realString;
-    int		loop = 1;
 
     Vm_MakeAccessible(VM_OVERWRITE_ACCESS, length, (Address) string,
 		      &numBytes, (Address *) &realString);
@@ -104,7 +105,7 @@ Test_GetLine(string, length)
     }
     realString[i] = '\0';
 
-    Vm_MakeUnaccessible((Address *) realString, numBytes);
+    Vm_MakeUnaccessible((Address) realString, numBytes);
 
     return(SUCCESS);
 }

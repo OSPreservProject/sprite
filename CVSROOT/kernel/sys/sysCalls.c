@@ -201,7 +201,7 @@ Sys_Shutdown(flags, rebootString)
 	    if (status != SUCCESS) {
 		return(SYS_ARG_NOACCESS);
 	    }
-	    String_Copy(rebootString, string);
+	    (void) String_Copy(rebootString, string);
 	    Proc_MakeUnaccessible(rebootString, accLength);
 	}
     }
@@ -256,7 +256,7 @@ Sys_Shutdown(flags, rebootString)
 	 * Give this process highest priority so that no other process 
 	 * can interrupt it.
 	 */
-	Proc_SetPriority(PROC_MY_PID, PROC_NO_INTR_PRIORITY, FALSE);
+	(void) Proc_SetPriority(PROC_MY_PID, PROC_NO_INTR_PRIORITY, FALSE);
     }
 
     /*
@@ -306,7 +306,7 @@ SysErrorShutdown(trapType)
     if (sys_ShouldSyncDisks && !mach_AtInterruptLevel && !sys_ShuttingDown &&
         !dbg_BeingDebugged && (trapType != MACH_BRKPT_TRAP || sysPanicing)) {
 	sys_ErrorShutdown = TRUE;
-	Sys_Shutdown(SYS_KILL_PROCESSES);
+	(void) Sys_Shutdown(SYS_KILL_PROCESSES);
     }
     if (sys_ShouldSyncDisks && sys_ShuttingDown) {
 	Sys_Printf("Error type %d while shutting down system. Exiting ...\n",
@@ -470,7 +470,8 @@ Sys_StatsStub(command, option, argPtr)
 		Sync_PrintStat();
 	    } else {
 		status = Vm_CopyOut(sizeof(Sync_Instrument),
-				  (Address)&sync_Instrument, syncStatPtr);
+				  (Address)&sync_Instrument,
+				  (Address) syncStatPtr);
 	    }
 	    break;
 	}

@@ -215,7 +215,7 @@ static SysCallEntry sysCalls[] = {
     Vm_GetSegInfo,	       Proc_RemoteDummy,   TRUE,	3,   NILPARM,
     Proc_GetResUsage,	       Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
     Proc_GetPriority,	       Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
-    Proc_SetPriority,	       Proc_DoRemoteCall,  FALSE,	3,   NILPARM,
+    CAST Proc_SetPriority,     Proc_DoRemoteCall,  FALSE,	3,   NILPARM,
     Proc_Debug,		       Proc_RemoteDummy,   TRUE,	5,   NILPARM,
     Proc_Profile,	       Proc_RemoteDummy,   TRUE,	6,   NILPARM,
     ErrorProc,		       ErrorProc,   	   TRUE,	2,   NILPARM,
@@ -246,7 +246,7 @@ static SysCallEntry sysCalls[] = {
     VmMach_MapKernelIntoUser,	Proc_RemoteDummy, FALSE,	4,   NILPARM,
     Fs_AttachDiskStub,		Proc_DoRemoteCall, FALSE,	3,   NILPARM,
     Fs_SelectStub,		Fs_SelectStub, 	   TRUE,	6,   NILPARM,
-    Sys_Shutdown,		Proc_DoRemoteCall, FALSE,	2,   NILPARM,
+    CAST Sys_Shutdown,		Proc_DoRemoteCall, FALSE,	2,   NILPARM,
     Proc_Migrate,		Proc_DoRemoteCall, FALSE,	2,   NILPARM,
     Fs_MakeDeviceStub,		Proc_DoRemoteCall, FALSE,	3,   NILPARM,
     Fs_CommandStub,		Proc_DoRemoteCall, FALSE,	3,   NILPARM,
@@ -500,12 +500,21 @@ SysInitSysCall()
 	if (!entryPtr->special) {
 	    entryPtr->paramsPtr = paramPtr;
 	    paramPtr += entryPtr->numWords;
+	/*
+	 * Won't lint due to cast of function pointer.
+	 */
+#ifndef lint
 	    Mach_InitSyscall(sysCallNum, entryPtr->numWords,
-		    (Address) entryPtr->localFunc, (Address) SysMigCall);
+		    entryPtr->localFunc, SysMigCall);
+#endif /* lint */
 	} else {
+	/*
+	 * Won't lint due to cast of function pointer.
+	 */
+#ifndef lint
 	    Mach_InitSyscall(sysCallNum, entryPtr->numWords,
-		    (Address) entryPtr->localFunc,
-		    (Address) entryPtr->remoteFunc);
+		    entryPtr->localFunc, entryPtr->remoteFunc);
+#endif /* lint */
 	}
 	entryPtr++;
     }
