@@ -586,6 +586,9 @@ FreeIndirectBlock(indBlockNum, handlePtr, indexInfoPtr, blockAddrPtr)
     int				modTime;
     int				indBlock;
     register	OfsIndirectInfo	*indInfoPtr;
+#ifdef SOSP91
+    Boolean		isForeign = FALSE;	/* Due to migration? */
+#endif SOSP91
 
     indInfoPtr = &indexInfoPtr->indInfo[indBlockNum];
 
@@ -593,6 +596,15 @@ FreeIndirectBlock(indBlockNum, handlePtr, indexInfoPtr, blockAddrPtr)
 	if (indInfoPtr->blockDirty) {
 	    modTime = Fsutil_TimeInSeconds();
 	    if (!indInfoPtr->deleteBlock) {
+#ifdef SOSP91
+		if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
+		    if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
+			    (proc_RunningProcesses[0]->genFlags &
+			    (PROC_FOREIGN | PROC_MIGRATING))) {
+			isForeign = TRUE;
+		    }
+		}
+#endif SOSP91
 		fs_Stats.blockCache.indBlockWrites++;
 #ifdef SOSP91
 		if (isForeign) {

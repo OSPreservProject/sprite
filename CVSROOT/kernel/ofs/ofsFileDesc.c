@@ -471,12 +471,24 @@ Ofs_FileDescStore(domainPtr, handlePtr, fileNumber, fileDescPtr, forceOut)
     int 		    offset;
     Fscache_Block	    *blockPtr;
     Boolean		    found;
+#ifdef SOSP91
+    Boolean		isForeign = FALSE;	/* Due to migration? */
+#endif SOSP91
 
     headerPtr = ofsPtr->headerPtr;
     blockNum = headerPtr->fileDescOffset + fileNumber / FSDM_FILE_DESC_PER_BLOCK;
     offset = (fileNumber & (FSDM_FILE_DESC_PER_BLOCK - 1)) *
 		FSDM_MAX_FILE_DESC_SIZE;
 
+#ifdef SOSP91
+    if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
+	if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
+		(proc_RunningProcesses[0]->genFlags &
+		(PROC_FOREIGN | PROC_MIGRATING))) {
+	    isForeign = TRUE;
+	}
+    }
+#endif SOSP91
     fs_Stats.blockCache.fileDescWrites++;
 #ifdef SOSP91
     if (isForeign) {

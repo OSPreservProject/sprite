@@ -1953,6 +1953,9 @@ Ofs_ReallocBlock(data, callInfoPtr)
     ReturnStatus	status;
     Fsdm_FileDescriptor	*descPtr;
     Ofs_Domain		*ofsPtr;
+#ifdef SOSP91
+    Boolean		isForeign = FALSE;	/* Due to migration? */
+#endif SOSP91
 
     virtBlockNum = blockPtr->blockNum;
     physBlockNum = blockPtr->diskBlock;
@@ -2065,6 +2068,15 @@ Ofs_ReallocBlock(data, callInfoPtr)
 	     * Read in the doubly indirect block  so that we can get to the
 	     * indirect block that we want.
 	     */
+#ifdef SOSP91
+	    if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
+		if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
+			(proc_RunningProcesses[0]->genFlags &
+			(PROC_FOREIGN | PROC_MIGRATING))) {
+		    isForeign = TRUE;
+		}
+	    }
+#endif SOSP91
 	    fs_Stats.blockCache.indBlockAccesses++;
 #ifdef SOSP91
 	    if (isForeign) {
@@ -2089,9 +2101,9 @@ Ofs_ReallocBlock(data, callInfoPtr)
 	    } else {
 		fs_Stats.blockCache.indBlockHits++;
 #ifdef SOSP91
-	    if (isForeign) {
-		fs_SospMigStats.blockCache.indBlockHits++;
-	    }
+		if (isForeign) {
+		    fs_SospMigStats.blockCache.indBlockHits++;
+		}
 #endif SOSP91
 	    }
 	    blockAddrPtr = (int *)blockPtr->blockAddr + (-virtBlockNum - 3);
