@@ -873,7 +873,7 @@ END(Mach_DisableIntr)
  */
 .set noreorder
 
-NON_LEAF(Mach_ContextSwitch,KERN_EXC_FRAME_SIZE,ra)
+NON_LEAF(Mach_ContextSwitch,STAND_FRAME_SIZE + 8,ra)
     subu	sp, sp, STAND_FRAME_SIZE
     sw		ra, STAND_RA_OFFSET(sp)
     sw		a0, STAND_FRAME_SIZE(sp)
@@ -886,12 +886,11 @@ NON_LEAF(Mach_ContextSwitch,KERN_EXC_FRAME_SIZE,ra)
     jal		VmMach_SetupContext
     nop
 /*
- * Restore saved register values and clear off the stack.
+ * Restore saved register values.
  */
     lw		ra, STAND_RA_OFFSET(sp)
     lw		a0, STAND_FRAME_SIZE(sp)
     lw		a1, STAND_FRAME_SIZE + 4(sp)
-    addu	sp, sp, STAND_FRAME_SIZE
 /*
  * Push the magic number and the status register onto the stack.
  */
@@ -920,6 +919,9 @@ NON_LEAF(Mach_ContextSwitch,KERN_EXC_FRAME_SIZE,ra)
     sw		s8, S8 * 4(t0)
     sw		ra, RA * 4(t0)
     sw		sp, SP * 4(t0)
+    .globl Mach_SwitchPoint
+Mach_SwitchPoint:
+
 /*
  * Restore the registers for the new process.
  */
@@ -996,7 +998,7 @@ NON_LEAF(Mach_ContextSwitch,KERN_EXC_FRAME_SIZE,ra)
     lw		t0, 4(sp)
     nop
     mtc0	t0, MACH_COP_0_STATUS_REG
-    add		sp, sp, 8
+    add		sp, sp, STAND_FRAME_SIZE + 8
 /*
  * Return 
  */
