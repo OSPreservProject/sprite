@@ -185,7 +185,8 @@ Sig_Handle(trapStackPtr, pcPtr)
 	    procPtr->genRegs[SP] = trapStackPtr->userStackPtr;
 	    procPtr->progCounter = trapStackPtr->excStack.pc;
 
-	    Proc_PutOnDebugList(procPtr, sigNum, 
+	    Proc_PutOnDebugList(procPtr, PROC_TERM_SIGNALED, sigNum, 
+				procPtr->sigCodes[sigNum],
 				trapStackPtr->excStack.statusReg);
 
 	    /*
