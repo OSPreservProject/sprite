@@ -75,9 +75,9 @@ extern TraceLog_Header *SOSP91TracePtr;
  * fileSize		Size in bytes of the file
  * modify		The modify time for the file.
  */
-#define	SOSP_ADD_OPEN_TRACE(currentHostID, homeHostID, fileID, streamID, effID, realID, mode, numNowReading, numNowWriting, create, fileSize, modify) \
+#define	SOSP_ADD_OPEN_TRACE(currentHostID, homeHostID, fileID, streamID, effID, realID, mode, numNowReading, numNowWriting, create, fileSize, modify, type) \
 {\
-	unsigned int	sospBuffer[19];\
+	unsigned int	sospBuffer[20];\
 \
 	sospBuffer[0] = SOSP_OPEN;\
 	sospBuffer[1] = currentHostID;\
@@ -92,8 +92,9 @@ extern TraceLog_Header *SOSP91TracePtr;
 	sospBuffer[16] = create;\
 	sospBuffer[17] = fileSize;\
 	sospBuffer[18] = modify;\
+	sospBuffer[19] = type;\
 	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
-		(19 * sizeof (int)), SOSP_OPEN);\
+		(20 * sizeof (int)), SOSP_OPEN);\
 }
 
 /*
