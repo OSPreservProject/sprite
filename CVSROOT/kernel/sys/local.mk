@@ -5,7 +5,5 @@
 # that must be included to set up various compilation stuff.
 #
 
-CFLAGS		+= -DNEW_NET
-
 #include	<$(SYSMAKEFILE)>
 
