@@ -17,15 +17,10 @@
  *		   UNIX signal handler calling conventions after that for
  *		   the process.
  *
- *		2) getcwd won't work correctly through remote links.  This
- *		   isn't a system call so its hard to fix it here.  A possible
- *		   quick and dirty fix is to see if ".." in a stat call refers
- *		   to a remote link and if so doing something intelligent.
- *			
- *		3) Sprite doesn't implement ptys so we can't run commands
+ *		2) Sprite doesn't implement ptys so we can't run commands
  *		   like xterm directly.
  *
- *		4) Reads that are interrupted do not restart like they
+ *		3) Reads that are interrupted do not restart like they
  *		   do in Sprite.  The problem is that if we restart them
  *		   in here then the user never has the oppurtunity to 
  *		   handle the signal.  A possible solution is to return to
@@ -49,7 +44,7 @@
  *	what the hell I'm talking about?  Well look at MachUNIXOpen for
  *	an example.
  *	
- *	If something in here looks bizarre and I didn't comment it it's
+ *	If something in here looks bizarre and I forgot to comment it it's
  *	probably because the UNIX system call stub does something weird.
  *	Extract it from the UNIX C library and disassemble it and things
  *	will probably make more sense.
