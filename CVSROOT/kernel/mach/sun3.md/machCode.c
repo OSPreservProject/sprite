@@ -1265,7 +1265,9 @@ MachUserReturn(procPtr)
 	    procPtr->unixProgress = PROC_PROGRESS_UNIX;
 	}
 	if (Sig_Handle(procPtr, &sigStack.sigStack, &pc)) {
-	    procPtr->unixProgress = PROC_PROGRESS_UNIX;
+	    if (procPtr->unixProgress != PROC_PROGRESS_NOT_UNIX) {
+		procPtr->unixProgress = PROC_PROGRESS_UNIX;
+	    }
 	    SetupSigHandler(procPtr, &sigStack, pc);
 	    Mach_DisableIntr();
 	    break;
