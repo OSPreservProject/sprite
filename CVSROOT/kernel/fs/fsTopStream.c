@@ -4,9 +4,15 @@
  *	There are two sets of procedures here.  The first manage the stream
  *	as it relates to the handle table; streams are installed in this
  *	table so that handle synchronization primitives can be used, and
- *	so that streams can be found after migration.  The second set of
- *	procedures handle the mapping from streams to user-level stream IDs,
- *	which are indexes into a per-process array of stream pointers.
+ *	so that streams can be found after migration.  The golden rule is
+ *	that the stream's refCount reflects local use, and its client list
+ *	is used to reflect remote use of a stream.  Thus I/O server's
+ *	don't keep references, only client list entries, unless there is
+ *	a local user.
+ *
+ *	The second set of procedures handle the mapping from streams to
+ *	user-level stream IDs,	which are indexes into a per-process array
+ *	of stream pointers.
  *
  * Copyright (C) 1987 Regents of the University of California
  * All rights reserved.
@@ -45,7 +51,7 @@ static	Sync_Lock	streamLock = {0, 0};
 static int	streamCount;	/* Used to generate fileIDs for streams*/
 
 /*
- * Forward routines. 
+ * Forward declarations. 
  */
 static ReturnStatus GrowStreamList();
 
@@ -53,24 +59,29 @@ static ReturnStatus GrowStreamList();
 /*
  *----------------------------------------------------------------------
  *
- * FsStreamNew --
+ * FsStreamNewClient --
  *
- *	Create a new stream.  This chooses a unique minor number for the
- *	fileID of the stream, installs it in the handle table,
- *	and initializes fields.
+ *	Create a new stream for a client.  This chooses a unique minor number
+ *	for the	fileID of the stream, installs it in the handle table,
+ *	and initializes the client list to contain the client.  This is
+ *	used on the file server to remember clients of regular files, and
+ *	when creating pipe streams which need client info for migration.
  *
  * Results:
- *	None.
+ *	A pointer to a locked stream with 1 reference and one client entry.
  *
  * Side effects:
  *	Install the new stream into the handle table and increment the global
- *	streamCount used to generate IDs.
+ *	streamCount used to generate IDs.  The stream is returned locked and
+ *	with one reference.  Our caller should release this reference if
+ *	this is just a shadow stream.
  *
  *----------------------------------------------------------------------
  */
 ENTRY Fs_Stream *
-FsStreamNew(serverID, ioHandlePtr, useFlags, name)
+FsStreamNewClient(serverID, clientID, ioHandlePtr, useFlags, name)
     int			serverID;	/* I/O server for stream */
+    int			clientID;	/* Client of the stream */
     FsHandleHeader	*ioHandlePtr;	/* I/O handle to attach to stream */
     int			useFlags;	/* Usage flags from Fs_Open call */
     char		*name;		/* Name for error messages */
@@ -79,6 +90,7 @@ FsStreamNew(serverID, ioHandlePtr, useFlags, name)
     register Fs_Stream *streamPtr;
     Fs_Stream *newStreamPtr;
     FsFileID fileID;
+    FsStreamClientInfo *clientPtr;
 
     LOCK_MONITOR;
 
@@ -110,10 +122,194 @@ FsStreamNew(serverID, ioHandlePtr, useFlags, name)
     streamPtr->nameInfoPtr = (FsNameInfo *)NIL;
     List_Init(&streamPtr->clientList);
 
+    clientPtr = Mem_New(FsStreamClientInfo);
+    clientPtr->clientID = clientID;
+    clientPtr->useFlags = useFlags;
+    List_InitElement((List_Links *)clientPtr);
+    List_Insert((List_Links *) clientPtr, LIST_ATFRONT(&streamPtr->clientList));
+
     UNLOCK_MONITOR;
     return(streamPtr);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsStreamAddClient --
+ *
+ *	Find a stream and add another client to its client list.
+ *
+ * Results:
+ *	A pointer to a locked stream with 1 reference and one client entry.
+ *	Our call should release this reference if this is just a shadow stream.
+ *
+ * Side effects:
+ *	Install the new stream into the handle table and increment the global
+ *	streamCount used to generate IDs.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY Fs_Stream *
+FsStreamAddClient(streamIDPtr, clientID, ioHandlePtr, useFlags, name, foundPtr)
+    FsFileID		*streamIDPtr;	/* File ID for stream */
+    int			clientID;	/* Client of the stream */
+    FsHandleHeader	*ioHandlePtr;	/* I/O handle to attach to stream */
+    int			useFlags;	/* Usage flags from Fs_Open call */
+    char		*name;		/* Name for error messages */
+    Boolean		*foundPtr;	/* True if client already existed */
+{
+    register Boolean found;
+    register Fs_Stream *streamPtr;
+    Fs_Stream *newStreamPtr;
+
+    found = FsHandleInstall(streamIDPtr, sizeof(Fs_Stream), name,
+			    (FsHandleHeader **)&newStreamPtr);
+    streamPtr = newStreamPtr;
+    if (!found) {
+	streamPtr->offset = 0;
+	streamPtr->flags = useFlags;
+	streamPtr->ioHandlePtr = ioHandlePtr;
+	streamPtr->nameInfoPtr = (FsNameInfo *)NIL;
+	List_Init(&streamPtr->clientList);
+    } else if (streamPtr->ioHandlePtr == (FsHandleHeader *)NIL) {
+	streamPtr->ioHandlePtr = ioHandlePtr;
+    }
+
+    (void)FsStreamClientOpen(&streamPtr->clientList, clientID, useFlags,
+	    foundPtr);
+
+    UNLOCK_MONITOR;
+    return(streamPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsStreamAddClient --
+ *
+ *	Find a stream and move a client from one host to another.  The
+ *	FS_RMT_SHARED stream flag is used to detect if the stream is
+ *	being shared by more than one client.  This may be already set by
+ *	the source client, or we may set it if we detect sharing here.
+ *
+ * Results:
+ *	TRUE if the stream is shared across the network after migration.
+ *
+ * Side effects:
+ *	Shifts the client list entry from one host to another.  This does
+ *	not add/subtract any references to the stream itself.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+FsStreamMigClient(streamIDPtr, srcClientID, dstClientID, ioHandlePtr,
+	    offsetPtr, flagsPtr)
+    FsFileID		*streamIDPtr;	/* File ID for stream */
+    int			srcClientID;	/* Original client of the stream */
+    int			dstClientID;	/* New client of the stream */
+    FsHandleHeader	*ioHandlePtr;	/* I/O handle to attach to stream */
+    int			*offsetPtr;	/* Offset from migration info */
+    int			*flagsPtr;	/* Stream use flags */
+{
+    register Boolean found;
+    register Fs_Stream *streamPtr;
+    Fs_Stream *newStreamPtr;
+
+    found = FsHandleInstall(streamIDPtr, sizeof(Fs_Stream), (char *)NIL,
+			    (FsHandleHeader **)&newStreamPtr);
+    streamPtr = newStreamPtr;
+    if (!found) {
+	streamPtr->offset = *offsetPtr;
+	streamPtr->flags = *flagsPtr;
+	streamPtr->ioHandlePtr = ioHandlePtr;
+	streamPtr->nameInfoPtr = (FsNameInfo *)NIL;
+	List_Init(&streamPtr->clientList);
+    } else if (streamPtr->ioHandlePtr == (FsHandleHeader *)NIL) {
+	streamPtr->ioHandlePtr = ioHandlePtr;
+    }
+    if ((streamPtr->flags & FS_RMT_SHARED) == 0) {
+	/*
+	 * We don't think the stream is being shared so we
+	 * grab the offset from the client.
+	 */
+	streamPtr->offset = *offsetPtr;
+    }
+    if ((*flagsPtr & FS_RMT_SHARED) == 0) {
+	/*
+	 * The client doesn't perceive sharing of the stream so
+	 * it must be its last reference so we do an I/O close.
+	 */
+	(void)FsStreamClientClose(&streamPtr->clientList, srcClientID);
+    }
+    if (FsStreamClientOpen(&streamPtr->clientList, dstClientID, *flagsPtr,
+			    (Boolean *)NIL)) {
+	/*
+	 * We detected network sharing so we mark the stream.
+	 */
+	streamPtr->flags |= FS_RMT_SHARED;
+    }
+    *flagsPtr = streamPtr->flags;
+    *offsetPtr = streamPtr->offset;
+    FsHandleRelease(streamPtr, TRUE);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsStreamNewID --
+ *
+ *	Generate a new streamID for a client.  This chooses a unique minor
+ *	number for the	fileID of the stream and returns the fileID.  This
+ *	is used on the file server to generate IDs for remote device streams.
+ *	This ID will be used to create matching streams on the device I/O server
+ *	and on the client's machine.
+ *
+ * Results:
+ *	A unique fileID for a stream to the given I/O server.
+ *
+ * Side effects:
+ *	Increment the global streamCount used to generate IDs.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+FsStreamNewID(serverID, streamIDPtr)
+    int			serverID;	/* I/O server for stream */
+    FsFileID		*streamIDPtr;	/* Return - FileID for the stream */
+{
+    register Boolean found;
+    Fs_Stream *newStreamPtr;
+    FsFileID fileID;
+
+    LOCK_MONITOR;
+
+    /*
+     * The streamID is uniquified by using our own host ID for the major
+     * field (for network uniqueness), and then choosing minor
+     * numbers until we don't have a local conflict.
+     */
+    fileID.type = FS_STREAM;
+    fileID.serverID = serverID;
+    fileID.major = rpc_SpriteID;
+
+    do {
+	fileID.minor = ++streamCount;
+	found = FsHandleInstall(&fileID, sizeof(Fs_Stream), (char *)NIL,
+				(FsHandleHeader **)&newStreamPtr);
+	if (found) {
+	    /*
+	     * Don't want to conflict with existing streams.
+	     */
+	    FsHandleRelease(newStreamPtr, TRUE);
+	}
+    } while (found);
+    *streamIDPtr = newStreamPtr->hdr.fileID;
+    FsHandleRelease(newStreamPtr, TRUE);
+    FsHandleRemove(newStreamPtr);
+    UNLOCK_MONITOR;
+}
+
+#ifdef notdef
 /*
  *----------------------------------------------------------------------
  *
@@ -159,6 +355,7 @@ FsStreamFind(streamIDPtr, ioHandlePtr, useFlags, name, foundPtr)
     }
     return(streamPtr);
 }
+#endif notdef
 
 /*
  *----------------------------------------------------------------------
@@ -404,27 +601,15 @@ FsStreamReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	ioHandlePtr = (*fsStreamOpTable[fileIDPtr->type].clientVerify)
 			(fileIDPtr, clientID, (int *)NIL);
 	if (ioHandlePtr != (FsHandleHeader *)NIL) {
-	    Boolean found;
-
-	    streamPtr = FsStreamFind(&reopenParamsPtr->streamID, ioHandlePtr,
-		     reopenParamsPtr->useFlags, ioHandlePtr->name, &found);
+	    streamPtr = FsStreamAddClient(&reopenParamsPtr->streamID, clientID,
+		    ioHandlePtr, reopenParamsPtr->useFlags, ioHandlePtr->name,
+		    (Boolean *)NIL);
 	    /*
 	     * BRENT Have to worry about the shared offset here.
 	     */
 	    streamPtr->offset = reopenParamsPtr->offset;
 
-	    (void)FsStreamClientOpen(&streamPtr->clientList, clientID,
-			reopenParamsPtr->useFlags);
-
-	    if (!found) {
-		/*
-		 * If the stream wasn't found it means we have to leave
-		 * a refernece on the I/O handle for it.
-		 */
-		FsHandleUnlock(ioHandlePtr);
-	    } else {
-		FsHandleRelease(ioHandlePtr, TRUE);
-	    }
+	    FsHandleRelease(ioHandlePtr, TRUE);
 	    FsHandleRelease(streamPtr, TRUE);
 	    status = SUCCESS;
 	} else {
