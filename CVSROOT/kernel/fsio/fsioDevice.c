@@ -311,14 +311,7 @@ FsRmtDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePt
     FsHandleHeader	**ioHandlePtrPtr;/* Return - a handle set up for
 					 * I/O to a device, NIL if failure. */
 {
-    ReturnStatus 	status;
-    Boolean		found;
-    FsDeviceState	*deviceStatePtr;
-
-    if (clientID != rpc_SpriteID) {
-	Sys_Panic(SYS_FATAL, "FsRmtDeviceCltOpen, bad clientID for rmtOpen\n");
-    }
-    *ioHandlePtrPtr = (FsHandleHeader *)NIL;
+    register ReturnStatus 	status;
 
     /*
      * Do a device open at the I/O server.  We set the ioFileID type so
@@ -326,34 +319,57 @@ FsRmtDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePt
      * server, as opposed to the local pipe (or whatever) open routine.
      * NAME note: are not passing the file name to the I/O server.
      */
-    deviceStatePtr = (FsDeviceState *)streamData;
     ioFileIDPtr->type = FS_LCL_DEVICE_STREAM;
     status = FsDeviceRemoteOpen(ioFileIDPtr, *flagsPtr,	sizeof(FsDeviceState),
-				(ClientData)deviceStatePtr);
-
+				streamData);
     if (status == SUCCESS) {
-	/*
-	 * Install the handle and initialize its recovery state.
-	 */
-	register FsRecoveryInfo *recovPtr;
-	FsRemoteIOHandle *rmtHandlePtr;
-
 	ioFileIDPtr->type = FS_RMT_DEVICE_STREAM;
-	found = FsHandleInstall(ioFileIDPtr, sizeof(FsRemoteIOHandle), name,
-		(FsHandleHeader **)&rmtHandlePtr);
-	recovPtr = &rmtHandlePtr->recovery;
-	if (!found) {
-	    FsRecoveryInit(recovPtr);
-	}
-	recovPtr->use.ref++;
-	if (*flagsPtr & FS_WRITE) {
-	    recovPtr->use.write++;
-	}
-	*ioHandlePtrPtr = (FsHandleHeader *)rmtHandlePtr;
-	FsHandleUnlock(rmtHandlePtr);
+	FsRemoteIOHandleInit(ioFileIDPtr, *flagsPtr, name, ioHandlePtrPtr);
+    } else {
+	*ioHandlePtrPtr = (FsHandleHeader *)NIL;
     }
-    Mem_Free((Address)deviceStatePtr);
+    Mem_Free((Address)streamData);
     return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsRemoteIOHandleInit --
+ *
+ *	Initialize a handle for a remote device/pseudo-device/whatever.
+ *
+ * Results:
+ *	Sets its *ioHandlePtrPtr to reference the installed handle.
+ *
+ * Side effects:
+ *	Create and install a handle for remote thing.  The handle is
+ *	returned unlocked.  The recovery use counts are incremented
+ *	to reflect the use of the handle.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+FsRemoteIOHandleInit(ioFileIDPtr, useFlags, name, newHandlePtrPtr)
+    Fs_FileID		*ioFileIDPtr;		/* Remote IO File ID */
+    int			useFlags;		/* Stream usage flags */
+    char		*name;			/* File name */
+    FsDeviceIOHandle	**newHandlePtrPtr;	/* Return - installed handle */
+{
+    register Boolean found;
+    register FsRecoveryInfo *recovPtr;
+
+    found = FsHandleInstall(ioFileIDPtr, sizeof(FsRemoteIOHandle), name,
+	    newHandlePtrPtr);
+    recovPtr = &((FsRemoteIOHandle *)*newHandlePtrPtr)->recovery;
+    if (!found) {
+	FsRecoveryInit(recovPtr);
+    }
+    recovPtr->use.ref++;
+    if (useFlags & FS_WRITE) {
+	recovPtr->use.write++;
+    }
+    FsHandleUnlock(*newHandlePtrPtr);
 }
 
 /*----------------------------------------------------------------------
