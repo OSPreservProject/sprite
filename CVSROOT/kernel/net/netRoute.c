@@ -187,10 +187,16 @@ Net_InstallRouteStub(size, routeInfoPtr)
 	return GEN_INVALID_ARG;
     }
     if (routeInfo.interface < 0 || routeInfo.interface >= netNumInterfaces) {
-	printf("Net_InstallRouteStub: interface %d does not exist\n");
+	printf("Net_InstallRouteStub: interface %d does not exist\n",
+	    routeInfo.interface);
 	return(GEN_INVALID_ARG);
     }
     interPtr = Net_GetInterface(routeInfo.netType, routeInfo.interface);
+    if (interPtr == (Net_Interface *) NIL) {
+	printf("Net_InstallRouteStub: can't find interface %d\n",
+	    routeInfo.interface);
+	return(GEN_INVALID_ARG);
+    }
     status = Net_InstallRoute(routeInfo.spriteID,
 		    interPtr, routeInfo.netAddress, 
 		    routeInfo.protocol,
