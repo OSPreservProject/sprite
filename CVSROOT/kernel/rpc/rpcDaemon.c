@@ -161,7 +161,7 @@ Rpc_CreateServer(pidPtr)
 #ifndef lint
     /* Won't lint due to cast of function pointer to address. */
     status = Proc_NewProc((Address)Rpc_Server, PROC_KERNEL, FALSE,
-	    (Proc_PID *) pidPtr, "Rpc_Server");
+	    (Proc_PID *) pidPtr, "Rpc_Server", FALSE);
 #else	/* lint */
     /*
      * FOR LINTING ONLY!!!!  So that lint doesn't complain about status

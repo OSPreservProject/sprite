@@ -1190,7 +1190,7 @@ StartProcessor(pnum)
      */
     sprintf(procName,"Processor%dStart",pnum);
     Proc_NewProc((Address)ProcessorStartProcess, PROC_KERNEL, FALSE, &pid,
-				    procName);
+				    procName, FALSE);
     procPtr = Proc_GetPCB(pid);
     /*
      * Wait for this processor to go into the WAIT state.
