@@ -1,5 +1,5 @@
 #
-# CVS Modules file for Prisma sources
+# CVS Modules file for Sprite kernel sources
 # $Id$
 #
 # Three differnt line formats are valid:
@@ -17,10 +17,10 @@
 world		-a .
 
 # CVSROOT.adm support
-CVSROOT		-i /usr/local/bin/mkmodules CVSROOT.adm
-CVSROOT.adm	-i /usr/local/bin/mkmodules CVSROOT.adm
-modules		-i /usr/local/bin/mkmodules CVSROOT.adm modules
-loginfo		-i /usr/local/bin/mkmodules CVSROOT.adm loginfo
+CVSROOT		-i /local/cmds/mkmodules CVSROOT.adm
+CVSROOT.adm	-i /local/cmds/mkmodules CVSROOT.adm
+modules		-i /local/cmds/mkmodules CVSROOT.adm modules
+loginfo		-i /local/cmds/mkmodules CVSROOT.adm loginfo
 
 mach		kernel/mach
 dbg		kernel/dbg
