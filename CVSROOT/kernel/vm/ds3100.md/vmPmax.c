@@ -2171,3 +2171,55 @@ VmMach_CopySharedMem(parentProcPtr, childProcPtr)
 	    VMMACH_SHARED_NUM_BLOCKS*sizeof(int));
     childSharedData->allocFirstFree = parentSharedData->allocFirstFree;
 }
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmMach_LockCachePage --
+ *
+ *      Perform machine dependent locking of a kernel resident file cache
+ *	page.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+VmMach_LockCachePage(kernelAddress)
+    Address	kernelAddress;	/* Address on page to lock. */
+{
+    /*
+     * Ds3100 leaves file cache pages always available so there is no need to
+     * lock or unlock them.
+     */
+    return;
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmMach_UnlockCachePage --
+ *
+ *      Perform machine dependent unlocking of a kernel resident page.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+VmMach_UnlockCachePage(kernelAddress)
+    Address	kernelAddress;	/* Address on page to unlock. */
+{
+    /*
+     * Ds3100 leaves file cache pages always available so there is no need to
+     * lock or unlock them.
+     */
+    return;
+}
+

@@ -150,4 +150,12 @@ extern  void		VmMach_SharedSegFinish();
 extern	void		VmMach_SharedProcStart();
 extern	void		VmMach_SharedProcFinish();
 
+/*
+ * File cache page lock/unlock routines.
+ */
+
+extern	void		VmMach_LockCachePage();
+extern	void		VmMach_UnlockCachePage();
+
+
 #endif /* _VMMACH */
