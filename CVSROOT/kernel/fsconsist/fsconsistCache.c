@@ -620,17 +620,18 @@ FsReopenClient(handlePtr, clientID, use, haveDirtyBlocks)
  * ----------------------------------------------------------------------------
  */
 ENTRY ReturnStatus
-FsReopenConsistency(handlePtr, clientID, use, cacheablePtr, openTimeStampPtr)
+FsReopenConsistency(handlePtr, clientID, use, swap, cacheablePtr, openTimeStampPtr)
     FsLocalFileIOHandle	*handlePtr;	/* Should be UNLOCKED. */
     int			clientID;	/* The client who is opening the file.*/
     FsUseCounts		use;		/* Clients usage of the file */
+    int			swap;		/* 0 or FS_SWAP to indicate swap file.*/
     Boolean 		*cacheablePtr;	/* IN: TRUE if client expects it to be
 					 * cacheable, i.e. has dirty blocks.
 					 * OUT: Cacheability of the file. */
     int			*openTimeStampPtr; /* Place to return a timestamp for 
 					 * this open.*/
 {
-    int				useFlags = 0;
+    int				useFlags;
     Boolean			cacheable;
     ReturnStatus		status;
     register FsConsistInfo	*consistPtr = &handlePtr->consist;
@@ -638,6 +639,7 @@ FsReopenConsistency(handlePtr, clientID, use, cacheablePtr, openTimeStampPtr)
 
     LOCK_MONITOR;
 
+    useFlags = swap;
     if (use.ref > use.write + use.exec) {
 	useFlags |= FS_READ;
     }
@@ -1880,20 +1882,10 @@ ProcessConsistReply(consistPtr, clientID, replyPtr)
 	LIST_FORALL(&(consistPtr->clientList), (List_Links *) clientPtr) {
 	    if (clientPtr->clientID == clientID) {
 		handlePtr = (FsLocalFileIOHandle *)consistPtr->hdrPtr;
-		if (!clientPtr->cached) {
-		    Sys_Panic(SYS_WARNING,
-			"ProcessConsistReply: client %d stopped caching\n",
-			 clientID);
-		    Sys_Printf("\tFile \"%s\" <%d,%d>, lastByte %d (not %d)\n",
-			FsHandleName(handlePtr),
-			handlePtr->hdr.fileID.major,
-			handlePtr->hdr.fileID.minor,
-			replyPtr->cachedAttr.lastByte,
-			handlePtr->cacheInfo.attr.lastByte);
-		}
+
 		if (msgPtr->flags & (FS_WRITE_BACK_BLOCKS |
 				     FS_WRITE_BACK_ATTRS)) {
-		    FsUpdateAttrFromClient(&handlePtr->cacheInfo,
+		    FsUpdateAttrFromClient(clientID, &handlePtr->cacheInfo,
 			&replyPtr->cachedAttr);
 		}
 		
