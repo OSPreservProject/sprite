@@ -71,7 +71,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "rpc.h"
 
 #define	SigGetBitMask(sig) (1 << (sig - 1))
-#define	KILL_BIT_MASK	SIG_BIT_MASK(SIG_KILL)
 
 unsigned int 	sigBitMasks[SIG_NUM_SIGNALS];
 int		sigDefActions[SIG_NUM_SIGNALS];
@@ -123,12 +122,13 @@ Sig_Init()
     sigDefActions[SIG_PIPE]		= SIG_KILL_ACTION;
     sigDefActions[SIG_TIMER]		= SIG_KILL_ACTION;
     sigDefActions[SIG_TERM]		= SIG_KILL_ACTION;
+    sigDefActions[SIG_TTY_SUSPEND]	= SIG_SUSPEND_ACTION;
 
     sigCanHoldMask = 
 	      ~(sigBitMasks[SIG_ARITH_FAULT] | sigBitMasks[SIG_ILL_INST] |
 		sigBitMasks[SIG_ADDR_FAULT]  | sigBitMasks[SIG_KILL] |
 		sigBitMasks[SIG_BREAKPOINT]  | sigBitMasks[SIG_TRACE_TRAP] |
-		sigBitMasks[SIG_MIGRATE_HOME]);
+		sigBitMasks[SIG_MIGRATE_HOME] | sigBitMasks[SIG_SUSPEND]);
 }
 
 
@@ -685,9 +685,8 @@ Sig_SetAction(sigNum, newActionPtr, oldActionPtr)
     /*
      * Make sure that the signal is in range.
      */
-
     if (sigNum < SIG_MIN_SIGNAL || sigNum >= SIG_NUM_SIGNALS || 
-	sigNum == SIG_KILL) {
+	sigNum == SIG_KILL || sigNum == SIG_SUSPEND) {
 	return(SIG_INVALID_SIGNAL);
     }
 
