@@ -56,10 +56,11 @@ static void DeferSignal();
  */
 
 ReturnStatus
-SigMigSend(procPtr, sigNum, code)
+SigMigSend(procPtr, sigNum, code, addr)
     register Proc_ControlBlock 	*procPtr; /* The migrated process */
     int				  sigNum;
     int				  code;
+    Address			  addr;
 {
     ReturnStatus status;
     Proc_PID processID;
@@ -120,7 +121,7 @@ again:
     Proc_Unlock(procPtr);
     locked = FALSE;
     status = SigSendRemoteSignal(remoteHostID, sigNum, code,
-			      remoteProcessID, FALSE);
+			      remoteProcessID, FALSE, addr);
 
     if (proc_MigDebugLevel > 4) {
 	printf("SigMigSend returning %x.\n", status);
