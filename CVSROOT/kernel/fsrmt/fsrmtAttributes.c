@@ -665,7 +665,7 @@ FsSpriteSetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
 {
     ReturnStatus 		status;
     Rpc_Storage			storage;
-    char			replyName[FS_MAX_PATH_LENGTH];
+    char			replyName[FS_MAX_PATH_NAME_LENGTH];
     FsGetAttrResultsParam	getAttrResultsParam;
     FsFileID			*fileIDPtr;
 
@@ -676,7 +676,7 @@ FsSpriteSetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
     storage.replyParamPtr = (Address) &(getAttrResultsParam);
     storage.replyParamSize = sizeof(FsGetAttrResultsParam);
     storage.replyDataPtr = (Address) replyName;
-    storage.replyDataSize = FS_MAX_PATH_LENGTH;
+    storage.replyDataSize = FS_MAX_PATH_NAME_LENGTH;
 
     fileIDPtr = (FsFileID *) resultsPtr;
 
@@ -770,7 +770,7 @@ Fs_RpcSetAttrPath(srvToken, clientID, command, storagePtr)
 
     if (status == SUCCESS) {
 	storagePtr->replyParamPtr = (Address) getAttrResultsParamPtr;
-	storagePtr->replyParamSize = sizeof(getAttrResultsParam);
+	storagePtr->replyParamSize = sizeof(FsGetAttrResultsParam);
 	storagePtr->replyDataPtr = (Address) NIL;
 	storagePtr->replyDataSize = 0;
     } else {
@@ -785,7 +785,7 @@ Fs_RpcSetAttrPath(srvToken, clientID, command, storagePtr)
 		    String_Length(newNameInfoPtr->fileName) + 1;
 	    storagePtr->replyDataPtr =
 		    (Address) Mem_Alloc(storagePtr->replyDataSize);
-	    String_Copy(nwNameInfoPtr->fileName,
+	    String_Copy(newNameInfoPtr->fileName,
 		    (char *) storagePtr->replyDataPtr);
 	    Mem_Free(newNameInfoPtr);
 	}

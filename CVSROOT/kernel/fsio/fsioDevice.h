@@ -24,63 +24,9 @@
 #include "fsRecovery.h"
 
 /*
- * Device types:
- *
- *	FS_DEV_CONSOLE		The console - basic character input/output
- *	FS_DEV_SYSLOG		The system log device
- *	FS_DEV_KEYBOARD		Keyboard
- *	FS_DEV_SCSI_DISK	Disk on the SCSI bus
- *	FS_DEV_SCSI_TAPE	Tape drive on the SCSI bus
- *	FS_DEV_MEMORY		Null device and kernel memory area.
- *	FS_DEV_XYLOGICS		Xylogics 450 controller
- *	FS_DEV_NET		Raw ethernet device - unit number is protocol.
- *	FS_DEV_SBC_DISK		Disk on Sun's "SCSI-3" host adaptor.
- *
- * NOTE: These numbers correspond to the major numbers for the devices
- * in /dev. Do not change them unless you redo makeDevice for all the devices
- * in /dev.
- *
+ * Include the device switch declaration from dev.
  */
-
-#define	FS_DEV_CONSOLE		0
-#define	FS_DEV_SYSLOG		1
-#define	FS_DEV_KEYBOARD		2
-#define	FS_DEV_PLACEHOLDER_2	3
-#define	FS_DEV_SCSI_DISK	4
-#define	FS_DEV_SCSI_TAPE	5
-#define	FS_DEV_MEMORY		6
-#define	FS_DEV_XYLOGICS		7
-#define	FS_DEV_NET		8
-#define FS_DEV_SBC_DISK		9
-
-/*
- * Device type specific operations.
- *	The arguments to the operations are commented below the
- *	macro definitions used to invoke them.
- */
-
-typedef struct FsDeviceTypeOps {
-    int		 type;	/* One of the device types. */
-    ReturnStatus (*open)();
-    ReturnStatus (*read)();
-    ReturnStatus (*write)();
-    ReturnStatus (*ioControl)();
-    ReturnStatus (*close)();
-    ReturnStatus (*select)();
-} FsDeviceTypeOps;
-
-extern FsDeviceTypeOps fsDeviceOpTable[];
-extern int fsNumDevices;
-
-/*
- * The filesystem device block I/O operation switch.
- */
-typedef struct FsBlockOps {
-    int 	deviceType;		/* Redundant device type info */
-    ReturnStatus (*readWrite)();	/* Block read/write routine */
-} FsBlockOps;
-
-extern FsBlockOps fsBlockOpTable[];
+#include "devFsOpTable.h"
 
 /*
  * FsDeviceBlockIO --
@@ -89,7 +35,7 @@ extern FsBlockOps fsBlockOpTable[];
  *	block indexes to disk addresses and does the I/O.
  */
 #define FsDeviceBlockIO(readWriteFlag, devicePtr, blockNumber, numBlocks, buf) \
-	(*fsBlockOpTable[(devicePtr)->type].readWrite) \
+	(*devFsBlockOpTable[(devicePtr)->type].readWrite) \
 	(readWriteFlag, devicePtr, blockNumber, numBlocks, buf)
 #ifdef comment
     int readWriteFlag;		/* FS_READ or FS_WRITE */
@@ -132,6 +78,16 @@ typedef struct FsDeviceIOHandle {
 typedef struct FsDeviceMigData {
     int foo;
 } FsDeviceMigData;
+
+/*
+ * The client data set up by the device pre-open routine on the server and
+ * used by the device open routine on the client.
+ */
+typedef struct FsDeviceState {
+    int		accessTime;	/* Access time from disk descriptor */
+    int		modifyTime;	/* Modify time from disk descriptor */
+    FsFileID	streamID;	/* Used to set up client list */
+} FsDeviceState;
 
 /*
  * Open operations.

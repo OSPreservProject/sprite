@@ -106,8 +106,17 @@ typedef struct FsSpriteBlockCopyParams {
 typedef struct FsSprite2PathParams {
     FsLookupArgs	lookupArgs;	/* Includes first prefixID */
     FsFileID		prefixID2;
-    char		path1[FS_MAX_PATH_NAME_LENGTH];
 } FsSprite2PathParams;
+
+typedef struct FsSprite2PathData {
+    char		path1[FS_MAX_PATH_NAME_LENGTH];
+    char		path2[FS_MAX_PATH_NAME_LENGTH];
+} FsSprite2PathData;
+
+typedef struct FsSprite2PathReplyParams {
+    int		prefixLength;
+    Boolean	name1RedirectP;
+} FsSprite2PathReplyParams;
 
 /*
  * Sprite Domain functions called via FsLookupOperation.

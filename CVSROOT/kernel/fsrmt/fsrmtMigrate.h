@@ -34,7 +34,6 @@ typedef struct FsMigInfo {
     char	data[32];	/* Should be a union! Do we even need it! */
 } FsMigInfo;
 
-
 /*
  * File migration routines.
  */

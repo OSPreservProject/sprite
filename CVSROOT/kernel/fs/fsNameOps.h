@@ -13,6 +13,11 @@
 #ifndef _FSNAMEOPS
 #define _FSNAMEOPS
 
+#include "fsFile.h"
+#include "fsDevice.h"
+#include "fsPdev.h"
+#include "fsRpcInt.h"
+
 /*
  * The arguments and results of the various lookup operations have to
  * be packaged into a struct so they can be passed through FsLookupOperation()
@@ -51,6 +56,15 @@ typedef struct FsOpenResults {
 } FsOpenResults;
 
 /*
+ * Rpc storage reply parameter for both redirected and unredirected calls.
+ */
+typedef	struct	FsOpenResultsParam {
+    int			prefixLength;
+    FsOpenResults	openResults;
+    FsUnionData		openData;
+} FsOpenResultsParam;
+
+/*
  * FS_DOMAIN_LOOKUP arguments and results.
  */
 typedef struct FsLookupArgs {
@@ -68,6 +82,17 @@ typedef struct FsGetAttrResults {
     FsFileID		*fileIDPtr;	/* File ID that indicates I/O server */
     Fs_Attributes	*attrPtr;	/* Returned results */
 } FsGetAttrResults;
+
+/*
+ * Rpc storage reply parameter for both redirected and unredirected calls.
+ */
+typedef	union	FsGetAttrResultsParam {
+    int	prefixLength;
+    struct	AttrResults {
+	FsFileID	fileID;
+	Fs_Attributes	attrs;
+    } attrResults;
+} FsGetAttrResultsParam;
 
 /*
  * FS_DOMAIN_SET_ATTR arguments.

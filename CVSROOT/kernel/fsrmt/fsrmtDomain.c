@@ -42,6 +42,14 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vm.h"
 #include "dbg.h"
 
+/*
+ * Used to contain fileID and stream data results from open calls.
+ */
+typedef	struct	FsOpenReplyParam {
+    FsUnionData	openData;
+    FsFileID	fileID;
+} FsOpenReplyParam;
+
 
 /*
  *----------------------------------------------------------------------
@@ -77,10 +85,11 @@ FsSpritePrefix(prefixHandle, fileName, argsPtr, resultsPtr, newNameInfoPtrPtr)
 {
     ReturnStatus 	status;
     Rpc_Storage 	storage;
-    FsFileID		fileID;		/* Returned from server */
+    FsFileID		*fileIDPtr;	/* Returned from server */
     ClientData		streamData;	/* Returned from server */
     FsHandleHeader	**hdrPtrPtr = (FsHandleHeader **)resultsPtr;
     int			flags = 0;
+    FsOpenReplyParam	openReplyParam;
 
     *hdrPtrPtr = (FsHandleHeader *)NIL;
 
@@ -89,19 +98,26 @@ FsSpritePrefix(prefixHandle, fileName, argsPtr, resultsPtr, newNameInfoPtrPtr)
     storage.requestDataPtr = (Address)fileName;
     storage.requestDataSize = String_Length(fileName)+1;
 
-    storage.replyParamPtr = (Address)&fileID;
-    storage.replyParamSize = sizeof(FsFileID);
-    streamData = (ClientData)Mem_Alloc(256);	/* Free'ed by cltOpen proc */
-    storage.replyDataPtr = (Address)streamData;
-    storage.replyDataSize = 256;
+    storage.replyParamPtr = (Address)&openReplyParam;
+    storage.replyParamSize = sizeof(FsOpenReplyParam);
+    storage.replyDataPtr = (Address)NIL;
+    storage.replyDataSize = 0;
+    fileIDPtr = &(openReplyParam.fileID);
 
     status = Rpc_Call(RPC_BROADCAST_SERVER_ID, RPC_FS_SPRITE_PREFIX, &storage);
+    /*
+     * It is necessary to allocate and copy over the stream data, since
+     * the cltOpen proc frees this space.
+     */
+    streamData = (ClientData)Mem_Alloc(sizeof(FsUnionData));
+						/* Free'ed by cltOpen proc */
+    *((FsUnionData *) streamData) = openReplyParam.openData;
 
     if (status == SUCCESS) {
 	/*
 	 * Use the client-open routine to set up an I/O handle for the prefix.
 	 */
-	status = (*fsStreamOpTable[fileID.type].cltOpen)(&fileID, &flags,
+	status = (*fsStreamOpTable[fileIDPtr->type].cltOpen)(fileIDPtr, &flags,
 		    rpc_SpriteID, (ClientData)streamData, hdrPtrPtr);
 	if (status == SUCCESS) {
 	    /*
@@ -156,6 +172,7 @@ Fs_RpcPrefix(srvToken, clientID, command, storagePtr)
     FsFileID				rootID;
     int					domainType;
     ReturnStatus			status;
+    FsOpenReplyParam			*openReplyParamPtr;
 
     status = FsPrefixLookup((char *) storagePtr->requestDataPtr,
 			FS_EXPORTED_PREFIX | FS_EXACT_PREFIX, clientID,
@@ -163,7 +180,6 @@ Fs_RpcPrefix(srvToken, clientID, command, storagePtr)
     if (status == SUCCESS) {
 	register Rpc_ReplyMem		*replyMemPtr;
 	register FsLocalFileIOHandle	*handlePtr;
-	register FsFileID		*fileIDPtr;
 	ClientData			streamData;
 	int				dataSize;
 
@@ -176,18 +192,26 @@ Fs_RpcPrefix(srvToken, clientID, command, storagePtr)
 	 * Use the server-open routine to set up the streamData.
 	 */
 	handlePtr = (FsLocalFileIOHandle *)hdrPtr;
-	fileIDPtr = Mem_New(FsFileID);
 	FsHandleLock(handlePtr);
+	/*
+	 * streamData is allocated in open routine, so I can't just pass a
+	 * pointer to the area of the reply param.
+	 */
+	openReplyParamPtr = Mem_New(FsOpenReplyParam);
 	status = (*fsOpenOpTable[handlePtr->descPtr->fileType].srvOpen)
-		    (handlePtr, clientID, 0, fileIDPtr, (FsFileID *)NIL,
-		     &dataSize, &streamData);
+		    (handlePtr, clientID, 0, &(openReplyParamPtr->fileID),
+		    (FsFileID *)NIL, &dataSize, &streamData);
 	FsHandleUnlock(handlePtr);
 
 	if (status == SUCCESS) {
-	    storagePtr->replyParamPtr = (Address) fileIDPtr;
-	    storagePtr->replyParamSize = sizeof(FsFileID);
-	    storagePtr->replyDataPtr = (Address) streamData;
-	    storagePtr->replyDataSize = dataSize;
+	    /* copy open data */
+	    openReplyParamPtr->openData = *((FsUnionData *) streamData);
+	    Mem_Free(streamData);
+	    /* do I need to include dataSize in openReplyParamPtr? */
+	    storagePtr->replyParamPtr = (Address) (openReplyParamPtr);
+	    storagePtr->replyParamSize = sizeof(FsOpenReplyParam);
+	    storagePtr->replyDataPtr = (Address)NIL;
+	    storagePtr->replyDataSize = 0;
 
 	    replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
 	    replyMemPtr->paramPtr = storagePtr->replyParamPtr;
@@ -196,7 +220,6 @@ Fs_RpcPrefix(srvToken, clientID, command, storagePtr)
 		    (ClientData)replyMemPtr);
 	    return(SUCCESS);
 	} else {
-	    Mem_Free((Address) fileIDPtr);
 	    Sys_Panic(SYS_WARNING, "Fs_RpcPrefix, srvOpen \"%s\" failed %x\n",
 		    storagePtr->requestDataPtr, status);
 	}
@@ -248,10 +271,10 @@ FsSpriteOpen(prefixHandle, relativeName, argsPtr, resultsPtr,
     ReturnStatus	status;
     FsOpenResults	*openResultsPtr = (FsOpenResults *)resultsPtr;
     Rpc_Storage		storage;	/* Specifies RPC parameters/results */
-    char		replyData[sizeof(FsRedirectInfo)];	 /* This
-					 * gets filled with either streamData
-					 * from the file-type srvOpen routine,
-					 * or with a redirected pathname */
+    char		replyName[FS_MAX_PATH_NAME_LENGTH];	 /* This
+					 * may get filled with a
+					 * redirected pathname */
+    FsOpenResultsParam	openResultsParam;
     /*
      * Synchronize with the re-open phase of recovery.
      * We don't want opens to race with the recovery actions.
@@ -268,10 +291,10 @@ FsSpriteOpen(prefixHandle, relativeName, argsPtr, resultsPtr,
     storage.requestParamSize = sizeof(FsOpenArgs);
     storage.requestDataPtr = (Address) relativeName;
     storage.requestDataSize = String_Length(relativeName) + 1;
-    storage.replyParamPtr = (Address) openResultsPtr;
-    storage.replyParamSize = sizeof(FsOpenResults);
-    storage.replyDataPtr = (Address) replyData;
-    storage.replyDataSize = sizeof(FsRedirectInfo);
+    storage.replyParamPtr = (Address) &openResultsParam;
+    storage.replyParamSize = sizeof(FsOpenResultsParam);
+    storage.replyDataPtr = (Address) replyName;
+    storage.replyDataSize = FS_MAX_PATH_NAME_LENGTH;
 
     status = Rpc_Call(prefixHandle->fileID.serverID, RPC_FS_SPRITE_OPEN,
 		      &storage);
@@ -280,23 +303,28 @@ FsSpriteOpen(prefixHandle, relativeName, argsPtr, resultsPtr,
 	 * Allocate space for the stream data returned by the server.
 	 * We then copy the streamData from our stack buffer.
 	 */
-	openResultsPtr->dataSize = storage.replyDataSize;
-	openResultsPtr->streamData =
-		(ClientData)Mem_Alloc(storage.replyDataSize);
-	Byte_Copy(storage.replyDataSize, (Address)replyData, 
-		    (Address)openResultsPtr->streamData);
+	/* This assumes openResults.dataSize was filled in correctly. */
+	*openResultsPtr = openResultsParam.openResults;
+	if (openResultsPtr->dataSize == 0) {
+	    ((Address) openResultsPtr->streamData) = (Address)NIL;
+	} else {
+	    openResultsPtr->streamData =
+		    (ClientData)Mem_Alloc(openResultsPtr->dataSize);
+	    Byte_Copy(openResultsPtr->dataSize,
+		    (Address) &(openResultsParam.openData),
+		    (Address) openResultsPtr->streamData);
+	}
     } else if (status == FS_LOOKUP_REDIRECT) {
 	/*
 	 * Allocate enough space to fit the prefix length and the file name and
 	 * copy over the structure that we have on our stack.
 	 */
-	register FsRedirectInfo *newNameInfoPtr = (FsRedirectInfo *)replyData;
 	register int redirectSize;
 
-	redirectSize = sizeof(int) + String_Length(newNameInfoPtr->fileName)+1;
+	redirectSize = sizeof(int) + String_Length(replyName)+1;
 	*newNameInfoPtrPtr = (FsRedirectInfo *) Mem_Alloc(redirectSize);
-	(*newNameInfoPtrPtr)->prefixLength = newNameInfoPtr->prefixLength;
-	String_Copy(newNameInfoPtr->fileName, (*newNameInfoPtrPtr)->fileName);
+	(*newNameInfoPtrPtr)->prefixLength = openResultsParam.prefixLength;
+	String_Copy(replyName, (*newNameInfoPtrPtr)->fileName);
     }
     FsPrefixOpenDone(prefixHandle);
     return(status);
@@ -342,6 +370,7 @@ Fs_RpcOpen(srvToken, clientID, command, storagePtr)
     FsHandleHeader		*prefixHandlePtr;	/* Handle for domain */
     FsRedirectInfo		*newNameInfoPtr;	/* prefix info for
 							 * redirected lookups */
+    FsOpenResultsParam		*openResultsParamPtr;	/* open results, etc. */
 
 
     if (Recov_GetClientState(clientID) & RECOV_IN_PROGRESS) {
@@ -370,7 +399,9 @@ Fs_RpcOpen(srvToken, clientID, command, storagePtr)
     FsHandleUnlock(prefixHandlePtr);
 
     newNameInfoPtr = (FsRedirectInfo *) NIL;
-    openResultsPtr = Mem_New(FsOpenResults);
+    openResultsParamPtr = Mem_New(FsOpenResultsParam);
+    openResultsPtr = &(openResultsParamPtr->openResults);
+
     status = FsLocalOpen(prefixHandlePtr, (char *)storagePtr->requestDataPtr,
 		(Address)openArgsPtr, (Address)openResultsPtr, &newNameInfoPtr);
     FsHandleRelease(prefixHandlePtr, FALSE);
@@ -378,22 +409,31 @@ Fs_RpcOpen(srvToken, clientID, command, storagePtr)
 	/*
 	 * The open worked.  We return the whole FsOpenResults structure
 	 * in the RPC parameter area, but it contains a pointer to
-	 * stream data and a dataSize. That stream data is returned in
-	 * the RPC data area.
+	 * stream data and a dataSize. That stream data is returned also
+	 * as a separate field in the RPC parameter area, so it must be copied.
 	 */
-	storagePtr->replyParamPtr = (Address)openResultsPtr;
-	storagePtr->replyParamSize = sizeof(FsOpenResults);
-	storagePtr->replyDataPtr = (Address)openResultsPtr->streamData;
-	storagePtr->replyDataSize = openResultsPtr->dataSize;
+	storagePtr->replyParamPtr = (Address)openResultsParamPtr;
+	storagePtr->replyParamSize = sizeof(FsOpenResultsParam);
+	/* copy openData */
+	if (openResultsPtr->dataSize != 0 &&
+		((Address)openResultsPtr->streamData) != (Address)NIL) {
+	    openResultsParamPtr->openData = *((FsUnionData *)
+		    openResultsPtr->streamData);
+	    Mem_Free(openResultsPtr->streamData);
+	    storagePtr->replyDataPtr = (Address)NIL;
+	    storagePtr->replyDataSize = 0;
+	}
     } else if (status == FS_LOOKUP_REDIRECT) {
 	/*
 	 * The file is not found on this server.
 	 */
-	storagePtr->replyParamPtr = (Address) NIL;
-	storagePtr->replyParamSize = 0;
-	storagePtr->replyDataPtr = (Address)newNameInfoPtr;
-	storagePtr->replyDataSize = sizeof(FsRedirectInfo);
-	Mem_Free((Address)openResultsPtr);
+	storagePtr->replyParamPtr = (Address)openResultsParamPtr;
+	storagePtr->replyParamSize = sizeof(FsOpenResultsParam);
+	openResultsParamPtr->prefixLength = newNameInfoPtr->prefixLength;
+	storagePtr->replyDataPtr = (Address)
+		String_Copy(newNameInfoPtr->fileName, NULL);
+	storagePtr->replyDataSize = String_Length(newNameInfoPtr->fileName) + 1;
+	Mem_Free(newNameInfoPtr);
     }
     if (status == SUCCESS || status == FS_LOOKUP_REDIRECT) {
 	Rpc_ReplyMem	*replyMemPtr;
@@ -405,7 +445,6 @@ Fs_RpcOpen(srvToken, clientID, command, storagePtr)
 		(ClientData)replyMemPtr);
         return(SUCCESS);
     } else {
-	Mem_Free((Address)openResultsPtr);
         return(status);
     }
 }
@@ -519,16 +558,29 @@ Fs_RpcReopen(srvToken, clientID, command, storagePtr)
     }
     return(status);
 }
+
+/*
+ * Union of things passed as close data.  Right now, it only seems to
+ * be cached attributes.
+ */
+typedef union FsCloseData {
+    FsCachedAttributes	attrs;
+} FsCloseData;
+
 
 /*
- * Request params for the close RPC.  The request data area is used for stream
+ * Request params for the close RPC.  The data for the close is put in the
+ * closeData field so that it too can be byte-swapped. The field is for stream
  * specific data that gets pushed back to the server when the client closes.
+ * Currently, it seems only to be FsCachedAttributes.
  * 
  */
 typedef struct FsSpriteCloseParams {
     FsFileID	fileID;		/* File to close */
     FsFileID	streamID;	/* Stream to close */
     int		flags;		/* Flags from the stream */
+    FsCloseData	closeData;	/* Seems to be only FsCachedAttributes... */
+    int		closeDataSize;	/* actual size of info in closeData field. */
 } FsSpriteCloseParams;
 
 /*
@@ -570,11 +622,13 @@ FsSpriteClose(streamPtr, clientID, flags, dataSize, closeData)
     params.fileID = rmtHandlePtr->hdr.fileID;
     params.streamID = streamPtr->hdr.fileID;
     params.flags = flags;
+    params.closeData = *((FsCloseData *)closeData);
+    params.closeDataSize = dataSize;
 
     storage.requestParamPtr = (Address)&params;
     storage.requestParamSize = sizeof(params);
-    storage.requestDataPtr = (Address)closeData;
-    storage.requestDataSize = dataSize;
+    storage.requestDataPtr = (Address)NIL;
+    storage.requestDataSize = 0;
     storage.replyParamPtr = (Address)NIL;
     storage.replyParamSize = 0;
     storage.replyDataPtr = (Address)NIL;
@@ -661,8 +715,8 @@ Fs_RpcClose(srvToken, clientID, command, storagePtr)
 	     */
 	    FS_TRACE_HANDLE(FS_TRACE_CLOSE, hdrPtr);
 	    status = (*fsStreamOpTable[hdrPtr->fileID.type].close)(streamPtr,
-		    clientID, paramsPtr->flags, storagePtr->requestDataSize,
-		    (ClientData)storagePtr->requestDataPtr);
+		    clientID, paramsPtr->flags, paramsPtr->closeDataSize,
+		    (ClientData)&(paramsPtr->closeData));
 	}
 	if (streamPtr != &dummy) {
 	    /*
@@ -714,13 +768,14 @@ FsSpriteRemove(prefixHandle, relativeName, argsPtr, resultsPtr,
     ReturnStatus	status;
     Rpc_Storage		storage;
     FsRedirectInfo	redirectInfo;
+    int			prefixLength;
 
     storage.requestParamPtr = (Address) argsPtr;
     storage.requestParamSize = sizeof(FsLookupArgs);
     storage.requestDataPtr = (Address) relativeName;
     storage.requestDataSize = String_Length(relativeName) + 1;
-    storage.replyParamPtr = (Address) NIL;
-    storage.replyParamSize = 0;
+    storage.replyParamPtr = (Address) &prefixLength;
+    storage.replyParamSize = sizeof (int);
     storage.replyDataPtr = (Address)&redirectInfo;
     storage.replyDataSize = sizeof(FsRedirectInfo);
 
@@ -729,7 +784,7 @@ FsSpriteRemove(prefixHandle, relativeName, argsPtr, resultsPtr,
 	register int redirectSize;
 	redirectSize = sizeof(int) + String_Length(redirectInfo.fileName) + 1;
 	*newNameInfoPtrPtr = (FsRedirectInfo *) Mem_Alloc(redirectSize);
-	(*newNameInfoPtrPtr)->prefixLength = redirectInfo.prefixLength;
+	(*newNameInfoPtrPtr)->prefixLength = prefixLength;
 	String_Copy(redirectInfo.fileName, (*newNameInfoPtrPtr)->fileName);
     }
     return(status);
@@ -765,13 +820,14 @@ FsSpriteRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr,
     ReturnStatus	status;
     Rpc_Storage		storage;
     FsRedirectInfo	redirectInfo;
+    int			prefixLength;
 
     storage.requestParamPtr = (Address) argsPtr;
     storage.requestParamSize = sizeof(FsLookupArgs);
     storage.requestDataPtr = (Address) relativeName;
     storage.requestDataSize = String_Length(relativeName) + 1;
-    storage.replyParamPtr = (Address) NIL;
-    storage.replyParamSize = 0;
+    storage.replyParamPtr = (Address) &prefixLength;
+    storage.replyParamSize = sizeof (int);
     storage.replyDataPtr = (Address)&redirectInfo;
     storage.replyDataSize = sizeof(FsRedirectInfo);
 
@@ -780,7 +836,7 @@ FsSpriteRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr,
 	register int redirectSize;
 	redirectSize = sizeof(int) + String_Length(redirectInfo.fileName) + 1;
 	*newNameInfoPtrPtr = (FsRedirectInfo *) Mem_Alloc(redirectSize);
-	(*newNameInfoPtrPtr)->prefixLength = redirectInfo.prefixLength;
+	(*newNameInfoPtrPtr)->prefixLength = prefixLength;
 	String_Copy(redirectInfo.fileName, (*newNameInfoPtrPtr)->fileName);
     }
     return(status);
@@ -854,6 +910,12 @@ Fs_RpcRemove(srvToken, clientID, command, storagePtr)
 
 	storagePtr->replyDataPtr = (Address) newNameInfoPtr;
 	storagePtr->replyDataSize = sizeof(FsRedirectInfo);
+	storagePtr->replyParamPtr = (Address) Mem_Alloc(sizeof (int));
+	storagePtr->replyParamSize = sizeof (int);
+	/*
+	 * prefixLength must be returned in parameter area for byte-swapping.
+	 */
+	*(storagePtr->replyParamPtr) = newNameInfoPtr->prefixLength;
         replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
         replyMemPtr->paramPtr = storagePtr->replyParamPtr;
         replyMemPtr->dataPtr = storagePtr->replyDataPtr;
@@ -898,13 +960,14 @@ FsSpriteMakeDir(prefixHandle, relativeName, argsPtr, resultsPtr,
     ReturnStatus	status;
     Rpc_Storage		storage;
     FsRedirectInfo	redirectInfo;
+    int			prefixLength;
 
     storage.requestParamPtr = (Address) argsPtr;
     storage.requestParamSize = sizeof(FsOpenArgs);
     storage.requestDataPtr = (Address) relativeName;
     storage.requestDataSize = String_Length(relativeName) + 1;
-    storage.replyParamPtr = (Address) NIL;
-    storage.replyParamSize = 0;
+    storage.replyParamPtr = (Address) &prefixLength;
+    storage.replyParamSize = sizeof (int);
     storage.replyDataPtr = (Address)&redirectInfo;
     storage.replyDataSize = sizeof(FsRedirectInfo);
 
@@ -913,7 +976,7 @@ FsSpriteMakeDir(prefixHandle, relativeName, argsPtr, resultsPtr,
 	register int redirectSize;
 	redirectSize = sizeof(int) + String_Length(redirectInfo.fileName) + 1;
 	*newNameInfoPtrPtr = (FsRedirectInfo *) Mem_Alloc(redirectSize);
-	(*newNameInfoPtrPtr)->prefixLength = redirectInfo.prefixLength;
+	(*newNameInfoPtrPtr)->prefixLength = prefixLength;
 	String_Copy(redirectInfo.fileName, (*newNameInfoPtrPtr)->fileName);
     }
     return(status);
@@ -978,6 +1041,12 @@ Fs_RpcMakeDir(srvToken, clientID, command, storagePtr)
 
 	storagePtr->replyDataPtr = (Address)newNameInfoPtr;
 	storagePtr->replyDataSize = sizeof(FsRedirectInfo);
+	storagePtr->replyParamPtr = (Address) Mem_Alloc(sizeof (int));
+	storagePtr->replyParamSize = sizeof (int);
+	/*
+	 * prefixLength must be returned in param area for byte-swapping.
+	 */
+	*(storagePtr->replyParamPtr) = newNameInfoPtr->prefixLength;
         replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
         replyMemPtr->paramPtr = storagePtr->replyParamPtr;
         replyMemPtr->dataPtr = storagePtr->replyDataPtr;
@@ -1022,13 +1091,14 @@ FsSpriteMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
     ReturnStatus		status;
     Rpc_Storage			storage;
     FsRedirectInfo		redirectInfo;
+    int				prefixLength;
 
     storage.requestParamPtr = (Address) argsPtr;
     storage.requestParamSize = sizeof(FsMakeDeviceArgs);
     storage.requestDataPtr = (Address) relativeName;
     storage.requestDataSize = String_Length(relativeName) + 1;
-    storage.replyParamPtr = (Address) NIL;
-    storage.replyParamSize = 0;
+    storage.replyParamPtr = (Address) &prefixLength;
+    storage.replyParamSize = sizeof (int);
     storage.replyDataPtr = (Address)Mem_Alloc(sizeof(FsRedirectInfo));
     storage.replyDataSize = sizeof(FsRedirectInfo);
 
@@ -1037,7 +1107,7 @@ FsSpriteMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
 	register int redirectSize;
 	redirectSize = sizeof(int) + String_Length(redirectInfo.fileName) + 1;
 	*newNameInfoPtrPtr = (FsRedirectInfo *) Mem_Alloc(redirectSize);
-	(*newNameInfoPtrPtr)->prefixLength = redirectInfo.prefixLength;
+	(*newNameInfoPtrPtr)->prefixLength = prefixLength;
 	String_Copy(redirectInfo.fileName, (*newNameInfoPtrPtr)->fileName);
     }
     return(status);
@@ -1099,6 +1169,9 @@ Fs_RpcMakeDev(srvToken, clientID, command, storagePtr)
 
 	storagePtr->replyDataPtr = (Address)newNameInfoPtr;
 	storagePtr->replyDataSize = sizeof(FsRedirectInfo);
+	storagePtr->replyParamPtr = (Address) Mem_Alloc(sizeof (int));
+	storagePtr->replyParamSize = sizeof (int);
+	*((int *) (storagePtr->replyParamPtr)) = newNameInfoPtr->prefixLength;
         replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
         replyMemPtr->paramPtr = storagePtr->replyParamPtr;
         replyMemPtr->dataPtr = storagePtr->replyDataPtr;
@@ -1130,6 +1203,7 @@ static ReturnStatus
 TwoNameOperation(command, prefixHandle1, relativeName1, prefixHandle2, 
 		 relativeName2, lookupArgsPtr, newNameInfoPtrPtr,
 		 name1RedirectPtr)
+    int			command;		/* Which Rpc: Mv or Ln */
     FsHandleHeader 	*prefixHandle1;		/* Handle from prefix table */
     char 		*relativeName1;		/* The new name of the file. */
     FsHandleHeader 	*prefixHandle2;		/* Handle from prefix table */
@@ -1141,26 +1215,32 @@ TwoNameOperation(command, prefixHandle1, relativeName1, prefixHandle2,
     Boolean 		*name1RedirectPtr;	/* TRUE if redirect info is for
 						 * first path */
 {
+
+#ifdef NOTDEF
     FsSprite2PathParams	params;
+    FsSprite2PathData	requestData;
+    FsSprite2PathReplyParams	replyParams;
     int			nameLength;
     Rpc_Storage		storage;
     ReturnStatus	status;
     FsRedirectInfo	redirectInfo;
 
-    nameLength = String_Length(relativeName1);
     params.lookupArgs = *lookupArgsPtr;
     params.lookupArgs.prefixID = prefixHandle1->fileID;
     params.prefixID2 = prefixHandle2->fileID;
-    Byte_Copy(nameLength, (Address) relativeName1, (Address) params.path1);
-    params.path1[nameLength] = '\0';
+    nameLength = String_Length(relativeName1);
+    Byte_Copy(nameLength, (Address) relativeName1, (Address) requestData.path1);
+    requestData.path1[nameLength] = '\0';
+    nameLength = String_Length(relativeName2);
+    Byte_Copy(nameLength, (Address) relativeName2, (Address) requestData.path2);
 
     storage.requestParamPtr = (Address) &params;
-    storage.requestParamSize = sizeof(FsLookupArgs) + sizeof(FsFileID) + 
-			       nameLength + 1;
-    storage.requestDataPtr = (Address) relativeName2;
-    storage.requestDataSize = String_Length(relativeName2) + 1;
-    storage.replyParamPtr = (Address) name1RedirectPtr;
-    storage.replyParamSize = sizeof(Boolean);
+    storage.requestParamSize = sizeof (FsSprite2PathParams);
+    storage.requestDataPtr = (Address) &requestData;
+    storage.requestDataSize = sizeof (FsSprite2PathData);
+
+    storage.replyParamPtr = (Address) &replyParams;
+    storage.replyParamSize = sizeof (FsSprite2PathReplyParams);
     storage.replyDataPtr = (Address)&redirectInfo;
     storage.replyDataSize = sizeof(FsRedirectInfo);
 
@@ -1168,10 +1248,56 @@ TwoNameOperation(command, prefixHandle1, relativeName1, prefixHandle2,
     if (status == FS_LOOKUP_REDIRECT) {
 	register int redirectSize;
 	redirectSize = sizeof(int) + String_Length(redirectInfo.fileName) + 1;
+    /* Is the following field only of value if LOOKUP returned? */
+	*name1RedirectPtr = replyParams.name1RedirectP;
 	*newNameInfoPtrPtr = (FsRedirectInfo *) Mem_Alloc(redirectSize);
-	(*newNameInfoPtrPtr)->prefixLength = redirectInfo.prefixLength;
+	(*newNameInfoPtrPtr)->prefixLength = replyParams.prefixLength;
 	String_Copy(redirectInfo.fileName, (*newNameInfoPtrPtr)->fileName);
     }
+#else
+    FsSprite2PathParams	params;
+    FsSprite2PathData	*requestDataPtr;	/* too big for stack */
+    FsSprite2PathReplyParams	replyParams;
+    int			nameLength;
+    Rpc_Storage		storage;
+    ReturnStatus	status;
+    FsRedirectInfo	redirectInfo;
+
+    requestDataPtr = Mem_New(FsSprite2PathData);
+    params.lookupArgs = *lookupArgsPtr;
+    params.lookupArgs.prefixID = prefixHandle1->fileID;
+    params.prefixID2 = prefixHandle2->fileID;
+    nameLength = String_Length(relativeName1);
+    Byte_Copy(nameLength, (Address) relativeName1,
+	    (Address) requestDataPtr->path1);
+    requestDataPtr->path1[nameLength] = '\0';
+    nameLength = String_Length(relativeName2);
+    Byte_Copy(nameLength, (Address) relativeName2,
+	    (Address) requestDataPtr->path2);
+    requestDataPtr->path2[nameLength] = '\0';
+
+    storage.requestParamPtr = (Address) &params;
+    storage.requestParamSize = sizeof (FsSprite2PathParams);
+    storage.requestDataPtr = (Address) requestDataPtr;
+    storage.requestDataSize = sizeof (FsSprite2PathData);
+
+    storage.replyParamPtr = (Address) &replyParams;
+    storage.replyParamSize = sizeof (FsSprite2PathReplyParams);
+    storage.replyDataPtr = (Address)&redirectInfo;
+    storage.replyDataSize = sizeof(FsRedirectInfo);
+
+    status = Rpc_Call(prefixHandle1->fileID.serverID, command, &storage);
+    if (status == FS_LOOKUP_REDIRECT) {
+	register int redirectSize;
+	redirectSize = sizeof(int) + String_Length(redirectInfo.fileName) + 1;
+    /* Is the following field only of value if LOOKUP returned? */
+	*name1RedirectPtr = replyParams.name1RedirectP;
+	*newNameInfoPtrPtr = (FsRedirectInfo *) Mem_Alloc(redirectSize);
+	(*newNameInfoPtrPtr)->prefixLength = replyParams.prefixLength;
+	String_Copy(redirectInfo.fileName, (*newNameInfoPtrPtr)->fileName);
+    }
+    Mem_Free(requestDataPtr);
+#endif NOTDEF
 
     return(status);
 }
@@ -1214,10 +1340,12 @@ Fs_Rpc2Path(srvToken, clientID, command, storagePtr)
     register	Rpc_ReplyMem		*replyMemPtr;
     FsRedirectInfo			*newNameInfoPtr;
     Boolean				name1Redirect;
-    Boolean				*name1RedirectPtr;
+    FsSprite2PathReplyParams		*replyParamsPtr;
+    FsSprite2PathData			*pathDataPtr;
     ReturnStatus			status;
 
     paramsPtr = (FsSprite2PathParams *)storagePtr->requestParamPtr;
+    pathDataPtr = (FsSprite2PathData *)storagePtr->requestDataPtr;
     lookupArgsPtr = &paramsPtr->lookupArgs;
     prefixHandle1Ptr =
 	(*fsStreamOpTable[lookupArgsPtr->prefixID.type].clientVerify)
@@ -1240,15 +1368,13 @@ Fs_Rpc2Path(srvToken, clientID, command, storagePtr)
 
     newNameInfoPtr = (FsRedirectInfo *) NIL;
     if (command == RPC_FS_RENAME) {
-	status = FsLocalRename(prefixHandle1Ptr, paramsPtr->path1, 
-		  		prefixHandle2Ptr, 
-				(char *) storagePtr->requestDataPtr,
+	status = FsLocalRename(prefixHandle1Ptr, pathDataPtr->path1, 
+		  		prefixHandle2Ptr, pathDataPtr->path2,
 				lookupArgsPtr, &newNameInfoPtr, 
 				&name1Redirect);
     } else if (command == RPC_FS_LINK) {
-	status = FsLocalHardLink(prefixHandle1Ptr, paramsPtr->path1, 
-				prefixHandle2Ptr, 
-				(char *) storagePtr->requestDataPtr, 
+	status = FsLocalHardLink(prefixHandle1Ptr, pathDataPtr->path1, 
+				prefixHandle2Ptr, pathDataPtr->path2, 
 				lookupArgsPtr, &newNameInfoPtr, 
 				&name1Redirect);
     } else {
@@ -1261,15 +1387,18 @@ Fs_Rpc2Path(srvToken, clientID, command, storagePtr)
 	Rpc_Reply(srvToken, status, storagePtr, (int (*)())NIL,
 		(ClientData)NIL);
     } else {
-	name1RedirectPtr = (Boolean *) Mem_Alloc(sizeof(Boolean));
-	*name1RedirectPtr = name1Redirect;
-	storagePtr->replyParamPtr = (Address) name1RedirectPtr;
-	storagePtr->replyParamSize = sizeof(Boolean);
+	replyParamsPtr = (FsSprite2PathReplyParams *)
+		Mem_Alloc(sizeof (FsSprite2PathReplyParams));
+	replyParamsPtr->name1RedirectP = name1Redirect;
+	replyParamsPtr->prefixLength = newNameInfoPtr->prefixLength;
+
+	storagePtr->replyParamPtr = (Address) replyParamsPtr;
+	storagePtr->replyParamSize = sizeof (FsSprite2PathReplyParams);
 	storagePtr->replyDataPtr = (Address) newNameInfoPtr;
 	storagePtr->replyDataSize = sizeof(int) +
 				    String_Length(newNameInfoPtr->fileName) + 1;
 	replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
-	replyMemPtr->paramPtr = (Address) name1RedirectPtr;
+	replyMemPtr->paramPtr = (Address) replyParamsPtr;
 	replyMemPtr->dataPtr = (Address) newNameInfoPtr;
 	Rpc_Reply(srvToken, status, storagePtr, 
 		  (int (*)()) Rpc_FreeMem, (ClientData) replyMemPtr);

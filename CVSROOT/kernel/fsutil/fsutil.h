@@ -265,6 +265,7 @@ typedef struct FsUserIDs {
     int numGroupIDs;		/* Number of valid entries in groupIDs */
     int group[FS_NUM_GROUPS];	/* The set of groups the user is in */
 } FsUserIDs;
+
 
 
 /*

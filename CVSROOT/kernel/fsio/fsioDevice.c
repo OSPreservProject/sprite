@@ -46,16 +46,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "dev.h"
 #include "rpc.h"
 #include "fsStat.h"
-
-/*
- * The client data set up by the device pre-open routine on the server
- * and used by the device open routine on the client.
- */
-typedef struct FsDeviceState {
-    int		accessTime;	/* Access time from disk descriptor */
-    int		modifyTime;	/* Modify time from disk descriptor */
-    FsFileID	streamID;	/* Used to set up client list */
-} FsDeviceState;
+#include "fsNameOps.h"
 
 /*
  * Parameters for RPC_FS_DEV_OPEN remote procedure call.
@@ -64,6 +55,8 @@ typedef struct FsDeviceState {
 typedef struct FsDeviceRemoteOpenPrm {
     FsFileID	fileID;		/* I/O fileID from name server. */
     int		useFlags;	/* FS_READ | FS_WRITE ... */
+    int		dataSize;	/* size of openData */
+    FsUnionData	openData;	/* FsFileState, FsDeviceState or PdevState */
 } FsDeviceRemoteOpenPrm;
 
 void ReadNotify();
@@ -253,10 +246,10 @@ FsDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPtr)
      * and unit number, the useFlags, and a token passed to Fs_NotifyReader
      * or Fs_NotifyWriter when the device becomes ready for I/O.
      */
-    if (devHandlePtr->device.type >= fsNumDevices) {
+    if (devHandlePtr->device.type >= devNumDevices) {
 	status = FS_DEVICE_OP_INVALID;
     } else {
-	status = (*fsDeviceOpTable[devHandlePtr->device.type].open)
+	status = (*devFsOpTable[devHandlePtr->device.type].open)
 		    (&devHandlePtr->device, flags, (ClientData)devHandlePtr);
     }
     if (status == SUCCESS) {
@@ -399,17 +392,26 @@ FsDeviceRemoteOpen(ioFileIDPtr, useFlags, inSize, inBuffer)
 
     param.fileID = *ioFileIDPtr;
     param.useFlags = useFlags;
-
+    param.dataSize = inSize;
+    if (inSize > 0) {
+	param.openData = *((FsUnionData *) inBuffer);	/* copy data */
+    }
     storage.requestParamPtr = (Address) &param;
     storage.requestParamSize = sizeof(FsDeviceRemoteOpenPrm);
-    storage.requestDataPtr = (Address) inBuffer;
-    storage.requestDataSize = inSize;
+    storage.requestDataPtr = (Address) NIL;
+    storage.requestDataSize = 0;
     storage.replyParamPtr = (Address) ioFileIDPtr;
     storage.replyParamSize = sizeof(FsFileID);
     storage.replyDataPtr = (Address) NIL;
     storage.replyDataSize = 0;
 
     status = Rpc_Call(ioFileIDPtr->serverID, RPC_FS_DEV_OPEN, &storage);
+    /*
+     * This used to be freed automatically when the request data pointed
+     * to this rather than our copying it over to the request parameter
+     * portion.
+     */
+    Mem_Free(inBuffer);
 
     if (status == SUCCESS) {
 	/*
@@ -463,7 +465,7 @@ Fs_RpcDevOpen(srvToken, clientID, command, storagePtr)
 					 * open routine. */
     ReturnStatus	status;
     FsDeviceRemoteOpenPrm *paramPtr;
-    register int	dataSize = storagePtr->requestDataSize;
+    register int	dataSize;
     ClientData		streamData;
 
     /*
@@ -473,9 +475,10 @@ Fs_RpcDevOpen(srvToken, clientID, command, storagePtr)
      * data so the CltOpen routine can free it, as it expects to do.
      */
     paramPtr = (FsDeviceRemoteOpenPrm *) storagePtr->requestParamPtr;
+    dataSize = paramPtr->dataSize;
     if (dataSize > 0) {
 	streamData = (ClientData)Mem_Alloc(dataSize);
-	Byte_Copy(dataSize, storagePtr->requestDataPtr, (Address)streamData);
+	Byte_Copy(dataSize, &(paramPtr->openData), (Address)streamData);
     } else {
 	streamData = (ClientData)NIL;
     }
@@ -546,7 +549,7 @@ FsDeviceClose(streamPtr, clientID, flags, size, data)
     /*
      * Call the driver's close routine to clean up.
      */
-    status = (*fsDeviceOpTable[devHandlePtr->device.type].close)
+    status = (*devFsOpTable[devHandlePtr->device.type].close)
 		(&devHandlePtr->device, flags, devHandlePtr->use.ref,
 			devHandlePtr->use.write);
 
@@ -613,7 +616,7 @@ FsDeviceClientKill(hdrPtr, clientID)
 	if (flags & FS_WRITE) {
 	    devHandlePtr->use.write -= writes;
 	}
-	(void)(*fsDeviceOpTable[devHandlePtr->device.type].close)
+	(void)(*devFsOpTable[devHandlePtr->device.type].close)
 		(&devHandlePtr->device, flags, devHandlePtr->use.ref,
 		    devHandlePtr->use.write);
     
@@ -1262,7 +1265,7 @@ FsDeviceRead(streamPtr, flags, buffer, offsetPtr, lenPtr, remoteWaitPtr)
      */
     FsWaitListInsert(&devHandlePtr->readWaitList, remoteWaitPtr);
     devicePtr = &devHandlePtr->device;
-    status = (*fsDeviceOpTable[devicePtr->type].read)(devicePtr,
+    status = (*devFsOpTable[devicePtr->type].read)(devicePtr,
 		*offsetPtr, length, readBuffer, lenPtr);
     length = *lenPtr;
     if (flags & FS_USER) {
@@ -1338,7 +1341,7 @@ FsDeviceWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, remoteWaitPtr)
 	 * happens from an interrupt handler.
 	 */
 	FsWaitListInsert(&devHandlePtr->writeWaitList, remoteWaitPtr);
-	status = (*fsDeviceOpTable[devicePtr->type].write)(devicePtr,
+	status = (*devFsOpTable[devicePtr->type].write)(devicePtr,
 		*offsetPtr, length, writeBuffer, lenPtr);
 	length = *lenPtr;
 	if (status != FS_WOULD_BLOCK) {
@@ -1405,7 +1408,7 @@ FsDeviceSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
 	inFlags |= FS_EXCEPTION;
 	FsWaitListInsert(&devHandlePtr->exceptWaitList, waitPtr);
     }
-    status = (*fsDeviceOpTable[devicePtr->type].select)(devicePtr,
+    status = (*devFsOpTable[devicePtr->type].select)(devicePtr,
 		    inFlags, &outFlags);
     if ((outFlags & FS_READABLE) == 0) {
 	*readPtr = 0;
@@ -1457,7 +1460,7 @@ FsDeviceIOControl(hdrPtr, command, inBufSize, inBuffer, outBufSize,
     register ReturnStatus status;
 
     FsHandleLock(devHandlePtr);
-    status = (*fsDeviceOpTable[devicePtr->type].ioControl) (devicePtr,
+    status = (*devFsOpTable[devicePtr->type].ioControl) (devicePtr,
 	    command, inBufSize,	inBuffer, outBufSize, outBuffer);
     FsHandleUnlock(devHandlePtr);
     return(status);

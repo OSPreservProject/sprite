@@ -98,24 +98,6 @@ typedef struct PdevControlIOHandle {
 } PdevControlIOHandle;
 
 /*
- * PdevState is returned from the SrvOpen routine to the CltOpen routine.
- * It is also sent via RPC from the remoteCltOpen routine to the localCltOpen
- * routine.  In this second case the processID and uid of the remote client is
- * initialized.
- */
-typedef struct PdevState {
-    FsFileID ctrlFileID;	/* Control stream FileID */
-    /*
-     * The following fields are used when the client process is remote
-     * from the server host.
-     */
-    Proc_PID procID;		/* Process ID of remote client */
-    int uid;			/* User ID of remote client */
-    FsFileID streamID;		/* Client's stream ID used to set up a
-				 * matching stream here on the server */
-} PdevState;
-
-/*
  * Because there are corresponding control handles on the file server,
  * which records which host has the pdev server, and on the pdev server
  * itself, we need to be able to reopen the control handle on the
@@ -365,8 +347,8 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
      register FsFileID	*ioFileIDPtr;	/* Return - I/O handle ID */
      FsFileID		*streamIDPtr;	/* Return - stream ID. 
 					 * NIL during set/get attributes */
-     int		*dataSizePtr;	/* Return - sizeof(PdevState) */
-     ClientData		*clientDataPtr;	/* Return - a reference to PdevState.
+     int		*dataSizePtr;	/* Return - sizeof(FsPdevState) */
+     ClientData		*clientDataPtr;	/* Return - a reference to FsPdevState.
 					 * Nothing is returned during set/get
 					 * attributes */
 
@@ -376,7 +358,7 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
     Boolean	found;
     register	PdevControlIOHandle *ctrlHandlePtr;
     register	Fs_Stream *streamPtr;
-    register	PdevState *pdevStatePtr;
+    register	FsPdevState *pdevStatePtr;
 
     /*
      * The control I/O handle is identified by the fileID of the pseudo-device
@@ -450,12 +432,12 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	     * corresponding server stream.  The procID and uid fields are
 	     * extra here, but will be used later if the client is remote.
 	     */
-	    pdevStatePtr = Mem_New(PdevState);
+	    pdevStatePtr = Mem_New(FsPdevState);
 	    pdevStatePtr->ctrlFileID = ctrlHandlePtr->rmt.hdr.fileID;
 	    pdevStatePtr->procID = (Proc_PID)NIL;
 	    pdevStatePtr->uid = NIL;
 	    *clientDataPtr = (ClientData)pdevStatePtr ;
-	    *dataSizePtr = sizeof(PdevState);
+	    *dataSizePtr = sizeof(FsPdevState);
 	    /*
 	     * Set up a top level stream for the opening process.  No shadow
 	     * stream is kept here.  Instead, the streamID is returned to
@@ -544,7 +526,7 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPt
     register FsFileID	*ioFileIDPtr;	/* I/O fileID */
     int			*flagsPtr;	/* FS_READ | FS_WRITE ... */
     int			clientID;	/* Host doing the open */
-    ClientData		streamData;	/* Ponter to PdevState. */
+    ClientData		streamData;	/* Ponter to FsPdevState. */
     FsHandleHeader	**ioHandlePtrPtr;/* Return - a locked handle set up for
 					 * I/O to a pseudo device, or NIL */
 {
@@ -552,13 +534,13 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPt
     Boolean			found;
     register PdevClientIOHandle	*cltHandlePtr;
     register PdevControlIOHandle	*ctrlHandlePtr;
-    register PdevState		*pdevStatePtr;
+    register FsPdevState		*pdevStatePtr;
     Proc_ControlBlock		*procPtr;
     Proc_PID 			procID;
     int				uid;
     int				seed;
 
-    pdevStatePtr = (PdevState *)streamData;
+    pdevStatePtr = (FsPdevState *)streamData;
     ctrlHandlePtr = FsHandleFetchType(PdevControlIOHandle,
 				    &pdevStatePtr->ctrlFileID);
     /*
@@ -609,7 +591,7 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPt
     /*
      * We have to look around and decide if we are being called
      * from Fs_Open, or via RPC from a remote client.  A remote client's
-     * processID and uid are passed to us via the PdevState.  We also
+     * processID and uid are passed to us via the FsPdevState.  We also
      * have to ensure that a FS_STREAM exists and has the remote client
      * on its list so the client's remote I/O ops. are accepted here.
      * The remote client's stream is closed for us by the close rpc stub.
@@ -693,7 +675,7 @@ FsRmtPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePt
 					 * I/O to a pseudo device, or NIL */
 {
     register ReturnStatus status;
-    register PdevState *pdevStatePtr = (PdevState *)streamData;
+    register FsPdevState *pdevStatePtr = (FsPdevState *)streamData;
     register FsRecoveryInfo *recovPtr;
     Proc_ControlBlock *procPtr;
     FsRemoteIOHandle *rmtHandlePtr;
@@ -701,14 +683,14 @@ FsRmtPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePt
 
     /*
      * Invoke via RPC FsPseudoStreamCltOpen.  Here we use the procID field
-     * of the PdevState so that FsPseudoStreamCltOpen can pass them
+     * of the FsPdevState so that FsPseudoStreamCltOpen can pass them
      * to ServerStreamCreate.
      */
     procPtr = Proc_GetEffectiveProc();
     pdevStatePtr->procID = procPtr->processID;
     pdevStatePtr->uid = procPtr->effectiveUserID;
     ioFileIDPtr->type = FS_LCL_PSEUDO_STREAM;
-    status = FsDeviceRemoteOpen(ioFileIDPtr, *flagsPtr,	sizeof(PdevState),
+    status = FsDeviceRemoteOpen(ioFileIDPtr, *flagsPtr,	sizeof(FsPdevState),
 				(ClientData)pdevStatePtr);
     if (status == SUCCESS) {
 	/*

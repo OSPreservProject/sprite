@@ -10,8 +10,14 @@
  * the final book-keeping on the new client, and 'srvMigrate' is called
  * on the I/O server to shift around state associated with the client.
  *
- * Copyright (C) 1985 Regents of the University of California
- * All rights reserved.
+ * Copyright (C) 1985, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
  */
 
 #ifndef lint
@@ -28,6 +34,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsFile.h"
 #include "fsDevice.h"
 #include "fsSpriteDomain.h"
+#include "fsRpcInt.h"
 #include "fsPrefix.h"
 #include "fsOpTable.h"
 #include "fsDebug.h"
@@ -46,7 +53,18 @@ Boolean fsMigDebug = TRUE;
 typedef struct MigrateReply {
     int flags;		/* New stream flags, the FS_RMT_SHARED bit is modified*/
     int offset;		/* New stream offset */
+    int pad;		/* filler because this structure confuses RPC if too
+			   small */
 } MigrateReply;
+
+/*
+ * This structure is for byte-swapping the rpc parameters correctly.
+ */
+typedef	struct	FsMigParam {
+    int			dataSize;
+    FsUnionData		data;
+    MigrateReply	migReply;
+} FsMigParam;
 
 
 /*
@@ -123,6 +141,7 @@ Fs_EncapStream(streamPtr, bufPtr)
     status = (*fsStreamOpTable[ioHandlePtr->fileID.type].migStart) (ioHandlePtr,
 		    streamPtr->flags, rpc_SpriteID, migInfoPtr->data);
 
+#ifdef notdef
     if (status == SUCCESS) {
 	/*
 	 * Clean up our reference to the stream.  We'll remove the stream from
@@ -135,6 +154,9 @@ Fs_EncapStream(streamPtr, bufPtr)
 	    FsHandleRelease(streamPtr, TRUE);
 	}
     }
+#else notdef
+    FsHandleUnlock(streamPtr);
+#endif notdef
     DEBUG( (" status %x\n", status) );
     return(status);
 }
@@ -226,7 +248,13 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
      * server checks for cross-network stream sharing and sets the
      * FS_RMT_SHARED flag if it is shared.  It also looks at the
      * FS_NEW_STREAM flag which we've set/unset above.
+     *
+     * NOTE: It is clear that holding the handle while eventually calling
+     * FsFileMigrate will deadlock on the handle, since it gets locked again.
+     * it's NOT clear whether freeing it beforehand is actually the right
+     * thing to do!!  Help?!
      */
+    FsHandleUnlock(streamPtr);
     status = (*fsStreamOpTable[migInfoPtr->ioFileID.type].migrate)
 		(migInfoPtr, rpc_SpriteID, &streamPtr->flags,
 		 &streamPtr->offset, &size, &data);
@@ -234,7 +262,6 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
 		migInfoPtr->ioFileID.major, migInfoPtr->ioFileID.minor,
 		streamPtr->offset) );
 
-    FsHandleUnlock(streamPtr);
     if (status == SUCCESS && !found) {
 	/*
 	 * Complete the setup of the stream with local book-keeping.  The
@@ -288,31 +315,37 @@ FsNotifyOfMigration(migInfoPtr, flagsPtr, offsetPtr, outSize, outData)
 {
     register ReturnStatus	status;
     Rpc_Storage 	storage;
-    MigrateReply	migReply;
+    FsMigParam		migParam;
 
     storage.requestParamPtr = (Address) migInfoPtr;
     storage.requestParamSize = sizeof(FsMigInfo);
     storage.requestDataPtr = (Address)NIL;
     storage.requestDataSize = 0;
 
-    storage.replyParamPtr = (Address)&migReply;
-    storage.replyParamSize = sizeof(MigrateReply);
-    storage.replyDataPtr = outData;
-    storage.replyDataSize = outSize;
+    storage.replyParamPtr = (Address)&migParam;
+    storage.replyParamSize = sizeof(FsMigParam);
+    storage.replyDataPtr = (Address) NIL;
+    storage.replyDataSize = 0;
 
     status = Rpc_Call(migInfoPtr->ioFileID.serverID, RPC_FS_START_MIGRATION,
 		&storage);
     if (status == SUCCESS) {
-	*flagsPtr = migReply.flags;
-	*offsetPtr = migReply.offset;
+	MigrateReply	*migReplyPtr;
+	migReplyPtr = &(migParam.migReply);
+	*flagsPtr = migReplyPtr->flags;
+	*offsetPtr = migReplyPtr->offset;
     }
+    if (migParam.dataSize > 0) {
+	Byte_Copy(migParam.dataSize, &(migParam.data), outData);
+    }
+	
     return(status);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * Fs_RpcNofityOfMigration --
+ * Fs_RpcNotifyOfMigration --
  * Fs_RpcStartMigration --
  *
  *	The service stub for FsNotifyOfMigration.
@@ -345,6 +378,7 @@ Fs_RpcStartMigration(srvToken, clientID, command, storagePtr)
     register FsHandleHeader	*hdrPtr;
     register ReturnStatus	status;
     register MigrateReply	*migReplyPtr;
+    register FsMigParam		*migParamPtr;
     register Rpc_ReplyMem	*replyMemPtr;
 
     migInfoPtr = (FsMigInfo *) storagePtr->requestParamPtr;
@@ -352,60 +386,27 @@ Fs_RpcStartMigration(srvToken, clientID, command, storagePtr)
     hdrPtr = (*fsStreamOpTable[migInfoPtr->ioFileID.type].clientVerify)
 		(&migInfoPtr->ioFileID, migInfoPtr->srcClientID);
     if (hdrPtr == (FsHandleHeader *) NIL) {
-	Sys_Panic(SYS_WARNING, "Fs_RpcMigrate, unknown I/O handle <%d,%d,%d>\n",
+	Sys_Panic(SYS_WARNING, "Fs_RpcStartMigration, unknown I/O handle <%d,%d,%d>\n",
 	    migInfoPtr->ioFileID.type,
 	    migInfoPtr->ioFileID.major, migInfoPtr->ioFileID.minor);
 	return(FS_STALE_HANDLE);
     }
     FsHandleUnlock(hdrPtr);
-    migReplyPtr = Mem_New(MigrateReply);
+    migParamPtr = Mem_New(FsMigParam);
+    migReplyPtr = &(migParamPtr->migReply);
     migReplyPtr->flags = migInfoPtr->flags;
-    storagePtr->replyParamPtr = (Address)migReplyPtr;
-    storagePtr->replyParamSize = sizeof(int);
+    storagePtr->replyParamPtr = (Address)migParamPtr;
+    storagePtr->replyParamSize = sizeof(FsMigParam);
     status = (*fsStreamOpTable[hdrPtr->fileID.type].migrate) (migInfoPtr,
 		clientID, &migReplyPtr->flags, &migReplyPtr->offset,
-		&storagePtr->replyDataSize, &storagePtr->replyDataPtr);
+		&migParamPtr->dataSize, &migParamPtr->data);
     FsHandleRelease(hdrPtr, FALSE);
 
     replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
     replyMemPtr->paramPtr = storagePtr->replyParamPtr;
-    replyMemPtr->dataPtr = storagePtr->replyDataPtr;
     Rpc_Reply(srvToken, status, storagePtr, Rpc_FreeMem,
 		(ClientData)replyMemPtr);
     return(SUCCESS);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Fs_RpcFinishMigration --
- *
- *	Server stub for RemoteFinishMigration.  NOT USED.
- *
- * Results:
- *	A return status.
- *
- * Side effects:
- *	Call the client open routine to do cache consistency.
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-ReturnStatus
-Fs_RpcFinishMigration(srvToken, clientID, command, storagePtr)
-    ClientData srvToken;	/* Handle on server process passed to
-				 * Rpc_Reply */
-    int clientID;		/* Sprite ID of client host */
-    int command;		/* IGNORED */
-    Rpc_Storage *storagePtr;    /* The request fields refer to the request
-				 * buffers and also indicate the exact amount
-				 * of data in the request buffers.  The reply
-				 * fields are initialized to NIL for the
-				 * pointers and 0 for the lengths.  This can
-				 * be passed to Rpc_Reply */
-{
-    return(FAILURE);
 }
 
 
@@ -430,4 +431,265 @@ int
 Fs_GetEncapSize()
 {
     return(sizeof(FsMigInfo));
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_EncapFileState --
+ *
+ *	Encapsulate the file system state of a process for migration.  
+ *
+ * Results:
+ *	A pointer to the encapsulated state is returned, along with
+ *	the size of the buffer allocated and the number of streams
+ *	that were encapsulated.  Any error during stream encapsulation
+ *	is returned; otherwise, SUCCESS.
+ *
+ * Side effects:
+ *	Memory is allocated for the buffer.  
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Fs_EncapFileState(procPtr, bufPtr, sizePtr, numEncapPtr)
+    register Proc_ControlBlock 	*procPtr;  /* The process being migrated */
+    Address *bufPtr;			   /* Pointer to allocated buffer */
+    int *sizePtr;			   /* Size of allocated buffer */
+    int *numEncapPtr;			   /* Number of streams encapsulated */
+{
+    Fs_ProcessState *fsPtr;
+    int numStreams;
+    int numGroups;
+    int streamFlagsLen;
+    register Address ptr;
+    Fs_Stream *streamPtr;
+    int i;
+    int numEncap;
+    ReturnStatus status;
+
+
+    fsPtr = procPtr->fsPtr;
+    numStreams = fsPtr->numStreams;
+    /*
+     * When sending an array of characters, it has to be even-aligned.
+     */
+    streamFlagsLen = Byte_AlignAddr(numStreams * sizeof(char));
+    *numEncapPtr = numEncap = 0;
+    
+    /*
+     * Send the groups, file permissions, number of streams, and encapsulated
+     * current working directory.  For each open file, send the
+     * streamID and encapsulated stream contents.
+     *
+     *	        data			size
+     *	 	----			----
+     * 		# groups		int
+     *	        groups			(# groups) * int
+     *		permissions		int
+     *		# files			int
+     *		per-file flags		(# files) * char
+     *		encapsulated files	(# files) * (FsMigInfo + int)
+     *		cwd			FsMigInfo
+     */
+    *sizePtr = (3 + fsPtr->numGroupIDs) * sizeof(int) +
+	    streamFlagsLen + numStreams * (sizeof(FsMigInfo) + sizeof(int)) +
+	    sizeof(FsMigInfo);
+    *bufPtr = Mem_Alloc(*sizePtr);
+    ptr = *bufPtr;
+
+    /*
+     * Send groups, filePermissions, numStreams, the cwd, and each file.
+     */
+    
+    numGroups = fsPtr->numGroupIDs;
+    Byte_FillBuffer(ptr, unsigned int, numGroups);
+    if (numGroups > 0) {
+	Byte_Copy(numGroups * sizeof(int), (Address) fsPtr->groupIDs, ptr);
+	ptr += numGroups * sizeof(int);
+    }
+    Byte_FillBuffer(ptr, unsigned int, fsPtr->filePermissions);
+    Byte_FillBuffer(ptr, int, numStreams);
+    if (numStreams > 0) {
+	Byte_Copy(numStreams * sizeof(char), (Address) fsPtr->streamFlags,
+		  ptr);
+	ptr += streamFlagsLen;
+    }
+    
+    status = Fs_EncapStream(fsPtr->cwdPtr, ptr);
+    if (status != SUCCESS) {
+	Sys_Panic(SYS_WARNING,
+		  "Fs_EncapFileState: Error %x from Fs_EncapStream on cwd.\n",
+		  status);
+	Mem_Free(*bufPtr);
+	return(status);
+    }
+    ptr += sizeof(FsMigInfo);
+    numEncap += 1;
+
+    for (i = 0; i < fsPtr->numStreams; i++) {
+	streamPtr = fsPtr->streamList[i];
+	if (streamPtr != (Fs_Stream *) NIL) {
+	    numEncap += 1;
+	    Byte_FillBuffer(ptr, int, i);
+	    status = Fs_EncapStream(streamPtr, ptr);
+	    if (status != SUCCESS) {
+		Sys_Panic(SYS_WARNING,
+			  "Fs_EncapFileState: Error %x from Fs_EncapStream.\n",
+			  status);
+		Mem_Free(*bufPtr);
+		return(status);
+	    }
+	} else {
+	    Byte_FillBuffer(ptr, int, NIL);
+	    Byte_Zero(sizeof(FsMigInfo), ptr);
+	}	
+	ptr += sizeof(FsMigInfo);
+    }
+
+
+    *numEncapPtr = numEncap;
+    return(SUCCESS);
+
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_ClearFileState --
+ *
+ *	Clear the file state associated with a process after it has
+ *	been migrated.  FIXME: Perhaps things should be freed here instead?
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The current working directory and open streams of the process
+ *	are cleared.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Fs_ClearFileState(procPtr)
+    register Proc_ControlBlock 	*procPtr;  /* The process being migrated */
+{
+    int i;
+    Fs_ProcessState *fsPtr;
+
+    fsPtr = procPtr->fsPtr;
+    if (fsPtr == (Fs_ProcessState *) NIL) {
+	Sys_Panic(SYS_FATAL, "Fs_ClearFileState: NIL Fs_ProcessState!");
+	return;
+    }
+    for (i = 0; i < fsPtr->numStreams; i++) {
+	fsPtr->streamList[i] = (Fs_Stream *) NIL;
+    }
+    fsPtr->cwdPtr = (Fs_Stream *) NIL;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_DeencapFileState --
+ *
+ *	Get the file system state of a process from another node.  The
+ *	buffer contains group information, permissions, the encapsulated
+ *	current working directory, and encapsulated streams.
+ *
+ * Results:
+ *	If Fs_DeencapStream returns an error, that error is returned.
+ *	Otherwise, SUCCESS is returned.  
+ *
+ * Side effects:
+ *	"Local" Fs_Streams are created and allocated to the foreign process.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Fs_DeencapFileState(procPtr, buffer)
+    Proc_ControlBlock *procPtr;
+    Address buffer;
+{
+    register Fs_ProcessState *fsPtr;
+    int i;
+    int index;
+    int numGroups;
+    int numStreams;
+    ReturnStatus status;
+
+    procPtr->fsPtr = fsPtr = Mem_New(Fs_ProcessState);
+    
+
+    /*
+     * Get group and permissions information.
+     */
+    Byte_EmptyBuffer(buffer, unsigned int, numGroups);
+    fsPtr->numGroupIDs = numGroups;
+    if (numGroups > 0) {
+	fsPtr->groupIDs = (int *)Mem_Alloc(numGroups * sizeof(int));
+	Byte_Copy(numGroups * sizeof(int), buffer, (Address) fsPtr->groupIDs);
+	buffer += numGroups * sizeof(int);
+    } else {
+	fsPtr->groupIDs = (int *)NIL;
+    }
+    Byte_EmptyBuffer(buffer, unsigned int, fsPtr->filePermissions);
+
+    /*
+     * Get numStreams, flags, and the encapsulated cwd.  Allocate memory
+     * for the streams and flags arrays if non-empty.  The array of
+     * streamFlags may be an odd number of bytes, so we skip past the
+     * byte of padding if it exists (using the Byte_AlignAddr macro).
+     */
+
+    Byte_EmptyBuffer(buffer, int, numStreams);
+    fsPtr->numStreams = numStreams;
+    if (numStreams > 0) {
+	fsPtr->streamList = (Fs_Stream **)
+		Mem_Alloc(numStreams * sizeof(Fs_Stream *));
+	fsPtr->streamFlags = (char *)Mem_Alloc(numStreams * sizeof(char));
+	Byte_Copy(numStreams * sizeof(char), buffer,
+		  (Address) fsPtr->streamFlags);
+	buffer += Byte_AlignAddr(numStreams * sizeof(char));
+    } else {
+	fsPtr->streamList = (Fs_Stream **)NIL;
+	fsPtr->streamFlags = (char *)NIL;
+    }
+    status = Fs_DeencapStream(buffer, &fsPtr->cwdPtr);
+    if (status != SUCCESS) {
+	Sys_Panic(SYS_FATAL,
+		  "GetFileState: Fs_DeencapStream returned %x for cwd.\n",
+		  status);
+    }
+    buffer += sizeof(FsMigInfo);
+
+    /*
+     * Get the other streams.
+     */
+    for (i = 0; i < fsPtr->numStreams; i++) {
+	Byte_EmptyBuffer(buffer, int, index);
+	if (index != NIL) {
+	    status = Fs_DeencapStream(buffer, &fsPtr->streamList[index]);
+	    if (status != SUCCESS) {
+		if (status != FAILURE) {
+		    Sys_Panic(SYS_WARNING,
+      "Fs_DeencapFileState: Fs_DeencapStream for file id %d returned %x.\n",
+			      index, status);
+		    return(status);
+		}
+		fsPtr->streamList[index] = (Fs_Stream *) NIL;
+	    }
+	} else {
+	    fsPtr->streamList[i] = (Fs_Stream *) NIL;
+	}
+	buffer += sizeof(FsMigInfo);
+    }
+    return(SUCCESS);
 }
