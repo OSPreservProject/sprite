@@ -2147,7 +2147,7 @@ Proc_MigAddToCounter(value, intPtr, squaredPtr)
     LOCK_MONITOR;
 
     *intPtr += value;
-    if (squaredPtr != (int *) NIL) {
+    if (squaredPtr != (unsigned int *) NIL) {
 	*squaredPtr += value * value;
     }
 
