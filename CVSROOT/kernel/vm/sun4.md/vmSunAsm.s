@@ -1170,7 +1170,7 @@ FlushingPage:
 /*
  * ----------------------------------------------------------------------------
  *
- * VmMachSetupUserDVMA --
+ * VmMachSetup32BitDVMA --
  *
  *      Return the user DVMA to access the lower 256 megabytes of context 0.
  *	We use this space to map pages for DMA.
@@ -1185,14 +1185,14 @@ FlushingPage:
  * ----------------------------------------------------------------------------
  */
 
-.globl  _VmMachSetupUserDVMA
-_VmMachSetupUserDVMA:
+.globl  _VmMachSetup32BitDVMA
+_VmMachSetup32BitDVMA:
     /*
      * First we initialized the map for VME context 0 to map into the
      * lower 256 megabytes of the context 0. The DVMA map takes the form
      * of an eight element array index by bits 30 to 28 from the VME bus. 
      *  each entry looking like:
-     *   struct UserDVMAMap {
+     *   struct 32BitDVMAMap {
      *	    unsigned char  :4;
      *	    unsigned char  topNibble:4;   Top four bits of DMA address. 
      *	    unsigned char  context:8;     Context to access. 

@@ -4421,8 +4421,6 @@ void VmMach_SharedProcStart() {}
 void VmMach_SharedProcFinish() {}
 
 #ifndef sun4c
-#define	VMMACH_USER_DMA_START_ADDR	0x40000
-#define	VMMACH_USER_DMA_SIZE		0x100000
 
 /*----------------------------------------------------------------------
  *
@@ -4441,7 +4439,7 @@ void VmMach_SharedProcFinish() {}
  *----------------------------------------------------------------------
  */
 ENTRY static void
-DevUserDMABufferInit()
+Dev32BitDMABufferInit()
 {
     Address		virtAddr;
     unsigned char	pmeg;
@@ -4451,13 +4449,17 @@ DevUserDMABufferInit()
     Address	endAddr;
 
     MASTER_LOCK(vmMachMutexPtr);
+    if ((VMMACH_32BIT_DMA_SIZE & (VMMACH_CACHE_SIZE - 1)) != 0) {
+	panic(
+"Dev32BitDMABufferInit: 32-bit DMA area must be a multiple of cache size.\n");
+    }
 
-    VmMachSetupUserDVMA(); 
+    VmMachSetup32BitDVMA(); 
     /*
      * Round base up to next page boundary and end down to page boundary.
      */
-    baseAddr = (Address)VMMACH_USER_DMA_START_ADDR;
-    endAddr = (Address)(VMMACH_USER_DMA_START_ADDR + VMMACH_USER_DMA_SIZE);
+    baseAddr = (Address)VMMACH_32BIT_DMA_START_ADDR;
+    endAddr = (Address)(VMMACH_32BIT_DMA_START_ADDR + VMMACH_32BIT_DMA_SIZE);
 
     /* 
      * Set up the hardware pages tables in the range of addresses given.
@@ -4484,13 +4486,13 @@ DevUserDMABufferInit()
 }
 
 
-static	Boolean	userdmaPageBitMap[VMMACH_USER_DMA_SIZE / VMMACH_PAGE_SIZE_INT];
+static	Boolean	userdmaPageBitMap[VMMACH_32BIT_DMA_SIZE / VMMACH_PAGE_SIZE_INT];
 
 
 /*
  ----------------------------------------------------------------------
  *
- * VmMach_UserDMAAlloc --
+ * VmMach_32BitDMAAlloc --
  *
  *	Allocate a set of virtual pages to a routine for mapping purposes.
  *	
@@ -4504,7 +4506,7 @@ static	Boolean	userdmaPageBitMap[VMMACH_USER_DMA_SIZE / VMMACH_PAGE_SIZE_INT];
  *----------------------------------------------------------------------
  */
 Address
-VmMach_UserDMAAlloc(numBytes, srcAddr)
+VmMach_32BitDMAAlloc(numBytes, srcAddr)
     int		numBytes;		/* Number of bytes to map in. */
     Address	srcAddr;	/* Kernel virtual address to start mapping in.*/
 {
@@ -4516,12 +4518,13 @@ VmMach_UserDMAAlloc(numBytes, srcAddr)
     Boolean	foundIt = FALSE;
     static initialized = FALSE;
     Address	newAddr;
-    int		oldContext;
+    unsigned	oldContext;
+    int		align;
  
     MASTER_LOCK(vmMachMutexPtr);
     if (!initialized) {
 	initialized = TRUE;
-	DevUserDMABufferInit();
+	Dev32BitDMABufferInit();
     }
 
     /* calculate number of pages needed */
@@ -4533,36 +4536,40 @@ VmMach_UserDMAAlloc(numBytes, srcAddr)
     numPages = (((unsigned int) endAddr) >> VMMACH_PAGE_SHIFT_INT) -
 	    (((unsigned int) beginAddr) >> VMMACH_PAGE_SHIFT_INT) + 1;
 
-    /* see if request can be satisfied */
-    for (i = 0; i < (VMMACH_USER_DMA_SIZE / VMMACH_PAGE_SIZE_INT); i++) {
+    /* set first addr to first entry that is also cache aligned */
+    align = (unsigned int) beginAddr & (VMMACH_CACHE_SIZE - 1);
+    align -= (unsigned int) VMMACH_32BIT_DMA_START_ADDR &
+	    (VMMACH_CACHE_SIZE - 1);
+    if ((int) align < 0) {
+	align += VMMACH_CACHE_SIZE;
+    }
+    /* see if request can be satisfied, incrementing by cache size in loop */
+    for (i = align / VMMACH_PAGE_SIZE_INT;
+	    i < (VMMACH_32BIT_DMA_SIZE / VMMACH_PAGE_SIZE_INT);
+	    i += (VMMACH_CACHE_SIZE / VMMACH_PAGE_SIZE_INT)) {
 	if (userdmaPageBitMap[i] == 1) {
 	    continue;
 	}
-	/*
-	 * Must be aligned in the cache to avoid write-backs of stale data
-	 * from other references to stuff on this page.
-	 */
-	newAddr = (Address)(VMMACH_USER_DMA_START_ADDR + (i * VMMACH_PAGE_SIZE_INT));
-	if (((unsigned int) newAddr & (VMMACH_CACHE_SIZE - 1)) !=
-		((unsigned int) beginAddr & (VMMACH_CACHE_SIZE - 1))) {
-	    continue;
-	}
+	newAddr = (Address) (VMMACH_32BIT_DMA_START_ADDR +
+		(i * VMMACH_PAGE_SIZE_INT));
 	for (j = 1; (j < numPages) &&
-		((i + j) < (VMMACH_USER_DMA_SIZE / VMMACH_PAGE_SIZE_INT)); j++) {
+		((i + j) < (VMMACH_32BIT_DMA_SIZE / VMMACH_PAGE_SIZE_INT));
+		j++) {
 	    if (userdmaPageBitMap[i + j] == 1) {
 		break;
 	    }
 	}
 	if ((j == numPages) &&
-		((i + j) < (VMMACH_USER_DMA_SIZE / VMMACH_PAGE_SIZE_INT))) {
+		((i + j) < (VMMACH_32BIT_DMA_SIZE / VMMACH_PAGE_SIZE_INT))) {
 	    foundIt = TRUE;
 	    break;
 	}
     }
+
     if (!foundIt) {
 	MASTER_UNLOCK(vmMachMutexPtr);
 	panic(
-	    "VmMach_DMAAlloc: unable to satisfy request for %d bytes at 0x%x\n",
+    "VmMach_32BitDMAAlloc: unable to satisfy request for %d bytes at 0x%x\n",
 		numBytes, srcAddr);
 #ifdef NOTDEF
 	return (Address) NIL;
@@ -4577,22 +4584,24 @@ VmMach_UserDMAAlloc(numBytes, srcAddr)
 		    VMMACH_URW_PROT;
 
 	SET_ALL_PAGE_MAP(((i + j) * VMMACH_PAGE_SIZE_INT) +
-		VMMACH_USER_DMA_START_ADDR, pte);
+		VMMACH_32BIT_DMA_START_ADDR, pte);
 	srcAddr += VMMACH_PAGE_SIZE;
     }
     VmMachSetContextReg(oldContext);
-    beginAddr = (Address) (VMMACH_USER_DMA_START_ADDR + (i * VMMACH_PAGE_SIZE_INT) +
+    beginAddr = (Address) (VMMACH_32BIT_DMA_START_ADDR + (i * VMMACH_PAGE_SIZE_INT) +
 	    (((unsigned int) srcAddr) & VMMACH_OFFSET_MASK));
 
+    /* set high VME addr bit */
+    (unsigned) beginAddr |= VMMACH_VME_ADDR_BIT;
     MASTER_UNLOCK(vmMachMutexPtr);
-    return (Address) ((unsigned) beginAddr | 0x80000000);
+    return (Address) beginAddr;
 }
 
 
 /*
  ----------------------------------------------------------------------
  *
- * VmMach_UserDMAFree --
+ * VmMach_32BitDMAFree --
  *
  *	Free a previously allocated set of virtual pages for a routine that
  *	used them for mapping purposes.
@@ -4606,7 +4615,7 @@ VmMach_UserDMAAlloc(numBytes, srcAddr)
  *----------------------------------------------------------------------
  */
 void
-VmMach_UserDMAFree(numBytes, mapAddr)
+VmMach_32BitDMAFree(numBytes, mapAddr)
     int		numBytes;		/* Number of bytes to map in. */
     Address	mapAddr;	/* Kernel virtual address to unmap.*/
 {
@@ -4618,7 +4627,8 @@ VmMach_UserDMAFree(numBytes, mapAddr)
 
     MASTER_LOCK(vmMachMutexPtr);
     /* calculate number of pages to free */
-    mapAddr = (Address) ((unsigned)mapAddr & ~0x80000000);
+    /* Clear the VME high bit from the address */
+    mapAddr = (Address) ((unsigned)mapAddr & ~VMMACH_VME_ADDR_BIT);
 						/* beginning of first page */
     beginAddr = (Address) (((unsigned int) mapAddr) & ~VMMACH_OFFSET_MASK_INT);
 						/* beginning of last page */
@@ -4628,7 +4638,7 @@ VmMach_UserDMAFree(numBytes, mapAddr)
 	    (((unsigned int) beginAddr) >> VMMACH_PAGE_SHIFT_INT) + 1;
 
     i = (((unsigned int) mapAddr) >> VMMACH_PAGE_SHIFT_INT) -
-	(((unsigned int) VMMACH_USER_DMA_START_ADDR) >> VMMACH_PAGE_SHIFT_INT);
+	(((unsigned int) VMMACH_32BIT_DMA_START_ADDR) >> VMMACH_PAGE_SHIFT_INT);
     oldContext = VmMachGetContextReg();
     VmMachSetContextReg(0);
     for (j = 0; j < numPages; j++) {
