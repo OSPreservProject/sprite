@@ -684,37 +684,53 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	    register Pdev_SetBufArgs *argPtr =
 		    (Pdev_SetBufArgs *)inBufPtr->addr;
 	    register Proc_ControlBlock *procPtr;
+	    register int extraBytes;
+
 	    if (inBufPtr->size != sizeof(Pdev_SetBufArgs)) {
 		status = GEN_INVALID_ARG;
 	    } else if ((pdevHandlePtr->flags & PDEV_SETUP) == 0) {
 		/*
-		 * Normal case, first time initialization.  The state has
-		 * been marked BUSY to simplify waiting in the routines
-		 * that call RequestResponse, so we clear that state bit.
-		 * We also mark it explicitly as SETUP so we can bail out
-		 * later if the server never sets up the request buffer.
+		 * Normal case, first time initialization.  Make sure the
+		 * buffers are word aligned.
 		 */
-		pdevHandlePtr->requestBuf.data = argPtr->requestBufAddr;
 		pdevHandlePtr->requestBuf.size = argPtr->requestBufSize;
+		pdevHandlePtr->requestBuf.data = argPtr->requestBufAddr;
+		extraBytes = (unsigned int)argPtr->requestBufAddr &
+			     (sizeof(int) - 1);
+		if (extraBytes) {
+		    pdevHandlePtr->requestBuf.data += sizeof(int) - extraBytes;
+		    pdevHandlePtr->requestBuf.size -= extraBytes;
+		}
 		pdevHandlePtr->requestBuf.firstByte = -1;
 		pdevHandlePtr->requestBuf.lastByte = -1;
 
-		pdevHandlePtr->flags &= ~PDEV_BUSY;
-		pdevHandlePtr->flags |= PDEV_SETUP|PDEV_READ_BUF_EMPTY|
-						 PDEV_SERVER_KNOWS_IT;
 		if (argPtr->readBufAddr == (Address)NIL ||
 		    argPtr->readBufAddr == (Address)0) {
 		    pdevHandlePtr->readBuf.data = (Address)NIL;
+		    pdevHandlePtr->readBuf.size = 0;
 		} else {
+		    pdevHandlePtr->readBuf.size = argPtr->readBufSize;
 		    pdevHandlePtr->readBuf.data = argPtr->readBufAddr;
+		    extraBytes = (unsigned int)argPtr->readBufAddr &
+				 (sizeof(int) - 1);
+		    if (extraBytes) {
+			pdevHandlePtr->readBuf.data += sizeof(int) - extraBytes;
+			pdevHandlePtr->readBuf.size -= extraBytes;
+		    }
 		}
-		pdevHandlePtr->readBuf.size = argPtr->readBufSize;
 		pdevHandlePtr->readBuf.firstByte = -1;
 		pdevHandlePtr->readBuf.lastByte = -1;
 
 		procPtr = Proc_GetEffectiveProc();
 		pdevHandlePtr->serverPID = procPtr->processID;
 
+		/*
+		 * The state has been marked BUSY to simplify waiting in the
+		 * routines that call RequestResponse, so we clear that bit.
+		 */
+		pdevHandlePtr->flags &= ~PDEV_BUSY;
+		pdevHandlePtr->flags |= PDEV_SETUP|PDEV_READ_BUF_EMPTY|
+						 PDEV_SERVER_KNOWS_IT;
 		Sync_Broadcast(&pdevHandlePtr->access);
 	    } else {
 		/*
