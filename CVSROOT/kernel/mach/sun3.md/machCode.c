@@ -277,17 +277,18 @@ Mach_InitFirstProc(procPtr)
  *----------------------------------------------------------------------
  */ 
 ReturnStatus
-Mach_SetupNewState(procPtr, parStatePtr, startFunc, startPC)
+Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
     Proc_ControlBlock	*procPtr;	/* Pointer to process control block
 					 * to initialize state for. */
-    Mach_State		*parStatePtr;	/* State of parent on fork or from
+    Mach_State		*fromStatePtr;	/* State of parent on fork or from
 					 * other machine on migration. */
     void		(*startFunc)();	/* Function to call when process first
 					 * starts executing. */
     Address		startPC;	/* Address to pass as argument to 
 					 * startFunc.  If NIL then the address
-					 * is taken from *parStatePtr's 
+					 * is taken from *fromStatePtr's 
 					 * exception stack. */
+    Boolean		user;		/* TRUE if is a user process. */
 {
     register	KernelStack	*stackPtr;
     register	Mach_State	*statePtr;
@@ -298,7 +299,7 @@ Mach_SetupNewState(procPtr, parStatePtr, startFunc, startPC)
     }
 
     statePtr = procPtr->machStatePtr;
-    /*
+    /* 
      * Allocate a kernel stack for this process.
      */
     statePtr->kernStackStart = Vm_GetKernelStack(0);
@@ -322,14 +323,18 @@ Mach_SetupNewState(procPtr, parStatePtr, startFunc, startPC)
     stackPtr->fill2 = 0;
     /* 
      * Set up the state of the process.  User processes inherit from their
-     * parent and kernel processes start executing at startPC.
+     * parent or the migrated process.  If the PC is not specified, take it
+     * from the parent as well.
      */
-    if (startPC == (Address)NIL) {
-	statePtr->userState.userStackPtr = parStatePtr->userState.userStackPtr;
+    if (user) {
+	statePtr->userState.userStackPtr =
+		fromStatePtr->userState.userStackPtr;
 	Byte_Copy(sizeof(statePtr->userState.trapRegs),
-		  (Address)parStatePtr->userState.trapRegs,
+		  (Address)fromStatePtr->userState.trapRegs,
 		  (Address)statePtr->userState.trapRegs);
-	stackPtr->startPC = (Address)parStatePtr->userState.excStackPtr->pc;
+    }
+    if (startPC == (Address)NIL) {
+	stackPtr->startPC = (Address)fromStatePtr->userState.excStackPtr->pc;
     } else {
 	stackPtr->startPC = startPC;
     }
