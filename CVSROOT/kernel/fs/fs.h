@@ -445,7 +445,7 @@ extern void Fs_Bin _ARGS_((void));
 extern void Fs_ProcInit _ARGS_((void));
 extern void Fs_InheritState _ARGS_((Proc_ControlBlock *parentProcPtr,
 				Proc_ControlBlock *newProcPtr));
-extern void Fs_CloseState _ARGS_((Proc_ControlBlock *procPtr));
+extern void Fs_CloseState _ARGS_((Proc_ControlBlock *procPtr, int phase));
 
 
 /*
