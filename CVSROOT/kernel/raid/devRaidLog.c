@@ -702,7 +702,7 @@ MasterFlushLog(raidPtr)
 	while(Dev_BlockDeviceIOSync(raidPtr->logHandlePtr, &req, &xferAmt) !=
 		SUCCESS) {
 	    Time time;
-	    perror("Error writing log");
+	    printf("Error writing log\n");
 	    time.seconds = 10;
 	    time.microseconds = 0;
 	    Sync_WaitTime(time);
