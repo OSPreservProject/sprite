@@ -67,12 +67,13 @@ extern TraceLog_Header *SOSP91TracePtr;
  * mode			Mode flags of the open command
  * numNowReading	Number of clients with file open for reading after open
  * numNowWriting	Number of clients with file open for writing
- * fileAge		The create time for the file
+ * create		The create time for the file
  * fileSize		Size in bytes of the file
+ * modify		The modify time for the file.
  */
-#define	SOSP_ADD_OPEN_TRACE(currentHostID, homeHostID, fileID, streamID, effID, realID, mode, numNowReading, numNowWriting, fileAge, fileSize) \
+#define	SOSP_ADD_OPEN_TRACE(currentHostID, homeHostID, fileID, streamID, effID, realID, mode, numNowReading, numNowWriting, create, fileSize, modify) \
 {\
-	unsigned int	sospBuffer[72];\
+	unsigned int	sospBuffer[19];\
 \
 	sospBuffer[0] = SOSP_OPEN;\
 	sospBuffer[1] = currentHostID;\
@@ -84,10 +85,11 @@ extern TraceLog_Header *SOSP91TracePtr;
 	sospBuffer[13] = mode;\
 	sospBuffer[14] = numNowReading;\
 	sospBuffer[15] = numNowWriting;\
-	sospBuffer[16] = fileAge;\
+	sospBuffer[16] = create;\
 	sospBuffer[17] = fileSize;\
+	sospBuffer[18] = modify;\
 	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
-		(18 * sizeof (int)), SOSP_OPEN);\
+		(19 * sizeof (int)), SOSP_OPEN);\
 }
 
 /*
@@ -96,21 +98,23 @@ extern TraceLog_Header *SOSP91TracePtr;
  * currentHostID:	Current client requesting delete
  * homeHostID:		HostID of process requesting delete before migration
  * fileID		The file ID for the file being deleted
- * fileAge		The create time for the file
+ * modify		The modify time for the file
+ * create		The create time for the file.
  * fileSize		Size in bytes of the file
  */ 
-#define	SOSP_ADD_DELETE_TRACE(currentHostID, homeHostID, fileID, fileAge, fileSize) \
+#define	SOSP_ADD_DELETE_TRACE(currentHostID, homeHostID, fileID, modify, create, fileSize) \
 {\
-	unsigned int	sospBuffer[36];\
+	unsigned int	sospBuffer[10];\
 \
 	sospBuffer[0] = SOSP_DELETE;\
 	sospBuffer[1] = currentHostID;\
 	sospBuffer[2] = homeHostID;\
 	*((Fs_FileID *) &(sospBuffer[3])) = fileID;\
-	sospBuffer[7] = fileAge;\
-	sospBuffer[8] = fileSize;\
+	sospBuffer[7] = modify;\
+	sospBuffer[8] = create;\
+	sospBuffer[9] = fileSize;\
 	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
-		(9 * sizeof (int)), SOSP_DELETE);\
+		(10 * sizeof (int)), SOSP_DELETE);\
 }
 	
 /*
@@ -122,7 +126,7 @@ extern TraceLog_Header *SOSP91TracePtr;
  */ 
 #define	SOSP_ADD_CREATE_TRACE(currentHostID, homeHostID, fileID)\
 {\
-	unsigned int	sospBuffer[28];\
+	unsigned int	sospBuffer[7];\
 \
 	sospBuffer[0] = SOSP_DELETE;\
 	sospBuffer[1] = currentHostID;\
@@ -265,17 +269,21 @@ extern TraceLog_Header *SOSP91TracePtr;
  * streamID		Fs_FileID in the header of stream for this operation
  * oldLength		Old length of the file
  * newLength		New length of the file
+ * modify		Modify time of the file before truncation.
+ * create		Create time of the file before truncation.
  */ 
-#define	SOSP_ADD_TRUNCATE_TRACE(streamID, oldLength, newLength) \
+#define	SOSP_ADD_TRUNCATE_TRACE(streamID, oldLength, newLength, modify, create) \
 {\
-	unsigned int	sospBuffer[7];\
+	unsigned int	sospBuffer[9];\
 \
 	sospBuffer[0] = SOSP_TRUNCATE;\
 	*((Fs_FileID *) &(sospBuffer[1])) = streamID;\
 	sospBuffer[5] = oldLength;\
 	sospBuffer[6] = newLength;\
+	sospBuffer[7] = modify;\
+	sospBuffer[8] = create;\
 	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
-		(7 * sizeof (int)),SOSP_TRUNCATE);\
+		(9 * sizeof (int)),SOSP_TRUNCATE);\
 }
 
 /*
