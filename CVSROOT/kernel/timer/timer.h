@@ -24,7 +24,7 @@
 #include "time.h"
 #include "timerTick.h"
 #else
-#include <user/spriteTime.h>
+#include <spriteTime.h>
 #include <kernel/timerTick.h>
 #endif
 
