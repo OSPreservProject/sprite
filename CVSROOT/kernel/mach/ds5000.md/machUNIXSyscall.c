@@ -226,6 +226,7 @@ extern ReturnStatus MachUNIXSemget();
 extern ReturnStatus MachUNIXMmap();
 extern ReturnStatus MachUNIXMunmap();
 extern ReturnStatus MachUNIXMincore();
+extern ReturnStatus MachUNIXProfil();
 extern ReturnStatus MachUNIXError();
 
 /*
@@ -276,7 +277,7 @@ SyscallInfo machUNIXSysCallTable[] = {
 	"dup", 			1, 	MachUNIXDup,
 	"pipe",			1, 	MachUNIXPipe,
 	"old times",		1, 	MachUNIXError,
-	"profil", 		4, 	MachUNIXError,
+	"profil", 		4, 	MachUNIXProfil,
 	"nosys", 		0, 	MachUNIXError,
 	"old setgid", 		1, 	MachUNIXError,
 	"getgid", 		0, 	MachUNIXGetGID,
@@ -2364,3 +2365,16 @@ MachUNIXError()
 	    machUNIXSysCallTable[machCurStatePtr->userState.regState.regs[V0]].name);
     return(FAILURE);
 }
+
+ReturnStatus
+MachUNIXProfil(buffer, bufsize, offset, scale)
+    char *buffer;
+    int bufsize;
+    int offset;
+    int scale;
+{
+
+    Prof_Profil(buffer, bufsize, offset, scale);
+    return SUCCESS;
+}
+

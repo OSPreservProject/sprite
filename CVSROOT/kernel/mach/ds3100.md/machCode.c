@@ -1158,11 +1158,7 @@ Interrupt(statusReg, causeReg, pc)
  * another interrupt handler, so we have to hand the routine the original
  * values.
  */
-	    if (n==5) {
-		interruptHandlers[n](statusReg, causeReg, pc);
-	    } else {
-		interruptHandlers[n]();
-	    }
+            interruptHandlers[n](statusReg, causeReg, pc);
 	}
 	mask >>= 1;
 	n++;
