@@ -199,7 +199,7 @@ Fs_RpcPrefix(srvToken, clientID, command, storagePtr)
 
 	if (status == SUCCESS) {
 	    Byte_Copy(dataSize, (Address)streamData,
-			(Address)openReplyParamPtr->openData);
+			(Address)&openReplyParamPtr->openData);
 	    Mem_Free((Address)streamData);
 	    storagePtr->replyParamPtr = (Address) (openReplyParamPtr);
 	    storagePtr->replyParamSize = sizeof(FsOpenReplyParam);
@@ -411,7 +411,7 @@ Fs_RpcOpen(srvToken, clientID, command, storagePtr)
 		((Address)openResultsPtr->streamData) != (Address)NIL) {
 	    Byte_Copy(openResultsPtr->dataSize,
 		    (Address)openResultsPtr->streamData,
-		    (Address)openResultsParamPtr->openData);
+		    (Address)&openResultsParamPtr->openData);
 	    Mem_Free((Address)openResultsPtr->streamData);
 	    storagePtr->replyDataPtr = (Address)NIL;
 	    storagePtr->replyDataSize = 0;
