@@ -19,10 +19,17 @@
 #ifndef _FSDM
 #define _FSDM
 
+#ifdef KERNEL
 #include <dev.h>
 #include <fslcl.h>
 #include <fsioFile.h>
 #include <fscache.h>
+#else
+#include <kernel/dev.h>
+#include <kernel/fslcl.h>
+#include <kernel/fsioFile.h>
+#include <kernel/fscache.h>
+#endif
 
 /*
  * A disk is partitioned into domains that are managed separately.
