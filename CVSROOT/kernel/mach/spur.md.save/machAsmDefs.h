@@ -167,6 +167,31 @@
 	st_external	VOL_TEMP2, r0, $rptm|MACH_CO_WR_REG|0x40  ;\
 	extract		VOL_TEMP2, VOL_TEMP1, $2 ;\
 	st_external	VOL_TEMP2, r0, $rptm|MACH_CO_WR_REG|0x60 
+
+/*
+ * LD_RPTM_PAGE(rx, rptm) --
+ *
+ *	Load from RPTM register in CC
+ *
+ *	rx -- 	register containing the 20 bit page number of the root page
+ *	      	table physical map
+ *	rptm --	address of byte 0 of specific RPTM register (e.g., RPTM0)
+ *
+ * rptm<19:0> <= rx<19:0>
+ */
+#define LD_RPTM_PAGE(rx,rptm) \
+	ld_external	rx, r0, $rptm|MACH_CO_RD_REG|0x20  ;\
+	ld_external	VOL_TEMP1, r0, $rptm|MACH_CO_RD_REG|0x40  ;\
+	wr_insert	$1; \
+	insert		rx, rx, VOL_TEMP1; \
+	ld_external	VOL_TEMP1, r0, $rptm|MACH_CO_RD_REG|0x80  ;\
+	wr_insert	$2; \
+	insert		rx, rx, VOL_TEMP1; \
+	srl		rx, rx, $1; \
+	srl		rx, rx, $1; \
+	srl		rx, rx, $1; \
+	srl		rx, rx, $1
+
 /*
  *
  * ST_GSN(rx,gsn) --
@@ -179,6 +204,19 @@
  * gsn<7:0> <= rx<7:0>
  */
 #define ST_GSN(rx,gsn) st_external	rx, r0, $gsn|MACH_CO_WR_REG
+
+/*
+ *
+ * LD_GSN(rx,gsn) --
+ *
+ *	Load from active segment register in CC
+ *
+ *	rx --	register containing the global segment number
+ *	gsn --	specific GSN register (e.g., GSN0)
+ *
+ * gsn<7:0> <= rx<7:0>
+ */
+#define LD_GSN(rx,gsn) ld_external	rx, r0, $gsn|MACH_CO_RD_REG
 
 /*
  * ST_PT_BASE(rx) --
@@ -286,14 +324,16 @@
 /*
  * SWITCH_TO_KERNEL_STACKS()
  *
- *	Switch to the kernel's spill and overflow stacks.  The act of switching
- *	to the kernel's overflow stack involves leaving the cwp alone and
- *	setting the swp equal to the cwp - 1 + stack_base.  This requires
+ *	Switch to the kernel's spill and overflow stacks.  Before we
+ *	are called we have already saved all of the windows through
+ *	cwp - 2 onto the user's saved window stack.  So the act of switching
+ *	to the kernel's saved window stack involves leaving the cwp alone and
+ *	setting the swp equal to the cwp - 2 + stack_base.  This requires
  *	the following sequence of instructions:
  *
  *		1) VOL_TEMP3 <= cwp
- *		2) VOL_TEMP3 = (VOL_TEMP3 - 1) & 0x1c to decrement the cwp
- *			and mask out bits in case it wraps.
+ *		2) VOL_TEMP3 = (VOL_TEMP3 - 8) & 0x1c to decrement the cwp
+ *			by 2 and mask out bits in case it wraps.
  *		3) VOL_TEMP3 <<= 5 to shift cwp<4:2> to swp<9:7>
  *		4) VOL_TEMP3 += StackBase
  *		5) swp <= VOL_TEMP3
@@ -304,7 +344,7 @@
 	ld_32		SPILL_SP, VOL_TEMP1, $MACH_KERN_STACK_END_OFFSET; \
 	ld_32		VOL_TEMP2, VOL_TEMP1, $MACH_KERN_STACK_START_OFFSET; \
 	rd_special	VOL_TEMP3, cwp; \
-	sub		VOL_TEMP3, VOL_TEMP3, $4; \
+	sub		VOL_TEMP3, VOL_TEMP3, $8; \
 	and		VOL_TEMP3, VOL_TEMP3, $0x1c; \
 	sll		VOL_TEMP3, VOL_TEMP3, $3; \
 	sll		VOL_TEMP3, VOL_TEMP3, $2; \
@@ -381,14 +421,16 @@
 /*
  * SWITCH_TO_DEBUGGER_STACKS()
  *
- *	Switch to the debugger's spill and overflow stacks.  The act of
+ *	Switch to the debugger's spill and overflow stacks.  Before we
+ *	are called we have already saved all of the windows through
+ *	cwp - 2 onto the normal saved window stack.  So the act of
  *	switching to the debugger's overflow stack involves leaving the cwp
- *	alone and setting the swp equal to the cwp - 1 + stack_base.
+ *	alone and setting the swp equal to the cwp - 2 + stack_base.
  *	This requires the following sequence of instructions:
  *
  *		1) VOL_TEMP2 <= cwp
- *		2) VOL_TEMP2 = (VOL_TEMP2 - 1) & 0x1c to decrement the cwp
- *			and mask out bits in case it wraps.
+ *		2) VOL_TEMP2 = (VOL_TEMP2 - 8) & 0x1c to decrement the cwp
+ *			by 2 and mask out bits in case it wraps.
  *		3) VOL_TEMP2 <<= 5 to shift cwp<4:2> to swp<9:7>
  *		4) VOL_TEMP2 += StackBase
  *		5) swp <= VOL_TEMP2
@@ -398,7 +440,7 @@
 	ld_32		VOL_TEMP1, r0, $debugSWStackBase; \
 	nop; \
 	rd_special	VOL_TEMP2, cwp; \
-	sub		VOL_TEMP2, VOL_TEMP2, $4; \
+	sub		VOL_TEMP2, VOL_TEMP2, $8; \
 	and		VOL_TEMP2, VOL_TEMP2, $0x1c; \
 	sll		VOL_TEMP2, VOL_TEMP2, $3; \
 	sll		VOL_TEMP2, VOL_TEMP2, $2; \

@@ -102,6 +102,8 @@ extern int machKcallTableOffset;	/* Byte offset of the kcallTable field
 					 * in a Proc_ControlBlock. */
 extern int machStatePtrOffset;		/* Byte offset of the machStatePtr
 					 * field in a Proc_ControlBlock. */
+extern int machSpecialHandlingOffset;	/* Byte offset of the special handling
+					 * flag in the proc table. */
 /* 
  * Pointer to the state structure for the current process.
  */
@@ -167,6 +169,7 @@ Mach_Init()
     machMaxSysCall = -1;
     machKcallTableOffset = (int) &((Proc_ControlBlock *) 0)->kcallTable;
     machStatePtrOffset = (int) &((Proc_ControlBlock *) 0)->machStatePtr;
+    machSpecialHandlingOffset = (int) &((Proc_ControlBlock *) 0)->specialHandling;
     /*
      * We start off with interrupts disabled.
      */
@@ -285,7 +288,7 @@ Mach_SetupNewState(procPtr, parStatePtr, startFunc, startPC)
     /*
      * Allocate a kernel stack for this process.
      */
-    statePtr->kernStackStart = Vm_GetKernelStack(1);
+    statePtr->kernStackStart = Vm_GetKernelStack(2);
     if (statePtr->kernStackStart == (Address)NIL) {
 	return(PROC_NO_STACKS);
     }
@@ -928,7 +931,7 @@ MachVMDataFault(faultType, PC, destAddr, kpsw)
     procPtr = Proc_GetCurrentProc();
 
     if (procPtr == (Proc_ControlBlock *)NIL ||
-	procPtr->genFlags & PROC_KERNEL) {
+	(procPtr->genFlags & PROC_KERNEL)) {
 	return(MACH_KERN_ACCESS_VIOL);
     }
 
@@ -993,7 +996,7 @@ MachVMPCFault(faultType, PC, kpsw)
 
     if ((kpsw & MACH_KPSW_PREV_MODE) == 0) {
 	extern int	etext;
-	if (PC > (Address)&etext || PC < (Address)MACH_CODE_START) {
+	if (PC > (Address)&etext || PC < (Address)VMMACH_PAGE_SIZE) {
 	    return(MACH_KERN_ACCESS_VIOL);
 	} else {
 	    return(MACH_NORM_RETURN);

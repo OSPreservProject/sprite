@@ -253,10 +253,42 @@ SigReturnAddr:
 	Nop
 
 /*
- * Jump table to return the operand from an instruction.  Also here
+ * Jump tables to return the operands from an instruction.  Also here
  * because is jumped to through an immediate constant.
  */
-OpRecov:
+OpRecov1:
+	add_nt		r30,  r0, $0
+	add_nt		r30,  r1, $0
+	add_nt		r30,  r2, $0
+	add_nt		r30,  r3, $0
+	add_nt		r30,  r4, $0
+	add_nt		r30,  r5, $0
+	add_nt		r30,  r6, $0
+	add_nt		r30,  r7, $0
+	add_nt		r30,  r8, $0
+	add_nt		r30,  r9, $0
+	add_nt		r30, r10, $0
+	add_nt		r30, r11, $0
+	add_nt		r30, r12, $0
+	add_nt		r30, r13, $0
+	add_nt		r30, r14, $0
+	add_nt		r30, r15, $0
+	add_nt		r30, r16, $0
+	add_nt		r30, r17, $0
+	add_nt		r30, r18, $0
+	add_nt		r30, r19, $0
+	add_nt		r30, r20, $0
+	add_nt		r30, r21, $0
+	add_nt		r30, r22, $0
+	add_nt		r30, r23, $0
+	add_nt		r30, r24, $0
+	add_nt		r30, r25, $0
+	add_nt		r30, r26, $0
+	add_nt		r30, r27, $0
+	add_nt		r30, r28, $0
+	add_nt		r30, r29, $0
+
+OpRecov2:
 	add_nt		r31,  r0, $0
 	add_nt		r31,  r1, $0
 	add_nt		r31,  r2, $0
@@ -287,7 +319,6 @@ OpRecov:
 	add_nt		r31, r27, $0
 	add_nt		r31, r28, $0
 	add_nt		r31, r29, $0
-
 /*
  ****************************************************************************
  *
@@ -1607,6 +1638,8 @@ sysCallTrap_CallRoutine:
 	Nop						
 	ld_32		VOL_TEMP1, VOL_TEMP1, $0
 	Nop
+	ld_32		VOL_TEMP1, VOL_TEMP1, $0
+	Nop
 	/*
 	 * VOL_TEMP2 <= offset of kcall table pointer in PCB
 	 */
@@ -1633,7 +1666,7 @@ sysCallTrap_CallRoutine:
 	Nop
 1:
 	rd_special	RETURN_ADDR_REG, pc
-	add_nt		RETURN_ADDR_REG, RETURN_ADDR_REG, $16
+	add_nt		RETURN_ADDR_REG, RETURN_ADDR_REG, $8
 	jump_reg	r9, $0
 	Nop
 
@@ -1831,6 +1864,8 @@ returnTrap_NormReturn:
 	 */
 	ld_32		VOL_TEMP1, r0, $runningProcesses
 	Nop
+	ld_32		VOL_TEMP1, VOL_TEMP1, $0
+	nop
 	ld_32		VOL_TEMP1, VOL_TEMP1, $0
 	ld_32		VOL_TEMP2, r0, $_machSpecialHandlingOffset
 	Nop
@@ -2671,11 +2706,10 @@ parse1b:
 	Nop
 	
 parse4:	sll		PREV_SRC1_REG, PREV_SRC1_REG, $2	/* s1 = s1 * 4 */
-	jump_reg	PREV_SRC1_REG, $OpRecov  /* Retrieve value of first op. */
-	jump	        parse41		 	/* Value is returned in r31 */
+	jump_reg	PREV_SRC1_REG, $OpRecov1  /* Retrieve value of first op. */
+	jump	        parse41		 	/* Value is returned in r30 */
 
 parse41:
-	add_nt		r30, r31, $0		/* Move to src1's register. */
 	call 	       	parse5			/* Get back to trap window.  */
 	Nop
 
@@ -2754,7 +2788,7 @@ parse6:	sll		PREV_SRC2_REG, PREV_SRC2_REG, $2  /* Multiply src2 reg */
 							  /*   by 4 to represent */
 							  /*   offset in jump  */
 							  /*   table. */
-	jump_reg	PREV_SRC2_REG, $OpRecov  /* Recover 2nd operand register */
+	jump_reg	PREV_SRC2_REG, $OpRecov2  /* Recover 2nd operand register */
 	jump 		parse7			 /*   and put value in r31 */
 parse7:	
 	call		parse_end

@@ -26,7 +26,11 @@
  * The compare trap types.  
  *
  * IMPORTANT: If the value of MACH_CALL_DEBUGGER_TRAP is changed then
- * 	      the macro DBG_CALL in dbg.h must be changed accordingly.
+ * 	      the macro DBG_CALL in dbg.h must be changed accordingly.  Also
+ *	      if MACH_SYS_CALL_TRAP is changed then the file
+ *	      /sprite/src/lib/c/syscall/spur.md/userSysCallInt.h will have
+ *	      to be changed accordingly and all user programs will 
+ *	      have to be recompiled (so don't change it!!!!).
  */
 #define	MACH_BREAKPOINT_TRAP		0
 #define	MACH_SINGLE_STEP_TRAP		1
@@ -449,7 +453,7 @@
  */
 #define	MACH_FIRST_USER_ADDR		VMMACH_SEG_SIZE
 #define	MACH_LAST_USER_ADDR		(3 * VMMACH_SEG_SIZE + (VMMACH_SEG_SIZE - VMMACH_PAGE_SIZE))
-#define	MACH_LAST_USER_STACK_PAGE	((MACH_LAST_USER_ADDR - 1) / VMMACH_PAGE_SIZE)
+#define	MACH_LAST_USER_STACK_PAGE	(((unsigned)MACH_LAST_USER_ADDR - 1) / VMMACH_PAGE_SIZE)
 #define	MACH_MAX_USER_STACK_ADDR	(MACH_LAST_USER_ADDR - MACH_SW_STACK_SIZE)
 #define	MACH_SW_STACK_SIZE		(1024 * 1024 - VMMACH_PAGE_SIZE)
 
