@@ -73,6 +73,35 @@ unsigned int recov_CrashDelay;
  */
 Recov_Stats recov_Stats;
 
+/*
+ * For per-client statistics about recovery on the server.
+ * This amounts to a per-host list, in array form, where the first element in
+ * each list is the RecovPerHostFirstInfo, and all the following items are
+ * time-stamps, but they are defined as a union since both types of elements
+ * must be the same size when copied out to the user.  Each host has a
+ * RecovPerHostFirstInfo, followed by (numTries - 1) time-stamps.
+ */
+typedef	struct	RecovPerHostFirstInfo {
+    int		spriteID;	/* Sprite ID of client. */
+    Time	firstTry;	/* First recovery attempt. */
+    Time	finished;	/* Last recovery attempt finished. */
+    int		numTries;	/* Number of recovery attempts. */
+    int		numHandles;	/* Number of reopens requested. */
+    int		numSuccessful;	/* Handles successfully recovered. */
+} RecovPerHostFirstInfo;
+
+typedef	struct	RecovStamp {
+    Time	timeStamp;			/* Time of a recov attempt. */
+    int		numHandles;			/* Handles since last time. */
+    int		numSuccessful;			/* Successful last time. */
+} RecovStamp;
+
+
+typedef	union	RecovPerHostInfo {
+    RecovPerHostFirstInfo	info;		/* Above structure. */
+    RecovStamp			stamp;		/* Above structure. */
+} RecovPerHostInfo;
+
 
 /*
  * The state of other hosts is kept in a hash table keyed on SpriteID.
@@ -84,6 +113,13 @@ Recov_Stats recov_Stats;
 static Hash_Table	recovHashTableStruct;
 static Hash_Table	*recovHashTable = &recovHashTableStruct;
 
+typedef	struct	RecovStampList {
+    List_Links	timeStampList;
+    Timer_Ticks	timeStamp;
+    int		numHandles;		/* Handles since last time. */
+    int		numSuccessful;		/* Successful last time. */
+} RecovStampList;
+
 typedef struct RecovHostState {
     int			state;		/* flags defined below */
     int			clientState;	/* flags defined in recov.h */
@@ -94,12 +130,19 @@ typedef struct RecovHostState {
     Sync_Condition	recovery;	/* Notified when recovery is complete */
     List_Links		rebootList;	/* List of callbacks for when this
 					 * host reboots. */
+    Timer_Ticks		firstTry;	/* Time that recovery is started. */
+    Timer_Ticks		finished;	/* Time last try finishes. */
+    int			numTries;	/* Number of times recov attempted. */
+    int			numHandles;	/* Handles since last time. */
+    int			numSuccessful;	/* Successful last time. */
+    List_Links		timeStampList;	/* List of time stamps for recovery. */
 } RecovHostState;
 
 #define RECOV_INIT_HOST(hostPtr, zspriteID, zstate, zbootID) \
     hostPtr = (RecovHostState *) malloc(sizeof (RecovHostState)); \
     (void)bzero((Address)hostPtr, sizeof(RecovHostState)); \
     List_Init(&(hostPtr)->rebootList); \
+    List_Init(&(hostPtr)->timeStampList);\
     (hostPtr)->spriteID = zspriteID; \
     (hostPtr)->state = zstate; \
     (hostPtr)->bootID = zbootID;
@@ -800,6 +843,7 @@ Recov_SetClientState(spriteID, stateBits)
     Hash_Entry *hashPtr;
     RecovHostState *hostPtr;
     register oldState;
+    RecovStampList	*stampPtr;
 
     LOCK_MONITOR;
 
@@ -809,6 +853,34 @@ Recov_SetClientState(spriteID, stateBits)
 	RECOV_INIT_HOST(hostPtr, spriteID, RECOV_STATE_UNKNOWN, 0);
 	hashPtr->value = (Address)hostPtr;
     }
+    if ((stateBits & CLT_RECOV_IN_PROGRESS) != 0) {
+	if (hostPtr->numTries == 0) {
+	    /* First recovery attempt */
+	    if ((hostPtr->clientState & CLT_RECOV_IN_PROGRESS) != 0) {
+		printf("No recovery attempt yet, but marked as in progress.");
+	    }
+	    Timer_GetCurrentTicks(&hostPtr->firstTry);
+	} else {
+	    /* Add a time-stamp to the recovery list. */
+	    stampPtr = (RecovStampList *) malloc(sizeof (RecovStampList));
+	    Timer_GetCurrentTicks(&stampPtr->timeStamp);
+	    /*
+	     * Handles recovered since last recovery attempt initiated.
+	     */
+	    stampPtr->numHandles = hostPtr->numHandles;
+	    stampPtr->numSuccessful = hostPtr->numSuccessful;
+	    List_InitElement((List_Links *) stampPtr);
+	    List_Insert((List_Links *) stampPtr,
+		    LIST_ATREAR(&hostPtr->timeStampList));
+	    /*
+	     * Clear handle count for this round.
+	     */
+	    hostPtr->numHandles = 0;
+	    hostPtr->numSuccessful = 0;
+	}
+	hostPtr->numTries++;
+    }
+
     oldState = hostPtr->clientState;
     hostPtr->clientState |= stateBits;
     UNLOCK_MONITOR;
@@ -838,7 +910,7 @@ Recov_ClearClientState(spriteID, stateBits)
     int stateBits;
 {
     register Hash_Entry *hashPtr;
-    register RecovHostState *hostPtr;
+    register RecovHostState *hostPtr = (RecovHostState *) NIL;
 
     LOCK_MONITOR;
 
@@ -849,8 +921,150 @@ Recov_ClearClientState(spriteID, stateBits)
 	    hostPtr->clientState &= ~stateBits;
 	}
     }
+    if ((hostPtr != (RecovHostState *) NIL) &&
+	    (stateBits & CLT_RECOV_IN_PROGRESS) != 0) {
+	/* End of recovery */
+	Timer_GetCurrentTicks(&hostPtr->finished);
+	/* Final count of handles recovered is in hostPtr. */
+    }
     UNLOCK_MONITOR;
     return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_AddHandleCountToClientState --
+ *
+ *	Increment count of handles reopened from this client.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Data in per-host recovery info updated.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+Recov_AddHandleCountToClientState(type, clientID, status)
+    int			type;		/* Type of handle being reopened. */
+    int			clientID;	/* Id of client requesting reopen. */
+    ReturnStatus	status;		/* Whether the reopen succeeded. */
+{
+    register Hash_Entry *hashPtr;
+    register RecovHostState *hostPtr = (RecovHostState *) NIL;
+
+    LOCK_MONITOR;
+
+    hashPtr = Hash_LookOnly(recovHashTable, (Address)clientID);
+    if (hashPtr != (Hash_Entry *)NIL) {
+	hostPtr = (RecovHostState *)hashPtr->value;
+	if (hostPtr != (RecovHostState *)NIL) {
+	    hostPtr->numHandles++;
+	    if (status == SUCCESS) {
+		hostPtr->numSuccessful++;
+	    }
+	}
+    }
+    UNLOCK_MONITOR;
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_DumpClientRecovInfo --
+ *
+ *	Dump out some of the recovery statistics in the per-host info.
+ *
+ * Results:
+ *	Returns FAILURE if recovery still in progress.  Returns SUCCESS
+ *	otherwise.
+ *
+ * Side effects:
+ *	Info copied into buffer.  Size of needed buffer also copied out.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY ReturnStatus
+Recov_DumpClientRecovInfo(length, resultPtr, lengthNeededPtr)
+    int			length;			/* size of data buffer */
+    RecovPerHostInfo	*resultPtr;		/* Array of info structs. */
+    int			*lengthNeededPtr;	/* to return space needed */
+{
+    Hash_Entry		*hashPtr;
+    RecovHostState	*hostPtr;
+    Hash_Search		hashSearch;
+    RecovPerHostInfo	*infoPtr;
+    int			numNeeded;
+    int			numAvail;
+    extern		int	fsutil_NumRecovering;
+
+
+    LOCK_MONITOR;
+
+    /*
+     * If recovery still going on, return FAILURE.
+     * NOTE: This isn't a sure-fire test.  I'm not sure there is one right now.
+     */
+    if (fsutil_NumRecovering >= 1) {
+	UNLOCK_MONITOR;
+	return FAILURE;
+    }
+    if (resultPtr != (RecovPerHostInfo *) NIL) {
+	bzero(resultPtr, length);
+    }
+    numNeeded = 0;
+    numAvail = length / sizeof (RecovPerHostInfo);
+
+    infoPtr = resultPtr;
+    Hash_StartSearch(&hashSearch);
+    for (hashPtr = Hash_Next(recovHashTable, &hashSearch);
+	    hashPtr != (Hash_Entry *) NIL;
+	    hashPtr = Hash_Next(recovHashTable, &hashSearch)) {
+	hostPtr = (RecovHostState *)hashPtr->value;
+
+	/*
+	 * We need one slot for each host, whether numTries is 0 or 1, plus
+	 * additional slots for each numTries over 1.
+	 */
+	numNeeded++;
+	if (hostPtr->numTries > 1) {
+	    numNeeded += (hostPtr->numTries - 1);
+	}
+	if (numNeeded > numAvail) {
+	    continue;
+	}
+	/* Why didn't Brent use GetValue()??? */
+	if (hostPtr != (RecovHostState *) NIL) {
+	    RecovStampList	*stampPtr;
+
+	    /* Copy info into buffer */
+	    infoPtr->info.spriteID = hostPtr->spriteID;
+	    infoPtr->info.numTries = hostPtr->numTries;
+	    Timer_GetRealTimeFromTicks(hostPtr->firstTry,
+		    &(infoPtr->info.firstTry), NIL, NIL);
+	    Timer_GetRealTimeFromTicks(hostPtr->finished,
+		    &(infoPtr->info.finished), NIL, NIL);
+	    infoPtr->info.numHandles = hostPtr->numHandles;
+	    infoPtr->info.numSuccessful = hostPtr->numSuccessful;
+	    LIST_FORALL(&hostPtr->timeStampList, (List_Links *) stampPtr) {
+		infoPtr++;
+		Timer_GetRealTimeFromTicks(stampPtr->timeStamp,
+			&infoPtr->stamp.timeStamp, NIL, NIL);
+		infoPtr->stamp.numHandles = stampPtr->numHandles;
+		infoPtr->stamp.numSuccessful = stampPtr->numSuccessful;
+	    }
+	}
+	infoPtr++;
+    }
+    *lengthNeededPtr = numNeeded * sizeof (RecovPerHostInfo);
+    UNLOCK_MONITOR;
+
+    return SUCCESS;
 }
 
 /*
