@@ -19,7 +19,7 @@
 #include "spriteTime.h"
 #else
 #include <kernel/vmMachTrace.h>
-#include <kernel/vmStat.h>
+#include <vmStat.h>
 #include <spriteTime.h>
 #endif
 
