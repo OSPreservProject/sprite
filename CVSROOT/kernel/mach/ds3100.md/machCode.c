@@ -29,6 +29,7 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include <dbg.h>
 #include <proc.h>
 #include <procMigrate.h>
+#include <procUnixStubs.h>
 #include <sched.h>
 #include <vm.h>
 #include <vmMach.h>
@@ -38,11 +39,10 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include <net.h>
 #include <ultrixSignal.h>
 
-
 /*
  * Flag to set for new Unix compatiblity code.  Once the new
  * code is working well enough, this flag should  be eliminated
- * and the old compatiblitty code in machAsm.s, machUNIXSyscall.c etc.
+ * and the old compatibility code in machAsm.s, machUNIXSyscall.c etc.
  * can be deleted.
  */
 
@@ -78,7 +78,11 @@ Boolean mach_AtInterruptLevel = FALSE;
  * used when expanding $MACHINE in file names.
  */
 
+#ifndef ds5000
 char *mach_MachineType = "ds3100";
+#else /* ds5000 */
+char *mach_MachineType = "ds5000";
+#endif /* ds5000 */
 
 /*
  * The byte ordering/alignment type used with Fmt_Convert and I/O control data
@@ -125,6 +129,11 @@ Address	mach_LastUserAddr;
 Address	mach_MaxUserStackAddr;
 int	mach_LastUserStackPage;
 
+#ifdef ds5000
+char	mach_BitmapAddr[16];
+char	mach_BitmapLen[8];
+
+#endif /* ds5000 */
 /*
  * The variables and tables below are used to dispatch kernel calls.
  */
@@ -174,16 +183,19 @@ MachStringTable	machMonBootParam;	/* Parameters from boot line. */
 Mach_State	*machCurStatePtr = (Mach_State *)NIL;
 Mach_State	*machFPCurStatePtr = (Mach_State *)NIL;
 
+#ifndef ds5000
 extern Boolean Dev_SIIIntr();
 extern void Timer_TimerServiceInterrupt();
 extern void Dev_DC7085Interrupt();
 extern void MachFPInterrupt();
+#endif /* not ds5000 */
 
 extern void PrintError _ARGS_((void));
 static void PrintInst _ARGS_((unsigned pc, unsigned inst));
 static void SoftFPReturn _ARGS_((void));
 static void MemErrorInterrupt _ARGS_((void));
 
+#ifndef ds5000
 /*
  * The interrupt handler table. This originally was static, hence the
  * initialization here.  It is now possible to set the entries
@@ -198,6 +210,17 @@ void (*machInterruptRoutines[MACH_NUM_HARD_INTERRUPTS])() = {
     MachFPInterrupt,
 };
 
+#else /* ds5000 */
+ReturnStatus	(*machInterruptRoutines[MACH_NUM_HARD_INTERRUPTS]) _ARGS_((
+		    unsigned int statusReg, unsigned int causeReg, 
+		    Address pc, ClientData data));
+#endif /* ds5000 */
+#ifdef ds5000
+void		(*machIOInterruptRoutines[MACH_NUM_IO_SLOTS]) _ARGS_((
+		    unsigned int statusReg, unsigned int causeReg, 
+		    Address pc, ClientData data));
+ClientData	machIOInterruptArgs[MACH_NUM_IO_SLOTS];
+#endif /* ds5000 */
 ClientData	machInterruptArgs[MACH_NUM_HARD_INTERRUPTS];
 
 extern void Mach_KernGenException();
@@ -257,11 +280,21 @@ unsigned	machInstCacheSize;
 Mach_DebugState	mach_DebugState;
 Mach_DebugState *machDebugStatePtr = &mach_DebugState;
 
-static void SetupSigHandler _ARGS_((register Proc_ControlBlock *procPtr, register SignalStack *sigStackPtr, Address pc));
+static void SetupSigHandler _ARGS_((register Proc_ControlBlock *procPtr, 
+			register SignalStack *sigStackPtr, Address pc));
 static void ReturnFromSigHandler _ARGS_((register Proc_ControlBlock *procPtr));
-static ReturnStatus Interrupt _ARGS_((unsigned statusReg, unsigned causeReg, Address pc));
-
-
+static ReturnStatus Interrupt _ARGS_((unsigned statusReg, unsigned causeReg, 
+			Address pc));
+#ifdef ds5000
+static ReturnStatus MachStdHandler _ARGS_((unsigned int statusReg, 
+			unsigned int causeReg, Address pc, ClientData data));
+static ReturnStatus MachIOInterrupt _ARGS_((unsigned int statusReg, 
+			unsigned int causeReg, Address pc, ClientData data));
+static ReturnStatus MachMemInterrupt _ARGS_((unsigned int statusReg, 
+			unsigned int causeReg, Address pc, ClientData data));
+extern ReturnStatus MachFPInterrupt _ARGS_((unsigned int statusReg, 
+			unsigned int causeReg, Address pc, ClientData data));
+#endif /* ds5000 */
 
 /*
  * Preallocate all machine state structs.
@@ -276,6 +309,30 @@ int		nextStateIndex = 0;
 
 Address		machBadVaddr = (Address) NIL;
 
+#ifdef ds5000
+/*
+ * Set to TRUE if we are inside of Mach_Probe.
+ */
+
+Boolean		machInProbe = FALSE;
+
+/*
+ * Read address of Mach_Probe.
+ */
+
+Address		machProbeReadAddr = (Address) NIL;
+typedef struct trace {
+    char	*srcPtr;
+    char	*destPtr;
+    int		dest1;
+    int		dest2;
+    int		src;
+} Trace;
+
+extern Trace *ncopyBuffer;
+extern int ncopyCount;
+extern int ncopyPath;
+#endif /* ds5000 */
 
 /*
  * ----------------------------------------------------------------------------
@@ -301,6 +358,10 @@ MachStringTable	*boot_argv;	/* Boot sequence strings. */
     extern char end[], edata[];
     int offset, i;
     char buf[256];
+#ifdef ds5000
+    volatile unsigned int 	*csrPtr = (unsigned int *) MACH_CSR_ADDR;
+    char	*copyPtr;
+#endif /* ds5000 */
 
     /*
      * Zero out the bss segment.
@@ -334,6 +395,34 @@ MachStringTable	*boot_argv;	/* Boot sequence strings. */
     }
     Mach_ArgParse(buf,&machMonBootParam);
 
+#ifdef ds5000
+    Mach_MonPrintf("Happy Birthday!!\n");
+    /*
+     * Get information on the memory bitmap.  This gets clobbered later.
+     */
+    /*
+     * IMPORTANT NOTE:  Don't use bcopy to do this, at least while
+     * bcopy contains the calls to Vm_CheckAccessible.  Those calls add a
+     * frame to the stack, causing it to overwrite the very information
+     * we're trying to copy.  JHH 4/18/91
+     */
+    copyPtr = Mach_MonGetenv("bitmaplen");
+    for(i = 0; i < sizeof(mach_BitmapLen); i++) {
+	mach_BitmapLen[i] = *copyPtr++;
+    }
+    copyPtr = Mach_MonGetenv("bitmap");
+    for(i = 0; i < sizeof(mach_BitmapAddr); i++) {
+	mach_BitmapAddr[i] = *copyPtr++;
+    }
+
+    /*
+     * Set up the CSR.  Turn on memory ECC. Interrupts from IO slots are
+     * turned on as handlers are registered. 
+     */
+    *csrPtr = MACH_CSR_CORRECT;
+
+
+#endif /* ds5000 */
     /*
      * Initialize some of the dispatching information.  The rest is
      * initialized by Mach_InitSysCall below.
@@ -360,13 +449,42 @@ MachStringTable	*boot_argv;	/* Boot sequence strings. */
     bcopy(F_TO_A MachException, (Address)MACH_GEN_EXC_VEC,
 	      F_TO_A MachEndException - F_TO_A MachException);
 
+#ifdef ds5000
+    /*
+     * Set all interrupt handlers to a default, then install handlers for
+     * those interrupts processed by the mach module.
+     */
+    for (i = 0; i < MACH_NUM_HARD_INTERRUPTS; i++ ) {
+	Mach_SetHandler(i, MachStdHandler, (ClientData) i);
+    }
+    Mach_SetHandler(MACH_IO_INTR, MachIOInterrupt, NIL);
+    Mach_SetHandler(MACH_MEM_INTR, MachMemInterrupt, NIL);
+    Mach_SetHandler(MACH_FPU_INTR, MachFPInterrupt, NIL);
+
+    /*
+     * Clear out the IO interrupt handlers.
+     */
+    for (i = 0; i < MACH_NUM_IO_SLOTS; i++ ) {
+	Mach_SetIOHandler(i, (void (*)()) NIL, (ClientData) NIL);
+    }
+    /*
+     * Enable the memory interrupt, because we need it for Mach_Probe to
+     * work.  Disabling interrupts has the side-effect of enabling the
+     * memory interrupt.
+     */
+    Mach_DisableIntr();
+#endif /* ds5000 */
     /*
      * Clear out the i and d caches.
      */
+#ifndef ds5000
     Mach_MonPrintf("Configuring cache: ");
+#endif /* not ds5000 */
     MachConfigCache();
+#ifndef ds5000
     Mach_MonPrintf("data cache size =%x inst cache size=%x\n",
 		   machDataCacheSize, machInstCacheSize);
+#endif /* not ds5000 */
     MachFlushCache();
 }
 
@@ -375,8 +493,24 @@ MachStringTable	*boot_argv;	/* Boot sequence strings. */
  *
  * Mach_SetHandler --
  *
+#ifndef ds5000
  *	Put a interrupt handling routine into the table.
+#else
+ *	Register an interrupt handler for R3000 interrupts.  Interrupt
+ *	handlers are of the form:
+#endif
  *
+#ifdef ds5000
+ *	void
+ *	Handler(statusReg, causeReg, pc, data)
+ *		unsigned int	statusReg;	Status register.
+ *		unsigned int	causeReg;	Cause register.
+ *		Address		pc;		PC where the interrupt 
+ *						occurred.
+ *		ClientData	data		Callback data
+ *	
+ *
+#endif
  * Results:
  *     None.
  *
@@ -387,6 +521,7 @@ MachStringTable	*boot_argv;	/* Boot sequence strings. */
  */
 
 void
+#ifndef ds5000
 Mach_SetHandler(interruptNumber, handler, clientData)
     int interruptNumber;	/* Interrupt number to set */
     void (*handler)();	/* Interrupt handling procedure */
@@ -396,11 +531,118 @@ Mach_SetHandler(interruptNumber, handler, clientData)
      * Check that it is valid.  Can't override FPU interrupt because it
      * takes special parameters.
      */
+#else /* ds5000 */
+Mach_SetHandler(level, handler, clientData)
+    int level;			/* Interrupt level. */
+    ReturnStatus (*handler) _ARGS_((unsigned int statusReg, 
+			    unsigned int causeReg,
+			    Address pc, ClientData data)); 
+			        /* Interrupt handler. */
+    ClientData	clientData; 	/* Data to pass handler. */
+{
+    /*
+     * Check that it is valid.  
+     */
+    if ((level < 0) || (level >= MACH_NUM_HARD_INTERRUPTS)){
+	panic("Warning: Bad interrupt level %d\n", level);
+    } else {
+	machInterruptRoutines[level] = handler;
+	machInterruptArgs[level] = clientData;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MachStdHandler --
+ *
+ *	The default handler for hard interrupts.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints out an error message.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+MachStdHandler(statusReg, causeReg, pc, data)
+    unsigned int	statusReg;	/* Status register. */
+    unsigned int	causeReg;	/* Cause register. */
+    Address		pc;		/* PC. */
+    ClientData		data;		/* Interrupt level. */
+{
+    int		level;
+
+    level = (int) data;
+    printf("WARNING: no handler for level %d interrupt!\n", level);
+    return MACH_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_SetIOHandler --
+ *
+ *	Register an interrupt handler for IO device interrupts.  All IO
+ *	device interrupts are merged into the same R3000 interrupt
+ *	(level 0). Interrupt handlers are of the form:
+ *
+ *	void
+ *	Handler(data)
+ *		ClientData	data		Callback data
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     The IO interrupt handling table is modified.  If the handler is not
+ *	NIL then the IO interrupt for the slot is turned on in the CSR.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+void
+Mach_SetIOHandler(slot, handler, clientData)
+    int slot;			/* Interrupt number to set */
+    void (*handler) _ARGS_((ClientData data)); /* Interrupt handler. */
+    ClientData	clientData; 	/* Data to pass handler. */
+{
+    volatile unsigned int 	*csrPtr = (unsigned int *) MACH_CSR_ADDR;
+    unsigned int		mask;
+    /*
+     * Check that it is valid.  
+     */
+#endif
+#ifndef ds5000
     if ((interruptNumber < 0) || (interruptNumber >= MACH_NUM_HARD_INTERRUPTS)){
 	panic("Warning: Bad interrupt number %d\n",interruptNumber);
+#else /* ds5000 */
+    if ((slot < 0) || (slot >= MACH_NUM_IO_SLOTS)){
+	panic("Warning: Bad slot number %d\n",slot);
+#endif /* ds5000 */
     } else {
+#ifndef ds5000
 	machInterruptRoutines[interruptNumber] = handler;
 	machInterruptArgs[interruptNumber] = clientData;
+#else /* ds5000 */
+	if ((machIOInterruptRoutines[slot] != (void (*)()) NIL) &&
+	    (handler != (void (*)()) NIL)) {
+	    Mach_MonPrintf("WARNING: replacing existing handler for slot %d.\n",
+		slot);
+	}
+	machIOInterruptRoutines[slot] = handler;
+	machIOInterruptArgs[slot] = clientData;
+	if (handler != (void (*)()) NIL) {
+	    mask = ((1 << slot) << MACH_CSR_IOINTEN_SHIFT);
+	    if (!(mask & MACH_CSR_IOINTEN)) {
+		panic("Goof up computing interrupt enable bits in csr.\n");
+	    }
+	    *csrPtr |= mask;
+	}
+#endif /* ds5000 */
     }
 }
 
@@ -576,7 +818,29 @@ Mach_SetReturnVal(procPtr, retVal, retVal2)
     procPtr->machStatePtr->userState.regState.regs[V0] = (unsigned)retVal;
     procPtr->machStatePtr->userState.regState.regs[V1] = (unsigned)retVal2;
 }
-
+
+/*----------------------------------------------------------------------------
+ *
+ * Mach_Return2 --
+ *
+ *      Set the second return value for Unix compat. routines that
+ *      return two values.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      v1 <- val
+ *
+ *----------------------------------------------------------------------------
+ */
+void
+Mach_Return2(val)
+int val;
+{
+    Proc_GetActualProc()->machStatePtr->userState.regState.regs[V1] =
+	    (unsigned)val;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -949,7 +1213,7 @@ MachUserExceptionHandler(statusReg, causeReg, badVaddr, pc)
 			    procPtr->processID, FALSE, badVaddr);
 	    break;
 	case MACH_EXC_SYSCALL:
-	    if (machNewUnixCompat || !MachUNIXSyscall()) {
+	    if (!MachUNIXSyscall()) {
 		printf("MachExceptionHandler: Bad syscall magic for proc %x\n",
 							procPtr->processID);
 		(void) Sig_Send(SIG_ILL_INST, SIG_BAD_TRAP,
@@ -1112,6 +1376,7 @@ MachKernelExceptionHandler(statusReg, causeReg, badVaddr, pc)
 		if (copyInProgress) {
 		    return(MACH_USER_ERROR);
 		} else {
+		    printf("badVaddr = 0x%x\n", badVaddr);
 		    return(MACH_KERN_ERROR);
 		}
 	    } else {
@@ -1130,9 +1395,14 @@ MachKernelExceptionHandler(statusReg, causeReg, badVaddr, pc)
 	    printf("MachKernelExceptionHandler:  Bus error on ifetch\n");
 	    return(MACH_KERN_ERROR);
 	case MACH_EXC_BUS_ERR_LD_ST:
+#ifndef ds5000
 	    if (pc >= F_TO_A Mach_Probe &&
 	        pc <= F_TO_A MachProbeEnd) {
 		return(MACH_USER_ERROR);
+#else /* ds5000 */
+	    if (machInProbe) {
+		return(MACH_OK);
+#endif /* ds5000 */
 	    }
 	    printf("MachKernelExceptionHandler:  Bus error on load or store\n");
 	    return(MACH_KERN_ERROR);
@@ -1173,12 +1443,14 @@ MachKernelExceptionHandler(statusReg, causeReg, badVaddr, pc)
  *
  * ----------------------------------------------------------------------------
  */
+#ifndef ds5000
 #define DEBUG_INTR
 #ifdef DEBUG_INTR
 static int lastInterruptCalled = -1;
 #endif  /* DEBUG_INTR */
 
 
+#endif /* not ds5000 */
 static ReturnStatus
 Interrupt(statusReg, causeReg, pc)
     unsigned	statusReg;
@@ -1187,7 +1459,11 @@ Interrupt(statusReg, causeReg, pc)
 {
     int		n;
     unsigned	mask;
+#ifdef ds5000
+    ReturnStatus status = MACH_OK;
+#endif /* ds5000 */
 
+#ifndef ds5000
 #ifdef DEBUG_INTR
     if (mach_AtInterruptLevel) {
 	printf("Received interrupt while at interrupt level.\n");
@@ -1198,13 +1474,38 @@ Interrupt(statusReg, causeReg, pc)
     }
 #endif /* DEBUG_INTR */
     
-    mach_KernelMode = !(statusReg & MACH_SR_KU_PREV);
-    mach_AtInterruptLevel = 1;
-    n = 0;
+#else /* ds5000 */
     mask = (causeReg & statusReg & MACH_CR_INT_PENDING) >> 
 						MACH_CR_HARD_INT_SHIFT;
+#endif /* ds5000 */
+    mach_KernelMode = !(statusReg & MACH_SR_KU_PREV);
+    mach_AtInterruptLevel = 1;
+#ifdef ds5000
+
+    /*
+     * If there is a memory interrupt pending, and we have all other
+     * interrupts off, then only handle that interrupt.
+     */
+
+    if (mach_NumDisableIntrsPtr[Mach_GetProcessorNumber()] > 0) {
+	if (mask & (MACH_INT_MASK_3 >> MACH_CR_HARD_INT_SHIFT)) {
+	    status = machInterruptRoutines[3](statusReg, causeReg, pc, 
+		    machInterruptArgs[3]); 
+	    goto exit;
+	} else {
+	    panic("Interrupt while at interrupt level, (0x%x) pc 0x%x.\n", 
+		mask, pc);
+	}
+    }
+#endif /* ds5000 */
+    n = 0;
+#ifndef ds5000
+    mask = (causeReg & statusReg & MACH_CR_INT_PENDING) >> 
+						MACH_CR_HARD_INT_SHIFT;
+#endif /* not ds5000 */
     while (mask != 0) {
 	if (mask & 1) {
+#ifndef ds5000
 #ifdef DEBUG_INTR
 	    if (n >= MACH_NUM_HARD_INTERRUPTS) {
 		printf("Bogus index (%d) for interrupt handler\n", n);
@@ -1227,18 +1528,32 @@ Interrupt(statusReg, causeReg, pc)
 	    } else {
 		machInterruptRoutines[n](machInterruptArgs[n]);
 	    }
+#else /* ds5000 */
+	    (void) machInterruptRoutines[n](statusReg, causeReg, pc, 
+		machInterruptArgs[n]); 
+#endif /* ds5000 */
 	}
 	mask >>= 1;
 	n++;
     }
+#ifndef ds5000
 
+#else /* ds5000 */
+exit:
+#endif /* ds5000 */
     mach_AtInterruptLevel = 0;
+#ifndef ds5000
 #ifdef DEBUG_INTR
     lastInterruptCalled = -1;
 #endif /* DEBUG_INTR */
     return(MACH_OK);
+#else /* ds5000 */
+    return(status);
+#endif /* ds5000 */
 }
+#ifdef ds5000
 
+#endif /* ds5000 */
 
 /*
  * ----------------------------------------------------------------------------
@@ -1259,12 +1574,18 @@ Boolean
 MachUserReturn(procPtr)
     register	Proc_ControlBlock	*procPtr;
 {
-    SignalStack			sigStack;
-    Address			pc;
+    SignalStack	sigStack;
+    Address	pc;
+    int		restarted = 0;
 
 
     if (procPtr->Prof_Scale >= 2 && procPtr->Prof_PC != 0) {
 	Prof_RecordPC(procPtr);
+    }
+
+    if (procPtr->unixProgress != PROC_PROGRESS_NOT_UNIX &&
+	    procPtr->unixProgress != PROC_PROGRESS_UNIX) {
+	printf("UnixProgress = %d entering MachUserReturn\n", procPtr->unixProgress);
     }
 
     /* 
@@ -1323,6 +1644,34 @@ MachUserReturn(procPtr)
 	    Mach_DisableIntr();
 	    break;
 	} else {
+	    if (procPtr->unixProgress == PROC_PROGRESS_RESTART ||
+		    procPtr->unixProgress > 0) {
+		/*
+		 * If we received a normal signal, we want to restart
+		 * the system call when we leave.
+		 * If we received a migrate signal, we will get here on
+		 * the new machine.
+		 */
+
+		/*
+		 * Mangle the PC so we restart the trap after we leave
+		 * the kernel.
+		 */
+		restarted = 1;
+		printf("Restarting system call with progress %d\n",
+			procPtr->unixProgress);
+		printf("Our PC = %x\n",
+			machCurStatePtr->userState.regState.pc);
+		machCurStatePtr->userState.regState.pc -= 4;
+		printf("Now our PC = %x\n",
+			machCurStatePtr->userState.regState.pc);
+		printf("V0 was %d and our call was %d\n", 
+			machCurStatePtr->userState.regState.regs[V0],
+			machCurStatePtr->userState.unixRetVal);
+		machCurStatePtr->userState.regState.regs[V0] =
+			machCurStatePtr->userState.unixRetVal;
+		procPtr->unixProgress = PROC_PROGRESS_UNIX;
+	    }
 	    /*
 	     * Disable interrupts.  Note that we don't use the DISABLE_INTR 
 	     * macro because it increments the nesting depth of interrupts
@@ -1339,6 +1688,8 @@ MachUserReturn(procPtr)
 		SetupSigHandler(procPtr, &sigStack, pc);
 		Mach_DisableIntr();
 		break;
+	    } else if (restarted) {
+		printf("No signal, yet we restarted system call!!?!\n");
 	    }
 	}
     }
@@ -1349,6 +1700,11 @@ MachUserReturn(procPtr)
      * As soon as we return to user mode, though, we will allow migration.
      */
     Sig_AllowMigration(procPtr);
+
+    if (procPtr->unixProgress != PROC_PROGRESS_NOT_UNIX &&
+	    procPtr->unixProgress != PROC_PROGRESS_UNIX) {
+	printf("UnixProgress = %d leaving MachUserReturn\n", procPtr->unixProgress);
+    }
 
     return(machFPCurStatePtr == machCurStatePtr);
 }
@@ -1443,7 +1799,18 @@ SetupSigHandler(procPtr, sigStackPtr, pc)
      * Now set up the registers correctly.
      */
     userStatePtr->regState.regs[SP] = usp;
-    userStatePtr->regState.regs[A0] = sigStackPtr->sigStack.sigNum;
+    if (procPtr->unixProgress != PROC_PROGRESS_NOT_UNIX) {
+	int unixSignal;
+	if (Compat_SpriteSignalToUnix(sigStackPtr->sigStack.sigNum,
+		&unixSignal) != SUCCESS) {
+	    printf("Signal %d invalid in SetupSigHandler\n",
+		    sigStackPtr->sigStack.sigNum);
+	} else {
+	    userStatePtr->regState.regs[A0] = unixSignal;
+	}
+    } else {
+	userStatePtr->regState.regs[A0] = sigStackPtr->sigStack.sigNum;
+    }
     userStatePtr->regState.regs[A1] = sigStackPtr->sigStack.sigCode;
     userStatePtr->regState.regs[A2] = usp + MACH_STAND_FRAME_SIZE;
     userStatePtr->regState.regs[A3] = sigStackPtr->sigStack.sigAddr;
@@ -1559,7 +1926,11 @@ Mach_ProcessorState(processor)
 int
 Mach_GetMachineArch()
 {
+#ifndef ds5000
     return SYS_DS3100;
+#else /* ds5000 */
+    return SYS_DS5000;
+#endif /* ds5000 */
 }
 
 
@@ -1670,44 +2041,203 @@ Mach_GetBootArgs(argc, bufferSize, argv, buffer)
     }
     return i;
 }
-
 
 /*
  *----------------------------------------------------------------------
  *
+#ifndef ds5000
  * Mach_GetEtherAddress --
+#else
+ * MachMemInterrupt --
+#endif
  *
+#ifndef ds5000
  *	Return the ethernet address out of the rom.
+#else
+ *	Handle an interrupt from the memory controller.
+#endif
  *
  * Results:
+#ifndef ds5000
  *	Number of elements returned in argv.
+#else
+ *	None.
+#endif
  *
  * Side effects:
+#ifndef ds5000
  *	*etherAddrPtr gets the ethernet address.
+#else
+ *	None.
+#endif
  *
  *----------------------------------------------------------------------
  */
+#ifndef ds5000
 void
 Mach_GetEtherAddress(etherAddrPtr)
     Net_EtherAddress	*etherAddrPtr;
 {
     volatile unsigned    *romPtr = (unsigned *)0xBD000000;
+#else /* ds5000 */
+static ReturnStatus
+MachMemInterrupt(statusReg, causeReg, pc, data)
+    unsigned	statusReg;		/* Status register. */
+    unsigned	causeReg;		/* Cause register. */
+    Address	pc;			/* PC. */
+    ClientData	data;			/* Callback data. */
 
+{
+    volatile unsigned int *erradrPtr = 
+	    (volatile unsigned int *) MACH_ERRADR_ADDR;
+    unsigned int erradr;
+    volatile unsigned int *chksynPtr = 
+	    (volatile unsigned int *) MACH_CHKSYN_ADDR;
+    unsigned int chksyn;
+    unsigned int address;
+    int		column;
+    ReturnStatus	status = MACH_OK;
+#endif /* ds5000 */
+
+#ifndef ds5000
     etherAddrPtr->byte1 = (romPtr[0] >> 8) & 0xff;
     etherAddrPtr->byte2 = (romPtr[1] >> 8) & 0xff;
     etherAddrPtr->byte3 = (romPtr[2] >> 8) & 0xff;
     etherAddrPtr->byte4 = (romPtr[3] >> 8) & 0xff;
     etherAddrPtr->byte5 = (romPtr[4] >> 8) & 0xff;
     etherAddrPtr->byte6 = (romPtr[5] >> 8) & 0xff;
+#else /* ds5000 */
+    erradr = *erradrPtr;
+    if (!(erradr & MACH_ERRADR_VALID)) {
+	printf("Received memory interrupt but ERRADR not valid.\n");
+	return;
+    }
+    address = erradr & MACH_ERRADR_ADDRESS;
+    switch(erradr & (MACH_ERRADR_CPU | MACH_ERRADR_WRITE | MACH_ERRADR_ECCERR)){
+	case 0: {
+	    /*
+	     * For IO space addresses the 27 bits in the ERRADR must be
+	     * shifted by 2, then the top bits set.  This isn't documented
+	     * anywhere.
+	     */
+	    address = MACH_IO_SLOT_BASE | (address << 2);
+	    panic("DMA read overrun at address 0x%x\n", address);
+	    break;
+	} 
+	case (MACH_ERRADR_ECCERR) :  {
+	    /*
+	     * Compensate for the address pipeline. 
+	     * See page 26 of the functional spec.
+	     */
+	    column = (int) (address & 0xfff); 
+	    column -= 5;
+	    address = (address & ~0xfff) | (unsigned int) column;
+	    printf("ECC read error during DMA at address 0x%x\n", address);
+	    break;
+	}
+	case (MACH_ERRADR_WRITE) : {
+	    address = MACH_IO_SLOT_BASE | (address << 2);
+	    panic("DMA write overrun at address 0x%x, pc = 0x%x\n", 
+	    address, pc);
+	    break;
+	} 
+	case (MACH_ERRADR_WRITE | MACH_ERRADR_ECCERR) : {
+	    printf("Holy bogus hardware, Batman!\n");
+	    printf("We got an illegal value in the ERRADR status register.\n");
+	    break;
+	}
+	case (MACH_ERRADR_CPU) : {
+	    address = MACH_IO_SLOT_BASE | (address << 2);
+	    if (machInProbe) {
+		status = MACH_USER_ERROR;
+		machInProbe = FALSE;
+		break;
+	    }
+	    panic(
+	"Timeout during CPU read of IO address 0x%x, pc = 0x%x\n", 
+	address, pc);
+	    Mach_SendSignal(MACH_SIGILL);
+	    break;
+	}
+	case (MACH_ERRADR_CPU | MACH_ERRADR_ECCERR) : {
+	    /*
+	     * Compensate for the address pipeline. 
+	     * See page 26 of the functional spec.
+	     */
+	    column = (int) (address & 0xfff); 
+	    column -= 5;
+	    address = (address & ~0xfff) | (unsigned int) column;
+	    printf("ECC read error during CPU access of address 0x%x\n", 
+		address);
+	    break;
+	}
+	case (MACH_ERRADR_CPU | MACH_ERRADR_WRITE) : {
+	    address = MACH_IO_SLOT_BASE | (address << 2);
+	    if (machInProbe) {
+		status = MACH_USER_ERROR;
+		machInProbe = FALSE;
+		break;
+	    }
+	    panic(
+	"Timeout during CPU write of IO address 0x%x\n, pc = 0x%x\n", 
+	address, pc);
+	    break;
+	}
+	case (MACH_ERRADR_CPU | MACH_ERRADR_WRITE | MACH_ERRADR_ECCERR) : {
+	    printf("ECC partial memory write error by CPU at address 0x%x\n",
+		address);
+	    break;
+	}
+    }
+    if (erradr & MACH_ERRADR_ECCERR) {
+	chksyn = *chksynPtr;
+	if (address & 0x1) {
+	    printf("ECC error was in the high bank.\n");
+	    printf("%s bit error\n", (chksyn & MACH_CHKSYN_SNGHI) ? 
+		"single" : "multiple");
+	    printf("Syndrome bits = 0x%x\n", chksyn & MACH_CHKSYN_SYNHI);
+	    if (chksyn & MACH_CHKSYN_VLDHI) {
+		printf("Check bits = 0x%x\n", chksyn & MACH_CHKSYN_CHKHI);
+	    } else {
+		printf("Check bits not valid.\n");
+	    }
+	} else {
+	    printf("ECC error was in the low bank.\n");
+	    printf("%s bit error\n", (chksyn & MACH_CHKSYN_SNGLO) ? 
+		"single" : "multiple");
+	    printf("Syndrome bits = 0x%x\n", chksyn & MACH_CHKSYN_SYNLO);
+	    if (chksyn & MACH_CHKSYN_VLDLO) {
+		printf("Check bits = 0x%x\n", chksyn & MACH_CHKSYN_CHKLO);
+	    } else {
+		printf("Check bits not valid.\n");
+	    }
+	}
+    }
+    /*
+     * Clear the ERRADR and CHKSYN registers.
+     */
+    *erradrPtr = 0;
+    return status;
+#endif /* ds5000 */
 }
+#ifndef ds5000
 
+#endif /* not ds5000 */
 
 /*
  *----------------------------------------------------------------------
  *
+#ifndef ds5000
  * MemErrorInterrupt --
+#else
+ * MachIOInterrupt --
+#endif
  *
+#ifndef ds5000
  *	Handler an interrupt for the DZ device.
+#else
+ *	Handle an interrupt from one of the IO slots.
+#endif
  *
  * Results:
  *	None.
@@ -1717,12 +2247,15 @@ Mach_GetEtherAddress(etherAddrPtr)
  *
  *----------------------------------------------------------------------
  */
+#ifndef ds5000
 static void
 MemErrorInterrupt()
 {
     unsigned short *sysCSRPtr = (unsigned short *)0xbe000000;
     unsigned short csr;
+#endif /* not ds5000 */
 
+#ifndef ds5000
     csr = *sysCSRPtr;
 
     if (csr & MACH_CSR_MEM_ERR) {
@@ -1731,6 +2264,35 @@ MemErrorInterrupt()
 	*sysCSRPtr = MACH_CSR_VINT | csr | 0x00ff;
     }
 }
+#else /* ds5000 */
+static ReturnStatus
+MachIOInterrupt(statusReg, causeReg, pc, data)
+    unsigned int	statusReg;	/* Status register. */
+    unsigned int	causeReg;	/* Cause register. */
+    Address		pc;		/* PC. */
+    ClientData		data;		/* Not used. */
+{
+    volatile unsigned int 	*csrPtr = (unsigned int *) MACH_CSR_ADDR;
+    unsigned int 		csr;
+    int				slot;
+    unsigned int		ioint;
+    int				i;
+
+    csr = *csrPtr;
+    ioint = csr & MACH_CSR_IOINT;
+    if (ioint == 0) {
+	panic("No interrupt pending on an IO slot.\n");
+    }
+    for (slot = 0; ioint != 0; slot++, ioint >>= 1) {
+	if (ioint & 1) {
+	    if (machIOInterruptRoutines[slot] != (void (*)()) NIL) {
+		machIOInterruptRoutines[slot](machIOInterruptArgs[slot]);
+	    }
+	}
+    }
+    return MACH_OK;
+}
+#endif /* ds5000 */
 
 
 /*
@@ -1805,24 +2367,224 @@ Mach_SendSignal(sigType)
     }
 }
 
+#ifndef ds5000
 void
 PrintError()
 {
     panic("Error on stack\n");
-}
+#else /* ds5000 */
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_ArgParseCode --
+ *
+ *	Parse an argument string.
+ *      Note: this replaces the DECstation argvize prom call that has
+ *	been disabled on the ds5000 for no good reason.
+ *
+ * Results:
+ *	Returns argc,argv in table.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+Mach_ArgParseCode(string,table)
+char *string;
+MachStringTable *table;
+{
+    char *ptr1, *ptr2,*end2;
+    table->num = 0;
+    ptr1 = string;
+    ptr2 = table->strings;
+    end2 = table->strings+256;
+    table->argPtr[0] = ptr2;
+    for (;*ptr1 != 0 && ptr2<end2; ptr2++) {
+	if (*ptr1 == ' ') {
+	    while(*ptr1 == ' ') {
+		ptr1++;
+	    }
+	    if (*ptr1 == '\0') {
+		break;
+	    }
+	    *ptr2 = '\0';
+	    table->num++;
+	    if (table->num>=16) break;
+	    table->argPtr[table->num] = ptr2+1;
+	} else {
+	    *ptr2 = *ptr1;
+	    ptr1++;
+	}
+    }
+#endif /* ds5000 */
+}
+#ifdef ds5000
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_GetEtherAddress --
+ *
+ *	Returns the ethernet address of the first ethernet interface.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	*etherAddrPtr gets the ethernet address.
+ *
+ *----------------------------------------------------------------------
+ */
+#endif /* ds5000 */
+
+#ifndef ds5000
 static void
 PrintInst(pc, inst)
     unsigned pc;
     unsigned inst;
+#else /* ds5000 */
+void
+Mach_GetEtherAddress(etherAddrPtr)
+    Net_EtherAddress	*etherAddrPtr;	/* Place to put ethernet address. */
+#endif /* ds5000 */
 {
+#ifndef ds5000
     printf("Emulating 0x%x: 0x%x\n", pc, inst);
 }
+#else /* ds5000 */
+    Net_Interface	*interPtr;
+#endif /* ds5000 */
 
+#ifndef ds5000
 static void
 SoftFPReturn()
+#else /* ds5000 */
+    interPtr = Net_GetInterface(NET_NETWORK_ETHER, 0);
+    if (interPtr != (Net_Interface *) NIL) {
+	NET_ETHER_ADDR_COPY(interPtr->netAddress[NET_PROTO_RAW].ether,
+	    *etherAddrPtr);
+    }
+}
+
+#define READ_ROM(from, to, count) { 			\
+    int	_i;						\
+    for(_i = 0; _i < (count); _i++) {			\
+	status = Mach_Probe(1, (from), &((to)[_i]));	\
+	if (status != SUCCESS) {			\
+	    return status;				\
+	}						\
+	(from) += 4;					\
+    }							\
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_GetSlotInfo --
+ *
+ *	Read the standard information from the ROM in a TURBOchannel
+ * 	slot.  Any trailing spaces are converted to null characters.
+ *	See page 13 of the TURBOchannel Hardware Specification for
+ * 	details on the format of the ROM.
+ *
+ * Results:
+ *	SUCCESS if the ROM was read ok, FAILURE otherwise
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Mach_GetSlotInfo(romAddr, infoPtr)
+    char		*romAddr;	/* ROM address. */
+    Mach_SlotInfo	*infoPtr;	/* Slot information. */
+#endif /* ds5000 */
 {
+#ifndef ds5000
     printf("SoftFPReturn\n");
+#else /* ds5000 */
+    ReturnStatus	status = SUCCESS;
+    unsigned char	value;
+    int			i;
+
+
+    /*
+     * Move to the start of the standard TURBOchannel rom info. 
+     */
+    romAddr += MACH_IO_ROM_OFFSET + 0x10;
+    /*
+     * Check the test pattern.
+     */
+    READ_ROM(romAddr, &value, 1);
+    if (value != 0x55) {
+	return FAILURE;
+    }
+    READ_ROM(romAddr, &value, 1);
+    if (value != 0x00) {
+	return FAILURE;
+    }
+    READ_ROM(romAddr, &value, 1);
+    if (value != 0xaa) {
+	return FAILURE;
+    }
+    READ_ROM(romAddr, &value, 1);
+    if (value != 0xff) {
+	return FAILURE;
+    }
+    /*
+     * Everything looks cool so read out the info.
+     */
+    READ_ROM(romAddr, infoPtr->revision, 8);
+    READ_ROM(romAddr, infoPtr->vendor, 8);
+    READ_ROM(romAddr, infoPtr->module, 8);
+    READ_ROM(romAddr, infoPtr->type, 4);
+    /*
+     * Get rid of trailing spaces
+     */
+    for (i = 7; i >= 0; i--) {
+	if (infoPtr->revision[i] == ' ') {
+	    infoPtr->revision[i] = '\0';
+	}
+	if (infoPtr->revision[i] != '\0') {
+	    break;
+	} 
+    }
+    for (i = 7; i >= 0; i--) {
+	if (infoPtr->vendor[i] == ' ') {
+	    infoPtr->vendor[i] = '\0';
+	}
+	if (infoPtr->vendor[i] != '\0') {
+	    break;
+	} 
+    }
+    for (i = 7; i >= 0; i--) {
+	if (infoPtr->module[i] == ' ') {
+	    infoPtr->module[i] = '\0';
+	}
+	if (infoPtr->module[i] != '\0') {
+	    break;
+	} 
+    }
+    for (i = 3; i >= 0; i--) {
+	if (infoPtr->type[i] == ' ') {
+	    infoPtr->type[i] = '\0';
+	}
+	if (infoPtr->type[i] != '\0') {
+	    break;
+	} 
+    }
+    /*
+     * Make sure all the strings are null terminated.
+     */
+    infoPtr->revision[8] = '\0';
+    infoPtr->vendor[8] = '\0';
+    infoPtr->module[8] = '\0';
+    infoPtr->type[4] = '\0';
+    return status;
+#endif /* ds5000 */
 }
 
 /*
@@ -1866,8 +2628,6 @@ Mach_SigreturnStub(sigContextPtr)
     regsPtr->mfhi = sigContext.sc_mdhi;
     bcopy(sigContext.sc_fpregs, regsPtr->fpRegs, sizeof(sigContext.sc_fpregs));
     regsPtr->fpStatusReg = sigContext.sc_fpc_csr;
-#if 0
-    (void) sysUnixSigBlock(&dummy, sigContext.sc_mask);
-#endif
+    Proc_GetCurrentProc()->sigHoldMask = sigContext.sc_mask;
     return(SUCCESS);
 }

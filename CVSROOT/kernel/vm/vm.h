@@ -137,6 +137,8 @@ typedef struct {
     int	bssFirstPage;
     int	bssLastPage;
     int	entry;
+    int flags;
+    int heapExcess;
 } Vm_ExecInfo;
 
 /*

@@ -350,10 +350,20 @@ VmFileServerRead(virtAddrPtr, pageFrame)
      * The address to read is just the page offset into the segment
      * ((page - offset) << vmPageShift) plus the offset of this segment into
      * the file (fileAddr).
+     * (We have to use the right offset for shared memory.
      */
     length = vm_PageSize;
-    offset = ((virtAddrPtr->page - segPtr->offset) << vmPageShift) + 
-	    segPtr->fileAddr;
+    if (segPtr->type == VM_SHARED) {
+	if (virtAddrPtr->sharedPtr == (Vm_SegProcList *)NIL) {
+	    printf("*** NIL sharedPtr in VmFileServerRead\n");
+	    return FAILURE;
+	}
+	offset = ((virtAddrPtr->page - segOffset(virtAddrPtr)) << vmPageShift)
+		+ virtAddrPtr->sharedPtr->fileAddr;
+    } else {
+	offset = ((virtAddrPtr->page - segOffset(virtAddrPtr)) << vmPageShift)
+		+ segPtr->fileAddr;
+    }
     if (vmPrefetch || !vmUseFSReadAhead) {
 	/*
 	 * If we are using prefetch then do the reads ourselves.

@@ -78,6 +78,7 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include "user/sys/uio.h"
 #include "stat.h"
 #include "ultrixSignal.h"
+#include "sys.h"
 #include "fs.h"
 #include "fsdm.h"
 #include "fslcl.h"	/* Directory format */
@@ -93,6 +94,8 @@ typedef struct {
     int			numArgs;
     ReturnStatus	(*func)();
 } SyscallInfo;
+
+extern int machNewUnixCompat;
 
 /*
  * Values for system call tracing:
@@ -110,7 +113,7 @@ typedef struct {
 #ifdef CANT_MIGRATE_COMPAT
 int machUNIXSyscallTrace = 1;
 #else /* CANT_MIGRATE_COMPAT */
-int machUNIXSyscallTrace = 0;
+int machUNIXSyscallTrace = 1;
 #endif /* CANT_MIGRATE_COMPAT */
 
 /*
@@ -233,6 +236,238 @@ extern ReturnStatus MachUNIXShutdown _ARGS_((int socketID, int action));
  * The system call table.
  */
 SyscallInfo machUNIXSysCallTable[] = {
+#if 1
+	"indir", 		-1, 	MachUNIXError,
+	"exit",			-1, 	MachUNIXExit,
+	"fork",			-1, 	MachUNIXFork,
+	"read",			-1, 	MachUNIXRead,
+	"write", 		-1, 	MachUNIXWrite,
+	"open",			-1, 	MachUNIXOpen,
+	"close", 		-1, 	MachUNIXClose,
+	"old wait", 		-1, 	MachUNIXError,
+	"creat", 		-1, 	MachUNIXCreat,
+	"link",			-1, 	MachUNIXLink,	
+	"unlink", 		-1, 	MachUNIXUnlink,
+	"execv", 		-1, 	MachUNIXExecv,
+	"chdir", 		-1, 	MachUNIXChdir,
+	"old time", 		-1, 	MachUNIXError,
+	"mknod", 		-1, 	MachUNIXError,
+	"chmod", 		-1, 	MachUNIXChmod,
+	"chown", 		-1, 	MachUNIXChown, 
+	"sbrk", 		-1, 	MachUNIXSbrk,
+	"old stat", 		-1,	MachUNIXError,
+	"lseek", 		-1, 	MachUNIXLseek,
+	"getpid", 		-1, 	MachUNIXGetPID,
+	"mount", 		-1, 	MachUNIXError,
+	"umount", 		-1, 	MachUNIXError,
+	"old setuid", 		-1, 	MachUNIXError,
+	"getuid", 		-1, 	MachUNIXGetuid,
+	"old stime", 		-1, 	MachUNIXError,
+	"ptrace", 		-1, 	MachUNIXPtrace,
+	"old alarm", 		-1, 	MachUNIXError,
+	"old fstat", 		-1, 	MachUNIXError,
+	"old pause", 		-1, 	MachUNIXError,
+	"old utime", 		-1, 	MachUNIXError,
+	"old stty", 		-1, 	MachUNIXError,
+	"old gtty", 		-1, 	MachUNIXError,
+	"access", 		-1, 	MachUNIXAccess,
+	"old nice", 		-1, 	MachUNIXError,
+	"old ftime", 		-1, 	MachUNIXError,
+	"sync",			-1, 	MachUNIXSync,
+	"kill",			-1, 	MachUNIXKill,
+	"stat",			-1, 	MachUNIXStat,
+	"old setpgrp", 		-1, 	MachUNIXError,
+	"lstat",		-1, 	MachUNIXLstat,
+	"dup", 			-1, 	MachUNIXDup,
+	"pipe",			-1, 	MachUNIXPipe,
+	"old times",		-1, 	MachUNIXError,
+	"profil", 		-1, 	MachUNIXProfil,
+	"nosys", 		-1, 	MachUNIXError,
+	"old setgid", 		-1, 	MachUNIXError,
+	"getgid", 		-1, 	MachUNIXGetGID,
+	"old sig", 		-1, 	MachUNIXError,
+	"USG 1", 		-1, 	MachUNIXError,
+	"USG 2", 		-1, 	MachUNIXError,
+	"acct", 		-1, 	MachUNIXError,
+	"old set phys addr", 	-1, 	MachUNIXError,
+	"old syslock in core",	-1, 	MachUNIXError,
+	"ioctl", 		-1, 	MachUNIXIoctl,
+	"reboot", 		-1, 	MachUNIXReboot,
+	"old mpxchan", 		-1, 	MachUNIXError,
+	"symlink", 		-1, 	MachUNIXSymlink,
+	"readlink", 		-1, 	MachUNIXReadLink,
+	"execve", 		-1, 	MachUNIXExecve,
+	"umask", 		-1, 	MachUNIXUmask,
+	"chroot", 		-1, 	MachUNIXError,
+	"fstat", 		-1, 	MachUNIXFstat,
+	"used internally", 	-1, 	MachUNIXError,
+	"getpagesize", 		-1, 	MachUNIXGetPageSize,
+	"mremap", 		-1, 	MachUNIXError,
+	"vfork", 		-1, 	MachUNIXVFork,
+	"old vread", 		-1, 	MachUNIXError,
+	"old vwrite", 		-1, 	MachUNIXError,
+	"new sbrk",		-1, 	MachUNIXError,
+	"sstk",			-1, 	MachUNIXError,
+	"mmap", 		-1, 	MachUNIXMmap,
+	"old vadvise", 		-1, 	MachUNIXError,
+	"munmap", 		-1, 	MachUNIXMunmap,
+	"mprotect", 		-1, 	MachUNIXError,
+	"madvise", 		-1, 	MachUNIXError,
+	"vhangup", 		-1, 	MachUNIXError,
+	"old vlimit", 		-1, 	MachUNIXError,
+	"mincore", 		-1, 	MachUNIXMincore,
+	"getgroups", 		-1, 	MachUNIXGetGroups,
+	"setgroups", 		-1, 	MachUNIXSetGroups,
+	"getpgrp", 		-1, 	MachUNIXGetPGrp,
+	"setpgrp", 		-1, 	MachUNIXSetPGrp,
+	"setitimer", 		-1, 	MachUNIXSetITimer,
+	"wait",			-1, 	MachUNIXWait,
+	"swapon", 		-1, 	MachUNIXError,
+	"getitimer", 		-1,	MachUNIXGetItimer,
+	"gethostname", 		-1, 	MachUNIXGetHostName,
+	"sethostname", 		-1, 	MachUNIXSetHostName,
+	"getdtablesize", 	-1,	MachUNIXGetDTableSize,
+	"dup2",			-1, 	MachUNIXDup2,
+	"getdopt", 		-1, 	MachUNIXGetDOpt,
+	"fcntl", 		-1, 	MachUNIXFcntl,
+	"select", 		-1, 	MachUNIXSelect,
+	"setdopt", 		-1, 	MachUNIXSetDOpt,
+	"fsync", 		-1, 	MachUNIXFSync,
+	"setpriority", 		-1, 	MachUNIXSetPriority,
+	"socket", 		-1, 	MachUNIXSocket,
+	"connect", 		-1, 	MachUNIXConnect,
+	"accept", 		-1, 	MachUNIXAccept,
+	"getpriority", 		-1,	MachUNIXGetPriority,
+	"send",			-1,	MachUNIXSend,
+	"recv",			-1, 	MachUNIXRecv,
+	"sigreturn", 		-1,	MachUNIXLongJumpReturn,
+	"bind",			-1,	MachUNIXBind,
+	"setsockopt", 		-1, 	MachUNIXSetSockOpt,
+	"listen", 		-1, 	MachUNIXListen,
+	"old vtimes", 		-1,	MachUNIXError,
+	"sigvec", 		-1, 	MachUNIXSigvec,
+	"sigblock", 		-1, 	MachUNIXBlock,
+	"sigsetmask", 		-1, 	MachUNIXSigSetmask,
+	"sigpause", 		-1, 	MachUNIXSigPause,
+	"sigstack", 		-1, 	MachUNIXSigStack,
+	"recvmsg", 		-1, 	MachUNIXRecvMsg,
+	"sendmsg", 		-1, 	MachUNIXSendMsg,
+	"#115",			-1,	MachUNIXError,
+	"gettimeofday",		-1, 	MachUNIXGetTimeOfDay,
+	"getrusage", 		-1, 	MachUNIXGetRUsage,
+	"getsockopt", 		-1, 	MachUNIXGetSockOpt,
+	"#119", 		-1,	MachUNIXError,
+	"readv", 		-1, 	MachUNIXReadv,
+	"writev", 		-1, 	MachUNIXWritev,
+	"settimeofday",		-1, 	MachUNIXSetTimeOfDay,
+	"fchown", 		-1, 	MachUNIXFChown,
+	"fchmod", 		-1, 	MachUNIXFChmod,
+	"recvfrom", 		-1, 	MachUNIXRecvFrom,
+	"setreuid", 		-1, 	MachUNIXSetREUID,
+	"setregid", 		-1, 	MachUNIXSetREGID,
+	"rename", 		-1, 	MachUNIXRename,
+	"truncate", 		-1, 	MachUNIXTruncate,
+	"ftruncate", 		-1, 	MachUNIXFTruncate,
+	"flock", 		-1, 	MachUNIXFLock,
+	"#132", 		-1,	MachUNIXError,
+	"sendto",		-1, 	MachUNIXSendTo,
+	"shutdown",		-1,	MachUNIXShutdown,
+	"socketpair",		-1,	MachUNIXSocketPair,
+	"mkdir",		-1,	MachUNIXMkDir,
+	"rmdir",		-1,	MachUNIXRMDir,
+	"utimes",		-1,	MachUNIXUTimes,
+	"sigreturn(ljmp)", 	-1,	MachUNIXLongJumpReturn,
+	"adjtime", 		-1, 	MachUNIXAdjTime,
+	"getpeername",		-1, 	MachUNIXGetPeerName,
+	"gethostid",		-1, 	MachUNIXGetHostID,
+	"sethostid",		-1, 	MachUNIXSetHostID,
+	"getrlimit",		-1, 	MachUNIXGetRLimit,
+	"setrlimit",		-1, 	MachUNIXSetRLimit,
+	"killpg",		-1, 	MachUNIXKillPG,
+	"#147",			-1, 	MachUNIXError,
+	"setquota", 		-1, 	MachUNIXError,
+	"quota",		-1, 	MachUNIXError,
+	"getsockname",  	-1, 	MachUNIXGetSockName,	
+	"sysmips", 		-1, 	MachUNIXError,
+	"cacheflush",		-1, 	MachUNIXError,
+	"cachectl",		-1, 	MachUNIXError,
+	"debug",		-1, 	MachUNIXError,
+	"#155",			-1, 	MachUNIXError,
+	"#156",			-1, 	MachUNIXError,
+	"#157",			-1, 	MachUNIXError,
+	"nfs_svc", 		-1, 	MachUNIXError,
+	"getdirentries",	-1, 	MachUNIXGetDirEntries,
+	"#160",			-1, 	MachUNIXError,
+	"#161",			-1, 	MachUNIXError,
+	"#162",			-1, 	MachUNIXError,
+	"nfs_biod",		-1, 	MachUNIXError,
+	"nfs_getfh",		-1, 	MachUNIXError,
+	"getdomainname", 	-1, 	MachUNIXGetDomainName,
+	"setdomainname", 	-1, 	MachUNIXSetDomainName,
+	"#167",			-1, 	MachUNIXError,
+	"#168",			-1, 	MachUNIXError,
+	"exportfs",		-1, 	MachUNIXError,
+	"#170",			-1, 	MachUNIXError,
+	"#171",			-1, 	MachUNIXError,
+	"msgctl",		-1, 	MachUNIXError,
+	"msgget",		-1, 	MachUNIXError,
+	"msgrcv",		-1, 	MachUNIXError,
+	"msgsnd",		-1, 	MachUNIXError,
+	"semctl",		-1, 	MachUNIXSemctl,
+	"semget",		-1, 	MachUNIXSemget,
+	"semop",		-1, 	MachUNIXSemop,
+	"uname",		-1,	MachUNIXError,
+	"shmsys",		-1, 	MachUNIXError,
+	"plock",		-1, 	MachUNIXError,
+	"lockf",		-1, 	MachUNIXError,
+	"ustat",		-1, 	MachUNIXError,
+	"getmnt",		-1, 	MachUNIXError,
+	"mount",		-1, 	MachUNIXError,
+	"umount",		-1, 	MachUNIXError,
+	"sigpending",		-1, 	MachUNIXError,
+	"#188",			-1, 	MachUNIXError,
+	"#189",			-1, 	MachUNIXError,
+	"#190",			-1, 	MachUNIXError,
+	"#191",			-1, 	MachUNIXError,
+	"#192",			-1, 	MachUNIXError,
+	"#193",			-1, 	MachUNIXError,
+	"#194",			-1, 	MachUNIXError,
+	"#195",			-1, 	MachUNIXError,
+	"#196",			-1, 	MachUNIXError,
+	"#197",			-1, 	MachUNIXError,
+	"#198",			-1, 	MachUNIXError,
+	"#199",			-1, 	MachUNIXError,
+	"#200",			-1, 	MachUNIXError,
+	"#201",			-1, 	MachUNIXError,
+	"#202",			-1, 	MachUNIXError,
+	"#203",			-1, 	MachUNIXError,
+	"#204",			-1, 	MachUNIXError,
+	"#205",			-1, 	MachUNIXError,
+	"#206",			-1, 	MachUNIXError,
+	"#207",			-1, 	MachUNIXError,
+	"#208",			-1, 	MachUNIXError,
+	"#209",			-1, 	MachUNIXError,
+	"#210",			-1, 	MachUNIXError,
+	"#211",			-1, 	MachUNIXError,
+	"#212",			-1, 	MachUNIXError,
+	"#213",			-1, 	MachUNIXError,
+	"#214",			-1, 	MachUNIXError,
+	"#215",			-1, 	MachUNIXError,
+	"#216",			-1, 	MachUNIXError,
+	"#217",			-1, 	MachUNIXError,
+	"#218",			-1, 	MachUNIXError,
+	"#219",			-1, 	MachUNIXError,
+	"#220",			-1, 	MachUNIXError,
+	"#221",			-1, 	MachUNIXError,
+	"#222",			-1, 	MachUNIXError,
+	"#223",			-1, 	MachUNIXError,
+	"#224",			-1, 	MachUNIXError,
+	"#225",			-1, 	MachUNIXError,
+	"#226",			-1, 	MachUNIXError,
+	"#227",			-1, 	MachUNIXError,
+	"#228",			-1, 	MachUNIXError,
+	"#229",			-1, 	MachUNIXError,
+#else
 	"indir", 		0, 	MachUNIXError,
 	"exit",			1, 	MachUNIXExit,
 	"fork",			0, 	MachUNIXFork,
@@ -463,6 +698,7 @@ SyscallInfo machUNIXSysCallTable[] = {
 	"#227",			0, 	MachUNIXError,
 	"#228",			0, 	MachUNIXError,
 	"#229",			0, 	MachUNIXError,
+#endif
 	"#230",			0, 	MachUNIXError,
 	"#231",			0, 	MachUNIXError,
 	"#232",			0, 	MachUNIXError,
@@ -530,12 +766,17 @@ MachUNIXSyscall()
     Proc_ControlBlock	*procPtr;
 #endif /* CANT_MIGRATE_COMPAT */
 
+    if (machNewUnixCompat) {
+	return MachUNIXSyscallNew();
+    }
+
     /*
      * See if we got a UNIX system call.  Unix passes the system call type
      * in v0.
      */
     type = machCurStatePtr->userState.regState.regs[V0];
     if (type < 0 || type >= machNumUNIXSyscalls) {
+	printf("MachUNIXSyscall failed with type %d\n", type);
 	return(FALSE);
     }
 
@@ -643,7 +884,10 @@ MachUNIXSyscall()
 					     regs[A2], regs[A3], args[0],
 					     args[1], args[2], args[3]);
 	default:
+	    return MachUNIXSyscallNew();
+	    /*
 	    panic("Too many args to UNIX system call\n");
+	    */
 	    break;
     }
     /* 
@@ -656,6 +900,9 @@ MachUNIXSyscall()
 	 * v0 has the UNIX error code and the stub will stuff the error
 	 * into errno.  If a3 == 0 the V0 has the return value.
 	 */
+	if (status == GEN_ABORTED_BY_SIGNAL) {
+	    printf("System call interrupted by signal\n");
+	}
 	if (status == SUCCESS) {
 	    regs[V0] = machCurStatePtr->userState.unixRetVal;
 	    regs[A3] = 0;
@@ -672,6 +919,176 @@ MachUNIXSyscall()
     return(TRUE);
 }
 
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * MachUNIXSyscallNew --
+ *
+ *	Try and handle the new given UNIX system call.
+ *	Note that this routine is called only if (machUNIXSyscallTrace > 0)
+ *	or under special conditions.
+ *
+ * Results:
+ *	TRUE if this was really a UNIX system call.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+Boolean
+MachUNIXSyscallNew()
+{
+    unsigned		*regs;
+    int			args[6];
+    ReturnStatus	status;
+    int			type;
+    int			numArgs;
+#ifdef CANT_MIGRATE_COMPAT
+    Proc_ControlBlock	*procPtr;
+#endif /* CANT_MIGRATE_COMPAT */
+
+    /*
+     * See if we got a UNIX system call.  Unix passes the system call type
+     * in v0.
+     */
+    type = machCurStatePtr->userState.regState.regs[V0];
+    machCurStatePtr->userState.unixRetVal = type;
+    if (type < 0 || type >= MACH_MAX_UNIX_SYSCALL) {
+	printf("MachUNIXSyscallNew failed with type %d\n", type);
+	return(FALSE);
+    }
+
+#ifdef CANT_MIGRATE_COMPAT
+    /*
+     * We don't want to migrate processes that are making unix-compatible calls.
+     */
+    procPtr = Proc_GetCurrentProc();
+    if (!(procPtr->genFlags & PROC_DONT_MIGRATE)) {
+	Proc_NeverMigrate(procPtr);
+    }
+#endif /* CANT_MIGRATE_COMPAT */
+    
+    numArgs = sysUnixSysCallTable[type].numArgs;
+    regs = machCurStatePtr->userState.regState.regs;
+    if (numArgs > 4) {
+	if (Vm_CopyIn(4 * (numArgs - 4), regs[SP] + 16, args) != SUCCESS) {
+	    regs[V0] = Compat_MapCode(SYS_ARG_NOACCESS);
+	    regs[A3] = 1;
+	    return(TRUE);
+	}
+    }
+    switch (numArgs) {
+	case 0:
+	    if (machUNIXSyscallTrace > 1) {
+		printf("MachUNIXSyscall: %s() => ", 
+			machUNIXSysCallTable[type].name);
+	    }
+	    status = sysUnixSysCallTable[type].func();
+	    break;
+	case 1:
+	    if (machUNIXSyscallTrace > 1) {
+		printf("MachUNIXSyscall: %s(%x) => ", 
+			machUNIXSysCallTable[type].name,
+			regs[A0]);
+	    }
+	    status = sysUnixSysCallTable[type].func(regs[A0]);
+	    break;
+	case 2:
+	    if (machUNIXSyscallTrace > 1) {
+		printf("MachUNIXSyscall: %s(%x, %x) => ", 
+			machUNIXSysCallTable[type].name,
+			regs[A0], regs[A1]);
+	    }
+	    status = sysUnixSysCallTable[type].func(regs[A0], regs[A1]);
+	    break;
+	case 3:
+	    if (machUNIXSyscallTrace > 1) {
+		printf("MachUNIXSyscall: %s(%x, %x, %x) => ", 
+			machUNIXSysCallTable[type].name,
+			regs[A0], regs[A1], regs[A2]);
+	    }
+	    status = sysUnixSysCallTable[type].func(regs[A0], regs[A1],
+					     regs[A2]);
+	    break;
+	case 4:
+	    if (machUNIXSyscallTrace > 1) {
+		printf("MachUNIXSyscall: %s(%x, %x, %x, %x) => ", 
+			machUNIXSysCallTable[type].name,
+			regs[A0], regs[A1], regs[A2], regs[A3]);
+	    }
+	    status = sysUnixSysCallTable[type].func(regs[A0], regs[A1],
+					     regs[A2], regs[A3]);
+	    break;
+	case 5: 
+	    if (machUNIXSyscallTrace > 1) {
+		printf("MachUNIXSyscall: %s(%x, %x, %x, %x, %x) => ", 
+			machUNIXSysCallTable[type].name,
+			regs[A0], regs[A1], regs[A2], regs[A3], args[0]);
+	    }
+	    status = sysUnixSysCallTable[type].func(regs[A0], regs[A1],
+					     regs[A2], regs[A3], args[0]);
+	    break; 
+	case 6:
+	    if (machUNIXSyscallTrace > 1) {
+		printf("MachUNIXSyscall: %s(%x, %x, %x, %x, %x, %x) => ", 
+			machUNIXSysCallTable[type].name,
+			regs[A0], regs[A1], regs[A2], regs[A3], args[0],
+			args[1]);
+	    }
+	    status = sysUnixSysCallTable[type].func(regs[A0], regs[A1],
+					     regs[A2], regs[A3], args[0],
+					     args[1]);
+	    break; 
+	case 7:
+	    if (machUNIXSyscallTrace > 1) {
+		printf("MachUNIXSyscall: %s(%x, %x, %x, %x, %x, %x, %x) => ", 
+			machUNIXSysCallTable[type].name,
+			regs[A0], regs[A1], regs[A2], regs[A3], args[0],
+			args[1], args[2]);
+	    }
+	    status = sysUnixSysCallTable[type].func(regs[A0], regs[A1],
+					     regs[A2], regs[A3], args[0],
+					     args[1], args[2]);
+	    break;
+	case 8:
+	    if (machUNIXSyscallTrace > 1) {
+		printf("MachUNIXSyscall: %s(%x, %x, %x, %x, %x, %x, %x, %x) => ", 
+			machUNIXSysCallTable[type].name,
+			regs[A0], regs[A1], regs[A2], regs[A3], args[0],
+			args[1], args[2], args[3]);
+	    }
+	    status = sysUnixSysCallTable[type].func(regs[A0], regs[A1], 
+					     regs[A2], regs[A3], args[0],
+					     args[1], args[2], args[3]);
+	default:
+	    panic("Too many args to UNIX system call\n");
+	    break;
+    }
+    /*
+     * The UNIX stubs looks at a3 to decide what to do.  If a3 == 1 then
+     * v0 has the UNIX error code and the stub will stuff the error
+     * into errno.  If a3 == 0 the V0 has the return value.
+     */
+    if (type != MACH_UNIX_LONG_JUMP_RETURN && type != MACH_UNIX_SIG_RETURN) {
+	if (status >= 0) {
+	    regs[V0] = status;
+	    regs[A3] = 0;
+	} else {
+	    regs[V0] = Proc_GetActualProc()->unixErrno;
+	    regs[A3] = 1;
+	}
+    }
+    if (machUNIXSyscallTrace > 1) {
+	printf("V0 = %x A3 = %x\n", regs[V0], regs[A3]);
+    }
+
+    machCurStatePtr->userState.regState.pc += 4;
+
+    return(TRUE);
+}
 
 ReturnStatus
 MachUNIXExit(status)
@@ -763,6 +1180,9 @@ MachUNIXRead(streamID, buffer, numBytes)
 	(void)Vm_CopyIn(sizeof(int), usp, 
 			(Address)&machCurStatePtr->userState.unixRetVal);
     }
+    if (status == GEN_ABORTED_BY_SIGNAL) {
+	printf("Read blown away by signal\n");
+    }
     return(status);
 }
 
@@ -781,6 +1201,9 @@ MachUNIXWrite(streamID, buffer, numBytes)
     if (status == SUCCESS) {
 	(void)Vm_CopyIn(sizeof(int), usp, 
 			(Address)&machCurStatePtr->userState.unixRetVal);
+    }
+    if (status == GEN_ABORTED_BY_SIGNAL) {
+	printf("Write blown away by signal\n");
     }
     return(status);
 }
@@ -1419,6 +1842,9 @@ ReturnStatus MachUNIXWait(statusPtr, options, unixRusagePtr)
     spriteRusagePtr = (Proc_ResUsage *)(usp - 12 - sizeof(Proc_ResUsage));
     status = Proc_Wait(0, (int *) NULL, flags, pidPtr, reasonPtr, 
 		       childStatusPtr, (int *)NULL, spriteRusagePtr);
+    if (status == GEN_ABORTED_BY_SIGNAL) {
+	printf("Wait blown away by signal\n");
+    }
     if (status != SUCCESS) {
 	return(status);
     }

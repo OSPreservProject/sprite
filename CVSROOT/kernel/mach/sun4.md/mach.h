@@ -119,6 +119,11 @@ extern ReturnStatus (*(mach_MigratedHandlers[]))();
  */
 #define	Mach_GetProcessorNumber() 	0
 
+/*
+ * Macro to get the user's stack pointer.
+ */
+#define Mach_UserStack() ((Address)machCurStatePtr->trapRegs->ins[6])
+
 extern	Address	Mach_GetPC _ARGS_((void));
 extern	Address	Mach_GetCallerPC _ARGS_((void));
 
@@ -234,5 +239,6 @@ extern	Address	mach_FirstUserAddr;
 extern	Address	mach_LastUserAddr;
 extern	Address	mach_MaxUserStackAddr;
 extern	int	mach_LastUserStackPage;
+extern	Mach_State  *machCurStatePtr;
 
 #endif /* _MACH */

@@ -11,21 +11,26 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "stddef.h"
-#include "sprite.h"
-#include "swapBuffer.h"
-#include "machConst.h"
-#include "machMon.h"
-#include "machInt.h"
-#include "mach.h"
-#include "proc.h"
-#include "sys.h"
-#include "sched.h"
-#include "vm.h"
-#include "vmMach.h"
+#include <stddef.h>
+#include <sprite.h>
+#include <swapBuffer.h>
+#include <machConst.h>
+#include <machMon.h>
+#include <machInt.h>
+#include <mach.h>
+#include <proc.h>
+#include <prof.h>
+#include <sys.h>
+#include <sched.h>
+#include <vm.h>
+#include <vmMach.h>
+#include <user/sun4.md/sys/machSignal.h>
+#include <procUnixStubs.h>
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <bstring.h>
+#include <compatInt.h>
 /*
  *  Number of processors in the system.
  */
@@ -71,6 +76,8 @@ Fmt_Format	mach_Format = FMT_SPARC_FORMAT;
  */
 int mach_NumDisableInterrupts[NUM_PROCESSORS];
 int *mach_NumDisableIntrsPtr = mach_NumDisableInterrupts;
+
+extern int debugProcStubs;
 
 /*
  * Machine dependent variables.
@@ -118,6 +125,8 @@ int	machStatePtrOffset;		/* Byte offset of the machStatePtr
 					 * field in a Proc_ControlBlock. */
 int	machSpecialHandlingOffset;	/* Byte offset of the specialHandling
 					 * field in a Proc_ControlBlock. */
+int	machTmpRegsOffset;		/* Offset of overflow temp regs. */
+int	machTmpRegsStore[2];		/* Temporary storage. */
 int	machGenFlagsOffset;		/* offset of genFlags field in a
 					 * Proc_ControlBlock. */
 int	machForeignFlag;		/* Value of PROC_FOREIGN available
@@ -308,6 +317,11 @@ Mach_Init()
     machStatePtrOffset = offsetof(Proc_ControlBlock, machStatePtr);
     machKcallTableOffset = offsetof(Proc_ControlBlock, kcallTable);
     machSpecialHandlingOffset = offsetof(Proc_ControlBlock, specialHandling);
+
+    if ( MACH_PROC_REGS_OFFSET != offsetof(Proc_ControlBlock, extraField)) {
+	panic("MACH_PROC_REGS_OFFSET is wrong!\n");
+    }
+
     machMaxSysCall = -1;
     MachPIDOffset = offsetof(Proc_ControlBlock, processID);
     machGenFlagsOffset = offsetof(Proc_ControlBlock, genFlags);
@@ -1326,8 +1340,9 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
  *	called.
  *
  * Results:
- *	The return value TRUE indicates we have a pending signal.  FALSE
- *	indicates that we do not.
+ *	The return value 0 indicates we have no pending signal.
+ *	The return value 1 indicates we have a pending Sprite signal.
+ *	The return value 2 indicates we have a pending Unix signal.
  *
  * Side effects:
  *	The mach state structure may change, especially the mask that indicates
@@ -1342,8 +1357,15 @@ MachUserAction()
     Mach_State		*machStatePtr;
     Sig_Stack		*sigStackPtr;
     Address		pc;
+    int			unixSignal;
 
     procPtr = Proc_GetCurrentProc();
+    if (procPtr->unixProgress != PROC_PROGRESS_NOT_UNIX &&
+            procPtr->unixProgress != PROC_PROGRESS_UNIX && debugProcStubs) {
+        printf("UnixProgress = %d entering MachUserReturn\n",
+		procPtr->unixProgress);
+    }
+
 HandleItAgain:
     if (procPtr->Prof_Scale != 0 && procPtr->Prof_PC != 0) {
 	Prof_RecordPC(procPtr);
@@ -1429,7 +1451,7 @@ HandleItAgain:
     }
     /*
      * Now check for signal stuff. We must check again for floating
-     * point exception becaue the Sig_Handle might do a context switch
+     * point exception because the Sig_Handle might do a context switch
      * during which the excpetion would get posted. 
      * 
      * Note: This is really wrong.  We should check for and process 
@@ -1439,6 +1461,25 @@ HandleItAgain:
      */
     sigStackPtr = &(machStatePtr->sigStack);
     sigStackPtr->contextPtr = &(machStatePtr->sigContext);
+    if (procPtr->unixProgress == PROC_PROGRESS_RESTART ||
+	    procPtr->unixProgress > 0) {
+	/*
+	 * If we received a normal signal, we want to restart
+	 * the system call when we leave.
+	 * If we received a migrate signal, we will get here on
+	 * the new machine.
+	 * We must also ensure that the argument registers are the
+	 * same as when we came in.
+	 */
+	machStatePtr->trapRegs->nextPc = machStatePtr->trapRegs->pc;
+	machStatePtr->trapRegs->pc = machStatePtr->trapRegs->nextPc-4;
+	/*
+	 * We need to restore %o0 which got clobbered by
+	 * the system call.
+	 */
+	machStatePtr->trapRegs->ins[0] = machStatePtr->savedArgI0;
+	procPtr->unixProgress = PROC_PROGRESS_UNIX;
+    }
     if (Sig_Handle(procPtr, sigStackPtr, &pc)) {
 	machStatePtr->sigContext.machContext.pcValue = pc;
 	machStatePtr->sigContext.machContext.trapInst = MACH_SIG_TRAP_INSTR;
@@ -1447,7 +1488,83 @@ HandleItAgain:
 	    HandleFPUException(procPtr, machStatePtr);
 	}
 	Mach_DisableIntr();
-	return TRUE;
+	if (procPtr->unixProgress == PROC_PROGRESS_UNIX) {
+	    /*
+	     * We have to build a proper Unix signal stack.
+	     */
+	    int n[16];
+	    struct sigcontext	unixContext;
+	    if (Compat_SpriteSignalToUnix(sigStackPtr->sigNum,
+		    &unixSignal) != SUCCESS) {
+		printf("Signal %d invalid in SetupSigHandler\n",
+			sigStackPtr->sigNum);
+		return 0;
+	    }
+
+	    printf("Unix signal %d(%d) to %x\n", sigStackPtr->sigNum,
+		    unixSignal, procPtr->processID);
+	    sigStackPtr->sigNum = unixSignal;
+	    unixContext.sc_onstack = 0;
+	    unixContext.sc_mask = machStatePtr->sigContext.oldHoldMask;
+	    unixContext.sc_sp = machStatePtr->trapRegs->ins[6];
+	    /*
+	     * pc and npc are where to continue the interrupted routine.
+	     */
+	    printf("PSR = %x\n", machStatePtr->trapRegs->curPsr);
+	    unixContext.sc_pc = machStatePtr->trapRegs->pc;
+	    unixContext.sc_npc = machStatePtr->trapRegs->nextPc;
+	    printf("trapRegs->pc=%x, trapRegs->npc=%x, context.pcValue=%x\n",
+		    machStatePtr->trapRegs->pc, machStatePtr->trapRegs->nextPc,
+		    machStatePtr->sigContext.machContext.pcValue);
+	    unixContext.sc_psr = machStatePtr->trapRegs->curPsr;
+	    unixContext.sc_g1 = machStatePtr->trapRegs->globals[1];
+	    unixContext.sc_o0 = machStatePtr->trapRegs->ins[0];
+	    /*
+	     * machContext.pcValue is the address of the handler.
+	     */
+	    machStatePtr->trapRegs->pc = (unsigned int)
+		    machStatePtr->sigContext.  machContext.pcValue;
+	    machStatePtr->trapRegs->nextPc = (unsigned int)
+		    machStatePtr->sigContext.machContext.pcValue+4;
+	    printf("new pc = %x\n", machStatePtr->trapRegs->nextPc);
+	    /*
+	     * Copy the window to the signal stack.
+	     */
+	    Vm_CopyIn(16*sizeof(int), (Address)unixContext.sc_sp, (Address)n);
+	    printf("Regs: %x %x %x, %x %x %x\n", n[0], n[1], n[2], n[8],
+		    n[9], n[10]);
+	    machStatePtr->trapRegs->ins[6] += MACH_SAVED_WINDOW_SIZE;
+	    unixContext.sc_wbcnt = 0;
+	    sigStackPtr->contextPtr = (Sig_Context *)
+		    (unixContext.sc_sp-sizeof(struct sigcontext));
+	    if (Vm_CopyOut(MACH_SAVED_WINDOW_SIZE,
+		    (Address)n,
+		    (Address)unixContext.sc_sp - sizeof(struct sigcontext)
+			    - 4*sizeof(int) - MACH_SAVED_WINDOW_SIZE) !=
+			    SUCCESS) {
+		return 0;
+	    }
+	    printf("Copied window to %x\n",
+		    (Address)unixContext.sc_sp - sizeof(struct sigcontext)
+			    - 4*sizeof(int) - MACH_SAVED_WINDOW_SIZE);
+	    /*
+	     * Copy the sigStack and sigContext to the signal window.
+	     */
+	    if (Vm_CopyOut(4*sizeof(int), (Address)sigStackPtr,
+		    (Address)unixContext.sc_sp - sizeof(struct sigcontext)
+			    - 4*sizeof(int)) != SUCCESS) {
+		return 0;
+	    }
+	    if (Vm_CopyOut(sizeof(struct sigcontext), (Address)&unixContext,
+		    (Address)unixContext.sc_sp - sizeof(struct sigcontext))
+			    != SUCCESS) {
+		return 0;
+	    }
+	    printf("Unix copies done\n");
+	    return 2;
+	} else {
+	    return 1;
+	}
     }
     if (machStatePtr->fpuStatus & MACH_FPU_EXCEPTION_PENDING) {
 	HandleFPUException(procPtr, machStatePtr);
@@ -1462,13 +1579,19 @@ HandleItAgain:
 	Sig_AllowMigration(procPtr);
     }
 
+    if (procPtr->unixProgress != PROC_PROGRESS_NOT_UNIX &&
+            procPtr->unixProgress != PROC_PROGRESS_UNIX) {
+        printf("UnixProgress = %d leaving MachUserReturn\n",
+		procPtr->unixProgress);
+    }
+
     /*
      * Go back to MachReturnFromTrap.  We are expected to have interrupts
      * off there.
      */
     Mach_DisableIntr();
 	
-    return FALSE;
+    return 0;
 }
 
 
@@ -1796,6 +1919,8 @@ Mach_GetBootArgs(argc, bufferSize, argv, buffer)
 Address
 Mach_GetStackPointer()
 {
+	panic("Mach_GetStackPointer");
+	return NULL;
 }
 
 /*
@@ -1855,28 +1980,48 @@ HandleFPUException(procPtr, machStatePtr)
     MachFPULoadState(machStatePtr->trapRegs);
 
 }
-
 /*
  *----------------------------------------------------------------------
  *
  * Mach_SigreturnStub --
  *
- *	Procedure to map from Unix sigreturn system call to Sprite.
- *	On the suns, this is used for returning from a longjmp.
+ *	Return from a unix signal or long jump.
  *
  * Results:
- *	Error code is returned upon error.  Otherwise SUCCESS is returned.
+ *	None.
  *
  * Side effects:
- *	Side effects associated with the system call.
+ *	Changes control of execution.
  *
  *----------------------------------------------------------------------
  */
 int
 Mach_SigreturnStub(jmpBuf)
-    jmp_buf *jmpBuf;
+jmp_buf *jmpBuf;
 {
+    struct sigcontext context;
+    Proc_ControlBlock	*procPtr = Proc_GetCurrentProc();
+    Mach_State		*machStatePtr = procPtr->machStatePtr;
 
-    printf("Mach_Sigreturn not implemented\n");
-    return -1;
+    if (Vm_CopyIn(9*sizeof(int), (Address)jmpBuf, (Address)&context) !=
+	    SUCCESS) {
+	printf("jmp_buf copy in failure\n");
+	return -1;
+    }
+    if (debugProcStubs) {
+	printf("Unix sigreturn: pc = %x, sp = %x, psr = %x\n", context.sc_pc,
+		context.sc_sp, context.sc_psr&MACH_DISABLE_TRAP_BIT &
+		~MACH_PS_BIT);
+    }
+    machStatePtr->trapRegs->pc = context.sc_pc;
+    machStatePtr->trapRegs->nextPc = context.sc_npc;
+
+    machStatePtr->trapRegs->globals[1] = context.sc_g1;
+    machStatePtr->trapRegs->ins[0] = context.sc_o0;
+    machStatePtr->sigContext.oldHoldMask = context.sc_mask;
+    machStatePtr->trapRegs->curPsr = (machStatePtr->trapRegs->curPsr&
+	    ~MACH_PSR_SIG_RESTORE) | (context.sc_psr&MACH_PSR_SIG_RESTORE);
+    machStatePtr->trapRegs->ins[6] = context.sc_sp;
+    Sig_Return(procPtr, &machStatePtr->sigStack);
+    return 0; /* Dummy */
 }

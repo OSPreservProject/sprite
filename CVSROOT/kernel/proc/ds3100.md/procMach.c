@@ -40,7 +40,8 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
  *----------------------------------------------------------------------
  */
 ReturnStatus
-ProcGetObjInfo(execPtr, objInfoPtr)
+ProcGetObjInfo(filePtr, execPtr, objInfoPtr)
+    Fs_Stream		*filePtr;
     ProcExecHeader	*execPtr;
     ProcObjInfo		*objInfoPtr;
 {
@@ -58,6 +59,7 @@ ProcGetObjInfo(execPtr, objInfoPtr)
 	    objInfoPtr->bssLoadAddr = execPtr->aoutHeader.bssStart;
 	    objInfoPtr->bssSize = execPtr->aoutHeader.bssSize;
 	    objInfoPtr->entry = execPtr->aoutHeader.entry;
+	    objInfoPtr->unixCompat = 0;
 	    break;
 	case PROC_OMAGIC:
 	    if (execPtr->aoutHeader.codeStart+execPtr->aoutHeader.codeSize !=
@@ -81,6 +83,7 @@ ProcGetObjInfo(execPtr, objInfoPtr)
 	    objInfoPtr->bssLoadAddr = execPtr->aoutHeader.bssStart;
 	    objInfoPtr->bssSize = execPtr->aoutHeader.bssSize;
 	    objInfoPtr->entry = execPtr->aoutHeader.entry;
+	    objInfoPtr->unixCompat = 0;
 	    break;
 	default:
 	    return(PROC_BAD_AOUT_FORMAT);

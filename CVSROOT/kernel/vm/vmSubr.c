@@ -51,6 +51,8 @@ extern Vm_SharedSegTable	sharedSegTable;
 
 Boolean		vmDebugLargeAllocs = FALSE;
 
+extern int debugVmStubs;	/* Unix compatibility flag. */
+
 /*
  * The maximum amount that a stack is allowed to grow.  We have to make it
  * real big because of the current configuration of SPUR.  This can be made
@@ -541,6 +543,10 @@ VmValidatePagesInt(segPtr,  firstPage, lastPage, zeroFill, clobber)
     pte = VM_VIRT_RES_BIT;
     if (segPtr->type == VM_CODE) {
 	pte |= VM_READ_ONLY_PROT;
+    } else if (segPtr->type == VM_SHARED) {
+	if (segPtr->filePtr == (Fs_Stream *)NIL) {
+	    pte |= VM_ON_SWAP_BIT;
+	}
     } else if (zeroFill) {
 	pte |= VM_ZERO_FILL_BIT;
     }
@@ -743,7 +749,7 @@ VmVirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
      */
     seg1Ptr = procPtr->vmPtr->segPtrArray[VM_CODE];
     if (page >= seg1Ptr->offset &&
-        page < (seg1Ptr->offset + seg1Ptr->numPages)) {
+	    page < (seg1Ptr->offset + seg1Ptr->numPages)) {
 	transVirtAddrPtr->segPtr = seg1Ptr;
 	UNLOCK_MONITOR;
 	UNLOCK_SHM_MONITOR;
@@ -1284,7 +1290,7 @@ Vm_CleanupSharedProc(procPtr)
 
     LOCK_SHM_MONITOR;
     sharedSegs = procPtr->vmPtr->sharedSegs;
-    while (0 && sharedSegs != (List_Links *)NIL) {
+    while (sharedSegs != (List_Links *)NIL) {
 	if (sharedSegs == (List_Links *)NULL) {
 	    dprintf("Vm_CleanupSharedProc: warning: sharedSegs == NULL\n");
 	    break;
@@ -1359,6 +1365,9 @@ Vm_DeleteSharedSegment(procPtr,segProcPtr)
 	    segProcPtr->mappedStart + 1, FALSE, FALSE);
     List_Remove((List_Links *)segProcPtr);
     VmMach_SharedSegFinish(procPtr,segProcPtr->addr);
+    if (debugVmStubs) {
+	printf("Vm_DeleteSharedSegment: freeing segProcPtr %x\n", segProcPtr);
+    }
     free((Address)segProcPtr);
     VmCheckListIntegrity((List_Links *)&sharedSegTable);
     /*
@@ -1557,6 +1566,7 @@ VmPrintSharedSegs(procPtr)
  *
  *----------------------------------------------------------------------
  */
+/*ARGSUSED*/
 void
 Vm_CleanupSharedFile(procPtr,streamPtr)
     Proc_ControlBlock	*procPtr;	/* Process with file. */
@@ -1574,7 +1584,13 @@ Vm_CleanupSharedFile(procPtr,streamPtr)
 	    nextPtr = (Vm_SegProcList *)List_Next((List_Links *)segPtr);
 	    if (segPtr->stream==streamPtr) {
 		dprintf("sharedSegment being deleted in Vm_CleanupSharedFile\n");
+#if 0
 		Vm_DeleteSharedSegment(procPtr,segPtr);
+#else
+		if (debugVmStubs) {
+		    printf("Vm_CleanupSharedFile: skipping segment delete\n");
+		}
+#endif
 		if (sharedSegs == (List_Links *)NIL) {
 		    break;
 		}

@@ -575,7 +575,7 @@ ProcExitProcess(exitProcPtr, reason, status, code, thisProcess)
 #endif
     if ((exitProcPtr->genFlags & PROC_USER) && !noVm) {
 	int i=0;
-	while (0 && exitProcPtr->vmPtr->sharedSegs != (List_Links *)NIL) {
+	while (exitProcPtr->vmPtr->sharedSegs != (List_Links *)NIL) {
 
 	    if (exitProcPtr->vmPtr->sharedSegs == (List_Links *)NULL) {
 		dprintf("ProcExitProcess: warning: sharedSegs == NULL\n");

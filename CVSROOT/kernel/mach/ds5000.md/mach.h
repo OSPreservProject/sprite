@@ -76,6 +76,13 @@
 #define MACH_UNCACHED_ADDR(addr) \
     (Address) ((int) addr - MACH_CACHED_MEMORY_ADDR + MACH_UNCACHED_MEMORY_ADDR)
 
+extern Mach_State *machCurStatePtr;
+/*
+ * Macro to get the user's stack pointer.
+ */
+#define Mach_UserStack()\
+	((Address)(machCurStatePtr->userState.regState.regs[SP]))
+
 /*
  * Dispatch tables for kernel calls.
  */
@@ -114,7 +121,8 @@ extern void Mach_Init _ARGS_((int boot_argc, MachStringTable *boot_argv));
  */
 extern void Mach_InitFirstProc _ARGS_((Proc_ControlBlock *procPtr));
 extern ReturnStatus Mach_SetupNewState _ARGS_((Proc_ControlBlock *procPtr, Mach_State *fromStatePtr, void (*startFunc)(), Address startPC, Boolean user));
-extern void Mach_SetReturnVal _ARGS_((Proc_ControlBlock *procPtr, int retVal));
+extern void Mach_SetReturnVal _ARGS_((Proc_ControlBlock *procPtr, int retVal,
+	int retVal2));
 extern void Mach_StartUserProc _ARGS_((Proc_ControlBlock *procPtr, Address entryPoint));
 extern void Mach_ExecUserProc _ARGS_((Proc_ControlBlock *procPtr, Address userStackPtr, Address entryPoint));
 extern void Mach_FreeState _ARGS_((Proc_ControlBlock *procPtr));
@@ -163,6 +171,9 @@ extern  ReturnStatus	Mach_ProbeAddr _ARGS_((int numArgs));
 extern void Mach_FlushCode _ARGS_((Address addr, unsigned len));
 extern ReturnStatus Mach_GetSlotInfo _ARGS_((char *romAddr, 
 			Mach_SlotInfo *infoPtr));
+extern void Mach_Return2 _ARGS_((int val));
+extern int Mach_SigreturnStub _ARGS_((struct sigcontext *sigContextPtr));
+
 /*
  * Machine dependent variables.
  */
@@ -175,5 +186,10 @@ extern	Address	mach_FirstUserAddr;
 extern	Address	mach_LastUserAddr;
 extern	Address	mach_MaxUserStackAddr;
 extern	int	mach_LastUserStackPage;
+
+/*
+ * Set the errno for Unix compatible system calls.
+ */
+#define Mach_SetErrno(err) Proc_GetActualProc()->unixErrno = (err)
 
 #endif /* _MACH */

@@ -166,6 +166,7 @@
 #define	MACH_FIRST_USER_PSR		0x080	/* traps off, interrupts on,
 						 * previous mode not supervisor,
 						 * current mode supervisor. */
+#define	MACH_PSR_SIG_RESTORE		0xF00000 /* Bits to restore from sig */ 
 #define	MACH_NO_INTR_USER_PSR		0xF80
 #define MACH_CARRY_BIT			0x00100000
 #define MACH_CARRY_BITMASK		(~MACH_CARRY_BIT)
@@ -250,6 +251,7 @@
 #define	MACH_KERN_STACK_SIZE	(MACH_STACK_START - MACH_STACK_BOTTOM)
 #define	MACH_BARE_STACK_OFFSET	(MACH_KERN_STACK_SIZE - 8)
 #define	MACH_UNIX_ERRNO_OFFSET	696
+#define MACH_PROC_REGS_OFFSET	(MACH_UNIX_ERRNO_OFFSET+28)
 
 /*
  * Constants for the user's address space.
@@ -314,6 +316,7 @@
 #define	MACH_FPU_REGS_OFFSET	(MACH_FPU_QUEUE_COUNT + 4)
 #define	MACH_FPU_QUEUE_OFFSET	(MACH_FPU_REGS_OFFSET + (MACH_NUM_FPS * 4))
 
+#define	MACH_SIG_STUFF_SIZE	((MACH_SAVED_STATE_FRAME + 8 + 4) + 20)
 						/* skip over calleeInputs too */
 /*
  * Byte offset from beginning of a Mach_State structure to various register
@@ -328,6 +331,9 @@
 #define	MACH_SAVED_SPS_OFFSET	(MACH_SAVED_MASK_OFFSET + 4)
 #define	MACH_KSP_OFFSET		(MACH_SAVED_SPS_OFFSET + (MACH_NUM_WINDOWS * 4))
 #define	MACH_FPU_STATUS_OFFSET  (MACH_KSP_OFFSET + 4)
+#define	MACH_UNDER1_OFFSET	(MACH_FPU_STATUS_OFFSET + MACH_SIG_STUFF_SIZE \
+				+ 8)
+#define	MACH_UNDER2_OFFSET	(MACH_UNDER1_OFFSET + (4 * MACH_NUM_WINDOWS))
 
 /*
  * Maximum number of processors configurable.

@@ -168,7 +168,7 @@ Proc_NewProc(PC, procType, shareHeap, pidPtr, procName, vforkFlag)
     }
     procPtr->familyID 		= parentProcPtr->familyID;
     procPtr->userID 		= parentProcPtr->userID;
-    procPtr->unixProgress	= -1;
+    procPtr->effectiveUserID 	= parentProcPtr->effectiveUserID;
 
     procPtr->billingRate 	= parentProcPtr->billingRate;
     procPtr->recentUsage 	= 0;

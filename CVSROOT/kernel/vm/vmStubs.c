@@ -24,15 +24,13 @@ static char rcsid[] = "$Header$";
 #include <status.h>
 #include <errno.h>
 #include <user/sys/types.h>
+#include <user/sys/mman.h>
 #include <mach.h>
 #include <proc.h>
 #include <timer.h>
 #include <vm.h>
 #include <vmInt.h>
-
-#ifndef Mach_SetErrno
-#define Mach_SetErrno(err)
-#endif
+#include <vmUnixStubs.h>
 
 int debugVmStubs;
 
@@ -45,7 +43,8 @@ int debugVmStubs;
  *	The stub for the "sbrk" Unix system call.
  *
  * Results:
- *	Returns -1 on failure.
+ *	Returns old break on success.
+ *	Returns -1 and errno on failure.
  *
  * Side effects:
  *	Side effects associated with the system call.
@@ -81,7 +80,6 @@ Vm_SbrkStub(addr)
 		    addr, lastAddr,
 		    (segPtr->offset + segPtr->numPages) * vm_PageSize);
 	    }
-
 	    return 0;
 	}
     }
@@ -148,13 +146,32 @@ Vm_MmapStub(addr, len, prot, share, fd, pos)
 {
     ReturnStatus	status;
     Address		mappedAddr;
+    int			spriteProt=0;
 
-    status = Vm_MmapInt(addr, len, prot, share, fd, pos, &mappedAddr);
+    if (debugVmStubs) {
+	printf("Vm_MmapStub(%x, %x, %x, %x, %x, %x)\n", addr, len, prot,
+		share, fd, pos);
+    }
+
+    if (prot&SUN_PROT_READ) {
+	spriteProt |= PROT_READ;
+    }
+    if (prot&SUN_PROT_WRITE) {
+	spriteProt |= PROT_WRITE;
+    }
+    if (prot&SUN_PROT_EXEC) {
+	spriteProt |= PROT_EXEC;
+    }
+    status = Vm_MmapInt(addr, len, spriteProt, share&~_MAP_NEW, fd, pos,
+	    &mappedAddr);
     if (status == SUCCESS) {
 #if defined(ds3100) || defined(ds5000)
-        return mappedAddr;
+        return (int)mappedAddr;
 #else
-        if (share && _MAP_NEW) {
+	if (debugVmStubs) {
+	    printf("Vm_MmapStub: returns %x\n", mappedAddr);
+	}
+        if (share & _MAP_NEW) {
 	    return (int)mappedAddr;
 	} else {
 	    return 0;
@@ -190,6 +207,9 @@ Vm_MunmapStub(addr, len)
 {
     ReturnStatus	status;
 
+    if (debugVmStubs) {
+	printf("Vm_MunmapStub(%x, %x)\n", addr, len);
+    }
     status = Vm_Munmap(addr, len, 0);
     if (status == SUCCESS) {
 	return 0;
@@ -224,6 +244,9 @@ Vm_MincoreStub(addr, len, vec)
 {
     ReturnStatus	status;
 
+    if (debugVmStubs) {
+	printf("Vm_MincoreStub(%x, %x, %x)\n", addr, len, vec);
+    }
     status = Vm_Mincore(addr, len, vec);
     if (status == SUCCESS) {
 	return 0;
@@ -232,4 +255,39 @@ Vm_MincoreStub(addr, len, vec)
 	return -1;
     }
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_MprotectStub --
+ *
+ *	The stub for the "mprotect" Unix system call.
+ *
+ * Results:
+ *	Returns -1 on failure.
+ *
+ * Side effects:
+ *	Side effects associated with the system call.
+ *	 
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Vm_MprotectStub(addr, len, prot)
+    caddr_t	addr;
+    int len;
+    int prot;
+{
+    ReturnStatus	status;
 
+    if (debugVmStubs) {
+	printf("Vm_MprotectStub(%x, %x, %x)\n", addr, len, prot);
+    }
+    status = Vm_Mprotect(addr, len, prot);
+    if (status == SUCCESS) {
+	return 0;
+    } else {
+	Mach_SetErrno(Compat_MapCode(status));
+	return -1;
+    }
+}

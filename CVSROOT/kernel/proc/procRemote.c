@@ -49,8 +49,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <sysSysCallParam.h>
 #include <dbg.h>
 #include <stdio.h>
+#include <procUnixStubs.h>
 #include <bstring.h>
 #include <recov.h>
+
+extern int debugProcStubs;
 
 
 /*
@@ -318,6 +321,19 @@ Proc_ResumeMigProc(pc)
     procPtr->genFlags &= ~PROC_NO_VM;
     VmMach_ReinitContext(procPtr);
     Proc_Unlock(procPtr);
+
+    if (procPtr->unixProgress != PROC_PROGRESS_NOT_UNIX &&
+	    procPtr->unixProgress != PROC_PROGRESS_UNIX) {
+	if (debugProcStubs) {
+	    printf("Unix progress = %d (mig)\n", procPtr->unixProgress);
+	}
+    }
+    if (procPtr->unixProgress == PROC_PROGRESS_MIG_RESTART) {
+	if (debugProcStubs) {
+	    printf("Restarting migrated system call\n");
+	}
+	procPtr->unixProgress = PROC_PROGRESS_RESTART;
+    }
 
     /*
      * Start the process running.  This does not return.  

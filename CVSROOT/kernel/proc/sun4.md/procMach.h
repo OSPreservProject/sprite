@@ -22,6 +22,7 @@
 #include <sprite.h>
 
 #define	NEW_PAGE_SIZE		0x2000
+#define SUN_SEG_SIZE		NEW_PAGE_SIZE
 #ifdef sun4
 #define	NEW_SEG_SIZE		0x40000
 #else
@@ -69,6 +70,10 @@ typedef struct {
 #define	PROC_DATA_FILE_OFFSET(x) \
 	(PROC_CODE_FILE_OFFSET(x) + (x).code)
 
+#define PROC_BASEADDR(x) \
+	(((x).magic==PROC_ZMAGIC) && ((x).entry < NEW_PAGE_SIZE) ?\
+	0 : NEW_PAGE_SIZE)
+
 /*
  * Macros which take exec structures as arguments and tell where the
  * various pieces will be loaded.
@@ -78,6 +83,10 @@ typedef struct {
 	(((x).magic==PROC_OMAGIC)? (PROC_CODE_LOAD_ADDR(x)+(x).code) \
 	: (NEW_SEG_SIZE+((PROC_CODE_LOAD_ADDR(x)+(x).code-1) & ~(NEW_SEG_SIZE-1))))
 #define PROC_BSS_LOAD_ADDR(x)  (PROC_DATA_LOAD_ADDR(x)+(x).data)
+
+#define PROC_SUN_DATA_LOAD_ADDR(x) \
+	(((x).magic==PROC_OMAGIC)? (PROC_CODE_LOAD_ADDR(x)+(x).code) \
+	: (SUN_SEG_SIZE+((PROC_CODE_LOAD_ADDR(x)+(x).code-1) & ~(SUN_SEG_SIZE-1))))
 
 
 #endif /* _PROCMACH */

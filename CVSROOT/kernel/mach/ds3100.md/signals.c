@@ -80,7 +80,7 @@ MachUNIXSigvec(sig, newVectorPtr, oldVectorPtr)
 		break;
 	    default:
 		newAction.action = SIG_HANDLE_ACTION;
-		newAction.handler = newVector.sv_handler;
+		newAction.handler = (int(*)())newVector.sv_handler;
 	}
 	status = Compat_UnixSigMaskToSprite(newVector.sv_mask,
 					    &newAction.sigHoldMask);
@@ -110,7 +110,7 @@ MachUNIXSigvec(sig, newVectorPtr, oldVectorPtr)
 		oldVector.sv_handler = SIG_IGN;
 		break;
 	    default:
-		oldVector.sv_handler = oldActionPtr->handler;
+		oldVector.sv_handler = (void(*)())oldActionPtr->handler;
 		break;
 	}
 	(void) Compat_SpriteSigMaskToUnix(oldAction.sigHoldMask, 

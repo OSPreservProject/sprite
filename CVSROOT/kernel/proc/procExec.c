@@ -34,17 +34,18 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <vm.h>
 #include <sys.h>
 #include <procMigrate.h>
+#include <procUnixStubs.h>
 #include <status.h>
 #include <string.h>
 #include <byte.h>
 #include <rpc.h>
 #include <prof.h>
-#include <file.h>
 #include <fsutil.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <bstring.h>
 #include <vmMach.h>
+#include <file.h>
 /*
  * This will go away when libc is changed.
  */
@@ -53,11 +54,15 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 				 PROC_MAX_ENVIRON_VALUE_LENGTH)
 #endif /*  PROC_MAX_ENVIRON_LENGTH */
 
+#define UNIX_CODE 1
+
 typedef struct {
     List_Links	links;
     Address	stringPtr;
     int		stringLen;
 } ArgListElement;
+
+extern int debugProcStubs;
 
 /*
  * Define the information needed to perform an exec: the user's stack,
@@ -140,8 +145,7 @@ static Boolean 		SetupVM _ARGS_((register Proc_ControlBlock *procPtr,
 			    Fs_Stream *codeFilePtr, Boolean usedFile, 
 			    Vm_Segment **codeSegPtrPtr, 
 			    register Vm_ExecInfo *execInfoPtr));
-static Boolean		ZeroHeapEnd _ARGS_ ((Vm_ExecInfo *execInfoPtr,
-					     Address heapEnd));
+static Boolean		ZeroHeapEnd _ARGS_ ((Vm_ExecInfo *execInfoPtr));
 
 #ifdef notdef
 /*
@@ -970,11 +974,11 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
     procPtr = Proc_GetActualProc();
 
     /*
-     * This should be in the Vm_ExecInfo structure, so it can get reused
-     * when a program is re-run.  I'll fix this soon.  --Ken
+     * objInfo.unixCompat is set if the header of the file indicates
+     * it is a Unix binary.
      */
     objInfo.unixCompat = 0;
-    procPtr->unixProgress = -1;
+    procPtr->unixProgress = PROC_PROGRESS_NOT_UNIX;
 
     /* Turn off profiling */
     if (procPtr->Prof_Scale != 0) {
@@ -1230,20 +1234,27 @@ DoExec(fileName, userArgsPtr, encapPtrPtr, debugMe)
     argBuffer = (Address) NIL;
     
     /*
+     * Move the stack pointer on the sun4.
+     */
+    if (execInfoPtr->flags & UNIX_CODE) {
+#ifdef sun4
+	/*
+	 * Unix on the sun4 has the stack in a different location from
+	 * Sprite.
+	 */
+	userStackPointer += 32;
+	if (debugProcStubs) {
+	    printf("Moving stack pointer for Unix binary.\n");
+	}
+#endif
+	procPtr->unixProgress = PROC_PROGRESS_UNIX;
+    }
+
+    /*
      * Disable interrupts.  Note that we don't use the macro DISABLE_INTR 
      * because there is an implicit enable interrupts when we return to user 
      * mode.
      */
-    if (objInfo.unixCompat) {
-#ifdef sun4
-	userStackPointer += 32;
-	printf("Moving stack pointer for Unix binary.\n");
-#endif
-	/*
-	 * I'm using a magic number here.  This should be temporary.
-	 */
-	procPtr->unixProgress = 0x11beef22;
-    }
     Mach_ExecUserProc(procPtr, userStackPointer, (Address) execInfoPtr->entry);
     panic("DoExec: Proc_RunUserProc returned.\n");
 
@@ -1457,6 +1468,11 @@ SetupVM(procPtr, objInfoPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr)
     int				realCode = 1;
 
     if (*codeSegPtrPtr == (Vm_Segment *) NIL) {
+	if (objInfoPtr->unixCompat) {
+	    execInfoPtr->flags = UNIX_CODE;
+	} else {
+	    execInfoPtr->flags = 0;
+	}
 	execInfoPtr->entry = (int)objInfoPtr->entry;
 	if (objInfoPtr->heapSize != 0) {
 	    execInfoPtr->heapPages = 
@@ -1472,6 +1488,11 @@ SetupVM(procPtr, objInfoPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr)
 			(unsigned)objInfoPtr->heapLoadAddr / vm_PageSize;
 	execInfoPtr->heapFileOffset = objInfoPtr->heapFileOffset;
 	heapEnd = objInfoPtr->heapLoadAddr + objInfoPtr->heapSize;
+	execInfoPtr->heapExcess =
+		vm_PageSize - ((unsigned)heapEnd&(vm_PageSize-1));
+	if (execInfoPtr->heapExcess == vm_PageSize) {
+	    execInfoPtr->heapExcess = 0;
+	}
 	execInfoPtr->bssFirstPage = 
 			(unsigned)objInfoPtr->bssLoadAddr / vm_PageSize;
 	if ((unsigned)(heapEnd-1) / vm_PageSize >= execInfoPtr->bssFirstPage) {
@@ -1575,14 +1596,13 @@ SetupVM(procPtr, objInfoPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr)
      * If heap does not match page boundary, prefetch the partial page
      * if necessary, and zero the rest.
      */
-    if (notFound && ((unsigned)heapEnd & (vm_PageSize-1)) != 0) {
-	if (realCode) {
+    if (execInfoPtr->heapExcess != 0) {
+	if (realCode && (execInfoPtr->flags & UNIX_CODE) == 0) {
 	    printf("SetupVM: Warning: Program %s has unaligned heap %s\n",
 		    Fsutil_HandleName(&codeFilePtr->hdr),
 		    "and should be relinked");
-	} else {
-	    return ZeroHeapEnd(execInfoPtr, heapEnd);
 	}
+	return ZeroHeapEnd(execInfoPtr);
     }
     return(TRUE);
 }
@@ -1608,14 +1628,14 @@ SetupVM(procPtr, objInfoPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr)
  */
     
 static Boolean
-ZeroHeapEnd(execInfoPtr, userHeapEnd)
+ZeroHeapEnd(execInfoPtr)
     Vm_ExecInfo	*execInfoPtr;	/* info about the exec file */
-    Address	userHeapEnd;	/* user address of the end of the heap */
 {
     ReturnStatus	status;
     Address	heapEnd;	/* kernel address of end of heap */
     int		bytesToZero;	/* number of bytes to zero out */
     int		bytesAvail;	/* number of bytes accessible */
+    int		userHeapEnd;
     
 
     status = Vm_PageIn((Address) ((execInfoPtr->bssFirstPage-1)*vm_PageSize),
@@ -1624,9 +1644,13 @@ ZeroHeapEnd(execInfoPtr, userHeapEnd)
 	printf("SetupVM: heap prefetch failure\n");
 	return FALSE;
     }
-    bytesToZero = vm_PageSize - ((unsigned)userHeapEnd&(vm_PageSize-1));
-    Vm_MakeAccessible(VM_READWRITE_ACCESS, bytesToZero, userHeapEnd,
-		      &bytesAvail, &heapEnd);
+    bytesToZero = execInfoPtr->heapExcess;
+    userHeapEnd = execInfoPtr->bssFirstPage*vm_PageSize-bytesToZero;
+    if (debugProcStubs) {
+	printf("ZeroHeapEnd: zeroing %x at %x\n", bytesToZero, userHeapEnd);
+    }
+    Vm_MakeAccessible(VM_READWRITE_ACCESS, bytesToZero, (Address)userHeapEnd,
+		      &bytesAvail, (Address *)&heapEnd);
     if (bytesAvail != bytesToZero) {
 	printf("SetupVM: can't map heap\n");
 	return FALSE;

@@ -32,7 +32,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 extern Mach_State	*machCurStatePtr;
 
+#if 0
 static ReturnStatus Wait _ARGS_((int socketID, Boolean readSelect, Time *timeOutPtr));
+#endif
 
 #ifdef DEBUG
 #  define	DebugMsg(status, string) 	printf("%x: %s\n", status, string)
@@ -134,7 +136,9 @@ MachUNIXAccept(socketID, addrPtr, addrLenPtr)
 	    /*
 	     * Wait for the server to tell us that a request has arrived.
 	     */
+#if 0
 	    (void) Wait(socketID, TRUE, (Time *) NULL);
+#endif
 
 	    /*
 	     * There's a pending connection so retry the ioctl.
@@ -308,7 +312,9 @@ MachUNIXConnect(socketID, namePtr, nameLen)
 	    return(FS_WOULD_BLOCK);
 	} 
 
+#if 0
 	status = Wait(socketID, FALSE, &time_OneMinute);
+#endif
 
 	if (status == FS_TIMEOUT) {
 	    DebugMsg(status, "connect (select)");
@@ -1188,6 +1194,7 @@ MachUNIXShutdown(socketID, action)
     return(status);
 }
 
+#if 0
 
 /*
  *----------------------------------------------------------------------
@@ -1294,3 +1301,4 @@ Wait(socketID, readSelect, timeOutPtr)
 
     return(SUCCESS);
 }
+#endif

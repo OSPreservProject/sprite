@@ -24,6 +24,7 @@ static char rcsid[] = "$Header$";
 #include <stdlib.h>
 #include <status.h>
 #include <errno.h>
+#include <procUnixStubs.h>
 #include <user/sys/types.h>
 #include <user/sys/wait.h>
 #include <user/sys/time.h>
@@ -35,13 +36,9 @@ static char rcsid[] = "$Header$";
 #include <fsutil.h>
 #include <assert.h>
 
-#ifndef Mach_SetErrno
-#define Mach_SetErrno(err)
-#endif
-
 int debugProcStubs;
 
-#ifdef ds3100
+#if defined(ds3100) || defined(ds5000)
 extern Mach_State *machCurStatePtr;
 #endif
 
@@ -125,7 +122,7 @@ Proc_ForkStub()
     if (debugProcStubs) {
 	printf("Proc_ForkStub\n");
     }
-#ifdef ds3100
+#if defined(ds3100) || defined(ds5000)
     /*
      * Put the right values in V1 and A3 for the child because the process
      * jumps directly to user space after it is created.  A 1 in v1 
@@ -134,8 +131,9 @@ Proc_ForkStub()
      */
     machCurStatePtr->userState.regState.regs[V1] = 1;
     machCurStatePtr->userState.regState.regs[A3] = 0;
-#endif
+#else
     Mach_Return2(1);
+#endif
     status = Proc_NewProc((Address) 0, PROC_USER, FALSE, &newPid, (char *) NIL);
     if (status == PROC_CHILD_PROC) {
 	panic("Proc_ForkStub: Child came alive here?\n");
@@ -144,10 +142,11 @@ Proc_ForkStub()
 	Mach_SetErrno(Compat_MapCode(status));
 	return -1;
     }
-#ifdef ds3100
+#if defined(ds3100) || defined(ds5000)
     machCurStatePtr->userState.regState.regs[V1] = 0;
-#endif    
+#else
     Mach_Return2(0);
+#endif
     return (int) newPid;
 }
 
@@ -160,7 +159,7 @@ Proc_VforkStub()
     if (debugProcStubs) {
 	printf("Proc_VForkStub\n");
     }
-#ifdef ds3100
+#if defined(ds3100) || defined(ds5000)
     /*
      * Put the right values in V1 and A3 for the child because the process
      * jumps directly to user space after it is created.  A 1 in v1 
@@ -169,8 +168,9 @@ Proc_VforkStub()
      */
     machCurStatePtr->userState.regState.regs[V1] = 1;
     machCurStatePtr->userState.regState.regs[A3] = 0;
-#endif
+#else
     Mach_Return2(1);
+#endif
     status = Proc_NewProc(0, PROC_USER, TRUE, &newPid, (char *) NIL);
     if (status == PROC_CHILD_PROC) {
 	panic("Proc_VforkStub: Child came alive here?\n");
@@ -179,10 +179,11 @@ Proc_VforkStub()
 	Mach_SetErrno(Compat_MapCode(status));
 	return -1;
     }
-#ifdef ds3100
+#if defined(ds3100) || defined(ds5000)
     machCurStatePtr->userState.regState.regs[V1] = 0;
-#endif
+#else
     Mach_Return2(0);
+#endif
     return (int) newPid;
 }
 
@@ -275,6 +276,7 @@ Proc_GetpidStub()
     if (debugProcStubs) {
 	printf("Proc_GetpidStub: %x\n", Proc_GetEffectiveProc()->processID);
     }
+    Mach_Return2(Proc_GetEffectiveProc()->parentID);
     return Proc_GetEffectiveProc()->processID;
 }
 
@@ -655,8 +657,11 @@ Proc_Wait4Stub(pid, statusPtr, options, unixRusagePtr)
 		childInfo.termCode);
     }
 
-    if (status != SUCCESS) {
-	/* need to check for GEN_ABORTED_BY_SIGNAL */
+    if (status == GEN_ABORTED_BY_SIGNAL) {
+	printf("Wait interrupted by signal\n");
+	curProcPtr->unixProgress = PROC_PROGRESS_RESTART;
+	return 0;
+    } else if (status != SUCCESS) {
 	if (status == PROC_NO_EXITS && (options & WNOHANG)) {
 	    printf("Proc_Wait4Stub: exiting\n");
 	    return 0;

@@ -65,6 +65,13 @@ extern void	panic _ARGS_(());
 /* Temporary declaration until prototyping is done */
 extern ReturnStatus Proc_RemoteDummy();
 
+typedef struct unixSyscallEntry {
+    int (*func)();
+    int numArgs;
+} unixSyscallEntry;
+
+extern unixSyscallEntry sysUnixSysCallTable[];
+
 #else
 
 /*

@@ -1025,6 +1025,7 @@ typedef struct {
     unsigned int 	schedQuantumTicks;
     Proc_TimerInterval  timers[PROC_MAX_TIMER + 1];
     int			argStringLength;
+    int			unixProgress;
 } EncapState;
 
 #define COPY_STATE(from, to, field) to->field = from->field
@@ -1163,6 +1164,7 @@ EncapProcState(procPtr, hostID, infoPtr, bufPtr)
     COPY_STATE(procPtr, encapPtr, numQuantumEnds);
     COPY_STATE(procPtr, encapPtr, numWaitEvents);
     COPY_STATE(procPtr, encapPtr, schedQuantumTicks);
+    COPY_STATE(procPtr, encapPtr, unixProgress);
 
 
     /*
@@ -1299,6 +1301,7 @@ DeencapProcState(procPtr, infoPtr, bufPtr)
     COPY_STATE(encapPtr, procPtr, numQuantumEnds);
     COPY_STATE(encapPtr, procPtr, numWaitEvents);
     COPY_STATE(encapPtr, procPtr, schedQuantumTicks);
+    COPY_STATE(encapPtr, procPtr, unixProgress);
 
     /* 
      * The process should never be flagged as unmigratable, so 

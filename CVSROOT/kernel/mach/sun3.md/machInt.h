@@ -35,7 +35,7 @@ extern void MachProbeStart _ARGS_((void));
 extern void MachProbeEnd _ARGS_((void));
 
 extern int MachTrap _ARGS_((Mach_TrapStack trapStack));
-
+extern void MachRunUserProc _ARGS_((void));
 
 /*
  * The number of different exceptions.

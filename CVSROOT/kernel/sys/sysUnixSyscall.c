@@ -17,128 +17,26 @@
 static char rcsid[] = "$Header$";
 #endif /* not lint */
 
-extern int Proc_ExitStub();
-extern int Proc_ForkStub();
-extern int Proc_VforkStub();
-extern int Fs_NewReadStub();
-extern int Fs_NewWriteStub();
-extern int Fs_NewOpenStub();
-extern int Fs_NewCloseStub ();
-extern int Fs_CreatStub();
-extern int Fs_LinkStub();	
-extern int Fs_UnlinkStub();
-extern int Proc_ExecvStub();
-extern int Fs_ChdirStub();
+#include <sprite.h>
+#include <vmUnixStubs.h>
+#include <fsUnixStubs.h>
+#include <proc.h>
+#include <procUnixStubs.h>
+#include <vm.h>
+#include <sig.h>
+#include <sigUnixStubs.h>
+#include <sys.h>
+#include <sysInt.h>
+#include <timerUnixStubs.h>
+#include <mach.h>
+#include <stdio.h>
 
-extern int Fs_ChmodStub();
-extern int Fs_ChownStub(); 
-extern int Vm_SbrkStub();
-extern int Fs_LseekStub();
-extern int Proc_GetpidStub();
-extern int Proc_GetuidStub();
-extern int Proc_PtraceStub();
-extern int Fs_AccessStub();
-extern int Fs_SyncStub();
-extern int Sig_KillStub();
-extern int Fs_StatStub();
-extern int Fs_LstatStub();
-extern int Fs_DupStub();
-extern int Fs_PipeStub();
-extern int Proc_GetgidStub();
-extern int Fs_IoctlStub();
-extern int Sys_RebootStub();
-extern int Fs_SymlinkStub();
-extern int Fs_ReadlinkStub();
-extern int Proc_ExecveStub();
-extern int Proc_UmaskStub();
-extern int Fs_FstatStub();
-extern int Vm_GetpagesizeStub();
-extern int Proc_GetgroupsStub();
-extern int Proc_SetgroupsStub();
-extern int Proc_GetpgrpStub();
-extern int Proc_SetpgrpStub();
-extern int Proc_SetitimerStub();
-extern int Proc_Wait3Stub();
-extern int Proc_GetitimerStub();
-extern int Sys_GethostnameStub();
-extern int Sys_SethostnameStub();
-extern int Fs_GetdtablesizeStub();
-extern int Fs_Dup2Stub();
-extern int Fs_GetdoptStub();
-extern int Fs_FcntlStub();
-extern int Fs_NewSelectStub();
-extern int Fs_SetdoptStub();
-extern int Fs_FsyncStub();
-extern int Proc_SetpriorityStub();
-extern int Fs_SocketStub();
-extern int Fs_ConnectStub();
-extern int Fs_AcceptStub();
-extern int Proc_GetpriorityStub();
-extern int Fs_SendStub();
-extern int Fs_RecvStub();
-extern int Fs_BindStub();
-extern int Fs_SetsockoptStub();
-extern int Fs_ListenStub();
-extern int Sig_SigvecStub();
-extern int Sig_SigblockStub();
-extern int Sig_SigsetmaskStub();
-extern int Sig_SigpauseStub();
-extern int Sig_SigstackStub();
-extern int Fs_RecvmsgStub();
-extern int Fs_SendmsgStub();
-extern int Timer_GettimeofdayStub();
-extern int Proc_GetrusageStub();
-extern int Fs_GetsockoptStub();
-extern int Fs_ReadvStub();
-extern int Fs_WritevStub();
-extern int Timer_SettimeofdayStub();
-extern int Fs_FchownStub();
-extern int Fs_FchmodStub();
-extern int Fs_RecvfromStub();
-extern int Proc_SetreuidStub();
-extern int Proc_SetregidStub();
-extern int Fs_NewRenameStub();
-extern int Fs_TruncateStub();
-extern int Fs_FtruncateStub();
-extern int Fs_FlockStub();
-extern int Fs_SendtoStub();
-extern int Sys_ShutdownStub();
-extern int Fs_SocketpairStub();
-extern int Fs_MkdirStub();
-extern int Fs_RmdirStub();
-extern int Fs_UtimesStub();
-/* extern int Mach_LongJumpReturnStub(); */
-extern int Timer_AdjtimeStub();
-extern int Sys_GetpeernameStub();
-extern int Sys_GethostidStub();
-extern int Sys_SethostidStub();
-extern int Sys_GetrlimitStub();
-extern int Sys_SetrlimitStub();
-extern int Sig_KillpgStub();
-extern int Fs_GetsocknameStub();	
-extern int Fs_GetdirentriesStub();
-extern int Sys_GetdomainnameStub();
-extern int Sys_SetdomainnameStub();
-extern int Sys_GetsysinfoStub();
-extern int Vm_MmapStub();
-extern int Vm_MunmapStub();
-extern int Vm_MincoreStub();
-static int Sys_UnixError();
-static int Sys_TestStub();
-extern int Mach_SigreturnStub();
-
-#if defined(ds3100) || defined(ds5000)
-extern int Proc_WaitpidStub();
-extern int Vm_SemctlStub();
-extern int Vm_SemopStub();
-extern int Vm_SemgetStub();
-#else
-extern int Fs_GetdentsStub();
-extern int Proc_Wait4Stub();
-extern int Vm_SemsysStub();
-#endif
 
 #define SYS_UNIX_ERROR  Sys_UnixError
+
+static int Sys_UnixError _ARGS_((void));
+static int Sys_TestStub _ARGS_((int arg0, int arg1, int arg2, int arg3,
+	int arg4, int arg5));
 
 /*
  * The system call table.
@@ -151,10 +49,7 @@ extern int Vm_SemsysStub();
  * since only 6 arguments are passed in registers.
  */
 
-struct {
-    int  (*func)();
-    int	 numArgs;
-} sysUnixSysCallTable[258] = {
+unixSyscallEntry sysUnixSysCallTable[258] = {
     {  SYS_UNIX_ERROR,        0  },      /* indir  */
     { Proc_ExitStub,          1  },      /* exit  */
     { Proc_ForkStub,          0  },      /* fork  */
@@ -233,7 +128,7 @@ struct {
     { Vm_MmapStub,            6  },      /* mmap  */
     { SYS_UNIX_ERROR,         1  },      /* old vadvise  */
     { Vm_MunmapStub,          2  },      /* munmap  */
-    { SYS_UNIX_ERROR,         3  },      /* mprotect  */
+    { Vm_MprotectStub,        3  },      /* mprotect  */
     { SYS_UNIX_ERROR,         3  },      /* madvise  */
     { SYS_UNIX_ERROR,         1  },      /* vhangup  */
     { SYS_UNIX_ERROR,         2  },      /* old vlimit  */
@@ -327,7 +222,7 @@ struct {
     { SYS_UNIX_ERROR,         0  },      /* #156  */
     { SYS_UNIX_ERROR,         0  },      /* #157  */
     { SYS_UNIX_ERROR,         0  },      /* nfs_svc  */
-    { SYS_UNIX_ERROR,         0  },      /* getdirentries  */
+    { Fs_GetdirentriesStub,   4  },      /* getdirentries  */
     { SYS_UNIX_ERROR,         0  },      /* statfs  #160 */
     { SYS_UNIX_ERROR,         0  },      /* fstatfs  */
     { SYS_UNIX_ERROR,         0  },      /* #162  */
@@ -472,12 +367,7 @@ struct {
 int sysUnixNumSyscalls =
                 sizeof(sysUnixSysCallTable)/sizeof(*sysUnixSysCallTable);
 
-#include <sprite.h>
-#include <stdio.h>
-#include <mach.h>
-#include <proc.h>
-
-#ifdef ds3100
+#if defined(ds3100) || defined(ds5000)
 int sysCallNum;
 #endif
 

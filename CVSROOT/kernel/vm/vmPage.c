@@ -49,14 +49,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <fsio.h>
 #include <fsrmt.h>
 #include <stdio.h>
-#ifdef SOSP91
-#include <fsStat.h>
-#endif SOSP91
 
 Boolean	vmDebug	= FALSE;
 
 static	VmCore          *coreMap;	/* Pointer to core map that is 
 					   allocated in VmCoreMapAlloc. */
+
+extern int debugVmStubs; /* Unix compatibility debug flag. */
 
 /*
  * Minimum fraction of pages that VM wants for itself.  It keeps
@@ -1412,26 +1411,8 @@ Vm_PageIn(virtAddr, protFault)
     Proc_ControlBlock		*procPtr;
     unsigned	int		virtFrameNum;
     PrepareResult		result;
-#ifdef SOSP91
-    Boolean			isForeign = FALSE;
-#endif SOSP91
-
-#ifdef SOSP91
-    if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
-	if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
-		(proc_RunningProcesses[0]->genFlags &
-		(PROC_FOREIGN | PROC_MIGRATING))) {
-	    isForeign = TRUE;
-	}
-    }
-#endif SOSP91
 
     vmStat.totalFaults++;
-#ifdef SOSP91
-	if (isForeign) {
-	    fs_MoreStats.totalFaultsM++;
-	}
-#endif SOSP91
 
     procPtr = Proc_GetCurrentProc();
     /*
@@ -1449,16 +1430,19 @@ Vm_PageIn(virtAddr, protFault)
 	 * If a process is wildly growing its stack we'll have the heap locked
 	 * while we try to grow the stack, and we have to unlock the heap.
 	 */
+	if (segPtr->type == VM_SHARED) {
+	    printf("Vm_PageIn: io error\n");
+	}
 	status = FAILURE;
 	goto pageinDone;
     }
-    if ((protFault && ( segPtr->type == VM_CODE) ||
-	    transVirtAddr.flags & VM_READONLY_SEG)) {
+    if (protFault && ( segPtr->type == VM_CODE ||
+	    (transVirtAddr.flags & VM_READONLY_SEG))) {
 	/*
 	 * Access violation.  Go to pageinDone to clean up ptUserCount.
 	 */
 	if (segPtr->type == VM_SHARED) {
-	    dprintf("Vm_PageIn: access violation\n");
+	    printf("Vm_PageIn: access violation\n");
 	}
 	status = FAILURE;
 	goto pageinDone;
@@ -1506,6 +1490,9 @@ Vm_PageIn(virtAddr, protFault)
     if (protFault && (*ptePtr & VM_READ_ONLY_PROT) &&
 	    !(*ptePtr & VM_COR_CHECK_BIT)) {
 	status = FAILURE;
+	if (segPtr->type == VM_SHARED) {
+	    printf("Vm_PageIn: permission failure\n");
+	}
 	goto pageinDone;
     }
 
@@ -1528,7 +1515,7 @@ Vm_PageIn(virtAddr, protFault)
 	    status = VmCOR(&transVirtAddr);
 	    if (status != SUCCESS) {
 		if (segPtr->type == VM_SHARED) {
-		    dprintf("Vm_PageIn: VmCOR failure\n");
+		    printf("Vm_PageIn: VmCOR failure\n");
 		}
 		status = FAILURE;
 		goto pageinError;
@@ -1540,6 +1527,9 @@ Vm_PageIn(virtAddr, protFault)
 	}
     }
     if (result == IS_DONE) {
+	if (transVirtAddr.segPtr->type == VM_SHARED) {
+	    printf("shared page at %x done early\n", virtAddr);
+	}
 	status = SUCCESS;
 	goto pageinDone;
     }
@@ -1550,16 +1540,15 @@ Vm_PageIn(virtAddr, protFault)
     virtFrameNum = VmPageAllocate(&transVirtAddr, TRUE);
     *ptePtr |= virtFrameNum;
 
+    if (transVirtAddr.segPtr->type == VM_SHARED && debugVmStubs) {
+	printf("paging in shared page to %x\n", virtAddr);
+    }
+
     /*
      * Call the appropriate routine to fill the page.
      */
     if (*ptePtr & VM_ZERO_FILL_BIT) {
 	vmStat.zeroFilled++;
-#ifdef SOSP91
-	if (isForeign) {
-	    fs_MoreStats.zeroFilledM++;
-	}
-#endif SOSP91
 	VmZeroPage(virtFrameNum);
 	*ptePtr |= VM_MODIFIED_BIT;
 	status = SUCCESS;
@@ -1572,14 +1561,8 @@ Vm_PageIn(virtAddr, protFault)
 	    VmStoreTraceRec(VM_TRACE_PAGE_FAULT_REC, sizeof(faultRec),
 			    (Address)&faultRec, TRUE);
 	}
-    } else if (*ptePtr & VM_ON_SWAP_BIT ||
-	    transVirtAddr.segPtr->type == VM_SHARED) {
+    } else if (*ptePtr & VM_ON_SWAP_BIT) {
 	vmStat.psFilled++;
-#ifdef SOSP91
-	if (isForeign) {
-	    fs_MoreStats.psFilledM++;
-	}
-#endif SOSP91
 	if (transVirtAddr.segPtr->type == VM_SHARED) {
 	    dprintf("Vm_PageIn: paging in shared page %d\n",transVirtAddr.page);
 	}
@@ -1595,11 +1578,6 @@ Vm_PageIn(virtAddr, protFault)
 	}
     } else {
 	vmStat.fsFilled++;
-#ifdef SOSP91
-	if (isForeign) {
-	    fs_MoreStats.fsFilledM++;
-	}
-#endif SOSP91
 	status = VmFileServerRead(&transVirtAddr, virtFrameNum);
 	if (vm_Tracing && transVirtAddr.segPtr->type == VM_HEAP) {
 	    Vm_TracePageFault	faultRec;
@@ -1629,7 +1607,7 @@ Vm_PageIn(virtAddr, protFault)
 pageinError:
     if (status != SUCCESS) {
 	if (transVirtAddr.segPtr->type == VM_SHARED) {
-	    dprintf("Vm_PageIn: Page read failed.  Invalidating pages.\n");
+	    printf("Vm_PageIn: Page read failed.  Invalidating pages.\n");
 	    VmPageFree(Vm_GetPageFrame(*ptePtr));
 	    VmPageInvalidateInt(&transVirtAddr, ptePtr);
 	} else {
@@ -3006,7 +2984,8 @@ VmPageFlush(virtAddrPtr, length, toDisk, wantRes)
 	/*
 	 * This stuff should probably be in the fs module.
 	 */
-	if (streamPtr->ioHandlePtr->fileID.type == FSIO_RMT_FILE_STREAM) {
+	if (streamPtr != (Fs_Stream *)NIL &&
+		streamPtr->ioHandlePtr->fileID.type == FSIO_RMT_FILE_STREAM) {
 	    cacheInfoPtr = & ((Fsrmt_FileIOHandle *)streamPtr
 		    ->ioHandlePtr)->cacheInfo;
 	    if (segPtr->type == VM_STACK) {

@@ -218,6 +218,10 @@ NotAnInterrupt:
 	be	MachUnixSyscallTrap
 	nop
 
+	cmp	%VOL_TEMP1, MACH_TRAP_INSTR_2		/* Dynamic linking  */
+	be	MachLinkTrap
+	nop
+
 	/*
 	 * These next few are handled by C routines, and we want them to
 	 * return to MachReturnFromTrap, so set that address as the return pc.
@@ -362,12 +366,20 @@ _MachReturnFromTrap:
 	tst	%RETURN_VAL_REG
 	be	NormalReturn
 	nop
+	cmp	%RETURN_VAL_REG, 2
+	be	DoUnixSignal
+	nop
 	/*
 	 * We must handle a signal.  Call the leaf routine MachSetupSignal.
 	 * It does its own return from trap, so we don't come back here when
 	 * it's done!
 	 */
 	call	_MachHandleSignal
+	nop
+DoUnixSignal:
+	MACH_RESTORE_WINDOW_FROM_STACK()
+	nop
+	sub	%fp, 0x8f0, %fp
 	nop
 NormalReturn:
 	MACH_UNDERFLOW_TEST(testModuloLabel)
@@ -820,10 +832,30 @@ MachHandleWindowUnderflowTrap:
 	 * global in SAFE_TEMP since it's only whacked by MachTrap, which is
 	 * the only thing that might whack it, in case MachTrap gets an
 	 * overflow.  But we won't get one since this is an underflow trap.
-	 * %o5 also appears to be safe here.
+	 * %o5 also appears to be safe here since it is not overwritten
+	 * by parameters to Vm_PageIn, etc.
+	 * It turns out we also need 2 more globals for checking whether
+	 * the stack will cause a fault.  There's no other place to save them
+	 * except in some per-process space, so I save g2 and g5 into
+	 * a per-process place.
 	 */
 	mov	%g3, %SAFE_TEMP
 	mov	%g4, %o5
+
+	MACH_GET_CUR_PROC_PTR(%g3)
+	cmp	%g3, -1
+	be	Dontsave1			/* If no proc, don't save.  */
+	nop
+	st	%g2, [%g3+MACH_PROC_REGS_OFFSET]
+	st	%g5, [%g3+MACH_PROC_REGS_OFFSET+4]
+	b	Save1
+
+Dontsave1:
+	set	_machTmpRegsStore, %g3
+	st	%g2, [%g3]			/* save %g2 */
+	st	%g5, [%g3+4]			/* save %g5 */
+        
+Save1:
 
 	/* Test if we came from user mode. */
 	andcc	%CUR_PSR_REG, MACH_PS_BIT, %g0
@@ -851,7 +883,7 @@ CheckForFaults:
 	/*
 	 * %g3 will have have a record of what faults would occur.
 	 */
-	MACH_CHECK_STACK_FAULT(%fp, %o0, %g3, %o1, UndflFault1, UndflFault2)
+	MACH_CHECK_STACK_FAULT(%fp, %g2, %g3, %g5, UndflFault1, UndflFault2)
 	mov	%fp, %g4		/* in case we need to fault it */
 	be	NormalUnderflow
 	save				/* back to trap window */
@@ -888,8 +920,24 @@ MachReturnToUnderflowWithSavedState:
 	nop
 	/* Otherwise, bad return, fall through to kill process. */
 KillTheProc:
-	mov	%SAFE_TEMP, %g3		/* Need I restore these really? */
-	mov	%o5, %g4
+	/* Need I restore all the global registers here since it's dying? */
+	MACH_GET_CUR_PROC_PTR(%g3)
+	cmp	%g3, -1
+	be	Dontsave2			/* If no proc, don't save.  */
+	nop
+	ld	[%g3+MACH_PROC_REGS_OFFSET],%g2
+	ld	[%g3+MACH_PROC_REGS_OFFSET+4],%g5
+	b	Save2
+Dontsave2:
+	set	_machTmpRegsStore, %g3
+	ld	[%g3], %g2
+	ld	[%g3+4], %g5
+        
+Save2:
+
+	mov	%SAFE_TEMP, %g3			/* restore g3 */
+	mov	%o5, %g4			/* restore g4 */
+
 	/* KILL IT - must be in trap window */
 	MACH_SR_HIGHPRIO()	/* traps back on for overflow from printf */
 	set	_MachHandleWindowUnderflowDeathString, %o0
@@ -945,20 +993,57 @@ BackAgain:
 	 * re-executed and will cause a further underflow trap.  This time,
 	 * the page should be there.
 	 */
-	mov	%SAFE_TEMP, %g3			/* restore globals */
+
+	/* Restore globals */
+	MACH_GET_CUR_PROC_PTR(%g3)
+	cmp	%g3, -1
+	be	Dontsave3			/* If no proc, don't save.  */
+	nop
+	ld	[%g3+MACH_PROC_REGS_OFFSET],%g2
+	ld	[%g3+MACH_PROC_REGS_OFFSET+4],%g5
+	b	Save3
+Dontsave3:
+	set	_machTmpRegsStore, %g3
+	ld	[%g3], %g2
+	ld	[%g3+4], %g5
+Save3:
+        
+	mov	%SAFE_TEMP, %g3			/* restore g3 and g4 */
 	mov	%o5, %g4
+
 	call	_MachReturnFromTrap
 	nop
 
 NormalUnderflow:
 	restore					/* retreat a window */
+	/*
+	 * We need to preserve l6 and l7 in this window
+	 */
+	mov	%l6, %g2
+	mov	%l7, %g5
 	mov	%RETURN_ADDR_REG, %g3		/* save reg in global */
 	set	MachWindowUnderflow, %g4	/* put address in global */
 	jmpl	%g4, %RETURN_ADDR_REG		/* our return addr to reg */
 	nop
 	mov	%g3, %RETURN_ADDR_REG		/* restore ret_addr */
+	mov	%g2, %l6
+	mov	%g5, %l7
 	save					/* back to trap window */
-	mov	%SAFE_TEMP, %g3			/* restore globals */
+
+	/* Restore globals */
+	MACH_GET_CUR_PROC_PTR(%g3)
+	cmp	%g3, -1
+	be	Dontsave4			/* If no proc, don't save.  */
+	nop
+	ld	[%g3+MACH_PROC_REGS_OFFSET],%g2
+	ld	[%g3+MACH_PROC_REGS_OFFSET+4],%g5
+Dontsave4:
+	set	_machTmpRegsStore, %g3
+	ld	[%g3], %g2
+	ld	[%g3+4], %g5
+Save4:
+
+	mov	%SAFE_TEMP, %g3			/* restore g3 and g4 */
 	mov	%o5, %g4
 
 	MACH_RESTORE_PSR()			/* restore psr */
@@ -1355,6 +1440,36 @@ ReturnFromSyscall:
 /*
  * ----------------------------------------------------------------------
  *
+ * MachLinkTrap --
+ *
+ *	This is the code to handle a dynamic linking trap #2.
+ *	Apparently we don't have to do anything.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------
+ */
+.global	MachLinkTrap
+MachLinkTrap:
+	/*
+	 * So that we don't re-execute the trap instruction when we
+	 * return from the system call trap via the return trap procedure,
+	 * we increment the return pc and npc here.
+	 */
+	mov	%NEXT_PC_REG, %CUR_PC_REG
+	add	%NEXT_PC_REG, 0x4, %NEXT_PC_REG
+
+	/* do normal return from trap */
+	set	_MachReturnFromTrap, %VOL_TEMP1
+	jmp	%VOL_TEMP1
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * MachUnixSyscallTrap --
  *
  *	This is the code to handle unix system call traps.  The number of the
@@ -1424,6 +1539,10 @@ GoodUnixSysCall:
 	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
 	st	%g1, [%VOL_TEMP1]
 	/*
+	 * Save i0 for call restart.
+	 */
+	st	%i0, [%VOL_TEMP1+4]
+	/*
 	 * Fetch args.  Copy them from user space if they aren't all in
 	 * the input registers.  For now I copy all the input registers,
 	 * since there isn't a table giving the actual number of args?
@@ -1439,6 +1558,9 @@ GoodUnixSysCall:
 	mov	%i2, %o2
 	mov	%i1, %o1
 	mov	%i0, %o0
+
+	cmp	%g1, 0x8b /* Sigreturn */
+	be	DoSigreturn
 
 	sll	%g1, 3, %g1
 	set	_sysUnixSysCallTable, %VOL_TEMP2
@@ -1493,7 +1615,20 @@ UnixOk:
 	set	_MachReturnFromTrap, %VOL_TEMP1
 	jmp	%VOL_TEMP1
 	nop
-	
+
+DoSigreturn:
+	/* We have to skip the errno checking */
+	QUICK_ENABLE_INTR(%VOL_TEMP1)
+	/* go do it */
+	call	_Mach_SigreturnStub
+	nop
+	MACH_RESTORE_WINDOW_FROM_STACK()
+	/* Disable interrupts. */
+	QUICK_DISABLE_INTR(%VOL_TEMP1)
+	set	_MachReturnFromTrap, %VOL_TEMP1
+	jmp	%VOL_TEMP1
+	nop
+
 
 /*
  * ----------------------------------------------------------------------

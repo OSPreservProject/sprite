@@ -34,10 +34,6 @@ static char rcsid[] = "$Header$";
 #include <fsutil.h>
 #include <assert.h>
 
-#ifndef Mach_SetErrno
-#define Mach_SetErrno(err)
-#endif
-
 int debugSysStubs;
 
 

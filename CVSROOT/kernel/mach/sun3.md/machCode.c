@@ -20,6 +20,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <sprite.h>
 #include <assert.h>
 #include <stddef.h>
+#include <stdio.h>
 
 #include <machConst.h>
 #include <machMon.h>
@@ -37,6 +38,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <sig.h>
 #include <swapBuffer.h>
 #include <user/sigMach.h>
+#include <user/sun3.md/sys/machSignal.h>
+#include <procUnixStubs.h>
+#include <compatInt.h>
+#include <sigUnixStubs.h>
 
 int	machLastSP, machPOP;
 
@@ -72,6 +77,8 @@ char *mach_MachineType = "sun3";
 #ifdef sun2
 char *mach_MachineType = "sun2";
 #endif
+
+extern int debugProcStubs;
 
 /*
  * The byte ordering/alignment type used with Fmt_Convert and I/O control data
@@ -112,17 +119,6 @@ typedef struct {
     Sig_Stack	sigStack;
     Sig_Context	sigContext;
 } SignalStack;
-
-/*
- * The format of a Unix signal stack.
- */
-typedef struct sigcontext {
-    int sc_onstack;
-    int sc_mask;
-    int sc_sp;
-    int sc_pc;
-    int sc_ps;
-} sigcontext;
 
 typedef struct UnixSignalStack {
     int sigNum;
@@ -1214,6 +1210,11 @@ MachUserReturn(procPtr)
     SignalStack			sigStack;
     Address			pc;
 
+    if (procPtr->unixProgress != PROC_PROGRESS_NOT_UNIX &&
+	    procPtr->unixProgress != PROC_PROGRESS_UNIX && debugProcStubs) {
+	printf("UnixProgress = %d entering MachUserReturn\n",
+		procPtr->unixProgress);
+    }
 
     if (procPtr->Prof_Scale != 0 && procPtr->Prof_PC != 0) {
 	Prof_RecordPC(procPtr);
@@ -1243,6 +1244,23 @@ MachUserReturn(procPtr)
 	}
 	Mach_EnableIntr();
 	sigStack.sigStack.contextPtr = &sigStack.sigContext;
+	if (procPtr->unixProgress == PROC_PROGRESS_RESTART ||
+		procPtr->unixProgress > 0) {
+	    /*
+	     * If we received a normal signal, we want to restart
+	     * the system call when we leave.
+	     * If we received a migrate signal, we will get here on
+	     * the new machine.
+	     * We must also ensure that the argument registers are the
+	     * same as when we came in.
+	     */
+	    printf("Restarting signal; old pc = %x\n",
+		    procPtr->machStatePtr->userState.excStackPtr->pc);
+	    procPtr->machStatePtr->userState.excStackPtr->pc -= 4;
+	    printf("Restarting signal; new pc = %x\n",
+		    procPtr->machStatePtr->userState.excStackPtr->pc);
+	    procPtr->unixProgress = PROC_PROGRESS_UNIX;
+	}
 	if (Sig_Handle(procPtr, &sigStack.sigStack, &pc)) {
 	    SetupSigHandler(procPtr, &sigStack, pc);
 	    Mach_DisableIntr();
@@ -1268,6 +1286,12 @@ MachUserReturn(procPtr)
      * As soon as we return to user mode, though, we will allow migration.
      */
     Sig_AllowMigration(procPtr);
+
+    if (procPtr->unixProgress != PROC_PROGRESS_NOT_UNIX &&
+            procPtr->unixProgress != PROC_PROGRESS_UNIX) {
+        printf("UnixProgress = %d leaving MachUserReturn\n",
+                procPtr->unixProgress);
+    }
 
 }
 
@@ -1333,7 +1357,7 @@ SetupSigHandler(procPtr, sigStackPtr, pc)
     statePtr = procPtr->machStatePtr;
     excStackSize = Mach_GetExcStackSize(statePtr->userState.excStackPtr);
 
-    if (procPtr->unixProgress == 0x11beef22) {
+    if (procPtr->unixProgress == PROC_PROGRESS_UNIX) {
 	usp = (Address)statePtr->userState.userStackPtr -
 		sizeof(UnixSignalStack);
 	if (Compat_SpriteSignalToUnix(sigStackPtr->sigStack.sigNum, &unixSignal)
@@ -1346,7 +1370,7 @@ SetupSigHandler(procPtr, sigStackPtr, pc)
 		sigStackPtr->sigStack.sigNum, procPtr->processID);
 	unixSigStack.sigNum = unixSignal;
 	unixSigStack.sigCode = sigStackPtr->sigStack.sigCode;
-	unixSigStack.sigContextPtr = (sigcontext *)(usp + 4*sizeof(int));
+	unixSigStack.sigContextPtr = (struct sigcontext *)(usp + 4*sizeof(int));
 	unixSigStack.sigAddr = sigStackPtr->sigStack.sigAddr;
 	unixSigStack.sigContext.sc_onstack = 0;
 	unixSigStack.sigContext.sc_mask = 0;
@@ -1455,6 +1479,12 @@ ReturnFromSigHandler(procPtr)
     SignalStack			sigStack;
 
     statePtr = procPtr->machStatePtr;
+    if (procPtr->unixProgress == PROC_PROGRESS_UNIX) {
+	/*
+	 * Unix dynamic linking does a trap#2 for no apparent reason.
+	 */
+	return;
+    }
     /*
      * Copy the signal stack in.
      */

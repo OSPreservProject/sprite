@@ -33,6 +33,13 @@ char	 *sprintf();
 
 int vmShmDebug = 0;	/* Shared memory debugging flag. */
 
+extern int   debugFsStubs; /* Unix compatibility debug flags. */
+extern int   debugProcStubs;
+extern int   debugSigStubs;
+extern int   debugSysStubs;
+extern int   debugTimerStubs;
+extern int   debugVmStubs;
+
 /*
  * Forward declaration.
  */
@@ -495,6 +502,13 @@ Vm_Cmd(command, arg)
 	case 1999:
 	    SETVAR(vmShmDebug, arg);
 	    break;
+	case 1234: /* Temporary unix compatibility hook. */
+	    SETVAR(debugFsStubs, arg);
+	    SETVAR(debugProcStubs, arg);
+	    SETVAR(debugSigStubs, arg);
+	    SETVAR(debugSysStubs, arg);
+	    SETVAR(debugTimerStubs, arg);
+	    SETVAR(debugVmStubs, arg);
         default:
 	    status = VmMach_Cmd(command, arg);
             break;
@@ -601,11 +615,17 @@ Vm_MmapInt(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
     Fs_Attributes	attr;
     Vm_SharedSegTable	*segTabPtr;
     Vm_Segment		*segPtr;
-    Vm_SegProcList		*sharedSeg;
+    Vm_SegProcList	*sharedSeg;
     Fs_Stream 		*filePtr;
 
+    length = (length+vm_PageSize-1)&~(vm_PageSize-1);
     dprintf("mmap( %x, %d, %d, %d, %d, %d)\n", startAddr, length,
 	    prot, share, streamID, fileAddr);
+
+    if ((share&MAP_TYPE)!=MAP_SHARED && (share&MAP_TYPE)!=MAP_PRIVATE) {
+	printf("Vm_Mmap: Invalid share flag %x\n", share);
+        return VM_WRONG_SEG_TYPE;
+    }
 
     procPtr = Proc_GetCurrentProc();
     status = Fs_GetStreamPtr(procPtr,streamID,&streamPtr);
@@ -615,7 +635,14 @@ Vm_MmapInt(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
 	printf("Vm_Mmap: Fs_GetStreamPtr failure\n");
 	return status;
     }
+    if (debugVmStubs) {
+	printf("mmap: refCount = %d  ",
+		((Fs_HandleHeader *)streamPtr)->refCount);
+    }
     Fsio_StreamCopy(streamPtr,&filePtr);
+    if (debugVmStubs) {
+	printf(", refCount = %d\n", ((Fs_HandleHeader *)streamPtr)->refCount);
+    }
 
     status = Fs_GetAttrStream(filePtr,&attr);
     if (status != SUCCESS) {
@@ -653,6 +680,11 @@ Vm_MmapInt(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
 
     /* 
      * Check permissions.
+     * The rules:
+     * The file must have read permissions.
+     * We must request read and/or write permissions.
+     * If we take a private copy, we can do whatever we want.
+     * Otherwise we must have the requested permissions.
      */
     if (attr.type != FS_FILE) {
 	printf("Vm_Mmap: not a file\n");
@@ -660,9 +692,11 @@ Vm_MmapInt(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
 	return VM_WRONG_SEG_TYPE;
     }
     if (!(filePtr->flags & FS_READ) || !(prot & (PROT_READ | PROT_WRITE)) ||
-	    ((prot & PROT_WRITE) && !(filePtr->flags & FS_WRITE)) ||
-	    ((prot & PROT_EXEC) && !(filePtr->flags & FS_EXECUTE))) {
+	    ((share&MAP_TYPE)!=MAP_PRIVATE &&
+	    (((prot & PROT_WRITE) && !(filePtr->flags & FS_WRITE)) ||
+	    ((prot & PROT_EXEC) && !(filePtr->flags & FS_EXECUTE))))) {
 	printf("Vm_Mmap: protection failure\n");
+	printf("flags = %x, prot = %x\n", filePtr->flags, prot);
 	(void)Fs_Close(filePtr);
 	return VM_WRONG_SEG_TYPE;
     }
@@ -672,34 +706,58 @@ Vm_MmapInt(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
 	dprintf("Vm_Mmap: New proc list\n");
 	procPtr->vmPtr->sharedSegs = (List_Links *)
 		malloc(sizeof(Vm_SegProcList));
+	if (debugVmStubs) {
+	    printf("Malloc'd segProcList: %x\n", procPtr->vmPtr->sharedSegs);
+	}
 	VmMach_SharedProcStart(procPtr);
 	dprintf("Vm_Mmap: sharedStart: %x\n",procPtr->vmPtr->sharedStart);
 	List_Init((List_Links *)procPtr->vmPtr->sharedSegs);
 	Proc_NeverMigrate(procPtr);
     }
-    status = VmMach_SharedStartAddr(procPtr, length, &startAddr);
-    if (status != SUCCESS) {
-	printf("Vm_Mmap: VmMach_SharedStart failure\n");
-	UNLOCK_SHM_MONITOR;
-	(void)Fs_Close(filePtr);
-	return status;
+/*
+ * TEMPORARY!!!!
+ */
+    if (!(share&MAP_FIXED) || startAddr==0) {
+#if 1
+	/*
+	 * Pick an address for the mapping.
+	 */
+	status = VmMach_SharedStartAddr(procPtr, length, &startAddr);
+	if (status != SUCCESS) {
+	    printf("Vm_Mmap: VmMach_SharedStart failure\n");
+	    UNLOCK_SHM_MONITOR;
+	    (void)Fs_Close(filePtr);
+	    return status;
+	}
+#else
+        startAddr = 0x0dddc000;
+#endif
     }
 
     /*
      * See if a shared segment is already using the specified file.
+     * If we're making a private copy, we probably need a new segment.
+     * (We should probably do something more intelligent about mapping
+     * multiple copies of a file into memory.)
      */
     segPtr = (Vm_Segment *) NIL;
-    LIST_FORALL((List_Links *)&sharedSegTable, (List_Links *)segTabPtr) {
-	if (segTabPtr->serverID == attr.serverID && segTabPtr->domain ==
+    segTabPtr = (Vm_SharedSegTable *) NIL;
+    if ((share&MAP_TYPE)!=MAP_PRIVATE) {
+	LIST_FORALL((List_Links *)&sharedSegTable, (List_Links *)segTabPtr) {
+	    if (segTabPtr->serverID == attr.serverID && segTabPtr->domain ==
 		    attr.domain && segTabPtr->fileNumber == attr.fileNumber) {
-	    segPtr = segTabPtr->segPtr;
-	    break;
+		segPtr = segTabPtr->segPtr;
+		break;
+	    }
 	}
     }
 
-    pnum = (int)startAddr>>vmPageShift;
+#if 0
     pnum = 10288;	/* Random number, since shared memory shouldn't
 				be using this value */
+#else
+    pnum = (int)startAddr>>vmPageShift;
+#endif
 
     if (segPtr == (Vm_Segment *)NIL) {
 	dprintf("Vm_Mmap: New segment\n");
@@ -711,8 +769,16 @@ Vm_MmapInt(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
 	dprintf("Vm_Mmap: creating new segment\n");
 	segTabPtr->segPtr = Vm_SegmentNew(VM_SHARED,(Fs_Stream *)NIL,
 		0,length>>vmPageShift,pnum,procPtr);
-	segTabPtr->segPtr->swapFilePtr = filePtr;
-	segTabPtr->segPtr->flags |= VM_SWAP_FILE_OPENED;
+	if ((share&MAP_TYPE)==MAP_PRIVATE) {
+	    segTabPtr->segPtr->filePtr = filePtr;
+	} else {
+	    segTabPtr->segPtr->filePtr = (Fs_Stream *)NIL;
+	    segTabPtr->segPtr->swapFilePtr = filePtr;
+	    segTabPtr->segPtr->flags |= VM_SWAP_FILE_OPENED;
+	}
+	if (debugVmStubs) {
+	    printf("Created new segment %x\n", segTabPtr->segPtr->segNum);
+	}
 	segTabPtr->serverID = attr.serverID;
 	segTabPtr->domain = attr.domain;
 	segTabPtr->fileNumber = attr.fileNumber;
@@ -780,6 +846,9 @@ Vm_MmapInt(startAddr, length, prot, share, streamID, fileAddr, mappedAddr)
      */
     dprintf("Vm_Mmap: Adding segment to list\n");
     sharedSeg = (Vm_SegProcList *)malloc(sizeof(Vm_SegProcList));
+    if (debugVmStubs) {
+	printf("Malloc'd segProcList: %x\n", sharedSeg);
+    }
     sharedSeg->fd = streamID;
     sharedSeg->stream = filePtr;
     sharedSeg->segTabPtr = segTabPtr;
@@ -941,6 +1010,9 @@ VmMunmapInt(startAddr, length, noError)
 		     */
 		    newSegProcPtr = (Vm_SegProcList *)
 			    malloc(sizeof(Vm_SegProcList));
+		    if (debugVmStubs) {
+			printf("Malloc'd %x\n", newSegProcPtr);
+		    }
 		    *newSegProcPtr = *segProcPtr;
 		    newSegProcPtr->mappedStart = endAddr;
 		    newSegProcPtr->mappedEnd = segProcPtr->mappedEnd;
@@ -1227,10 +1299,12 @@ Vm_Mprotect(startAddr, length, prot)
 	printf("Vm_Mprotect: Invalid start or offset\n");
 	return VM_WRONG_SEG_TYPE;
     }
+#if 0
     if (prot & ~(PROT_READ|PROT_WRITE)) {
 	printf("Vm_Mprotect: Only read/write permissions allowed\n");
 	return SYS_INVALID_ARG;
     }
+#endif
     if (!(prot & PROT_READ)) {
 	printf("Vm_Mprotect: can't remove read perms in this implementation\n");
 	return SYS_INVALID_ARG;

@@ -16,7 +16,11 @@
 
 #include "machConst.h"
 #include "machAsmDefs.h"
+#ifndef ds3100
+#include "vm3maxConst.h"
+#else /* ds3100 */
 #include "vmPmaxConst.h"
+#endif /* ds3100 */
 #include <regdef.h>
 
 /*----------------------------------------------------------------------------
@@ -336,6 +340,78 @@ MachFetchICache:
 	nop
 	.set	reorder
 
+#ifndef ds3100
+/*----------------------------------------------------------------------------
+ *
+ * Mach_FlushCacheRange --
+ *
+ *	Mach_FlushCacheRange(addr, len)
+ *
+ *	Flush d cache for range ofaddr to addr + len - 1.
+ *
+ * Results:
+ *     	None.
+ *
+ * Side effects:
+ *	The contents of the d cache is flushed.
+ *
+ *----------------------------------------------------------------------------
+ */
+    .globl Mach_FlushCacheRange
+Mach_FlushCacheRange:
+	lw	t1,machDataCacheSize
+	mfc0	t3,MACH_COP_0_STATUS_REG	# Save SR
+	mtc0	zero,MACH_COP_0_STATUS_REG	# Disable interrupts.
+
+	.set	noreorder
+	la	v0,1f
+	or	v0,VMMACH_PHYS_UNCACHED_START	# Run uncached.
+	j	v0
+	nop
+
+1:	li	v0,MACH_SR_ISOL_CACHES	#isolate cache
+	mtc0	v0,MACH_COP_0_STATUS_REG
+	bltu	t1,a1,1f		# cache is smaller than region
+	nop
+	move	t1,a1
+1:	addu	t1,a0			# ending address + 1
+	move	t0,a0
+	la	v0,1f			# run cached
+	j	v0
+	nop
+	.set	reorder
+
+1:	sb	zero,0(t0)
+	sb	zero,4(t0)
+	sb	zero,8(t0)
+	sb	zero,12(t0)
+	sb	zero,16(t0)
+	sb	zero,20(t0)
+	sb	zero,24(t0)
+	addu	t0,32
+	sb	zero,-4(t0)
+	bltu	t0,t1,1b
+
+	.set	noreorder
+	la	v0,1f
+	or	v0,VMMACH_PHYS_UNCACHED_START
+	j	v0			# Run uncached
+	nop
+
+1:	nop				# insure isolated stores out of pipe
+	mtc0	zero,MACH_COP_0_STATUS_REG  # unisolate, unswap
+	nop				# keep pipeline clean
+	nop				# keep pipeline clean
+	nop				# keep pipeline clean
+	mtc0	t3,MACH_COP_0_STATUS_REG # enable interrupts
+	nop
+	j	ra			# return and run cached
+	nop
+	.set	reorder
+
+#endif /* not ds3100 */
+
+
 /*----------------------------------------------------------------------------
  *
  * MachRunUserProc --
@@ -502,6 +578,23 @@ NON_LEAF(Mach_KernGenException,KERN_EXC_FRAME_SIZE,ra)
     mfc0	a1, MACH_COP_0_CAUSE_REG	# Second arg is the cause reg.
     mfc0	a2, MACH_COP_0_BAD_VADDR	# Third arg is the fault addr.
     mfc0	a3, MACH_COP_0_EXC_PC		# Fourth arg is the pc.
+#ifndef ds3100
+
+/*
+ * Don't disable interrupts from the memory system, unless there is
+ * a memory system interrupt pending.
+ */
+    and		t0, a0, MACH_INT_MASK_3
+    bne		zero, t0, 10f
+    nop
+    mfc0	t0, MACH_COP_0_STATUS_REG
+    and		t0, t0, ~MACH_KERN_INT_MASK
+    or		t0, t0, MACH_INT_MASK_3 | MACH_SR_INT_ENA_CUR
+    mtc0	t0, MACH_COP_0_STATUS_REG
+    nop
+    nop
+10:
+#endif /* not ds3100 */
     jal		MachKernelExceptionHandler
     nop
     mtc0	zero, MACH_COP_0_STATUS_REG	# Disable interrupts
@@ -845,7 +938,12 @@ LEAF(Mach_DisableIntr)
 .set noreorder
     mfc0	t0, MACH_COP_0_STATUS_REG
     nop
+#ifndef ds3100
+    and		t0, t0, ~(MACH_SR_INT_ENA_CUR | MACH_KERN_INT_MASK)
+    or		t0, t0, MACH_INT_MASK_3 | MACH_SR_INT_ENA_CUR
+#else /* ds3100 */
     and		t0, t0, ~MACH_SR_INT_ENA_CUR
+#endif /* ds3100 */
     mtc0	t0, MACH_COP_0_STATUS_REG
     nop
     j		ra
@@ -1256,7 +1354,7 @@ END(MachGetCurFPState)
  *	Handle a floating point interrupt.
  *
  * Results:
- *     	None.
+ *     	MACH_OK
  *
  * Side effects:
  *	None.
@@ -1393,6 +1491,9 @@ FPReturn:
 	lw	ra, STAND_RA_OFFSET(sp)
 	addu	sp, sp, STAND_FRAME_SIZE
 	j	ra
+#ifndef ds3100
+	li	v0, MACH_OK
+#endif /* not ds3100 */
 END(MachFPInterrupt)
 
 /*----------------------------------------------------------------------------
@@ -1670,6 +1771,17 @@ UNIXSyscall:
  * won't get modified unless a value is returned in v1.
  */
 1:
+    sll		t0, v0, 2	# t0 <= v0 * 4
+    sll		t3, v0, 3	# t3 <= v0 * 8
+    add		t0, t0, t3	# t0 <= v0 * 12
+    la		t3, machUNIXSysCallTable
+    add		t0, t0, t3
+    lw		t3, 4(t0)	# t3 <= number of arguments.
+    nop
+    bltz	t3, 42f
+    nop
+
+
     lw		t1, machCurStatePtr
     add		t2, sp, zero
     mfc0	t3, MACH_COP_0_EXC_PC
@@ -1729,7 +1841,6 @@ UNIXSyscall:
     jal		t3		# Call the routine.
     nop
 
-
 /*
  * Return to the user.  We have the following saved information:
  *	s0:	machCurStatePtr
@@ -1776,7 +1887,6 @@ unixSyscallReturn:
     sw		a3, MACH_TRAP_REGS_OFFSET + (A3 * 4)(s0)
     j		sysCallReturn
     nop
-
 1:
     jal		Compat_MapCode
     add		a0, v0, zero
@@ -1796,8 +1906,20 @@ newUNIXSyscall:
     add		t7, gp, zero			# Save the user's gp in t7
     la		gp, _gp				# Switch to the kernel's gp
 /*
+ * If we are tracing system calls or we have a signal or long jump return
+ * do it the slow way.  Signal and long jump returns are done the slow way
+ * because they have to do a full restore.
+ */
+    lw		k0, machUNIXSyscallTrace
+    beq		v0, MACH_UNIX_LONG_JUMP_RETURN, Mach_UserGenException
+    nop
+    beq		v0, MACH_UNIX_SIG_RETURN, Mach_UserGenException
+    nop
+    bne		k0, zero, Mach_UserGenException
+/*
  * See if this system call is valid.
  */
+42:
     sltu	t0, v0, MACH_MAX_UNIX_SYSCALL   # t0 <= Maximum sys call value.
     bne		t0, zero, 1f			# If so then continue on.
     nop
@@ -1822,6 +1944,7 @@ newUNIXSyscall:
     lw		t1, machCurStatePtr
     add		t2, sp, zero
     mfc0	t3, MACH_COP_0_EXC_PC
+    sw		v0, MACH_TRAP_UNIX_RET_VAL_OFFSET(t1)
     sw		sp, MACH_TRAP_REGS_OFFSET + (SP * 4)(t1)
     sw		t7, MACH_TRAP_REGS_OFFSET + (GP * 4)(t1)
     sw		s0, MACH_TRAP_REGS_OFFSET + (S0 * 4)(t1)
@@ -1906,28 +2029,30 @@ unixNewSyscallReturn:
  * Set up the registers correctly:
  *
  *	1) Restore a0, a1, a2 and v1
- *	2) If status == 0 then regs[a3] <= 0 and v0 <= return value.
- *	   Else regs[A3] <= 1 and v0 <= Compat_MapCode(status).
+ *	2) If status == 0 then regs[a3] <- 0 and v0 <- return value.
+ *	   Else regs[A3] <- 1 and v0 <- Compat_MapCode(status).
  */
 1:
-    sw		v1, MACH_TRAP_REGS_OFFSET + (V1 * 4)(s0)
-    nor         v1, $0, $0
-    add		a3, $0, $0
-    beq         v0, v1, 3f
-    nop
+    bltz	v0, 3f
+    add		a3, zero, zero
 2:
     lw		a0, MACH_TRAP_REGS_OFFSET + (A0 * 4)(s0)
     lw		a1, MACH_TRAP_REGS_OFFSET + (A1 * 4)(s0)
     lw		a2, MACH_TRAP_REGS_OFFSET + (A2 * 4)(s0)
-    add		a3, zero, zero
+    lw		v1, MACH_TRAP_REGS_OFFSET + (V1 * 4)(s0)
     sw		v0, MACH_TRAP_REGS_OFFSET + (V0 * 4)(s0)
     sw		a3, MACH_TRAP_REGS_OFFSET + (A3 * 4)(s0)
     j		sysCallReturn
     nop
 3:
-    lw		v0, MACH_UNIX_ERRNO_OFFSET(s0)
+    lw          v0, proc_RunningProcesses       # v0 <= pointer to running
+                                                #       processes array.
+    nop
+    lw          v0, 0(v0)                       # v0 <= pointer to currently
+                                                #       running process
     li          a3, 1
-    and         v0, 0x7fff
+    lw          v0, MACH_UNIX_ERRNO_OFFSET(v0)
+    nop
     j           2b
     nop
 
@@ -2048,6 +2173,19 @@ MachFetchArgsEnd:
  *	bus errors that may occur. This	routine is intended to be used to 
  *	probe for memory mapped devices.
  *
+ *	The memory interrupt must be enabled for this thing to work.
+ *
+ *	The ds5000 has a few quirks that make this all more complicated
+ *	then it has to be.  First of all, accesses to unpopulated memory
+ *	addresses don't seem to cause any sort of error, so you can't
+ *	use Mach_Probe to figure out how much memory you have.  Second,
+ *	an access to an invalid IO address causes an interrupt.
+ *	Therefore you need to have the memory interrupt enabled to get
+ *	this to work.  A read of an invalid IO address causes both a bus error
+ *	and an interrupt.  The bus error handler will just ignore the bus
+ *	error if it happened in Mach_Probe.  This may not be the best solution
+ *	but it seems to work.
+ *
  * NOTE: This trap handlers force this routine to return SYS_NO_ACCESS if an
  *	 bus error occurs.
  *
@@ -2062,16 +2200,36 @@ MachFetchArgsEnd:
  *	
  *
  * Results:
- *	SUCCESS if the copy worked and  SYS_NO_ACCESS otherwise
+ *	SUCCESS if the copy worked, SYS_NO_ACCESS if there was a bus
+ *	error or IO timeout, FAILURE if the memory interrupt is
+ *	disabled
  *
  * Side effects:
  *	None.
  *----------------------------------------------------------------------
  */
 .set noreorder
+#ifndef ds3100
+LEAF(Mach_Probe)
+	/*
+	 * If memory interrupts aren't turned on then we can't do a
+	 * probe.
+	 */
+	mfc0	t0, MACH_COP_0_STATUS_REG
+	nop
+	and	t0, t0, MACH_INT_MASK_3 | MACH_SR_INT_ENA_CUR
+	beq	t0, MACH_INT_MASK_3 | MACH_SR_INT_ENA_CUR, 1f
+	nop
+	j	ra
+	add	v0, zero, 1
+1:
+	add	t0, zero, 1
+	sw	t0, machInProbe
+#else /* ds3100 */
 	.globl Mach_Probe
 	.ent Mach_Probe, 0
 Mach_Probe:
+#endif /* ds3100 */
 	/* a0 is the number of bytes
 	 * a1 is the src address
 	 * a2 is the dest address
@@ -2081,8 +2239,13 @@ Mach_Probe:
 	lbu 	t0, 0(a1)
 	nop
 	sb	t0, 0(a2)
+#ifndef ds3100
+	b 	Done
+	nop
+#else /* ds3100 */
 	j	ra
 	add	v0, zero, zero
+#endif /* ds3100 */
 Read2Bytes:
 	bne 	a0, 2, Read4Bytes
 	nop
@@ -2095,8 +2258,13 @@ Read2Bytes:
 	lhu	t0, 0(a1)
 	nop
 	sh	t0, 0(a2)
+#ifndef ds3100
+	b 	Done
+	nop
+#else /* ds3100 */
 	j	ra
 	add	v0, zero, zero
+#endif /* ds3100 */
 Read4Bytes:
 	bne 	a0, 4, Read8Bytes
 	nop
@@ -2109,8 +2277,13 @@ Read4Bytes:
 	lw	t0, 0(a1)
 	nop
 	sw	t0, 0(a2)
+#ifndef ds3100
+	b 	Done
+	nop
+#else /* ds3100 */
 	j	ra
 	add	v0, zero, zero
+#endif /* ds3100 */
 Read8Bytes:
 	bne 	a0, 8, BadRead
 	nop
@@ -2126,33 +2299,29 @@ Read8Bytes:
 	lw	t0, 4(a1)
 	nop	
 	sw	t0, 4(a1)
+#ifndef ds3100
+	b 	Done
+	nop
+#else /* ds3100 */
 	j	ra
 	add	v0, zero, zero
+#endif /* ds3100 */
 BadRead:
 	j	ra
 	add	v0, zero, 1
+#ifndef ds3100
+Done:
+	sw	zero, machInProbe
+	j	ra
+	add	v0, zero, zero
+#endif /* not ds3100 */
 .set reorder
+#ifndef ds3100
+END(Mach_Probe)
+#endif /* not ds3100 */
 
+#ifdef ds3100
 	.globl	MachProbeEnd
 MachProbeEnd:
 .end
-/*----------------------------------------------------------------------------
- *
- * Mach_Return2 --
- *
- *	Set the second return value for Unix compat. routines that
- *	return two values.
- *
- * Results:
- *     	None.
- *
- * Side effects:
- *	v1 <- val
- *
- *----------------------------------------------------------------------------
- */
-    .globl Mach_Return2
-Mach_Return2:
-
-    move	v1, a0
-    j		ra
+#endif /* ds3100 */

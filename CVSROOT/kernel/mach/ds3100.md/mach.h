@@ -67,6 +67,13 @@
  */
 #define	MACH_DELAY(n)	{ register int N = (n)*6; while (N > 0) {N--;} }
 
+extern Mach_State *machCurStatePtr;
+/*
+ * Macro to get the user's stack pointer.
+ */
+#define Mach_UserStack()\
+	((Address)(machCurStatePtr->userState.regState.regs[SP]))
+
 /*
  * Dispatch tables for kernel calls.
  */

@@ -22,6 +22,8 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include <procInt.h>
 #include <status.h>
 
+extern int debugProcStubs;
+
 
 /*
  *----------------------------------------------------------------------
@@ -50,7 +52,12 @@ ProcGetObjInfo(filePtr, execPtr, objInfoPtr)
     int data[4];
     int sizeRead;
     ReturnStatus status;
+#ifndef sun3
     int excess;
+#endif
+#define TYPE_SPRITE 0
+#define TYPE_UNIX 0x1000
+    int type;
 
 #ifdef sun2
     if (execPtr->machineType != PROC_MC68010) {
@@ -72,51 +79,49 @@ ProcGetObjInfo(filePtr, execPtr, objInfoPtr)
     if ((execPtr->machineType & 0xff) != PROC_SPARC) {
 	return(PROC_BAD_AOUT_FORMAT);
     }
-    if (execPtr->dynamic) {
+#endif
+    /*
+     * The following few lines are total hack.  The idea is to look at
+     * the startup code to see if it was a Sprite-compiled file, or
+     * a Unix-compiled file.
+     */
+    sizeRead = 4*sizeof(int);
+    status = Fs_Read(filePtr, (char *)data,
+	execPtr->entry-PROC_CODE_LOAD_ADDR(*execPtr), &sizeRead);
+    if (status != SUCCESS) {
+	printf("READ failed\n");
 	return(PROC_BAD_AOUT_FORMAT);
     }
-#endif
-    switch (execPtr->magic) {
-
-    case PROC_ZMAGIC:
-	/*
-	 * The following few lines are total hack.  The idea is to look at
-	 * the startup code to see if it was a Sprite-compiled file, or
-	 * a Unix-compiled file.
-	 */
-	sizeRead = 4*sizeof(int);
-	status = Fs_Read(filePtr, (char *)data,
-	    execPtr->entry-PROC_CODE_LOAD_ADDR(*execPtr), &sizeRead);
-	if (status != SUCCESS) {
-	    printf("READ failed\n");
-	    return(PROC_BAD_AOUT_FORMAT);
-	}
 #ifdef sun3
-	if (data[0]==0x241747ef && data[1]==0x42002 &&
-		(data[2]==0x52807204 || data[2]==0x5280223c) &&
-		((data[3]&0xffff0000)==0x4eb90000 || data[3]==4)) {
+    if (data[0]==0x241747ef && data[1]==0x42002 &&
+	    (data[2]==0x52807204 || data[2]==0x5280223c) &&
+	    ((data[3]&0xffff0000)==0x4eb90000 || data[3]==4)) {
 #else
-	/* Normal sun4 startup code */
-	if ((data[0]==0xac10000e && data[1]==0xac05a060 &&
-		data[2]==0xd0058000 && data[3]==0x9205a004) ||
-	/* Profiled sun4 startup code */
-		(data[0]==0xbc100000 && data[1]==0x11000008 &&
-		    data[2]==0x13000208 && data[3]==0x400038df)) {
-#endif
-	    goto spriteMagic;
-	} else {
-#ifdef sun3
-	    /*
-	     * Special check for emacs, which has weird startup code.
-	     */
-	    if (data[0]==0x4e560000 && data[1]==0x61064e5e &&
-		    data[2]==0x4e750000) goto spriteMagic;
-#endif
+    /* Normal sun4 startup code */
+    if ((data[0]==0xac10000e && data[1]==0xac05a060 &&
+	    data[2]==0xd0058000 && data[3]==0x9205a004) ||
+    /* Profiled sun4 startup code */
+	    (data[0]==0xbc100000 && data[1]==0x11000008 &&
+		data[2]==0x13000208 && data[3]==0x400038df)) {
 
-	    printf("Executing UNIX file in compatibility mode.\n");
-	    goto unixMagic;
+#endif
+	type = TYPE_SPRITE;
+    } else {
+	type = TYPE_UNIX;
+#ifdef sun3
+	/*
+	 * Special check for emacs, which has weird startup code.
+	 */
+	if (data[0]==0x4e560000 && data[1]==0x61064e5e &&
+		data[2]==0x4e750000) {
+	    type = TYPE_SPRITE;
 	}
-spriteMagic:
+#endif
+    }
+
+    switch (execPtr->magic | type) {
+
+    case PROC_ZMAGIC:		/* demand-paged */
 	objInfoPtr->codeLoadAddr = (Address)PROC_CODE_LOAD_ADDR(*execPtr);
 	objInfoPtr->codeFileOffset = PROC_CODE_FILE_OFFSET(*execPtr);
 	objInfoPtr->codeSize = execPtr->code;
@@ -144,27 +149,27 @@ spriteMagic:
 	break;
 
     case UNIX_ZMAGIC:
-    unixMagic:
-
-	objInfoPtr->codeLoadAddr =
-	    (Address) (execPtr->entry < 0x2000 ? 0 : 0x2000);
+    case PROC_ZMAGIC|TYPE_UNIX:
+	if (debugProcStubs) {
+	    printf("Executing UNIX file in compatibility mode.\n");
+	}
+	objInfoPtr->codeLoadAddr = (Address) PROC_BASEADDR(*execPtr);
 
 	objInfoPtr->codeFileOffset = PROC_CODE_FILE_OFFSET(*execPtr);
 	objInfoPtr->codeSize = execPtr->code;
 #ifdef sun3
-	objInfoPtr->heapLoadAddr = (Address) 0x20000
-	    + (((int) objInfoPtr->codeLoadAddr +
-	        execPtr->code - 1) & ~(0x20000 - 1));
+	objInfoPtr->heapLoadAddr = (Address) PROC_SUN_DATA_LOAD_ADDR(*execPtr);
 	objInfoPtr->heapFileOffset = PROC_DATA_FILE_OFFSET(*execPtr);
 	objInfoPtr->heapSize = execPtr->data;
+	objInfoPtr->bssLoadAddr = objInfoPtr->heapLoadAddr + execPtr->data;
 #else
 	/*
 	 * We have to shuffle things around so the heap is on a pmeg
 	 * boundary.  This involves loading some of the code as heap.
 	 */
-	objInfoPtr->heapLoadAddr = (Address)
-	    (((int) objInfoPtr->codeLoadAddr +
-	        execPtr->code) & ~(0x20000 - 1));
+	objInfoPtr->heapLoadAddr = (Address) (((int) objInfoPtr->codeLoadAddr +
+		execPtr->code) & ~(NEW_SEG_SIZE - 1));
+
 	if (objInfoPtr->heapLoadAddr < objInfoPtr->codeLoadAddr) {
 	    objInfoPtr->heapLoadAddr = objInfoPtr->codeLoadAddr;
 	}
@@ -175,6 +180,60 @@ spriteMagic:
 	objInfoPtr->heapFileOffset -= excess;
 	objInfoPtr->heapSize += excess;
 	objInfoPtr->codeSize -= excess;
+	objInfoPtr->bssLoadAddr = objInfoPtr->heapLoadAddr + execPtr->code +
+		execPtr->data;
+#endif
+
+	objInfoPtr->bssSize = execPtr->bss;
+	objInfoPtr->entry = (Address)execPtr->entry;
+	objInfoPtr->unixCompat = 1;
+	if (debugProcStubs) {
+	    printf("ZMAGIC: code at %x (%x), heap at %x (%x), bss at %x (%x)\n",
+		    objInfoPtr->codeLoadAddr, objInfoPtr->codeSize,
+		    objInfoPtr->heapLoadAddr, objInfoPtr->heapSize,
+		    objInfoPtr->bssLoadAddr, objInfoPtr->bssSize);
+	}
+	break;
+
+    case PROC_NMAGIC|TYPE_UNIX:
+	objInfoPtr->codeLoadAddr = (Address) PROC_BASEADDR(*execPtr);
+
+	objInfoPtr->codeFileOffset = PROC_CODE_FILE_OFFSET(*execPtr);
+	objInfoPtr->codeSize = execPtr->code;
+#if 1
+#ifdef sun3
+	objInfoPtr->heapLoadAddr = (Address) PROC_DATA_LOAD_ADDR(*execPtr);
+#else
+	objInfoPtr->heapLoadAddr = (Address) PROC_SUN_DATA_LOAD_ADDR(*execPtr);
+#endif
+	objInfoPtr->heapFileOffset = PROC_CODE_FILE_OFFSET(*execPtr)+
+		execPtr->code;
+	objInfoPtr->heapSize = execPtr->data;
+#else
+#ifdef sun3
+	objInfoPtr->heapLoadAddr = (Address) PROC_DATA_LOAD_ADDR(*execPtr);
+	objInfoPtr->heapFileOffset = PROC_CODE_FILE_OFFSET(*execPtr)+
+		execPtr->code;
+	objInfoPtr->heapSize = execPtr->data;
+#else
+
+	/*
+	 * We have to shuffle things around so the heap is on a pmeg
+	 * boundary.  This involves loading some of the code as heap.
+	 */
+	objInfoPtr->heapLoadAddr = (Address) (((int) objInfoPtr->codeLoadAddr +
+		execPtr->code) & ~(NEW_SEG_SIZE - 1));
+	if (objInfoPtr->heapLoadAddr < objInfoPtr->codeLoadAddr) {
+	    objInfoPtr->heapLoadAddr = objInfoPtr->codeLoadAddr;
+	}
+	objInfoPtr->heapFileOffset = PROC_DATA_FILE_OFFSET(*execPtr);
+	objInfoPtr->heapSize = execPtr->data;
+	excess = (objInfoPtr->codeLoadAddr+execPtr->code) -
+		objInfoPtr->heapLoadAddr;
+	objInfoPtr->heapFileOffset -= excess;
+	objInfoPtr->heapSize += excess;
+	objInfoPtr->codeSize -= excess;
+#endif
 #endif
 
 	objInfoPtr->bssLoadAddr = objInfoPtr->heapLoadAddr + execPtr->data;

@@ -259,7 +259,6 @@ _MachFetchArgsEnd2:
 	|* kcallTable field.
 	|*
 
-
 	movl	_machCurStatePtr, a0
 	movl	a0@(MACH_USER_SP_OFFSET), a2 | restore the (new) SP
 	movc	a2, usp
@@ -309,14 +308,27 @@ _MachFetchArgsEnd2:
 	|* the beginning of the kernel call, then go through a slow
 	|* trap-processing procedure to take special action.
 	|*
+	|* We have to make sure we do the right thing with errno,
+	|* even if special handling is set.
+	|*
 
 	movl	a3, sp			| Pop kcall args off stack.
-	clrl	a2@(4)
+	|*clrl	a2@(4)
 	movw	#0x2000, sr
 	movl	sp@+, a3
 	movl	sp@+, a2
 	movl    sp@+, a1
 	movl    sp@+, a0
+	cmpl    #-1, d0
+	beqs    7f
+	CallTrapHandler(MACH_UNIX_SYSCALL_TRAP)
+7:
+	movw	sp@, d0		| Set the carry bit to indicate error
+	orw	#0x1, d0
+	movw	d0, sp@
+	movel	_proc_RunningProcesses,a0	| Move errno into d0
+	movel	a0@,a0
+	movel	a0@(MACH_UNIX_ERRNO_OFFSET),d0
 	CallTrapHandler(MACH_UNIX_SYSCALL_TRAP)
 
 
