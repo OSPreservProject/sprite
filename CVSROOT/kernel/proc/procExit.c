@@ -125,7 +125,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "procInt.h"
 #include "procMigrate.h"
 #include "migrate.h"
-
 #include "sync.h"
 #include "sched.h"
 #include "list.h"
@@ -136,13 +135,22 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "stdlib.h"
 #include "rpc.h"
 #include "sig.h"
+#include "stdio.h"
 
 static	Sync_Lock	exitLock = Sync_LockInitStatic("Proc:exitLock"); 
 #define	LOCKPTR &exitLock
 
-static INTERNAL ReturnStatus FindExitingChild();
-static INTERNAL void WakeupMigratedParent();
-static void SendSigChild();
+static 	INTERNAL ReturnStatus FindExitingChild _ARGS_((
+				    Proc_ControlBlock *parentProcPtr,
+				    Boolean returnSuspend, int numPids,
+				    Proc_PID *pidArray, 
+				    ProcChildInfo *infoPtr));
+static 	INTERNAL void WakeupMigratedParent _ARGS_((Proc_PID pid));
+static 	void 	SendSigChild _ARGS_((ClientData data, 
+			Proc_CallInfo *callInfoPtr));
+static 	Proc_State	ExitProcessInt _ARGS_((
+				Proc_ControlBlock *exitProcPtr,
+				Boolean	migrated, Boolean contextSwitch));
 
 /*
  * Shared memory.
@@ -286,7 +294,7 @@ ExitProcessInt(exitProcPtr, migrated, contextSwitch)
     Boolean			contextSwitch;	/* TRUE => context switch. */
 {
     register	Proc_ControlBlock	*procPtr;
-    Proc_State				newState;
+    Proc_State				newState = PROC_UNUSED;
     register Proc_PCBLink 		*procLinkPtr;
     Timer_Ticks 		        ticks;
 
@@ -888,9 +896,16 @@ Proc_Detach(status)
     return(SUCCESS);
 }
 
-static ReturnStatus 	CheckPidArray();
-static ReturnStatus 	LookForAnyChild();
-static ReturnStatus 	DoWait();
+static ReturnStatus 	CheckPidArray _ARGS_((Proc_ControlBlock *curProcPtr,
+				Boolean returnSuspend, int numPids,
+				Proc_PID *pidArray, 
+				Proc_ControlBlock **procPtrPtr));
+static ReturnStatus 	LookForAnyChild _ARGS_((Proc_ControlBlock *curProcPtr,
+				Boolean returnSuspend, 
+				Proc_ControlBlock **procPtrPtr));
+static ReturnStatus 	DoWait _ARGS_((Proc_ControlBlock *curProcPtr,
+			    int	flags, int numPids, Proc_PID *newPidArray,
+			    ProcChildInfo *childInfoPtr));
 
 
 /*

@@ -20,11 +20,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "proc.h"
+#include "procInt.h"
 #include "timer.h"
 #include "sys.h"
 #include "sig.h"
 #include "stdlib.h"
 #include "sync.h"
+#include "bstring.h"
 
 /*
  * Information about the state of an interval timer for a process.
@@ -50,8 +52,11 @@ typedef struct ProcIntTimerInfo {
 static Sync_Lock	procTimerLock = Sync_LockInitStatic("procTimerLock");
 #define	LOCKPTR &procTimerLock
 
-static ReturnStatus	GetCurrentTimer();
-static void		SendTimerSigFunc();
+static ReturnStatus	GetCurrentTimer _ARGS_((Proc_ControlBlock *procPtr,
+				int timerType, Proc_TimerInterval *timerBufPtr,
+				Boolean userMode));
+static void		SendTimerSigFunc _ARGS_((ClientData data,
+				Proc_CallInfo *infoPtr));
 
 
 
@@ -151,7 +156,7 @@ GetCurrentTimer(procPtr, timerType, timerBufPtr, userMode)
 					 * for encapsulation.
 					 */
 {
-    register ProcIntTimerInfo	*timerPtr;
+    register ProcIntTimerInfo	*timerPtr = (ProcIntTimerInfo *) NIL;
     Proc_TimerInterval	timer;
     Boolean exists = FALSE;
 

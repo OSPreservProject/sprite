@@ -106,21 +106,4 @@ typedef enum {
 } ProcRecordUsageType;
 
 
-/*
- * Various proc-internal procedures.
- */
-extern ReturnStatus ProcMigAcceptMigration();
-extern ReturnStatus ProcMigReceiveProcess();
-extern ReturnStatus ProcMigGetUpdate();
-extern ReturnStatus ProcMigEncapCallback();
-extern ReturnStatus ProcMigDestroyCmd();
-extern ReturnStatus ProcMigCommand();
-extern ReturnStatus ProcMigContinueProcess();
-extern ReturnStatus ProcMigGetSuspend();
-extern void         ProcMigRemoveDependency();
-extern void 	    ProcMigAddDependency();
-extern void	    ProcMigKillRemoteCopy();
-extern ENTRY void   ProcMigWakeupWaiters();
-extern ENTRY void   ProcMigEvictionComplete();
-
 #endif /* _MIGRATE */

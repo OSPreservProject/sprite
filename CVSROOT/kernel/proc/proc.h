@@ -28,6 +28,8 @@
 #include "timer.h"
 #include "sig.h"
 #include "mach.h"
+#include "rpc.h"
+#include "sysSysCallParam.h"
 #else
 #include <proc.h>
 #include <sync.h>
@@ -574,78 +576,160 @@ extern Boolean proc_RefuseMigrations;
  * External procedures.
  */
 
-extern void		  	Proc_Init();
-extern void		  	Proc_InitMainProc();
-extern ReturnStatus		Proc_NewProc();
-extern void			ProcStartUserProc();
-extern void			Proc_ExitInt();
-extern void			Proc_Exit();
-extern void			Proc_DetachInt();
-extern ReturnStatus		Proc_Detach();
-extern void			Proc_InformParent();	
-extern void			Proc_Reaper();
-extern void			Proc_NotifyMigratedWaiters();
-extern void			Proc_PutOnDebugList();
-extern void			Proc_SuspendProcess();
-extern void			Proc_ResumeProcess();
-extern int			Proc_ExecEnv();
-extern int			Proc_RemoteExec();
-extern ReturnStatus 		Proc_GetHostIDs();
-extern ReturnStatus		Proc_RpcRemoteWait();
-extern ReturnStatus		Proc_RpcGetPCB();
-
-
-extern ReturnStatus		Proc_EvictForeignProcs();
-extern ReturnStatus		Proc_EvictProc();
-extern Boolean			Proc_IsMigratedProc();
-extern void			Proc_FlagMigration();
-extern void			Proc_MigrateTrap();
-extern void			Proc_OkayToMigrate();
-extern ReturnStatus		Proc_MigSendUserInfo();
-extern ReturnStatus		Proc_DoRemoteCall();
-extern void			Proc_SetEffectiveProc();
-extern Proc_ControlBlock *	Proc_GetEffectiveProc();
-extern ReturnStatus		Proc_ByteCopy();
-extern ReturnStatus		Proc_MakeStringAccessible();
-extern void			Proc_MakeUnaccessible();
-extern void			Proc_MigrateStartTracing();
-extern void			Proc_DestroyMigratedProc();
-extern void			Proc_NeverMigrate();
-extern ReturnStatus		Proc_MigGetStats();
-extern ReturnStatus		Proc_MigZeroStats();
-extern ENTRY void	        Proc_MigAddToCounter();
-
-extern void			ProcInitMainEnviron();
-extern void			ProcSetupEnviron();
-extern void			ProcDecEnvironRefCount();
-
-extern void			Proc_SetServerPriority();
-
-extern	int			Proc_KillAllProcesses();
-extern	void			Proc_WakeupAllProcesses();
-
-extern	void			Proc_Unlock();
-extern	void			Proc_Lock();
-extern	Proc_ControlBlock	*Proc_LockPID();
-extern	ReturnStatus		Proc_LockFamily();
-extern	void			Proc_UnlockFamily();
-extern	void			Proc_TakeOffDebugList();
-extern	Boolean			Proc_HasPermission();
-
-extern	void			Proc_ServerInit();
-extern	void			Proc_CallFunc();
-extern	void			Proc_CancelCallFunc();
-extern	ClientData		Proc_CallFuncAbsTime();
-extern	void			Proc_ServerProc();
-extern	int			proc_NumServers;
-
-extern  ReturnStatus		Proc_Dump();
-extern  ReturnStatus		Proc_KDump();
-extern  void			Proc_DumpPCB();
-
-extern  void			Proc_RemoveFromLockStack();
-extern  void			Proc_PushLockStack();
-
+extern ReturnStatus 	Proc_ByteCopy _ARGS_((Boolean copyIn, int numBytes,
+				Address sourcePtr, Address destPtr));
+extern void		Proc_CallFunc _ARGS_((void (*func)(), 
+				ClientData clientData, unsigned int interval));
+extern ClientData 	Proc_CallFuncAbsTime _ARGS_((void (*func)(), 
+				ClientData clientData, Timer_Ticks time));
+extern void 		Proc_CancelCallFunc _ARGS_((ClientData token));
+extern	ReturnStatus	Proc_Debug _ARGS_((Proc_PID pid, 
+				Proc_DebugReq request, int numBytes,
+				Address srcAddr, Address destAddr));
+extern	void		Proc_DestroyMigratedProc _ARGS_((ClientData pidData));
+extern ReturnStatus 	Proc_Detach _ARGS_((int status));
+extern void 		Proc_DetachInt _ARGS_((register 
+				Proc_ControlBlock *procPtr));
+extern	ReturnStatus	Proc_DoForEveryProc _ARGS_((Boolean (*booleanFuncPtr)(),
+				ReturnStatus (*actionFuncPtr)(), 
+				Boolean ignoreStatus, int *numMatchedPtr));
+extern ReturnStatus 	Proc_DoRemoteCall _ARGS_((int callNumber, int numWords,
+				ClientData *argsPtr, Sys_CallParam *specsPtr));
+extern	ReturnStatus	Proc_Dump _ARGS_((void));
+extern	void		Proc_DumpPCB _ARGS_((Proc_ControlBlock *procPtr));
+extern	ReturnStatus	Proc_EvictForeignProcs _ARGS_((void));
+extern	ReturnStatus	Proc_EvictProc _ARGS_((Proc_PID pid));
+extern	int		Proc_Exec _ARGS_((char *fileName, 
+				char **argsPtrArray, char **envPtrArray,
+				Boolean debugMe, int host));
+extern int 		Proc_ExecEnv _ARGS_((char *fileName, 
+				char **argPtrArray, char **envPtrArray, 
+				Boolean debugMe));
+extern void 		Proc_Exit _ARGS_((int status));
+extern void 		Proc_ExitInt _ARGS_((int reason, int status, int code));
+extern	void		Proc_FlagMigration _ARGS_((Proc_ControlBlock *procPtr,
+				int hostID, Boolean exec));
+extern	int		Proc_Fork _ARGS_((Boolean shareHeap, Proc_PID *pidPtr));
+extern	Proc_ControlBlock *Proc_GetEffectiveProc _ARGS_((void));
+extern	ReturnStatus	Proc_GetFamilyID _ARGS_((Proc_PID pid,
+				Proc_PID *familyIDPtr));
+extern	ReturnStatus	Proc_GetGroupIDs _ARGS_((int numGIDs, int *gidArrayPtr,
+				int *trueNumGIDsPtr));
+extern	ReturnStatus	Proc_GetHostIDs _ARGS_((int *virtualHostPtr, 
+				int *physicalHostPtr));
+extern	ReturnStatus	Proc_GetIDs _ARGS_((Proc_PID *procIDPtr,
+				Proc_PID *parentIDPtr, int *userIDPtr,
+				int *effUserIDPtr));
+extern	ReturnStatus	Proc_GetIntervalTimer _ARGS_((int timerType,
+				Proc_TimerInterval *userTimerPtr));
+extern	ReturnStatus	Proc_GetPCBInfo _ARGS_((Proc_PID firstPid,
+				Proc_PID lastPid, int hostID, int infoSize,
+				Address bufferPtr, Proc_PCBArgString *argsPtr,
+				int *trueNumBuffersPtr));
+extern	ReturnStatus	Proc_GetPriority _ARGS_((Proc_PID pid, 
+				int *priorityPtr));
+extern	ReturnStatus	Proc_GetRemoteSegInfo _ARGS_((int hostID, int segNum,
+				Vm_SegmentInfo *segInfoPtr));
+extern	ReturnStatus	Proc_GetResUsage _ARGS_((Proc_PID pid, 
+				Proc_ResUsage *bufferPtr));
+extern	Boolean		Proc_HasPermission _ARGS_((int userID));
+extern void 		Proc_InformParent _ARGS_((register 
+				Proc_ControlBlock *procPtr, int childStatus));
+extern void 		Proc_Init _ARGS_((void));
+extern	void		Proc_InitMainEnviron _ARGS_((
+				Proc_ControlBlock *procPtr));
+extern void 		Proc_InitMainProc _ARGS_((void));
+extern	Boolean		Proc_IsMigratedProc _ARGS_((
+				Proc_ControlBlock *procPtr));
+extern	int		Proc_KillAllProcesses _ARGS_((Boolean userProcsOnly));
+extern	void		Proc_KDump _ARGS_((void));
+extern	void		Proc_Lock _ARGS_((Proc_ControlBlock *procPtr));
+extern ReturnStatus 	Proc_LockFamily _ARGS_((int familyID, 
+				List_Links **familyListPtr, int *userIDPtr));
+extern	Proc_ControlBlock *Proc_LockPID _ARGS_((Proc_PID pid));
+extern ReturnStatus 	Proc_MakeStringAccessible _ARGS_((int maxLength,
+				char **stringPtrPtr, int *accessLengthPtr,
+				int *newLengthPtr));
+extern void 		Proc_MakeUnaccessible _ARGS_((Address addr, 
+				int numBytes));
+extern	void		Proc_MigAddToCounter _ARGS_((int value, 
+				unsigned int *intPtr, 
+				unsigned int *squaredPtr));
+extern	ReturnStatus	Proc_MigGetStats _ARGS_((Address addr));
+extern	void		Proc_MigInit _ARGS_((void));
+extern	ReturnStatus	Proc_Migrate _ARGS_((Proc_PID pid, int hostID));
+extern	void		Proc_MigrateStartTracing _ARGS_((void));
+extern	void		Proc_MigrateTrap _ARGS_((Proc_ControlBlock *procPtr));
+extern	ReturnStatus	Proc_MigResetStats _ARGS_((void));
+extern ReturnStatus	Proc_MigUpdateInfo _ARGS_((Proc_ControlBlock *procPtr));
+extern	void		Proc_NeverMigrate _ARGS_((Proc_ControlBlock *procPtr));
+extern ReturnStatus	Proc_NewProc _ARGS_((Address PC, int procType,
+				Boolean shareHeap, Proc_PID *pidPtr,
+				char *procName));
+extern	void		Proc_NotifyMigratedWaiters _ARGS_((Proc_PID pid,
+				Proc_CallInfo *callInfoPtr));
+extern	ReturnStatus	Proc_Profile _ARGS_((int shiftSize, int lowPC,
+				int highPC, Time interval, int counterArray[]));
+extern	void		Proc_PushLockStack _ARGS_((Proc_ControlBlock *pcbPtr,
+				int type, Address lockPtr));
+extern void 		Proc_Reaper _ARGS_((register 
+				Proc_ControlBlock *procPtr, 
+				Proc_CallInfo *callInfoPtr));
+extern void		Proc_ResumeProcess _ARGS_((Proc_ControlBlock *procPtr,
+				Boolean killingProc));
+extern	ReturnStatus	Proc_RemoteDummy _ARGS_((int callNumber, 
+				int numWords, Sys_ArgArray *argsPtr,
+				Sys_CallParam *specsPtr));
+extern int 		Proc_RemoteExec _ARGS_((char *fileName, 
+				char **argPtrArray,char **envPtrArray, 
+				int host));
+extern	void		Proc_RemoveFromLockStack _ARGS_((
+				Proc_ControlBlock *pcbPtr, Address lockPtr));
+extern	void		Proc_ResumeMigProc _ARGS_((int pc));
+extern	ReturnStatus	Proc_RpcGetPCB _ARGS_((ClientData srvToken,
+				int clientID, int command,
+				Rpc_Storage *storagePtr));
+extern	ReturnStatus	Proc_RpcMigCommand _ARGS_((ClientData srvToken,
+				int hostID, int command, 
+				Rpc_Storage *storagePtr));
+extern	ReturnStatus	Proc_RpcRemoteCall _ARGS_((ClientData srvToken,
+				int clientID, int command, 
+				Rpc_Storage *storagePtr));
+extern ReturnStatus 	Proc_RpcRemoteWait _ARGS_((ClientData srvToken,
+				int clientID, int command, 
+				Rpc_Storage *storagePtr));
+extern void 		Proc_UnlockFamily _ARGS_((int familyID));
+extern void 		Proc_ServerInit _ARGS_((void));
+extern void 		Proc_ServerProc _ARGS_((void));
+extern	void		Proc_SetEffectiveProc _ARGS_((
+				Proc_ControlBlock *procPtr));
+extern	ReturnStatus	Proc_SetFamilyID _ARGS_((Proc_PID pid, 
+				Proc_PID familyID));
+extern	ReturnStatus	Proc_SetGroupIDs _ARGS_((int numGIDs, 
+				int *gidArrayPtr));
+extern	ReturnStatus	Proc_SetIDs _ARGS_((int userID, int effUserID));
+extern	ReturnStatus	Proc_SetIntervalTimer _ARGS_((int timerType,
+				Proc_TimerInterval *newTimerPtr,
+				Proc_TimerInterval *oldTimerPtr));
+extern	ReturnStatus	Proc_SetPriority _ARGS_((Proc_PID pid, int priority,
+				Boolean useFamily));
+extern	void		Proc_SetServerPriority _ARGS_((Proc_PID pid));
+extern	void		Proc_SetupEnviron _ARGS_((Proc_ControlBlock *procPtr));
+extern	ReturnStatus	Proc_StringNCopy _ARGS_((int numBytes, char *srcStr,
+				char *destStr, int *strLengthPtr));
+extern	void		Proc_SuspendProcess _ARGS_((
+				Proc_ControlBlock *procPtr, Boolean debug,
+				int termReason, int termStatus, 
+				int termCode));
+extern	void		Proc_Unlock _ARGS_((Proc_ControlBlock *procPtr));
+extern	ReturnStatus	Proc_Wait _ARGS_((int numPids, Proc_PID pidArray[],
+				int flags, Proc_PID *procIDPtr, 
+				int *reasonPtr, int *statusPtr, 
+				int *subStatusPtr, Proc_ResUsage *usagePtr));
+extern	ReturnStatus	Proc_WaitForHost _ARGS_((int hostID));
+extern	ReturnStatus	Proc_WaitForMigration _ARGS_((Proc_PID processID));
+extern	void		Proc_WakeupAllProcesses _ARGS_((void));
+extern	int		proc_NumServers;
 /*
  * The following are kernel stubs corresponding to system calls.  They
  * used to be known by the same name as the system call, but the C library
@@ -653,12 +737,19 @@ extern  void			Proc_PushLockStack();
  * The "Stub" suffix therefore avoids naming conflicts with the library.
  */
 
-extern ReturnStatus		Proc_SetEnvironStub();
-extern ReturnStatus		Proc_UnsetEnvironStub();
-extern ReturnStatus		Proc_GetEnvironVarStub();
-extern ReturnStatus		Proc_GetEnvironRangeStub();
-extern ReturnStatus		Proc_InstallEnvironStub();
-extern ReturnStatus		Proc_CopyEnvironStub();
-extern int                      Proc_KernExec();
+extern	ReturnStatus	Proc_SetEnvironStub _ARGS_((
+				Proc_EnvironVar environVar));
+extern	ReturnStatus	Proc_UnsetEnvironStub _ARGS_((
+				Proc_EnvironVar environVar));
+extern	ReturnStatus	Proc_GetEnvironVarStub _ARGS_((
+				Proc_EnvironVar environVar));
+extern	ReturnStatus	Proc_GetEnvironRangeStub _ARGS_((int first, int last,
+				Proc_EnvironVar *envArray, 
+				int *numActualVarsPtr));
+extern	ReturnStatus	Proc_CopyEnvironStub _ARGS_((void));
+extern	ReturnStatus	Proc_InstallEnvironRangeStub _ARGS_((
+				Proc_EnvironVar environVar, int numVars));
+extern 	int 		Proc_KernExec _ARGS_((char *fileName, 
+				char **argPtrArray));
 
 #endif /* _PROC */

@@ -46,6 +46,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sync.h"
 #include "sysSysCall.h"
 #include "timer.h"
+#include "stdio.h"
+#include "bstring.h"
 
 Sync_Condition	migrateCondition;
 Sync_Condition	evictCondition;
@@ -94,24 +96,28 @@ static int statsVersion = PROC_MIG_STATS_VERSION;
  * Procedures internal to this file
  */
 
-static ReturnStatus GetProcEncapSize();
-static ReturnStatus EncapProcState();
-static ReturnStatus DeencapProcState();
-static ReturnStatus UpdateState();
+static ReturnStatus GetProcEncapSize _ARGS_((Proc_ControlBlock *procPtr,
+			    int hostID, Proc_EncapInfo *infoPtr));
+static ReturnStatus EncapProcState _ARGS_((Proc_ControlBlock *procPtr,
+			    int hostID, Proc_EncapInfo *infoPtr,
+			    Address bufPtr));
+static ReturnStatus DeencapProcState _ARGS_((Proc_ControlBlock *procPtr,
+			    Proc_EncapInfo *infoPtr, Address bufPtr));
 
-static ReturnStatus ResumeExecution();
-static void 	    AbortMigration();
+static void 	    AbortMigration _ARGS_((Proc_ControlBlock *procPtr));
 
-static void 	    SuspendCallback();
+static void 	    SuspendCallback _ARGS_((ClientData data,
+			    Proc_CallInfo *callInfoPtr));
 
 /*
  * Procedures for statistics gathering
  */
-static ENTRY void    AddMigrateTime();
-static ENTRY void    AccessStats();
-static ENTRY Boolean EvictionStarted();
-static ENTRY void    WaitForEviction();
-static ENTRY ReturnStatus WaitForMigration();
+static ENTRY void    AddMigrateTime _ARGS_((Time time, unsigned int *totalPtr,
+			    unsigned int *squaredTotalPtr));
+static ENTRY void    AccessStats _ARGS_((Proc_MigStats *copyPtr));
+static ENTRY Boolean EvictionStarted _ARGS_((void));
+static ENTRY void    WaitForEviction _ARGS_((void));
+static ENTRY ReturnStatus WaitForMigration _ARGS_((void));
 
 
 #ifdef DEBUG
@@ -235,13 +241,6 @@ Proc_MigInit()
     ProcRecovInit();
 }
 
-/* 
- * STUB for backward compatibility; remove when main installed.
- */
-Proc_RecovInit()
-{
-    Proc_MigInit();
-}
 
 
 /*
@@ -466,7 +465,7 @@ Proc_MigrateTrap(procPtr)
     register Proc_ControlBlock 	*procPtr; /* The process being migrated */
 {
     int hostID;			/* host to which it migrates */
-    ReturnStatus status;
+    ReturnStatus status = FAILURE;
     Proc_TraceRecord record;
     Boolean foreign = FALSE;
     Boolean evicting = FALSE;
@@ -905,7 +904,7 @@ ProcMigReceiveProcess(cmdPtr, procPtr, inBufPtr, outBufPtr)
     Proc_MigBuffer *inBufPtr;	/* input buffer */
     Proc_MigBuffer *outBufPtr;	/* output buffer (stays NIL) */
 {
-    ReturnStatus status;
+    ReturnStatus status = SUCCESS;
     Address bufPtr;
     register int i;
     Proc_EncapInfo *infoPtr;
@@ -1573,7 +1572,7 @@ SuspendCallback(data, callInfoPtr)
     int numTries;			/* number of times trying RPC */
     ProcMigCmd cmd;
     Proc_MigBuffer inBuf;
-    int host;
+    int host = 0;
 
     callPtr = (SuspendCallbackInfo *) data;
     if (proc_MigDebugLevel > 4) {
@@ -2170,8 +2169,8 @@ ProcRecordUsage(ticks, type)
     Timer_Ticks ticks;
     ProcRecordUsageType type;
 {
-    unsigned int *timePtr;
-    unsigned int *squaredTimePtr;
+    unsigned int *timePtr = (unsigned int *) NIL;
+    unsigned int *squaredTimePtr = (unsigned int *) NIL;
     Time time;
 
 #ifndef CLEAN

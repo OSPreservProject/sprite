@@ -41,22 +41,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "prof.h"
 #include "file.h"
 #include "fsutil.h"
-#ifdef notdef
-#include "dbg.h"
-#endif
-
-
-/*
- * Forward declarations.
- */
-static ReturnStatus	SetupExec();
-static ReturnStatus	DoExec();
-static ReturnStatus	SetupInterpret();
-static ReturnStatus	SetupArgs();
-static ReturnStatus	GrabArgArray();
-static Boolean		SetupVM();
-
-
+#include "ctype.h"
+#include "stdio.h"
+#include "bstring.h"
 /*
  * This will go away when libc is changed.
  */
@@ -127,6 +114,28 @@ typedef struct {
     int		numEnvs;	/* The number of arguments in the envArray. */
 } UserArgs;
 
+/*
+ * Forward declarations.
+ */
+static ReturnStatus 	DoExec _ARGS_((char fileName[], 
+			    UserArgs *userArgsPtr, 
+			    ExecEncapState **encapPtrPtr, Boolean debugMe));
+static ReturnStatus 	SetupInterpret _ARGS_((register char *buffer, 
+			    int sizeRead, register Fs_Stream **filePtrPtr, 
+			    char **argPtrPtr, int *extraArgsPtr, 
+			    ProcObjInfo *objInfoPtr));
+static ReturnStatus 	SetupArgs _ARGS_((UserArgs *userArgsPtr, 
+			    char **extraArgArray, Address *argStackPtr, 
+			    char **argStringPtr));
+static ReturnStatus 	GrabArgArray _ARGS_((int maxLength, Boolean userProc, 
+			    char **extraArgArray, char **argPtrArray, 
+			    int *numArgsPtr, List_Links *argList, 
+			    int *realLengthPtr, int *paddedLengthPtr));
+static Boolean 		SetupVM _ARGS_((register Proc_ControlBlock *procPtr, 
+			    register ProcObjInfo *objInfoPtr, 
+			    Fs_Stream *codeFilePtr, Boolean usedFile, 
+			    Vm_Segment **codeSegPtrPtr, 
+			    register Vm_ExecInfo *execInfoPtr));
 
 #ifdef notdef
 /*
@@ -1410,7 +1419,7 @@ SetupVM(procPtr, objInfoPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr)
     Vm_Segment			*heapSegPtr;
     Fs_Stream			*heapFilePtr;
     ReturnStatus		status;
-    Address			heapEnd;
+    Address			heapEnd = (Address) NIL;
     int				realCode = 1;
 
     if (*codeSegPtrPtr == (Vm_Segment *) NIL) {
@@ -1538,7 +1547,8 @@ SetupVM(procPtr, objInfoPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr)
 		    Fsutil_HandleName(&codeFilePtr->hdr),
 		    "and should be relinked");
 	} else {
-	    status = Vm_PageIn((execInfoPtr->bssFirstPage-1)*vm_PageSize,
+	    status = Vm_PageIn((Address) 
+		    ((execInfoPtr->bssFirstPage-1)*vm_PageSize),
 		    FALSE);
 	    if (status != SUCCESS) {
 		printf("SetupVM: heap prefetch failure\n");
@@ -1737,7 +1747,7 @@ ProcDoRemoteExec(procPtr)
     register Proc_ControlBlock *procPtr; /* Process control block, locked
 					  * on entry */
 {
-    char *fileName;
+    char *fileName = (char *) NIL;
     ReturnStatus status;
     ExecEncapState *encapPtr;
 

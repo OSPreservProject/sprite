@@ -27,6 +27,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "stdlib.h"
 #include "status.h"
 #include "vm.h"
+#include "bstring.h"
+#include "string.h"
+#include "stdio.h"
 
 /*
  * The minimum size of the environment that is allocated.  This size
@@ -54,6 +57,16 @@ static	Sync_Lock environMonitorLock =
     Sync_LockInitStatic("Proc:environMonitorLock");
 #define	LOCKPTR   &environMonitorLock
 
+static	void	DoCopyEnviron _ARGS_((int srcSize, 
+			ProcEnvironVar *srcVarPtr, int destSize, 
+			ProcEnvironVar *destVarPtr));
+static	void	FreeEnviron _ARGS_((register Proc_EnvironInfo *environPtr,
+			int size, Boolean freeEnvironInfo));
+static	ProcEnvironVar *FindVar _ARGS_((Proc_EnvironInfo *environPtr,
+			char *name));
+static 	ProcEnvironVar *InitializeVar _ARGS_((Proc_EnvironInfo 
+			*environPtr, char *name, int nameLength));
+static	void	DecEnvironRefCount _ARGS_((Proc_EnvironInfo *environPtr));
 
 /*
  * ----------------------------------------------------------------------------
@@ -360,7 +373,7 @@ InitializeVar(environPtr, name, nameLength)
  * ----------------------------------------------------------------------------
  */
 
-INTERNAL void
+static INTERNAL void
 DecEnvironRefCount(environPtr)
     register	Proc_EnvironInfo	*environPtr;
 {
@@ -858,7 +871,7 @@ Proc_InstallEnvironStub(environ, numVars)
     /*
      * Make the users environment array accessible.
      */
-
+    userEnvironPtr = (Proc_EnvironVar *) NIL;
     if (numVars > 0) {
 	Vm_MakeAccessible(VM_READONLY_ACCESS, numVars * sizeof(Proc_EnvironVar),
 	    		  (Address) environ, &environLength, 

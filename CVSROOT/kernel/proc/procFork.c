@@ -35,7 +35,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vm.h"
 #include "prof.h"
 
-static ReturnStatus    InitUserProc();
+static ReturnStatus    InitUserProc _ARGS_((Proc_ControlBlock *procPtr,
+			    Proc_ControlBlock *parentProcPtr,
+			    Boolean shareHeap));
 
 
 /*

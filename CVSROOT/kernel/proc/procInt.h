@@ -18,7 +18,11 @@
 
 #ifndef _PROCINT
 #define _PROCINT
-
+#include "procMigrate.h"
+#include "migrate.h"
+#include "proc.h"
+#include "fs.h"
+#include "procMach.h"
 /*
  * Information used by the Proc_Wait command for child termination information.
  */
@@ -56,36 +60,114 @@ typedef struct {
  * Procedures internal to the proc module.
  */
 
-extern 	void 			ProcRemoteExit();
-extern 	void 			ProcRemoteSuspend();
-extern 	void			ProcExitProcess();
-
-extern	void			ProcFamilyHashInit();
-extern	void			ProcDebugInit();
-extern	void			ProcRecovInit();
-extern 	void			ProcExitInit();
-extern	void			ProcMigrateInit();
-extern	void			ProcEnvironInit();
-
-extern	void			ProcDebugWakeup();
-extern	void			ProcFreePCB();
-extern	Proc_ControlBlock	*ProcGetUnusedPCB();
-extern	void			ProcFamilyRemove();
-extern	ReturnStatus		ProcFamilyInsert();
-
-extern	ReturnStatus		ProcChangeTimer();
-extern	void			ProcDeleteTimers();
-
-extern	int			ProcTableMatch();
-extern  void			ProcInitTable();
-extern	void			ProcAddToGroupList();
-
-extern	ReturnStatus		ProcExecGetEncapSize();
-extern	ReturnStatus		ProcExecEncapState();
-extern	ReturnStatus		ProcExecDeencapState();
-extern	ReturnStatus		ProcExecFinishMigration();
-extern	void			ProcDoRemoteExec();
-extern	void			ProcRemoteExec();
-extern  void			ProcRecordUsage();
-	  
+extern void 		ProcRemoteExit _ARGS_((register 
+				Proc_ControlBlock *procPtr, int reason, 
+				int exitStatus, int code));
+extern 	void 		ProcRemoteSuspend _ARGS_((Proc_ControlBlock *procPtr,
+				int exitFlags));
+extern void 		ProcExitProcess _ARGS_((register 
+				Proc_ControlBlock *exitProcPtr, int reason, 
+				int status, int code, Boolean thisProcess));
+extern void 		ProcFamilyHashInit _ARGS_((void));
+extern void 		ProcDebugInit _ARGS_((void));
+extern	void		ProcDebugWakeup _ARGS_((void));
+extern void 		ProcRecovInit _ARGS_((void));
+extern void 		ProcFamilyRemove _ARGS_((Proc_ControlBlock *procPtr));
+extern ReturnStatus 	ProcFamilyInsert _ARGS_((Proc_ControlBlock *procPtr, 
+				int familyID));
+extern	ReturnStatus	ProcChangeTimer _ARGS_((int timerType, 
+				Proc_TimerInterval *newTimerPtr,
+				Proc_TimerInterval *oldTimerPtr,
+				Boolean userMode));
+extern	void		ProcDeleteTimers _ARGS_((Proc_ControlBlock *procPtr));
+extern ReturnStatus 	ProcExecGetEncapSize _ARGS_((Proc_ControlBlock *procPtr,
+				int hostID, Proc_EncapInfo *infoPtr));
+extern ReturnStatus 	ProcExecEncapState _ARGS_((register 
+				Proc_ControlBlock *procPtr, int hostID, 
+				Proc_EncapInfo *infoPtr, Address bufPtr));
+extern ReturnStatus	ProcExecDeencapState _ARGS_((register 
+				Proc_ControlBlock *procPtr, 
+				Proc_EncapInfo *infoPtr, Address bufPtr));
+extern ReturnStatus 	ProcExecFinishMigration _ARGS_((register 
+				Proc_ControlBlock *procPtr, int hostID, 
+				Proc_EncapInfo *infoPtr, Address bufPtr, 
+				Boolean failure));
+extern void 		ProcDoRemoteExec _ARGS_((register 
+				Proc_ControlBlock *procPtr));
+extern void 		ProcRemoteExec _ARGS_((register 
+				Proc_ControlBlock *procPtr, int uid));
+extern  void		ProcRecordUsage _ARGS_((Timer_Ticks ticks,
+				ProcRecordUsageType type));
+extern  ReturnStatus	ProcRemoteWait _ARGS_((Proc_ControlBlock *procPtr,
+				int flags, int numPids, Proc_PID pidArray[],
+				ProcChildInfo *childInfoPtr));
+extern	ReturnStatus	ProcRemoteFork _ARGS_((Proc_ControlBlock *parentProcPtr,
+				Proc_ControlBlock *childProcPtr));
+extern	ReturnStatus	ProcInitiateMigration _ARGS_((
+				Proc_ControlBlock *procPtr, int hostID));
+extern	ReturnStatus	ProcServiceRemoteWait _ARGS_((
+				Proc_ControlBlock *curProcPtr,
+				int flags, int numPids, Proc_PID pidArray[],
+				int waitToken, ProcChildInfo *childInfoPtr));
+extern	void		ProcDebugInit _ARGS_((void));
+extern void 		ProcInitMainEnviron _ARGS_((register 
+				Proc_ControlBlock *procPtr));
+extern void 		ProcSetupEnviron _ARGS_((register 
+				Proc_ControlBlock *procPtr));
+extern void 		ProcDecEnvironRefCount _ARGS_((register 
+				Proc_EnvironInfo	*environPtr));
+extern	ReturnStatus	ProcIsObj _ARGS_((Fs_Stream *streamPtr,
+				int doErr));
+extern	void		ProcAddToGroupList _ARGS_((Proc_ControlBlock *procPtr,
+				int gid));
+extern	ReturnStatus	ProcMigReceiveProcess _ARGS_((ProcMigCmd *cmdPtr,
+				Proc_ControlBlock *procPtr,
+				Proc_MigBuffer *inBufPtr,
+				Proc_MigBuffer *outBufPtr));
+extern	ReturnStatus	ProcMigGetUpdate _ARGS_((ProcMigCmd *cmdPtr,
+				Proc_ControlBlock *procPtr,
+				Proc_MigBuffer *inBufPtr,
+				Proc_MigBuffer *outBufPtr));
+extern	ReturnStatus	ProcMigGetSupend _ARGS_((ProcMigCmd *cmdPtr,
+				Proc_ControlBlock *procPtr,
+				Proc_MigBuffer *inBufPtr, 
+				Proc_MigBuffer *outBufPtr));
+extern	ReturnStatus	ProcMigEncapCallback _ARGS_((ProcMigCmd *cmdPtr,
+				Proc_ControlBlock *procPtr,
+				Proc_MigBuffer *inBufPtr,
+				Proc_MigBuffer *outBufPtr));
+extern	void		ProcMigKillRemoteCopy _ARGS_((Proc_PID processID));
+extern	ReturnStatus	ProcMigCommand _ARGS_((int host, ProcMigCmd *cmdPtr,
+				Proc_MigBuffer *inBufPtr, 
+				Proc_MigBuffer *outBufPtr));
+extern	void		ProcMigWakeupWaiters _ARGS_((void));
+extern	void		ProcMigEvictionComplete _ARGS_((void));
+extern	void		ProcMigAddDependency _ARGS_((Proc_PID processID,
+				Proc_PID peerProcessID));
+extern	void		ProcMigRemoveDependency _ARGS_((Proc_PID processID,
+				Boolean notified));
+extern	ReturnStatus	ProcMigAcceptMigration _ARGS_((ProcMigCmd *cmdPtr,
+				Proc_ControlBlock *procPtr,
+				Proc_MigBuffer *inBufPtr,
+				Proc_MigBuffer *outBufPtr));
+extern	ReturnStatus	ProcMigDestroyCmd _ARGS_((ProcMigCmd *cmdPtr,
+				Proc_ControlBlock *procPtr,
+				Proc_MigBuffer *inBufPtr,
+				Proc_MigBuffer *outBufPtr));
+extern	ReturnStatus	ProcMigContinueProcess _ARGS_((ProcMigCmd *cmdPtr,
+				Proc_ControlBlock *procPtr,
+				Proc_MigBuffer *inBufPtr,
+				Proc_MigBuffer *outBufPtr));
+extern	ReturnStatus	ProcMigGetSuspend _ARGS_((ProcMigCmd *cmdPtr,
+				Proc_ControlBlock *procPtr,
+				Proc_MigBuffer *inBufPtr,
+				Proc_MigBuffer *outBufPtr));
+extern	void		ProcInitTable _ARGS_((void));
+extern	Proc_ControlBlock *ProcGetUnusedPCB _ARGS_((void));
+extern	void		ProcFreePCB _ARGS_((Proc_ControlBlock *procPtr));
+extern	int		ProcTableMatch _ARGS_((int maxPids,
+				Boolean (*booleanFuncPtr)(),
+				Proc_PID *pidArray));
+extern 	int		ProcGetObjInfo _ARGS_((ProcExecHeader *execPtr,
+				ProcObjInfo *objInfoPtr));
 #endif /* _PROCINT */

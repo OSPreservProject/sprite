@@ -47,7 +47,8 @@ static int realMaxProcesses;	/* The absolute number of process table
 				 * entries, not necessarily allocated yet. */
 static int entriesInUse = 0;	/* Number of PCB's in use. */
 
-static void InitPCB();
+static void 	InitPCB _ARGS_((Proc_ControlBlock *pcbPtr, int i));
+static void	AddPCBs _ARGS_((Proc_ControlBlock **procPtrPtr));
 
 
 /*
@@ -203,7 +204,7 @@ InitPCB(pcbPtr, i)
  * ----------------------------------------------------------------------------
  */
 
-void
+static void
 AddPCBs(procPtrPtr)
     Proc_ControlBlock **procPtrPtr;
 {

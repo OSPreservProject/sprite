@@ -20,6 +20,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "proc.h"
+#include "procInt.h"
 #include "procMigrate.h"
 #include "migrate.h"
 #include "recov.h"
@@ -27,8 +28,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "rpc.h"
 #include "hash.h"
 #include "stdlib.h"
+#include "stdio.h"
 
-static void HostChanged();
+static void HostChanged _ARGS_((int hostID, ClientData clientData));
 
 static Sync_Lock recovLock;
 Sync_Condition recovCondition = {0};

@@ -33,6 +33,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "status.h"
 #include "stdlib.h"
 #include "procServer.h"
+#include "stdio.h"
 
 /*
  * Circular queue of pending function calls.
@@ -57,6 +58,11 @@ int	proc_NumServers = PROC_NUM_SERVER_PROCS;
  */
 volatile Sync_Semaphore	serverMutex; 
 
+static void 	ScheduleFunc _ARGS_((void (*func)(), ClientData clientData,
+			unsigned int interval, FuncInfo *funcInfoPtr));
+static void 	CallFuncFromTimer _ARGS_((Timer_Ticks time, 
+			FuncInfo *funcInfoPtr));
+static void	CallFunc _ARGS_((FuncInfo *funcInfoPtr));	
 
 /*
  *----------------------------------------------------------------------

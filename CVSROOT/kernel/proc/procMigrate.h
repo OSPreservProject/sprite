@@ -318,17 +318,5 @@ extern Boolean proc_KillMigratedDebugs;	/* kill foreign processes instead
 extern int proc_AllowMigrationState;	/* how much migration to permit */
 extern Proc_MigStats proc_MigStats;	/* migration statistics */
 
-/*
- * Functions for process migration.  [Others should be moved here.]
- */
-extern void Proc_ResumeMigProc();
-extern void Proc_DestroyMigratedProc();
-
-extern ReturnStatus Proc_WaitForHost();
-extern ReturnStatus Proc_WaitForMigration();
-
-extern ReturnStatus Proc_RpcMigCommand();
-extern ReturnStatus Proc_RpcRemoteCall();
-
 
 #endif /* _PROCMIGRATE */

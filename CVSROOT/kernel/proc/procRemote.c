@@ -47,16 +47,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "rpc.h"
 #include "sysSysCall.h"
 #include "sysSysCallParam.h"
-
 #include "dbg.h"
+#include "stdio.h"
+#include "bstring.h"
 
-/*
- * Procedures internal to this file.
- */
-
-static ReturnStatus GetProcessState();
-static ReturnStatus GetStream();
-ENTRY static ReturnStatus GetUserInfo();
 
 /*
  * An address for copy-out or make accessible is reasonable if it is not NIL.

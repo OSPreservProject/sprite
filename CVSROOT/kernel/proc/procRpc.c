@@ -39,11 +39,24 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devVid.h"
 #include "prof.h"
 #include "string.h"
+#include "stdio.h"
+#include "bstring.h"
 
-static ReturnStatus RpcProcExit();
-static ReturnStatus RpcProcFork();
-static ReturnStatus RpcProcExec();
-static ReturnStatus RpcRemoteCall();
+static ReturnStatus 	RpcProcExit _ARGS_((Proc_ControlBlock *procPtr, 
+				Address dataPtr, int dataLength, 
+				Address *replyDataPtr, 
+				int *replyDataLengthPtr));
+static ReturnStatus 	RpcProcFork _ARGS_((Proc_ControlBlock *parentProcPtr, 
+				Address dataPtr, int dataLength, 
+				Address *replyDataPtr, 
+				int *replyDataLengthPtr));
+static ReturnStatus 	RpcProcExec _ARGS_((Proc_ControlBlock *procPtr, 
+				Address dataPtr, int dataLength, 
+				Address *replyDataPtr, 
+				int *replyDataLengthPtr));
+static ReturnStatus 	RpcRemoteCall _ARGS_((Proc_RemoteCall *callPtr, 
+			Address dataPtr, int dataLength, 
+			Address *replyDataPtr, int *replyDataLengthPtr));
 
 typedef ReturnStatus ((*PRS) ());
 

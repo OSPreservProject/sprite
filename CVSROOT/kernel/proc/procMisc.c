@@ -37,15 +37,18 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "rpcServer.h"
 #include "procServer.h"
 #include "fsrmt.h"
+#include "bstring.h"
+#include "stdio.h"
 
 #define min(a,b) ((a) < (b) ? (a) : (b))
 /*
  * Procedures internal to this file
  */
 
-static Boolean 		CheckIfUsed();
-static ReturnStatus 	GetRemotePCB();
-static void		FillPCBInfo();	
+static ReturnStatus 	GetRemotePCB _ARGS_((int hostID, Proc_PID pid,
+				Proc_PCBInfo *pcbPtr, char *argString));
+static void		FillPCBInfo _ARGS_((Proc_ControlBlock *pcbPtr,
+				Proc_PCBInfo *statusInfoPtr));	
 
 /*
  *----------------------------------------------------------------------
@@ -124,7 +127,7 @@ Proc_GetPCBInfo(firstPid, lastPid, hostID, infoSize, bufferPtr,
     int 		*trueNumBuffersPtr;  /* The actual number of buffers 
 						used.*/
 {
-    register Proc_ControlBlock 	*procPtr;
+    register Proc_ControlBlock 	*procPtr = (Proc_ControlBlock *) NIL;
     int				i, j;
     char 			argString[PROC_PCB_ARG_LENGTH];
     Proc_ControlBlock		pcbEntry;
@@ -480,7 +483,7 @@ Proc_RpcGetPCB(srvToken, clientID, command, storagePtr)
     Proc_PID		*pidPtr;
     Rpc_ReplyMem	*replyMemPtr;
     Proc_PCBInfo	*pcbPtr;
-    Proc_ControlBlock   *procPtr;
+    Proc_ControlBlock   *procPtr = (Proc_ControlBlock *) NIL;
     Proc_ControlBlock   pcb;
     int			*segNumPtr;
     Vm_SegmentInfo	*segInfoPtr;
@@ -1342,14 +1345,14 @@ exit:
 		str, HANDLENAME(handle), handle->lockProcID)
 char buf[21] = {0};
 
-static ISLIST(x)
+static int ISLIST(x)
 List_Links *x;
 {
     return ISADDRR(x,sizeof(List_Links)) && ISADDR(x->prevPtr) &&
 	    ISADDR(x->nextPtr);
 }
 
-static ISHANDLE(x)
+static int ISHANDLE(x)
 Fs_HandleHeader *x;
 {
     return ISADDRR(x,sizeof(Fs_HandleHeader)) && ISLIST(&x->lruLinks) &&
@@ -1357,14 +1360,14 @@ Fs_HandleHeader *x;
 	    ISSTRZ(x->name) && (unsigned)x->lockProcID <= 0xfffff; 
 }
 
-static ISPCB(x)
+static int ISPCB(x)
 Proc_ControlBlock *x;
 {
     return ISADDRR(x,sizeof(Proc_ControlBlock)) && ISLIST(&x->links) &&
 	    ISSMALL(x->processor) && ISLIST(&x->childListHdr);
 }
 
-static ISRPCCLIENT(x)
+static int ISRPCCLIENT(x)
 RpcClientChannel *x;
 {
     int i;
@@ -1375,7 +1378,7 @@ RpcClientChannel *x;
     return 0;
 }
 
-static ISRPCSERVER(x)
+static int ISRPCSERVER(x)
 RpcServerState *x;
 {
     int i;
@@ -1386,7 +1389,7 @@ RpcServerState *x;
     return 0;
 }
 
-static ISSERVERPROC(x)
+static int ISSERVERPROC(x)
 ServerInfo *x;
 {
     int i;
@@ -1397,7 +1400,7 @@ ServerInfo *x;
     return 0;
 }
 
-static ISLOCK(x)
+static int ISLOCK(x)
 Sync_Lock *x;
 {
     return ISADDRR(x,sizeof(Sync_Lock)) && ISBOOL(x->inUse) &&
@@ -1405,7 +1408,7 @@ Sync_Lock *x;
 	    ISPCBZ(x->holderPCBPtr);
 }
 
-static ISSEM(x)
+static int ISSEM(x)
 Sync_Semaphore *x;
 {
     return ISADDRR(x,sizeof(Sync_Semaphore)) && ISSMALL(x->value) &&
@@ -1446,9 +1449,10 @@ LockEntry locks[] = {
     0, 0
 };
 
+void
 Proc_KDump()
 {
-    int i,j;
+    int i;
     Proc_ControlBlock *procPtr, *tmpProcPtr;
     int *event;
     LockEntry *lockPtr;

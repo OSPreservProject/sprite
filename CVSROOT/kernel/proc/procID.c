@@ -27,6 +27,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sync.h"
 #include "sched.h"
 #include "vm.h"
+#include "bstring.h"
 
 /*
  * Define a macro to get the minimum of two values.  Note: it is *not*

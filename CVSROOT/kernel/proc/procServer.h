@@ -82,11 +82,6 @@ typedef struct {
  */
 #define PROC_NUM_SERVER_PROCS	(FSCACHE_MAX_CLEANER_PROCS + VM_MAX_PAGE_OUT_PROCS)
 
-extern void	Proc_ServerProc();
-static void	ScheduleFunc();
-static void	CallFunc();
-static void	CallFuncFromTimer();
-
 extern ServerInfo	*serverInfoTable;
 
 #endif /* _PROCSERVER */

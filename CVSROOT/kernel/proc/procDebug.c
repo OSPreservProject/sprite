@@ -49,11 +49,14 @@ static Sync_Lock debugLock; 			/* Monitor lock. */
 List_Links	debugListHdr;
 List_Links	*debugList = &debugListHdr;
 
-ENTRY 	void		ProcDebugWakeup();
-static	ENTRY	void		AddToDebugList();
-static	ENTRY	void		RemoveFromDebugList();
-static	ENTRY	ReturnStatus	ProcGetThisDebug();
-static	ENTRY	ReturnStatus	ProcGetNextDebug();
+static	ENTRY	void		AddToDebugList _ARGS_((
+				    Proc_ControlBlock *procPtr));
+static	ENTRY	void		RemoveFromDebugList _ARGS_((
+				    Proc_ControlBlock *procPtr));
+static	ENTRY	ReturnStatus	ProcGetThisDebug _ARGS_((Proc_PID pid,
+				    Proc_ControlBlock **procPtrPtr));
+static	ENTRY	ReturnStatus	ProcGetNextDebug _ARGS_((Address destAddr,
+				    Proc_ControlBlock **procPtrPtr));
 
 
 /*
@@ -114,7 +117,7 @@ Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
     Address 		destAddr;	/* Location (either in caller or pid) 
 					 * where info info is to be written. */
 {
-    register Proc_ControlBlock 	*procPtr;
+    register Proc_ControlBlock 	*procPtr = (Proc_ControlBlock *) NIL;
     Proc_DebugState		debugState;
     int				i;
     ReturnStatus		status = SUCCESS;
@@ -400,7 +403,7 @@ Proc_ResumeProcess(procPtr, killingProc)
 /*
  *----------------------------------------------------------------------
  *
- * Proc_DebugWakeup --
+ * ProcDebugWakeup --
  *
  *	Wakeup any processes waiting on the debug list.
  *
@@ -518,7 +521,7 @@ ProcGetNextDebug(destAddr, procPtrPtr)
     Proc_ControlBlock	**procPtrPtr;
 {
     Boolean			sigPending = FALSE;
-    register Proc_ControlBlock 	*procPtr;
+    register Proc_ControlBlock 	*procPtr = (Proc_ControlBlock *) NIL;
     ReturnStatus		status;
 
 
