@@ -74,19 +74,20 @@
  */
 #define RECOV_TRACE_FS_STALE	0x1000
 
-void		Recov_CrashRegister();
-void		Recov_RebootRegister();
-void		Recov_HostAlive();
-void		Recov_HostDead();
-int		Recov_GetHostState();
-ReturnStatus	Recov_IsHostDown();
-void		Recov_HostTrace();
-int		Recov_SetClientState();
-int		Recov_GetClientState();
-void		Recov_ClearClientState();
+extern void             Recov_Init();
+extern void		Recov_CrashRegister();
+extern void		Recov_RebootRegister();
+extern void		Recov_HostAlive();
+extern void		Recov_HostDead();
+extern int		Recov_GetHostState();
+extern ReturnStatus	Recov_IsHostDown();
+extern void		Recov_HostTrace();
+extern int		Recov_SetClientState();
+extern int		Recov_GetClientState();
+extern void		Recov_ClearClientState();
 
-void		Recov_HostTrace();
-void		Recov_PrintTrace();
+extern void		Recov_HostTrace();
+extern void		Recov_PrintTrace();
 
 #endif /* _RECOV */
 
