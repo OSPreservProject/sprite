@@ -67,6 +67,7 @@ MAIN = ${TOP}/main/${ODIR}
 NET = ${TOP}/net/${ODIR}
 PROC = ${TOP}/proc/${ODIR}
 PROF = ${TOP}/prof/${ODIR}
+RAID = ${TOP}/raid.null/${ODIR}
 RECOV = ${TOP}/recov/${ODIR}
 RPC_O = ${TOP}/rpc/${ODIR}/rpc.o
 RPC = ${TOP}/rpc/${ODIR}
@@ -90,6 +91,7 @@ OBJS = 	${LIB}/mach.o \
 	${LIB}/net.o \
 	${LIB}/proc.o \
 	${LIB}/prof.o \
+	${LIB}/raid.null.o \
 	${LIB}/recov.o \
 	${LIB}/rpc.o \
 	${LIB}/sched.o \
@@ -121,7 +123,7 @@ HDRS = sprite.h
 sun2: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	rm -f $@ version.o
 	rm -f mainHook.o
-	cc -c ${CFLAGS} mainHook.o
+	cc -c ${CFLAGS} mainHook.c
 	${MKVERSION} -p "SPRITE VERSION 1.0 (Sun2)" > version.h
 	cc -c ${CFLAGS} version.c
 	${LD} -X -o $@ -e start -T 804000 ${OBJS} version.o \
@@ -135,7 +137,7 @@ sun2: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 sun3: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	-Save $@
 	rm -f mainHook.o
-	cc -c ${CFLAGS} mainHook.o
+	cc -c ${CFLAGS} mainHook.c
 	${MKVERSION} -p "SPRITE VERSION 1.0 (sun3)" > version.h
 	cc -c ${CFLAGS} version.c
 	${LD} -X -o $@ -e start -T e004000 ${OBJS} version.o \
@@ -152,7 +154,7 @@ sun3: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 profile2: ${PROFOBJS} Makefile .PRECIOUS
 	rm -f $@
 	rm -f mainHook.o
-	cc -c ${CFLAGS} mainHook.o
+	cc -c ${CFLAGS} mainHook.c
 	@${MKVERSION} -p "SPRITE VERSION 1.0 (profile2)" > version.h
 	@cc -c ${CFLAGS} version.c
 	${LD} -X -o $@ -e start -T 804000 ${PROFOBJS} version.o \
@@ -166,7 +168,7 @@ profile2: ${PROFOBJS} Makefile .PRECIOUS
 profile3: ${PROFOBJS} Makefile .PRECIOUS
 	rm -f $@
 	rm -f mainHook.o
-	cc -c ${CFLAGS} mainHook.o
+	cc -c ${CFLAGS} mainHook.c
 	@${MKVERSION} -p "SPRITE VERSION 1.0 (profile3)" > version.h
 	@cc -c ${CFLAGS} version.c
 	${LD} -X -o $@ -e start -T e004000 ${PROFOBJS} version.o \
