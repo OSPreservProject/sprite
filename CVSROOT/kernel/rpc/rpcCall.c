@@ -377,7 +377,7 @@ RpcChanAlloc(serverID)
 		 * transaction.
 		 */
 		rpcCltStat.chanHits++;
-		DEBUG(chanPtr, "alloc channel w/ same server");
+		CHAN_TRACE(chanPtr, "alloc channel w/ same server");
 		goto found;
 	    } else if (firstFree < 0) {
 		/*
