@@ -160,7 +160,7 @@ typedef struct {
 static ReturnStatus ExabyteError _ARGS_((ScsiDevice *devPtr,
 	ScsiCmd *scsiCmdPtr));
 ReturnStatus DevExabyteStatus _ARGS_((ScsiTape *tapePtr, 
-	Dev_TapeStatus *statusPtr));
+	Dev_TapeStatus *statusPtr, Boolean *readPositionPtr));
 
 
 /*
@@ -319,9 +319,11 @@ ExabyteError(devPtr, scsiCmdPtr)
  */
 
 ReturnStatus
-DevExabyteStatus(tapePtr, statusPtr)
-    ScsiTape	 *tapePtr;		/* SCSI Tape */
+DevExabyteStatus(tapePtr, statusPtr, readPositionPtr)
+    ScsiTape	 	*tapePtr;	/* SCSI Tape */
     Dev_TapeStatus	*statusPtr;	/* Status to fill in. */
+    Boolean		*readPositionPtr; /* OUT: should read position cmd
+					   * done? */
 {
     ReturnStatus	status = SUCCESS;
     int			size;
@@ -367,6 +369,7 @@ DevExabyteStatus(tapePtr, statusPtr)
 	statusPtr->writeProtect = (header.writeProtect) ? TRUE : FALSE;
 	statusPtr->bufferedMode = header.bufferedMode;
 	statusPtr->serial[0] = '\0';
+	*readPositionPtr = FALSE;
     } else if (tapePtr->type == DEV_TAPE_EXB8500) {
 	Exb8500Sense	*sensePtr;
 	int		bufSize;
@@ -404,6 +407,7 @@ DevExabyteStatus(tapePtr, statusPtr)
 	inqPtr = (Exb8500Inquiry *) tapePtr->devPtr->inquiryDataPtr;
 	bcopy(inqPtr->serial, statusPtr->serial, sizeof(statusPtr->serial));
 	statusPtr->serial[10] = '\0';
+	*readPositionPtr = TRUE;
     }
 done:
     return status;

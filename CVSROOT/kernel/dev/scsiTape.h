@@ -52,7 +52,7 @@ typedef struct ScsiTape {
 		   int command, int count));	/* Procedure to handle special 
 						 * tape cmds. */
     ReturnStatus (*statusProc) _ARGS_((struct ScsiTape *tapePtr,
-		    Dev_TapeStatus *statusPtr));
+		    Dev_TapeStatus *statusPtr, Boolean *readPositionPtr));
 } ScsiTape;
 
 
