@@ -1162,7 +1162,8 @@ FsPfs2Path(operation,prefixHandle1, relativeName1, prefixHandle2, relativeName2,
 	return(FS_FILE_NOT_FOUND);
     }
     request.param.rename.lookup = *lookupArgsPtr;
-    if ((prefixHandle2->fileID.type != prefixHandle1->fileID.type) ||
+    if ((prefixHandle2 == (FsHandleHeader *)NIL) ||
+	(prefixHandle2->fileID.type != prefixHandle1->fileID.type) ||
 	(prefixHandle2->fileID.major != prefixHandle1->fileID.major) ||
 	(prefixHandle2->fileID.minor != prefixHandle1->fileID.minor)) {
 	/*
