@@ -252,8 +252,12 @@ FsDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, ioHandlePtrPtr)
      * and unit number, the useFlags, and a token passed to Fs_NotifyReader
      * or Fs_NotifyWriter when the device becomes ready for I/O.
      */
-    status = (*fsDeviceOpTable[devHandlePtr->device.type].open)
-		(&devHandlePtr->device, flags, (ClientData)devHandlePtr);
+    if (devHandlePtr->device.type >= fsNumDevices) {
+	status = FS_DEVICE_OP_INVALID;
+    } else {
+	status = (*fsDeviceOpTable[devHandlePtr->device.type].open)
+		    (&devHandlePtr->device, flags, (ClientData)devHandlePtr);
+    }
     if (status == SUCCESS) {
 	if (!found) {
 	    devHandlePtr->modifyTime = deviceDataPtr->modifyTime;

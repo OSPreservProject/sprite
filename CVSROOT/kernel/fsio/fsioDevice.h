@@ -33,6 +33,8 @@
  *	FS_DEV_SCSI_TAPE	Tape drive on the SCSI bus
  *	FS_DEV_MEMORY		Null device and kernel memory area.
  *	FS_DEV_XYLOGICS		Xylogics 450 controller
+ *	FS_DEV_NET		Raw ethernet device - unit number is protocol.
+ *	FS_DEV_SBC_DISK		Disk on Sun's "SCSI-3" host adaptor.
  *
  * NOTE: These numbers correspond to the major numbers for the devices
  * in /dev. Do not change them unless you redo makeDevice for all the devices
@@ -49,6 +51,7 @@
 #define	FS_DEV_MEMORY		6
 #define	FS_DEV_XYLOGICS		7
 #define	FS_DEV_NET		8
+#define FS_DEV_SBC_DISK		9
 
 /*
  * Device type specific operations.
@@ -67,6 +70,7 @@ typedef struct FsDeviceTypeOps {
 } FsDeviceTypeOps;
 
 extern FsDeviceTypeOps fsDeviceOpTable[];
+extern int fsNumDevices;
 
 /*
  * The filesystem device block I/O operation switch.
