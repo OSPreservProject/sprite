@@ -14,5 +14,5 @@
 # If the repository name does not match any of the regular expressions in this
 # file, the "DEFAULT" line is used, if it is specified.
 #
-
+kernel/test /sprite/lib/scvs/scvslog %s >> /tmp/scvs.test
 DEFAULT	/sprite/lib/scvs/scvslog %s >> /sprite/src/kernel/scvs.log
