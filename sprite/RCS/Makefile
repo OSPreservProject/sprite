@@ -210,7 +210,7 @@ HDRS = sprite.h
 DISTFILES ?= Save SnapshotSources doversion mainHook.c \
              porting_comments version.h.template
 
-default: ${MACHINE}
+default: ${RTM}
 
 dist:
 #if defined(DISTDIR) && !empty(DISTDIR)
