@@ -118,7 +118,8 @@ Rpc_Call(serverID, command, storagePtr)
 	return(GEN_INVALID_ARG);
     } else if (serverID != RPC_BROADCAST_SERVER_ID &&
 	       serverID == rpc_SpriteID) {
-	Sys_Panic(SYS_FATAL, "Trying to RPC to myself");
+	Sys_Panic((command != RPC_ECHO) ? SYS_FATAL : SYS_WARNING,
+		    "Trying to RPC to myself");
 	return(GEN_INVALID_ARG);
     } else if ((serverID == RPC_BROADCAST_SERVER_ID) && 
 	       ! (command == RPC_FS_UNIX_PREFIX ||
