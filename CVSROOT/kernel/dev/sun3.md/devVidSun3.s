@@ -42,7 +42,7 @@
 #define VIDEO_ENABLE_BIT	0x8
 
     .text
-    .globl 	_Dev_VidEnable:
+    .globl 	_Dev_VidEnable
 _Dev_VidEnable:
     movl	d2,sp@-			| save d2
     movc	sfc,d1			| Save source function code
