@@ -165,7 +165,7 @@ ENTRY static void
 DoFork(srcSegPtr, destSegPtr)
     register	Vm_Segment	*srcSegPtr;
     register	Vm_Segment	*destSegPtr;
-{
+{	
     register	Vm_PTE	*destPTEPtr;
     register	Vm_PTE	*srcPTEPtr;
     register	int	virtPage;
@@ -290,7 +290,7 @@ VmCOWCopySeg(segPtr)
     Vm_VirtAddr			virtAddr;
     int				firstPage;
     int				lastPage;
-    ReturnStatus		status;
+    ReturnStatus		status = SUCCESS;
 
     if (segPtr->type == VM_STACK) {
 	firstPage = mach_LastUserStackPage - segPtr->numPages + 1;
@@ -312,7 +312,7 @@ VmCOWCopySeg(segPtr)
 	} else if (*ptePtr & VM_COR_BIT) {
 	    status = COR(&virtAddr, ptePtr);
 	    if (status != SUCCESS) {
-		return(status);
+		break;
 	    }
 	}
     }
@@ -322,7 +322,7 @@ VmCOWCopySeg(segPtr)
     if (cowInfoPtr != (VmCOWInfo *)NIL) {
 	Mem_Free((Address)cowInfoPtr);
     }
-    return(SUCCESS);
+    return(status);
 }
 
 
@@ -655,10 +655,10 @@ VmCOR(virtAddrPtr)
     ptePtr = VmGetPTEPtr(virtAddrPtr->segPtr, virtAddrPtr->page);
     if (!(*ptePtr & VM_COR_BIT)) {
 	vmStat.quickCORFaults++;
-	return(SUCCESS);
+	status = SUCCESS;
+    } else {
+	status = COR(virtAddrPtr, ptePtr);
     }
-
-    status = COR(virtAddrPtr, ptePtr);
 
     cowInfoPtr = (VmCOWInfo *)NIL;
     COWEnd(virtAddrPtr->segPtr, &cowInfoPtr);
@@ -725,6 +725,7 @@ COR(virtAddrPtr, ptePtr)
 	if (status != SUCCESS) {
 	    Sys_Panic(SYS_WARNING, "VmCOR: Couldn't read page, status <%x>\n",
 				   status);
+	    VmPageFree(virtFrameNum);
 	    return(status);
 	}
     }
@@ -895,14 +896,9 @@ VmCOW(virtAddrPtr)
     ptePtr = VmGetPTEPtr(virtAddrPtr->segPtr, virtAddrPtr->page);
     if (!(*ptePtr & VM_COW_BIT)) {
 	vmStat.quickCOWFaults++;
-	return;
+    } else if (IsResident(ptePtr)) {
+	COW(virtAddrPtr, ptePtr, TRUE, FALSE);
     }
-
-    if (!IsResident(ptePtr)) {
-	return;
-    }
-
-    COW(virtAddrPtr, ptePtr, TRUE, FALSE);
 
     cowInfoPtr = (VmCOWInfo *)NIL;
     COWEnd(virtAddrPtr->segPtr, &cowInfoPtr);
