@@ -22,3 +22,5 @@ extern void SUnlockRaid();
 extern void XUnlockRaid();
 extern void BeginRaidUse();
 extern void EndRaidUse();
+extern void LockRaid();
+extern void UnlockRaid();
