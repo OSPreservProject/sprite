@@ -64,7 +64,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <net.h>
 #include <sysSysCall.h>
 #include <sysSysCallParam.h>
-#include <sysTestCall.h>
 #include <status.h>
 #include <stdio.h>
 
