@@ -234,6 +234,37 @@ Proc_CallFuncAbsTime(func, clientData, time)
 /*
  *----------------------------------------------------------------------
  *
+ * Proc_CancelCallFunc --
+ *
+ *	This routine is used to deschedule a timer entry created by
+ *	Proc_CallFuncAbsTime.   Proc_CallFuncAbsTime 
+ *	can not be called with interrupts disabled.
+ *	      
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The timer entry is removed from the timer queue.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Proc_CancelCallFunc(token)
+    ClientData		token;	/* Data to pass to func. */
+{
+    register FuncInfo	*funcInfoPtr = (FuncInfo *) token;
+
+    if (funcInfoPtr->allocated == FALSE) {
+	panic("Proc_CancelCallFunc: called with unallocated callback entry");
+	return;
+    }
+    Timer_DescheduleRoutine(&funcInfoPtr->queueElement);
+    free((Address) funcInfoPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Proc_ServerInit --
  *
  *	Initialize the state and the set of processes needed to execute
