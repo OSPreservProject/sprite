@@ -787,7 +787,6 @@ MachUNIXRecvMsg(socketID, msgPtr, flags)
 					 *  MSG_OOB, MSG_PEEK*/
 {
     ReturnStatus	status;
-    int			amountRead;
     struct msghdr	msg;
     int			*intPtr;
 
@@ -911,9 +910,7 @@ MachUNIXSendTo(socketID, bufPtr, bufSize, flags, destPtr, destLen)
     int			destLen;	/* Size of *destPtr.  */
 {
     ReturnStatus	status;
-    int			numWritten;
     Address		usp;
-    Net_SendInfo	*sendInfoPtr;
     int			*intPtr;
 
     usp = (Address) (machCurStatePtr->userState.regState.regs[SP]);
@@ -999,7 +996,6 @@ MachUNIXSendMsg(socketID, msgPtr, flags)
 					 *  MSG_OOB, MSG_PEEK, MSG_DONTROUTE. */
 {
     ReturnStatus	status;
-    int			numWritten;
     struct msghdr	msg;
 
     if (msgPtr == (struct msghdr *) NULL) {

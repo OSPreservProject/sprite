@@ -76,6 +76,7 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include "user/sys/time.h"
 #include "user/sys/resource.h"
 #include "user/sys/uio.h"
+#include "stat.h"
 #include "signal.h"
 #include "fs.h"
 #include "fsDisk.h"
@@ -755,8 +756,6 @@ MachUNIXOpen(pathName, unixFlags, permissions)
 				 * O_APPEND O_CREAT O_TRUNC O_EXCL */
     int		permissions;	/* Permission mask to use on creation */
 {
-    int		streamId;		/* place to hold stream id allocated by
-				 * Fs_Open */
     ReturnStatus status;	/* result returned by Fs_Open */
     register int useFlags = 0;	/* Sprite version of flags */
     Address		usp;
@@ -980,7 +979,6 @@ MachUNIXLseek(streamID, offset, whence)
     int whence;
 {
     ReturnStatus	status;
-    int  		base;
     Ioc_RepositionArgs args;
     Address		usp;
 
@@ -1052,7 +1050,6 @@ MachUNIXAccess(pathName, mode)
     int	 mode;			/* access mode to test for */
 {
     int spriteMode;
-    ReturnStatus status;
 
     if (mode == F_OK) {
 	spriteMode = FS_EXISTS;
@@ -1302,7 +1299,6 @@ MachUNIXGetGroups(gidsetlen, gidset)
     int *gidset;
 {
     ReturnStatus status;	/* result returned by Proc_GetGroupIDs */
-    int	numGids;
     Address usp;
 
     usp = (Address) (machCurStatePtr->userState.regState.regs[SP] - 4);

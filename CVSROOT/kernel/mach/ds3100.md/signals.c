@@ -150,7 +150,6 @@ MachUNIXBlock(mask)
 {
     int spriteMask = 0;		/* equivalent mask for Sprite */
     int oldSpriteMask;		/* old mask, in Sprite terms */
-    int oldMask = 0;		/* old mask, in Unix terms */
     ReturnStatus status;	/* generic result code */
 
     status = Compat_UnixSigMaskToSprite(mask,&spriteMask);
@@ -198,7 +197,6 @@ MachUNIXSigSetmask(mask)
 {
     int spriteMask = 0;		/* equivalent mask for Sprite */
     int oldSpriteMask;		/* old mask, in Sprite terms */
-    int oldMask = 0;		/* old mask, in Unix terms */
     ReturnStatus status;	/* generic result code */
     Address usp;
 
