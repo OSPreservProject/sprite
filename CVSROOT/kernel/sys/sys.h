@@ -38,6 +38,7 @@ extern	void	Sys_Init();
 extern	void	Sys_Printf();
 extern	void	Sys_SafePrintf();
 extern	void	Sys_UnSafePrintf();
+extern	void	Sys_HostPrint();
 extern	void	Sys_Panic();
 
 /*
