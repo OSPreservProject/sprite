@@ -29,6 +29,12 @@ static  void	PrintProc();
 void		(*memPrintProc)();
 ClientData	memPrintData;
 
+/*
+ * Flag to determine whether to panic when freeing free blocks. This
+ * value is user/kernel dependent and is therefore placed in this file.
+ */
+
+Boolean memAllowFreeingFree = FALSE;
 
 
 
