@@ -140,7 +140,7 @@ FsRmtLinkSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	register PdevControlIOHandle *ctrlHandlePtr;
 
 	ioFileIDPtr->serverID = rpc_SpriteID;
-	ctrlHandlePtr = PfsControlHandleInit(ioFileIDPtr, handlePtr->hdr.name);
+	ctrlHandlePtr = FsControlHandleInit(ioFileIDPtr, handlePtr->hdr.name);
 	if (ctrlHandlePtr->serverID != NIL) {
 	    status = FS_FILE_BUSY;
 	} else {
@@ -153,49 +153,6 @@ FsRmtLinkSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
     *dataSizePtr = 0;
     FsHandleUnlock(handlePtr);
     return(status);
-}
-
-/*
- *----------------------------------------------------------------------------
- *
- * PfsControlHandleInit --
- *
- *	Fetch and initialize a control handle for a pseudo-filesystem.
- *
- * Results:
- *	A pointer to the control stream I/O handle.
- *
- * Side effects:
- *	Initializes and installs the control handle.
- *
- *----------------------------------------------------------------------------
- *
- */
-PdevControlIOHandle *
-PfsControlHandleInit(fileIDPtr, name)
-    Fs_FileID *fileIDPtr;
-    char *name;
-{
-    register Boolean found;
-    register PdevControlIOHandle *ctrlHandlePtr;
-    FsHandleHeader *hdrPtr;
-
-    found = FsHandleInstall(fileIDPtr, sizeof(PdevControlIOHandle), name,
-			    &hdrPtr);
-    ctrlHandlePtr = (PdevControlIOHandle *)hdrPtr;
-    if (!found) {
-	ctrlHandlePtr->serverID = NIL;
-	ctrlHandlePtr->seed = 0;
-	FsLockInit(&ctrlHandlePtr->lock);
-	FsRecoveryInit(&ctrlHandlePtr->rmt.recovery);
-	fsStats.object.controls++;
-	/*
-	 * These next two lists aren't used.
-	 */
-	List_Init(&ctrlHandlePtr->queueHdr);
-	List_Init(&ctrlHandlePtr->readWaitList);
-    }
-    return(ctrlHandlePtr);
 }
 
 /*
