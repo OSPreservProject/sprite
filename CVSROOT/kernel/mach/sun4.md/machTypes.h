@@ -80,7 +80,7 @@ typedef enum {
  * have this many args!  How do we keep it this way?  This is MESSY, since
  * actually one of the calleeInputs is for a "hidden parameter" for an agregate
  * return value, and one of them is really the beginning of the extra
- * params, but I'll fix this up later.
+ * params.
  */
 typedef struct Mach_RegState {
     unsigned int	curPsr;				/* locals */
@@ -146,7 +146,7 @@ typedef struct Mach_SigContext {
 } Mach_SigContext;
 
 /*
- * Mary will fix this!  Ask her about it.
+ * Gross hack to avoid circular include file problem.
  */
 #ifdef KERNEL
 #include "sigTypes.h"
