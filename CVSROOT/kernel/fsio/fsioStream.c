@@ -977,8 +977,22 @@ Fsio_StreamReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	reopenParams.ioFileID = streamPtr->ioHandlePtr->fileID;
 	reopenParams.useFlags = streamPtr->flags;
 	reopenParams.offset   = streamPtr->offset;
+	/*
+	 * This is a mousetrap to catch the "poison packets" reported in
+	 * log message 30402.  It can be removed once that bug is fixed.
+	 * JHH 12/10/90
+	 */
+	if (reopenParams.ioFileID.type == -1) {
+	    panic("About to reopen stream with ioFileID.type set to -1\n");
+	}
 	status = FsrmtReopen(hdrPtr, sizeof(reopenParams),
 		    (Address)&reopenParams, &outSize, (Address)NIL);
+    /*
+     * This here is the server side fix for the "poison packet" bug.
+     * Ignore the request if the type is -1.  Remove this when
+     * the bug is fixed.
+     * JHH 12/10/90
+     */
     } else if (((StreamReopenParams *) inData)->ioFileID.type < 0) {
 	printf("Fsio_StreamReopen: fileID type = 0x%x from client %d\n",
 		((StreamReopenParams *) inData)->ioFileID.type, clientID);
