@@ -222,4 +222,12 @@ devSCSITape fixed so that a filemark is written on close only if last
 access was a write.
 Fs_UserClose now returns error codes consistent with the close() man page.
 
+
+1.066	Thu Jun 21 22:23:13 PDT 1990
+includes more of Mary's modifications for nacks.
+includes JKO's fs tracing.
+includes fix for migration to transfer oversized buffers (large page tables,
+right now) and to have servers tell clients that a flushback is due to
+migration.
+
     New files linked in from the net library.
