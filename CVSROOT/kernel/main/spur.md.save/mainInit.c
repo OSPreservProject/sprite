@@ -199,6 +199,7 @@ main()
      * Set up bins for the memory allocator.
      */
     Fs_Bin();
+    Net_Bin();
 
     /*
      * Initialize virtual memory.  After this point must use the normal
@@ -376,25 +377,15 @@ main()
      * with the data kept on disk.
      */
     Proc_CallFunc(Fs_SyncProc, (ClientData) NIL, 0);
-
-    /*
-     * Start the process that scavenges handles.
-     */
-    Proc_CallFunc(Fs_HandleScavenge, (ClientData)TRUE, 0);
-
     /*
      * Create a few RPC server processes and the Rpc_Daemon process which
      * will create more server processes if needed.
      */
 
     if (main_NumRpcServers > 0) {
-        printf("Creating %d RPC servers", main_NumRpcServers);
 	for (i=0 ; i<main_NumRpcServers ; i++) {
 	    Rpc_CreateServer(&pid);
 	}
-        printf(" and Rpc_Daemon\n");
-    } else {
-	printf("Creating Rpc_Daemon\n");
     }
     Proc_NewProc((Address) Rpc_Daemon, PROC_KERNEL, FALSE, &pid, "Rpc_Daemon");
 
@@ -421,7 +412,7 @@ main()
     /*
      * Print out the amount of memory used.
      */
-    printf("%d bytes of memory allocated for kernel\n", 
+    printf("MEMORY %d bytes allocated for kernel\n", 
 		vmMemEnd - mach_KernStart);
 
     bootProgress = 26;
