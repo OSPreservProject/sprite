@@ -24,6 +24,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <dbg.h>
 #include <machMon.h>
 #include <net.h>
+#include <devVid.h>
 
 /*
  * Information about registered commands:
@@ -132,6 +133,11 @@ Dev_InvokeConsoleCmd(commandChar)
 	commands['d'].proc = Debug;
 	commands['d'].clientData = (ClientData) FALSE;
     }
+
+    /*
+     * Turn on the video.
+     */
+    (void) Dev_VidEnable(TRUE);
 
     commandChar &= 0x7f;
     if (commands[commandChar].proc != 0) {
