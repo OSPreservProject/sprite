@@ -103,7 +103,11 @@ DevScsiAttachDevice(devicePtr, insertProc)
 	    status =  DevScsiSendCmdSync(handle, &inquiryCmdBlock, 
 			    &(handle->inquiryLength));
 	    if (status != SUCCESS) {
-		handle->inquiryLength = 0;
+		if (status == DEV_NO_DEVICE) {
+		    return (ScsiDevice *) NIL;
+		} else {
+		    handle->inquiryLength = 0;
+		}
 	    }
 	    tryNumber++;
 	}
