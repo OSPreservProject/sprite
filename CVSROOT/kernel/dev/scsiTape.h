@@ -40,11 +40,15 @@ typedef struct ScsiTape {
 				 * it it really exists, etc. */
     char *name;			/* Type name of tape device. */
     int blockSize;		/* Native block size of the drive. */
-    void (*releaseProc)();	/* Procedure to customize device close. */
-    ReturnStatus (*tapeIOProc)(); /* Procedure to customize tape IO. */
-    ReturnStatus (*specialCmdProc)();	/* Procedure to handle specail 
-					 * tape cmds. */
-    ReturnStatus (*errorProc)(); /* Procedure to handle sense data */
+    ReturnStatus (*tapeIOProc) _ARGS_((struct ScsiTape *tapePtr, int command, 
+	char *buffer, int *countPtr)); /* Procedure to customize tape IO. */
+
+    ReturnStatus (*specialCmdProc) _ARGS_((struct ScsiTape *tapePtr,
+		   int command, int count));	/* Procedure to handle special 
+						 * tape cmds. */
+    ReturnStatus (*errorProc) _ARGS_((struct ScsiTape *tapePtr,
+	unsigned int statusByte, int senseLength, char *senseDataPtr));
+				/* Procedure to handle sense data */
 } ScsiTape;
 
 
@@ -70,7 +74,8 @@ typedef struct ScsiTape {
 #define	SCSI_TAPE_DEFAULT_BLOCKSIZE	512
 
 extern int devNumSCSITapeTypes;
-extern ReturnStatus ((*devSCSITapeAttachProcs[])());
+extern ReturnStatus ((*devSCSITapeAttachProcs[]) _ARGS_((Fs_Device *devicePtr,
+    ScsiDevice *devPtr, ScsiTape *tapePtr)));
 /*
  * Forward Declarations.
  */
