@@ -15,41 +15,16 @@
 #define _SIG
 
 #ifdef KERNEL
-#include "user/sig.h"
-#ifdef sun4
-#include "machSig.h"
+#include "sigTypes.h"
+#include "rpc.h"
+#include "procTypes.h"
+#include "procMigrate.h"
 #else
-#include "mach.h"
-#endif /* sun4 */
-#else
-#include <sig.h>
-#include <kernel/mach.h>
+#include <kernel/sigTypes.h>
+#include <kernel/rpc.h>
+#include <kernel/procTypes.h>
+#include <kernel/procMigrate.h>
 #endif
-
-/*
- * The signal context that is used to restore the state after a signal.
- */
-typedef struct {
-    int			oldHoldMask;	/* The signal hold mask that was in
-					 * existence before this signal
-					 * handler was called.  */
-    Mach_SigContext	machContext;	/* The machine dependent context
-					 * to restore the process from. */
-} Sig_Context;
-
-/*
- * Structure that user sees on stack when a signal is taken.
- * Sig_Context+Sig_Stack must be double word aligned for the sun4.
- * Thus there is 4 bytes of padding here.
- */
-typedef struct {
-    int		sigNum;		/* The number of this signal. */
-    int		sigCode;    	/* The code of this signal. */
-    Sig_Context	*contextPtr;	/* Pointer to structure used to restore the
-				 * state before the signal. */
-    int		sigAddr;	/* Address of fault. */
-    int		pad;		/* Explained above. */
-} Sig_Stack;
 
 /*
  *----------------------------------------------------------------------
@@ -70,12 +45,7 @@ typedef struct {
 #define Sig_Pending(procPtr) \
     ((Boolean) (procPtr->sigPendingMask & ~procPtr->sigHoldMask))
 
-/*
- * Procedures for the signal module.
- */
 #ifdef KERNEL
-#include "proc.h"
-#include "procMigrate.h"
 
 extern ReturnStatus Sig_Send _ARGS_((int sigNum, int code, Proc_PID id, 
 		Boolean familyID, Address addr));
@@ -101,6 +71,9 @@ extern Boolean Sig_Handle _ARGS_((Proc_ControlBlock *procPtr,
 extern void Sig_CheckForKill _ARGS_((Proc_ControlBlock *procPtr));
 extern void Sig_Return _ARGS_((Proc_ControlBlock *procPtr, 
 		Sig_Stack *sigStackPtr));
+
+extern ReturnStatus Sig_RpcSend _ARGS_((ClientData srvToken, int clientID,
+			int command, Rpc_Storage *storagePtr));
 
 /*
  * Procedures to support process migration.
