@@ -622,37 +622,35 @@ FsHandleRemoveHdr(hdrPtr)
  *----------------------------------------------------------------------------
  *
  * FsHandleAttemptRemove --
- * FsHandleAttemptRemoveHdr --
  *
- *	Like FsHandleRemove, but will not actually remove the handle
- *	if there are references to it.  The reference count has to be
- *	checked inside the monitor to avoid multi-processor races.
- *	(This conditional remove is needed because of the reference
- *	counts from the name hash table.  While noone might be using a
- *	handle, i.e. its use count is zero, if it is still referenced from
- *	the name hash table it will be picked up in FsLocalLookup, and
- *	hence should not be removed.)  This routine is called by the
+ *	Like FsHandleRemove, but specific to local file handles because
+ *	they might have extra references from the name component cache.
+ *	This will not remove the handle if it is still referenced from
+ *	that cache.  The reference count has to be checked inside the
+ *	monitor to avoid multi-processor races.	This routine is called by the
  *	scavenging routines if they think it's probably ok to remove the handle.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	None (see FsHandleRemoveInt).
+ *	Frees the memory for the handles file descriptor.
  *
  *----------------------------------------------------------------------------
  *
  */
 
 ENTRY void
-FsHandleAttemptRemoveHdr(hdrPtr)
-    register FsHandleHeader *hdrPtr;	/* Handle to try and remove. */
+FsHandleAttemptRemove(handlePtr)
+    register FsLocalFileIOHandle *handlePtr;	/* Handle to try and remove. */
 {
     LOCK_MONITOR;
-    if (hdrPtr->refCount == 0) {
-	FsHandleRemoveInt(hdrPtr);
+    if (handlePtr->hdr.refCount == 0) {
+	Mem_Free((Address)handlePtr->descPtr);
+	handlePtr->descPtr = (FsFileDescriptor *)NIL;
+	FsHandleRemoveInt((FsHandleHeader *)handlePtr);
     } else {
-	UNLOCK_HANDLE(hdrPtr);
+	UNLOCK_HANDLE((FsHandleHeader *)handlePtr);
     }
     UNLOCK_MONITOR;
 }
