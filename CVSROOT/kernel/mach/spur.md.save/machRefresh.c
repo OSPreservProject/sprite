@@ -19,8 +19,9 @@
 #include "sprite.h"
 #include "mach.h"
 #include "prof.h"
+#include "sched.h"
 
-static int RefreshCount = 0;
+static int RefreshCount[MACH_MAX_NUM_PROCESSORS];
 
 
 /*
@@ -36,7 +37,8 @@ static int RefreshCount = 0;
  * Cycles between refreshes. Around 100ms at 5.814 Mhz.
  */
 
-#define	MACH_REFRESH_TIMER_TICKS	581395	
+/* #define	MACH_REFRESH_TIMER_TICKS	581395	 */
+#define	MACH_REFRESH_TIMER_TICKS	40000	
 
 /*
  * Cycles between profile pc sample. Around 20ms at 5.814 Mhz.
@@ -75,7 +77,12 @@ void
 Mach_RefreshStart()
 {
      unsigned int modeRegister;		/* Local copy of CC mode register */
+     extern   unsigned int *machIdleCountPtr[MACH_MAX_NUM_PROCESSORS];
+     int      i;
 
+     for (i = 0; i < MACH_MAX_NUM_PROCESSORS; i++) {
+	machIdleCountPtr[i] = &(sched_Instrument.processor[i].idleTicksLow);
+     }
     /*
      * Stop the timer in case it is ticking.
      */
@@ -137,6 +144,7 @@ Mach_RefreshInterrupt()
 {
      unsigned int modeRegister;		/* Local copy of CC mode register */
      int	switches;
+     int	count;
 
     /*
      * Stop the timer in case it is ticking.
@@ -148,7 +156,7 @@ Mach_RefreshInterrupt()
     }
 
 
-    RefreshCount++;
+    count = RefreshCount[Mach_GetProcessorNumber()]++;
     asm("cmp_trap	always,r0,r0,$3");
     /*
      * If switch 3 set then interrupt.
@@ -180,6 +188,21 @@ Mach_RefreshInterrupt()
 
     if (profEnabled) {
 	 Prof_CollectInfo(machInterruptAddr); 
+    }
+    /* 
+     * Show 0x42 for Sprite on leds. 
+     */
+    {
+	    extern Boolean rpcServiceEnabled;
+	    static int refresh_leds[] = { 0x1042, 0x7042, 0x1042, 0x7042 };
+	    static int idle_leds[] = { 0x0e00, 0x0d00, 0x0b00, 0x0700 };
+	    if (rpcServiceEnabled) { 
+		    write_physical_word(0x20000,
+			refresh_leds[(count>>6)&0x3] |
+			idle_leds[(sched_Instrument.
+				processor[Mach_GetProcessorNumber()].
+			   idleTicksLow>>16)&0x3]);
+	    }
     }
 
 }
