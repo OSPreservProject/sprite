@@ -307,7 +307,7 @@ Proc_ResumeMigProc(pc)
 
     procPtr = Proc_GetCurrentProc();
     Proc_Lock(procPtr);
-    if (procPtr->genFlags & PROC_EVICTING) {
+    if (procPtr->migFlags & PROC_EVICTING) {
 	/*
 	 * Just to make sure we migrate back home ASAP...
 	 */
@@ -972,7 +972,7 @@ ProcRemoteExit(procPtr, reason, exitStatus, code)
     if (!(procPtr->genFlags & PROC_DONT_MIGRATE)) {
 	PROC_MIG_DEC_STAT(foreign);
     }
-    if ((procPtr->genFlags & PROC_EVICTING) ||
+    if ((procPtr->migFlags & PROC_EVICTING) ||
 	(proc_MigStats.foreign == 0 &&
 	 proc_MigStats.evictionsInProgress > 0)) {
 	ProcMigEvictionComplete();

@@ -83,20 +83,10 @@ Boolean proc_KillMigratedDebugs = TRUE;
 int proc_AllowMigrationState = PROC_MIG_ALLOW_DEFAULT;
 
 /*
- * defined in migVersion.h, in the machine-dependent directory.
+ * Declare some variables from corresponding constants.  This permits
+ * them to be modified using the debugger or mainHook.  
  */
 int proc_MigrationVersion = PROC_MIGRATE_VERSION;
-
-/*
- * Define the statistics "version".  This is used to make sure we're 
- * gathering consistent sets of statistics.  It's defined as a static variable
- * so it can be changed with adb or the debugger if need be.  It's copied
- * into a structure at initialization time.
- */
-#ifndef PROC_MIG_STATS_VERSION
-#define PROC_MIG_STATS_VERSION 1001
-#endif /* PROC_MIG_STATS_VERSION */
-
 static int statsVersion = PROC_MIG_STATS_VERSION;
 
 /*
@@ -226,9 +216,7 @@ static struct {
  *
  *	Initialize data structures relating to process migration.
  *	This procedure is called at boot time.
- *	If statistics gathering is enabled at boot time, those
- * 	structures are set up now, else they are set up when statistics
- *	gathering is enabled later on.
+ *	Sets up statistics gathering and recovery code.
  *
  * Results:
  *	None.
@@ -242,11 +230,7 @@ static struct {
 void
 Proc_MigInit()
 {
-    if (proc_MigDoStats) {
-	bzero((Address) &proc_MigStats, sizeof(proc_MigStats));
-	proc_MigStats.statsVersion = statsVersion;
-	
-    }
+    AccessStats((Proc_MigStats *) NIL);
     ProcRecovInit();
 }
 
@@ -509,9 +493,8 @@ Proc_MigrateTrap(procPtr)
 
     if (procPtr->genFlags & PROC_FOREIGN) {
 	foreign = TRUE;
-	if (procPtr->genFlags & PROC_EVICTING) {
+	if (procPtr->migFlags & PROC_EVICTING) {
 	    evicting = TRUE;
-	    procPtr->genFlags &= ~PROC_EVICTING;
 	}
     }
     if (procPtr->genFlags & PROC_REMOTE_EXEC_PENDING) {
@@ -753,7 +736,8 @@ Proc_MigrateTrap(procPtr)
      * on the other host.
      */
     Proc_Lock(procPtr);
-    procPtr->genFlags = procPtr->genFlags & ~PROC_MIGRATING;
+    procPtr->genFlags &= ~PROC_MIGRATING;
+    procPtr->migFlags &= ~PROC_EVICTING;
     Proc_Unlock(procPtr);
 
     ProcMigWakeupWaiters();
@@ -768,8 +752,13 @@ Proc_MigrateTrap(procPtr)
 	Timer_GetTimeOfDay(&endTime, (int *) NIL, (Boolean *) NIL);
 	Time_Subtract(endTime, startTime, &timeDiff);
 	if (whenNeeded == MIG_ENCAP_MIGRATE) {
-	    timePtr = &proc_MigStats.varStats.timeToMigrate;
-	    squaredTimePtr = &proc_MigStats.squared.timeToMigrate;
+	    if (evicting) {
+		timePtr = &proc_MigStats.varStats.timeToEvict;
+		squaredTimePtr = &proc_MigStats.squared.timeToEvict;
+	    } else {
+		timePtr = &proc_MigStats.varStats.timeToMigrate;
+		squaredTimePtr = &proc_MigStats.squared.timeToMigrate;
+	    }
 	} else {
 	    timePtr = &proc_MigStats.varStats.timeToExec;
 	    squaredTimePtr = &proc_MigStats.squared.timeToExec;
@@ -839,6 +828,7 @@ Proc_MigrateTrap(procPtr)
     }
     procPtr->genFlags &= ~(PROC_MIGRATING|PROC_REMOTE_EXEC_PENDING|
 			   PROC_MIG_ERROR);
+    procPtr->migFlags &= ~PROC_EVICTING;
     ProcMigWakeupWaiters();
     if (proc_DoTrace && proc_MigDebugLevel > 0 && !foreign) {
 	record.processID = pid;
@@ -1018,6 +1008,7 @@ ProcMigReceiveProcess(cmdPtr, procPtr, inBufPtr, outBufPtr)
  * procPtr->argString, padded to an integer boundary.
  */
 typedef struct {
+    int			migFlags;
     Proc_PID		parentID;
     int			familyID;
     int			userID;
@@ -1153,6 +1144,7 @@ EncapProcState(procPtr, hostID, infoPtr, bufPtr)
     ReturnStatus status;
     Proc_TimerInterval timer;
 
+    COPY_STATE(procPtr, encapPtr, migFlags);
     COPY_STATE(procPtr, encapPtr, parentID);
     COPY_STATE(procPtr, encapPtr, familyID);
     COPY_STATE(procPtr, encapPtr, userID);
@@ -1235,7 +1227,7 @@ EncapProcState(procPtr, hostID, infoPtr, bufPtr)
 			    &ticks);
 	Timer_SubtractTicks(ticks, procPtr->userCpuUsage.ticks,
 			    &ticks);
-	ProcRecordUsage(ticks, TRUE);
+	ProcRecordUsage(ticks, PROC_MIG_USAGE_REMOTE_CPU);
     }
 #endif /* CLEAN */
     return(SUCCESS);
@@ -1285,6 +1277,7 @@ DeencapProcState(procPtr, infoPtr, bufPtr)
     }
 
 
+    COPY_STATE(encapPtr, procPtr, migFlags);
     COPY_STATE(encapPtr, procPtr, parentID);
     COPY_STATE(encapPtr, procPtr, familyID);
     COPY_STATE(encapPtr, procPtr, userID);
@@ -1375,7 +1368,16 @@ DeencapProcState(procPtr, infoPtr, bufPtr)
 #ifndef CLEAN
 	Timer_AddTicks(procPtr->kernelCpuUsage.ticks,
 			procPtr->userCpuUsage.ticks, &ticks);
-	ProcRecordUsage(ticks, TRUE);
+	ProcRecordUsage(ticks, PROC_MIG_USAGE_REMOTE_CPU);
+#endif /* CLEAN */
+	if (procPtr->migFlags & PROC_EVICTING) {
+	    procPtr->migFlags &= ~PROC_EVICTING;
+#ifndef CLEAN
+	    if (!(procPtr->migFlags & PROC_WAS_EVICTED)) {
+		procPtr->migFlags |= PROC_WAS_EVICTED;
+		procPtr->preEvictionUsage.ticks = ticks;
+	    }
+	}
 #endif /* CLEAN */
     }
 
@@ -2100,9 +2102,14 @@ AddMigrateTime(time, totalPtr, squaredTotalPtr)
 #ifndef CLEAN
     LOCK_MONITOR;
 
-    intTime = time.seconds * 1000 + time.microseconds / 1000;
+    /*
+     * Round times to hundreds of milliseconds, to keep things
+     * on a low enough scale to keep from overflowing too easily.
+     */
+
+    intTime = PROC_MIG_TIME_FOR_STATS(time);
     *totalPtr += intTime;
-    squaredTime = (intTime * intTime) >> PROC_MIG_TIME_SHIFT;
+    squaredTime = intTime * intTime;
     *squaredTotalPtr += squaredTime;
 
     UNLOCK_MONITOR;
@@ -2165,9 +2172,9 @@ Proc_MigAddToCounter(value, intPtr, squaredPtr)
  *----------------------------------------------------------------------
  */
 void
-ProcRecordUsage(ticks, remoteCPU)
+ProcRecordUsage(ticks, type)
     Timer_Ticks ticks;
-    Boolean remoteCPU;
+    ProcRecordUsageType type;
 {
     int *timePtr;
     int *squaredTimePtr;
@@ -2175,12 +2182,17 @@ ProcRecordUsage(ticks, remoteCPU)
 
 #ifndef CLEAN
 
-    if (remoteCPU) {
+    if (type == PROC_MIG_USAGE_REMOTE_CPU) {
 	timePtr = &proc_MigStats.varStats.remoteCPUTime;
 	squaredTimePtr = &proc_MigStats.squared.remoteCPUTime;
-    } else {
+    } else if (type == PROC_MIG_USAGE_TOTAL_CPU) {
 	timePtr = &proc_MigStats.varStats.totalCPUTime;
 	squaredTimePtr = &proc_MigStats.squared.totalCPUTime;
+	proc_MigStats.processes++;
+    } else if (type == PROC_MIG_USAGE_POST_EVICTION) {
+	timePtr = &proc_MigStats.varStats.evictionCPUTime;
+	squaredTimePtr = &proc_MigStats.squared.evictionCPUTime;
+	proc_MigStats.evictionsToUs++;
     }
     Timer_TicksToTime(ticks, &time);
 
@@ -2222,6 +2234,7 @@ AccessStats(copyPtr)
 	      sizeof(Proc_MigStats));
     } else {
 	bzero((Address) &proc_MigStats, sizeof(Proc_MigStats));
+	proc_MigStats.statsVersion = statsVersion;
     }
 	
     UNLOCK_MONITOR;
@@ -2585,9 +2598,9 @@ Proc_EvictProc(pid)
 	printf("Proc_EvictProc: evicting process %x.\n", pid);
     }
     if ((procPtr->genFlags & PROC_FOREIGN) &&
-	!(procPtr->genFlags &
-	  (PROC_DONT_MIGRATE | PROC_EVICTING | PROC_DYING))) {
-	procPtr->genFlags |= PROC_EVICTING;
+	!(procPtr->genFlags & (PROC_DONT_MIGRATE | PROC_DYING)) &&
+	!(procPtr->migFlags & PROC_EVICTING)) {
+	procPtr->migFlags |= PROC_EVICTING;
 	PROC_MIG_INC_STAT(evictionsInProgress);
 	status = Sig_SendProc(procPtr, SIG_MIGRATE_HOME, 0, (Address)0);
     }
@@ -2677,10 +2690,10 @@ WaitForEviction()
 
 	Timer_GetTimeOfDay(&time, (int *) NIL, (Boolean *) NIL);
 	Time_Subtract(time, timeEvictionStarted, &time);
-	intTime = time.seconds * 1000 + time.microseconds / 1000;
-	squaredTime = (intTime * intTime) >> PROC_MIG_TIME_SHIFT;
-	proc_MigStats.varStats.timeToEvict += intTime;
-	proc_MigStats.squared.timeToEvict += squaredTime;
+	intTime = PROC_MIG_TIME_FOR_STATS(time);
+	squaredTime = intTime * intTime;
+	proc_MigStats.varStats.totalEvictTime += intTime;
+	proc_MigStats.squared.totalEvictTime += squaredTime;
 
 	proc_MigStats.evictsNeeded++;
     }
@@ -2753,17 +2766,19 @@ Proc_NeverMigrate(procPtr)
 {
 
     Proc_Lock(procPtr);
-    if (proc_MigDebugLevel > 2) {
+    if (proc_MigDebugLevel > 4) {
 	printf("Proc_NeverMigrate: don't migrate process %x.\n",
 	       procPtr->processID);
     }
-    procPtr->genFlags |= PROC_DONT_MIGRATE;
-    if (procPtr->genFlags & PROC_FOREIGN) {
-	if (proc_MigDebugLevel > 3) {
-	    printf("Proc_NeverMigrate: process %x is foreign.\n",
-		   procPtr->processID);
+    if (!(procPtr->genFlags & PROC_DONT_MIGRATE)) {
+	procPtr->genFlags |= PROC_DONT_MIGRATE;
+	if (procPtr->genFlags & PROC_FOREIGN) {
+	    if (proc_MigDebugLevel > 3) {
+		printf("Proc_NeverMigrate: process %x is foreign.\n",
+		       procPtr->processID);
+	    }
+	    PROC_MIG_DEC_STAT(foreign);
 	}
-	PROC_MIG_DEC_STAT(foreign);
     }
     Proc_Unlock(procPtr);
 }
