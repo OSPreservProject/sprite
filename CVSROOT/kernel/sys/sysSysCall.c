@@ -258,8 +258,10 @@ static SysCallEntry sysCalls[] = {
     Fs_CheckAccess,     	Fs_CheckAccess, 	TRUE,	3,   NILPARM,
     Proc_GetIntervalTimer,	Proc_GetIntervalTimer, 	TRUE,	2,   NILPARM,
     Proc_SetIntervalTimer,	Proc_SetIntervalTimer, 	TRUE,	3,   NILPARM,
-    Fs_FileWriteBackStub,	Fs_FileWriteBackStub, TRUE, 4,  NILPARM,
+    Fs_FileWriteBackStub,	Fs_FileWriteBackStub, TRUE,	4,   NILPARM,
     Proc_ExecEnv,		Proc_ExecEnv,	   TRUE,	4,   NILPARM,
+    Fs_SetAttrStub,		Fs_SetAttrStub,	   TRUE,	4,   NILPARM,
+    Fs_SetAttrIDStub,		Fs_SetAttrIDStub,   TRUE,	3,   NILPARM,
 };
 
 
@@ -444,6 +446,8 @@ static Sys_CallParam paramsArray[] = {
     /* local */				/* SYS_PROC_SETINTERVALTIMER	84 */
     /* local */				/* SYS_FS_WRITEBACKID		85 */
     /* special */			     	/* SYS_PROC_EXEC_ENV	86 */
+    /* local */				/* SYS_FS_SET_ATTR_NEW		87 */
+    /* local */ 			/* SYS_FS_SET_ATTR_ID_NEW	88 */
     /*
      * Insert new system call information above this line.
      */
