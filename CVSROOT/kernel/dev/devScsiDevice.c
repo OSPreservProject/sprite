@@ -69,20 +69,28 @@ DevScsiAttachDevice(devicePtr, insertProc)
     }
     /*
      * If the inquiry data doesn't exists for this device yet send the
-     * device a INQUIRY command.
+     * device a INQUIRY command. We try it twice because the device might
+     * abort the INQUIRY with a UNIT_ATTENTION.
      */
     if ((handle != (ScsiDevice *) NIL) && (handle->inquiryLength == 0)) {
 	unsigned char statusByte;
-	if (handle->inquiryDataPtr == (char *) 0) {
-	    handle->inquiryDataPtr = (char *) malloc(DEV_MAX_INQUIRY_SIZE);
+	int	tryNumber = 1;
+	ReturnStatus	status = SUCCESS;
+
+	while((tryNumber <= 2) && (handle->inquiryLength == 0) && 
+	      (status != DEV_TIMEOUT)) { 
+	    if (handle->inquiryDataPtr == (char *) 0) {
+		handle->inquiryDataPtr = (char *) malloc(DEV_MAX_INQUIRY_SIZE);
+	    }
+	    (void) DevScsiGroup0Cmd(handle,SCSI_INQUIRY,0,DEV_MAX_INQUIRY_SIZE,
+				    &inquiryCmdBlock);
+	    inquiryCmdBlock.buffer = handle->inquiryDataPtr;
+	    inquiryCmdBlock.bufferLen = DEV_MAX_INQUIRY_SIZE;
+	    inquiryCmdBlock.dataToDevice = FALSE;
+	    status =  DevScsiSendCmdSync(handle, &inquiryCmdBlock, &statusByte, 
+			&(handle->inquiryLength),  (int *) NIL, (char *) NIL);
+	    tryNumber++;
 	}
-	(void) DevScsiGroup0Cmd(handle,SCSI_INQUIRY,0,DEV_MAX_INQUIRY_SIZE,
-				&inquiryCmdBlock);
-	inquiryCmdBlock.buffer = handle->inquiryDataPtr;
-	inquiryCmdBlock.bufferLen = DEV_MAX_INQUIRY_SIZE;
-	inquiryCmdBlock.dataToDevice = FALSE;
-	(void) DevScsiSendCmdSync(handle, &inquiryCmdBlock, &statusByte, 
-		    &(handle->inquiryLength),  (int *) NIL, (char *) NIL);
     }
     if (handle != (ScsiDevice *) NIL) {
 	handle->referenceCount++;
@@ -439,7 +447,7 @@ DevScsiIOControl(devPtr, ioctlPtr, replyPtr)
         if (senseBufLen > senseDataLen) {
 	    senseBufLen = senseDataLen;
 	}
-	bcopy(senseData, (char *)(ioctlPtr->outBufSize + sizeof(Dev_ScsiStatus)
+	bcopy(senseData, (char *)(ioctlPtr->outBuffer + sizeof(Dev_ScsiStatus)
 				     + statusPtr->amountTransferred) ,
 	                 senseBufLen);
 	return status;
