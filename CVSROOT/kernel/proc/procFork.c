@@ -290,7 +290,7 @@ p     */
 	Proc_Unlock(parentProcPtr);
     }
 
-    Mach_SetReturnVal(procPtr, (int) PROC_CHILD_PROC);
+    Mach_SetReturnVal(procPtr, (int) PROC_CHILD_PROC, 1);
      * Set up the environment of the process.
      */
 
