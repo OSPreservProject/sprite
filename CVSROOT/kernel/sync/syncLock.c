@@ -384,8 +384,7 @@ Sync_SlowMasterWait(event, mutexPtr, wakeIfSignal)
  * Sync_UnlockAndSwitch --
  *
  *      Release the monitor lock and then perform a context switch to the
- *	given state.  The monitor lock is reaquired before this routine 
- *	returns.
+ *	given state.
  *
  * Results:
  *	SUCCESS		is always returned.
