@@ -180,19 +180,8 @@ Address			theAddrOfMachPtr = 0;
 Address			oldAddrOfVmPtr = 0; 
 Address			oldAddrOfMachPtr = 0;
 
+Address			machRomVectorPtr;
 MachMonBootParam	machMonBootParam;
-
-/*
- * For debugging stuff, put values into a circular buffer.  After each value,
- * stamp a special mark, which gets overwritten by next value, so we
- * always know where the end of the list is.
- */
-#define	DEBUG_ADD(thing)	\
-    debugSpace[debugCounter++] = (int)(thing);	\
-    if (debugCounter >= 500) {	\
-	debugCounter = 0;	\
-    }				\
-    debugSpace[debugCounter] = (int)(0x11100111);
 
 extern	void	MachFlushWindowsToStack();
     
@@ -261,6 +250,13 @@ Mach_Init()
     CHECK_TRAP_REG_OFFSETS(ins, MACH_INS_OFFSET);
     CHECK_TRAP_REG_OFFSETS(globals, MACH_GLOBALS_OFFSET);
 
+#ifdef sun4c
+    if ((*(romVectorPtr->virtMemory))->address != VMMACH_DEV_START_ADDR ||
+	    (VMMACH_DEV_START_ADDR + (*(romVectorPtr->virtMemory))->size - 1)
+	    != VMMACH_DEV_END_ADDR) {
+	panic("VMMACH_DEV_START_ADDR and VMMACH_DEV_END_ADDR are wrong.\n");
+    }
+#endif /* sun4c */
 #undef CHECK_SIZE
 #undef CHECK_OFFSETS
     /*
@@ -331,6 +327,7 @@ Mach_Init()
      * Initialize the interrupt vector table.
      */
     for (i = 0; i < MACH_NUM_VECTORS; i++) {
+#ifndef sun4c
 	if (i == 13 || i == 11 || i == 9 || i == 7 || i == 5 || i == 3 ||
 		i == 2) {
 	    machVectorTable[i] = (Address) MachVectoredInterrupt;
@@ -347,14 +344,18 @@ Mach_Init()
 	    machInterruptArgs[i] = (ClientData)
 		    (MACH_VME_INTR_VECTOR | ((i + 1) | 1));
 	} else { 
+#endif
 	    machVectorTable[i] = (Address) MachHandleDebugTrap;
 	    machInterruptArgs[i] = (ClientData) 0;
+#ifndef sun4c
 	}
+#endif
     }
 
     /* Temporary: for debugging net module and debugger: */
     mach_NumDisableInterrupts[0] = 1;
 
+#ifdef NOTDEF
     /*
      * Copy the boot parameter structure. The original location will get
      * unmapped during vm initialization so we need to get our own copy.
@@ -373,6 +374,15 @@ Mach_Init()
      * characters at the end of shorter reboot strings.
      */
     bzero(romVectorPtr->lineBuf, *romVectorPtr->lineSize);
+#endif
+
+#ifdef sun4c
+    /*
+     * This gets turned on by the profiler init when it is called.
+     */
+    *Mach_InterruptReg &= ~MACH_ENABLE_LEVEL14_INTR;
+#endif
+    
 
     return;
 }
@@ -1123,7 +1133,11 @@ MachIntrNotHandledYet()
  */
 void
 MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
+#ifdef sun4c
+    unsigned	int	busErrorReg;
+#else
     unsigned	char	busErrorReg;
+#endif
     Address		addrErrorReg;
     unsigned	int	trapPsr;
     Address		pcValue;
@@ -1143,9 +1157,12 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
 	/*
 	 * This doesn't return to here.  It erases the fact that the
 	 * page fault happened and makes the probe routine that
-	 * got the page fault return FAILURE to its caller.
+	 * got the page fault return FAILURE to its caller.  We must turn off
+	 * interrupts before calling MachHandleBadProbe().
 	 */
+	Mach_DisableIntr();
 	MachHandleBadProbe();
+	Mach_EnableIntr();
     }
     procPtr = Proc_GetActualProc();
     if (procPtr == (Proc_ControlBlock *) NIL) {
@@ -1160,8 +1177,9 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
 	     * This fault happened inside the kernel and it wasn't on behalf
 	     * of a user process.  This is an error.
 	     */
-	    panic("MachPageFault: page fault in kernel process! pc is 0x%x\n",
-		    (unsigned) pcValue);
+	    panic(
+"MachPageFault: page fault in kernel process! pc:0x%x, addr:0x%x, Error:0x%x\n",
+		    pcValue, addrErrorReg, busErrorReg);
 	}
 	/*
 	 * A page fault on a user process while executing in
@@ -1190,17 +1208,19 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
 	 * Since this is called from trap handlers only, we know interrupts
 	 * are off here.  The Vm system needs them on?
 	 */
-	Mach_EnableIntr();
 	status = Vm_PageIn(addrErrorReg, protError);
-	Mach_DisableIntr();
 	if (status != SUCCESS) {
 	    if (copyInProgress) {
 		/*
 		 * This doesn't return to here.  It erases the fact that the
 		 * page fault happened and makes the copy routine that
 		 * got the page fault return SYS_ARG_NO_ACCESS to its caller.
+		 * We must turn off interrupts before calling
+		 * MachHandleBadArgs().
 		 */
+		Mach_DisableIntr();
 		MachHandleBadArgs();
+		Mach_EnableIntr();
 	    } else {
 		/* kernel error */
 		panic(
@@ -1212,16 +1232,18 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
     }
     /* user page fault */
     protError = busErrorReg & MACH_PROT_ERROR;
-    Mach_EnableIntr();
     if (Vm_PageIn(addrErrorReg, protError) != SUCCESS) {
-	printf("MachPageFault: Bus error in user proc %x, PC = %x, addr = %x BR Reg %x\n",
+	printf(
+    "MachPageFault: Bus error in user proc %x, PC = %x, addr = %x BR Reg %x\n",
+#ifdef sun4c
+		procPtr->processID, pcValue, addrErrorReg, busErrorReg);
+#else
 		procPtr->processID, pcValue, addrErrorReg, (short) busErrorReg);
+#endif
 	/* Kill user process */
 	Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL, procPtr->processID, FALSE);
-	Mach_DisableIntr();
 	return;
     }
-    Mach_DisableIntr();
     return;
 }
 
@@ -1494,6 +1516,44 @@ MachHandleWeirdoInstruction(trapType, pcValue, trapPsr)
     }
     return;
 }
+
+#ifdef sun4c
+void
+Mach_PrintInterruptReg()
+{
+    unsigned char	interReg;
+
+    interReg = *Mach_InterruptReg;
+    Mach_MonPrintf("Interrupt register: 0x%x\n", interReg);
+    return;
+}
+
+void
+Mach_PrintBusErrorRegs()
+{
+    unsigned int	busErrorReg;
+
+    busErrorReg = MachGetSyncErrorReg();
+    Mach_MonPrintf("Sync error register: 0x%x\n", busErrorReg);
+    busErrorReg = MachGetSyncErrorAddrReg();
+    Mach_MonPrintf("Sync error addr register: 0x%x\n", busErrorReg);
+    busErrorReg = MachGetASyncErrorReg();
+    Mach_MonPrintf("ASync error register: 0x%x\n", busErrorReg);
+    busErrorReg = MachGetASyncErrorAddrReg();
+    Mach_MonPrintf("ASync error addr register: 0x%x\n", busErrorReg);
+    return;
+}
+
+void
+Mach_PrintSystemEnableReg()
+{
+    unsigned char	systemEnableReg;
+
+    systemEnableReg = MachGetSystemEnableReg();
+    Mach_MonPrintf("System enable register: 0x%x\n", systemEnableReg);
+    return;
+}
+#endif
 
 void
 MachTestContexts()

@@ -224,6 +224,20 @@ extern	int	mach_ByteOrder;
  */
 extern void	Mach_Init();
 
+/*
+ * Macro to put some primitive debugging values into a circular buffer.
+ * After each value, it stamps a special mark, which gets overwritten by the
+ * next value, so we always know where the end of the list is.
+ */
+extern	int	debugCounter;
+extern	int	debugSpace[];
+#define	MACH_DEBUG_ADD(thing)	\
+    debugSpace[debugCounter++] = (int)(thing);	\
+    if (debugCounter >= 500) {	\
+	debugCounter = 0;	\
+    }				\
+    debugSpace[debugCounter] = (int)(0x11100111);
+
 #ifdef NOTDEF
 /*
  * Routines to munge machine state struct.
