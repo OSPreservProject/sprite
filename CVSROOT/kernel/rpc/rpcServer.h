@@ -225,7 +225,7 @@ extern int		rpcServiceCount[];
  * to the broadcast server ID.
  */
 #define	RPC_IS_BROADCAST(srvrPtr)	\
-    (((RpcServer *) srvrPtr)->requestRpcHdr.serverID == RPC_BROADCAST_SERVER_ID)
+    (((RpcServerState *) srvrPtr)->requestRpcHdr.serverID == RPC_BROADCAST_SERVER_ID)
 
 /*
  * For tracing calls.
