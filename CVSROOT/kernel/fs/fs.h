@@ -232,15 +232,6 @@ typedef struct Fs_Stream {
 #define FS_NEW_STREAM		0x08000000
 #define	FS_WB_ON_LDB		0x10000000
 
-/*
- * Flags to Fs_WaitForHost
- *	FS_NAME_SERVER		Wait on the name server for the stream
- *	FS_IO_SERVER		Wait on the I/O server for the stream
- *	FS_NON_BLOCKING		Don't wait, just start recovery in background,
- *				(this is defined in user/fs.h)
- */
-#define FS_NAME_SERVER		0x1
-#define FS_IO_SERVER		0x2
 
 /*
  * Fragment stuff that is dependent on the filesystem block size
