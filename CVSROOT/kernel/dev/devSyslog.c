@@ -40,6 +40,7 @@ static	char	syslogBuffer[SYSLOG_BUF_SIZE];
 static	int	firstIndex = -1;
 static	int	lastIndex = -1;
 
+static	Boolean syslogEnable = TRUE;
 static	Boolean	openForReading = FALSE;	/* TRUE if the device is open for
 					 * reading.  Only one process can
 					 * be reading syslog at a time. */
@@ -232,6 +233,11 @@ Dev_SyslogWrite(devicePtr, writePtr, replyPtr)
     int origSize = writePtr->length;
     Address bufPtr = writePtr->buffer;
 
+
+    if (!syslogEnable) {
+	replyPtr->length = writePtr->length;
+	return(SUCCESS);
+    }
 
     if (!dbg_UsingSyslog) {
 	if (!openForReading) {
@@ -553,3 +559,32 @@ Dev_SyslogReturnBuffer(bufPtrPtr, firstIndexPtrPtr, lastIndexPtrPtr, bufSizePtr)
     *bufSizePtr = SYSLOG_BUF_SIZE;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_SyslogDisable --
+ *
+ *	Toggles syslog on/off.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Dev_SyslogDisable()
+{
+    if (syslogEnable) {
+	MASTER_LOCK(&syslogMutex);
+	MASTER_UNLOCK(&syslogMutex);
+	firstIndex = -1;
+	lastIndex = - 1;
+	syslogEnable = FALSE;
+    } else {
+	syslogEnable = TRUE;
+    }
+}
