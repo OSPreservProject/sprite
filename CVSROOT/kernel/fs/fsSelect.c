@@ -539,7 +539,7 @@ Fs_Select(numStreams, timeoutPtr, inReadMaskPtr, outReadMaskPtr,
 	 * 63, etc. Within a row, the low-order bit corresponds to the
 	 * smallest stream number.
 	 */
-	s = numStreams + 1;
+	s = numStreams;
 	for (row = 0; row < intsInMask; row++) {
 	    int	outReadMask = 0;
 	    int	outWriteMask = 0;
