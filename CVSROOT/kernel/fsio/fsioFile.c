@@ -542,15 +542,15 @@ FsFileClose(streamPtr, clientID, flags, dataSize, closeData)
     }
     /*
      * Handle pending deletes
-     *	1. We mark the disk descriptor as deleted,
-     *	2. We scan the client list and call-back to the last writer if
+     *	1. We scan the client list and call-back to the last writer if
      *		it is not the client doing the close.
+     *	2. We mark the disk descriptor as deleted,
      *	3. We return FS_FILE_REMOVED to the calling client so it knows
      *		to nuke its cache.
      */
     if ((handlePtr->use.ref == 0) && (handlePtr->flags & FS_FILE_DELETED)) {
-	status = FsDeleteFileDesc(handlePtr);
 	FsClientRemoveCallback(&handlePtr->consist, clientID);
+	status = FsDeleteFileDesc(handlePtr);
 	FsHandleRelease(handlePtr, TRUE);
 	FsHandleRemove(handlePtr);
 	if (clientID != rpc_SpriteID && status == SUCCESS) {
@@ -615,8 +615,8 @@ FsFileClientKill(hdrPtr, clientID)
      * and tell other clients about the remove.
      */
     if ((handlePtr->use.ref == 0) && (handlePtr->flags & FS_FILE_DELETED)) {
-	(void)FsDeleteFileDesc(handlePtr);
 	FsClientRemoveCallback(&handlePtr->consist, clientID);
+	(void)FsDeleteFileDesc(handlePtr);
 	FsHandleRemove(handlePtr);
     } else {
 	FsHandleUnlock(handlePtr);
@@ -679,7 +679,7 @@ FsFileScavenge(hdrPtr)
 	/*
 	 * Remove handles for files with no users and no blocks in cache.
 	 * This call unlocks the handle and then frees its memory if there
-	 * are no references to it.
+	 * are no references to it lingering from the name hash table.
 	 */
 	FsHandleAttemptRemove(handlePtr);
     } else {
