@@ -679,10 +679,14 @@ FsFileError(hdrPtr, string, status)
     FsHandleHeader *hdrPtr;
     char *string;
 {
-    Net_HostPrint(hdrPtr->fileID.serverID,
-		  FsFileTypeToString(hdrPtr->fileID.type));
-    Sys_Printf("<%d,%d> %s: ", hdrPtr->fileID.major,
-	    hdrPtr->fileID.minor, string);
+    if (hdrPtr == (FsHandleHeader *)NIL) {
+	Sys_Printf("(NIL handle)");
+    } else {
+	Net_HostPrint(hdrPtr->fileID.serverID,
+		      FsFileTypeToString(hdrPtr->fileID.type));
+	Sys_Printf("\"%s\" <%d,%d> %s: ", FsHandleName(hdrPtr),
+		hdrPtr->fileID.major, hdrPtr->fileID.minor, string);
+    }
     switch (status) {
 	case FS_DOMAIN_UNAVAILABLE:
 	    Sys_Printf("domain unavailable\n");
