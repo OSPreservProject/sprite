@@ -460,6 +460,7 @@ Net_Input(packetPtr, packetLength)
  *----------------------------------------------------------------------
  */
 
+/* ARGSUSED */
 static void
 EnterDebugger(packetPtr, packetLength)
     Address packetPtr;
@@ -476,7 +477,7 @@ EnterDebugger(packetPtr, packetLength)
      * Copy the length out of the packet into a correctly aligned integer.
      * Correct its byte order.
      */
-    Byte_Copy(packetPtr, (Address) &len, sizeof(len));
+    Byte_Copy(sizeof(len), packetPtr, (Address) &len);
 
     len = Net_NetToHostInt(len);
 
