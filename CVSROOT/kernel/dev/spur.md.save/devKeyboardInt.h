@@ -25,6 +25,6 @@
  * Master lock for keyboard/mouse driver.
  */
 
-extern Sync_Semaphore	devKbdMutex;
+extern volatile Sync_Semaphore devKbdMutex;
 
-#endif _DEVKEYBOARDINT
+#endif /* _DEVKEYBOARDINT */

@@ -18,7 +18,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif
 
 #include "sprite.h"
 #include "machMon.h"
@@ -88,9 +88,9 @@ Dev_KbdInit()
     bzero((Address) &dev_KbdInstrument, sizeof(dev_KbdInstrument));
 
 #ifdef notdef
-    mouseUartAddr = (Dev_UartDevice *) DEV_KBD_ADDR;
-    kbdUartAddr	= (Dev_UartDevice *) (DEV_KBD_ADDR | 4);
-#endif notdef
+    mouseUartAddr = (volatile Dev_UartDevice *) DEV_KBD_ADDR;
+    kbdUartAddr	= (volatile Dev_UartDevice *) (DEV_KBD_ADDR | 4);
+#endif
     uartAddr = (Address) DEV_UART_SERIAL_ADDR;
 
 
