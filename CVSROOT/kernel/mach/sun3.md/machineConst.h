@@ -75,11 +75,7 @@
  */
 
 #define	MACH_LAST_USER_STACK_PAGE	((MACH_MAX_USER_STACK_ADDR - 1) / VM_PAGE_SIZE)
-#ifdef SUN3
-#define	MACH_MAX_USER_STACK_ADDR	0xf000000
-#else
-#define	MACH_MAX_USER_STACK_ADDR	0x800000
-#endif
+#define	MACH_MAX_USER_STACK_ADDR	VM_MAP_SEG_ADDR
 
 /*
  * The indices of all of the registers in the standard 16 register array of
