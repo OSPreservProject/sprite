@@ -111,7 +111,7 @@ char *errs[] = {"ENOERR", "EPERM", "ENOENT", "ESRCH", "EINTR", "EIO",
 #define Mach_SetErrno(err)
 #endif
 
-int debugFsStubs;
+extern int debugFsStubs;
 
 static int CvtSpriteToUnixType _ARGS_((register int spriteFileType));
 static void CvtSpriteToUnixAtts _ARGS_((register Fs_Attributes *spriteAttsPtr,
