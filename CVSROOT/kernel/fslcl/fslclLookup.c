@@ -309,8 +309,17 @@ FslclLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
 		 * The parent handle is normally aready unlocked by
 		 * FindComponent, unless the directory is corrupted.
 		 */
-		Fsutil_HandleRelease(parentHandlePtr, (status != SUCCESS));
-		parentHandlePtr = (Fsio_FileIOHandle *)NIL;
+		if (status == SUCCESS && curHandlePtr->descPtr ==
+			(Fsdm_FileDescriptor *)NIL) {
+		    printf("FslclLookup, missing '..' link: ID <%d, %d, %d>\n",
+				 curHandlePtr->hdr.fileID.serverID,
+				 curHandlePtr->hdr.fileID.major,
+				 curHandlePtr->hdr.fileID.minor);
+		    status = FS_FILE_NOT_FOUND;
+		} else {
+		    Fsutil_HandleRelease(parentHandlePtr, (status != SUCCESS));
+		    parentHandlePtr = (Fsio_FileIOHandle *)NIL;
+		}
 	    }
 	} else if ((compLen == 1) && component[0] == '.') {
 	    /*
