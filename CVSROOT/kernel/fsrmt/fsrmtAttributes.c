@@ -98,6 +98,7 @@ Fs_GetAttrStream(streamPtr, attrPtr)
 #ifdef lint
 	    status = FsLocalGetAttr(&nameInfoPtr->fileID, rpc_SpriteID,attrPtr);
 	    status = FsSpriteGetAttr(&nameInfoPtr->fileID,rpc_SpriteID,attrPtr);
+	    status = FsPseudoGetAttr(&nameInfoPtr->fileID,rpc_SpriteID,attrPtr);
 #endif lint
 	    if (status != SUCCESS) {
 		Sys_Panic(SYS_WARNING,
@@ -307,6 +308,7 @@ Fs_SetAttrStream(streamPtr, attrPtr, idPtr, flags)
 #ifdef lint
 	    status = FsLocalSetAttr(&nameInfoPtr->fileID, attrPtr,idPtr,flags);
 	    status = FsSpriteSetAttr(&nameInfoPtr->fileID, attrPtr,idPtr,flags);
+	    status = FsPseudoSetAttr(&nameInfoPtr->fileID, attrPtr,idPtr,flags);
 #endif lint
 	} else {
 	    status = SUCCESS;
