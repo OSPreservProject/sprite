@@ -1752,11 +1752,19 @@ UpgradeFragment(handlePtr, indexInfoPtr, curLastBlock, newLastFrag,
 	    fs_Stats.blockCache.readAheadHits++;
 	}
     }
-
-    *(indexInfoPtr->blockAddrPtr) = 
-		    newFragBlock * FS_FRAGMENTS_PER_BLOCK + newFragOffset;
-    descPtr->numKbytes += newLastFrag - curLastFrag;
-    *dirtiedIndexPtr = TRUE;
+    /*
+     * Commit the change in the fragments location.
+     * 1 - unlock the cache block, specifying the new location.
+     *		This step blocks if I/O is in progress on the block.
+     *		After any I/O (such as a writeback) completes, then
+     *		the block will be put on the dirty list with the new address.
+     * 2 - update the file descriptors indexing information to point to
+     *		the new block.
+     * 3 - free up the old fragment.
+     *
+     * (As a historical note, steps 1 & 2 used to be reversed.  Files
+     *	were ending up with the wrong trailing fragment occasionally.)
+     */
 
     if (dontWriteThru) {
 	flags = FSCACHE_CLEAR_READ_AHEAD | FSCACHE_DONT_WRITE_THRU;
@@ -1766,6 +1774,13 @@ UpgradeFragment(handlePtr, indexInfoPtr, curLastBlock, newLastFrag,
     Fscache_UnlockBlock(fragCacheBlockPtr, (unsigned) fsutil_TimeInSeconds, 
 		       *indexInfoPtr->blockAddrPtr, 
 		       (newLastFrag + 1) * FS_FRAGMENT_SIZE, flags);
+
+    *(indexInfoPtr->blockAddrPtr) = 
+		    newFragBlock * FS_FRAGMENTS_PER_BLOCK + newFragOffset;
+    descPtr->numKbytes += newLastFrag - curLastFrag;
+    descPtr->flags |= FSDM_FD_DIRTY;
+    *dirtiedIndexPtr = TRUE;
+
     FsdmFragFree(domainPtr, curLastFrag + 1, curFragBlock, curFragOffset);
 
 exit:
