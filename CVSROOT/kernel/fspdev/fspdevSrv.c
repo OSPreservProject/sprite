@@ -216,7 +216,8 @@ RequestResponse(pdevHandlePtr, hdrSize, requestHdrPtr, inputSize, inputBuf,
     requestHdrPtr->messageSize = hdrSize +
 		((inputSize + sizeof(int) - 1) / sizeof(int)) * sizeof(int);
     if (pdevHandlePtr->requestBuf.size < requestHdrPtr->messageSize) {
-	printf("RequestResponse request too large\n");
+	printf("RequestResponse: request too large (%d > %d)\n",
+	    requestHdrPtr->messageSize, pdevHandlePtr->requestBuf.size);
 	return(GEN_INVALID_ARG);
     }
 
@@ -346,6 +347,7 @@ RequestResponse(pdevHandlePtr, hdrSize, requestHdrPtr, inputSize, inputBuf,
 	 */
 
 	pdevHandlePtr->replyBuf = replyBuf;
+	pdevHandlePtr->replySize = replySize;
 	pdevHandlePtr->clientPID = (Proc_GetEffectiveProc())->processID;
 	if (waitPtr != (Sync_RemoteWaiter *)NIL) {
 	    pdevHandlePtr->clientWait = *waitPtr;
@@ -376,6 +378,8 @@ RequestResponse(pdevHandlePtr, hdrSize, requestHdrPtr, inputSize, inputBuf,
 	pdevHandlePtr->reply.status = SUCCESS;
     }
 failure:
+    pdevHandlePtr->replyBuf = (char *)NIL;
+    pdevHandlePtr->replySize = 0;
     if (status == SUCCESS) {
 	status = pdevHandlePtr->reply.status;
     }
@@ -915,6 +919,17 @@ FspdevServerStreamIOControl(streamPtr, ioctlPtr, replyPtr)
 		pdevHandlePtr->reply = *srvReplyPtr;
 		if (srvReplyPtr->replySize > 0) {
 		    register Proc_ControlBlock *clientProcPtr;
+		    if (pdevHandlePtr->replyBuf == (char *)NIL) {
+			printf("PdevReply: unwanted reply data <%s>\n",
+			    Fsutil_HandleName(pdevHandlePtr));
+			goto noReplyData;
+		    }
+		    if (srvReplyPtr->replySize > pdevHandlePtr->replySize) {
+			printf("PdevReply: extra reply data (%d > %d) <%s>\n",
+			    srvReplyPtr->replySize, pdevHandlePtr->replySize,
+			    Fsutil_HandleName(pdevHandlePtr));
+			srvReplyPtr->replySize = pdevHandlePtr->replySize;
+		    }
 		    /*
 		     * Copy the reply into the waiting buffers.
 		     */
@@ -966,6 +981,7 @@ FspdevServerStreamIOControl(streamPtr, ioctlPtr, replyPtr)
 			pdevHandlePtr->flags |= PDEV_REPLY_FAILED;
 		    }
 		}
+noReplyData:
 		PDEV_REPLY(&pdevHandlePtr->hdr.fileID, srvReplyPtr);
 		if (srvReplyPtr->status == FS_WOULD_BLOCK) {
 		    /*
