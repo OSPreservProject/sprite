@@ -282,3 +282,95 @@ fstat(fd, attsBufPtr)
 	return(UNIX_SUCCESS);
     }
 }
+
+ReturnStatus
+Fs_FileWriteBackUser(streamID, firstByte, lastByte, shouldBlock)
+    int		streamID;	/* Stream ID of file to write back. */
+    int		firstByte;	/* First byte to write back. */
+    int		lastByte;	/* Last byte to write back. */
+    Boolean	shouldBlock;	/* TRUE if should wait for the blocks to go
+				 * to disk. */
+{
+    Ioc_WriteBackArgs args;
+
+    args.firstByte = firstByte;
+    args.lastByte = lastByte;
+    args.shouldBlock = shouldBlock;
+
+    return( Fs_IOControlUser(streamID, IOC_WRITE_BACK, sizeof(args),
+				    (Address)&args, 0, (Address)0) );
+}
+
+ReturnStatus
+Fs_IOControlUser(streamID, command, inBufSize, inBuffer,
+			   outBufSize, outBuffer)
+    int 	streamID;	/* User's handle on the stream */
+    int 	command;	/* IOControl command */
+    int 	inBufSize;	/* Size of inBuffer */
+    Address 	inBuffer;	/* Command specific input parameters */
+    int 	outBufSize;	/* Size of outBuffer */
+    Address 	outBuffer;	/* Command specific output parameters */
+{
+    Proc_ControlBlock *procPtr;
+    Fs_ProcessState *fsPtr;
+    Fs_Stream 	 *streamPtr;
+    register ReturnStatus status = SUCCESS;
+    Address	localInBuffer = (Address)NIL;
+    Address	localOutBuffer = (Address)NIL;
+    Fs_IOCParam ioctl;
+    Fs_IOReply reply;
+
+    /*
+     * Get a stream pointer.
+     */
+    procPtr = Proc_GetEffectiveProc();
+    streamPtr = (Fs_Stream *) streamID;
+
+    ioctl.command = command;
+    ioctl.format = mach_Format;
+    ioctl.procID = procPtr->processID;
+    ioctl.familyID = procPtr->familyID;
+    ioctl.uid = procPtr->effectiveUserID;
+
+    ioctl.inBufSize = inBufSize;
+    ioctl.inBuffer = inBuffer;
+    ioctl.outBufSize = outBufSize;  
+    ioctl.outBuffer = outBuffer;
+    ioctl.flags = 0;
+    return(Fs_IOControl(streamPtr, &ioctl, &reply));
+}
+
+^L
+/*
+ *----------------------------------------------------------------------
+ *
+ * SyncFile --
+ *
+ *      Fsync file.
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+SyncFile(fileName)
+    char        *fileName;
+{
+    Fs_Stream   *streamPtr;
+
+    if ((streamPtr = (Fs_Stream *) open(fileName, O_RDONLY, 0666)) ==
+            (Fs_Stream *)-1) {
+        return FAILURE;
+    }
+    while(fsync(streamPtr) != 0) {
+        Time time;
+        perror("Error writing log");
+        time.seconds = 10;
+        time.microseconds = 0;
+        Sync_WaitTime(time);
+    }
+    close(streamPtr);
+    return SUCCESS;
+}
