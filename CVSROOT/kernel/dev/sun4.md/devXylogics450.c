@@ -536,7 +536,7 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
     Fs_IOReply *replyPtr;	/* Size of outBuffer and returned signal */
 {
 
-     switch (command) {
+     switch (ioctlPtr->command) {
 	case	IOC_REPOSITION:
 	    /*
 	     * Reposition is ok
