@@ -27,4 +27,8 @@ the debug list rather than just being killed.
 This has a fix for sun4c migration at exec time, and for the uninitialized
 event field in the PCB.  It also will clean up processes in the PROC_NEW state
 if the other host dies at the start of migration.  - FD
+
+This contains the final (I hope) format of the recovery information statistics
+so that all kernels from this point onwards should be able to run the
+current recovinfo.
     New files linked in from the net library.
