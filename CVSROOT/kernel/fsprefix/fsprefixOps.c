@@ -411,7 +411,7 @@ retry:
 		    goto getSrcPrefix;
 		}
 	    } else {
-		status = FsLookupRedirect(redirectInfoPtr, dstPrefixPtr
+		status = FsLookupRedirect(redirectInfoPtr, dstPrefixPtr,
 					  &dstName);
 		if (status == FS_LOOKUP_REDIRECT) {
 		    goto getDstPrefix;
