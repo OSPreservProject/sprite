@@ -170,12 +170,12 @@ DevNet_FsOpen(devicePtr, useFlags, data)
     protoPtr->protocol = protocol;
     bzero((Address)&protoPtr->stats,sizeof(ProtoStats));
     /*
-     * Pre-allocate buffer space for the input queue.  This seems excessive,
-     * we could go to a global buffer pool...
+     * Pre-allocate buffer space for the input queue.
+     * Vm_RawAlloc is used because this queue space is never recycled.
      */
 
     for (i=0 ; i< PACKET_QUEUE_LEN ; i++) {
-	protoPtr->queue.packet[i] = (Address) malloc(NET_ETHER_MAX_BYTES);
+	protoPtr->queue.packet[i] = (Address) Vm_RawAlloc(NET_ETHER_MAX_BYTES);
     }
 
 
