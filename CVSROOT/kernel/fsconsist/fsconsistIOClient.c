@@ -36,6 +36,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsStat.h"
 #include "stdlib.h"
 #include "rpc.h"
+#include "sync.h"
 
 /*
  * A master list of clients of this host.  This is maintained here and
