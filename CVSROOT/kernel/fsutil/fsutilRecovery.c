@@ -119,7 +119,7 @@ Fsutil_Reopen(serverID, clientData)
      */
     Fsprefix_Reopen(serverID);
 
-    if (!fastBoot || !recov_Transparent) {
+    if (!fastBoot || recov_ClientIgnoreTransparent) {
 	/*
 	 * Wait for opens in progress, then block opens.
 	 */
