@@ -128,7 +128,7 @@ sun3: ${OBJS} Makefile .PRECIOUS
 	rm -f $@
 	${MKVERSION} -p "SPRITE VERSION 1.0 (sun3)" > version.h
 	cc -c ${CFLAGS} version.c
-	${LD} -X -o $@ -e start -T f004000 ${OBJS} version.o \
+	${LD} -X -o $@ -e start -T e004000 ${OBJS} version.o \
 	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBC}
 	@ls -l $@
 	@size $@
@@ -153,7 +153,7 @@ profile3: ${PROFOBJS} Makefile .PRECIOUS
 	rm -f $@
 	@${MKVERSION} -p "SPRITE VERSION 1.0 (profile3)" > version.h
 	@cc -c ${CFLAGS} version.c
-	${LD} -X -o $@ -e start -T f004000 ${PROFOBJS} version.o \
+	${LD} -X -o $@ -e start -T e004000 ${PROFOBJS} version.o \
 	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBC}
 	@ls -l $@
 	@size $@
