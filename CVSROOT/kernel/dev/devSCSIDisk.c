@@ -322,13 +322,13 @@ DevSCSIDiskError(devPtr, sensePtr)
 	 * FIXME: the relationship between SCSI and SBC is pretty confused.
 	 */
 	case SCSI_EMULEX_DISK: {
-	    register DevEmuluxSense *emuluxSensePtr;
+	    register DevSBCSense *sbcSensePtr;
 	    register DevSCSIExtendedSense *extSensePtr;
 	    extern Boolean devSBCDebug;
 	    DevSBCDevice *sbcDevPtr;
 	    DevSBCController *sbcPtr;
 
-	    emuluxSensePtr = (DevEmuluxSense *)sensePtr;
+	    sbcSensePtr = (DevSBCSense *)sensePtr;
 	    extSensePtr = (DevSCSIExtendedSense *)sensePtr;
 	    sbcDevPtr = (DevSBCDevice *) devPtr;
 	    sbcPtr = sbcDevPtr->sbcPtr;
@@ -347,8 +347,9 @@ DevSCSIDiskError(devPtr, sensePtr)
 		     */
 		    if (devSBCDebug > 2) {
 			Sys_Panic(SYS_WARNING,
-				  "SCSI-%d drive %d, recoverable error\n",
-				  devPtr->scsiPtr->number, devPtr->slaveID);
+				  "SCSI-%d drive %d, recoverable error, code %x\n",
+				  devPtr->scsiPtr->number, devPtr->slaveID,
+				  sbcSensePtr->code2);
 			Sys_Printf("\tInfo bytes 0x%x 0x%x 0x%x 0x%x\n",
 				   extSensePtr->info1 & 0xff,
 				   extSensePtr->info2 & 0xff,
@@ -356,6 +357,7 @@ DevSCSIDiskError(devPtr, sensePtr)
 				   extSensePtr->info4 & 0xff);
 		    }
 		    sbcPtr->stats.numRecoverableErrors++;
+		    status = DEV_RETRY_ERROR;
 		    break;
 		case SCSI_NOT_READY_KEY:
 		    status = DEV_OFFLINE;
@@ -372,10 +374,10 @@ DevSCSIDiskError(devPtr, sensePtr)
 		    break;
 		case SCSI_MEDIA_ERROR:
 		case SCSI_HARDWARE_ERROR:
-		    Sys_Panic(SYS_WARNING,
-				"SCSI-%d drive %d, hard class7 error %d\n",
-				devPtr->scsiPtr->number, devPtr->slaveID,
-				extSensePtr->key);
+		    Sys_Panic((devSBCDebug > 2) ? SYS_FATAL : SYS_WARNING,
+			      "SCSI-%d drive %d, hard class7 error %x code %x\n",
+			      devPtr->scsiPtr->number, devPtr->slaveID,
+			      extSensePtr->key, sbcSensePtr->code2);
 		    Sys_Printf("\tInfo bytes 0x%x 0x%x 0x%x 0x%x\n",
 			extSensePtr->info1 & 0xff,
 			extSensePtr->info2 & 0xff,
