@@ -413,12 +413,16 @@ typedef struct Fs_MigStats {
 					   migration. */
     unsigned int errorsOnDeencap;	/* Any files that couldn't be
 					   deencapsulated due to errors. */
+    unsigned int encapSquared; 		/* Sum of squares for
+					   filesEncapsulated. */
+    unsigned int deencapSquared; 	/* Sum of squares for
+					   filesDeencapsulated. */
 } Fs_MigStats;
 
 /*
  * File system statistics.
  */
-#define FS_STAT_VERSION 1
+#define FS_STAT_VERSION 2
 typedef struct Fs_Stats {
     int			statsVersion;   /* Version number of statistics info */
     Fs_NameOpStats	cltName;	/* Client-side naming operations */
