@@ -75,25 +75,25 @@ extern Boolean proc_RefuseMigrations;
  *  Macros to manipulate process IDs.
  */
 
-#define Proc_ComparePIDs(p1, p2) (p1 == p2)
+#define Proc_ComparePIDs(p1, p2) ((p1) == (p2))
 
-#define Proc_GetPCB(pid) (proc_PCBTable[pid & PROC_INDEX_MASK])
+#define Proc_GetPCB(pid) (proc_PCBTable[(pid) & PROC_INDEX_MASK])
 
 #define Proc_ValidatePID(pid) \
-    (((pid & PROC_INDEX_MASK) < proc_MaxNumProcesses) && \
-     ((pid == proc_PCBTable[pid & PROC_INDEX_MASK]->processID)))
+    ((((pid) & PROC_INDEX_MASK) < proc_MaxNumProcesses) && \
+     (((pid) == proc_PCBTable[(pid) & PROC_INDEX_MASK]->processID)))
 
 #define PROC_GET_VALID_PCB(pid, procPtr) \
-    if ((pid & PROC_INDEX_MASK) >= proc_MaxNumProcesses) { \
+    if (((pid) & PROC_INDEX_MASK) >= proc_MaxNumProcesses) { \
 	procPtr = (Proc_ControlBlock *) NIL; \
     } else { \
-	procPtr = proc_PCBTable[pid & PROC_INDEX_MASK]; \
-	if (pid != procPtr->processID) { \
+	procPtr = proc_PCBTable[(pid) & PROC_INDEX_MASK]; \
+	if ((pid) != (procPtr)->processID) { \
 	    procPtr = (Proc_ControlBlock *) NIL; \
 	} \
     }
 
-#define	Proc_GetHostID(pid) ((pid & PROC_ID_NUM_MASK) >> PROC_ID_NUM_SHIFT)
+#define	Proc_GetHostID(pid) (((pid) & PROC_ID_NUM_MASK) >> PROC_ID_NUM_SHIFT)
 
 /*
  * Macros to determine and set the "actual" currently running process.
@@ -102,7 +102,7 @@ extern Boolean proc_RefuseMigrations;
 #define	Proc_GetActualProc() \
 	proc_RunningProcesses[Mach_GetProcessorNumber()]
 #define Proc_SetActualProc(processPtr) \
-	proc_RunningProcesses[Mach_GetProcessorNumber()] = processPtr
+	proc_RunningProcesses[Mach_GetProcessorNumber()] = (processPtr)
 
 #define Proc_GetCurrentProc() Proc_GetActualProc()
 #define Proc_SetCurrentProc(processPtr)	Proc_SetActualProc(processPtr)
