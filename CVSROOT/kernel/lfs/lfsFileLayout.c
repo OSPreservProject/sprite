@@ -925,6 +925,7 @@ PlaceFileInSegment(lfsPtr, segPtr, cacheInfoPtr, layoutPtr, token,
 
 	LIST_FORALL(&segLayoutDataPtr->blockList, (List_Links *) blockPtr) {
 	    int bytesUsed;
+	    int modTime;
 	   /*
 	    * Make sure there is enough room for both the data blocks in 
 	    * the data region and the block number in the summary region.
@@ -968,6 +969,14 @@ PlaceFileInSegment(lfsPtr, segPtr, cacheInfoPtr, layoutPtr, token,
 	     LfsError(lfsPtr, status, "Can't update file index");
 	   }
 	   segPtr->activeBytes += bytesUsed;
+	   /*
+	    * Update the modtime time of the segment to reflect this block
+	    * if it is under than the rest.
+	    */
+	   modTime = (((Fsio_FileIOHandle *)(cacheInfoPtr->hdrPtr))->descPtr->dataModifyTime);
+	   if (segPtr->timeOfLastWrite < modTime) {
+	       segPtr->timeOfLastWrite = modTime;
+	   }
 	   /*
 	    * Any blocks after the first one must be of FS_BLOCK_SIZE 
 	    * size.
