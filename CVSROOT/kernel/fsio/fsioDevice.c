@@ -1380,3 +1380,47 @@ Fsio_BootTimeTtyOpen()
     Fsutil_HandleUnlock(devHandlePtr);
     return(status);
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsio_DeviceMmap --
+ *
+ *	Do a device-specific mmap operation.
+ *
+ * Results:
+ *	SUCCESS or FAILURE.
+ *
+ * Side effects:
+ *	Kernel memory mapped into user space.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fsio_DeviceMmap(streamPtr, startAddr, length, offset, newAddrPtr)
+    Fs_Stream		*streamPtr;	/* Stream to device. */
+    Address		startAddr;	/* Requested starting virt. addr. */
+    int			length;		/* Length of mapped segment. */
+    int			offset;		/* Offset into mapped file. */
+    Address		*newAddrPtr;
+{
+    Fs_Device		*devicePtr;
+    Fsio_DeviceIOHandle	*ioHandlePtr;
+    ReturnStatus	status;
+
+    if (streamPtr->ioHandlePtr->fileID.type != FSIO_LCL_DEVICE_STREAM) {
+	printf("Fsio_DeviceMmap passed something that wasn't a device.\n");
+	return FAILURE;
+    }
+    ioHandlePtr = (Fsio_DeviceIOHandle *) streamPtr->ioHandlePtr;
+    devicePtr = &(ioHandlePtr->device);
+    if (DEV_TYPE_INDEX(devicePtr->type) >= devNumDevices) {
+	return  FS_DEVICE_OP_INVALID;
+    }
+
+    status = (*devFsOpTable[DEV_TYPE_INDEX(devicePtr->type)].mmap)
+		(devicePtr, startAddr, length, offset, newAddrPtr);
+
+    return status;
+}

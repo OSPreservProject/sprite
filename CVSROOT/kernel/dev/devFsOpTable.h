@@ -35,6 +35,7 @@
  *	DeviceSelect
  *	BlockDeviceAttach
  *	DeviceReopen
+ *	DeviceMMap
  */
 
 typedef struct DevFsTypeOps {
@@ -125,6 +126,16 @@ typedef struct DevFsTypeOps {
      *						(Fs_NotifyWriter/Reader calls)
      */
     ReturnStatus (*reopen)();
+    /*
+     * MMap Device -  called to map device memory into user space.
+     *	(*mmapProc)(devicePtr, startAddr, length, offset, newAddrPtr)
+     *		Fs_Device *devicePtr;		(Identifies device)
+     *		Address startAddr;		(Requested starting virt. addr.)
+     *		int length;			(Length of mapped segment)
+     *		int offset;			(Offset into mapped file)
+     *		Address *newAddrPtr;		(User address really mapped at)
+     */
+    ReturnStatus (*mmap)();
 } DevFsTypeOps;
 
 extern DevFsTypeOps devFsOpTable[];
