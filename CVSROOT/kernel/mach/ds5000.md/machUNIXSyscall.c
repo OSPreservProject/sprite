@@ -82,8 +82,6 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include "fsdm.h"
 #include "fslcl.h"	/* Directory format */
 #include "sys/types.h"
-#include "sys/ipc.h"
-#include "sys/sem.h"
 
 /*
  * System call entry structure.  Note that this is different than the one
