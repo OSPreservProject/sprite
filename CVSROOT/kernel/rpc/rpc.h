@@ -88,12 +88,11 @@ void		Rpc_ErrorReply();
 void		Rpc_FreeMem();
 
 ReturnStatus	Rpc_Echo();
+ReturnStatus	Rpc_Ping();
 ReturnStatus	Rpc_EchoTest();
 ReturnStatus	Rpc_GetTime();
-ReturnStatus	Rpc_GetClientId();
 
 ReturnStatus	Test_RpcStub();
-ReturnStatus	Test_StatsStub();
 
 void		Rpc_Init();
 void		Rpc_Start();
@@ -109,5 +108,7 @@ ReturnStatus	Rpc_DumpTrace();
 void		Rpc_StampTest();
 
 void		Rpc_RebootNotify();
+int		Rpc_WaitForHost();
+Boolean		Rpc_HostIsDown();
 
 #endif _RPC
