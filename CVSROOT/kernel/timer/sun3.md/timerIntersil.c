@@ -58,6 +58,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "timerInt.h"
 #include "timerIntersilInt.h"
 #include "spriteTime.h"
+#include "stdio.h"
 
 
 /* For profiling call */
@@ -110,8 +111,6 @@ static    IntersilCounters	initialCounter = {
 
 static void CountersToTime();
 int Timer_TimerServiceInterrupt();
-static unsigned short Timer_TimerGetStatus();
-static Boolean Timer_TimerExamineStatus();
 
 
 
@@ -317,6 +316,7 @@ Timer_TimerInactivate(timer)
 }
 
 
+#if 0
 /*
  *----------------------------------------------------------------------
  *
@@ -395,7 +395,7 @@ Timer_TimerGetStatus()
 /*ARGSUSED*/
 static Boolean
 Timer_TimerExamineStatus(statusReg, timer, spuriousPtr)
-    unsigned char statusReg;	/* Ignored because it is always 0. */
+    unsigned int statusReg;	/* Ignored because it is always 0. */
     unsigned int timer;		/* Virtual Timer # */
     Boolean *spuriousPtr;	/* Always set FALSE. */
 {
@@ -425,6 +425,7 @@ Timer_TimerExamineStatus(statusReg, timer, spuriousPtr)
 	return(FALSE);
     }
 }
+#endif
 #endif
 
 /*
@@ -505,6 +506,7 @@ Timer_TimerServiceInterrupt(clientData, stack)
     if (callbackTimerToggle) {
 	TIMER_CALLBACK_ROUTINE(interval, time);
     }
+    return 0;
 }
 
 

@@ -270,6 +270,7 @@ Timer_TimerServiceInterrupt(clientData, pc)
 #ifdef lint
     junk = junk;
 #endif
+    return 0;
 }
 
 /*

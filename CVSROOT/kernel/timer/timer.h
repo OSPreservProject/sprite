@@ -251,15 +251,19 @@ extern Sync_Semaphore 	timer_ClockMutex;
 #endif
 
 
-extern void	Timer_ScheduleRoutine();
-extern Boolean  Timer_DescheduleRoutine();
-
-extern void Timer_GetTimeOfDay();
-extern void Timer_GetRealTimeOfDay();
-extern void Timer_GetRealTimeFromTicks();
-extern void Timer_SetTimeOfDay();
-
-extern void Timer_LockRegister();
+extern void Timer_ScheduleRoutine _ARGS_((register 
+			Timer_QueueElement *newElementPtr, Boolean interval));
+extern Boolean Timer_DescheduleRoutine _ARGS_((register 
+			Timer_QueueElement *elementPtr));
+extern void Timer_GetTimeOfDay _ARGS_((Time *timePtr, int *timerLocalOffsetPtr,
+			Boolean *DSTPtr));
+extern void Timer_GetRealTimeOfDay _ARGS_((Time *timePtr, 
+			int *timerLocalOffsetPtr, Boolean *DSTPtr));
+extern void Timer_GetRealTimeFromTicks _ARGS_((Timer_Ticks ticks, 
+			Time *timePtr, int *timerLocalOffsetPtr, 
+			Boolean *DSTPtr));
+extern void Timer_SetTimeOfDay _ARGS_((Time newUniversal, int newLocalOffset, 
+			Boolean newDSTAllowed));
 
 
 /*
@@ -267,21 +271,16 @@ extern void Timer_LockRegister();
  * found in any of the machine dependent implementations.
  */
 
-extern void 	Timer_TimerInit();
-extern void 	Timer_TimerStart();
-extern void	Timer_TimerInactivate();
+extern void Timer_TimerInit _ARGS_((unsigned short timer));
+extern void Timer_TimerStart _ARGS_((register unsigned short timer));
+extern void Timer_TimerInactivate _ARGS_((register unsigned short timer));
 
-/*
- * This routine should only be called by the mach module and then only
- * at interrupt level. 
- */
-extern	void	Timer_TimerServiceInterrupts();
 
 /*
  * Used by the dump routines in the utils module for debugging.
  */
-extern void 	Timer_TimerGetInfo();
-extern void	Timer_DumpQueue();
-extern void	Timer_DumpStats();
+extern void Timer_TimerGetInfo _ARGS_((void));
+extern void Timer_DumpQueue _ARGS_((void));
+extern void Timer_DumpStats _ARGS_((ClientData arg));
 
 #endif /* _TIMER */

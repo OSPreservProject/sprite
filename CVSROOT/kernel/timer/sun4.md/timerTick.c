@@ -42,6 +42,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "spriteTime.h"
 #include "timerIntersilInt.h"
 #include "sys.h"
+#include "bstring.h"
+#include "stdio.h"
 
 
 /*
@@ -88,8 +90,8 @@ static Time maxIntervalTime = {
 /*
  * Forward declaration of routines.
  */
-static void ConvertTimeToInt();
-static void ConvertIntToTime();
+static void ConvertTimeToInt _ARGS_((Time time, unsigned int *resultPtr));
+static void ConvertIntToTime _ARGS_((unsigned int counter, Time *resultPtr));
 
 
 /*

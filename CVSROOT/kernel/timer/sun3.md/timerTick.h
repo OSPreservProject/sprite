@@ -70,7 +70,7 @@ typedef Time Timer_Ticks;
 #define Timer_TimeToTicks(a,b)		*(b) = a;
 
 
-extern void Timer_AddIntervalToTicks();
+extern void Timer_AddIntervalToTicks _ARGS_((Timer_Ticks absolute, unsigned int interval, Timer_Ticks *resultPtr));
 extern void Timer_GetCurrentTicks();
 
 

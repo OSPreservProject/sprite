@@ -59,8 +59,9 @@ extern Time 		timer_MaxIntervalTime;
 #define Timer_TicksToTime(a,b)		*(b) = a;
 #define Timer_TimeToTicks(a,b)		*(b) = a;
 
-extern void Timer_AddIntervalToTicks();
-extern void Timer_GetCurrentTicks();
+extern void Timer_AddIntervalToTicks _ARGS_((Timer_Ticks absolute, 
+		unsigned int interval, Timer_Ticks *resultPtr));
+extern void Timer_GetCurrentTicks _ARGS_((Timer_Ticks *ticksPtr));
 
 
 /*

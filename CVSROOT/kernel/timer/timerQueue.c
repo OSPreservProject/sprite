@@ -37,6 +37,9 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "list.h"
 #include "vm.h"
 #include "dev.h"
+#include "stdio.h"
+#include "bstring.h"
+
 
 /*
  * Procedures internal to this file

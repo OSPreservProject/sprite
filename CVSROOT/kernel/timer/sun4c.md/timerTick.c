@@ -22,6 +22,7 @@ static char rcsid[] = "$Header$ SPRITE (DECWRL)";
 #include "timerTick.h"
 #include "spriteTime.h"
 #include "sys.h"
+#include "bstring.h"
 
 /*
  * Some commonly used values for intervals.

@@ -27,12 +27,15 @@ extern Sync_Semaphore 	timerMutex;
 extern int 		timerUniversalToLocalOffset;
 extern Boolean		timerDSTAllowed;
 
-extern void		Timer_CallBack();
-extern void 		TimerTicksInit();
-extern void 		Timer_CounterInit();
-extern void		TimerClock_Init();
-extern void		TimerSetSoftwareUniversalTime();
-extern void		TimerSetHardwareUniversalTime();
-extern void		TimerHardwareUniversalTimeInit();
+extern void Timer_CallBack _ARGS_((unsigned int interval, Time time));
+extern void TimerTicksInit _ARGS_((void));
+extern void Timer_CounterInit _ARGS_((void));
+extern void TimerClock_Init _ARGS_((void));
+extern void TimerSetSoftwareUniversalTime _ARGS_((Time *newUniversal, 
+		    int newLocalOffset, Boolean newDSTAllowed));
+extern void TimerSetHardwareUniversalTime _ARGS_((Time *timePtr, 
+		    int localOffset, Boolean DST));
+extern void TimerHardwareUniversalTimeInit _ARGS_((Time *timePtr, 
+		    int *localOffsetPtr, Boolean *DSTPtr));
 
 #endif /* _TIMERINT */

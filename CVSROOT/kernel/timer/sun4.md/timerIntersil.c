@@ -57,6 +57,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "timerInt.h"
 #include "timerIntersilInt.h"
 #include "spriteTime.h"
+#include "stdio.h"
 
 
 /* For profiling call */
@@ -104,7 +105,7 @@ static    IntersilCounters	initialCounter = {
  * counters.
  */
 
-static void CountersToTime();
+static void CountersToTime _ARGS_((register IntersilCounters *counterPtr, register Time *timePtr));
 int Timer_TimerServiceInterrupt();
 
 /*
@@ -477,7 +478,7 @@ Timer_TimerServiceInterrupt(dummy, pc)
              * spurious (this is o.k. -- see devTimerSun3.c).
              */
             if (!spurious) {
-                return;
+                return 0;
             }
 
             /* Spurious interrupt!!! */
@@ -489,6 +490,7 @@ Timer_TimerServiceInterrupt(dummy, pc)
 
         }
     }
+    return 0;
 }
 
 
