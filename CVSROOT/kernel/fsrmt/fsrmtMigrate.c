@@ -292,13 +292,15 @@ Fs_DeencapStream(bufPtr, streamPtrPtr)
  *
  */
 ReturnStatus
-FsMigrateUseCounts(flags, usePtr)
+FsMigrateUseCounts(flags, closeSrcClient, usePtr)
     register int	 flags;		/* Flags from the stream */
+    Boolean		closeSrcClient;	/* TRUE if I/O close was done at src */
     register FsUseCounts *usePtr;	/* Use counts from the I/O handle */
 {
-    if ((flags & FS_NEW_STREAM) && (flags & FS_RMT_SHARED)) {
+    if ((flags & FS_NEW_STREAM) && !closeSrcClient) {
 	/*
-	 * The stream is becoming shared across the network.
+	 * The stream is becoming shared across the network because
+	 * it is new at the destination and wasn't closed at the source.
 	 * Increment the use counts on the I/O handle
 	 * to reflect the additional client stream.
 	 */
@@ -309,9 +311,10 @@ FsMigrateUseCounts(flags, usePtr)
 	if (flags & FS_EXECUTE) {
 	    usePtr->exec++;
 	}
-    } else if ((flags & (FS_NEW_STREAM|FS_RMT_SHARED)) == 0) {
+    } else if ((flags & FS_NEW_STREAM) == 0 && closeSrcClient) {
 	/*
-	 * The stream is becoming un-shared.
+	 * The stream is becoming un-shared.  The last reference from the
+	 * source was closed and there is already a reference at the dest.
 	 * Decrement the use counts to reflect the fact that the stream on
 	 * the original client is not referencing the I/O handle.
 	 */
@@ -355,18 +358,21 @@ FsMigrateUseCounts(flags, usePtr)
  */
 
 ENTRY void
-FsIOClientMigrate(clientList, srcClientID, dstClientID, flags)
+FsIOClientMigrate(clientList, srcClientID, dstClientID, flags, closeSrcClient)
     List_Links	*clientList;	/* List of clients for the I/O handle. */
     int		srcClientID;	/* The original client. */
     int		dstClientID;	/* The destination client. */
-    int		flags;		/* FS_RMT_SHARED if stream is now shared.
+    int		flags;		/* FS_RMT_SHARED if a copy of the stream
+				 * still exists on the srcClient.
 				 * FS_NEW_STREAM if stream is new on dst.
 				 * FS_READ | FS_WRITE | FS_EXECUTE */
+    Boolean	closeSrcClient;	/* TRUE if we should close src client.  This
+				 * is set by FsStreamMigClient */
 {
     register Boolean found;
     Boolean cache = FALSE;
 
-    if ((flags & FS_RMT_SHARED) == 0) {
+    if (closeSrcClient) {
 	/*
 	 * The stream is not shared so we nuke the original client's use.
 	 */
@@ -494,7 +500,7 @@ Fs_RpcStartMigration(srvToken, clientID, command, storagePtr)
 
     /*
      * This is getting hacked up.  Should we add a new RPC used only to
-     * call FsStreamMigrate?  Or add FsStreamClientVerify to fsOpTable.c
+     * call FsStreamMigrate (which should really be FsStreamRelease!)
      */
     if (migInfoPtr->ioFileID.type == FS_STREAM) {
 	hdrPtr = (FsHandleHeader *)FsStreamClientVerify(&migInfoPtr->ioFileID,
