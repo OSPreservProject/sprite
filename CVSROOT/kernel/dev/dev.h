@@ -25,7 +25,9 @@
 #else
 #include <kernel/devSyslog.h>
 #endif
-
+#ifndef _SPRITETIME
+#include <spriteTime.h>
+#endif
 
 /*
  * The filesystem and the device module cooperate to translate from
@@ -41,6 +43,8 @@ typedef struct Dev_DiskAddr {
  *	DEV_BYTES_PER_SECTOR the common size for disk sectors.
  */
 #define DEV_BYTES_PER_SECTOR	512
+
+extern Time	dev_LastConsoleInput;
 
 extern void	Dev_Init();
 extern void	Dev_Config();

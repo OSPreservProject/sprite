@@ -42,6 +42,14 @@ Sync_Lock devTtyLock = Sync_LockInitStatic("Dev:devTtyLock");
 #define LOCKPTR (&devTtyLock)
 
 /*
+ * The following variable tells when the last user interaction occurred
+ * on the console.  It doesn't exactly belong here, but there isn't
+ * anyplace where it fits better.
+ */
+
+Time		dev_LastConsoleInput;
+
+/*
  * Forward declarations for procedures defined in this file:
  */
 
@@ -584,6 +592,10 @@ TransferInProc(ttyPtr, callInfoPtr)
 		}
 		ttyPtr->consoleFlags &= ~DEV_TTY_GOT_BREAK;
 	    }
+	}
+	if (ttyPtr->consoleFlags & DEV_TTY_IS_CONSOLE) {
+	    Timer_GetTimeOfDay(&dev_LastConsoleInput, (int *) NIL,
+		    (Boolean *) NIL);
 	}
     }
 
