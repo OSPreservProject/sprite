@@ -18,13 +18,14 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "fs.h"
 #include "fsInt.h"
+#include "fsPdev.h"
 #include "fsOpTable.h"
 #include "fsStream.h"
 #include "fsClient.h"
 #include "fsLock.h"
+#include "fsRecovery.h"
 #include "proc.h"
 #include "rpc.h"
-#include "fsPdev.h"
 
 /*
  *----------------------------------------------------------------------------

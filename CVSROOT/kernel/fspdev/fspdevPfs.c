@@ -50,6 +50,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsPdev.h"
 
 PdevControlIOHandle *PfsControlHandleInit();
+PdevServerIOHandle *PfsGetUserLevelIDs();
 
 /*
  *----------------------------------------------------------------------------
@@ -98,7 +99,6 @@ FsRmtLinkSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 					 * attributes */
 {
     register ReturnStatus status = SUCCESS;
-    register Fs_Stream *streamPtr;
 
     if ((useFlags & FS_PFS_MASTER) == 0) {
 	return(FsFileSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr,
@@ -295,7 +295,8 @@ FsPfsCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
     pdevHandlePtr->ctrlHandlePtr = ctrlHandlePtr;
     /*
      * Distinguish the naming request-response stream from other connections
-     * that may get established later.  This ID gets passed in FsLookupArgs.
+     * that may get established later.  This ID gets passed in FsLookupArgs
+     * as the prefixID if the prefix is the root of the pseudo domain.
      */
     pdevHandlePtr->userLevelID.type = 0;
     pdevHandlePtr->userLevelID.serverID = 0;

@@ -401,7 +401,7 @@ FsServerStreamClose(streamPtr, clientID, procID, flags, size, data)
 	dummy.ioHandlePtr = (FsHandleHeader *)ctrlHandlePtr;
 	FsHandleLock(ctrlHandlePtr);
 	FsPrefixHandleClose(ctrlHandlePtr->prefixPtr);
-	FsControlClose(&dummy, clientID, procID, flags, 0, (ClientData)NIL);
+	(void)FsControlClose(&dummy, clientID, procID, flags, 0, (ClientData)NIL);
     }
     FsHandleRelease(pdevHandlePtr, TRUE);
     FsHandleRemove(pdevHandlePtr);	/* No need for scavenging */
@@ -976,6 +976,7 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	    PdevClientNotify(pdevHandlePtr);
 	    break;
 	}
+#ifdef notdef
 	case IOC_PFS_SET_ID: {
 	    /*
 	     * A pseudo-filesystem server is setting its own notion of the
@@ -991,6 +992,7 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	    }
 	    break;
 	}
+#endif
 	case IOC_PFS_PASS_STREAM:
 	    /*
 	     * A pseudo-filesystem server is replying to an open request by
@@ -1248,8 +1250,10 @@ exit:
  *
  * FsPseudoGetAttr --
  *
- *	Get the attributes of a file in a pseudo-filesystem.  We have the
- *	fileID of the request-response stream to the server.
+ *	Called from Fs_GetAttributesID to get the attributes of a file
+ *	in a pseudo-filesystem.  The stream's nameInfoPtr->fileID is
+ *	set to the fileID of the pseudo-device connection to the server,
+ *	and this ID is passed into us.  This does a PDEV_GET_ATTR request.
  *
  * Results:
  *	The attributes structure is passed back from the pfs server.
@@ -1313,7 +1317,8 @@ exit:
  * FsPseudoSetAttr --
  *
  *	Set the attributes of a file in a pseudo-filesystem.  We have the
- *	fileID of the request-response stream to the server.
+ *	fileID of the request-response stream to the server.  This issues
+ *	a PDEV_SET_ATTR request to the server that contains new attributes.
  *
  * Results:
  *	An error code.
