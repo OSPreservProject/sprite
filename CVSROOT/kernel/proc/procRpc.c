@@ -974,10 +974,23 @@ Proc_RpcRemoteWait(srvToken, clientID, command, storagePtr)
     cmdPtr = (ProcRemoteWaitCmd *) storagePtr->requestParamPtr;
     procPtr = Proc_LockPID(cmdPtr->pid);
     if (procPtr == (Proc_ControlBlock *) NIL) {
+	if (proc_MigDebugLevel > 1) {
+	    printf("Proc_RpcRemoteWait: no such process %x\n", cmdPtr->pid);
+	}
 	return (PROC_NO_PEER);
     } else if (procPtr->state != PROC_MIGRATED ||
 	    procPtr->peerHostID != clientID) {
 	Proc_Unlock(procPtr);
+	if (proc_MigDebugLevel > 1) {
+	    if (procPtr->state != PROC_MIGRATED) {
+		printf("Proc_RpcRemoteWait: process %x not migrated (%d)\n",
+		       procPtr->processID, procPtr->state);
+	    } else {
+		printf("%s: process %x has peer host %d, expected %d.\n",
+		       "Proc_RpcRemoteWait", procPtr->processID,
+		       procPtr->peerHostID, clientID);
+	    }
+	}
 	return (PROC_NO_PEER);
     }
     pidArray = (Proc_PID *) storagePtr->requestDataPtr;
@@ -1073,6 +1086,10 @@ Proc_RpcMigCommand(srvToken, hostID, command, storagePtr)
 	if (procPtr == (Proc_ControlBlock *) NIL) {
 	    if (proc_MigDebugLevel > 3) {
 		panic("Proc_RpcMigCommand: Invalid pid: %x.\n", commandPtr->remotePid);
+	    }
+	    if (proc_MigDebugLevel > 1) {
+		printf("Proc_RpcMigCommand: Invalid pid: %x.\n",
+		       commandPtr->remotePid);
 	    }
 	    status = PROC_NO_PEER;
 	    goto done;

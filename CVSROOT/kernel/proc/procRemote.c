@@ -709,6 +709,10 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
      * then blow it away.
      */
     if (remoteCallStatus == PROC_NO_PEER) {
+	if (proc_MigDebugLevel > 1) {
+	    printf("Proc_DoRemoteCall: peer process %x is gone, killing %x.\n",
+		   procPtr->peerProcessID, procPtr->processID);
+	}
 	status = PROC_NO_PEER;
 	(void) Sig_Send(SIG_KILL, (int) PROC_NO_PEER, procPtr->processID,
 			FALSE, (Address)0); 

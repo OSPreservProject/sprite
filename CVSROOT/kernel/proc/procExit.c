@@ -1304,8 +1304,9 @@ ProcRemoteWait(procPtr, flags, numPids, pidArray, childInfoPtr)
 	(void) Sig_Send(SIG_KILL, (int) PROC_NO_PEER, procPtr->processID,
 			FALSE, (Address)0); 
 	if (proc_MigDebugLevel > 1) {
-	    printf("ProcRemoteWait killing process %x: home node's copy died.\n",
-		   procPtr->processID);
+	    printf("%s killing process %x: home node's copy (pid %x) died.\n",
+		   "ProcRemoteWait", procPtr->processID,
+		   procPtr->peerProcessID);
 	}
     } else if (proc_MigDebugLevel > 3) {
 	printf("ProcRemoteWait returning status %x.\n", status);

@@ -1602,6 +1602,10 @@ SuspendCallback(data, callInfoPtr)
     }
     procPtr = Proc_LockPID(callPtr->processID);
     if (procPtr == (Proc_ControlBlock *) NIL) {
+	if (proc_MigDebugLevel > 1) {
+	    printf("SuspendCallback: no such process (%x).\n",
+		   callPtr->processID);
+	}
 	status = PROC_NO_PEER;
 	goto done;
     }
