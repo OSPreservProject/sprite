@@ -1196,3 +1196,126 @@ ProcRemoteExit(procPtr, reason, exitStatus, code)
     }
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcRemoteExec --
+ *
+ *	Tell the home node of a process that it has done an exec, and to
+ * 	change any information it might have about effective IDs.  
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	A remote procedure call is performed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+ProcRemoteExec(procPtr, uid)
+    register Proc_ControlBlock 	*procPtr;  /* process that is doing exec */
+    int uid;				   /* new effective user ID, or -1 */
+{
+    Address buffer;
+    Address ptr;
+    int bufferSize;
+    Rpc_Storage storage;
+    Proc_RemoteCall call;
+    ReturnStatus status;
+    Proc_TraceRecord record;		/* used to store trace data */
+    int numTries;			/* number of times trying RPC */
+
+    if (proc_MigDebugLevel > 4) {
+	printf("ProcRemoteExec(%s) called.\n", procPtr->argString);
+    }
+
+    status = Recov_IsHostDown(procPtr->peerHostID);
+    if (status != SUCCESS) {
+	if (proc_MigDebugLevel > 0) {
+	    printf("ProcRemoteExec: host %d is down; killing process %x.\n",
+		       procPtr->peerHostID, procPtr->processID);
+	}
+	Proc_Unlock(procPtr);
+	Proc_ExitInt(PROC_TERM_DESTROYED, (int) PROC_NO_PEER, 0);
+	/*
+	 * This point should not be reached, but the N-O-T-R-E-A-C-H-E-D
+	 * directive causes a complaint when there's code after it.
+	 */
+	panic("ProcRemoteExec: Proc_ExitInt returned.\n");
+	return;
+    }
+
+
+    if (proc_DoTrace && proc_DoCallTrace) {
+	record.processID = procPtr->processID;
+	record.flags = PROC_MIGTRACE_START;
+	record.info.call.callNumber = SYS_PROC_EXEC;
+	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_CALL,
+		     (ClientData) &record);
+    }
+
+
+    bufferSize = sizeof(int) + strlen(procPtr->argString) + 1;
+    buffer = (Address) malloc(bufferSize);
+
+    ptr = buffer;
+    Byte_FillBuffer(ptr, int,  uid);
+    strcpy(ptr,  procPtr->argString);
+
+
+    /*
+     * Set up for the RPC.
+     */
+    call.processID = procPtr->peerProcessID;
+    call.callNumber = SYS_PROC_EXEC;
+    call.parseArgs = FALSE;
+    storage.requestParamPtr = (Address) &call;
+    storage.requestParamSize = sizeof(Proc_RemoteCall);
+
+    storage.requestDataPtr = buffer;
+    storage.requestDataSize = bufferSize;
+
+    storage.replyParamPtr = (Address) NIL;
+    storage.replyParamSize = 0;
+    storage.replyDataPtr = (Address) NIL;
+    storage.replyDataSize = 0;
+
+
+    /*
+     * Unlock the process while we're doing the RPC.
+     */
+    Proc_Unlock(procPtr);
+    
+    for (numTries = 0; numTries < PROC_MAX_RPC_RETRIES; numTries++) {
+	status = Rpc_Call(procPtr->peerHostID, RPC_PROC_REMOTE_CALL, &storage);
+	if (status != RPC_TIMEOUT) {
+	    break;
+	}
+	status = Proc_WaitForHost(procPtr->peerHostID);
+	if (status != SUCCESS) {
+	    break;
+	}
+    }
+
+    /*
+     * Give the process back the way it was handed to us (locked).
+     */
+    Proc_Lock(procPtr);
+
+    if (proc_DoTrace && proc_DoCallTrace) {
+	record.flags &= ~PROC_MIGTRACE_START;
+	record.info.call.status = status;
+	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_CALL,
+		     (ClientData) &record);
+    }
+
+    free(buffer);
+
+    if ((status != SUCCESS) && (proc_MigDebugLevel > 0)) {
+	printf("Warning: ProcRemoteExec received status %x.\n", status);
+    }
+}
+

@@ -738,6 +738,9 @@ DoExec(fileName, fileNameLength, argPtrArray, numArgs, envPtrArray, numEnvs,
 	 */
 	Sig_SendProc(procPtr, SIG_DEBUG, SIG_NO_CODE);
     }
+    if (procPtr->genFlags & PROC_FOREIGN) {
+	ProcRemoteExec(procPtr, uid);
+    }
     Proc_Unlock(procPtr);
 
     /*
