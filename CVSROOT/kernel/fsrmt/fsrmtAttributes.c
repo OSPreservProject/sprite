@@ -378,9 +378,10 @@ FsLocalSetAttr(fileIDPtr, attrPtr, idPtr, flags)
 
     handlePtr = FsHandleFetchType(FsLocalFileIOHandle, fileIDPtr);
     if (handlePtr == (FsLocalFileIOHandle *)NIL) {
-	Sys_Panic(SYS_WARNING, "FsLocalSetAttr, no handle <%d,%d,%d,%d>\n",
-		    fileIDPtr->type, fileIDPtr->serverID,
-		    fileIDPtr->major, fileIDPtr->minor);
+	Sys_Panic(SYS_WARNING,
+		"FsLocalSetAttr, no handle for %s <%d,%d> from server %d\n",
+		FsFileTypeToString(fileIDPtr->type),
+		fileIDPtr->major, fileIDPtr->minor, fileIDPtr->serverID);
 	return(FS_FILE_NOT_FOUND);
     }
     descPtr = handlePtr->descPtr;
