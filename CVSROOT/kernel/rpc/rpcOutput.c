@@ -332,7 +332,7 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 		     */
 		    RPC_TRACE(fragRpcHdrPtr, RPC_OUTPUT, "Fragout");
 		    if (mutexPtr != (int *)NIL) {
-			if (mach_AtInterruptLevel) {
+			if (Mach_AtInterruptLevel()) {
 			    Sys_Panic(SYS_FATAL,
 			      "RpcOutput, unlocking mutex at interrupt level");
 			} else {
