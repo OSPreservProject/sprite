@@ -23,6 +23,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "mem.h"
 #include "byte.h"
 #include "sys.h"
+#include "sync.h"
+
+/* 
+ * Trace module mutex.
+ */
+
+int trace_Mutex = 0;
 
 
 /*
@@ -105,8 +112,10 @@ Trace_Insert(traceHdrPtr, event, data)
     int size;
     Timer_Ticks ticks;
     
+    MASTER_LOCK(trace_Mutex);
     if (traceHdrPtr == (Trace_Header *)NIL ||
 	(traceHdrPtr->flags & TRACE_INHIBIT)) {
+	MASTER_UNLOCK(trace_Mutex);
 	return;
     }
 
@@ -117,17 +126,18 @@ Trace_Insert(traceHdrPtr, event, data)
     }
     size = traceHdrPtr->dataSize;
     if ((size > 0) && (data != (ClientData) NIL)) {
-	Byte_Copy(size, (Address) data, (Address) recordPtr->traceData);
+	bcopy((Address) data, (Address) recordPtr->traceData,size);
 	recordPtr->flags = TRACE_DATA_VALID;
     } else {
 	if (recordPtr->traceData != (ClientData *) NIL) {
-	    Byte_Zero(size, (Address) recordPtr->traceData);
+	    bzero((Address) recordPtr->traceData,size);
 	}
 	recordPtr->flags = TRACE_DATA_INVALID;
     }
     recordPtr->event = event;
     traceHdrPtr->currentRecord =
 	    (traceHdrPtr->currentRecord + 1) % traceHdrPtr->numRecords;
+    MASTER_UNLOCK(trace_Mutex);
 }
 
 
@@ -166,13 +176,15 @@ Trace_Dump(traceHdrPtr, numRecs, addr)
     int current;
 
     if (traceHdrPtr == (Trace_Header *) NIL) {
-	Sys_Panic(SYS_WARNING, "Trace_Dump: trace buffer not initialized.\n");
+	printf("Trace_Dump: trace buffer not initialized.\n");
 	numRecs = 0;
 	status = Vm_CopyOut(sizeof(int), (Address) &numRecs, addr);
 	return(status);
     }
 
+    MASTER_LOCK(trace_Mutex);
     traceHdrPtr->flags |= TRACE_INHIBIT;
+    MASTER_UNLOCK(trace_Mutex);
 
     if (numRecs > traceHdrPtr->numRecords) {
 	numRecs = traceHdrPtr->numRecords;
@@ -276,7 +288,7 @@ done:
  *	None
  *
  * Side effects:
- *	Sys_Printf's to the screen.
+ *	prints to the screen.
  *
  *----------------------------------------------------------------------
  */
@@ -296,7 +308,9 @@ Trace_Print(traceHdrPtr, numRecs, printProc)
     Time baseTime;		/* Used to calculate deltaTime */
     Trace_Record *recordPtr;
 
+    MASTER_LOCK(trace_Mutex);
     traceHdrPtr->flags |= TRACE_INHIBIT;
+    MASTER_UNLOCK(trace_Mutex);
 
     baseTime.seconds = 0;
     baseTime.microseconds = 0;
@@ -320,15 +334,15 @@ Trace_Print(traceHdrPtr, numRecs, printProc)
 	if ( ! (traceHdrPtr->flags & TRACE_NO_TIMES)) {
 	    Time_Subtract(recordPtr->time, baseTime, &deltaTime);
 	    if (baseTime.seconds + baseTime.microseconds > 0) {
-		Sys_Printf("%2d.%04d ", deltaTime.seconds,
+		printf("%2d.%04d ", deltaTime.seconds,
 				    deltaTime.microseconds / 100);
 	    } else {
-		Sys_Printf("           ");
+		printf("           ");
 	    }
 	    baseTime = recordPtr->time;
 	}
 	(*printProc)(recordPtr->traceData, recordPtr->event, FALSE);
-	Sys_Printf("\n");
+	printf("\n");
     }
     (*printProc)((ClientData *)NIL, TRUE);
 

@@ -5,6 +5,9 @@
  * 	table.  Hash tables grow automatically as the amount of
  * 	information increases.
  *
+ *	None of the routines in this module do any sort of mutual exclusion
+ *	of accesses to the hash tables.
+ *
  * Copyright (C) 1983 Regents of the University of California
  * All rights reserved.
  */
@@ -182,7 +185,7 @@ ChainSearch(table, key, hashList)
     LIST_FORALL(hashList, (List_Links *) hashEntryPtr) {
 	switch (numKeys) {
 	    case 0:
-		if (String_Compare(hashEntryPtr->key.name, key) == 0) {
+		if (strcmp(hashEntryPtr->key.name, key) == 0) {
 		    return(hashEntryPtr);
 		}
 		break;
@@ -199,9 +202,9 @@ ChainSearch(table, key, hashList)
 		}
 		break;
 	    default:
-		if (Byte_Compare(numKeys * sizeof(int), 
-			    (Address) hashEntryPtr->key.words,
-			    (Address) key)) {
+		if (bcmp((Address) hashEntryPtr->key.words,
+			 (Address) key,
+			 numKeys * sizeof(int)) == 0) {
 		    return(hashEntryPtr);
 		}
 		break;
@@ -479,12 +482,12 @@ Hash_Stats(table)
 	}
     }
 
-    Sys_Printf("Entries in table %d number of buckets %d\n", 
+    printf("Entries in table %d number of buckets %d\n", 
 		table->numEntries, table->size);
     for (i = 0;  i < 10; i++) {
-	Sys_Printf("Number of buckets with %d entries: %d.\n", i, count[i]);
+	printf("Number of buckets with %d entries: %d.\n", i, count[i]);
     }
-    Sys_Printf("Number of buckets with > 9 entries: %d.\n", overflow);
+    printf("Number of buckets with > 9 entries: %d.\n", overflow);
 }
 
 
