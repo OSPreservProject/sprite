@@ -172,6 +172,8 @@ RequestResponse(pdevHandlePtr, hdrSize, requestHdrPtr, inputSize, inputBuf,
     if ((pdevHandlePtr == (PdevServerIOHandle *)NIL) ||
 	(pdevHandlePtr->flags & PDEV_SERVER_GONE)) {
 	return(DEV_OFFLINE);
+    } else if ((pdevHandlePtr->flags & PDEV_SETUP) == 0) {
+	Sys_Panic(SYS_FATAL, "RequestResponse: connection not set up\n");
     }
     /*
      * See if we have to switch to a new request buffer.  This is needed
@@ -364,128 +366,87 @@ failure:
 /*
  *----------------------------------------------------------------------
  *
- * FsServerStreamClose --
+ * FsServerStreamCreate --
  *
- *	Clean up the state associated with a server stream.  This makes
- *	sure the client processes associated with the pseudo stream get
- *	poked, and it marks the pseudo stream's state as invalid so
- *	the clients will abort their current operations, if any.  The
- *	handle is 'removed' here, but it won't go away until the client
- *	side closes down and releases its reference to it.
+ *	Set up the stream state for a server's private channel to a client.
+ *	This creates a PdevServerIOHandle that has all the state for the
+ *	connection to the client.
  *
  * Results:
- *	SUCCESS.
+ *	A pointer to the I/O handle created.  The handle is locked.
+ *	NIL is returned if a handle under the fileID already existed.
  *
  * Side effects:
- *	Marks the pseudo stream state with PDEV_SERVER_GONE, notifies
- *	all conditions in pseudo stream state, wakes up all processes
- *	in any of the pseudo stream's wait lists, and then removes
- *	the handle from the hash table.
+ *	The I/O handle for this connection between a client and the server
+ *	is installed and initialized.
  *
  *----------------------------------------------------------------------
  */
-/*ARGSUSED*/
-FsServerStreamClose(streamPtr, clientID, procID, flags, size, data)
-    Fs_Stream		*streamPtr;	/* Service stream to close */
-    int			clientID;	/* HostID of client closing */
-    Proc_PID		procID;		/* ID of closing process */
-    int			flags;		/* Flags from the stream being closed */
-    int			size;		/* Should be zero */
-    ClientData		data;		/* IGNORED */
+
+PdevServerIOHandle *
+FsServerStreamCreate(ioFileIDPtr, name)
+    Fs_FileID	*ioFileIDPtr;	/* File ID used for pseudo stream handle */
+    char	*name;		/* File name for error messages */
 {
-    register PdevServerIOHandle *pdevHandlePtr =
-	    (PdevServerIOHandle *)streamPtr->ioHandlePtr;
+    FsHandleHeader *hdrPtr;
+    register PdevServerIOHandle *pdevHandlePtr;
+    Boolean found;
 
-    DBG_PRINT( ("Server Closing pdev %x,%x\n", 
-		pdevHandlePtr->hdr.fileID.major,
-		pdevHandlePtr->hdr.fileID.minor) );
-
-    PdevClientWakeup(pdevHandlePtr);
-    if (pdevHandlePtr->ctrlHandlePtr != (PdevControlIOHandle *)NIL) {
-	/*
-	 * This is the naming requeust-response stream of a pseudo-filesystem.
-	 */
-	register PdevControlIOHandle *ctrlHandlePtr;
-	Fs_Stream dummy;
-
-	ctrlHandlePtr = pdevHandlePtr->ctrlHandlePtr;
-	dummy.hdr.fileID.type = -1;
-	dummy.ioHandlePtr = (FsHandleHeader *)ctrlHandlePtr;
-	FsHandleLock(ctrlHandlePtr);
-	FsPrefixHandleClose(ctrlHandlePtr->prefixPtr);
-	(void)FsControlClose(&dummy, clientID, procID, flags, 0, (ClientData)NIL);
+    ioFileIDPtr->type = FS_SERVER_STREAM;
+    found = FsHandleInstall(ioFileIDPtr, sizeof(PdevServerIOHandle), name,
+			    &hdrPtr);
+    pdevHandlePtr = (PdevServerIOHandle *)hdrPtr;
+    if (found) {
+	Sys_Panic(SYS_WARNING, "ServerStreamCreate, found handle <%x,%x,%x>\n",
+		  hdrPtr->fileID.serverID, hdrPtr->fileID.major,
+		  hdrPtr->fileID.minor);
+	FsHandleRelease(pdevHandlePtr, TRUE);
+	return((PdevServerIOHandle *)NIL);
     }
-    FsHandleRelease(pdevHandlePtr, TRUE);
-    FsHandleRemove(pdevHandlePtr);	/* No need for scavenging */
-    return(SUCCESS);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * PdevClientWakeup --
- *
- *	Called when the server's stream is closed.  This
- *	notifies the various conditions that the client might be
- *	waiting on and marks the pdev state as invalid so the
- *	client will bail out when it wakes up.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Notifies condition variables and marks the pseudo stream as invalid.
- *
- *----------------------------------------------------------------------
- */
 
-ENTRY static void
-PdevClientWakeup(pdevHandlePtr)
-    PdevServerIOHandle *pdevHandlePtr;	/* State for the pseudo stream */
-{
-    LOCK_MONITOR;
-    pdevHandlePtr->flags |= (PDEV_SERVER_GONE|PDEV_REPLY_FAILED);
-    Sync_Broadcast(&pdevHandlePtr->setup);
-    Sync_Broadcast(&pdevHandlePtr->access);
-    Sync_Broadcast(&pdevHandlePtr->caughtUp);
-    Sync_Broadcast(&pdevHandlePtr->replyReady);
-    FsFastWaitListNotify(&pdevHandlePtr->cltReadWaitList);
-    FsFastWaitListNotify(&pdevHandlePtr->cltWriteWaitList);
-    FsFastWaitListNotify(&pdevHandlePtr->cltExceptWaitList);
-    UNLOCK_MONITOR;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * FsPdevServerOK --
- *
- *	Called from FsPfsExport to see if the server of a prefix still exists.
- *
- * Results:
- *	TRUE if the server process is still around.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
+    DBG_PRINT( ("ServerStreamOpen <%d,%x,%x>\n",
+	    ioFileIDPtr->serverID, ioFileIDPtr->major, ioFileIDPtr->minor) );
 
-ENTRY Boolean
-FsPdevServerOK(pdevHandlePtr)
-    PdevServerIOHandle *pdevHandlePtr;	/* State for the pseudo stream */
-{
-    register Boolean answer;
-    LOCK_MONITOR;
-    if (pdevHandlePtr->flags & PDEV_SERVER_GONE) {
-	answer = FALSE;
-    } else {
-	answer = TRUE;
-    }
-    UNLOCK_MONITOR;
-    return(answer);
-}
+    /*
+     * Initialize the state for the pseudo stream.  Remember that
+     * the request and read ahead buffers for the pseudo-stream are set up
+     * via IOControls by the server process later.  In the meantime we
+     * pretend the connection is busy to lock out requests.
+     */
 
+    pdevHandlePtr->flags = PDEV_BUSY;
+    pdevHandlePtr->selectBits = 0;
+
+    pdevHandlePtr->requestBuf.data = (Address)NIL;
+    pdevHandlePtr->requestBuf.firstByte = -1;
+    pdevHandlePtr->requestBuf.lastByte = -1;
+    pdevHandlePtr->requestBuf.size = 0;
+
+    pdevHandlePtr->readBuf.data = (Address)NIL;
+    pdevHandlePtr->readBuf.firstByte = -1;
+    pdevHandlePtr->readBuf.lastByte = -1;
+    pdevHandlePtr->readBuf.size = 0;
+
+    pdevHandlePtr->nextRequestBuffer = (Address)NIL;
+
+    pdevHandlePtr->operation = PDEV_INVALID;
+    pdevHandlePtr->replyBuf = (Address)NIL;
+    pdevHandlePtr->serverPID = (Proc_PID)NIL;
+    pdevHandlePtr->clientPID = (Proc_PID)NIL;
+    pdevHandlePtr->clientWait.pid = NIL;
+    pdevHandlePtr->clientWait.hostID = NIL;
+    pdevHandlePtr->clientWait.waitToken = NIL;
+
+    List_Init(&pdevHandlePtr->srvReadWaitList);
+    List_Init(&pdevHandlePtr->cltReadWaitList);
+    List_Init(&pdevHandlePtr->cltWriteWaitList);
+    List_Init(&pdevHandlePtr->cltExceptWaitList);
+
+    pdevHandlePtr->ctrlHandlePtr = (PdevControlIOHandle *)NIL;
+    pdevHandlePtr->userLevelID = *ioFileIDPtr;
+
+    return(pdevHandlePtr);
+}
 
 /*
  *----------------------------------------------------------------------
@@ -702,13 +663,18 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 		status = GEN_INVALID_ARG;
 	    } else if ((pdevHandlePtr->flags & PDEV_SETUP) == 0) {
 		/*
-		 * Normal case, first time initialization.
+		 * Normal case, first time initialization.  The state has
+		 * been marked BUSY to simplify waiting in the routines
+		 * that call RequestResponse, so we clear that state bit.
+		 * We also mark it explicitly as SETUP so we can bail out
+		 * later if the server never sets up the request buffer.
 		 */
 		pdevHandlePtr->requestBuf.data = argPtr->requestBufAddr;
 		pdevHandlePtr->requestBuf.size = argPtr->requestBufSize;
 		pdevHandlePtr->requestBuf.firstByte = -1;
 		pdevHandlePtr->requestBuf.lastByte = -1;
 
+		pdevHandlePtr->flags &= ~PDEV_BUSY;
 		pdevHandlePtr->flags |= PDEV_SETUP|PDEV_READ_BUF_EMPTY|
 						 PDEV_SERVER_KNOWS_IT;
 		if (argPtr->readBufAddr == (Address)NIL ||
@@ -724,7 +690,7 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 		procPtr = Proc_GetEffectiveProc();
 		pdevHandlePtr->serverPID = procPtr->processID;
 
-		Sync_Broadcast(&pdevHandlePtr->setup);
+		Sync_Broadcast(&pdevHandlePtr->access);
 	    } else {
 		/*
 		 * The server is changing request buffers.  We just remember
@@ -1092,9 +1058,134 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * FsServerStreamClose --
+ *
+ *	Clean up the state associated with a server stream.  This makes
+ *	sure the client processes associated with the pseudo stream get
+ *	poked, and it marks the pseudo stream's state as invalid so
+ *	the clients will abort their current operations, if any.  The
+ *	handle is 'removed' here, but it won't go away until the client
+ *	side closes down and releases its reference to it.
+ *
+ * Results:
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	Marks the pseudo stream state with PDEV_SERVER_GONE, notifies
+ *	all conditions in pseudo stream state, wakes up all processes
+ *	in any of the pseudo stream's wait lists, and then removes
+ *	the handle from the hash table.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+FsServerStreamClose(streamPtr, clientID, procID, flags, size, data)
+    Fs_Stream		*streamPtr;	/* Service stream to close */
+    int			clientID;	/* HostID of client closing */
+    Proc_PID		procID;		/* ID of closing process */
+    int			flags;		/* Flags from the stream being closed */
+    int			size;		/* Should be zero */
+    ClientData		data;		/* IGNORED */
+{
+    register PdevServerIOHandle *pdevHandlePtr =
+	    (PdevServerIOHandle *)streamPtr->ioHandlePtr;
+
+    DBG_PRINT( ("Server Closing pdev %x,%x\n", 
+		pdevHandlePtr->hdr.fileID.major,
+		pdevHandlePtr->hdr.fileID.minor) );
+
+    PdevClientWakeup(pdevHandlePtr);
+    if (pdevHandlePtr->ctrlHandlePtr != (PdevControlIOHandle *)NIL) {
+	/*
+	 * This is the naming requeust-response stream of a pseudo-filesystem.
+	 */
+	register PdevControlIOHandle *ctrlHandlePtr;
+	Fs_Stream dummy;
+
+	ctrlHandlePtr = pdevHandlePtr->ctrlHandlePtr;
+	dummy.hdr.fileID.type = -1;
+	dummy.ioHandlePtr = (FsHandleHeader *)ctrlHandlePtr;
+	FsHandleLock(ctrlHandlePtr);
+	FsPrefixHandleClose(ctrlHandlePtr->prefixPtr);
+	(void)FsControlClose(&dummy, clientID, procID, flags, 0, (ClientData)NIL);
+    }
+    FsHandleRelease(pdevHandlePtr, TRUE);
+    FsHandleRemove(pdevHandlePtr);	/* No need for scavenging */
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PdevClientWakeup --
+ *
+ *	Called when the server's stream is closed.  This
+ *	notifies the various conditions that the client might be
+ *	waiting on and marks the pdev state as invalid so the
+ *	client will bail out when it wakes up.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Notifies condition variables and marks the pseudo stream as invalid.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY static void
+PdevClientWakeup(pdevHandlePtr)
+    PdevServerIOHandle *pdevHandlePtr;	/* State for the pseudo stream */
+{
+    LOCK_MONITOR;
+    pdevHandlePtr->flags |= (PDEV_SERVER_GONE|PDEV_REPLY_FAILED);
+    Sync_Broadcast(&pdevHandlePtr->access);
+    Sync_Broadcast(&pdevHandlePtr->caughtUp);
+    Sync_Broadcast(&pdevHandlePtr->replyReady);
+    FsFastWaitListNotify(&pdevHandlePtr->cltReadWaitList);
+    FsFastWaitListNotify(&pdevHandlePtr->cltWriteWaitList);
+    FsFastWaitListNotify(&pdevHandlePtr->cltExceptWaitList);
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsPdevServerOK --
+ *
+ *	Called from FsPfsExport to see if the server of a prefix still exists.
+ *
+ * Results:
+ *	TRUE if the server process is still around.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY Boolean
+FsPdevServerOK(pdevHandlePtr)
+    PdevServerIOHandle *pdevHandlePtr;	/* State for the pseudo stream */
+{
+    register Boolean answer;
+    LOCK_MONITOR;
+    if (pdevHandlePtr->flags & PDEV_SERVER_GONE) {
+	answer = FALSE;
+    } else {
+	answer = TRUE;
+    }
+    UNLOCK_MONITOR;
+    return(answer);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * FsPseudoStreamOpen --
  *
- *	Do the first request-response with the server to see if it
+ *	Do the first request-response with a pseudo-device server to see if it
  *	will accept the open by the client.   This is used to tell
  *	the server something about the new stream it is getting,
  *	and to let it decide if it will accept the open.
@@ -1122,20 +1213,21 @@ FsPseudoStreamOpen(pdevHandlePtr, flags, clientID, procID, userID)
     LOCK_MONITOR;
 
     /*
-     * We have to wait for the server to establish buffer space for
-     * the new stream before we can try to use it.
+     * Wait for the server to set up the request buffer.  The state starts
+     * out PDEV_BUSY to eliminate an explicit check for PDEV_SETUP in all
+     * the routines that call RequestResponse.  PDEV_BUSY is cleared after
+     * the server initializes the request buffer with IOC_PDEV_SETUP.
      */
-    pdevHandlePtr->flags |= PDEV_BUSY;
-    while ((pdevHandlePtr->flags & PDEV_SETUP) == 0) {
+    while (pdevHandlePtr->flags & PDEV_BUSY) {
+	if ((pdevHandlePtr->flags & PDEV_SERVER_GONE) == 0) {
+	    (void)Sync_Wait(&pdevHandlePtr->access, FALSE);
+	}
 	if (pdevHandlePtr->flags & PDEV_SERVER_GONE) {
-	    /*
-	     * Server bailed out before we made contact.
-	     */
 	    status = DEV_OFFLINE;
 	    goto exit;
 	}
-	(void) Sync_Wait(&pdevHandlePtr->setup, FALSE);
     }
+    pdevHandlePtr->flags |= PDEV_BUSY;
 
     /*
      * Issue the first request to the server to see if it will accept us.
@@ -1163,19 +1255,21 @@ exit:
  *
  * FsPseudoStreamLookup --
  *
- *	Do a lookup request-response to a pseudo-filesystem server.  This
- *	takes care of synchronization over the pseudo-stream connection.
- *	Otherwise this is a stub that passes its bundled arguments to the
- *	server and returns the results.
+ *	Do a lookup request-response to a pseudo-filesystem server over
+ *	the naming request-response stream that is hooked to the prefix table.
+ *	If a pathname redirection occurs this allocates a buffer for the
+ *	returned pathname.  Otherwise this is a stub that passes its arguments
+ *	up to the user level pseudo-filesystem server via request-response.
  *
  * Results:
- *	A status, plus a I/O fileID and related info used when a file is
- *	opened in the pseudo-filesystem.  Other operations, like remove or
- *	make-directory, return only a status.
+ *	A status and some bundled results that aren't interpreted by us.
+ *	If status is FS_REDIRECT then *newNameInfoPtrPtr has been allocated
+ *	and contains the returned pathname.
  *
  * Side effects:
  *	The effect of the naming operation in the pseudo-filesystem is
- *	up to the pseudo-filesystem server.
+ *	up to the pseudo-filesystem server.  Upon FS_REDIRECT this
+ *	allocates the *newNameInfoPtrPtr buffer.
  *
  *----------------------------------------------------------------------
  */
@@ -1197,26 +1291,10 @@ FsPseudoStreamLookup(pdevHandlePtr, requestPtr, argSize, argsPtr,
 
     LOCK_MONITOR;
 
-    while ((pdevHandlePtr->flags & PDEV_SETUP) == 0) {
-	/*
-	 * Wait for the server to set up its request buffer.
-	 */
-	if (pdevHandlePtr->flags & PDEV_SERVER_GONE) {
-	    status = FS_STALE_HANDLE;
-	    goto exit;
-	}
-	Sys_Panic(SYS_WARNING,
-	    "Pseudo-domain lookup waiting for server to set up\n");
-	if (Sync_Wait(&pdevHandlePtr->setup, TRUE)) {
-	    UNLOCK_MONITOR;
-	    return(GEN_ABORTED_BY_SIGNAL);
-	}
-    }
     while (pdevHandlePtr->flags & PDEV_BUSY) {
-	/*
-	 * Wait for exclusive access to the naming stream.
-	 */
-	(void)Sync_Wait(&pdevHandlePtr->access, FALSE);
+	if ((pdevHandlePtr->flags & PDEV_SERVER_GONE) == 0) {
+	    (void)Sync_Wait(&pdevHandlePtr->access, FALSE);
+	}
 	if (pdevHandlePtr->flags & PDEV_SERVER_GONE) {
 	    status = FS_STALE_HANDLE;
 	    goto exit;
@@ -1287,21 +1365,19 @@ FsPseudoGetAttr(fileIDPtr, clientID, attrPtr)
 
     cltHandlePtr = FsHandleFetchType(PdevClientIOHandle, fileIDPtr);
     if (cltHandlePtr == (PdevClientIOHandle *)NIL) {
-	Sys_Panic(SYS_WARNING, "FsPseudoGetAttr, no handle <%d,%d,%x,%x>\n",
-	    fileIDPtr->serverID, fileIDPtr->type,
+	Sys_Panic(SYS_WARNING, "FsPseudoGetAttr, no %s handle <%d,%x,%x>\n",
+	    FsFileTypeToString(fileIDPtr->type), fileIDPtr->serverID,
 	    fileIDPtr->major, fileIDPtr->minor);
 	return(FS_FILE_NOT_FOUND);
     }
-    FsHandleUnlock(cltHandlePtr);
+    FsHandleRelease(cltHandlePtr, TRUE);
     pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
     LOCK_MONITOR;
-    /*
-     * Wait for exclusive access to the stream.  Different clients might
-     * be using the shared pseudo stream at about the same time.  Things
-     * are kept simple by only letting one process through at a time.
-     */
+
     while (pdevHandlePtr->flags & PDEV_BUSY) {
-	(void)Sync_Wait(&pdevHandlePtr->access, FALSE);
+	if ((pdevHandlePtr->flags & PDEV_SERVER_GONE) == 0) {
+	    (void)Sync_Wait(&pdevHandlePtr->access, FALSE);
+	}
 	if (pdevHandlePtr->flags & PDEV_SERVER_GONE) {
 	    status = DEV_OFFLINE;
 	    goto exit;
@@ -1358,12 +1434,14 @@ FsPseudoSetAttr(fileIDPtr, attrPtr, idPtr, flags)
 	    fileIDPtr->major, fileIDPtr->minor);
 	return(FS_FILE_NOT_FOUND);
     }
-    FsHandleUnlock(cltHandlePtr);
+    FsHandleRelease(cltHandlePtr, TRUE);
     pdevHandlePtr = cltHandlePtr->pdevHandlePtr;
     LOCK_MONITOR;
 
     while (pdevHandlePtr->flags & PDEV_BUSY) {
-	(void)Sync_Wait(&pdevHandlePtr->access, FALSE);
+	if ((pdevHandlePtr->flags & PDEV_SERVER_GONE) == 0) {
+	    (void)Sync_Wait(&pdevHandlePtr->access, FALSE);
+	}
 	if (pdevHandlePtr->flags & PDEV_SERVER_GONE) {
 	    status = DEV_OFFLINE;
 	    goto exit;
@@ -1425,13 +1503,10 @@ FsPseudoStreamRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     Pdev_Request	request;
 
     LOCK_MONITOR;
-    /*
-     * Wait for exclusive access to the stream.  Different clients might
-     * be using the shared pseudo stream at about the same time.  Things
-     * are kept simple by only letting one process through at a time.
-     */
     while (pdevHandlePtr->flags & PDEV_BUSY) {
-	(void)Sync_Wait(&pdevHandlePtr->access, FALSE);
+	if ((pdevHandlePtr->flags & PDEV_SERVER_GONE) == 0) {
+	    (void)Sync_Wait(&pdevHandlePtr->access, FALSE);
+	}
 	if (pdevHandlePtr->flags & PDEV_SERVER_GONE) {
 	    status = DEV_OFFLINE;
 	    goto exit;
@@ -1520,6 +1595,7 @@ FsPseudoStreamRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	status = RequestResponse(pdevHandlePtr, sizeof(Pdev_Request),
 	    &request.hdr, 0, (Address) NIL, *lenPtr, buffer, lenPtr, waitPtr);
     }
+    *offsetPtr += *lenPtr;
 exit:
     if (status == DEV_OFFLINE) {
 	/*
@@ -1587,7 +1663,9 @@ FsPseudoStreamWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
      * Wait for exclusive access to the stream.
      */
     while (pdevHandlePtr->flags & PDEV_BUSY) {
-	(void)Sync_Wait(&pdevHandlePtr->access, FALSE);
+	if ((pdevHandlePtr->flags & PDEV_SERVER_GONE) == 0) {
+	    (void)Sync_Wait(&pdevHandlePtr->access, FALSE);
+	}
 	if (pdevHandlePtr->flags & PDEV_SERVER_GONE) {
 	    UNLOCK_MONITOR;
 	    return(FS_BROKEN_PIPE);
@@ -1645,18 +1723,12 @@ FsPseudoStreamWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	    numBytes = 0;
 	}
 	amountWritten += numBytes;
-	if (numBytes < length) {
-	    /*
-	     * Stop on short writes.
-	     */
-	    status = FS_WOULD_BLOCK;
-	    break;
-	}
 	toWrite -= numBytes;
 	request.param.write.offset += numBytes;
 	buffer += numBytes;
     }
     *lenPtr = amountWritten;
+    *offsetPtr += amountWritten;
 exit:
     if (status == DEV_OFFLINE) {
 	/*
@@ -1677,9 +1749,7 @@ exit:
  *
  *	IOControls for pseudo-device.  The in parameter block of the
  *	IOControl is passed to the server, and its response is used
- *	to fill the return parameter block of the client.  Remember that
- *	Fs_IOControlStub copies the user buffers into and out of the kernel
- *	so we'll set the FS_USER flag in the serverIOHandle.
+ *	to fill the return parameter block of the client.
  *
  * Results:
  *	SUCCESS			- the operation was successful.
@@ -1710,7 +1780,9 @@ FsPseudoStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
      * Wait for exclusive access to the stream.
      */
     while (pdevHandlePtr->flags & PDEV_BUSY) {
-	(void)Sync_Wait(&pdevHandlePtr->access, FALSE);
+	if ((pdevHandlePtr->flags & PDEV_SERVER_GONE) == 0) {
+	    (void)Sync_Wait(&pdevHandlePtr->access, FALSE);
+	}
 	if (pdevHandlePtr->flags & PDEV_SERVER_GONE) {
 	    status = DEV_OFFLINE;
 	    goto exit;
@@ -1908,17 +1980,10 @@ FsPseudoStreamCloseInt(pdevHandlePtr)
 
     LOCK_MONITOR;
 
-    if ((pdevHandlePtr->flags & PDEV_SETUP) == 0) {
-	/*
-	 * Server never set the stream up so we obviously can't contact it.
-	 */
-	goto exit;
-    }
-    /*
-     * Wait for exclusive access to the stream.
-     */
     while (pdevHandlePtr->flags & PDEV_BUSY) {
-	(void)Sync_Wait(&pdevHandlePtr->access, FALSE);
+	if ((pdevHandlePtr->flags & PDEV_SERVER_GONE) == 0) {
+	    (void)Sync_Wait(&pdevHandlePtr->access, FALSE);
+	}
 	if (pdevHandlePtr->flags & PDEV_SERVER_GONE) {
 	    goto exit;
 	}
