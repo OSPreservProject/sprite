@@ -587,6 +587,14 @@ VmVirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
 	return;
     }
 #endif sun4
+    transVirtAddrPtr->flags = 0;
+    if (VmMach_VirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)) {
+	/*
+	 * The hardware routine was able to translate it for us.
+	 */
+	UNLOCK_MONITOR;
+	return;
+    }
 	
     seg1Ptr = procPtr->vmPtr->segPtrArray[VM_HEAP];
     while (seg1Ptr->flags & VM_PT_EXCL_ACC) {
@@ -596,14 +604,6 @@ VmVirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
 	 */
 	tSegPtr = seg1Ptr;
 	(void)Sync_Wait(&tSegPtr->condition, FALSE);
-    }
-    transVirtAddrPtr->flags = 0;
-    if (VmMach_VirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)) {
-	/*
-	 * The hardware routine was able to translate it for us.
-	 */
-	UNLOCK_MONITOR;
-	return;
     }
 
     transVirtAddrPtr->offset = (unsigned int)virtAddr & (vm_PageSize - 1);
@@ -939,11 +939,13 @@ Vm_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr)
 	return(status);
     }
 
-    if ((fromProcPtr->genFlags & PROC_NO_VM) && !fromKernel) {
+    if (fromProcPtr->genFlags & PROC_NO_VM) {
 	/*
 	 * The process that we are copying from has already deleted its VM.
 	 */
-	return(SYS_ARG_NOACCESS);
+	if (!fromKernel) {
+	    return(SYS_ARG_NOACCESS);
+	}
     }
     /*
      * Determine which segment the address falls into.
