@@ -33,6 +33,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <devNull.h>
 #include <devSCSIDisk.h>
 #include <devSCSITape.h>
+#include <devSCSIRobot.h>
 #include <devNet.h>
 #include <devBlockDevice.h>
 #include <scsiHBADevice.h>
@@ -166,6 +167,24 @@ DevFsTypeOps devFsOpTable[] = {
     {DEV_STDFB, DevStdFBOpen, NullProc, NullProc,
 		    DevStdFBIOControl, DevStdFBClose, NullProc, 
 		    DEV_NO_ATTACH_PROC, NoDevice, DevStdFBMMap},
+    /*
+     * The following device number is unused.
+     */
+    {DEV_PLACEHOLDER_4, NoDevice, NullProc, NullProc,
+		    NullProc, NullProc, NullProc, 
+		    DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+    /*
+     * The following device number is unused.
+     */
+    {DEV_PLACEHOLDER_5, NoDevice, NullProc, NullProc,
+		    NullProc, NullProc, NullProc, 
+		    DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+    /*
+     * The "jukebox", or tape/disk robot device.
+     */
+    {DEV_SCSI_ROBOT, DevSCSIExbRobotOpen, NullProc, NullProc,
+	            DevSCSIExbRobotIOControl, DevSCSIExbRobotClose,
+	            NullProc, DEV_NO_ATTACH_PROC, NoDevice, NullProc},
 };
 
 static ReturnStatus
