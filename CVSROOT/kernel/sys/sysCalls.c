@@ -618,6 +618,23 @@ Sys_StatsStub(command, option, argPtr)
 		    }
 		}
 		break;
+	        case SYS_PROC_MIG_SET_VERSION: {
+		    register Proc_ControlBlock *procPtr;
+		    int arg;
+
+		    procPtr = Proc_GetEffectiveProc();
+		    if (procPtr->effectiveUserID != 0) {
+			status = GEN_NO_PERMISSION;
+		    } else {
+			status = Vm_CopyIn(sizeof(int), argPtr, (Address)&arg);
+			if (status == SUCCESS && arg >= 0) {
+			    proc_MigrationVersion = arg;
+			} else if (status == SUCCESS) {
+			    status = GEN_INVALID_ARG;
+			}
+		    }
+		}
+		break;
 		case SYS_PROC_MIG_SET_DEBUG: {
 		    int arg;
 		    status = Vm_CopyIn(sizeof(int), argPtr, (Address)&arg);
@@ -629,6 +646,14 @@ Sys_StatsStub(command, option, argPtr)
 		}
 		break;
 
+		case SYS_PROC_MIG_GET_STATS: {
+		    status = Proc_MigGetStats(argPtr);
+		    break;
+		}
+		case SYS_PROC_MIG_RESET_STATS: {
+		    status = Proc_MigResetStats();
+		    break;
+		}
 		default:{
 		    status = GEN_INVALID_ARG;
 		}

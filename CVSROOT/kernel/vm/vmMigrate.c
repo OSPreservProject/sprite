@@ -659,6 +659,10 @@ FlushSegment(segPtr)
 	 * The page is dirty so put it on the dirty list.  Wait later on
 	 * for it to be written out.
 	 */
+#ifndef CLEAN
+	proc_MigStats.pagesWritten++;
+#endif /* CLEAN */
+	
 	VmPutOnDirtyList(Vm_GetPageFrame(*ptePtr));
     }
     return(SUCCESS);
