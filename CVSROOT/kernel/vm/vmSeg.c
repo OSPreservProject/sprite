@@ -1442,19 +1442,22 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
     for (i = 0, srcPTEPtr = tSrcPTEPtr, destPTEPtr = tDestPTEPtr; 
 	 i < destSegPtr->numPages; 
 	 i++, VmIncPTEPtr(srcPTEPtr, 1), VmIncPTEPtr(destPTEPtr, 1), 
-		destVirtAddr.page++) {
+		destVirtAddr.page++, srcVirtAddr.page++) {
 	if (CopyPage(srcSegPtr, srcPTEPtr, destPTEPtr)) {
 	    *destPTEPtr |= VM_REFERENCED_BIT | VM_MODIFIED_BIT |
 	                   VmPageAllocate(&destVirtAddr, VM_CAN_BLOCK);
 	    destSegPtr->resPages++;
 	    if (srcAddr == (Address) NIL) {
+		VmMach_FlushPage(&srcVirtAddr);
 		srcAddr = VmMapPage(Vm_GetPageFrame(*srcPTEPtr));
 		destAddr = VmMapPage(Vm_GetPageFrame(*destPTEPtr));
 	    } else {
+		VmMach_FlushPage(&srcVirtAddr);
 		VmRemapPage(srcAddr, Vm_GetPageFrame(*srcPTEPtr));
 		VmRemapPage(destAddr, Vm_GetPageFrame(*destPTEPtr));
 	    }
 	    Byte_Copy(vm_PageSize, srcAddr, destAddr);
+	    	
 	    VmUnlockPage(Vm_GetPageFrame(*srcPTEPtr));
 	    VmUnlockPage(Vm_GetPageFrame(*destPTEPtr));
 	}
@@ -1679,6 +1682,7 @@ CopyInfo(srcSegPtr, destSegPtr, srcPTEPtrPtr, destPTEPtrPtr,
     }
     destVirtAddrPtr->segPtr = destSegPtr;
     srcVirtAddrPtr->segPtr = srcSegPtr;
+    srcVirtAddrPtr->page = destVirtAddrPtr->page;
 
     UNLOCK_MONITOR;
 }
