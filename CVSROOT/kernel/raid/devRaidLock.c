@@ -26,6 +26,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sync.h"
 #include "hash.h"
+#include "devRaid.h"
 #include "debugMem.h"
 
 extern char *malloc();
@@ -142,4 +143,114 @@ UnlockStripe(stripe)
     Hash_Delete(&lockTable, hashEntryPtr);
     MASTER_UNLOCK(&mutex);
     Free((char *) condPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LockRaid --
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Gains exclusive access to specified RAID device.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+LockRaid (raidPtr)
+    Raid *raidPtr;
+{
+    MASTER_LOCK(&raidPtr->mutex);
+    if (raidPtr->state != RAID_VALID) {
+	MASTER_UNLOCK(&raidPtr->mutex);
+	return 0;
+    } else {
+	raidPtr->state = RAID_EXCLUSIVE;
+	if (raidPtr->numReqInSys != 0) {
+	    Sync_MasterWait(&raidPtr->waitExclusive, &raidPtr->mutex, FALSE);
+	}
+	MASTER_UNLOCK(&raidPtr->mutex);
+	return 1;
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UnlockRaid --
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Releases exclusive access to specified RAID device.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+UnlockRaid (raidPtr)
+    Raid *raidPtr;
+{
+    MASTER_LOCK(&raidPtr->mutex);
+    raidPtr->state = RAID_VALID;
+    Sync_MasterBroadcast(&raidPtr->waitNonExclusive);
+    MASTER_UNLOCK(&raidPtr->mutex);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * BeginRaidUse --
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+BeginRaidUse (raidPtr)
+    Raid *raidPtr;
+{
+    MASTER_LOCK(&raidPtr->mutex);
+    if (raidPtr->state == RAID_EXCLUSIVE) {
+	Sync_MasterWait(&raidPtr->waitNonExclusive, &raidPtr->mutex, FALSE);
+    }
+    raidPtr->numReqInSys++;
+    MASTER_UNLOCK(&raidPtr->mutex);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * EndRaidUse --
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+EndRaidUse (raidPtr)
+    Raid *raidPtr;
+{
+    MASTER_LOCK(&raidPtr->mutex);
+    raidPtr->numReqInSys--;
+    if (raidPtr->state == RAID_EXCLUSIVE && raidPtr->numReqInSys == 0) {
+	Sync_MasterBroadcast(&raidPtr->waitExclusive);
+    }
+    MASTER_UNLOCK(&raidPtr->mutex);
 }
