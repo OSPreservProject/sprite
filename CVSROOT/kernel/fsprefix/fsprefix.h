@@ -113,5 +113,6 @@ extern	ReturnStatus	FsPrefixOpenCheck();
 extern	int		FsPrefixOpenInProgress();
 extern	void		FsPrefixOpenDone();
 extern	FsPrefix *	FsPrefixFromFileID();
+extern	void		FsPrefixHandleClose();
 
 #endif _FSPREFIX

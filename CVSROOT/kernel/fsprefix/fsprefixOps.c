@@ -63,7 +63,6 @@ Boolean fsFileNameTrace = FALSE;
 ReturnStatus FsLookupRedirect();
 ReturnStatus LocatePrefix();
 ReturnStatus GetPrefix();
-void FsPrefixHandleClose();
 void PrefixUpdate();
 FsPrefix *PrefixInsert();
 void GetNilPrefixes();
