@@ -1719,7 +1719,7 @@ again:
      */
     if (flags & FSCACHE_WRITE_BACK_INDIRECT) {
 	register List_Links	*linkPtr;
-	LIST_FORALL(&blockPtr->cacheInfoPtr->indList, linkPtr) {
+	LIST_FORALL(&cacheInfoPtr->indList, linkPtr) {
 	    blockPtr = FILE_LINKS_TO_BLOCK(linkPtr);
 	    if (blockPtr->flags & FSCACHE_BLOCK_ON_DIRTY_LIST) {
 		/*
