@@ -18,10 +18,8 @@
  */
 
 typedef struct {
-    int	stealContext;		/* The number of times that have to take
-				   a context away from a process. */
-    int	stealPmeg;		/* The number of times that have to take a
-				   pmeg away from a process. */
+    int	refBitFaults;	/* Number of reference bit faults. */
+    int	dirtyBitFaults;	/* Number of dirty bit faults. */
 } VmMachDepStat;
 
 #endif _VMMACHSTAT
