@@ -237,8 +237,6 @@ FslclGetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
     attrResultsPtr = (Fs_GetAttrResults *)resultsPtr;
 
 #ifdef SOSP91
-    SOSP_ADD_GET_ATTR_TRACE(openArgsPtr->clientID, openArgsPtr->migClientID, 
-	    NullFileID);
     SOSP_REMEMBERED_OP = FS_DOMAIN_GET_ATTR;
     SOSP_REMEMBERED_CLIENT = openArgsPtr->clientID;
     SOSP_REMEMBERED_MIG = openArgsPtr->migClientID;
