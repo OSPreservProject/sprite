@@ -241,13 +241,17 @@ main()
     Proc_ServerInit();
 
     /*
-     * Initialize the ethernet drivers.
+     * Initialize the ethernet drivers and the routes.
      * Dependencies: Vm_Init
      */
     if (main_PrintInitRoutines) {
 	Mach_MonPrintf("Calling Net_Init\n");
     }
     Net_Init();
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Net_RouteInit\n");
+    }
+    Net_RouteInit();
 
     /*
      * Initialize the recovery module.  Do before Rpc and after Vm_Init.
