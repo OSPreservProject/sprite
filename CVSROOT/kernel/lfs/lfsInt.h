@@ -23,6 +23,7 @@
 #include <fsconsist.h>
 #include <user/fs.h>
 #include <lfs.h>
+#include <lfsTypes.h>
 #include <lfsDesc.h>
 #include <lfsDescMapInt.h>
 #include <lfsDescInt.h>
@@ -32,7 +33,6 @@
 #include <lfsDirLogInt.h>
 #include <lfsMemInt.h>
 #include <lfsStats.h>
-#include <lfsTypes.h>
 
 #include <fsdm.h>
 
