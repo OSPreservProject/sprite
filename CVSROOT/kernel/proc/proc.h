@@ -441,6 +441,12 @@ typedef struct Proc_ControlBlock {
 					  * migration command. */
     int		migCmdBufSize;		 /* Size of migCmdBuffer, for
 					  * sanity checks. */
+    int		migFlags;		 /* Flags used for migration. (Needs
+					  * to be reorganized to include things
+					  * currently in genFlags but that will
+					  * also require a world recompile.) */
+    Proc_Time   preEvictionUsage; 	 /* CPU usage (user + kernel)
+					  * as of the start of eviction. */
 
 } Proc_ControlBlock;
 
