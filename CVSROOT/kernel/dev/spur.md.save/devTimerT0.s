@@ -132,6 +132,9 @@ _Dev_TimerT0Read:
 	/* 
 	 * T0LOW <- T0<31:0> a byte at a time.
 	 */
+	rd_kpsw		r16
+	and		r17,r16,$~(MACH_KPSW_INTR_TRAP_ENA)
+	wr_kpsw		r17, $0
 	ld_external	T0LOW, r0, $T00|RDREG
 	ld_external	TEMP, r0, $T01|RDREG
 	wr_insert	$1
@@ -197,6 +200,7 @@ ReadTimerT0ReadAgain:
 	/*
 	 * Return the integer of SUCCESS
 	 */
+	wr_kpsw		r18, $0
 	 add_nt		RESULT, r0, $SUCCESS
 	 return		r10,$8
 	 nop
