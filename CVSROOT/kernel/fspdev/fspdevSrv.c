@@ -7,10 +7,10 @@
  *	are in fsPdevSetup.c.  Routines for the Control stream are
  *	found in fsPdevControl.c
  *
- *	Operations are forwarded to a user-level server process using
- *	a "request-response" protocol.
- *	The server process declares a request buffer and optionally a read
- *	ahead buffer in its address space.  The kernel puts requests, which
+ *	Operations on a pseudo-device are forwarded to a user-level server
+ *	process using a "request-response" protocol.
+ *	The server process declares a request buffer (and optionally a read
+ *	ahead buffer) in its address space.  The kernel puts requests, which
  *	are generated when a client does an operation on the pseudo stream,
  *	into the request buffer directly.  The server learns of new requests
  *	by reading messages from the server stream that contain offsets within
@@ -59,7 +59,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "dev/pfs.h"
 
 /*
- * Access to PdevServerIOHandle is monitored.
+ * Access to PdevServerIOHandle is monitored to serialize access to
+ * the request-response communication channel.
  */
 #define LOCKPTR (&pdevHandlePtr->lock)
 
@@ -88,6 +89,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  *				the request buffer to fail.  This is to
  *				support UDP socket semantics, sigh.
  *	PDEV_NAMING		Set on the naming request-response channel.
+ *	PDEV_SIGNAL_PENDING	Set when the server wants us to generate
+ *				a signal in response to the request.
+ *	PDEV_REQUEST_ABORTED	Set when the client aborts during a request-
+ *				response transaction so we ignore the next rply.
  *	FS_USER			This flag is borrowed from the stream flags
  *				and it indicates the buffers are in user space
  */
@@ -102,6 +107,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #define PDEV_WRITE_BEHIND	0x0100
 #define PDEV_NO_BIG_WRITES	0x0200
 #define PDEV_NAMING		0x0400
+#define PDEV_SIGNAL_PENDING	0x0800
+#define PDEV_REQUEST_ABORTED	0x1000
 /*resrv FS_USER			0x8000 */
 
 /*
@@ -139,7 +146,7 @@ void				FsRmtPseudoStreamClose();
 
 INTERNAL static ReturnStatus
 RequestResponse(pdevHandlePtr, hdrSize, requestHdrPtr, inputSize, inputBuf,
-	replySize, replyBuf, replySizePtr, waitPtr)
+	replySize, replyBuf, ioReplyPtr, waitPtr)
     register PdevServerIOHandle *pdevHandlePtr;	/* Caller should lock this
 						 * with the monitor lock. */
     int			hdrSize;	/* Either sizeof(Pdev_Request) or
@@ -150,13 +157,12 @@ RequestResponse(pdevHandlePtr, hdrSize, requestHdrPtr, inputSize, inputBuf,
     int			inputSize;	/* Size of input buffer. */
     Address		inputBuf;	/* Inputs of the remote command. */
     int			replySize;	/* Size of output buffer.  0 means
-					 * no reply data expected.  Of the
-					 * operation is PDEV_WRITE_ASYNC then
-					 * no reply is wanted and ths argument
-					 * is ignored. */
+					 * no reply data expected.  If the
+					 * operation is PDEV_WRITE_ASYNC then no
+					 * reply is wanted and this is ignored*/
     Address		replyBuf;	/* Results of the remote command. */
-    int			*replySizePtr;	/* Amount of data actually in replyBuf.
-					 * (May be NIL if not needed.) */
+    Fs_IOReply		*ioReplyPtr;	/* Amount transferred and signal to
+					 * return. (May be NIL if not needed.)*/
     Sync_RemoteWaiter	*waitPtr;	/* Client process info for waiting.
 					 * Only needed for read & write. */
 {
@@ -168,8 +174,8 @@ RequestResponse(pdevHandlePtr, hdrSize, requestHdrPtr, inputSize, inputBuf,
     int			   savedLastByte;    /* For error recovery */
     int			   savedFirstByte;   /*   ditto */
 
-    if (replySizePtr != (int *) NIL) {
-	*replySizePtr = 0;
+    if (ioReplyPtr != (Fs_IOReply *) NIL) {
+	ioReplyPtr->length = 0;
     }
 
     if ((pdevHandlePtr == (PdevServerIOHandle *)NIL) ||
@@ -189,8 +195,10 @@ RequestResponse(pdevHandlePtr, hdrSize, requestHdrPtr, inputSize, inputBuf,
     lastByte = pdevHandlePtr->requestBuf.lastByte;
     if ((pdevHandlePtr->nextRequestBuffer != (Address)NIL) &&
 	((firstByte > lastByte) || (firstByte == -1))) {
+#ifndef CLEAN
 	printf( "Switching to request buffer at 0x%x\n",
 			       pdevHandlePtr->nextRequestBuffer);
+#endif
 	pdevHandlePtr->requestBuf.data = pdevHandlePtr->nextRequestBuffer;
 	pdevHandlePtr->requestBuf.size = pdevHandlePtr->nextRequestBufSize;
 	pdevHandlePtr->nextRequestBuffer = (Address)NIL;
@@ -212,7 +220,7 @@ RequestResponse(pdevHandlePtr, hdrSize, requestHdrPtr, inputSize, inputBuf,
     requestHdrPtr->messageSize = hdrSize +
 		((inputSize + sizeof(int) - 1) / sizeof(int)) * sizeof(int);
     if (pdevHandlePtr->requestBuf.size < requestHdrPtr->messageSize) {
-	printf( "RequestResponse request too large\n");
+	printf("RequestResponse request too large\n");
 	return(GEN_INVALID_ARG);
     }
 
@@ -250,8 +258,10 @@ RequestResponse(pdevHandlePtr, hdrSize, requestHdrPtr, inputSize, inputBuf,
 	    while (pdevHandlePtr->requestBuf.firstByte <
 		   pdevHandlePtr->requestBuf.lastByte) {
 		DBG_PRINT( (" (catch up) ") );
-		(void) Sync_Wait(&pdevHandlePtr->caughtUp, FALSE);
-		if (pdevHandlePtr->flags & PDEV_SERVER_GONE) {
+		if (Sync_Wait(&pdevHandlePtr->caughtUp, TRUE)) {
+		    status = GEN_ABORTED_BY_SIGNAL;
+		    goto failure;
+		} else if (pdevHandlePtr->flags & PDEV_SERVER_GONE) {
 		    status = DEV_OFFLINE;
 		    goto failure;
 		}
@@ -346,20 +356,41 @@ RequestResponse(pdevHandlePtr, hdrSize, requestHdrPtr, inputSize, inputBuf,
 	}
 	pdevHandlePtr->flags &= ~PDEV_REPLY_READY;
 	while ((pdevHandlePtr->flags & PDEV_REPLY_READY) == 0) {
-	    (void)Sync_Wait(&pdevHandlePtr->replyReady, FALSE);
-	    if (pdevHandlePtr->flags & (PDEV_REPLY_FAILED|PDEV_SERVER_GONE)) {
+	    if (Sync_Wait(&pdevHandlePtr->replyReady, TRUE)) {
+		if ((pdevHandlePtr->flags & PDEV_REPLY_READY) == 0) {
+		    pdevHandlePtr->flags |= PDEV_REQUEST_ABORTED;
+		}
+		status = GEN_ABORTED_BY_SIGNAL;
+		goto failure;
+	    } else if (pdevHandlePtr->flags &
+			(PDEV_REPLY_FAILED|PDEV_SERVER_GONE)) {
 		status = DEV_OFFLINE;
+		goto failure;
+	    } else if (pdevHandlePtr->flags & PDEV_SIGNAL_PENDING) {
+		status = GEN_ABORTED_BY_SIGNAL;
+		if (ioReplyPtr != (Fs_IOReply *) NIL) {
+		    ioReplyPtr->length = pdevHandlePtr->reply.replySize;
+		    ioReplyPtr->signal = pdevHandlePtr->reply.signal;
+		    ioReplyPtr->code = pdevHandlePtr->reply.code;
+		    /*
+		     * For now, until higher-levels do it...
+		     */
+		    Sig_Send(pdevHandlePtr->reply.signal,
+			     pdevHandlePtr->reply.code,
+			     pdevHandlePtr->clientPID, FALSE);
+		}
 		goto failure;
 	    }
 	}
-	if (replySizePtr != (int *) NIL) {
-	    *replySizePtr = pdevHandlePtr->reply.replySize;
+	if (ioReplyPtr != (Fs_IOReply *) NIL) {
+	    ioReplyPtr->length = pdevHandlePtr->reply.replySize;
+	    ioReplyPtr->signal = 0;
+	    ioReplyPtr->code = 0;
 	}
     } else {
 	pdevHandlePtr->reply.status = SUCCESS;
     }
 failure:
-
     if (status == SUCCESS) {
 	status = pdevHandlePtr->reply.status;
     }
@@ -401,7 +432,7 @@ FsServerStreamCreate(ioFileIDPtr, name, naming)
 			    &hdrPtr);
     pdevHandlePtr = (PdevServerIOHandle *)hdrPtr;
     if (found) {
-	printf( "ServerStreamCreate, found handle <%x,%x,%x>\n",
+	printf("ServerStreamCreate, found handle <%x,%x,%x>\n",
 		  hdrPtr->fileID.serverID, hdrPtr->fileID.major,
 		  hdrPtr->fileID.minor);
 	FsHandleRelease(pdevHandlePtr, TRUE);
@@ -608,11 +639,6 @@ FsServerStreamRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	pdevHandlePtr->flags &= ~PDEV_READ_PTRS_CHANGED;
 	status = Vm_CopyOut(sizeof(Pdev_BufPtrs), (Address)&bufPtrs, buffer);
 	*lenPtr = sizeof(Pdev_BufPtrs);
-	/*
-	 * Poke the "caughtUp" condition in case anyone is waiting to stuff
-	 * more requests into the buffer.  (THIS SEEMS INAPPROPRIATE)
-	 */
-	Sync_Broadcast(&pdevHandlePtr->caughtUp);
 	DBG_PRINT( ("READ %x,%x req %d:%d read %d:%d\n",
 		pdevHandlePtr->hdr.fileID.major,
 		pdevHandlePtr->hdr.fileID.minor,
@@ -824,8 +850,7 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 		    break;
 		}
 		if (argPtr->readLastByte > pdevHandlePtr->readBuf.size) {
-		    printf(
-			"FsServerStreamIOControl: set bad readPtr\n");
+		    printf("FsServerStreamIOControl: set bad readPtr\n");
 		    status = GEN_INVALID_ARG;
 		    break;
 		}
@@ -874,6 +899,7 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	    }
 	    break;
 	}
+	case IOC_PDEV_SMALL_REPLY:
 	case IOC_PDEV_REPLY: {
 	    /*
 	     * The server is replying to a request.
@@ -886,57 +912,98 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	     */
 	    register Pdev_Reply *srvReplyPtr = (Pdev_Reply *)inBufPtr->addr;
 
-	    pdevHandlePtr->reply = *srvReplyPtr;
-	    if (srvReplyPtr->replySize > 0) {
-		register Proc_ControlBlock *clientProcPtr;
-
+	    if (inBufPtr->size < sizeof(Pdev_Reply)) {
 		/*
-		 * Copy the reply into the waiting buffers.  PDEV_WRITE is
-		 * handled specially because the reply buffer is just an
-		 * integer variable in the kernel, while the input buffer
-		 * is in user space, which is indicated by the FS_USER flag.
-		 *  - To be fully general we'd need a user space flag for
-		 * 	both the input buffer and the reply.
+		 * inBuffer must be at least as big as Pdev_Reply.
+		 * It will be larger during PDEV_SMALL_REPLY which
+		 * includes a small amount of embedded data.
 		 */
-		if (((pdevHandlePtr->flags & FS_USER) == 0) ||
-		    (pdevHandlePtr->operation == PDEV_WRITE)) {
-		    status = Vm_CopyIn(srvReplyPtr->replySize,
-				       srvReplyPtr->replyBuf,
-				       pdevHandlePtr->replyBuf);
-	        } else {
-		    clientProcPtr = Proc_LockPID(pdevHandlePtr->clientPID);
-		    if (clientProcPtr == (Proc_ControlBlock *)NIL) {
-			status = FS_BROKEN_PIPE;
+		status = FS_INVALID_ARG;
+		pdevHandlePtr->flags |= PDEV_REPLY_READY|PDEV_REPLY_FAILED;
+	    } else if (pdevHandlePtr->flags & PDEV_REQUEST_ABORTED) {
+		/*
+		 * Client aborted the request from its end.
+		 * Do nothing but grab the select bits.
+		 */
+		pdevHandlePtr->flags &= ~PDEV_REQUEST_ABORTED;
+		pdevHandlePtr->selectBits = srvReplyPtr->selectBits;
+	    } else {
+		/*
+		 * Copy current reply in to pdev state.
+		 */
+		pdevHandlePtr->reply = *srvReplyPtr;
+		if (srvReplyPtr->replySize > 0) {
+		    register Proc_ControlBlock *clientProcPtr;
+		    /*
+		     * Copy the reply into the waiting buffers.  PDEV_WRITE is
+		     * handled specially because the reply buffer is just an
+		     * integer variable in the kernel, while the input buffer
+		     * is in user space, which is indicated by the FS_USER flag.
+		     *  - To be fully general we'd need a user space flag for
+		     * 	both the input buffer and the reply.
+		     */
+		    if ((command == IOC_PDEV_SMALL_REPLY) &&
+			((srvReplyPtr->replySize > PDEV_SMALL_DATA_LIMIT) ||
+			 (inBufPtr->size <
+				 sizeof(Pdev_Reply) + srvReplyPtr->replySize))){
+			status = GEN_INVALID_ARG;
 		    } else {
-			status = Vm_CopyOutProc(srvReplyPtr->replySize,
-				srvReplyPtr->replyBuf, FALSE,
-				clientProcPtr, pdevHandlePtr->replyBuf);
-			Proc_Unlock(clientProcPtr);
+			if (((pdevHandlePtr->flags & FS_USER) == 0) ||
+			    (pdevHandlePtr->operation == PDEV_WRITE)) {
+			    if (command == IOC_PDEV_SMALL_REPLY) {
+				bcopy(((Pdev_ReplyData *)srvReplyPtr)->data,
+					pdevHandlePtr->replyBuf,
+					srvReplyPtr->replySize);
+			    } else {
+				status = Vm_CopyIn(srvReplyPtr->replySize,
+						   srvReplyPtr->replyBuf,
+						   pdevHandlePtr->replyBuf);
+			    }
+			} else {
+			    clientProcPtr = Proc_LockPID(pdevHandlePtr->clientPID);
+			    if (clientProcPtr == (Proc_ControlBlock *)NIL) {
+				status = FS_BROKEN_PIPE;
+			    } else {
+				if (command == IOC_PDEV_SMALL_REPLY) {
+				    status =
+					Vm_CopyOutProc(srvReplyPtr->replySize,
+					((Pdev_ReplyData *)srvReplyPtr)->data,
+					TRUE, clientProcPtr,
+					pdevHandlePtr->replyBuf);
+				} else {
+				    status =
+					Vm_CopyOutProc(srvReplyPtr->replySize,
+					srvReplyPtr->replyBuf, FALSE,
+					clientProcPtr, pdevHandlePtr->replyBuf);
+				}
+				Proc_Unlock(clientProcPtr);
+			    }
+			}
+		    }
+		    if (status != SUCCESS) {
+			pdevHandlePtr->flags |= PDEV_REPLY_FAILED;
 		    }
 		}
-		if (status != SUCCESS) {
-		    pdevHandlePtr->flags |= PDEV_REPLY_FAILED;
+		PDEV_REPLY(&pdevHandlePtr->hdr.fileID, srvReplyPtr);
+		if (srvReplyPtr->status == FS_WOULD_BLOCK) {
+		    /*
+		     * Put the client process on the appropriate wait list.
+		     */
+		    if (pdevHandlePtr->operation == PDEV_READ) {
+			FsFastWaitListInsert(&pdevHandlePtr->cltReadWaitList,
+					     &pdevHandlePtr->clientWait);
+		    } else if (pdevHandlePtr->operation == PDEV_WRITE) {
+			FsFastWaitListInsert(&pdevHandlePtr->cltWriteWaitList,
+					     &pdevHandlePtr->clientWait);
+		    }
 		}
-	    }
-	    PDEV_REPLY(&pdevHandlePtr->hdr.fileID, srvReplyPtr);
-	    if (srvReplyPtr->status == FS_WOULD_BLOCK) {
-		if (pdevHandlePtr->operation == PDEV_READ) {
-		    FsFastWaitListInsert(&pdevHandlePtr->cltReadWaitList,
-					 &pdevHandlePtr->clientWait);
-		} else if (pdevHandlePtr->operation == PDEV_WRITE) {
-		    FsFastWaitListInsert(&pdevHandlePtr->cltWriteWaitList,
-					 &pdevHandlePtr->clientWait);
+		pdevHandlePtr->flags |= PDEV_REPLY_READY;
+		if (srvReplyPtr->signal != 0) {
+		    pdevHandlePtr->flags |= PDEV_SIGNAL_PENDING;
 		}
+		pdevHandlePtr->selectBits = srvReplyPtr->selectBits;
 	    }
-	    /*
-	     * Wakeup the client waiting for this reply.
-	     */
-	    pdevHandlePtr->flags |= PDEV_REPLY_READY;
 	    Sync_Broadcast(&pdevHandlePtr->replyReady);
-	    /*
-	     * Notify other clients that may also be blocked on the stream.
-	     */
-	    pdevHandlePtr->selectBits = srvReplyPtr->selectBits;
 	    PdevClientNotify(pdevHandlePtr);
 	    break;
 	}
@@ -986,6 +1053,10 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	    if (inBufPtr->size < sizeof(Fs_FileID) ||
 		outBufPtr->size < sizeof(int)) {
 		status = GEN_INVALID_ARG;
+	    } else if (pdevHandlePtr->flags & PDEV_REQUEST_ABORTED) {
+		pdevHandlePtr->flags &= ~PDEV_REQUEST_ABORTED;
+		PdevClientNotify(pdevHandlePtr);
+		break;
 	    } else {
 		newStreamID = FsPfsOpenConnection(pdevHandlePtr,
 			    (Fs_FileID *)inBufPtr->addr, &openResults);
@@ -1035,12 +1106,11 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	    }
 	    break;
 	}
-	case IOC_PFS_PASS_STREAM:
+	case IOC_PFS_PASS_STREAM: {
 	    /*
 	     * A pseudo-filesystem server is replying to an open request by
 	     * asking us to pass one of its open streams to the client.
 	     */
-#ifdef work_in_progress
 	    register int passedStreamID;	/* From the server */
 	    FsOpenResults openResults;		/* For the client */
 	    Address encapStream;		/* packaged stream */
@@ -1050,6 +1120,10 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 
 	    if (inBufPtr->size < sizeof(int)) {
 		status = GEN_INVALID_ARG;
+	    } else if (pdevHandlePtr->flags & PDEV_REQUEST_ABORTED) {
+		pdevHandlePtr->flags &= ~PDEV_REQUEST_ABORTED;
+		PdevClientNotify(pdevHandlePtr);
+		break;
 	    } else {
 		passedStreamID = *(int *)inBufPtr->addr;
 		procPtr = Proc_GetEffectiveProc();
@@ -1063,10 +1137,10 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 			 * Set up open results so Fs_Open will call a cltOpen
 			 * routine that will unpackage the encapsulated stream.
 			 */
-			bzero((char *)&openResults, sizeof(FsOpenResults);
-			openResults.fileID.type = FS_PASSING_STREAM;
+			bzero((char *)&openResults, sizeof(FsOpenResults));
+			openResults.ioFileID.type = FS_PASSING_STREAM;
 			openResults.dataSize = encapSize;
-			openResults.streamData = encapStream;
+			openResults.streamData = (ClientData)encapStream;
 
 			openResultsPtr =
 				(FsOpenResults *)pdevHandlePtr->replyBuf;
@@ -1084,8 +1158,8 @@ FsServerStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	    pdevHandlePtr->flags |= PDEV_REPLY_READY;
 	    Sync_Broadcast(&pdevHandlePtr->replyReady);
 	    PdevClientNotify(pdevHandlePtr);
-#endif work_in_progress
 	    break;
+	}
 	case IOC_REPOSITION:
 	    status = GEN_INVALID_ARG;
 	    break;
@@ -1396,7 +1470,7 @@ FsPseudoStreamOpen(pdevHandlePtr, flags, clientID, procID, userID)
 
     pdevHandlePtr->flags &= ~FS_USER;
     status = RequestResponse(pdevHandlePtr, sizeof(Pdev_Request), &request.hdr,
-			 0, (Address) NIL, 0, (Address) NIL, (int *)NIL,
+			 0, (Address) NIL, 0, (Address) NIL, (Fs_IOReply *)NIL,
 			 (Sync_RemoteWaiter *)NIL);
     pdevHandlePtr->flags &= ~PDEV_BUSY;
 exit:
@@ -1436,13 +1510,17 @@ FsPseudoStreamLookup(pdevHandlePtr, requestPtr, argSize, argsPtr,
     Pfs_Request		*requestPtr;	/* Semi-initialized request header */
     int			argSize;	/* Size of argsPtr buffer */
     Address		argsPtr;	/* Ref. to bundled args, usually name */
-    int			*resultsSizePtr;/* In/Out size of results */
+    int			*resultsSizePtr;/* Out size of results */
     Address		resultsPtr;	/* Ref. to bundled results or 
 					 * FsRedirectInfo */
     FsRedirectInfo	**newNameInfoPtrPtr;/* Set if server returns name */
 {
     register ReturnStatus 	status;
-    FsRedirectInfo		redirectInfo;
+    FsRedirectInfo		redirectInfo;	/* This is a large buffer
+						 * that is used for EITHER
+						 * normal reply parameters
+						 * or a redirected pathname */
+    Fs_IOReply			ioReply;
 
     LOCK_MONITOR;
 
@@ -1460,16 +1538,20 @@ FsPseudoStreamLookup(pdevHandlePtr, requestPtr, argSize, argsPtr,
     pdevHandlePtr->flags &= ~FS_USER;
     status = RequestResponse(pdevHandlePtr, sizeof(Pfs_Request),
 		&requestPtr->hdr, argSize, argsPtr, sizeof(FsRedirectInfo),
-		(Address)&redirectInfo, resultsSizePtr,
+		(Address)&redirectInfo, &ioReply,
 		(Sync_RemoteWaiter *)NIL);
     if (status == FS_LOOKUP_REDIRECT) {
 	*newNameInfoPtrPtr = mnew(FsRedirectInfo);
 	(*newNameInfoPtrPtr)->prefixLength = redirectInfo.prefixLength;
 	(void)strcpy((*newNameInfoPtrPtr)->fileName, redirectInfo.fileName);
     } else {
+	/*
+	 * Grab the result parameters.
+	 */
 	*newNameInfoPtrPtr = (FsRedirectInfo *)NIL;
-	if (*resultsSizePtr > 0) {
-	    bcopy((Address)&redirectInfo, resultsPtr, *resultsSizePtr);
+	*resultsSizePtr = ioReply.length;
+	if (ioReply.length > 0) {
+	    bcopy((Address)&redirectInfo, resultsPtr, ioReply.length);
 	}
     }
 
@@ -1521,7 +1603,6 @@ FsPseudoStream2Path(pdevHandlePtr, requestPtr, dataPtr, name1ErrorPtr,
     FsRedirectInfo	**newNameInfoPtrPtr;/* Set if server returns name */
 {
     register ReturnStatus 	status;
-    int resultSize;
     Fs2PathRedirectInfo		redirectInfo;
 
     LOCK_MONITOR;
@@ -1541,7 +1622,7 @@ FsPseudoStream2Path(pdevHandlePtr, requestPtr, dataPtr, name1ErrorPtr,
     status = RequestResponse(pdevHandlePtr, sizeof(Pfs_Request),
 		&requestPtr->hdr, sizeof(Fs2PathData), (Address)dataPtr,
 		sizeof(Fs2PathRedirectInfo), (Address)&redirectInfo,
-		&resultSize, (Sync_RemoteWaiter *)NIL);
+		(Fs_IOReply *)NIL, (Sync_RemoteWaiter *)NIL);
     if (status == FS_LOOKUP_REDIRECT) {
 	*newNameInfoPtrPtr = mnew(FsRedirectInfo);
 	(*newNameInfoPtrPtr)->prefixLength = redirectInfo.prefixLength;
@@ -1624,7 +1705,7 @@ FsPseudoGetAttr(fileIDPtr, clientID, attrPtr)
     status = RequestResponse(pdevHandlePtr, sizeof(Pdev_Request), &request.hdr,
 			0, (Address) NIL,
 			sizeof(Fs_Attributes), (Address)attrPtr,
-			(int *)NIL, (Sync_RemoteWaiter *)NIL);
+			(Fs_IOReply *)NIL, (Sync_RemoteWaiter *)NIL);
     /*
      * Patch the serverID in the attributes so it matches the serverID
      * given in the prefix table.  This is needed to make getwd() work.
@@ -1696,7 +1777,7 @@ FsPseudoSetAttr(fileIDPtr, attrPtr, idPtr, flags)
     status = RequestResponse(pdevHandlePtr, sizeof(Pdev_Request), &request.hdr,
 			sizeof(Fs_Attributes), (Address)attrPtr,
 			0, (Address) NIL,
-			(int *)NIL, (Sync_RemoteWaiter *)NIL);
+			(Fs_IOReply *)NIL, (Sync_RemoteWaiter *)NIL);
     pdevHandlePtr->flags &= ~PDEV_BUSY;
 exit:
     Sync_Broadcast(&pdevHandlePtr->access);
@@ -1833,6 +1914,7 @@ FsPseudoStreamRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 #endif notdef
     Proc_ControlBlock	*procPtr;
     Pdev_Request	request;
+    Fs_IOReply		ioReply;
 
     LOCK_MONITOR;
     while (pdevHandlePtr->flags & PDEV_BUSY) {
@@ -1938,13 +2020,21 @@ FsPseudoStreamRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	 * Set up and do the request-response exchange.
 	 */
 	request.hdr.operation		= PDEV_READ;
+	request.param.read.buffer	= 0;
+	request.param.read.length	= *lenPtr;
 	request.param.read.offset	= *offsetPtr;
+	request.param.read.flags	= 0;
 	request.param.read.familyID	= procPtr->familyID;
 	request.param.read.procID	= procPtr->processID;
+	request.param.read.uid		= procPtr->effectiveUserID;
+	if (procPtr->fsPtr->numGroupIDs > 0) {
+	    request.param.read.gid	= procPtr->fsPtr->groupIDs[0];
+	}
 
 	pdevHandlePtr->flags |= (flags & FS_USER);
 	status = RequestResponse(pdevHandlePtr, sizeof(Pdev_Request),
-	    &request.hdr, 0, (Address) NIL, *lenPtr, buffer, lenPtr, waitPtr);
+	    &request.hdr, 0, (Address) NIL, *lenPtr, buffer, &ioReply, waitPtr);
+	*lenPtr = ioReply.length;
     } else {
 	/*
 	 * The pseudo-device is not readable now.
@@ -2017,6 +2107,7 @@ FsPseudoStreamWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
     int			replySize;
     int			numBytes;
     int			maxRequestSize;
+    Fs_IOReply		ioReply;
 #ifdef notdef
     IOC_Owner		*ownerPtr;
 #endif
@@ -2067,30 +2158,33 @@ FsPseudoStreamWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	status = FS_WOULD_BLOCK;
 	goto exit;
     }
-    /*
-     * The write request parameters are the offset and flags parameters.
-     * The buffer contains the data to write.
-     */
+
+    maxRequestSize = pdevHandlePtr->requestBuf.size - sizeof(Pdev_Request);
+    if (toWrite > maxRequestSize &&
+	(pdevHandlePtr->flags & PDEV_NO_BIG_WRITES)) {
+	printf("Too large a write (%d bytes) an a (UDP?) pseudo-device\n",
+	    toWrite);
+	status = GEN_INVALID_ARG;
+	goto exit;
+    }
+
     if (pdevHandlePtr->flags & PDEV_WRITE_BEHIND) {
 	request.hdr.operation		= PDEV_WRITE_ASYNC;
     } else {
 	request.hdr.operation		= PDEV_WRITE;
     }
+    request.param.write.buffer		= 0;
     request.param.write.offset		= *offsetPtr;
+    request.param.write.flags		= flags;
     request.param.write.familyID	= procPtr->familyID;
     request.param.write.procID		= procPtr->processID;
+    request.param.write.uid		= procPtr->effectiveUserID;
+    if (procPtr->fsPtr->numGroupIDs > 0) {
+	request.param.write.gid	= procPtr->fsPtr->groupIDs[0];
+    }
 
     toWrite = *lenPtr;
     amountWritten = 0;
-    maxRequestSize = pdevHandlePtr->requestBuf.size - sizeof(Pdev_Request);
-    if (toWrite > maxRequestSize &&
-	(pdevHandlePtr->flags & PDEV_NO_BIG_WRITES)) {
-	printf(
-	    "Too large a write (%d bytes) attempted on pseudo-device (UDP?)\n",
-	    toWrite);
-	status = GEN_INVALID_ARG;
-	goto exit;
-    }
     while ((toWrite > 0) && (status == SUCCESS)) {
 	/*
 	 * Loop to put the maximum amount of data into the request
@@ -2101,11 +2195,13 @@ FsPseudoStreamWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	} else {
 	    length = toWrite;
 	}
+	request.param.write.length = length;
 	replySize = sizeof(int);
 	status = RequestResponse(pdevHandlePtr, sizeof(Pdev_Request),
 				 &request.hdr, length, buffer,
-				 replySize, (Address)&numBytes, &replySize,
+				 replySize, (Address)&numBytes, &ioReply,
 				 waitPtr);
+	replySize = ioReply.length;
 	if (pdevHandlePtr->flags & PDEV_WRITE_BEHIND) {
 	    /*
 	     * Assume all bytes accepted when write-behind is enabled.
@@ -2166,6 +2262,7 @@ FsPseudoStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 {
     ReturnStatus 	status;
     Pdev_Request	request;
+    Fs_IOReply		ioReply;
     register Proc_ControlBlock *procPtr;
     register PdevClientIOHandle *cltHandlePtr =
 	    (PdevClientIOHandle *)streamPtr->ioHandlePtr;
@@ -2264,15 +2361,23 @@ FsPseudoStreamIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
 	    procPtr = Proc_GetEffectiveProc();
 	    request.hdr.operation		= PDEV_IOCTL;
 	    request.param.ioctl.command		= command;
-	    request.param.ioctl.familyID	= procPtr->familyID;
-	    request.param.ioctl.procID		= procPtr->processID;
+	    request.param.ioctl.inBuffer	= 0;
+	    request.param.ioctl.inBufSize	= inBufPtr->size;
+	    request.param.ioctl.outBuffer	= 0;
+	    request.param.ioctl.outBufSize	= outBufPtr->size;
 	    request.param.ioctl.byteOrder	= byteOrder;
-	    
+	    request.param.ioctl.procID		= procPtr->processID;
+	    request.param.ioctl.familyID	= procPtr->familyID;
+	    request.param.ioctl.uid		= procPtr->effectiveUserID;
+	    if (procPtr->fsPtr->numGroupIDs > 0) {
+		request.param.read.gid	= procPtr->fsPtr->groupIDs[0];
+	    }
+
 	    status = RequestResponse(pdevHandlePtr, sizeof(Pdev_Request),
-				     &request.hdr,
-				     inBufPtr->size, inBufPtr->addr,
-				     outBufPtr->size, outBufPtr->addr,
-				     (int *) NIL, (Sync_RemoteWaiter *)NIL);
+				 &request.hdr,
+				 inBufPtr->size, inBufPtr->addr,
+				 outBufPtr->size, outBufPtr->addr,
+				 &ioReply, (Sync_RemoteWaiter *)NIL);
 	}
     }
 
@@ -2430,7 +2535,7 @@ FsPseudoStreamCloseInt(pdevHandlePtr)
      */
     request.hdr.operation = PDEV_CLOSE;
     (void) RequestResponse(pdevHandlePtr, sizeof(Pdev_Request), &request.hdr,
-		    0, (Address)NIL, 0, (Address)NIL, (int *) NIL,
+		    0, (Address)NIL, 0, (Address)NIL, (Fs_IOReply *) NIL,
 		    (Sync_RemoteWaiter *)NIL);
     pdevHandlePtr->flags &= ~(PDEV_BUSY|FS_USER);
 exit:
