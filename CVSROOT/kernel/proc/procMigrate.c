@@ -601,7 +601,6 @@ SendSegment(procPtr, type, nodeID, foreign)
      * Free up the segment on the home node.
      */
     Vm_SegmentDelete(procPtr->vmPtr->segPtrArray[type], procPtr);
-    
     if (proc_DoTrace && proc_MigDebugLevel > 2) {
 	record.flags = (foreign ? 0 : PROC_MIGTRACE_HOME);
 	record.info.command.data = (ClientData) numPages;
@@ -692,15 +691,7 @@ SendFileState(procPtr, nodeID, foreign)
     Byte_FillBuffer(ptr, int, procPtr->numStreams);
     
     status = Fs_EncapStream(procPtr->cwdPtr, ptr);
-    if (status == SUCCESS) {
-	status = Fs_Close(procPtr->cwdPtr);
-	if (status != SUCCESS) {
-	    Sys_Panic(SYS_WARNING,
-		      "SendFileState: Error %x from Fs_Close on cwd.\n",
-		      status);
-	    return(status);
-	}
-    } else {
+    if (status != SUCCESS) {
 	Sys_Panic(SYS_WARNING,
 		  "SendFileState: Error %x from Fs_EncapStream on cwd.\n",
 		  status);
@@ -715,15 +706,7 @@ SendFileState(procPtr, nodeID, foreign)
 	    numEncap += 1;
 	    Byte_FillBuffer(ptr, int, i);
 	    status = Fs_EncapStream(streamPtr, ptr);
-	    if (status == SUCCESS) {
-		status = Fs_Close(streamPtr);
-		if (status != SUCCESS) {
-		    Sys_Panic(SYS_WARNING,
-			      "SendFileState: Error %x from Fs_Close.\n",
-			      status);
-		    return(status);
-		}
-	    } else {
+	    if (status != SUCCESS) {
 		Sys_Panic(SYS_WARNING,
 			  "SendFileState: Error %x from Fs_EncapStream.\n",
 			  status);
