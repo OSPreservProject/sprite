@@ -234,8 +234,8 @@ ds3100: ${OBJS} .PRECIOUS
 		-L/sprite/lib/${TM}.md ${LIBC}
 	@ls -l $@
 	@size $@
-	update -f $@ /sprite/boot/$@.md/$@.new
-	strip /sprite/boot/$@.md/$@.new
+	update -f $@ /sprite/boot/$@.md/sprite.new
+	strip /sprite/boot/$@.md/sprite.new
 	rm -f $@.nm
 	nm -n $@ > $@.nm
 
