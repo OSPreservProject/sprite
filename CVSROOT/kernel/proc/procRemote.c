@@ -94,6 +94,7 @@ Proc_AcceptMigration(nodeID)
 /*
  *----------------------------------------------------------------------
  *
+ * 
  * Proc_MigReceiveInfo --
  *
  *	Get information about a process migrating to this machine.  The
@@ -272,7 +273,7 @@ GetProcessState(buffer, hostID)
 	       (Address) &procPtr->genFlags);
     buffer += PROC_NUM_FLAGS * sizeof(int);
     Byte_Copy(PROC_NUM_ID_FIELDS * sizeof(int), buffer,
-	       (Address) &procPtr->userID);
+	       (Address) &procPtr->parentID);
     buffer += PROC_NUM_ID_FIELDS * sizeof(int);
     if (procPtr->numGroupIDs) {
 	procPtr->groupIDs = (int *)
@@ -286,8 +287,10 @@ GetProcessState(buffer, hostID)
     procPtr->genFlags |= PROC_NO_VM;
     if (home) {
 	procPtr->genFlags &= (~PROC_FOREIGN);
+	procPtr->kcallTable = exc_NormalHandlers;
     } else {
 	procPtr->genFlags |= PROC_FOREIGN;
+	procPtr->kcallTable = exc_MigratedHandlers;
     }
     procPtr->genFlags &= ~(PROC_MIG_PENDING | PROC_MIGRATING);
 
@@ -350,18 +353,12 @@ GetProcessState(buffer, hostID)
     Vm_ProcInit(procPtr);
 
     /*
-     * CHANGE this to inherit statistics!
+     * Initialize some of the fields as if for a new process.  If migrating
+     * home, these are already set up.  FIXME: inheritance of fields has
+     * changed a lot, and some of this may become the same for both
+     * migrating away and migrating home.
      */
     if (!home) {
-	procPtr->kernelCpuUsage 	= timer_TicksZeroSeconds;
-	procPtr->userCpuUsage 		= timer_TicksZeroSeconds;
-	procPtr->childKernelCpuUsage 	= timer_TicksZeroSeconds;
-	procPtr->childUserCpuUsage 	= timer_TicksZeroSeconds;
-	procPtr->numQuantumEnds		= 0;
-	procPtr->numWaitEvents		= 0;
-
-	procPtr->parentID 		= NIL;
-	procPtr->familyID 		= NIL;
 	procPtr->event			= NIL;
 
 	procPtr->setJumpStatePtr 	= (Sys_SetJumpState *) NIL;
@@ -645,26 +642,22 @@ ProcResumeMigProc()
 	Sys_Printf("Status register: %x.\n", trapStackPtr->excStack.statusReg);
     }
 
-    if (trapStackPtr->trapType == EXC_SYSCALL_TRAP &&
-	trapStackPtr->genRegs[D0] == GEN_ABORTED_BY_SIGNAL) {
-	trapStackPtr->genRegs[D0] = NIL;
-	if (proc_MigDebugLevel > 5) {
-	    Sys_Printf("Calling RunMigProcSysCall.\n");
-	}
-	ProcRunMigProcSysCall(*trapStackPtr);
-    } else {
-	/*
-	 * Disable interrupts and then start off the process.  Note that
-	 * we don't use the macro DISABLE_INTR because there is an implicit 
-	 * enable interrupts when we return to user mode.  This is just like 
-	 * starting a new user process.
-	 */
-	if (proc_MigDebugLevel > 5) {
-	    Sys_Printf("Calling RunMigProc.\n");
-	}
-	Sys_DisableIntr();
-	ProcRunMigProc(*trapStackPtr);
+    /*
+     * Disable interrupts and then start off the process.  Note that
+     * we don't use the macro DISABLE_INTR because there is an implicit 
+     * enable interrupts when we return to user mode.  This is just like 
+     * starting a new user process, except that the stack pointer saved
+     * with the registers is the KERNEL stack pointer, not the user
+     * stack pointer.
+     */
+    if (proc_MigDebugLevel > 5) {
+	Sys_Printf("Calling RunMigProc.\n");
     }
+    Sys_DisableIntr();
+    trapStackPtr->genRegs[mach_SP] = trapStackPtr->userStackPtr;
+    Proc_RunUserProc(trapStackPtr->genRegs, trapStackPtr->excStack.pc,
+	    Proc_Exit, procPtr->stackStart + mach_ExecStackOffset);
+    Sys_Panic(SYS_FATAL, "ProcResumeMigProc: Proc_RunUserProc returned.\n");
 }
 
 
@@ -1151,6 +1144,7 @@ ProcRemoteFork(parentProcPtr, childProcPtr)
     }
     childProcPtr->peerHostID = parentProcPtr->peerHostID;
     childProcPtr->genFlags |= PROC_FOREIGN;
+    childProcPtr->kcallTable = exc_MigratedHandlers;
 
     if (proc_MigDebugLevel > 3) {
 	Sys_Printf("ProcRemoteFork returning status %x.\n", status);
