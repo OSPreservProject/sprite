@@ -234,7 +234,7 @@ extern int	rpc_SwappedVersionNew;
  * 1k of parameters.  This large chunk is broken into fragments.
  * The maximum size of a datagram is dependent on the transport medium.
  */
-#define RPC_MAX_NUM_FRAGS	31
+#define RPC_MAX_NUM_FRAGS	16
 #define RPC_MAX_FRAG_SIZE	1024
 #define RPC_MAX_DATASIZE	(RPC_MAX_NUM_FRAGS * RPC_MAX_FRAG_SIZE)
 #define RPC_MAX_PARAMSIZE	(1 * RPC_MAX_FRAG_SIZE)
