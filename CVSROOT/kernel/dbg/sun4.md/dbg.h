@@ -241,21 +241,21 @@ typedef struct {
     "Unknown Trap 14",			\
     "Unknown Trap 15",			\
     "Interrupt Trap",			\
-    "Level 1 Interrupt",		\
-    "Level 2 Interrupt",		\
-    "Level 3 Interrupt",		\
-    "Level 4 Interrupt",		\
-    "Level 5 Interrupt",		\
-    "Level 6 Interrupt",		\
-    "Level 7 Interrupt",		\
-    "Level 8 Interrupt",		\
-    "Level 9 Interrupt",		\
-    "Level 10 Interrupt",		\
-    "Level 11 Interrupt",		\
-    "Level 12 Interrupt",		\
-    "Level 13 Interrupt",		\
-    "Level 14 Interrupt",		\
-    "Level 15 Interrupt",		\
+    "D[1] Interrupt (level 1)",		\
+    "VMEbus 1 Interrupt (level 2)",	\
+    "VMEbus 2 Interrupt (level 3)",	\
+    "SCSI Interrupt (level 4)",		\
+    "VMEbus 3 Interrupt (level 5)",	\
+    "Ethernet Interrupt (level 6)",	\
+    "VMEbus 4 Interrupt (level 7)",	\
+    "Video Interrupt (level 8)",	\
+    "VMEbus 5 Interrupt (level 9)",	\
+    "Clock Interrupt (level 10)",	\
+    "VMEbus 6 Interrupt (level 11)",	\
+    "SCCs Interrupt (level 12)",	\
+    "VMEbus 7 Interrupt (level 13)",	\
+    "Clock Interrupt (level 14)",	\
+    "Memory Interrupt (level 15)",	\
     "Breakpoint Trap",			\
     "Unknown Trap",			\
     "UNKNOWN EXCEPTION"			\
