@@ -148,20 +148,20 @@ Fs_EncapStream(streamPtr, bufPtr)
     status = (*fsStreamOpTable[ioHandlePtr->fileID.type].migStart) (ioHandlePtr,
 		    streamPtr->flags, rpc_SpriteID, &migInfoPtr->flags);
 
-    if (status == SUCCESS) {
-	/*
-	 * Clean up our reference to the stream.  We'll remove the
-	 * stream from the handle table entirely if this is the last
-	 * reference on a client and the stream is not a shadow for
-	 * remote clients.
-	 */
-	if ((streamPtr->hdr.refCount <= 1) &&
-	    FsStreamClientClose(&streamPtr->clientList, rpc_SpriteID)) {
-	    FsStreamDispose(streamPtr);
-	} else {
-	    FsHandleRelease(streamPtr, TRUE);
-	}
+    /*
+     * Clean up our reference to the stream.  We'll remove the
+     * stream from the handle table entirely if this is the last
+     * reference on a client and the stream is not a shadow for
+     * remote clients.  On error, or if the stream isn't the last
+     * reference, we just release our lock.
+     */
+    if ((status == SUCCESS)  && (streamPtr->hdr.refCount <= 1) &&
+	FsStreamClientClose(&streamPtr->clientList, rpc_SpriteID)) {
+	FsStreamDispose(streamPtr);
+    } else {
+	FsHandleRelease(streamPtr, TRUE);
     }
+
     DEBUG( (" status %x\n", status) );
     return(status);
 }
@@ -481,16 +481,20 @@ FsNotifyOfMigration(migInfoPtr, flagsPtr, offsetPtr, outSize, outData)
 	migReplyPtr = &(migParam.migReply);
 	*flagsPtr = migReplyPtr->flags;
 	*offsetPtr = migReplyPtr->offset;
-    }
-    if (migParam.dataSize > 0) {
-	if (outSize < migParam.dataSize) {
-	    Sys_Panic(SYS_WARNING,
-		"FsNotifyOfMigration: too much data returned %d not %d\n",
-		migParam.dataSize, outSize);
-	    status = FAILURE;
-	} else {
-	    Byte_Copy(migParam.dataSize, (Address)&migParam.data, outData);
+	if (migParam.dataSize > 0) {
+	    if (outSize < migParam.dataSize) {
+		Sys_Panic(fsMigDebug ? SYS_FATAL : SYS_WARNING,
+			  "FsNotifyOfMigration: too much data returned %d not %d\n",
+			  migParam.dataSize, outSize);
+		status = FAILURE;
+	    } else {
+		Byte_Copy(migParam.dataSize, (Address)&migParam.data, outData);
+	    }
 	}
+    } else if (fsMigDebug) {
+	Sys_Panic(SYS_WARNING,
+		  "FsNotifyOfMigration: status %x returned by remote migrate routine.\n",
+		  status);
     }
     return(status);
 }
@@ -541,7 +545,8 @@ Fs_RpcStartMigration(srvToken, clientID, command, storagePtr)
     hdrPtr = (*fsStreamOpTable[migInfoPtr->ioFileID.type].clientVerify)
 		(&migInfoPtr->ioFileID, migInfoPtr->srcClientID, (int *)NIL);
     if (hdrPtr == (FsHandleHeader *) NIL) {
-	Sys_Panic(SYS_WARNING, "Fs_RpcStartMigration, unknown I/O handle <%d,%d,%d>\n",
+	Sys_Panic(fsMigDebug ? SYS_FATAL : SYS_WARNING,
+		  "Fs_RpcStartMigration, unknown I/O handle <%d,%d,%d>\n",
 	    migInfoPtr->ioFileID.type,
 	    migInfoPtr->ioFileID.major, migInfoPtr->ioFileID.minor);
 	return(FS_STALE_HANDLE);
@@ -558,7 +563,7 @@ Fs_RpcStartMigration(srvToken, clientID, command, storagePtr)
 		clientID, &migReplyPtr->flags, &migReplyPtr->offset,
 		&dataSize, &dataPtr);
     migParamPtr->dataSize = dataSize;
-    if (dataSize > 0) {
+    if ((status == SUCCESS) && (dataSize > 0)) {
 	if (dataSize <= sizeof(migParamPtr->data)) {
 	    Byte_Copy(dataSize, dataPtr, (Address) &migParamPtr->data);
 	    Mem_Free(dataPtr);
