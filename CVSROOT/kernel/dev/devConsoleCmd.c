@@ -125,10 +125,6 @@ Dev_InvokeConsoleCmd(commandChar)
     if (commands['a'].proc == 0) {
 	commands['a'].proc = Abort;
     }
-    if (commands['b'].proc == 0) {
-	commands['b'].proc = Debug;
-	commands['b'].clientData = (ClientData) TRUE;
-    }
     if (commands['d'].proc == 0) {
 	commands['d'].proc = Debug;
 	commands['d'].clientData = (ClientData) FALSE;
