@@ -171,7 +171,13 @@ FslclLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
 	return(FS_DOMAIN_UNAVAILABLE);
     }
 
-   /*
+    if (prefixHdrPtr->fileID.type != FSIO_LCL_FILE_STREAM) {
+	printf("FslclLookup, bad prefix handle type <%d> for {%s}%s\n",
+	    prefixHdrPtr->fileID.type,
+	    Fsutil_HandleName(prefixHdrPtr), relativeName);
+	return(FS_DOMAIN_UNAVAILABLE);
+    }
+    /*
      * Duplicate the prefixHandle into the handle for the current point
      * in the directory.  This locks and ups the reference count on the handle.
      */
@@ -179,10 +185,6 @@ FslclLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
     curHandlePtr = Fsutil_HandleDupType(Fsio_FileIOHandle, prefixHdrPtr);
     parentHandlePtr = (Fsio_FileIOHandle *)NIL;
     newNameBuffer = (char *)NIL;
-    if (curHandlePtr->hdr.fileID.type != FSIO_LCL_FILE_STREAM) {
-	panic( "FslclLookup, bad prefix handle type <%d>\n",
-	    curHandlePtr->hdr.fileID.type);
-    }
     /*
      * Loop through the pathname expanding links and checking permissions.
      * Creations and deletions are handled after this loop.
@@ -527,6 +529,21 @@ endScan:
 			status = (type == FS_DIRECTORY) ? FS_NOT_DIRECTORY :
 							  FS_WRONG_TYPE;
 		    } else {
+			/*
+			 * Special case code to trap the bugger who is deleting
+			 * "/tmp", which is a remote link! 
+			 */
+			if (curHandlePtr->descPtr->fileType == FS_REMOTE_LINK &&
+			    parentHandlePtr->hdr.fileID.minor == 2 &&
+			    parentHandlePtr->hdr.fileID.major == 0 &&
+			    strcmp(component, "tmp") == 0) {
+			    printf("FslclLookup removal of \tmp (%s) by client %d denied\n",
+				relativeName, clientID);
+			    status = FS_NO_ACCESS;
+			    break;
+			}
+			/* End special hack.  Remove by 1990 */
+
 			status = DeleteFileName(domainPtr, parentHandlePtr, 
 				&curHandlePtr, component, compLen,
 				(int) (useFlags & FS_RENAME), idPtr);
