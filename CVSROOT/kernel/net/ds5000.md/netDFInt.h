@@ -449,9 +449,6 @@ typedef struct NetDFHostRcvBuf {
     unsigned char bufB[NET_DF_HOST_RCV_BUFB_SIZE];
 } NetDFHostRcvBuf;
 
-#ifdef NET_DF_USE_UNCACHED_MEM
-#undef NET_DF_USE_UNCACHED_MEM
-#endif 
 /*
  * Remove to have the receive buffers cached.
  *
@@ -742,9 +739,10 @@ typedef struct {
 /*
  * Flags to determine adapter state
  */
-#define NET_DF_FLAGS_NORMAL          0x00000001
-#define NET_DF_FLAGS_RESETTING       0x00000002
-#define NET_DF_FLAGS_SYSLOG          0x00000004
+#define NET_DF_FLAGS_NORMAL          	0x00000001
+#define NET_DF_FLAGS_RESETTING       	0x00000002
+#define NET_DF_FLAGS_SYSLOG          	0x00000004
+#define NET_DF_FLAGS_HALTED		0x00000008
 
 /*
  * Debug ring.
@@ -772,8 +770,12 @@ extern void             NetDFPrintDebugRing _ARGS_((NetDFState *statePtr));
 
 extern int netDFDebug;
 
+#ifndef lint
 #define DFprintf \
   if (netDFDebug == NET_DF_DEBUG_ON) printf
+#else
+#define DFprintf printf
+#endif
 
 extern	ReturnStatus	NetDFInit _ARGS_((Net_Interface *interPtr));
 extern	ReturnStatus	NetDFOutput _ARGS_((Net_Interface *interPtr,

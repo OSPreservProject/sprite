@@ -535,11 +535,8 @@ NetDFRecvProcess(dropPackets, statePtr)
     register volatile NetDFHostRcvDesc  *hostDescPtr;
     register volatile NetDFHostRcvBuf   *bufPtr;
     register Net_FDDIStats              *stats;
-    unsigned long                       *addr1;
-    unsigned long                       addr2;
     register int			size;
     Boolean				tossPacket;
-    register int			numResets;
     ReturnStatus                        result;
 
     /*
@@ -578,7 +575,6 @@ NetDFRecvProcess(dropPackets, statePtr)
     }
 
     tossPacket = dropPackets;
-    numResets = statePtr->numResets;
     statePtr->lastRecvCnt = 0;
     stats = &statePtr->stats;
     while (TRUE) {

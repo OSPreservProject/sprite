@@ -112,7 +112,7 @@ NetDFBcopy(startPtr, destPtr, numBytes)
      */
     value = *div;
     bytePtr = (unsigned char *)&value;
-    switch(mod) {
+    switch((int)mod) {
     case 1:
 	bytePtr[1] = fromPtr[0];
 	fromPtr++;
@@ -172,7 +172,7 @@ NetDFBcopy(startPtr, destPtr, numBytes)
 	
 	value = *div;
 	bytePtr = (unsigned char *)&value;
-	switch(mod) {
+	switch((int)mod) {
 	case 3:
 	    bytePtr[2] = fromPtr[2];
 	case 2:
@@ -325,8 +325,6 @@ void
 NetDFXmitInit(statePtr)
     register NetDFState		*statePtr; 	/* State of the interface. */
 {
-    register volatile NetDFRmcXmtBuf *bufPtr;
-    
     if (!statePtr->xmitMemAllocated) {
 	/*
 	 * SMT XMT ring
@@ -462,8 +460,6 @@ OutputPacket(fddiHdrPtr, scatterGatherPtr, scatterGatherLength, statePtr)
     register int                        remaining;
     int					totalLength;
     int					i, n, l;
-    char                                buffer[32];
-    volatile unsigned short             status;
 
     descPtr = statePtr->rmcXmtNextDescPtr;
     /*
@@ -597,14 +593,12 @@ NetDFXmitDone(statePtr)
     register NetDFState		        *statePtr; /* State of the interface */
 {
     register volatile NetDFRmcXmtDesc   *descPtr;
-    register volatile NetDFSmtXmtDesc   *smtDescPtr;
     register NetDFXmtElement  	        *xmitElementPtr;
     register Net_FDDIStats              *stats;
     register int                        size;
     ReturnStatus			status;
 
     descPtr = statePtr->rmcXmtNextDescPtr;
-    smtDescPtr = statePtr->smtXmtNextDescPtr;
     stats = &statePtr->stats;
 
     /*
@@ -731,6 +725,7 @@ exit:
  *
  *----------------------------------------------------------------------
  */
+/*ARGSUSED*/
 ReturnStatus
 NetDFOutput(interPtr, hdrPtr, scatGathPtr, scatGathLength, rpc, statusPtr)
     Net_Interface	       *interPtr;      /* The network interface. */
@@ -747,7 +742,6 @@ NetDFOutput(interPtr, hdrPtr, scatGathPtr, scatGathLength, rpc, statusPtr)
     Net_FDDIHdr			        *fddiHdrPtr = (Net_FDDIHdr *)hdrPtr;
     Boolean				restart = FALSE;
     ReturnStatus			status;
-    unsigned short                      status2;
 
     statePtr = (NetDFState *) interPtr->interfaceData;
 

@@ -54,18 +54,11 @@ NetDFMachInit(interPtr, statePtr)
     NetDFState		*statePtr;	/* State structure. */
 {
     char		*slotAddr;
-    char		*tempAddr;
-    int 		i;
-    List_Links		*itemPtr;
-    char		*romPtr;
-    char		buffer[32];
     ReturnStatus 	status;
     int			slot;
     Mach_SlotInfo	slotInfo;
     static char		*vendor = "DEC";
     static char		*module = "PMAF-AA";
-
-    unsigned char       romval;
 
     slot = (int) interPtr->ctrlAddr;
     slotAddr = (char *) MACH_IO_SLOT_ADDR(slot);

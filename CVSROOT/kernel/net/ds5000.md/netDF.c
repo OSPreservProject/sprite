@@ -89,7 +89,7 @@ void NetDFRestart();
  *----------------------------------------------------------------------
  */
 void
-NetDFPrintStateAddrs(void)
+NetDFPrintStateAddrs()
 {
     /*
      * When the stack gets trashed, etc., it's hard to get a handle
@@ -221,7 +221,7 @@ NetDFInit(interPtr)
      * Now we are running.
      */
     statePtr->running = TRUE;
-    statePtr->flags |= NET_DF_FLAGS_NORMAL;
+    statePtr->flags = NET_DF_FLAGS_NORMAL;
 
     MASTER_UNLOCK(&interPtr->mutex);
 
@@ -252,6 +252,7 @@ int  netDFDebugRingIndex;
  *
  *----------------------------------------------------------------------
  */
+/*ARGSUSED*/
 void
 NetDFPrintDebugRing(statePtr)
     register NetDFState *statePtr;
@@ -914,7 +915,7 @@ ProcessUnsolicited(statePtr)
     }
     statePtr->lastUnsolCnt = 0;
     while (TRUE) {
-	switch (descPtr->eventID) {
+	switch ((int) descPtr->eventID) {
 	case NET_DF_UNSOL_UNDEFINED:
 	case NET_DF_UNSOL_RING_INIT_INIT:
 	case NET_DF_UNSOL_RING_INIT_RCV:
@@ -986,8 +987,6 @@ NetDFReset(interPtr)
     register NetDFState		        *statePtr;
     register int			i;
     unsigned short	                status;
-    unsigned short	                event;
-    unsigned long	                own;
     Boolean                             test;
 
     statePtr = (NetDFState *) interPtr->interfaceData;
@@ -1221,6 +1220,7 @@ exit:
  *
  *----------------------------------------------------------------------
  */
+/* ARGSUSED */
 void
 NetDFIntr(interPtr, polling)
     Net_Interface	*interPtr;	/* Interface to process. */
@@ -1231,7 +1231,6 @@ NetDFIntr(interPtr, polling)
     register volatile unsigned short event;
     int                 i;
     List_Links          *xmitElem;
-    static unsigned short linkStatus = NET_DF_LINK_UNAVAILABLE;
     unsigned short      status;
     ReturnStatus        statusRcv, statusXmt;
     static Boolean      shouldNotice = FALSE;
@@ -1266,9 +1265,11 @@ NetDFIntr(interPtr, polling)
 	goto exit;
     }
 
+#ifdef NOTDEF
 /*
  * useful for halting in the interrupt routine when debugging
- 
+ */
+
     if (halt == TRUE) {
 	NET_DF_CLEAR_ALL_EVENTS(*statePtr->regEvent);
 	NET_DF_DISABLE_ALL_INT(*statePtr->regMask);
@@ -1276,7 +1277,10 @@ NetDFIntr(interPtr, polling)
 
 	goto exit;
     }
- */
+#endif
+#ifdef lint
+    halt == true;
+#endif
     event = *(statePtr->regEvent);
     *(statePtr->regEvent) = event;
     if (shouldNotice && !(event & NET_DF_EVENT_XMT_PKT_DONE)) {
@@ -1296,11 +1300,9 @@ NetDFIntr(interPtr, polling)
 		 status & NET_DF_STATUS_LINK_STATUS);
 	if ((status & NET_DF_STATUS_LINK_STATUS) == NET_DF_LINK_UNAVAILABLE) {
 	    printf("DEC FDDI: Link became unavailable.\n");
-	    linkStatus = NET_DF_LINK_UNAVAILABLE;
 	    halt = TRUE;
 	} else {
 	    printf("DEC FDDI: Link now available.\n");
-	    linkStatus = NET_DF_LINK_AVAILABLE;
 	}
     }
     /*
@@ -1334,25 +1336,27 @@ NetDFIntr(interPtr, polling)
     if ((*(statePtr->regStatus) & NET_DF_STATUS_ADAPTER_STATE)
 	== NET_DF_STATE_HALTED) {
 	printf("DEC FDDI: Adapter halted.\n");
+	if (!(statePtr->flags & NET_DF_FLAGS_HALTED)) {
 
 #ifdef NOTDEF
-	NetDFPrintRegContents(statePtr);
-	NetDFPrintErrorLog(statePtr);
-
-	NET_DF_CLEAR_ALL_EVENTS(*statePtr->regEvent);
-	NET_DF_DISABLE_ALL_INT(*statePtr->regMask);
-	Mach_EmptyWriteBuffer();
-
-	NetDFPrintDebugRing(statePtr);
-	DBG_CALL;
-	Mach_EmptyWriteBuffer();
-	Mach_EmptyWriteBuffer();
-	halt = TRUE;
+	    NetDFPrintRegContents(statePtr);
+	    NetDFPrintErrorLog(statePtr);
+    
+	    NET_DF_CLEAR_ALL_EVENTS(*statePtr->regEvent);
+	    NET_DF_DISABLE_ALL_INT(*statePtr->regMask);
+	    Mach_EmptyWriteBuffer();
+    
+	    NetDFPrintDebugRing(statePtr);
+	    DBG_CALL;
+	    Mach_EmptyWriteBuffer();
+	    Mach_EmptyWriteBuffer();
+	    halt = TRUE;
 #endif
-	/*
-	 * Note that this reset does not lock the mutex.
-	 */
-	NetDFRestart(interPtr);    
+	    /*
+	     * Note that this reset does not lock the mutex.
+	     */
+	    NetDFRestart(interPtr);    
+	}
 	goto exit;
     }
     /*
@@ -1525,6 +1529,7 @@ NetDFIOControl(interPtr, ioctlPtr, replyPtr)
     switch(ioctlPtr->command) {
     case IOC_FDDI_RESET:
 	MASTER_UNLOCK(&interPtr->mutex);
+	statePtr->flags &= ~NET_DF_FLAGS_HALTED;
 	Net_DFRestart(interPtr);
 	MASTER_LOCK(&interPtr->mutex);
 	status = SUCCESS;
@@ -1570,7 +1575,6 @@ NetDFIOControl(interPtr, ioctlPtr, replyPtr)
     }
     case IOC_FDDI_SEND_PACKET: {
 	Dev_FDDISendPacket *packetPtr;
-	ReturnStatus       retval;
 	Net_FDDIHdr        *fddiHdrPtr;
 	Net_ScatterGather  *scatterPtr;
 
@@ -1598,7 +1602,7 @@ NetDFIOControl(interPtr, ioctlPtr, replyPtr)
 	 * NetDFOutput locks the mutex.
 	 */
 	MASTER_UNLOCK(&interPtr->mutex);
-	retval = NetDFOutput(interPtr, fddiHdrPtr, scatterPtr, 1, FALSE, NIL);
+	status = NetDFOutput(interPtr, fddiHdrPtr, scatterPtr, 1, FALSE, NIL);
 	MASTER_LOCK(&interPtr->mutex);
 
 	break;
@@ -1650,6 +1654,7 @@ NetDFIOControl(interPtr, ioctlPtr, replyPtr)
 	break;
     }
     case IOC_FDDI_HALT: {
+	statePtr->flags |= NET_DF_FLAGS_HALTED;
 	*(statePtr->regCtrlA) |= NET_DF_CTRLA_HALT;
 	break;
     }
