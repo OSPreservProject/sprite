@@ -861,8 +861,11 @@ Fs_Close(streamPtr)
 	status = FsServerStreamClose(streamPtr, rpc_SpriteID,procPtr->processID,
 		streamPtr->flags, 0, (ClientData)NIL);
 #endif /* lint */
-	(void)FsStreamClientClose(&streamPtr->clientList, rpc_SpriteID);
-	FsStreamDispose(streamPtr);
+	if (FsStreamClientClose(&streamPtr->clientList, rpc_SpriteID)) {
+	    FsStreamDispose(streamPtr);
+	} else {
+	    FsHandleRelease(streamPtr, TRUE);
+	}
     }
     return(status);
 }
