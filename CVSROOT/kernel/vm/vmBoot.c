@@ -43,7 +43,14 @@ Vm_BootInit()
 {
     extern unsigned int end;
 
+    /* 
+     * Don't bother initializing vmStat.minFSPages.  During booting it
+     * will get set to 0 or 1, which isn't interesting.  So we will
+     * put something in the bootcmds script to set minFSPages to the
+     * current cache size after the system has finished booting.
+     */
     bzero((Address) &vmStat, sizeof(vmStat));
+
     vmNoBootAlloc = FALSE;
     vmMemEnd = (Address) &end;
     /*
