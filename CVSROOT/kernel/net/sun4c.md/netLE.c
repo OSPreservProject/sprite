@@ -277,8 +277,8 @@ NetLEReset()
 
     {
 	int	i;
-	unsigned short 	*csr0Ptr = &(netLEStatePtr->regPortPtr->dataPort);
-
+	unsigned volatile short	*csr0Ptr = 
+	    &(netLEStatePtr->regPortPtr->dataPort);
 
 	for (i = 0; ((*csr0Ptr & NET_LE_CSR0_INIT_DONE) == 0); i++) {
 	    if (i > 50000) {
@@ -301,7 +301,6 @@ NetLEReset()
 		    (NET_LE_CSR0_START | NET_LE_CSR0_INTR_ENABLE);
 
     printf("LE ethernet: Reinitialized chip.\n");
-
 }
 
 
