@@ -1366,7 +1366,10 @@ Fscache_DeleteFile(cacheInfoPtr)
     if ((cacheInfoPtr->blocksInCache > 0) ||
 	(cacheInfoPtr->flags & (FSCACHE_FILE_ON_DIRTY_LIST|
 				FSCACHE_FILE_BEING_WRITTEN))) {
-	panic("Fscache_DeleteFile failed\n");
+	panic("Fscache_DeleteFile failed \"%s\" blocks %d flags %x\n",
+		Fsutil_HandleName(cacheInfoPtr->hdrPtr),
+		cacheInfoPtr->blocksInCache,
+		cacheInfoPtr->flags);
     }
     UNLOCK_MONITOR;
 }
