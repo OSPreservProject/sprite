@@ -427,7 +427,9 @@ RpcProcFork(parentProcPtr, dataPtr, dataLength, replyDataPtr,
     childProcPtr->effectiveUserID 	= parentProcPtr->effectiveUserID;
     childProcPtr->familyID 		= parentProcPtr->familyID;
 
+#ifdef notdef
     childProcPtr->stackStart 		= NIL;
+#endif
 
     Vm_ProcInit(childProcPtr);
 
