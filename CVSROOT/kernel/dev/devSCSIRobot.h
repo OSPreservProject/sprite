@@ -378,7 +378,7 @@ extern void ExbRobotInitElemStatus _ARGS_((ScsiCmd *scsiRobotCmdPtr,
 extern void ExbRobotInquiry _ARGS_((ScsiCmd *scsiRobotCmdPtr, 
      ExbRobotInquiryData *inquiryDataPtr));
 extern void ExbModeSelect _ARGS_((ScsiCmd *scsiRobotCmdPtr, 
-     Dev_RobotCommand *cmdPtr, Address *dataPtr,
+     Dev_RobotCommand *cmdPtr, Address dataPtr,
      unsigned int dataLength));				  
 extern void ExbMoveMedium _ARGS_((ScsiCmd *scsiRobotCmdPtr,
      ScsiExbRobot *robotPtr, Dev_RobotCommand *cmdPtr));
