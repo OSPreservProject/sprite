@@ -195,6 +195,10 @@ Fsconsist_SyncLockCleanup(consistPtr)
  *	Take action to ensure that everything is consistent for a
  *	file that is being mapped.
  *
+ *	This routine looks after consistency of a file mapped on multiple
+ *	clients.  Since nobody's wanted to do that, I haven't got this
+ *	routine implemented yet.  -- Ken Shirriff 8/90
+ *
  * Results:
  *	SUCCESS or FS_FILE_BUSY.
  *
@@ -210,33 +214,7 @@ Fsconsist_MappedConsistency(handlePtr, clientID, isMapped)
     int 		clientID;	/* ID of the host doing the map. */
     int			isMapped;	/* 1 if file is being mapped. */
 {
-#ifdef 0
-    int					cacheable;	/* Dummy. */
-    register Fsconsist_ClientInfo	*clientPtr;
-    register Fsconsist_Info		*consistPtr = &handlePtr->consist;
-    ReturnStatus			status;
-
-    printf("Fsconsist_MappedConsistency: updating consistency (a)\n");
-    LOCK_MONITOR;
-
-    printf("Fsconsist_MappedConsistency: updating consistency (b)\n");
-    StartConsistency(consistPtr, clientID, (int)(isMapped ? FS_MAP : 0),
-	    &cacheable);
-
-    printf("Fsconsist_MappedConsistency: updating consistency (c)\n");
-    LIST_FORALL(&consistPtr->clientList, (List_Links *)clientPtr) {
-	if (clientPtr->clientID == clientID) {
-	    clientPtr->mapped = isMapped ? TRUE : FALSE;
-	}
-    }
-
-    printf("Fsconsist_MappedConsistency: updating consistency (d)\n");
-    status = EndConsistency(consistPtr);
-    printf("Fsconsist_MappedConsistency: updating consistency (e)\n");
-
-    UNLOCK_MONITOR;
-    return(status);
-#endif
+    return SUCCESS;
 }
 
 /*
