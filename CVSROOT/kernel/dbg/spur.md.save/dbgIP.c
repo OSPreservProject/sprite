@@ -608,7 +608,7 @@ Send_Packet (dataPtr, dataSize, type, seqNum)
 
     gather.bufAddr = (Address) packetBuffer;
     gather.length = packetLength;
-    gather.conditionPtr = (Sync_Condition *) NIL;
+    gather.mutexPtr = (Sync_Semaphore *) NIL;
 
     Net_OutputRawEther(&etherHdr, &gather, 1);
 
