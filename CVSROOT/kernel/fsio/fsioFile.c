@@ -155,6 +155,33 @@ FsLocalFileHandleInit(fileIDPtr, name, newHandlePtrPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * FsFileSyncLockCleanup --
+ *
+ *	This takes care of the dynamically allocated Sync_Lock's that
+ *	are embedded in a FsLocalFileIOHandle.  This routine is
+ *	called when the file handle is being removed.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The locking statistics for this handle are combined with the
+ *	summary statistics for the lock types in the handle
+ *
+ *----------------------------------------------------------------------
+ */
+void
+FsFileSyncLockCleanup(handlePtr)
+    FsLocalFileIOHandle *handlePtr;
+{
+    FsConsistSyncLockCleanup(&handlePtr->consist);
+    FsCacheInfoSyncLockCleanup(&handlePtr->cacheInfo);
+    FsReadAheadSyncLockCleanup(&handlePtr->readAhead);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * FsFileSrvOpen --
  *
  *	This is called in two cases after name lookup on the server.
@@ -531,7 +558,7 @@ FsFileClose(streamPtr, clientID, procID, flags, dataSize, closeData)
     /*
      * Update use counts and handle pending deletions.
      */
-    status = FileCloseInt(handlePtr, 1, (flags & FS_WRITE) != 0,
+    status = FsFileCloseInt(handlePtr, 1, (flags & FS_WRITE) != 0,
 				     (flags & FS_EXECUTE) != 0,
 				     clientID, TRUE);
     if (status == FS_FILE_REMOVED) {
@@ -571,11 +598,12 @@ FsFileClose(streamPtr, clientID, procID, flags, dataSize, closeData)
 /*
  * ----------------------------------------------------------------------------
  *
- * FileCloseInt --
+ * FsFileCloseInt --
  *
  *	Close a file, handling pending deletions.
- *	This is called from the regular close routine and from
- *	the file client-kill cleanup routine.
+ *	This is called from the regular close routine, from
+ *	the file client-kill cleanup routine, and from the
+ *	lookup routine that deletes file names.
  *
  * Results:
  *	SUCCESS or FS_FILE_REMOVED.
@@ -589,7 +617,7 @@ FsFileClose(streamPtr, clientID, procID, flags, dataSize, closeData)
  *
  */
 ReturnStatus
-FileCloseInt(handlePtr, ref, write, exec, clientID, callback)
+FsFileCloseInt(handlePtr, ref, write, exec, clientID, callback)
     FsLocalFileIOHandle *handlePtr;	/* File to clean up */
     int ref;				/* Number of uses to remove */
     int write;				/* Number of writers to remove */
@@ -608,7 +636,7 @@ FileCloseInt(handlePtr, ref, write, exec, clientID, callback)
     handlePtr->use.exec -= exec;
     if (handlePtr->use.ref < 0 || handlePtr->use.write < 0 ||
 	handlePtr->use.exec < 0) {
-	panic("FileCloseInt <%d,%d> use %d, write %d, exec %d\n",
+	panic("FsFileCloseInt <%d,%d> use %d, write %d, exec %d\n",
 	    handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
 	    handlePtr->use.ref, handlePtr->use.write, handlePtr->use.exec);
     }
@@ -631,6 +659,7 @@ FileCloseInt(handlePtr, ref, write, exec, clientID, callback)
 	    FsClientRemoveCallback(&handlePtr->consist, clientID);
 	}
 	(void)FsDeleteFileDesc(handlePtr);
+	FsFileSyncLockCleanup(handlePtr);
 	if (callback) {
 	    FsHandleRelease(handlePtr, TRUE);
 	}
@@ -676,7 +705,7 @@ FsFileClientKill(hdrPtr, clientID)
 		    &refs, &writes, &execs);
     FsLockClientKill(&handlePtr->lock, clientID);
 
-    status = FileCloseInt(handlePtr, refs, writes, execs, clientID, FALSE);
+    status = FsFileCloseInt(handlePtr, refs, writes, execs, clientID, FALSE);
     if (status != FS_FILE_REMOVED) {
 	FsHandleUnlock(handlePtr);
     }
