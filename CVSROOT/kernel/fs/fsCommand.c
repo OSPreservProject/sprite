@@ -93,8 +93,8 @@ Fs_Command(command, bufSize, buffer)
 	    if (status == SUCCESS) {
 		status = Vm_CopyIn(argPtr->pathLen2, argPtr->path2, prefix);
 		if (status == SUCCESS) {
-		    status = Fs_Open(localPath, FS_READ, FS_DIRECTORY, 0,
-						&streamPtr);
+		    status = Fs_Open(localPath, FS_READ|FS_FOLLOW,
+						FS_DIRECTORY, 0, &streamPtr);
 		    if (status == SUCCESS) {
 			if (streamPtr->ioHandlePtr->fileID.type !=
 				FS_LCL_FILE_STREAM) {
@@ -385,7 +385,7 @@ Fs_Cat(fileName)
     Address buffer;
 
     streamPtr = (Fs_Stream *)NIL;
-    error = Fs_Open(fileName, FS_READ, FS_FILE, 0, &streamPtr);
+    error = Fs_Open(fileName, FS_READ|FS_FOLLOW, FS_FILE, 0, &streamPtr);
     if (error) {
 	return(error);
     }
@@ -442,13 +442,13 @@ Fs_Copy(srcFileName, dstFileName)
     Address buffer;
 
     srcStreamPtr = (Fs_Stream *)NIL;
-    error = Fs_Open(srcFileName, FS_READ, FS_FILE, 0, &srcStreamPtr);
+    error = Fs_Open(srcFileName, FS_READ|FS_FOLLOW, FS_FILE, 0, &srcStreamPtr);
     if (error) {
 	Sys_SafePrintf("Fs_Copy: can't open source file (%s)\n", srcFileName);
 	return(error);
     }
     dstStreamPtr = (Fs_Stream *)NIL;
-    error = Fs_Open(dstFileName, FS_CREATE|FS_WRITE, FS_FILE, 0666, &dstStreamPtr);
+    error = Fs_Open(dstFileName, FS_CREATE|FS_WRITE|FS_FOLLOW, FS_FILE, 0666, &dstStreamPtr);
     if (error) {
 	Sys_SafePrintf("Fs_Copy: can't open destination file (%s)\n",
 				 dstFileName);
