@@ -1211,6 +1211,7 @@ MachUserReturn(procPtr)
 {
     SignalStack			sigStack;
     Address			pc;
+    int				restarted;
 
     if (procPtr->unixProgress != PROC_PROGRESS_NOT_UNIX &&
 	    procPtr->unixProgress != PROC_PROGRESS_UNIX && debugProcStubs) {
@@ -1256,21 +1257,29 @@ MachUserReturn(procPtr)
 	     * We must also ensure that the argument registers are the
 	     * same as when we came in.
 	     */
+	    restarted = 1;
 	    if (debugProcStubs) {
-		printf("Restarting signal; old pc = %x\n",
-			procPtr->machStatePtr->userState.excStackPtr->pc);
-	    }
-	    procPtr->machStatePtr->userState.excStackPtr->pc -= 4;
-	    if (debugProcStubs) {
-		printf("Restarting signal; new pc = %x\n",
-			procPtr->machStatePtr->userState.excStackPtr->pc);
+		printf("Restarting system call with progress %d\n",
+			procPtr->unixProgress);
 	    }
 	    procPtr->unixProgress = PROC_PROGRESS_UNIX;
+			procPtr->machStatePtr->userState.excStackPtr->pc);
 	}
 	if (Sig_Handle(procPtr, &sigStack.sigStack, &pc)) {
 	    SetupSigHandler(procPtr, &sigStack, pc);
 	    Mach_DisableIntr();
 	    break;
+	} else {
+	    if (procPtr->unixProgress == PROC_PROGRESS_MIG_RESTART ||
+		    procPtr->unixProgress == PROC_PROGRESS_RESTART) {
+		restarted = 1;
+		if (debugProcStubs) {
+		    printf("No signal action, so we restarted call\n");
+		}
+		procPtr->unixProgress = PROC_PROGRESS_UNIX;
+	    } else if (restarted) {
+		printf("No signal, yet we restarted system call!\n");
+	    }
 	}
     }
 
@@ -1292,6 +1301,13 @@ MachUserReturn(procPtr)
      * As soon as we return to user mode, though, we will allow migration.
      */
     Sig_AllowMigration(procPtr);
+
+    if (restarted) {
+	if (debugProcStubs) {
+	    printf("Moving the PC to restart the system call\n");
+	}
+	procPtr->machStatePtr->userState.excStackPtr->pc -= 4;
+    }
 
     if (procPtr->unixProgress != PROC_PROGRESS_NOT_UNIX &&
             procPtr->unixProgress != PROC_PROGRESS_UNIX && debugProcStubs) {
