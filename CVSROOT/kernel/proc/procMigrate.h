@@ -149,49 +149,6 @@ typedef struct Proc_DestroyMigProcData {
     ReturnStatus status;		/* status to return when it exits */
 } Proc_DestroyMigProcData;
 
-/*
- * Define the state of this machine w.r.t accepting migrated processes.
- * A machine must always be willing to accept its own processes if they
- * are migrated home.  Other than that, a host may allow migrations onto
- * it under various sets of criteria, and may allow migrations away from
- * it under similar sets of criteria.
- *
- *	PROC_MIG_IMPORT_NEVER		- never allow migrations to this host.
- *	PROC_MIG_IMPORT_ROOT 		- allow migrations to this host only
- *					  by root.
- *	PROC_MIG_IMPORT_ALL  		- allow migrations by anyone.
- *	PROC_MIG_IMPORT_ANYINPUT 	- don't check keyboard input when
- *					  determining availability.
- *	PROC_MIG_IMPORT_ANYLOAD  	- don't check load average when
- *					  determining availability.
- *	PROC_MIG_IMPORT_ALWAYS  	- don't check either.
- *	PROC_MIG_EXPORT_NEVER    	- never export migrations from this
- * 					  host.
- *	PROC_MIG_EXPORT_ROOT	        - allow only root to export.
- *	PROC_MIG_EXPORT_ALL	        - allow anyone to export.
- *
- * For example, a reasonable default for a file server might be to import
- * and export only for root; for a user's machine, it might be to allow
- * anyone to migrate; and for a compute server, it might never export
- * and import always regardless of load average or keyboard input.  (The
- * load average would not have to be exceptionally low to determine
- * availability; the host still would only be selected if the load average
- * were low enough to gain something by migrating to it.)
- */
-
-#define PROC_MIG_IMPORT_NEVER 			 0
-#define PROC_MIG_IMPORT_ROOT    	0x00000001
-#define PROC_MIG_IMPORT_ALL     	0x00000003
-#define PROC_MIG_IMPORT_ANYINPUT	0x00000010
-#define PROC_MIG_IMPORT_ANYLOAD		0x00000020
-#define PROC_MIG_IMPORT_ALWAYS  \
-			(PROC_MIG_IMPORT_ANYINPUT | PROC_MIG_IMPORT_ANYLOAD)
-#define PROC_MIG_EXPORT_NEVER			 0
-#define PROC_MIG_EXPORT_ROOT		0x00010000
-#define PROC_MIG_EXPORT_ALL		0x00030000
-
-#define PROC_MIG_ALLOW_DEFAULT (PROC_MIG_IMPORT_ALL | PROC_MIG_EXPORT_ALL)
-
 
 /*
  * Information for encapsulating process state.
