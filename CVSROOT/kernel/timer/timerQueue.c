@@ -116,8 +116,7 @@ Timer_Init()
     static	Boolean	initialized	= FALSE;
 
     if (initialized) {
-	Sys_Panic(SYS_WARNING,
-		"Timer_Init: Timer module initialized more that once!\n");
+	printf("Timer_Init: Timer module initialized more that once!\n");
     }
     initialized = TRUE;
 
@@ -221,8 +220,7 @@ Timer_CallBack()
 #define  ELEMENTPTR ((Timer_QueueElement *) readyPtr)
 
 		    if (ELEMENTPTR->routine == 0) {
-			Sys_Panic(SYS_FATAL,
-			"Timer_ServiceInterrupt: t.q.e. routine == 0\n");
+			panic("Timer_ServiceInterrupt: t.q.e. routine == 0\n");
 		    } else {
 			ELEMENTPTR->processed = TRUE;
 			(ELEMENTPTR->routine) 
@@ -376,8 +374,7 @@ Timer_RescheduleRoutine(newElementPtr, interval)
      * Safety check.
      */
     if (newElementPtr->routine == 0) {
-	Sys_Panic(SYS_FATAL, 
-		"Timer_RescheduleRoutine: bad address for t.q.e. routine.\n");
+	panic("Timer_RescheduleRoutine: bad address for t.q.e. routine.\n");
     }
 
     /* 
@@ -579,8 +576,7 @@ Timer_DumpStats(arg)
 	Timer_SubtractTicks(end, start, &diff);
 	Timer_TicksToTime(diff, &time);
 
-	printf(
-	"\n%d.%06d cb %d prof %d spur %d; Sched %d Res %d Des %d\n",
+	printf("\n%d.%06d cb %d prof %d spur %d; Sched %d Res %d Des %d\n",
 	    time.seconds, time.microseconds,
 	    timer_Statistics.callback,
 	    timer_Statistics.profile,
