@@ -40,9 +40,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 int	rpc_SpriteID = 0;
 
 /*
- * We stop handlling requests during a panic().
+ * We stop handlling requests during a bad trap that causes us
+ * to sync our disks.  If that deadlocks we want to be sure that
+ * the RPC system is off so we can't hang other machines.
  */
-extern int sysPanicing;
+extern int sys_ErrorSync;
 
 /*
  * Set to FALSE for debugging a few isolated machines without tons of msgs.
@@ -180,7 +182,7 @@ Rpc_Dispatch(headerType, headerPtr, rpcHdrAddr, packetLength)
 	 * deadlocks trying to enter the debugger, then callback RPCs
 	 * from file servers should not also hang.
 	 */
-	if (rpc_SpriteID == 0 || sysPanicing) {
+	if (rpc_SpriteID == 0 || sys_ErrorSync) {
 	    return;
 	}
 	if (rpcHdrPtr->serverID != RPC_BROADCAST_SERVER_ID &&
