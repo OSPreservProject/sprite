@@ -768,6 +768,15 @@ VmMach_Init(firstFreePage)
     VmMachInitAddrErrorControlReg();
 #endif
     VmMachInitSystemEnableReg();
+#ifdef NOTDEF
+    /*
+     * Initialize map of invalid pmegs for later copying.
+     */
+    for (i = 0; i < VMMACH_NUM_SEGS_PER_CONTEXT; i++) {
+	copyMap[i] = VMMACH_INV_PMEG;
+    }
+#endif NOTDEF
+
 }
 
 
@@ -1381,7 +1390,6 @@ PMEGGet(softSegPtr, hardSegNum, flags)
 	    Boolean	printedStealPMEG = FALSE;
 
 	    ptePtr = pteArray;
-	    /* XXX Okay since it was flushed when freed? */
 	    VmMachReadAndZeroPMEG(pmegNum, ptePtr);
 	    for (i = 0;
 		 i < VMMACH_NUM_PAGES_PER_SEG_INT;
@@ -1466,6 +1474,7 @@ PMEGFree(pmegNum)
 	/*
 	 * Deal with pages that are still cached in this pmeg.
 	 */
+#ifdef NOTDEF
 	for (i = 0; i < VMMACH_NUM_PAGES_PER_SEG_INT; i++) {
 	    addr = vmMachPTESegAddr +
 		    ((i << VMMACH_PAGE_SHIFT) & VMMACH_PAGE_MASK);
@@ -1487,6 +1496,12 @@ PMEGFree(pmegNum)
 		break;
 	    }
 	}
+#else
+	addr = (Address) (pmegPtr->hardSegNum << VMMACH_SEG_SHIFT);
+#ifdef BADFLUSH
+	VmMachFlushSegment(addr);
+#endif
+#endif
 	VmMachPMEGZero(pmegNum);
     }
     pmegPtr->segPtr = (Vm_Segment *) NIL;
@@ -1626,6 +1641,7 @@ SetupContext(procPtr)
     register	VmMach_Context	*contextPtr;
     register	VmMach_SegData	*segDataPtr;
     register	Vm_ProcInfo	*vmPtr;
+    int		stolenContext	= FALSE;
 
     vmPtr = procPtr->vmPtr;
     contextPtr = vmPtr->machPtr->contextPtr;
@@ -1657,6 +1673,7 @@ SetupContext(procPtr)
 	    contextPtr->procPtr->vmPtr->machPtr->contextPtr =
 							(VmMach_Context *)NIL;
 	    vmStat.machDepStat.stealContext++;
+	    stolenContext = TRUE;
 	}
 	/*
 	 * Initialize the context table entry.
@@ -1665,7 +1682,9 @@ SetupContext(procPtr)
 	contextPtr->procPtr = procPtr;
 	vmPtr->machPtr->contextPtr = contextPtr;
 	VmMachSetContextReg(contextPtr->context);
-	VmMachFlushCurrentContext();
+	if (stolenContext) {
+	    VmMachFlushCurrentContext();
+	}
 	/*
 	 * Set the context map.
 	 */
@@ -1673,7 +1692,15 @@ SetupContext(procPtr)
 	    int			i;
 	    unsigned int	j;
 
+#ifdef NOTDEF
 	    j = ((unsigned int)mach_KernStart) >> VMMACH_SEG_SHIFT;
+#else
+	    /*
+	     * Since user addresses are never higher than the bottom of the
+	     * hole in the address space, this will save something like 30ms!
+	     */
+	    j = ((unsigned int)VMMACH_BOTTOM_OF_HOLE) >> VMMACH_SEG_SHIFT;
+#endif
 	    for (i = 0; i < j; i++) {
 		contextPtr->map[i] = VMMACH_INV_PMEG;
 	    }
@@ -1701,7 +1728,15 @@ SetupContext(procPtr)
 	/*
 	 * Push map out to hardware.
 	 */
+#ifdef NOTDEF
 	VmMachSegMapCopy(contextPtr->map, 0, mach_KernStart);
+#else
+	/*
+	 * Since user addresses are never higher than the bottom of the
+	 * hole in the address space, this will save something like 30ms!
+	 */
+	VmMachSegMapCopy(contextPtr->map, 0, VMMACH_BOTTOM_OF_HOLE);
+#endif
     } else {
 	/* XXX No need to flush anything? */
 	VmMachSetContextReg(contextPtr->context);
@@ -1731,7 +1766,6 @@ VmMach_FreeContext(procPtr)
 {
     register	VmMach_Context	*contextPtr;
     register	VmMach_ProcData	*machPtr;
-    int		oldContext;
 
     MASTER_LOCK(vmMachMutexPtr);
 
@@ -3260,9 +3294,13 @@ PageInvalidate(virtAddrPtr, virtPage, segDeletion)
 			(Address)&pteChange, TRUE);
     }
     /*
-     * Invalidate the page table entry.
+     * Invalidate the page table entry.  There's no need to flush the page if
+     * the invalidation is due to segment deletion, since the whole segment
+     * will already have been flushed.
      */
-    VmMachFlushPage(testVirtAddr);
+    if (!segDeletion) {
+	VmMachFlushPage(testVirtAddr);
+    }
     for (i = 0; i < VMMACH_CLUSTER_SIZE; i++, addr += VMMACH_PAGE_SIZE_INT) {
 	VmMachWritePTE(pmegNum, addr, (VmMachPTE)0);
     }
@@ -3706,8 +3744,6 @@ VmMach_DMAFree(numBytes, mapAddr)
     Address	endAddr;
     int		numPages;
     int		i, j;
-    Boolean	foundIt = FALSE;
-    int		virtPage;
  
     /* calculate number of pages to free */
 						/* beginning of first page */

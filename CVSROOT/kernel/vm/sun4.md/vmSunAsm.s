@@ -105,6 +105,303 @@ _VmMachWritePTE:
     retl	/* Return from leaf routine */
     nop
 
+
+#ifdef NOTDEF
+/*
+ * ----------------------------------------------------------------------
+ *
+ * bcopy --
+ *
+ *	Copy numBytes from *sourcePtr in to *destPtr.
+ *	This routine is optimized to do transfers when sourcePtr and 
+ *	destPtr are both double-word aligned.
+ *
+ *	void
+ *	bcopy(sourcePtr, destPtr, numBytes)
+ *	    Address sourcePtr;          Where to copy from.
+ *	    Address destPtr;            Where to copy to.
+ *	    int numBytes;      The number of bytes to copy
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The area that destPtr points to is modified.
+ *
+ * ----------------------------------------------------------------------
+ */
+.globl	_bcopy
+_bcopy:
+						/* sourcePtr in o0 */
+						/* destPtr in o1 */
+						/* numBytes in o2 */
+/*
+ * If the source or dest are not double-word aligned then everything must be
+ * done as word or byte copies.
+ */
+    or		%o0, %o1, %OUT_TEMP1
+    andcc	%OUT_TEMP1, 7, %g0
+    be		BDoubleWordCopy
+    nop
+    andcc	%OUT_TEMP1, 3, %g0
+    be		BWordCopy
+    nop
+    ba		BByteCopyIt
+    nop
+
+    /*
+     * Do as many 64-byte copies as possible.
+     */
+
+BDoubleWordCopy:
+    cmp    	%o2, 64
+    bl     	BFinishWord
+    nop
+    ldd		[%o0], %OUT_TEMP1	/* uses out_temp1 and out_temp2 */
+    std		%OUT_TEMP1, [%o1]
+    ldd		[%o0 + 8], %OUT_TEMP1
+    std		%OUT_TEMP1, [%o1 + 8]
+    ldd		[%o0 + 16], %OUT_TEMP1
+    std		%OUT_TEMP1, [%o1 + 16]
+    ldd		[%o0 + 24], %OUT_TEMP1
+    std		%OUT_TEMP1, [%o1 + 24]
+    ldd		[%o0 + 32], %OUT_TEMP1
+    std		%OUT_TEMP1, [%o1 + 32]
+    ldd		[%o0 + 40], %OUT_TEMP1
+    std		%OUT_TEMP1, [%o1 + 40]
+    ldd		[%o0 + 48], %OUT_TEMP1
+    std		%OUT_TEMP1, [%o1 + 48]
+    ldd		[%o0 + 56], %OUT_TEMP1
+    std		%OUT_TEMP1, [%o1 + 56]
+    
+    sub   	%o2, 64, %o2
+    add		%o0, 64, %o0
+    add		%o1, 64, %o1
+    ba     	BDoubleWordCopy
+    nop
+BWordCopy:
+    cmp		%o2, 64
+    bl		BFinishWord
+    nop
+    ld		[%o0], %OUT_TEMP1
+    st		%OUT_TEMP1, [%o1]
+    ld		[%o0 + 4], %OUT_TEMP1
+    st		%OUT_TEMP1, [%o1 + 4]
+    ld		[%o0 + 8], %OUT_TEMP1
+    st		%OUT_TEMP1, [%o1 + 8]
+    ld		[%o0 + 12], %OUT_TEMP1
+    st		%OUT_TEMP1, [%o1 + 12]
+    ld		[%o0 + 16], %OUT_TEMP1
+    st		%OUT_TEMP1, [%o1 + 16]
+    ld		[%o0 + 20], %OUT_TEMP1
+    st		%OUT_TEMP1, [%o1 + 20]
+    ld		[%o0 + 24], %OUT_TEMP1
+    st		%OUT_TEMP1, [%o1 + 24]
+    ld		[%o0 + 28], %OUT_TEMP1
+    st		%OUT_TEMP1, [%o1 + 28]
+    ld		[%o0 + 32], %OUT_TEMP1
+    st		%OUT_TEMP1, [%o1 + 32]
+    ld		[%o0 + 36], %OUT_TEMP1
+    st		%OUT_TEMP1, [%o1 + 36]
+    ld		[%o0 + 40], %OUT_TEMP1
+    st		%OUT_TEMP1, [%o1 + 40]
+    ld		[%o0 + 44], %OUT_TEMP1
+    st		%OUT_TEMP1, [%o1 + 44]
+    ld		[%o0 + 48], %OUT_TEMP1
+    st		%OUT_TEMP1, [%o1 + 48]
+    ld		[%o0 + 52], %OUT_TEMP1
+    st		%OUT_TEMP1, [%o1 + 52]
+    ld		[%o0 + 56], %OUT_TEMP1
+    st		%OUT_TEMP1, [%o1 + 56]
+    ld		[%o0 + 60], %OUT_TEMP1
+    st		%OUT_TEMP1, [%o1 + 60]
+    
+    sub   	%o2, 64, %o2
+    add		%o0, 64, %o0
+    add		%o1, 64, %o1
+    ba     	BWordCopy
+    nop
+
+    /*
+     * Copy up to 64 bytes of remainder, in 4-byte chunks.  I SHOULD do this
+     * quickly by dispatching into the middle of a sequence of move
+     * instructions, but I don't yet.
+     */
+
+BFinishWord:
+    cmp		%o2, 4
+    bl		BByteCopyIt
+    nop
+    ld		[%o0], %OUT_TEMP1
+    st		%OUT_TEMP1, [%o1]
+    sub		%o2, 4, %o2
+    add		%o0, 4, %o0
+    add		%o1, 4, %o1
+    ba		BFinishWord
+    nop
+    
+    /*
+     * Do one byte copies until done.
+     */
+BByteCopyIt:
+    tst    	%o2
+    ble     	BDoneCopying
+    nop
+    ldub	[%o0], %OUT_TEMP1
+    stb		%OUT_TEMP1, [%o1]
+    sub		%o2, 1, %o2
+    add		%o0, 1, %o0
+    add		%o1, 1, %o1
+    ba     	BByteCopyIt
+    nop
+
+    /* 
+     * Return.
+     */
+
+BDoneCopying: 
+    retl		/* return from leaf routine */
+    nop
+#endif NOTDEF
+#ifdef NOTDEF
+.globl	_bcopy
+_bcopy:
+						/* sourcePtr in i0 */
+						/* destPtr in i1 */
+						/* numBytes in i2 */
+    /* Start prologue */
+    set		(-MACH_SAVED_WINDOW_SIZE), %OUT_TEMP1
+    save	%sp, %OUT_TEMP1, %sp
+    /* end prologue */
+/*
+ * If the source or dest are not double-word aligned then everything must be
+ * done as word or byte copies.
+ */
+    or		%i0, %i1, %OUT_TEMP1
+    andcc	%OUT_TEMP1, 7, %g0
+    be		BDoubleWordCopy
+    nop
+    andcc	%OUT_TEMP1, 3, %g0
+    be		BWordCopy
+    nop
+    ba		BByteCopyIt
+    nop
+
+    /*
+     * Do as many 64-byte copies as possible.
+     */
+
+BDoubleWordCopy:
+    cmp    	%i2, 64
+    bl     	BFinishWord
+    nop
+    ldd		[%i0], %OUT_TEMP1	/* uses out_temp1 and out_temp2 */
+    std		%OUT_TEMP1, [%i1]
+    ldd		[%i0 + 8], %OUT_TEMP1
+    std		%OUT_TEMP1, [%i1 + 8]
+    ldd		[%i0 + 16], %OUT_TEMP1
+    std		%OUT_TEMP1, [%i1 + 16]
+    ldd		[%i0 + 24], %OUT_TEMP1
+    std		%OUT_TEMP1, [%i1 + 24]
+    ldd		[%i0 + 32], %OUT_TEMP1
+    std		%OUT_TEMP1, [%i1 + 32]
+    ldd		[%i0 + 40], %OUT_TEMP1
+    std		%OUT_TEMP1, [%i1 + 40]
+    ldd		[%i0 + 48], %OUT_TEMP1
+    std		%OUT_TEMP1, [%i1 + 48]
+    ldd		[%i0 + 56], %OUT_TEMP1
+    std		%OUT_TEMP1, [%i1 + 56]
+    
+    sub   	%i2, 64, %i2
+    add		%i0, 64, %i0
+    add		%i1, 64, %i1
+    ba     	BDoubleWordCopy
+    nop
+BWordCopy:
+    cmp		%i2, 64
+    bl		BFinishWord
+    nop
+    ld		[%i0], %OUT_TEMP1
+    st		%OUT_TEMP1, [%i1]
+    ld		[%i0 + 4], %OUT_TEMP1
+    st		%OUT_TEMP1, [%i1 + 4]
+    ld		[%i0 + 8], %OUT_TEMP1
+    st		%OUT_TEMP1, [%i1 + 8]
+    ld		[%i0 + 12], %OUT_TEMP1
+    st		%OUT_TEMP1, [%i1 + 12]
+    ld		[%i0 + 16], %OUT_TEMP1
+    st		%OUT_TEMP1, [%i1 + 16]
+    ld		[%i0 + 20], %OUT_TEMP1
+    st		%OUT_TEMP1, [%i1 + 20]
+    ld		[%i0 + 24], %OUT_TEMP1
+    st		%OUT_TEMP1, [%i1 + 24]
+    ld		[%i0 + 28], %OUT_TEMP1
+    st		%OUT_TEMP1, [%i1 + 28]
+    ld		[%i0 + 32], %OUT_TEMP1
+    st		%OUT_TEMP1, [%i1 + 32]
+    ld		[%i0 + 36], %OUT_TEMP1
+    st		%OUT_TEMP1, [%i1 + 36]
+    ld		[%i0 + 40], %OUT_TEMP1
+    st		%OUT_TEMP1, [%i1 + 40]
+    ld		[%i0 + 44], %OUT_TEMP1
+    st		%OUT_TEMP1, [%i1 + 44]
+    ld		[%i0 + 48], %OUT_TEMP1
+    st		%OUT_TEMP1, [%i1 + 48]
+    ld		[%i0 + 52], %OUT_TEMP1
+    st		%OUT_TEMP1, [%i1 + 52]
+    ld		[%i0 + 56], %OUT_TEMP1
+    st		%OUT_TEMP1, [%i1 + 56]
+    ld		[%i0 + 60], %OUT_TEMP1
+    st		%OUT_TEMP1, [%i1 + 60]
+    
+    sub   	%i2, 64, %i2
+    add		%i0, 64, %i0
+    add		%i1, 64, %i1
+    ba     	BWordCopy
+    nop
+
+    /*
+     * Copy up to 64 bytes of remainder, in 4-byte chunks.  I SHOULD do this
+     * quickly by dispatching into the middle of a sequence of move
+     * instructions, but I don't yet.
+     */
+
+BFinishWord:
+    cmp		%i2, 4
+    bl		BByteCopyIt
+    nop
+    ld		[%i0], %OUT_TEMP1
+    st		%OUT_TEMP1, [%i1]
+    sub		%i2, 4, %i2
+    add		%i0, 4, %i0
+    add		%i1, 4, %i1
+    ba		BFinishWord
+    nop
+    
+    /*
+     * Do one byte copies until done.
+     */
+BByteCopyIt:
+    tst    	%i2
+    ble     	BDoneCopying
+    nop
+    ldub	[%i0], %OUT_TEMP1
+    stb		%OUT_TEMP1, [%i1]
+    sub		%i2, 1, %i2
+    add		%i0, 1, %i0
+    add		%i1, 1, %i1
+    ba     	BByteCopyIt
+    nop
+
+    /* 
+     * Return.
+     */
+
+BDoneCopying: 
+    ret
+    restore
+#endif /* NOTDEF */
+
 /*
  * ----------------------------------------------------------------------------
  *
@@ -750,16 +1047,63 @@ ClearTags:
  */
 .globl	_VmMachFlushCurrentContext
 _VmMachFlushCurrentContext:
-    clr		%OUT_TEMP1			/* start at first address = 0 */
-    set		VMMACH_NUM_CACHE_LINES, %OUT_TEMP2
-FlushingContext:
-    sta		%g0, [%OUT_TEMP1] VMMACH_FLUSH_CONTEXT_SPACE
-    subcc	%OUT_TEMP2, 1, %OUT_TEMP2	/* decrement loop */
-    bne		FlushingContext
-    add		%OUT_TEMP1, VMMACH_CACHE_LINE_SIZE, %OUT_TEMP1	/* delay slot */
+    /* Start prologue */
+    set		(-MACH_SAVED_WINDOW_SIZE), %OUT_TEMP1
+    save	%sp, %OUT_TEMP1, %sp
+    /* end prologue */
 
-    retl
-    nop
+    /*
+     * Spread the stores evenly through 16 chunks of the cache.  This helps
+     * to avoid back-to-back writebacks.
+     */
+    set		(VMMACH_CACHE_SIZE / 16), %l0
+
+    /* Start with last line in each of the 16 chunks.  We work backwards. */
+    sub		%l0, VMMACH_CACHE_LINE_SIZE, %i0
+
+    /* Preload a bunch of offsets so we can straight-line a lot of this. */
+    add		%l0, %l0, %l1
+    add		%l1, %l0, %l2
+    add		%l2, %l0, %l3
+    add		%l3, %l0, %l4
+    add		%l4, %l0, %l5
+    add		%l5, %l0, %l6
+    add		%l6, %l0, %l7
+
+    add		%l7, %l0, %o0
+    add		%o0, %l0, %o1
+    add		%o1, %l0, %o2
+    add		%o2, %l0, %o3
+    add		%o3, %l0, %o4
+    add		%o4, %l0, %o5
+    add		%o5, %l0, %i4
+
+    sta		%g0, [%i0] VMMACH_FLUSH_CONTEXT_SPACE
+FlushingContext:
+    sta		%g0, [%i0 + %l0] VMMACH_FLUSH_CONTEXT_SPACE
+    sta		%g0, [%i0 + %l1] VMMACH_FLUSH_CONTEXT_SPACE
+    sta		%g0, [%i0 + %l2] VMMACH_FLUSH_CONTEXT_SPACE
+    sta		%g0, [%i0 + %l3] VMMACH_FLUSH_CONTEXT_SPACE
+    sta		%g0, [%i0 + %l4] VMMACH_FLUSH_CONTEXT_SPACE
+    sta		%g0, [%i0 + %l5] VMMACH_FLUSH_CONTEXT_SPACE
+    sta		%g0, [%i0 + %l6] VMMACH_FLUSH_CONTEXT_SPACE
+    sta		%g0, [%i0 + %l7] VMMACH_FLUSH_CONTEXT_SPACE
+    sta		%g0, [%i0 + %o0] VMMACH_FLUSH_CONTEXT_SPACE
+    sta		%g0, [%i0 + %o1] VMMACH_FLUSH_CONTEXT_SPACE
+    sta		%g0, [%i0 + %o2] VMMACH_FLUSH_CONTEXT_SPACE
+    sta		%g0, [%i0 + %o3] VMMACH_FLUSH_CONTEXT_SPACE
+    sta		%g0, [%i0 + %o4] VMMACH_FLUSH_CONTEXT_SPACE
+    sta		%g0, [%i0 + %o5] VMMACH_FLUSH_CONTEXT_SPACE
+    sta		%g0, [%i0 + %i4] VMMACH_FLUSH_CONTEXT_SPACE
+
+    subcc	%i0, VMMACH_CACHE_LINE_SIZE, %i0	/* decrement loop */
+    bge,a	FlushingContext
+							/* delay slot */
+    sta		%g0, [%i0] VMMACH_FLUSH_CONTEXT_SPACE
+
+    ret
+    restore
+
 
 /*
  * ----------------------------------------------------------------------------
@@ -781,18 +1125,68 @@ FlushingContext:
  */
 .globl	_VmMachFlushSegment
 _VmMachFlushSegment:
-    mov		%o0, %OUT_TEMP1				/* seg addr */
-    set		VMMACH_SEG_MAP_MASK, %OUT_TEMP2
-    and		%OUT_TEMP1, %OUT_TEMP2, %OUT_TEMP1	/* beginning of seg */
-    set		VMMACH_NUM_CACHE_LINES, %OUT_TEMP2
-FlushingSegment:
-    sta		%g0, [%OUT_TEMP1] VMMACH_FLUSH_SEG_SPACE
-    subcc	%OUT_TEMP2, 1, %OUT_TEMP2		/* decrement loop */
-    bne		FlushingSegment
-    add		%OUT_TEMP1, VMMACH_CACHE_LINE_SIZE, %OUT_TEMP1	/* delay slot */
+    /* Start prologue */
+    set		(-MACH_SAVED_WINDOW_SIZE), %OUT_TEMP1
+    save	%sp, %OUT_TEMP1, %sp
+    /* end prologue */
 
-    retl
-    nop
+    set		VMMACH_SEG_MAP_MASK, %o0
+    and		%i0, %o0, %i0				/* beginning of seg */
+    
+    set		VMMACH_NUM_CACHE_LINES / 16, %i1	/* num loops */
+
+    /*
+     * Spread the stores evenly through 16 chunks of the cache.  This helps
+     * to avoid back-to-back writebacks.
+     */
+    set		(VMMACH_CACHE_SIZE / 16), %l0
+
+    /* Start with last line in each of the 16 chunks.  We work backwards. */
+    add		%i0, %l0, %i0
+    sub		%i0, VMMACH_CACHE_LINE_SIZE, %i0
+
+    /* Preload a bunch of offsets so we can straight-line a lot of this. */
+    add		%l0, %l0, %l1
+    add		%l1, %l0, %l2
+    add		%l2, %l0, %l3
+    add		%l3, %l0, %l4
+    add		%l4, %l0, %l5
+    add		%l5, %l0, %l6
+    add		%l6, %l0, %l7
+
+    add		%l7, %l0, %o0
+    add		%o0, %l0, %o1
+    add		%o1, %l0, %o2
+    add		%o2, %l0, %o3
+    add		%o3, %l0, %o4
+    add		%o4, %l0, %o5
+    add		%o5, %l0, %i4
+
+FlushingSegment:
+    sta		%g0, [%i0] VMMACH_FLUSH_SEG_SPACE
+    sta		%g0, [%i0 + %l0] VMMACH_FLUSH_SEG_SPACE
+    sta		%g0, [%i0 + %l1] VMMACH_FLUSH_SEG_SPACE
+    sta		%g0, [%i0 + %l2] VMMACH_FLUSH_SEG_SPACE
+    sta		%g0, [%i0 + %l3] VMMACH_FLUSH_SEG_SPACE
+    sta		%g0, [%i0 + %l4] VMMACH_FLUSH_SEG_SPACE
+    sta		%g0, [%i0 + %l5] VMMACH_FLUSH_SEG_SPACE
+    sta		%g0, [%i0 + %l6] VMMACH_FLUSH_SEG_SPACE
+    sta		%g0, [%i0 + %l7] VMMACH_FLUSH_SEG_SPACE
+    sta		%g0, [%i0 + %o0] VMMACH_FLUSH_SEG_SPACE
+    sta		%g0, [%i0 + %o1] VMMACH_FLUSH_SEG_SPACE
+    sta		%g0, [%i0 + %o2] VMMACH_FLUSH_SEG_SPACE
+    sta		%g0, [%i0 + %o3] VMMACH_FLUSH_SEG_SPACE
+    sta		%g0, [%i0 + %o4] VMMACH_FLUSH_SEG_SPACE
+    sta		%g0, [%i0 + %o5] VMMACH_FLUSH_SEG_SPACE
+    sta		%g0, [%i0 + %i4] VMMACH_FLUSH_SEG_SPACE
+
+    subcc	%i1, 1, %i1				/* decrement loop */
+    bne		FlushingSegment
+							/* delay slot */
+    sub		%i0, VMMACH_CACHE_LINE_SIZE, %i0
+
+    ret
+    restore
 
 /*
  * ----------------------------------------------------------------------------
@@ -814,18 +1208,68 @@ FlushingSegment:
  */
 .globl	_VmMachFlushPage
 _VmMachFlushPage:
-    mov		%o0, %OUT_TEMP1				/* page addr */
-    set		~VMMACH_OFFSET_MASK, %OUT_TEMP2
-    and		%OUT_TEMP1, %OUT_TEMP2, %OUT_TEMP1	/* beginning of page */
-    set		(VMMACH_PAGE_SIZE_INT / VMMACH_CACHE_LINE_SIZE), %OUT_TEMP2
-FlushingPage:
-    sta		%g0, [%OUT_TEMP1] VMMACH_FLUSH_PAGE_SPACE
-    subcc	%OUT_TEMP2, 1, %OUT_TEMP2		/* decrement loop */
-    bne		FlushingPage
-    add		%OUT_TEMP1, VMMACH_CACHE_LINE_SIZE, %OUT_TEMP1	/* delay slot */
+    /* Start prologue */
+    set		(-MACH_SAVED_WINDOW_SIZE), %OUT_TEMP1
+    save	%sp, %OUT_TEMP1, %sp
+    /* end prologue */
+    
+    set		~VMMACH_OFFSET_MASK, %o0
+    and		%i0, %o0, %i0			/* beginning of page */
 
-    retl
-    nop
+						/* number of loops */
+    set		(VMMACH_PAGE_SIZE_INT / VMMACH_CACHE_LINE_SIZE / 16), %i1
+
+    /*
+     * Spread the stores evenly through 16 chunks of the page flush area in the
+     * cache.  This helps to avoid back-to-back writebacks.
+     */
+    set		(VMMACH_PAGE_SIZE_INT / 16), %l0
+
+    /* Start with last line in each of the 16 chunks.  We work backwards. */
+    add		%i0, %l0, %i0
+    sub		%i0, VMMACH_CACHE_LINE_SIZE, %i0
+
+    /* Preload a bunch of offsets so we can straight-line a lot of this. */
+    add		%l0, (VMMACH_PAGE_SIZE_INT / 16), %l1
+    add		%l1, (VMMACH_PAGE_SIZE_INT / 16), %l2
+    add		%l2, (VMMACH_PAGE_SIZE_INT / 16), %l3
+    add		%l3, (VMMACH_PAGE_SIZE_INT / 16), %l4
+    add		%l4, (VMMACH_PAGE_SIZE_INT / 16), %l5
+    add		%l5, (VMMACH_PAGE_SIZE_INT / 16), %l6
+    add		%l6, (VMMACH_PAGE_SIZE_INT / 16), %l7
+
+    add		%l7, (VMMACH_PAGE_SIZE_INT / 16), %o0
+    add		%o0, (VMMACH_PAGE_SIZE_INT / 16), %o1
+    add		%o1, (VMMACH_PAGE_SIZE_INT / 16), %o2
+    add		%o2, (VMMACH_PAGE_SIZE_INT / 16), %o3
+    add		%o3, (VMMACH_PAGE_SIZE_INT / 16), %o4
+    add		%o4, (VMMACH_PAGE_SIZE_INT / 16), %o5
+    add		%o5, (VMMACH_PAGE_SIZE_INT / 16), %i4
+
+FlushingPage:
+    sta		%g0, [%i0] VMMACH_FLUSH_PAGE_SPACE
+    sta		%g0, [%i0 + %l0] VMMACH_FLUSH_PAGE_SPACE
+    sta		%g0, [%i0 + %l1] VMMACH_FLUSH_PAGE_SPACE
+    sta		%g0, [%i0 + %l2] VMMACH_FLUSH_PAGE_SPACE
+    sta		%g0, [%i0 + %l3] VMMACH_FLUSH_PAGE_SPACE
+    sta		%g0, [%i0 + %l4] VMMACH_FLUSH_PAGE_SPACE
+    sta		%g0, [%i0 + %l5] VMMACH_FLUSH_PAGE_SPACE
+    sta		%g0, [%i0 + %l6] VMMACH_FLUSH_PAGE_SPACE
+    sta		%g0, [%i0 + %l7] VMMACH_FLUSH_PAGE_SPACE
+    sta		%g0, [%i0 + %o0] VMMACH_FLUSH_PAGE_SPACE
+    sta		%g0, [%i0 + %o1] VMMACH_FLUSH_PAGE_SPACE
+    sta		%g0, [%i0 + %o2] VMMACH_FLUSH_PAGE_SPACE
+    sta		%g0, [%i0 + %o3] VMMACH_FLUSH_PAGE_SPACE
+    sta		%g0, [%i0 + %o4] VMMACH_FLUSH_PAGE_SPACE
+    sta		%g0, [%i0 + %o5] VMMACH_FLUSH_PAGE_SPACE
+    sta		%g0, [%i0 + %i4] VMMACH_FLUSH_PAGE_SPACE
+
+    subcc	%i1, 1, %i1				/* decrement loop */
+    bne		FlushingPage
+    sub		%i0, VMMACH_CACHE_LINE_SIZE, %i0	/* delay slot */
+    ret
+    restore
+
 
 
 /*
