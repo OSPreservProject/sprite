@@ -694,6 +694,11 @@ Dbg_Main(trapType, trapStatePtr)
 		if (procPtr != (Proc_ControlBlock *) NIL &&
 		    procPtr->machStatePtr != (Mach_State *)NIL) {
 		    stopInfo.regs = *(procPtr->machStatePtr->switchRegs);
+		    stopInfo.regs.tbr = trapStatePtr->tbr;
+		    stopInfo.regs.y = trapStatePtr->y;
+		    stopInfo.regs.pc = ((int) &Mach_ContextSwitch)+16;
+		    stopInfo.regs.nextPc = stopInfo.regs.pc+4;
+
 		} else {
 		    stopInfo.regs = *trapStatePtr;
 		}
@@ -706,8 +711,13 @@ Dbg_Main(trapType, trapStatePtr)
 
 		if (procPtr != (Proc_ControlBlock *) NIL &&
 		    procPtr->machStatePtr != (Mach_State *)NIL) {
-		    PutReplyBytes(sizeof(*(procPtr->machStatePtr->switchRegs)),
-			       (Address) (procPtr->machStatePtr->switchRegs));
+		    Mach_RegState	regState;
+		    regState = *(procPtr->machStatePtr->switchRegs);
+		    regState.tbr = trapStatePtr->tbr;
+		    regState.y = trapStatePtr->y;
+		    regState.pc = ((int) &Mach_ContextSwitch)+16;
+		    regState.nextPc = regState.pc+4;
+		    PutReplyBytes(sizeof(regState), (Address) &regState);
 		} else {
 		    PutReplyBytes(sizeof(*trapStatePtr),
 			         (Address) trapStatePtr);
