@@ -96,6 +96,15 @@ OBJS = 	${LIB}/mach.o \
 	${LIB}/dbg.o \
 	${LIB}/dev.o \
 	${LIB}/fs.o \
+        ${LIB}/fsdm.o  \
+        ${LIB}/fscache.o  \
+        ${LIB}/fsconsist.o \
+        ${LIB}/fsio.o \
+        ${LIB}/fslcl.o \
+        ${LIB}/fspdev.o \
+        ${LIB}/fsprefix.o \
+        ${LIB}/fsrmt.o \
+        ${LIB}/fsutil.o \
 	${LIB}/main.o \
 	${LIB}/mem.o \
 	${LIB}/net.o \
