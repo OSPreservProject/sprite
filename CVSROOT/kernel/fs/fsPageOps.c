@@ -255,7 +255,7 @@ Fs_PageCopy(srcStreamPtr, destStreamPtr, offset, numBytes)
 		     * the user process doing the page fault.
 		     */
 		    Net_HostPrint(srcHdrPtr->fileID.serverID,
-			    "Fs_PageCopy, waiting for server %d\n");
+			    "Fs_PageCopy waiting for recovery\n");
 		    status = Fsutil_WaitForRecovery(srcStreamPtr->ioHandlePtr,
 				status);
 		    if (status == SUCCESS) {
