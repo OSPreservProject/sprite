@@ -257,9 +257,7 @@ Proc_SetGroupIDs(numGIDs, gidArrayPtr)
      */
     procPtr = Proc_GetEffectiveProc();
     if (procPtr->effectiveUserID != 0) {
-	Sys_Panic(SYS_WARNING,
-		  "Proc_SetGroupIDs, non-setuid process <%x> setting groups\n",
-		  procPtr->processID);
+	return(GEN_NO_PERMISSION);
     }
 
     Vm_MakeAccessible(VM_READONLY_ACCESS,
