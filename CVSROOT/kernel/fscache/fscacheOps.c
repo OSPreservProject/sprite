@@ -909,7 +909,6 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 		    if (blockPtr->flags & FSCACHE_READ_AHEAD_BLOCK) {
 			fs_Stats.blockCache.readAheadHits++;
 		    }
-		    bytesToFree += toWrite;
 		} else {
 		    fs_Stats.blockCache.partialWriteMisses++;
 		    status = (cacheInfoPtr->ioProcsPtr->blockRead)
@@ -926,8 +925,8 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 			    FSCACHE_DELETE_BLOCK);
 			break;
 		    }
-		    bytesToFree += numBytes;
 		}
+		bytesToFree += toWrite;
 	    } else {
 		/*
 		 * We are writing to the end of the file or the block
