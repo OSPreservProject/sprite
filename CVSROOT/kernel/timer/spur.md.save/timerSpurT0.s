@@ -190,6 +190,7 @@ _Timer_ReadT0:
 	st_32		T0LOW, VALPTR, $0
 	st_32		T0HIGH, VALPTR, $4
 	 wr_kpsw	KPSW, $0
+	 invalidate_ib
 	 return		r10,$8
 	 nop
 
@@ -257,6 +258,7 @@ _Timer_WriteT0:
 	st_external	TEMP, r0, $T01|WRREG
 	st_external	HALF, r0, $T00|WRREG
 	wr_kpsw		KPSW, $0
+	invalidate_ib
 	return		r10,$8
 	nop
 
