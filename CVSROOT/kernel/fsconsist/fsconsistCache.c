@@ -660,6 +660,7 @@ ConsistTimeout(data, callInfoPtr)
 {
     Fsconsist_Info *consistPtr = (Fsconsist_Info *)data;
     ConsistMsgInfo *msgPtr;
+    int ref, write, exec;
 
     LOCK_MONITOR;
     while (!List_IsEmpty(&consistPtr->msgList)) {
@@ -671,6 +672,11 @@ ConsistTimeout(data, callInfoPtr)
 		consistPtr->hdrPtr->fileID.major,
 		consistPtr->hdrPtr->fileID.minor,
 		Fsutil_HandleName(consistPtr->hdrPtr));
+
+	Fsconsist_IOClientKill(&consistPtr->clientList, msgPtr->clientID,
+		    &ref, &write, &exec);
+	printf("\tClient state killed: %d refs %d write %d exec\n",
+		    ref, write, exec);
 
 	if (msgPtr->clientID == consistPtr->lastWriter) {
 	    consistPtr->lastWriter = -1;
