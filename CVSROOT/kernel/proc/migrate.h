@@ -58,6 +58,16 @@ typedef struct {
 } ProcRemoteWaitCmd;
 
 /*
+ * Parameters when initiating migration to another machine.
+ */
+
+typedef struct {
+    Proc_PID 	pid;	    /* ID of process being migrated */
+    int 	version;    /* Migration version number of machine starting
+			     * migration */
+} ProcMigInitiateCmd;
+
+/*
  * Number of times to try an RPC before giving up due to RPC_TIMEOUT, while
  * waiting for the host to come up.
  */
