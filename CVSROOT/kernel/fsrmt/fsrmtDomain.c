@@ -713,6 +713,12 @@ Fsrmt_RpcClose(srvToken, clientID, command, storagePtr)
     Fs_Stream				dummy;
     register ClientData clientData;
 
+    if (storagePtr->requestParamSize < sizeof(FsRemoteCloseParams)) {
+	printf("Fsrmt_RpcClose: rpc from host %d had undersize param (%d)\n",
+	    clientID, storagePtr->requestParamSize);
+	status = GEN_INVALID_ARG;
+	goto exit;
+    }
     paramsPtr = (FsRemoteCloseParams *) storagePtr->requestParamPtr;
 
     hdrPtr = (*fsio_StreamOpTable[paramsPtr->fileID.type].clientVerify)
@@ -1339,6 +1345,18 @@ Fsrmt_Rpc2Path(srvToken, clientID, command, storagePtr)
     ReturnStatus			status = SUCCESS;
     int					domainType;
 
+    if (storagePtr->requestParamSize < sizeof(Fs_2PathParams)) {
+	printf("Fsrmt_Rpc2Path: rpc from host %d had undersize param (%d)\n",
+	    clientID, storagePtr->requestParamSize);
+	status = GEN_INVALID_ARG;
+	goto exit;
+    }
+    if (storagePtr->requestDataSize < sizeof(Fs_2PathData)) {
+	printf("Fsrmt_Rpc2Path: rpc from host %d had undersize data (%d)\n",
+	    clientID, storagePtr->requestDataSize);
+	status = GEN_INVALID_ARG;
+	goto exit;
+    }
     paramsPtr = (Fs_2PathParams *)storagePtr->requestParamPtr;
     pathDataPtr = (Fs_2PathData *)storagePtr->requestDataPtr;
     lookupArgsPtr = &paramsPtr->lookup;
