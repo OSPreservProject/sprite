@@ -1,5 +1,5 @@
 /* 
- * fsHandle.c --
+ * fsutilHandle.c --
  *
  *	Routines to manage file handles.  They are kept in a table hashed
  *	by the Fs_FileID type.  They are referenced counted and eligible for
@@ -22,16 +22,19 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsutil.h"
-#include "fsStat.h"
-#include "fslcl.h"
-#include "fsdm.h"
-#include "fsio.h"
-#include "fsutilTrace.h"
-#include "fsNameOps.h"
-#include "hash.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsStat.h>
+#include <fslcl.h>
+#include <fsdm.h>
+#include <fsio.h>
+#include <fsutilTrace.h>
+#include <fsNameOps.h>
+#include <hash.h>
+
+#include <string.h>
+#include <stdio.h>
 
 static Sync_Lock handleTableLock = Sync_LockInitStatic("Fs:handleTable");
 #define	LOCKPTR	&handleTableLock
@@ -42,6 +45,13 @@ static Sync_Lock handleTableLock = Sync_LockInitStatic("Fs:handleTable");
 Sync_Condition lruDone;
 static Boolean lruInProgress;
 static int lruHandlesChecked;
+/*
+ * NOTE: The current implementation of handle scavenging leads to serious
+ * performance problems.  On systems with large file caches almost all the
+ * handles on the LRU will have files in the cache and wont be scavenged.
+ * Everytime a new handle needs to be created the entire LRU is scanned 
+ * before the code gives up and malloc's memory. This needs to be fixed. 
+ */
 
 /*
  * Hash tables for object handles.  These are kept in LRU order and
@@ -72,13 +82,14 @@ static List_Links *lruList = &lruListHeader;
  *	looking at un-reclaimable handles.
  */
 #define		FS_HANDLE_TABLE_SIZE	   400
-#define		LIMIT_INC(max)		   ( 25 )
+
+#define		LIMIT_INC(max)		   ( 100 )
 int		handleLimitInc =	   LIMIT_INC(FS_HANDLE_TABLE_SIZE);
 #define		THREASHOLD(max)		   ( 1 )
 int		handleScavengeThreashold = THREASHOLD(FS_HANDLE_TABLE_SIZE);
 
-Fs_HandleHeader *GetNextLRUHandle();
-void DoneLRU();
+extern Fs_HandleHeader *GetNextLRUHandle _ARGS_((void));
+extern void DoneLRU _ARGS_((int numScavenged));
 
 /*
  * Flags for handles referenced from the hash table.
@@ -202,6 +213,10 @@ int fsHandleTrace = FALSE;
 #define HANDLE_TRACE(hdrPtr, comment)
 #endif
 
+extern Boolean HandleInstallInt _ARGS_((Fs_FileID *fileIDPtr, 
+		unsigned int handleLimit, Fs_HandleHeader **hdrPtrPtr, 
+		Boolean *foundPtr, Boolean returnLocked));
+
 
 /*
  *----------------------------------------------------------------------------
@@ -224,7 +239,16 @@ Fsutil_HandleInit(fileHashSize)
     int	fileHashSize;	/* The number of hash table entries to put in the
 			 * file hash table for starters. */
 {
+    /*
+     * Set the initial number of handle to be the maximum of 
+     * FS_HANDLE_TABLE_SIZE and 1/4 of the maximum number of blocks in the
+     * file cache.  This hack prevents the large overheads from
+     * the initial growing of the handle table. 
+     */
     fs_Stats.handle.maxNumber = FS_HANDLE_TABLE_SIZE;
+    if (fs_Stats.handle.maxNumber < fs_Stats.blockCache.maxNumBlocks/4) {
+	fs_Stats.handle.maxNumber = fs_Stats.blockCache.maxNumBlocks/4;
+    }
     List_Init(lruList);
     Hash_Init(fileHashTable, fileHashSize, Hash_Size(sizeof(Fs_FileID)));
 }
@@ -252,12 +276,15 @@ Fsutil_HandleInit(fileHashSize)
  *
  */
 ENTRY Boolean
-Fsutil_HandleInstall(fileIDPtr, size, name, hdrPtrPtr)
+Fsutil_HandleInstall(fileIDPtr, size, name, cantBlock, hdrPtrPtr)
     register Fs_FileID	*fileIDPtr;	/* Identfies handle to install. */
     int		 	size;		/* True size of the handle.  This
 					 * routine only looks at the header,
 					 * but more data follows that. */
     char		*name;		/* File name for error messages */
+    Boolean		cantBlock;	/* TRUE if this call shouldn't block
+					 * because the handle already is locked.
+					 */
     Fs_HandleHeader	**hdrPtrPtr;	/* Return pointer to handle that
 					 * is found in the hash table. */
 {
@@ -270,6 +297,7 @@ Fsutil_HandleInstall(fileIDPtr, size, name, hdrPtrPtr)
 
     fs_Stats.handle.installCalls++;
     do {
+	Boolean wouldWait;
 	/*
 	 * Due to memory limitations we structure this so we malloc()
 	 * outside the handle monitor lock.  That way we can still
@@ -279,7 +307,15 @@ Fsutil_HandleInstall(fileIDPtr, size, name, hdrPtrPtr)
 	 * 3. Install the handle in the table.
 	 * 4. If the install fails we do LRU replacment and loop to step 1.
 	 */
-	hdrPtr = Fsutil_HandleFetch(fileIDPtr);
+	if (cantBlock) { 
+	    hdrPtr = Fsutil_HandleFetchNoWait(fileIDPtr, &wouldWait);
+	    if ((hdrPtr == (Fs_HandleHeader *)NIL) && wouldWait) {
+		*hdrPtrPtr = hdrPtr;
+		return TRUE;
+	    }
+	} else {
+	    hdrPtr = Fsutil_HandleFetch(fileIDPtr);
+	}
 	if (hdrPtr != (Fs_HandleHeader *)NIL) {
 	    found = TRUE;
 	    break;
@@ -413,7 +449,7 @@ again:
 	     */
 	    if (lruInProgress) {
 		do {
-		    Sync_Wait(&lruDone, FALSE);
+		    (void)Sync_Wait(&lruDone, FALSE);
 		} while (lruInProgress);
 		goto again;
 	    } else {
@@ -541,6 +577,62 @@ again:
 		fs_Stats.handle.lockWaits++;
 		(void) Sync_Wait(&hdrPtr->unlocked, FALSE);
 		goto again;
+	    }
+	    MOVE_HANDLE(hdrPtr);
+	    LOCK_HANDLE(hdrPtr);
+	    hdrPtr->refCount++;
+	}
+    }
+    UNLOCK_MONITOR;
+    return(hdrPtr);
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * Fsutil_HandleFetchNoWait --
+ *
+ *	This routine does the same thing as Fsutil_HandleFetch except that
+ *	it wouldn't wait around for a handle to because unlocked.
+ *
+ * Results:
+ *	A pointer to a file handle, NIL if none found or handle locked.
+ *
+ * Side effects:
+ *	Locks the handle and increments its reference count.  The handle
+ *	is also moved to the end of the LRU list.
+ *
+ *----------------------------------------------------------------------------
+ *
+ */
+ENTRY Fs_HandleHeader *
+Fsutil_HandleFetchNoWait(fileIDPtr, wouldWaitPtr)
+    Fs_FileID 	*fileIDPtr;	/* Identfies handle to fetch. */
+    Boolean	*wouldWaitPtr;  /* OUT: Set to TRUE if call would of waited. */
+{
+    Hash_Entry	*hashEntryPtr;
+    Fs_HandleHeader	*hdrPtr;
+
+    LOCK_MONITOR;
+
+    fs_Stats.handle.fetchCalls++;
+
+    /*
+     * Look in the hash table.  A bucket might have been installed by
+     * Fsutil_HandleInstall, but the value might be NIL because the
+     * handle table's size would have been exceeded by creating the handle.
+     */
+    *wouldWaitPtr = FALSE;
+    hdrPtr = (Fs_HandleHeader *)NIL;
+    hashEntryPtr = Hash_LookOnly(fileHashTable, (Address) fileIDPtr);
+    if (hashEntryPtr != (Hash_Entry *) NIL) {
+	hdrPtr = (Fs_HandleHeader *) Hash_GetValue(hashEntryPtr);
+	if (hdrPtr != (Fs_HandleHeader *)NIL) {
+	    fs_Stats.handle.fetchHits++;
+	    if (hdrPtr->flags & FS_HANDLE_LOCKED) {
+		*wouldWaitPtr = TRUE;
+		UNLOCK_MONITOR;
+		return (Fs_HandleHeader *) NIL;
 	    }
 	    MOVE_HANDLE(hdrPtr);
 	    LOCK_HANDLE(hdrPtr);
@@ -908,10 +1000,13 @@ Fsutil_HandleRemoveHdr(hdrPtr)
  */
 
 ENTRY Boolean
-Fsutil_HandleAttemptRemove(handlePtr)
-    register Fsio_FileIOHandle *handlePtr;	/* Handle to try and remove. */
+Fsutil_HandleAttemptRemove(hdrPtr)
+	Fs_HandleHeader *hdrPtr; /* Handle to try and remove. */
 {
+    register Fsio_FileIOHandle *handlePtr;	
     register Boolean removed;
+
+    handlePtr = (Fsio_FileIOHandle *) hdrPtr;
     LOCK_MONITOR;
     if (handlePtr->hdr.refCount == 0) {
 	free((Address)handlePtr->descPtr);
