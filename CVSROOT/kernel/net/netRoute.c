@@ -163,7 +163,6 @@ Net_RouteInit()
 {
     register int i;
     int spriteID;
-    Net_EtherAddress etherAddr;
 
     /*
      * The route table.  An array of routes is kept for directing
@@ -187,29 +186,12 @@ Net_RouteInit()
     Net_InstallRoute(NET_BROADCAST_HOSTID, NET_ROUTE_BROAD, NET_ROUTE_ETHER,
 			   (ClientData) &netBroadcastAddr, "broadcast",
 			   "unknown");
-#ifdef need_root_by_lust
-    /*
-     * Lust's route is installed in case it is acting as the root server.
-     * Lust doesn't implement ARP, so in this case we still need the
-     * hard-wired address, lust has spriteID 1.
-     */
-    etherAddr.byte1 = 0x08;
-    etherAddr.byte2 = 0x00;
-    etherAddr.byte3 = 0x20;
-    etherAddr.byte4 = 0x01;
-    etherAddr.byte5 = 0x02;
-    etherAddr.byte6 = 0xc6;
-    spriteID = 1;
-    Net_InstallRoute(spriteID, 0, NET_ROUTE_ETHER, (ClientData) &etherAddr,
-			"lust", "sun2");
-#endif need_root_by_lust
-
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * Net_InstallRouteStub --
+ * Net_InstallRouteStub --	
  *
  *	System call stub for Net_InstallRoute
  *
