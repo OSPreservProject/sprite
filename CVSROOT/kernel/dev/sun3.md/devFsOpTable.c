@@ -22,6 +22,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "dev.h"
 #include "devInt.h"
 #include "fs.h"
+#include "rawBlockDev.h"
 #include "devFsOpTable.h"
 #include "devTypesInt.h"
 
@@ -32,12 +33,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devConsole.h"
 #include "devSyslog.h"
 #include "devNull.h"
-#include "devSCSI.h"
 #include "devSCSIDisk.h"
 #include "devSCSITape.h"
-#include "devSCSIWorm.h"
-#include "devXylogicsDisk.h"
+#include "xylogics450.h"
 #include "devNet.h"
+#include "devBlockDevice.h"
 
 
 static ReturnStatus NullSelectProc();
@@ -59,6 +59,7 @@ extern ReturnStatus Dev_serialBInTrace();
  *	DeviceIOControl
  *	DeviceClose
  *	DeviceSelect
+ *	BlockDeviceAttach
  */
 
 
@@ -67,88 +68,70 @@ DevFsTypeOps devFsOpTable[] = {
      * The console.  The workstation's display and keyboard.
      */
     {DEV_CONSOLE,    Dev_ConsoleOpen, Dev_ConsoleRead, Dev_ConsoleWrite,
-		     Dev_ConsoleIOControl, Dev_ConsoleClose, Dev_ConsoleSelect},
+		     Dev_ConsoleIOControl, Dev_ConsoleClose, Dev_ConsoleSelect,
+		     DEV_NO_ATTACH_PROC},
     /*
      * The system error log.  If this is not open then error messages go
      * to the console.
      */
     {DEV_SYSLOG,    Dev_SyslogOpen, Dev_SyslogRead, Dev_SyslogWrite,
-		    Dev_SyslogIOControl, Dev_SyslogClose, Dev_SyslogSelect},
+		    Dev_SyslogIOControl, Dev_SyslogClose, Dev_SyslogSelect,
+		    DEV_NO_ATTACH_PROC},
     /*
      * SCSI Worm interface.
      */
-    {DEV_SCSI_WORM, Dev_SCSIWormOpen, Dev_SCSIWormRead, Dev_SCSIWormWrite,
-		     Dev_SCSIWormIOControl, Dev_SCSIWormClose, NullProc},
+    {DEV_SCSI_WORM, NoDevice, NullProc, NullProc,
+		    NullProc, NullProc, NullProc, DEV_NO_ATTACH_PROC},
+
     /*
      * The following device number is unused.
      */
     {DEV_PLACEHOLDER_2, NoDevice, NullProc, NullProc,
-		    NullProc, NullProc, NullProc},
+		    NullProc, NullProc, NullProc, DEV_NO_ATTACH_PROC},
     /*
      * SCSI Disk interface.
      */
-    {DEV_SCSI_DISK, Dev_SCSIDiskOpen, Dev_SCSIDiskRead, Dev_SCSIDiskWrite,
-		    Dev_SCSIDiskIOControl, Dev_SCSIDiskClose, NullProc},
+    /*
+     * New SCSI Disk interface.
+     */
+    {DEV_SCSI_DISK, DevRawBlockDevOpen, DevRawBlockDevRead,
+		    DevRawBlockDevWrite, DevRawBlockDevIOControl, 
+		    DevRawBlockDevClose, NullProc, DevScsiDiskAttach},
     /*
      * SCSI Tape interface.
      */
-    {DEV_SCSI_TAPE, Dev_SCSITapeOpen, Dev_SCSITapeRead, Dev_SCSITapeWrite,
-		    Dev_SCSITapeIOControl, Dev_SCSITapeClose, NullProc},
+    {DEV_SCSI_TAPE, DevSCSITapeOpen, DevSCSITapeRead, DevSCSITapeWrite,
+		    DevSCSITapeIOControl, DevSCSITapeClose, NullProc},
     /*
      * /dev/null
      */
     {DEV_MEMORY,    NullProc, Dev_NullRead, Dev_NullWrite,
-		    NullProc, NullProc, NullSelectProc},
+		    NullProc, NullProc, NullSelectProc, DEV_NO_ATTACH_PROC},
     /*
      * Xylogics 450 disk controller.
      */
-    {DEV_XYLOGICS, Dev_XylogicsDiskOpen, Dev_XylogicsDiskRead,
-		    Dev_XylogicsDiskWrite, Dev_XylogicsDiskIOControl,
-		    Dev_XylogicsDiskClose, NullProc},
+    {DEV_XYLOGICS, DevRawBlockDevOpen, DevRawBlockDevRead,
+		    DevRawBlockDevWrite, DevRawBlockDevIOControl, 
+		    DevRawBlockDevClose, NullProc, DevXylogics450DiskAttach},
     /*
      * Network devices.  The unit number specifies the ethernet protocol number.
      */
     {DEV_NET,      DevNet_FsOpen, DevNet_FsRead, DevNet_FsWrite, 
-		   DevNet_FsIOControl, DevNet_FsClose, DevNet_FsSelect},
+		   DevNet_FsIOControl, DevNet_FsClose, DevNet_FsSelect, 
+		   DEV_NO_ATTACH_PROC},
 
 #ifdef SERIALB_DEBUG
     {DEV_SERIALB_OUT_QUEUE, NullProc, Dev_serialBOutTrace, NullProc,
-                  NullProc, NullProc, NullProc },
+                  NullProc, NullProc, NullProc, DEV_NO_ATTACH_PROC },
 
     {DEV_SERIALB_IN_QUEUE, NullProc, Dev_serialBInTrace, NullProc,
-                  NullProc, NullProc, NullProc },
+                  NullProc, NullProc, NullProc, DEV_NO_ATTACH_PROC },
 #endif
+
 };
 
 int devNumDevices = sizeof(devFsOpTable) / sizeof(DevFsTypeOps);
 
-/*
- * Device Block I/O operation table.  This table is sparse because not
- * all devices support block I/O.
- *	FsBlockIOInit
- *	FsBlockIO
- */
-DevFsBlockOps devFsBlockOpTable[] = {
-    { DEV_CONSOLE, 0 },
-    { DEV_SYSLOG, 0 },
-    { DEV_SCSI_WORM, 0 },
-    { DEV_PLACEHOLDER_2, 0 },
-    { DEV_SCSI_DISK, Dev_SCSIDiskBlockIO },
-    { DEV_SCSI_TAPE, 0 },
-    { DEV_MEMORY, 0 },
-    { DEV_XYLOGICS, Dev_XylogicsDiskBlockIO },
-    { DEV_NET, 0 },
-#ifdef SERIALB_DEBUG
-    { DEV_SERIALB_OUT_QUEUE, 0 },
-    { DEV_SERIALB_IN_QUEUE, 0 },
-#endif
-};
-
-/*
- * A list of disk device types that is used when probing for a disk.
- */
-int devFsDefaultDiskTypes[] = { DEV_SCSI_DISK, DEV_XYLOGICS };
-int devNumDiskTypes = sizeof(devFsDefaultDiskTypes) / sizeof(int);
 
 static ReturnStatus
 NullProc()
