@@ -46,7 +46,7 @@
  *			      queuing and building controller control blocks.
  */
 
-#define	MAX_BLOCK_DEV_CTRL_WORDS (64/sizeof(int))
+#define	MAX_BLOCK_DEV_CTRL_WORDS (384/sizeof(int))
 
 /*
  * The DevBlockDeviceRequest structure is passed to block IO devices to 
