@@ -159,7 +159,10 @@ Vm_MigrateSegment(segPtr, bufferPtr, bufferSizePtr, numPagesPtr)
  *     	Copy the information from a Vm_Segment into a buffer, ready to be
  *	transferred to another node.  This includes generating the name of
  *	the swap file (since we don't migrate files yet) so it can be opened
- *	from the remote node.
+ *	from the remote node.  We have to duplicate the stream to the
+ *	swap or code file for the segment because Fs_EncapStream effectively
+ *	closes the stream.  By dup'ing the stream the proc module can
+ *	safely call Vm_DeleteSegment which will close the stream (again).
  *
  * Results:
  *      A pointer to the buffer and its length are returned.
@@ -183,6 +186,7 @@ EncapsulateInfo(segPtr, bufferPtr, bufferSizePtr)
     int bufferSize;
     int varSize;
     ReturnStatus status;
+    Fs_Stream *dummyStreamPtr;
 
     if (segPtr->type != VM_CODE) {
 	varSize = segPtr->ptSize * sizeof(Vm_PTE);
@@ -198,10 +202,12 @@ EncapsulateInfo(segPtr, bufferPtr, bufferSizePtr)
     if (segPtr->type != VM_CODE) {
 	Byte_Copy(varSize, (Address) segPtr->ptPtr, ptr);
 	ptr += varSize;
+	Fs_StreamCopy(segPtr->swapFilePtr, &dummyStreamPtr);
 	status = Fs_EncapStream(segPtr->swapFilePtr, ptr);
     } else {
 	Byte_Copy(varSize, (Address) &segPtr->execInfo, ptr);
 	ptr += varSize;
+	Fs_StreamCopy(segPtr->filePtr, &dummyStreamPtr);
 	status = Fs_EncapStream(segPtr->filePtr, ptr);
     }
     if (status != SUCCESS) {
