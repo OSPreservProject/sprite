@@ -26,7 +26,6 @@
 .globl	_spriteStart
 start:
 _spriteStart:
-
 	mov	%psr, %g1
 	or	%g1, MACH_SR_HIGHPRIO, %g1	/* lock out interrupts */
 	andn	%g1, MACH_CWP_BITS, %g1		/* set cwp to 0 */
@@ -39,24 +38,21 @@ _spriteStart:
  * MACH_KERN_START which is before MACH_CODE_START, which is where we told the
  * loader that the kernel would be loaded.
  * In this code, %g1 is segment, %g2 is context, %g3 is pmeg, and %g4 is
- * offset in control space to context register.  %g5 is a temporary register.
+ * offset in control space to context register.  %g5 contains seg size.
  */
-	sethi	%hi(VMMACH_CONTEXT_OFF), %g4	/* set %g4 to context offset */
-	or	%g4, %lo(VMMACH_CONTEXT_OFF), %g4
+	set	VMMACH_CONTEXT_OFF, %g4		/* set %g4 to context offset */
 	clr	%g2				/* start with context 0 */
+	set	VMMACH_SEG_SIZE, %g5		/* for additions */
 contextLoop:
 						/* set context register */
 	stba	%g2, [%g4] VMMACH_CONTROL_SPACE
 	clr	%g3				/* start with 0th pmeg */
-	sethi	%hi(MACH_KERN_START), %g1	/* pick starting segment */
-	or	%g1, %lo(MACH_KERN_START), %g1
+	set	MACH_KERN_START, %g1		/* pick starting segment */
 loopStart:
 					/* set segment to point to new pmeg */
 	stha	%g3, [%g1] VMMACH_SEG_MAP_SPACE
 	add	%g3, 1, %g3			/* increment which pmeg */
-	sethi	%hi(VMMACH_SEG_SIZE), %g5	/* increment which segment */
-	add	%g1, %g5, %g1
-	add	%g1, %lo(VMMACH_SEG_SIZE), %g1
+	add	%g1, %g5, %g1			/* increment which segment */
 	cmp	%g3, (0x800000 / VMMACH_SEG_SIZE)	/* last pmeg? */
 	bne	loopStart			/* if not, continue */
 	nop
@@ -71,8 +67,7 @@ loopStart:
 /*
  * Force a non-PC-relative jump to the real start of the kernel.
  */
-	sethi	%hi(begin), %g1
-	or	%g1, %lo(begin), %g1
+	set	begin, %g1
 	jmp	%g1				/* jump to "begin" */
 	nop
 
@@ -83,10 +78,8 @@ begin:
 	/*
 	 * Zero out the bss segment.
 	 */
-	sethi	%hi(_edata), %g2
-	or	%g2, %lo(_edata), %g2
-	sethi	%hi(_end), %g3
-	or	%g3, %lo(_end), %g3
+	set	_edata, %g2
+	set	_end, %g3
 	cmp	%g2, %g3	/* if _edata == _end, don't zero stuff. */
 	be	doneZeroing
 	nop
@@ -98,35 +91,83 @@ zeroing:
 	std	%g0, [%g2]
 	add	%g2, 0x8, %g2
 	cmp	%g2, %g3
-	mov	0x7, %g6
 	bne	zeroing
 	nop
 doneZeroing:
-
-	/*
-	 * Set the stack pointer for the initial process.
-	 * start == MACH_CODE_START == where we asked loader to start loading
-	 * kernel text.
-	 */
-	mov	start, %o0
-	call	printArg
-	nop
-
 #ifdef NOTDEF
-	mov	start, %sp
-	mov	%tbr, %g4	/* save prom tbr */
-#endif NOTDEF
+	/*
+	 * Now set up initial trap table by copying machProtoVectorTable
+	 * into reserved space at the correct alignment.  The table must
+	 * be aligned on a MACH_TRAP_ADDR_MASK boundary, and it contains
+	 * ~MACH_TRAP_ADDR_MASK + 1 bytes.  We copy doubles (8 bytes at
+	 * a time) for speed.  %g1 is source for copy, %g2 is destination,
+	 * %g3 is the counter copy, %g4 and %g5 are the registers used for
+	 * the double-word copy, 
+	 */
+	mov	0x1, %g6
+	set	machProtoVectorTable, %g1		/* g1 contains src */
+	mov	%g1, %o0
+	call	_printArg
+	nop
+	mov	0x2, %g6
+	set	reserveSpace, %o0
+	call	_printArg
+	nop
+	set	reserveSpace, %g2			/* g2 to contain dest */
+	add	%g2, (1 + ~MACH_TRAP_ADDR_MASK), %g2	/* add size of table */
+	and	%g2, MACH_TRAP_ADDR_MASK, %g2		/* align to 4k bound. */
+	mov	%g2, %o0
+	call	_printArg
+	nop
+	clr	%g3					/* clear counter */
+	mov	0x3, %g6
+copyingTable:
+	ldda	[%g1] VMMACH_KERN_PROGRAM_SPACE, %g4	/* %g4 and %g5 in */
+	mov	0x4, %g6
+	stda	%g4, [%g2] VMMACH_KERN_PROGRAM_SPACE	/* $g4 and %g5 out */
+	mov	0x5, %g6
+	add	%g1, 8, %g1				/* incr. addresses */
+	add	%g2, 8, %g2
+	add	%g3, 1, %g3				/* incr. counter */
+	cmp	%g3, ((1 + ~MACH_TRAP_ADDR_MASK) / 8)	/* how many copies */
+	bne	copyingTable
+	nop
+	mov	0x6, %g6
+	mov	%g3, %o0
+	call	_printArg
+	nop
+	mov	%g1, %o0
+	call	_printArg
+	nop
+	mov	0x7, %g6
+	mov	%g2, %o0
+	call	_printArg
+	nop
+	mov	0x8, %g6
+	set	reserveSpace, %g2			/* g2 to be trap base */
+	add	%g2, (1 + ~MACH_TRAP_ADDR_MASK), %g2	/* add size of table */
+	and	%g2, MACH_TRAP_ADDR_MASK, %g2		/* align to 4k bound. */
 	call	_main
 	nop
-
+#endif NOTDEF
+	mov	0x9, %g6
+	set	MACH_KERN_STACK_START, %sp
+	mov	0xa, %g6
+	mov	%sp, %o0
+	call	_printArg
+	nop
+	mov	0xb, %g6
+	call	_main
+	nop
 .align 8
+.global	_printArg
 /*
  * printArg:
  *
  * Move integer argument to print into %o0.  This will print
- * desired integer in hex.
+ * desired integer in hex.  This routine uses o0, o1, l3, and l4.
  */
-printArg:
+_printArg:
 	.seg	"data1"
 argString:
 	.ascii	"printArg: %x\012\0"
@@ -134,18 +175,26 @@ argString:
 
 	mov	%o0, %o1
 	set	argString, %o0
-	mov	%o7, %g6
-	sethi   %hi(-0x17ef7c),%g1
-	ld      [%g1+%lo(-0x17ef7c)],%g1
-	call    %g1,2
+	mov	%o7, %l3
+	sethi   %hi(-0x17ef7c),%l4
+	ld      [%l4+%lo(-0x17ef7c)],%l4
+	call    %l4,2
 	nop
-	mov	%g6, %o7
+	mov	%l3, %o7
 	retl
 	nop
-.align 8
-_machProtoVectorTable:
+/*
+ * Reserve twice the amount of space we need for the trap table.
+ * Then copy machProtoVectorTable into it repeatedly, starting at
+ * a 4k-byte alignment.  This is dumb, but the assembler doesn't allow
+ * me to do much else.
+ */
+.align	8
+machProtoVectorTable:
 	rd	%tbr, %g1
 	and	%g1, 0xff0, %g1
 	add	%g1, %g4, %g1
 	jmp	%g1
-	nop
+	nop				/* nop isn't copied, but quiets AS */
+.align	8
+reserveSpace:	.skip	0x2000

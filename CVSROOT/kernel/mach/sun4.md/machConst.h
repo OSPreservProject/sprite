@@ -172,7 +172,6 @@
 #define	MACH_CWP_BITS			0x1f	/* cwp bits in psr */
 
 
-
 #ifdef NOTDEF
 /*
  * Different stack formats on a 68000
@@ -215,7 +214,8 @@
  *			doesn't get trashed.
  */
 #define	MACH_KERN_START		0xe000000
-#define	MACH_CODE_START		0xe004000
+#define	MACH_KERN_STACK_START	0xe004000
+#define	MACH_CODE_START		0xe004020
 #define	MACH_STACK_BOTTOM	0xe000000
 #define MACH_KERN_END		VMMACH_DEV_START_ADDR
 #define	MACH_KERN_STACK_SIZE	(MACH_CODE_START - MACH_STACK_BOTTOM)
