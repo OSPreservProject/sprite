@@ -29,3 +29,23 @@ DISTFILES   +=  $(TM).md/sparcStationPromMap $(TM).md/sunFiles \
 INSTFILES   +=  $(TM).md/sun4 $(TM).md/sys
 #endif
 
+#if !empty(TM:Msymm)
+
+# The symmetry generates a header file for assembler files on the fly.
+# This is a problem for two reasons 1) we need a program to generate
+# the file, and 2) we can only run the program on the symmetry. If the
+# header file is out of date then you can't cross-compile.
+#
+
+machAsmSymbols.h:	symm.md/machGenAsmSymbols
+#if empty(MACHINE:Msymm)
+	@echo "You must compile this on a symmetry"
+	@exit 1
+#else
+	rm -f symm.md/machAsmSymbols.h
+	symm.md/machGenAsmSymbols > symm.md/machAsmSymbols.h
+#endif
+
+symm.md/machGenAsmSymbols:	symm.md/machGenAsmSymbols.c ${HDRS:Nsymm.md/machAsmSymbols.h}
+	${CC} ${CFLAGS} -o $(.TARGET) symm.md/machGenAsmSymbols.c
+#endif
