@@ -217,12 +217,16 @@ Proc_RpcRemoteCall(callPtr, dataPtr, dataLength, replyDataPtr,
     if (procPtr == (Proc_ControlBlock *) NIL
 	|| ((procPtr->state != PROC_MIGRATED) &&
 	    !(procPtr->genFlags & PROC_MIGRATION_DONE)))   {
- 	Sys_Panic(SYS_FATAL,
+ 	Sys_Panic(SYS_WARNING,
 		  "Proc_RpcRemoteCall: invalid pid: %x.\n", callPtr->processID);
 	if (procPtr != (Proc_ControlBlock *) NIL) {
 	    Proc_Unlock(procPtr);
 	}
-	return (PROC_INVALID_PID);
+	/*
+	 * Return a special status that indicates the migrated process
+	 * should be destroyed.
+	 */
+	return (PROC_NO_PEER);
     }
     Proc_Unlock(procPtr);
     if (callBackVector[callPtr->callNumber].localPtr ==
@@ -706,12 +710,12 @@ Proc_RpcRemoteWait(srvToken, clientID, command, storagePtr)
     cmdPtr = (ProcRemoteWaitCmd *) storagePtr->requestParamPtr;
     procPtr = Proc_LockPID(cmdPtr->pid);
     if (procPtr == (Proc_ControlBlock *) NIL) {
-	return (PROC_INVALID_PID);
+	return (PROC_NO_PEER);
     } else if (procPtr->state != PROC_MIGRATED ||
 	    procPtr->peerHostID != clientID) {
 	Proc_Unlock(procPtr);
-	return (PROC_INVALID_PID);
-    } 
+	return (PROC_NO_PEER);
+    }
     pidArray = (Proc_PID *) storagePtr->requestDataPtr;
     childInfoPtr = (ProcChildInfo *) Mem_Alloc(sizeof(ProcChildInfo));
 
