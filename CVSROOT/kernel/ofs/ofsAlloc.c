@@ -2483,13 +2483,7 @@ PutInBadBlockFile(handlePtr, domainPtr, blockNum)
 	status = Fsio_LocalFileHandleInit(&fileID, "BadBlockFile",
 			&badBlockHandlePtr);
 	if (status != SUCCESS) {
-	    /* 
-	     * Leave allocated buffers around for debugging...
-	     */
-	    printf(
-	      "PutInBadBlockFile: error %x getting bad block file descriptor",
-	      status);
-	    UNLOCK_MONITOR;
+	    printf("PutInBadBlockFile: error %x reading descriptor\n", status);
 	    return;
 	}
     }
