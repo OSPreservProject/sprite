@@ -814,7 +814,7 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 #ifdef lint
 	status = Fsdm_BlockAllocate(cacheInfoPtr->hdrPtr,
 		    offset, toAlloc, dontBlock, &blockAddr, &newBlock);
-	status = FsrmtBlockAllocate(cacheInfoPtr->hdrPtr,
+	status = FsrmtFileBlockAllocate(cacheInfoPtr->hdrPtr,
 		    offset, toAlloc, dontBlock, &blockAddr, &newBlock);
 #endif /* lint */
 
