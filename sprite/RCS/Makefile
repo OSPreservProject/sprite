@@ -171,6 +171,7 @@ HDRS = sprite.h
 sun3: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	sed 's/MACHINE/$@/g' version.h.template > version.h
 	cat version.h >> $@.versionLog
+	-Save $@
 	rm -f mainHook.o
 	cc -c ${CFLAGS} mainHook.c
 	cc -c ${CFLAGS} version.c
@@ -189,6 +190,7 @@ sun3: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 sun4: ${OBJS_SUN4} Makefile .PRECIOUS .NOEXPORT
 	sed 's/MACHINE/$@/g' version.h.template > version.h
 	cat version.h >> $@.versionLog
+	-Save $@
 	rm -f mainHook.o
 	cc -c ${CFLAGS} -Dsun4 mainHook.c
 	cc -c ${CFLAGS} -Dsun4 version.c
@@ -205,6 +207,7 @@ sun4: ${OBJS_SUN4} Makefile .PRECIOUS .NOEXPORT
 sun4c: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 	sed 's/MACHINE/$@/g' version.h.template > version.h
 	cat version.h >> $@.versionLog
+	-Save $@
 	rm -f mainHook.o
 	cc -c ${CFLAGS} -Dsun4 -Dsun4c mainHook.c
 	cc -c ${CFLAGS} -Dsun4 -Dsun4c version.c
@@ -221,7 +224,7 @@ sun4c: ${OBJS} Makefile .PRECIOUS .NOEXPORT
 ds3100: ${OBJS} .PRECIOUS
 	sed 's/MACHINE/$@/g' version.h.template > version.h
 	cat version.h >> $@.versionLog
-	rm -f $@
+	-Save $@
 	rm -f mainHook.o
 	cc -c ${CFLAGS} mainHook.c
 	@cc -c ${CFLAGS} version.c
