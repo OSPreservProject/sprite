@@ -563,7 +563,7 @@ Proc_GetResUsage(pid, bufferPtr)
     if (pid == PROC_MY_PID) {
 	procPtr = Proc_GetEffectiveProc();
 	if (procPtr == (Proc_ControlBlock *) NIL) {
-	    panic("Proc_GetIDs: procPtr == NIL\n");
+	    panic("Proc_GetResUsage: procPtr == NIL\n");
 	} 
 	Proc_Lock(procPtr);
     } else {
@@ -631,7 +631,7 @@ Proc_GetPriority(pid, priorityPtr)
     if (pid == PROC_MY_PID) {
 	procPtr = Proc_GetEffectiveProc();
 	if (procPtr == (Proc_ControlBlock *) NIL) {
-	    panic("Proc_GetIDs: procPtr == NIL\n");
+	    panic("Proc_GetPriority: procPtr == NIL\n");
 	} 
 	Proc_Lock(procPtr);
     } else {
