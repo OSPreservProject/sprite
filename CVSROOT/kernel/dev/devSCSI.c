@@ -20,22 +20,22 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "mach.h"
-#include "dev.h"
-#include "devInt.h"
-#include "scsi.h"
-#include "scsiDevice.h"
-#include "dbg.h"
-#include "vm.h"
-#include "sys.h"
-#include "sync.h"
-#include "fs.h"
-#include "sched.h"
-#include "stdio.h"
-#include "stdlib.h"
-#include "string.h"
-#include "bstring.h"
+#include <sprite.h>
+#include <mach.h>
+#include <dev.h>
+#include <devInt.h>
+#include <sys/scsi.h>
+#include <scsiDevice.h>
+#include <dbg.h>
+#include <vm.h>
+#include <sys.h>
+#include <sync.h>
+#include <fs.h>
+#include <sched.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <bstring.h>
 
 /*
  * The error codes for class 0-6 sense data are class specific.
@@ -170,9 +170,8 @@ DevScsiMapClass7Sense(senseLength,senseDataPtr,statusPtr,errorString)
 	case SCSI_CLASS7_UNIT_ATTN:
 	    /*
 	     * This is an error that occurs after the drive is reset.
-	     * It can probably be ignored.
 	     */
-	    status = SUCCESS;
+	    status = DEV_RESET;
 	    break;
 	case SCSI_CLASS7_WRITE_PROTECT:
 	    sprintf(errorString,"write protected");
