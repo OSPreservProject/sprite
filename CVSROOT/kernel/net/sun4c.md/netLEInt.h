@@ -21,12 +21,12 @@
 #define _NETLEINT
 
 #include <netInt.h>
+#include <mach.h>
+#include <netLEMachInt.h>
 
 /*
  * Defined constants:
  *
- * NET_LE_CONTROL_REG_ADDR	The address of the control register for the 
- *				ethernet chip.
  * NET_LE_NUM_RECV_BUFFERS  	The number of buffers that we have to receive
  *			   	packets in. Also, number of receive ring 
  *				descriptors. It must be between 1 and 128 and
@@ -50,11 +50,6 @@
  * NET_LE_NUM_XMIT_ELEMENTS 	The number of elements to preallocate for the 
  *			   	retransmission queue.
  */
-#ifdef sun4
-#define NET_LE_CONTROL_REG_ADDR		0xffd10000
-#else
-#define NET_LE_CONTROL_REG_ADDR		0xfe10000
-#endif
 
 #define	NET_LE_NUM_RECV_BUFFERS_LOG2	4
 #define	NET_LE_NUM_RECV_BUFFERS		(1 << NET_LE_NUM_RECV_BUFFERS_LOG2)
@@ -69,20 +64,6 @@
 #define	NET_LE_NUM_XMIT_ELEMENTS	32
 
 /*
- * Macros for converting chip to cpu and cpu to chip address.
- * We always deal with chip addresses in two parts, the lower 16 bits
- * and the upper 8 bits.
- */
-#ifdef sun4
-#define	NET_LE_SUN_FROM_CHIP_ADDR(high,low)	\
-		((Address) (0xff000000 + ((high) << 16) + (low)))
-#else
-#define	NET_LE_SUN_FROM_CHIP_ADDR(high,low)	\
-		((Address) (0xf000000 + ((high) << 16) + (low)))
-#endif
-#define	NET_LE_SUN_TO_CHIP_ADDR_HIGH(a) ( (((unsigned int) (a)) >> 16) & 0xff)
-#define	NET_LE_SUN_TO_CHIP_ADDR_LOW(a) ( ((unsigned int) (a)) & 0xffff)
-/*
  * The LANCE chip has four control and status registers that are selected by a
  * register address port (RAP) register. The top 14 bits of RAP are reserved
  * and read as zeros. The register accessable in the register data port (RDP)
@@ -90,12 +71,13 @@
  *
  */
 
-typedef struct NetLE_Reg {
-	unsigned short	dataPort;	/* RDP */
-        unsigned short	addrPort[1];	/* RAP */
-} NetLE_Reg;
+typedef NetLEMach_Reg NetLE_Reg;
 
 #define AddrPort	0x0e02
+#define DataCSR0	0x0010
+#define DataCSR1	0x0010
+#define DataCSR2	0x0808
+#define DataCSR3	0x0d03
 
 /*
  * Possible RAP values. (page15)
@@ -169,6 +151,22 @@ typedef struct NetLE_Reg {
 #define	NET_LE_CSR3_BYTE_CONTROL	0x0001	/* Byte control - RW */
 
 /*
+ * Define the value for csr3 for the different machine types.
+ */
+#if defined(sun4c)
+#define NET_LE_CSR3_VALUE \
+    (NET_LE_CSR3_BYTE_SWAP | NET_LE_CSR3_ALE_CONTROL | NET_LE_CSR3_BYTE_CONTROL)
+#else 
+
+#if (defined(ds5000) || defined(sun3))
+#define NET_LE_CSR3_VALUE  0
+#else
+#define NET_LE_CSR3_VALUE NET_LE_CSR3_BYTE_SWAP
+#endif
+
+#endif
+
+/*
  * First in the mode register.
  *
  *typedef struct NetLEModeReg {
@@ -209,7 +207,7 @@ typedef unsigned short NetLEModeReg[1];
  *} NetLERingPointer;
  */
 
-typedef unsigned int NetLERingPointer[1];
+typedef unsigned short NetLERingPointer[2];
 
 #define RingAddrLow               0x0010
 #define LogRingLength             0x1003
@@ -255,8 +253,13 @@ typedef struct NetLEInitBlock {
 
 typedef struct NetLERecvMsgDesc {
     unsigned short	bufAddrLow;	/* Low order 16 addr bits of buffer. */
+#ifdef ds5000
+    unsigned char	bufAddrHigh;	/* High order 8 addr bits of buffer. */
+    unsigned char	bits[1];	/* Control bits. */
+#else
     unsigned char	bits[1];	/* Control bits. */
     unsigned char	bufAddrHigh;	/* High order 8 addr bits of buffer. */
+#endif
     short	        bufferSize;	/* Size of buffer in bytes. This 
 					 * has to be the 2's complement of
 					 * the buffer size.
@@ -304,8 +307,13 @@ typedef struct NetLERecvMsgDesc {
  */
 typedef struct NetLEXmitMsgDesc {
     unsigned short  bufAddrLow;	/* Low order 16 addr bits of buffer.*/
+#ifdef ds5000
+    unsigned char   bufAddrHigh;	/* High order 8 addr bits of buffer. */
+    unsigned char   bits1[1];	/* Control bits. See below. */
+#else
     unsigned char   bits1[1];	/* Control bits. See below. */
     unsigned char   bufAddrHigh;	/* High order 8 addr bits of buffer. */
+#endif
     short           bufferSize;		/* Signed size of buffer in bytes. This 
 					 * has to be the 2's complement of
 					 * the buffer size.
@@ -323,7 +331,7 @@ typedef struct NetLEXmitMsgDesc {
 #define StartOfPacket             0x0601
 #define EndOfPacket               0x0701
 
-#define XmitBufferError              0x0001
+#define XmitBufferError           0x0001
 #define UnderflowError            0x0101
 #define LateCollision             0x0301
 #define LostCarrier               0x0401
@@ -390,6 +398,18 @@ typedef struct {
 					   * has been allocated. */
     Net_Interface	*interPtr;	/* Pointer back to network interface. */
     Net_EtherStats	stats;		/* Performance statistics. */
+    int			numResets;	/* Number of times the chip has
+					 * been reset. */
+    Boolean		resetPending;	/* TRUE => chip should be reset when
+					 * current transmit is done. */
+    int			lastRecvCnt;	/* Number of packets done during
+					 * last receive interrupt. */
+#ifdef ds5000
+    char		*bufAddr;	/* Network buffer. */
+    char		*bufAllocPtr;	/* Current allocation address in
+					 * network buffer. */
+    int			bufSize;	/* Size of the network buffer. */
+#endif
 } NetLEState;
 
 
@@ -408,7 +428,11 @@ extern	void		NetLERestart _ARGS_((Net_Interface *interPtr));
 extern	void		NetLEReset _ARGS_((Net_Interface *interPtr));
 extern	ReturnStatus	NetLEGetStats _ARGS_((Net_Interface *interPtr, 
 			    Net_Stats *statPtr));
+extern Address		NetLEMemAlloc _ARGS_((NetLEState *statePtr, 
+			    int numBytes));
 
+extern ReturnStatus	NetLEMachInit _ARGS_((Net_Interface *interPtr,
+			    NetLEState *statePtr));
 /*
  * Routines for transmitting.
  */
@@ -425,5 +449,13 @@ extern	void		NetLEXmitDrop _ARGS_((NetLEState *statePtr));
 extern	void		NetLERecvInit _ARGS_((NetLEState *statePtr));
 extern	ReturnStatus	NetLERecvProcess _ARGS_((Boolean dropPackets,
 			    NetLEState *statePtr));
+
+
+extern	NetLEState	netLEDebugState;
+extern	NetLERecvMsgDesc netLEDebugRecv[];
+extern	NetLEXmitMsgDesc netLEDebugXmit[];
+extern	int		netLEDebugCount;
+extern	unsigned short	netLEDebugCsr0;
+extern	char		netLEDebugBuffer[];
 
 #endif /* _NETLEINT */

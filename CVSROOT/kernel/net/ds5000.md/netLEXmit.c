@@ -25,22 +25,25 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <vmMach.h>
 #include <list.h>
 #include <sync.h>
+#include <machMon.h>
 
 /*
  * Macros to step ring pointers.
  */
 
-#define	NEXT_SEND(p)	( ((++p) > statePtr->xmitDescLastPtr) ? \
+#define	NEXT_SEND(p)	( ((p+1) > statePtr->xmitDescLastPtr) ? \
 				statePtr->xmitDescFirstPtr : \
-				(p))
-#define	PREV_SEND(p)	( ((--p) < statePtr->xmitDescFirstPtr) ? \
+				(p+1))
+#define	PREV_SEND(p)	( ((p-1) < statePtr->xmitDescFirstPtr) ? \
 				statePtr->xmitDescLastPtr : \
-				(p))
+				(p-1))
 static	ReturnStatus	OutputPacket _ARGS_((Net_EtherHdr *etherHdrPtr,
 			    Net_ScatterGather *scatterGatherPtr,
 			    int scatterGatherLength,
 			    NetLEState *statePtr));
 static	void		AllocateXmitMem _ARGS_((NetLEState *statePtr));
+
+char	foo[NET_ETHER_MAX_BYTES];
 
 /*
  *----------------------------------------------------------------------
@@ -81,6 +84,7 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength, statePtr)
     Net_ScatterGather			newScatGathArr[NET_LE_NUM_XMIT_BUFFERS];
     register Boolean			reMapped = FALSE;
 #endif
+    int					i;
 
     descPtr = statePtr->xmitDescNextPtr;
 
@@ -94,6 +98,15 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength, statePtr)
 
     statePtr->transmitting = TRUE;
     statePtr->curScatGathPtr = scatterGatherPtr;
+    firstBufferPtr = statePtr->firstDataBuffer;
+
+    /*
+     * Add the first data buffer to the ring.
+     */
+    descPtr->bufAddrLow = NET_LE_TO_CHIP_ADDR_LOW(firstBufferPtr);
+    descPtr->bufAddrHigh = NET_LE_TO_CHIP_ADDR_HIGH(firstBufferPtr);
+    NetBfByteSet(descPtr->bits1, StartOfPacket, 1);
+    NetBfByteSet(descPtr->bits1, EndOfPacket, 0);
 
     /*
      * Since the first part of a packet is always the ethernet header that
@@ -101,24 +114,16 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength, statePtr)
      * firstDataBuffer to build the first buffer of mimumum allowable size.
      */
 
-    firstBufferPtr = statePtr->firstDataBuffer;
 
-    /*
-     * Add the buffer to the ring.
-     */
-    descPtr->bufAddrLow = 
-	    NET_LE_SUN_TO_CHIP_ADDR_LOW(statePtr->firstDataBuffer);
-    descPtr->bufAddrHigh = 
-	    NET_LE_SUN_TO_CHIP_ADDR_HIGH(statePtr->firstDataBuffer);
-    NetBfByteSet(descPtr->bits1, StartOfPacket, 1);
-    NetBfByteSet(descPtr->bits1, EndOfPacket, 0);
-    descPtr->bufferSize = -NET_LE_MIN_FIRST_BUFFER_SIZE; /* May be wrong for 
-							  * small packets. 
+    descPtr->bufferSize = -NET_LE_MIN_FIRST_BUFFER_SIZE; /* May be wrong 
+							  * for small 
+							  * packets. 
 							  */
 
     /* 
      * First copy in the header making sure the source address field is set
-     * correctly. (Such a fancy chip and it won't even set the source address
+     * correctly. (Such a fancy chip and it won't even set the source 
+     * address
      * of the header for us.)
      */
 
@@ -128,99 +133,115 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength, statePtr)
 
     firstBufferPtr += sizeof(Net_EtherHdr);
 
-    /*
-     * Then copy enough data to bring buffer up to size.
-     */
-
-    totalLength = sizeof(Net_EtherHdr);
-
-    bufCount = 0;
-    for (bufCount = 0; bufCount < scatterGatherLength; 
-			bufCount++,scatterGatherPtr++ ) {
-
-	/*
-	 * If is an empty buffer then skip it.
-	 */
-
-	length = scatterGatherPtr->length;
-	if (length == 0) {
-	    continue;
+    if (NET_LE_COPY_PACKET) {
+	totalLength = sizeof(Net_EtherHdr);
+	for (i = 0; i < scatterGatherLength; i++) {
+	    totalLength += scatterGatherPtr[i].length;
+	} 
+	if (totalLength <= NET_ETHER_MAX_BYTES) {
+	    Net_GatherCopy(scatterGatherPtr, scatterGatherLength, 
+		firstBufferPtr);
+	    descPtr->bufferSize = -totalLength;
+	} else {
+	    panic("OutputPacket: packet too large (%d)\n", totalLength);
 	}
+    } else {
 
-	bufPtr = scatterGatherPtr->bufAddr;
-
+    
 	/*
-	 * Compute the amount of data needed in the first buffer to make it a
-	 * minumum size.
+	 * Then copy enough data to bring buffer up to size.
 	 */
-
-	amountNeeded = NET_LE_MIN_FIRST_BUFFER_SIZE - totalLength;
-	if (amountNeeded > 0 ) {
+    
+	totalLength = sizeof(Net_EtherHdr);
+    
+	bufCount = 0;
+	for (bufCount = 0; bufCount < scatterGatherLength; 
+			    bufCount++,scatterGatherPtr++ ) {
+    
 	    /*
-	     * Still need more padding in first buffer.
+	     * If is an empty buffer then skip it.
 	     */
-	    if (length <= amountNeeded) {
-		 /*
-		  * Needs this entire length.
-		  */
-		 bcopy(bufPtr, firstBufferPtr, length);
-		 totalLength += length;
-		 firstBufferPtr += length;
-		 /*
-		  * Get the next segment of the scatter.
-		  */
-		 continue;
-	    } else {
-		/*
-		 * Needs only part of this buffer.
-		 */
-		 bcopy(bufPtr, firstBufferPtr, amountNeeded);
-		 totalLength += amountNeeded;
-		 /*
-		  * Update the length and address for insertion into the
-		  * buffer ring. firstBufferPtr is not used anymore in this
-		  * loop.
-		  */
-		 length -= amountNeeded;
-		 bufPtr += amountNeeded;
-		 if (length == 0) {
-			continue;
-		 }
-
+    
+	    length = scatterGatherPtr->length;
+	    if (length == 0) {
+		continue;
 	    }
-	 }
+    
+	    bufPtr = scatterGatherPtr->bufAddr;
+    
+	    /*
+	     * Compute the amount of data needed in the first buffer to make it
+	     * a minumum size.
+	     */
+    
+	    amountNeeded = NET_LE_MIN_FIRST_BUFFER_SIZE - totalLength;
+	    if (amountNeeded > 0 ) {
+		/*
+		 * Still need more padding in first buffer.
+		 */
+		if (length <= amountNeeded) {
+		     /*
+		      * Needs this entire length.
+		      */
+		     bcopy(bufPtr, firstBufferPtr, length);
+		     totalLength += length;
+		     firstBufferPtr += length;
+		     /*
+		      * Get the next segment of the scatter.
+		      */
+		     continue;
+		} else {
+		    /*
+		     * Needs only part of this buffer.
+		     */
+		     bcopy(bufPtr, firstBufferPtr, amountNeeded);
+		     totalLength += amountNeeded;
+		     /*
+		      * Update the length and address for insertion into the
+		      * buffer ring. firstBufferPtr is not used anymore in this
+		      * loop.
+		      */
+		     length -= amountNeeded;
+		     bufPtr += amountNeeded;
+		     if (length == 0) {
+			    continue;
+		     }
+    
+		}
+	     }
 #if defined(sun3) || defined(sun4)
-	if (!reMapped) { 
-	    /*
-	     * Remap the packet into network addressible memory.
-	     */
-	    VmMach_NetMapPacket(scatterGatherPtr, scatterGatherLength-bufCount, 
-				newScatGathArr);
-	    bufPtr = newScatGathArr->bufAddr + 
-			(bufPtr - scatterGatherPtr->bufAddr);
-	    scatterGatherPtr = newScatGathArr;
-	    reMapped = TRUE;
-	}
+	    if (!reMapped) { 
+		/*
+		 * Remap the packet into network addressible memory.
+		 */
+		VmMach_NetMapPacket(scatterGatherPtr, 
+		    scatterGatherLength-bufCount, newScatGathArr);
+		bufPtr = newScatGathArr->bufAddr + 
+			    (bufPtr - scatterGatherPtr->bufAddr);
+		scatterGatherPtr = newScatGathArr;
+		reMapped = TRUE;
+	    }
 #endif
-	/*
-	 * Add bufPtr of length length to the next buffer of the chain.
-	 */
-	descPtr = NEXT_SEND(descPtr);
-	if (NetBfByteTest(descPtr->bits1, ChipOwned, 1)) {
 	    /*
-	     * Along as we only transmit one packet at a time, a buffer
-	     * own by the chip is a serious problem.
+	     * Add bufPtr of length length to the next buffer of the chain.
 	     */
-	    printf("LE ethernet: Transmit buffer owned by chip.\n");
-	    return (FAILURE);
-	}
-	descPtr->bufAddrLow = NET_LE_SUN_TO_CHIP_ADDR_LOW(bufPtr);
-	descPtr->bufAddrHigh = NET_LE_SUN_TO_CHIP_ADDR_HIGH(bufPtr);
-	NetBfByteSet(descPtr->bits1, StartOfPacket, 0);
-	NetBfByteSet(descPtr->bits1, EndOfPacket, 0);
-	descPtr->bufferSize = -length;
+	    descPtr = NEXT_SEND(descPtr);
+	    if (NetBfByteTest(descPtr->bits1, ChipOwned, 1)) {
+		/*
+		 * Along as we only transmit one packet at a time, a buffer
+		 * own by the chip is a serious problem.
+		 */
+		printf("LE ethernet: Transmit buffer owned by chip.\n");
+		return (FAILURE);
+	    }
+	    descPtr->bufAddrLow = NET_LE_TO_CHIP_ADDR_LOW(bufPtr);
+	    descPtr->bufAddrHigh = NET_LE_TO_CHIP_ADDR_HIGH(bufPtr);
+	    NetBfByteSet(descPtr->bits1, StartOfPacket, 0);
+	    NetBfByteSet(descPtr->bits1, EndOfPacket, 0);
+	    descPtr->bufferSize = -length;
 
-	totalLength += length;
+	    totalLength += length;
+	}
     }
 
     /*
@@ -262,7 +283,7 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength, statePtr)
     while (TRUE) {
 	NetBfByteSet(descPtr->bits1, ChipOwned, 1);
 	if (descPtr == statePtr->xmitDescNextPtr) {
-	 break;
+	    break;
 	}
 	descPtr = PREV_SEND(descPtr);
     }
@@ -270,10 +291,10 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength, statePtr)
     /*
      * Give the chip a little kick.
      */
-
     NetBfShortSet(statePtr->regPortPtr->addrPort, AddrPort, NET_LE_CSR0_ADDR);
-    statePtr->regPortPtr->dataPort =
-		(NET_LE_CSR0_XMIT_DEMAND | NET_LE_CSR0_INTR_ENABLE);
+    Mach_EmptyWriteBuffer();
+    statePtr->regPortPtr->dataPort = 
+	    (NET_LE_CSR0_XMIT_DEMAND | NET_LE_CSR0_INTR_ENABLE);
     return (SUCCESS);
 
 }
@@ -305,8 +326,8 @@ AllocateXmitMem(statePtr)
      * Allocate the ring of transmission buffer descriptors.  
      * The ring must start on 8-byte boundary.  
      */
-    memBase = (unsigned int) VmMach_NetMemAlloc(
-		(NET_LE_NUM_XMIT_BUFFERS * sizeof(NetLEXmitMsgDesc)) + 8);
+    memBase = (unsigned int) BufAlloc(statePtr, 
+	(NET_LE_NUM_XMIT_BUFFERS * sizeof(NetLEXmitMsgDesc)) + 8);
     /*
      * Insure ring starts on 8-byte boundary.
      */
@@ -318,8 +339,8 @@ AllocateXmitMem(statePtr)
     /*
      * Allocate the first buffer for a packet.
      */
-    statePtr->firstDataBuffer = 
-	VmMach_NetMemAlloc(NET_LE_MIN_FIRST_BUFFER_SIZE);
+    statePtr->firstDataBuffer = BufAlloc(statePtr, ((NET_LE_COPY_PACKET) ? 
+	NET_ETHER_MAX_BYTES : NET_LE_MIN_FIRST_BUFFER_SIZE));
     statePtr->xmitMemAllocated = TRUE;
     return;
 }
@@ -364,29 +385,8 @@ NetLEXmitInit(statePtr)
 
     descPtr = statePtr->xmitDescFirstPtr;
     for (bufNum = 0; bufNum < NET_LE_NUM_XMIT_BUFFERS; bufNum++, descPtr++) { 
-	/*
-	 * Clear out error fields. 
-	 */
-	NetBfByteSet(descPtr->bits1, Error, 0);
-	NetBfByteSet(descPtr->bits1, Retries, 0);
-	NetBfByteSet(descPtr->bits1, OneRetry, 0);
-	NetBfByteSet(descPtr->bits1, Deferred, 0);
-	NetBfShortSet(descPtr->bits2, XmitBufferError, 0);
-	NetBfShortSet(descPtr->bits2, UnderflowError, 0);
-	NetBfShortSet(descPtr->bits2, RetryError, 0);
-	NetBfShortSet(descPtr->bits2, LostCarrier, 0);
-	NetBfShortSet(descPtr->bits2, LateCollision, 0);
-	/*
-	 * Clear packet boundry bits.
-	 */
-	NetBfByteSet(descPtr->bits1, StartOfPacket, 0);
-	NetBfByteSet(descPtr->bits1, EndOfPacket, 0);
-	/*
-	 * Set ownership to the os.
-	 */
-	NetBfByteSet(descPtr->bits1, ChipOwned, 0);
+	bzero((char *) descPtr, sizeof(NetLEXmitMsgDesc));
     }
-
     statePtr->transmitting = FALSE;
     statePtr->curScatGathPtr = (Net_ScatterGather *) NIL;
     return;
@@ -417,15 +417,9 @@ NetLEXmitDone(statePtr)
     register	volatile NetXmitElement     	*xmitElementPtr;
     register	volatile NetLEXmitMsgDesc	*descPtr;
     ReturnStatus			status;
+    char				*buffer; 
 
     descPtr = statePtr->xmitDescNextPtr;
-
-    /*
-     * Reset the interrupt.
-     */
-    NetBfShortSet(statePtr->regPortPtr->addrPort, AddrPort, NET_LE_CSR0_ADDR);
-    statePtr->regPortPtr->dataPort = 
-		(NET_LE_CSR0_XMIT_INTR | NET_LE_CSR0_INTR_ENABLE);
 
     /*
      * If there is nothing that is currently being sent then something is
@@ -433,18 +427,20 @@ NetLEXmitDone(statePtr)
      */
     if (statePtr->curScatGathPtr == (Net_ScatterGather *) NIL) {
 	printf( "NetLEXmitDone: No current packet\n.");
-	return (FAILURE);
+	status = FAILURE;
+	goto exit;
     }
 
     if (NetBfByteTest(descPtr->bits1, ChipOwned, 1)) {
 	printf("LE ethernet: Bogus xmit interrupt. Buffer owned by chip.\n");
-	return (FAILURE);
+	status = FAILURE;
+	goto exit;
     }
     if (NetBfByteTest(descPtr->bits1, StartOfPacket, 0)) {
 	printf("LE ethernet: Bogus xmit interrupt. Buffer not start of packet.\n");
-	return (FAILURE);
+	status = FAILURE;
+	goto exit;
     }
-
 
     /*
      * Check for errors.
@@ -474,12 +470,14 @@ NetLEXmitDone(statePtr)
 	    }
 	    if (NetBfShortTest(descPtr->bits2, UnderflowError, 1)) {
 		printf("LE ethernet: Memory underflow error.\n");
-		return (FAILURE);
+		status = FAILURE;
+		goto exit;
 	    }
 	}
 	if (NetBfShortTest(descPtr->bits2, XmitBufferError, 1)) {
 	    printf("LE ethernet: Transmit buffering error.\n");
-	    return (FAILURE);
+	    status = FAILURE;
+	    goto exit;
 	}
 	if (NetBfByteTest(descPtr->bits1, OneRetry, 1)) {
 	    statePtr->stats.collisions++;
@@ -491,6 +489,9 @@ NetLEXmitDone(statePtr)
 	    statePtr->stats.collisions += 2;	/* Only a guess. */
 	}
 
+	buffer = (char *) NET_LE_FROM_CHIP_ADDR(statePtr, 
+	    descPtr->bufAddrHigh, descPtr->bufAddrLow);
+
 	if (NetBfByteTest(descPtr->bits1, EndOfPacket, 1)) {
 		break;
 	}
@@ -501,7 +502,8 @@ NetLEXmitDone(statePtr)
 	}
 	if (NetBfByteTest(descPtr->bits1, ChipOwned, 1)) {
 		printf("LE ethernet: Transmit Buffer owned by chip.\n");
-		return (FAILURE);
+		status = FAILURE;
+		goto exit;
 	}
     }
 
@@ -526,6 +528,9 @@ NetLEXmitDone(statePtr)
      * the queue.  Otherwise there is nothing being transmitted.
      */
     status = SUCCESS;
+    if (statePtr->resetPending == TRUE) {
+	goto exit;
+    }
     if (!List_IsEmpty(statePtr->xmitList)) {
 	xmitElementPtr = (NetXmitElement *) List_First(statePtr->xmitList);
 	status = OutputPacket(xmitElementPtr->etherHdrPtr,
@@ -536,6 +541,11 @@ NetLEXmitDone(statePtr)
     } else {
 	statePtr->transmitting = FALSE;
 	statePtr->curScatGathPtr = (Net_ScatterGather *) NIL;
+    }
+exit:
+    if (statePtr->resetPending == TRUE) {
+	statePtr->transmitting = FALSE;
+	NetLEReset(statePtr->interPtr);
     }
     return (status);
 }
@@ -581,7 +591,7 @@ NetLEOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength, rpc,
     Net_EtherHdr			*etherHdrPtr = (Net_EtherHdr *) hdrPtr;
 
     statePtr = (NetLEState *) interPtr->interfaceData;
-    DISABLE_INTR();
+    MASTER_LOCK(&interPtr->mutex);
 
     statePtr->stats.packetsOutput++;
 
@@ -594,8 +604,8 @@ NetLEOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength, rpc,
 	scatterGatherPtr->done = TRUE;
 
 	printf("LE ethernet: Packet in too many pieces\n");
-	ENABLE_INTR();
-	return FAILURE;
+	status = FAILURE;
+	goto exit;
     }
 
 
@@ -627,11 +637,11 @@ NetLEOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength, rpc,
 
         scatterGatherPtr->done = TRUE;
 
-	ENABLE_INTR();
+	status = SUCCESS;
 	if (statusPtr != (ReturnStatus *) NIL) {
 	    *statusPtr = SUCCESS;
 	}
-	return SUCCESS;
+	goto exit;
     }
 
     /*
@@ -647,10 +657,8 @@ NetLEOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength, rpc,
 	} else if (statusPtr != (ReturnStatus *) NIL) {
 	    *statusPtr = SUCCESS;
 	}
-	ENABLE_INTR();
-	return status;
+	goto exit;
     }
-
     /*
      * There is a packet being sent so this packet has to be put onto the
      * transmission queue.  Get an element off of the transmission free list.  
@@ -659,8 +667,8 @@ NetLEOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength, rpc,
 
     if (List_IsEmpty(statePtr->xmitFreeList)) {
         scatterGatherPtr->done = TRUE;
-	ENABLE_INTR();
-	return FAILURE;
+	status = FAILURE;
+	goto exit;
     }
 
     xmitPtr = (NetXmitElement *) List_First((List_Links *) statePtr->xmitFreeList);
@@ -684,7 +692,9 @@ NetLEOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength, rpc,
     if (statusPtr != (ReturnStatus *) NIL) {
 	*statusPtr = SUCCESS;
     }
-    ENABLE_INTR();
+    status = SUCCESS;
+exit:
+    MASTER_UNLOCK(&interPtr->mutex);
     return SUCCESS;
 }
 

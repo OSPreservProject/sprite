@@ -23,14 +23,19 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <vmMach.h>
 #include <sys.h>
 #include <list.h>
+#include <machMon.h>
 
 /*
  * Macro to step ring pointers.
  */
 
-#define	NEXT_RECV(p)	( ((++p) > statePtr->recvDescLastPtr) ? \
+#define	NEXT_RECV(p)	( ((p+1) > statePtr->recvDescLastPtr) ? \
 				statePtr->recvDescFirstPtr : \
-				(p))
+				(p+1))
+#define	PREV_RECV(p)	( ((p-1) < statePtr->recvDescFirstPtr) ? \
+				statePtr->recvDescLastPtr : \
+				(p-1))
+
 
 static void AllocateRecvMem _ARGS_((NetLEState *statePtr));
 
@@ -61,7 +66,7 @@ AllocateRecvMem(statePtr)
      * Allocate the ring of receive buffer descriptors.  The ring must start
      * on 8-byte boundary.  
      */
-    memBase = (unsigned int) VmMach_NetMemAlloc(
+    memBase = (unsigned int) BufAlloc(statePtr, 
 		(NET_LE_NUM_RECV_BUFFERS * sizeof(NetLERecvMsgDesc)) + 8);
     /*
      * Insure ring starts on 8-byte boundary.
@@ -77,13 +82,19 @@ AllocateRecvMem(statePtr)
      * the ethernet header) will start on a long word boundry. This
      * eliminates unaligned word fetches from the RPC module which would
      * cause alignment traps on SPARC processors such as the sun4.
+     *
+     * This code assumes that ethernet headers are an odd number of short
+     * (2-byte) words long.
      */
 
-#define ALIGNMENT_PADDING       (sizeof(Net_EtherHdr)&0x3)
     for (i = 0; i < NET_LE_NUM_RECV_BUFFERS; i++) {
-        statePtr->recvDataBuffer[i] = (Address)
-                VmMach_NetMemAlloc(NET_LE_RECV_BUFFER_SIZE + ALIGNMENT_PADDING)
-		    + ALIGNMENT_PADDING;
+	int 	addr;
+	addr = (int) BufAlloc(statePtr, NET_LE_RECV_BUFFER_SIZE + 3);
+	addr += 1;
+	addr &= ~0x3;
+	addr += 2;
+        statePtr->recvDataBuffer[i] = (Address) addr;
+	bzero((char *) statePtr->recvDataBuffer[i], NET_LE_RECV_BUFFER_SIZE);
     }
 #undef ALIGNMENT_PADDING
 
@@ -132,36 +143,24 @@ NetLERecvInit(statePtr)
      */
     descPtr = statePtr->recvDescFirstPtr;
     for (bufNum = 0; bufNum < NET_LE_NUM_RECV_BUFFERS; bufNum++, descPtr++) { 
+	bzero((char *) descPtr, sizeof(NetLERecvMsgDesc));
 	 /*
 	  * Point the descriptor at its buffer.
 	  */
 	descPtr->bufAddrLow = 
-		NET_LE_SUN_TO_CHIP_ADDR_LOW(statePtr->recvDataBuffer[bufNum]);
+		NET_LE_TO_CHIP_ADDR_LOW(statePtr->recvDataBuffer[bufNum]);
 	descPtr->bufAddrHigh = 
-		NET_LE_SUN_TO_CHIP_ADDR_HIGH(statePtr->recvDataBuffer[bufNum]);
+		NET_LE_TO_CHIP_ADDR_HIGH(statePtr->recvDataBuffer[bufNum]);
 	/* 
 	 * Insert its size. Note the 2's complementness of the bufferSize.
 	 */
 	descPtr->bufferSize = -NET_LE_RECV_BUFFER_SIZE;
 	/*
-	 * Clear out error fields. 
-	 */
-	NetBfByteSet(descPtr->bits, Error, 0);
-	NetBfByteSet(descPtr->bits, FramingError, 0);
-	NetBfByteSet(descPtr->bits, OverflowError, 0);
-	NetBfByteSet(descPtr->bits, CrcError, 0);
-	NetBfByteSet(descPtr->bits, RecvBufferError, 0);
-	/*
-	 * Clear packet boundary bits.
-	 */
-	NetBfByteSet(descPtr->bits, StartOfPacket, 0);
-	NetBfByteSet(descPtr->bits, EndOfPacket, 0);
-
-	/*
 	 * Set ownership to the chip.
 	 */
 	NetBfByteSet(descPtr->bits, ChipOwned, 1);
     }
+    statePtr->lastRecvCnt = 0;
     statePtr->recvMemInitialized = TRUE;
 }
 
@@ -191,6 +190,7 @@ NetLERecvProcess(dropPackets, statePtr)
     register	Net_EtherHdr		*etherHdrPtr;
     int					size;
     Boolean				tossPacket;
+    int					numResets;
 
     /*
      * If not initialized then forget the interrupt.
@@ -199,18 +199,16 @@ NetLERecvProcess(dropPackets, statePtr)
     if (!statePtr->recvMemInitialized) {
 	return (FAILURE);
     }
-
     descPtr = statePtr->recvDescNextPtr;
 
-    /*
-     * First a few consistency check. 
-     */
     if (NetBfByteTest(descPtr->bits, ChipOwned, 1)) {
-	printf(
-	    "LE ethernet: Bogus receive interrupt. Buffer owned by chip.\n");
-	return (FAILURE);
+	if (statePtr->lastRecvCnt < 2) {
+	    printf(
+	"LE ethernet: Bogus receive interrupt. Buffer 0x%x owned by chip.\n",
+		descPtr);
+	    return (FAILURE);
+	}
     }
-
     if (NetBfByteTest(descPtr->bits, StartOfPacket, 0)) {
 	printf(
 	 "LE ethernet: Bogus receive interrupt. Buffer doesn't start packet.\n");
@@ -221,12 +219,14 @@ NetLERecvProcess(dropPackets, statePtr)
      */
 
     tossPacket = dropPackets;
+    numResets = statePtr->numResets;
+    statePtr->lastRecvCnt = 0;
     while (TRUE) {
 	/* 
 	 * Check to see if we have processed all our buffers. 
 	 */
 	if (NetBfByteTest(descPtr->bits, ChipOwned, 1)) {
-		break;
+	    break;
 	}
 	/*
 	 * Since we allocated very large receive buffers all packets must fit
@@ -295,7 +295,8 @@ NetLERecvProcess(dropPackets, statePtr)
 	statePtr->stats.packetsRecvd++;
 
 	etherHdrPtr = (Net_EtherHdr *) 
-	    NET_LE_SUN_FROM_CHIP_ADDR(descPtr->bufAddrHigh,descPtr->bufAddrLow);
+	    NET_LE_FROM_CHIP_ADDR(statePtr, descPtr->bufAddrHigh,
+		descPtr->bufAddrLow);
 
 	 /*
 	  * Call higher level protocol to process the packet. Remove the
@@ -306,26 +307,19 @@ NetLERecvProcess(dropPackets, statePtr)
 		Net_Input(statePtr->interPtr, (Address)etherHdrPtr, size);
 	}
 	/*
+	 * If the number of resets has changed then somebody reset the chip
+	 * in Net_Input. In that case we can't keep processing packets because
+	 * the packet pointers have been reset.  
+	 */
+	if (numResets != statePtr->numResets) {
+	    return SUCCESS;
+	}
+	/*
 	 * We're finish with it, give the buffer back to the chip. 
 	 */
 	NetBfByteSet(descPtr->bits, ChipOwned, 1);
 
-	/*
-	 * Clear the interrupt bit for the packet we just got before 
-	 * we check the ownership of the next packet. This prevents the 
-	 * following race condition: We check the buffer and it is own
-	 * by the chip; the chip gives the buffer to us and sets the
-	 * interrupt; we clear the interrupt. 
-	 * The fix is to always clear the interrupt and then check
-	 * for owership as the chip sets owership and then sets the
-	 * interrupt.
-	 */
-
-	NetBfShortSet(statePtr->regPortPtr->addrPort, AddrPort, 
-		NET_LE_CSR0_ADDR);
-	statePtr->regPortPtr->dataPort = 
-			NET_LE_CSR0_RECV_INTR | NET_LE_CSR0_INTR_ENABLE;
-
+	statePtr->lastRecvCnt++;
 	/* 
 	 * Check to see if we have processed all our buffers. 
 	 */
@@ -334,7 +328,6 @@ NetLERecvProcess(dropPackets, statePtr)
 		break;
 	}
     }
-
     /*
      * Update the the ring pointer. We should be pointer at the chip owned 
      * buffer in that the next packet will be put.

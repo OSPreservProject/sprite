@@ -35,6 +35,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <machMon.h>
 #include <dbg.h>
 #include <assert.h>
+
 #ifdef sun4c
 #include <devSCSIC90.h>
 #endif
@@ -61,57 +62,30 @@ ReturnStatus
 NetLEInit(interPtr)
     Net_Interface	*interPtr; 	/* Network interface. */
 {
-    Address 	ctrlAddr;	/* Kernel virtual address of controller. */
-    int 	i;
-    List_Links	*itemPtr;
-    NetLEState	*statePtr;
+    int 		i;
+    List_Links		*itemPtr;
+    NetLEState		*statePtr;
+    ReturnStatus	status;
+    void		NetLETrace();
 
-    assert(sizeof(NetLE_Reg) == 4);
+    assert(sizeof(NetLE_Reg) == NET_LE_REG_SIZE);
     assert(sizeof(NetLEModeReg) == 2);
     assert(sizeof(NetLERingPointer) == 4);
     assert(sizeof(NetLEInitBlock) == 24);
     assert(sizeof(NetLERecvMsgDesc) == 8);
     assert(sizeof(NetLEXmitMsgDesc) == 8);
 
-    DISABLE_INTR();
-
-    ctrlAddr = interPtr->ctrlAddr;
-    /*
-     * If the address is physical (not in kernel's virtual address space)
-     * then we have to map it in.
-     */
-    if (interPtr->virtual == FALSE) {
-	ctrlAddr = (char *) VmMach_MapInDevice(ctrlAddr, 1);
-    }
     statePtr = (NetLEState *) malloc (sizeof(NetLEState));
     bzero((char *) statePtr, sizeof(NetLEState));
+    MASTER_LOCK(&interPtr->mutex)
     statePtr->running = FALSE;
+    status = NetLEMachInit(interPtr, statePtr);
+    if (status != SUCCESS) {
+	MASTER_UNLOCK(&interPtr->mutex);
+	free((char *) statePtr);
+	return status;
+    }
 
-    /*
-     * The onboard control register is at a pre-defined kernel virtual
-     * address.  The virtual mapping is set up by the sun PROM monitor
-     * and passed to us from the netInterface table.
-     */
-
-    statePtr->regPortPtr = (volatile NetLE_Reg *) ctrlAddr;
-    {
-	/*
-	 * Poke the controller by setting the RAP.
-	 */
-	short value = NET_LE_CSR0_ADDR;
-	ReturnStatus status;
-	status = Mach_Probe(sizeof(short), (char *) &value, 
-			  (char *) (((short *)(statePtr->regPortPtr)) + 1));
-	if (status != SUCCESS) {
-	    /*
-	     * Got a bus error.
-	     */
-	    free((char *) statePtr);
-	    ENABLE_INTR();
-	    return(FAILURE);
-	}
-    } 
-    Mach_SetHandler(interPtr->vector, Net_Intr, (ClientData) interPtr);
     /*
      * Initialize the transmission list.  
      */
@@ -122,41 +96,18 @@ NetLEInit(interPtr)
     statePtr->xmitFreeList = &statePtr->xmitFreeListHdr;
     List_Init(statePtr->xmitFreeList);
 
+    printf("Initializing transmission list\n");
     for (i = 0; i < NET_LE_NUM_XMIT_ELEMENTS; i++) {
-	itemPtr = (List_Links *) VmMach_NetMemAlloc(sizeof(NetXmitElement)), 
+	itemPtr = (List_Links *) malloc(sizeof(NetXmitElement)), 
 	List_InitElement(itemPtr);
 	List_Insert(itemPtr, LIST_ATREAR(statePtr->xmitFreeList));
     }
 
     /*
-     * Get ethernet address out of the rom.  
-     */
-
-    Mach_GetEtherAddress(&statePtr->etherAddress);
-    printf("%s-%d Ethernet address %x:%x:%x:%x:%x:%x\n", 
-	      interPtr->name, interPtr->number,
-	      statePtr->etherAddress.byte1 & 0xff,
-	      statePtr->etherAddress.byte2 & 0xff,
-	      statePtr->etherAddress.byte3 & 0xff,
-	      statePtr->etherAddress.byte4 & 0xff,
-	      statePtr->etherAddress.byte5 & 0xff,
-	      statePtr->etherAddress.byte6 & 0xff);
-
-    /*
-     * Generate a byte-swapped copy of it.
-     */
-    statePtr->etherAddressBackward.byte2 = statePtr->etherAddress.byte1;
-    statePtr->etherAddressBackward.byte1 = statePtr->etherAddress.byte2;
-    statePtr->etherAddressBackward.byte4 = statePtr->etherAddress.byte3;
-    statePtr->etherAddressBackward.byte3 = statePtr->etherAddress.byte4;
-    statePtr->etherAddressBackward.byte6 = statePtr->etherAddress.byte5;
-    statePtr->etherAddressBackward.byte5 = statePtr->etherAddress.byte6;
-
-    /*
      * Allocate the initialization block.
      */
     statePtr->initBlockPtr = 
-		    (NetLEInitBlock *)VmMach_NetMemAlloc(sizeof(NetLEInitBlock));
+		(NetLEInitBlock *) BufAlloc(statePtr, sizeof(NetLEInitBlock));
     interPtr->init	= NetLEInit;
     interPtr->output 	= NetLEOutput;
     interPtr->intr	= NetLEIntr;
@@ -175,6 +126,7 @@ NetLEInit(interPtr)
     statePtr->recvMemAllocated = FALSE;
     statePtr->xmitMemInitialized = FALSE;
     statePtr->xmitMemAllocated = FALSE;
+    statePtr->resetPending = FALSE;
 
     /*
      * Reset the world.
@@ -187,7 +139,7 @@ NetLEInit(interPtr)
      */
 
     statePtr->running = TRUE;
-    ENABLE_INTR();
+    MASTER_UNLOCK(&interPtr->mutex);
     return (SUCCESS);
 }
 
@@ -214,13 +166,29 @@ NetLEReset(interPtr)
 {
     volatile NetLEInitBlock *initPtr;
     NetLEState		    *statePtr;
+    int				i;
+    int				j;
+    unsigned short		csr0;
 
     statePtr = (NetLEState *) interPtr->interfaceData;
+    /*
+     * If there isn't a reset pending already, and the chip is currently
+     * transmitting then just set the pending flag.  With any luck
+     * this mechanism will prevent the chip from being reset right in
+     * the middle of a packet.
+     */
+    if (!(statePtr->resetPending) && (statePtr->transmitting)) {
+	statePtr->resetPending = TRUE;
+	return;
+    }
+    statePtr->resetPending = FALSE;
     /* 
      * Reset (and stop) the chip.
      */
     NetBfShortSet(statePtr->regPortPtr->addrPort, AddrPort, NET_LE_CSR0_ADDR);
-    statePtr->regPortPtr->dataPort = NET_LE_CSR0_STOP; 
+    Mach_EmptyWriteBuffer();
+    statePtr->regPortPtr->dataPort = NET_LE_CSR0_STOP;
+    interPtr->flags &= ~NET_IFLAGS_RUNNING;
 #ifdef sun4c
     Dev_ScsiResetDMA();
 #endif
@@ -232,46 +200,60 @@ NetLEReset(interPtr)
      NetLEXmitInit(statePtr);
 
     /*
-     *  Fill in the initialization block. Make eeverything zero unless 
+     *  Fill in the initialization block. Make everything zero unless 
      *  told otherwise.
      */
 
     bzero( (Address) statePtr->initBlockPtr, sizeof(NetLEInitBlock));
     initPtr = statePtr->initBlockPtr;
+
     /*
-     * Insert the byte swapped ethernet address.
+     * Insert the ethernet address.
      */
 
-    initPtr->etherAddress = statePtr->etherAddressBackward;
+#ifndef ds5000
+    {
+	Net_EtherAddress	revAddr;
+	revAddr.byte2 = statePtr->etherAddress.byte1;
+	revAddr.byte1 = statePtr->etherAddress.byte2;
+	revAddr.byte4 = statePtr->etherAddress.byte3;
+	revAddr.byte3 = statePtr->etherAddress.byte4;
+	revAddr.byte6 = statePtr->etherAddress.byte5;
+	revAddr.byte5 = statePtr->etherAddress.byte6;
+	bcopy((char *) &revAddr, (char *) &initPtr->etherAddress, 
+	sizeof(statePtr->etherAddress));
+    }
+#else
+    bcopy((char *) &statePtr->etherAddress, (char *) &initPtr->etherAddress, 
+	sizeof(statePtr->etherAddress));
+#endif
 
     /*
      * Reject all multicast addresses.
-     * Except we want boot multicasts.
-     * These are address ab-00-00-01-00-00 = hash bit 31, maybe?
      */
 
-    initPtr->multiCastFilter[0] = 0x8000; /* Bit 31 apparently. */
-    initPtr->multiCastFilter[1] = 0x0;
-    initPtr->multiCastFilter[2] = 0x0;
-    initPtr->multiCastFilter[3] = 0x0;
+    initPtr->multiCastFilter[0] = 0;
+    initPtr->multiCastFilter[1] = 0;
+    initPtr->multiCastFilter[2] = 0;
+    initPtr->multiCastFilter[3] = 0;
 
     /*
      * Set up the ring pointers.
      */
 
-    NetBfWordSet(initPtr->recvRing, LogRingLength, 
+    NetBfShortSet(initPtr->recvRing, LogRingLength, 
 		NET_LE_NUM_RECV_BUFFERS_LOG2);
-    NetBfWordSet(initPtr->recvRing, RingAddrLow, 
-		NET_LE_SUN_TO_CHIP_ADDR_LOW(statePtr->recvDescFirstPtr));
-    NetBfWordSet(initPtr->recvRing, RingAddrHigh, 
-		NET_LE_SUN_TO_CHIP_ADDR_HIGH(statePtr->recvDescFirstPtr));
+    NetBfShortSet(initPtr->recvRing, RingAddrLow, 
+		NET_LE_TO_CHIP_ADDR_LOW(statePtr->recvDescFirstPtr));
+    NetBfShortSet(initPtr->recvRing, RingAddrHigh, 
+		NET_LE_TO_CHIP_ADDR_HIGH(statePtr->recvDescFirstPtr));
 
-    NetBfWordSet(initPtr->xmitRing, LogRingLength, 
+    NetBfShortSet(initPtr->xmitRing, LogRingLength, 
 		NET_LE_NUM_XMIT_BUFFERS_LOG2);
-    NetBfWordSet(initPtr->xmitRing, RingAddrLow, 
-		NET_LE_SUN_TO_CHIP_ADDR_LOW(statePtr->xmitDescFirstPtr));
-    NetBfWordSet(initPtr->xmitRing, RingAddrHigh, 
-		NET_LE_SUN_TO_CHIP_ADDR_HIGH(statePtr->xmitDescFirstPtr));
+    NetBfShortSet(initPtr->xmitRing, RingAddrLow, 
+		NET_LE_TO_CHIP_ADDR_LOW(statePtr->xmitDescFirstPtr));
+    NetBfShortSet(initPtr->xmitRing, RingAddrHigh, 
+		NET_LE_TO_CHIP_ADDR_HIGH(statePtr->xmitDescFirstPtr));
 
     /*
      * Set the the Bus master control register (csr3) to have chip byte
@@ -280,59 +262,66 @@ NetLEReset(interPtr)
      */
 
     NetBfShortSet(statePtr->regPortPtr->addrPort, AddrPort, NET_LE_CSR3_ADDR);
-#ifdef sun4c
-     statePtr->regPortPtr->dataPort = NET_LE_CSR3_BYTE_SWAP |
-					  NET_LE_CSR3_ALE_CONTROL |
-					  NET_LE_CSR3_BYTE_CONTROL;
-#else
-    statePtr->regPortPtr->dataPort = NET_LE_CSR3_BYTE_SWAP;
-#endif
+    Mach_EmptyWriteBuffer();
+    statePtr->regPortPtr->dataPort = 0;
+    Mach_EmptyWriteBuffer();
+    statePtr->regPortPtr->dataPort = NET_LE_CSR3_VALUE;
+
     /*
      * Set the init block pointer address in csr1 and csr2
      */
     NetBfShortSet(statePtr->regPortPtr->addrPort, AddrPort, NET_LE_CSR1_ADDR);
-    statePtr->regPortPtr->dataPort = 
-			NET_LE_SUN_TO_CHIP_ADDR_LOW(initPtr);
+    Mach_EmptyWriteBuffer();
+    NetBfShortSet(&statePtr->regPortPtr->dataPort, DataCSR1, 
+	    NET_LE_TO_CHIP_ADDR_LOW(initPtr));
+    Mach_EmptyWriteBuffer();
 
     NetBfShortSet(statePtr->regPortPtr->addrPort, AddrPort, NET_LE_CSR2_ADDR);
-    statePtr->regPortPtr->dataPort = 
-			NET_LE_SUN_TO_CHIP_ADDR_HIGH(initPtr);
+    Mach_EmptyWriteBuffer();
+    NetBfShortSet(&statePtr->regPortPtr->dataPort, DataCSR2, 
+		NET_LE_TO_CHIP_ADDR_HIGH(initPtr));
+    Mach_EmptyWriteBuffer();
 
     /*
      * Tell the chip to initialize and wait for results.
      */
+    csr0 = 0;
+    for (j = 0; (j < 100) && ((csr0 & NET_LE_CSR0_INIT_DONE) == 0); j++) {
+	NetBfShortSet(statePtr->regPortPtr->addrPort, AddrPort, 
+		NET_LE_CSR0_ADDR);
+	Mach_EmptyWriteBuffer();
+	statePtr->regPortPtr->dataPort = NET_LE_CSR0_INIT;
+	Mach_EmptyWriteBuffer();
 
-    NetBfShortSet(statePtr->regPortPtr->addrPort, AddrPort, NET_LE_CSR0_ADDR);
-    statePtr->regPortPtr->dataPort = NET_LE_CSR0_INIT;
 
-    {
-	int	i;
-	unsigned volatile short	*csr0Ptr = 
-	    &(statePtr->regPortPtr->dataPort);
-
-	for (i = 0; ((*csr0Ptr & NET_LE_CSR0_INIT_DONE) == 0); i++) {
-	    if (i > 5000) {
-		panic("LE ethernet: Chip will not initialize, csr = 0x%x \n",
-			*csr0Ptr);
+	for (i = 0; i < 10000; i++) {
+	    csr0 = statePtr->regPortPtr->dataPort;
+	    if (csr0 & NET_LE_CSR0_INIT_DONE) {
+		break;
 	    }
-	    MACH_DELAY(100);
 	}
-
-	/*
-	 * Ack the interrupt.
-	 */
-
-	 *csr0Ptr = NET_LE_CSR0_INIT_DONE;
+	if (csr0 & NET_LE_CSR0_INIT_DONE) {
+	    break;
+	}
     }
+    if (!(csr0 & NET_LE_CSR0_INIT_DONE)) {
+	panic("LE ethernet: Chip will not initialize, csr0 = 0x%x\n", csr0);
+    }
+    MACH_DELAY(100);
+
+    /*
+     * Ack the interrupt.
+     */
+    statePtr->regPortPtr->dataPort = NET_LE_CSR0_INIT_DONE;
 
     /*
      * Start the chip and enable interrupts.
      */
-
     statePtr->regPortPtr->dataPort = 
-		    (NET_LE_CSR0_START | NET_LE_CSR0_INTR_ENABLE);
+	(NET_LE_CSR0_START | NET_LE_CSR0_INTR_ENABLE);
 
     printf("LE ethernet: Reinitialized chip.\n");
+    statePtr->numResets++;
     interPtr->flags |= NET_IFLAGS_RUNNING;
     return;
 }
@@ -360,7 +349,7 @@ NetLERestart(interPtr)
 
     NetLEState	*statePtr = (NetLEState *) interPtr->interfaceData;
 
-    DISABLE_INTR();
+    MASTER_LOCK(&interPtr->mutex);
 
     /*
      * Drop the current packet so the sender does't get hung.
@@ -377,7 +366,7 @@ NetLERestart(interPtr)
      */
     NetLEXmitRestart(statePtr);
 
-    ENABLE_INTR();
+    MASTER_UNLOCK(&interPtr->mutex);
     return;
 }
 
@@ -411,11 +400,31 @@ NetLEIntr(interPtr, polling)
     statePtr = (NetLEState *) interPtr->interfaceData;
 
     NetBfShortSet(statePtr->regPortPtr->addrPort, AddrPort, NET_LE_CSR0_ADDR);
+    Mach_EmptyWriteBuffer();
     csr0 = statePtr->regPortPtr->dataPort;
     if (netDebug) {
-	printf("NetLEIntr: %s\n", (polling == TRUE) ? "polling" : 
-	    "not polling");
+	printf("NetLEIntr: %s, csr0 = 0x%x\n", (polling == TRUE) ? "polling" : 
+	    "not polling", csr0);
     }
+    if (csr0 & NET_LE_CSR0_STOP) {
+	printf("NetLEIntr: chip is stopped.\n");
+	NetLERestart(interPtr);
+	return;
+    }
+
+    csr0 &= ~NET_LE_CSR0_INTR_ENABLE;
+    statePtr->regPortPtr->dataPort = csr0;
+    statePtr->regPortPtr->dataPort = NET_LE_CSR0_INTR_ENABLE;
+    if ( !((csr0 & NET_LE_CSR0_ERROR) || (csr0 & NET_LE_CSR0_INTR)) ) {
+	/*
+	 * We could be polling; that's why we were here.
+	 */
+	if (!polling) {
+	    printf("LE ethernet: Spurious interrupt CSR0 = <%x>\n", csr0);
+	    NetLERestart(interPtr);
+	} 
+	return;
+    } 
 
     /*
      * Check for errors.
@@ -426,9 +435,8 @@ NetLEIntr(interPtr, polling)
 	if (csr0 & NET_LE_CSR0_MISSED_PACKET) {
 	    printf("LE ethernet: Missed a packet.\n");
 	    /*
-	     * Clear interrupt bit but don't reset controller.
+	     * Don't reset controller.
 	     */
-	    statePtr->regPortPtr->dataPort = NET_LE_CSR0_MISSED_PACKET;
 	    reset = FALSE;
 	}
 	if (csr0 & NET_LE_CSR0_COLLISION_ERROR) {
@@ -451,9 +459,10 @@ NetLEIntr(interPtr, polling)
 	    panic("LE ethernet: Transmit babble\n");
 	}
 	if (csr0 & NET_LE_CSR0_MEMORY_ERROR) {
-#ifdef sun4c
-	    printf("statePtr: 0x%x, regPortPtr = 0x%x, dataPort = 0x%x, csr0: 0x%x\n", statePtr, statePtr->regPortPtr, statePtr->regPortPtr->dataPort, csr0);
-#endif
+	    printf(
+	"statePtr: 0x%x, regPortPtr = 0x%x, dataPort = 0x%x, csr0: 0x%x\n", 
+		statePtr, statePtr->regPortPtr, statePtr->regPortPtr->dataPort, 
+		csr0);
 	    panic("LE ethernet: Memory Error.\n");
 	}
 	/*
@@ -498,14 +507,6 @@ NetLEIntr(interPtr, polling)
      * what are we doing here?
      */
 
-    if ( !(csr0 & NET_LE_CSR0_INTR_ENABLE) || !(csr0 & NET_LE_CSR0_INTR) ) {
-	/*
-	 * We could be polling; that's why we were here.
-	 */
-	if (!polling) {
-	    printf("LE ethernet: Spurious interrupt CSR0 = <%x>\n", csr0);
-	} 
-    } 
     return;
 }
 
@@ -532,10 +533,9 @@ NetLEGetStats(interPtr, statPtr)
 {
     NetLEState	*statePtr;
     statePtr = (NetLEState *) interPtr->interfaceData;
-    DISABLE_INTR();
+    MASTER_LOCK(&interPtr->mutex);
     statPtr->ether = statePtr->stats;
-    ENABLE_INTR();
+    MASTER_UNLOCK(&interPtr->mutex);
     return SUCCESS;
 }
-
 
