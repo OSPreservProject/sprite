@@ -41,10 +41,21 @@ main()
     * Initialize machine dependent info.  MUST BE CALLED HERE!!!.
     */
     Mach_Init();
-    diddly(20);
+    Vm_BootInit();
+    Dbg_Init();
+    Sync_Init();
+    Mach_MonPrintf("Before\n");
+    NetIEInit("howdy", 0, 0xffd0c000);
+    Mach_MonPrintf("After\n");
+#ifdef NOTDEF
+    Net_Init();
+#endif /* NOTDEF */
+
+
+    Dbg_Main(1, main);
+#ifdef NOTDEF
     Timer_TimerInit();
     Timer_TimerStart();
-#ifdef NOTDEF
     Mach_EnableIntr();		/* Should be ENABLE_INTR when I'm ready. */
 #endif NOTDEF
     for ( ; ; ) {
@@ -65,8 +76,9 @@ int	x;
     return 1;
 }
 
-printf(args)
-char	*args;
+printf(arg, a1, a2, a3, a4, a5, a6)
+char	*arg;
 {
+	Mach_MonPrintf(arg, a1, a2, a3, a4, a5, a6);
 	return;
 }
