@@ -730,15 +730,11 @@ Fs_RpcClose(srvToken, clientID, command, storagePtr)
 	if (streamPtr != &dummy) {
 	    /*
 	     * Take the client of the stream's list and nuke the server's
-	     * shadow stream if there are no client's left.  Remove the extra
-	     * reference kept for the shadow stream, along with the reference
-	     * we got when locking it before.
+	     * shadow stream if there are no client's left.
 	     */
 	    FsHandleRelease(streamPtr, FALSE);
 	    if (FsStreamClientClose(&streamPtr->clientList, clientID)) {
 		FsStreamDispose(streamPtr);
-	    } else {
-		FsHandleRelease(streamPtr, TRUE);
 	    }
 	}
     }
