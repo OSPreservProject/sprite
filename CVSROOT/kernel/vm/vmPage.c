@@ -1755,7 +1755,7 @@ Vm_PinUserMem(mapType, numBytes, addr)
     /*
      * Make sure that the range of addresses are accessible.
      */
-    Vm_MakeAccessible(VM_READWRITE_ACCESS, numBytes, addr, &accBytes, &accAddr);
+    Vm_MakeAccessible(mapType, numBytes, addr, &accBytes, &accAddr);
     if (accAddr == (Address)NIL) {
 	return(SYS_INVALID_ARG);
     } else if (accBytes != numBytes) {
@@ -1802,6 +1802,7 @@ Vm_PinUserMem(mapType, numBytes, addr)
 		    break;
 		}
 	    }
+	    VmMach_PinUserPage(&virtAddr);
 	}
     }
 
@@ -1907,6 +1908,7 @@ Vm_UnpinUserMem(numBytes, addr)
      */
     for (; virtAddr.page <= lastPage; virtAddr.page++) {
 	PageUnlock(&virtAddr);
+	VmMach_UnpinUserPage(&virtAddr);
     }
 
 done:
