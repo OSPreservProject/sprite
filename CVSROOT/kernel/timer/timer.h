@@ -21,11 +21,7 @@
 #include "list.h"
 
 #ifdef KERNEL
-#ifdef NEWLIB
 #include "spriteTime.h"
-#else
-#include "time.h"
-#endif
 #include "timerTick.h"
 #else
 #include <spriteTime.h>

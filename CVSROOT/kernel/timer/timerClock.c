@@ -48,13 +48,11 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 #include "sprite.h"
-#include "mach.h"
+#include "sync.h"
 #include "timer.h"
 #include "timerInt.h"
-#include "time.h"
+#include "spriteTime.h"
 #include "timerTick.h"
-#include "sys.h"
-#include "byte.h"
 
 /*
  *  The time of day (abbreviated TOD, also called Universal Time
@@ -110,6 +108,55 @@ Time   timerTimeOfDay			= { 0, 0 };
 static int localOffset			= 0;
 static Boolean DSTAllowed		= TRUE;
 
+/*
+ * Semaphore protecting the above time of day variables.
+ */
+
+int	timerClockMutex = 0;
+
+
+/*
+ * UpdateTimeOfDay() adjusts timerTimeOfDay to the real time of day.
+ */
+
+static void UpdateTimeOfDay();
+static Timer_QueueElement      updateElement;
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimerClock_Init --
+ *
+ *	Initializes the data structures necessary to manage the timer
+ *	modules' time of day clock.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     The system counter is initialized and started.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TimerClock_Init()
+{
+
+    Timer_CounterInit();
+
+    /*
+     * Add the routine to fix the time of day to the timer queue.
+     * The routine is called every 10 seconds.
+     */
+
+    updateElement.routine = UpdateTimeOfDay;
+    updateElement.interval = 10 * timer_IntOneSecond;
+    Timer_ScheduleRoutine(&updateElement, TRUE);
+}
+
 
 
 /*
@@ -145,13 +192,8 @@ Timer_GetRealTimeOfDay(timePtr, localOffsetPtr, DSTPtr)
      *  of the stored time of day to get the current T.O.D.
      */
 
-    /* 
-     * I don't think that we need DISABLE_INTR because Timer_GetCurrentTicks
-     * already does a DISABLE_INTR before reading the counter.  On the other
-     * hand the timer module works fine with the DISABLE_INTR. 
-     */
+    MASTER_LOCK(timerClockMutex);
 
-    DISABLE_INTR();
 
     Timer_GetCurrentTicks(&curTime);
 
@@ -159,14 +201,14 @@ Timer_GetRealTimeOfDay(timePtr, localOffsetPtr, DSTPtr)
     Timer_AddTicks(diff, timeOfDay, &diff);
     Timer_TicksToTime(diff, timePtr);
 
-    ENABLE_INTR();
-
     if (localOffsetPtr != (int *) NIL) {
 	*localOffsetPtr = localOffset;
     }
     if (DSTPtr != (Boolean *) NIL) {
 	*DSTPtr = DSTAllowed;
     }
+    MASTER_UNLOCK(timerClockMutex);
+
 }
 
 
@@ -199,16 +241,10 @@ Timer_GetTimeOfDay(timePtr, localOffsetPtr, DSTPtr)
     int  *localOffsetPtr;	/* Optional buffer to hold local offset. */
     Boolean *DSTPtr;		/* Optional buffer to hold DST allowed flag. */
 {
-    /*
-     *  Get the approximate time with interrupts disabled because
-     *  the value is updated at interrupt time.
-     */
 
-    DISABLE_INTR();
+    MASTER_LOCK(timerClockMutex);
 
     *timePtr = timerTimeOfDay;
-
-    ENABLE_INTR();
 
     if (localOffsetPtr != (int *) NIL) {
 	*localOffsetPtr = localOffset;
@@ -216,6 +252,9 @@ Timer_GetTimeOfDay(timePtr, localOffsetPtr, DSTPtr)
     if (DSTPtr != (Boolean *) NIL) {
 	*DSTPtr = DSTAllowed;
     }
+
+    MASTER_UNLOCK(timerClockMutex);
+
 }
 
 
@@ -249,15 +288,48 @@ Timer_SetTimeOfDay(newTOD, newLocalOffset, newDSTAllowed)
      *  the new local offset and the DST flag.
      */
 
-    DISABLE_INTR();
+    MASTER_LOCK(timerClockMutex);
+
 
     timerTimeOfDay = newTOD;
 
     Timer_GetCurrentTicks(&timeWhenTODSet);
     Timer_TimeToTicks(newTOD, &timeOfDay);
 
-    ENABLE_INTR();
 
     localOffset 	= newLocalOffset;
     DSTAllowed 		= newDSTAllowed;
+
+    MASTER_UNLOCK(timerClockMutex);
+
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UpdateTimeOfDay --
+ *
+ *	Called from the timer queue to make timerTimeOfDay close
+ *	to the real current time as calculated by Timer_GetTimeOfDay.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	timerTimeOfDay is updated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+UpdateTimeOfDay()
+{
+	/* 
+	 * No need to get the timerClock Mutex lock because 
+	 * Timer_GetRealTimeOfDay gets it for us.
+	 */
+    Timer_GetRealTimeOfDay(&timerTimeOfDay, (int *) NIL, (int *) NIL);
+    Timer_RescheduleRoutine(&updateElement, TRUE);
+}
+
+

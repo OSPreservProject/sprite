@@ -36,8 +36,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sched.h"
 #include "list.h"
 #include "vm.h"
-#include "dbg.h"
-#include "byte.h"
 #include "dev.h"
 
 
@@ -63,22 +61,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 int timerMutex = 0;
 
 /*
- * The value to update the time of day at every timer interrupt.
- * It equals the amount of time between callback timer interrupts.
- */
-
-static Time todUpdate = {
-    0, TIMER_CALLBACK_INTERVAL * (ONE_SECOND/ONE_MILLISECOND)
-};
-
-/*
- * UpdateTimeOfDay() adjusts timerTimeOfDay to the real time of day.
- */
-
-static void UpdateTimeOfDay();
-static Timer_QueueElement      updateElement;
-
-/*
  *  Debugging routine and data.
  */
 
@@ -87,6 +69,15 @@ static Timer_QueueElement      updateElement;
 static unsigned char array[SIZE+1];
 static int count = 0;
 #endif DEBUG
+
+/*
+ * The value to update the time of day at every timer interrupt.
+ * It equals the amount of time between callback timer interrupts.
+ */
+
+static Time todUpdate = {
+    0, TIMER_CALLBACK_INTERVAL * (ONE_SECOND/ONE_MILLISECOND)
+};
 
 /*
  * Instrumentation for counting how many times the routines get called.
@@ -116,50 +107,29 @@ Timer_Statistics timer_Statistics;
 void
 Timer_Init()
 {
-    Timer_CounterInit();
+    static	Boolean	initialized	= FALSE;
+
+    if (initialized) {
+	Sys_Panic(SYS_WARNING,
+		"Timer_Init: Timer module initialized more that once!\n");
+    }
+    initialized = TRUE;
+
     Timer_TimerInit(TIMER_CALLBACK_TIMER);
     TimerTicksInit();
 
-    Byte_Zero(sizeof(timer_Statistics), (Address) &timer_Statistics);
+    bzero((Address) &timer_Statistics, sizeof(timer_Statistics));
 
     timerQueueList = (List_Links *) Vm_BootAlloc(sizeof(List_Links));
     List_Init(timerQueueList);
 
     /*
-     * Add the routine to fix the time of day to the timer queue.
-     * The routine is called every 10 seconds.
+     * Initialized the time of day clock.
      */
-
-    updateElement.routine = UpdateTimeOfDay;
-    updateElement.interval = 10 * timer_IntOneSecond;
-    Timer_ScheduleRoutine(&updateElement, TRUE);
+    TimerClock_Init();
     Timer_TimerStart(TIMER_CALLBACK_TIMER);
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * UpdateTimeOfDay --
- *
- *	Called from the timer queue to make timerTimeOfDay close
- *	to the real current time as calculated by Timer_GetTimeOfDay.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	timerTimeOfDay is updated.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-UpdateTimeOfDay()
-{
-    Timer_GetRealTimeOfDay(&timerTimeOfDay, (int *) NIL, (int *) NIL);
-    Timer_RescheduleRoutine(&updateElement, TRUE);
-}
 
 
 /*
@@ -185,6 +155,7 @@ Timer_CallBack()
 	register List_Links	*itemPtr;	/* Used to examine TQE's. */
 	register List_Links	*readyPtr;	/* Ptr to TQE that's ready
 						 * to be called. */
+	Time			timeOfDay;	/* Best guess at tod. */
 	Timer_Ticks		currentTime;
 
 	/*
@@ -201,9 +172,13 @@ Timer_CallBack()
 
 	MASTER_LOCK(timerMutex);
 
+	MASTER_LOCK(timerClockMutex);
 	Time_Add(timerTimeOfDay, todUpdate, &timerTimeOfDay);
+	timeOfDay = timerTimeOfDay;
+	MASTER_UNLOCK(timerClockMutex);
+
 	if (vm_Tracing) {
-	    Vm_StoreTraceTime(timerTimeOfDay);
+	    Vm_StoreTraceTime(timeOfDay);
 	}
 	Sched_GatherProcessInfo();
 	Dev_GatherDiskStats();
