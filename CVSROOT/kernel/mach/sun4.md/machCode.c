@@ -1501,8 +1501,10 @@ HandleItAgain:
 		return 0;
 	    }
 
-	    printf("Unix signal %d(%d) to %x\n", sigStackPtr->sigNum,
-		    unixSignal, procPtr->processID);
+	    if (procDebugStubs) {
+		printf("Unix signal %d(%d) to %x\n", sigStackPtr->sigNum,
+			unixSignal, procPtr->processID);
+	    }
 	    sigStackPtr->sigNum = unixSignal;
 	    unixContext.sc_onstack = 0;
 	    unixContext.sc_mask = machStatePtr->sigContext.oldHoldMask;
@@ -1510,12 +1512,16 @@ HandleItAgain:
 	    /*
 	     * pc and npc are where to continue the interrupted routine.
 	     */
-	    printf("PSR = %x\n", machStatePtr->trapRegs->curPsr);
+	    if (procDebugStubs) {
+		printf("PSR = %x\n", machStatePtr->trapRegs->curPsr);
+	    }
 	    unixContext.sc_pc = machStatePtr->trapRegs->pc;
 	    unixContext.sc_npc = machStatePtr->trapRegs->nextPc;
-	    printf("trapRegs->pc=%x, trapRegs->npc=%x, context.pcValue=%x\n",
-		    machStatePtr->trapRegs->pc, machStatePtr->trapRegs->nextPc,
-		    machStatePtr->sigContext.machContext.pcValue);
+	    if (procDebugStubs) {
+		printf("trapRegs->pc=%x, trapRegs->npc=%x, context.pcValue=%x\n",
+			machStatePtr->trapRegs->pc, machStatePtr->trapRegs->nextPc,
+			machStatePtr->sigContext.machContext.pcValue);
+	    }
 	    unixContext.sc_psr = machStatePtr->trapRegs->curPsr;
 	    unixContext.sc_g1 = machStatePtr->trapRegs->globals[1];
 	    unixContext.sc_o0 = machStatePtr->trapRegs->ins[0];
@@ -1526,13 +1532,17 @@ HandleItAgain:
 		    machStatePtr->sigContext.  machContext.pcValue;
 	    machStatePtr->trapRegs->nextPc = (unsigned int)
 		    machStatePtr->sigContext.machContext.pcValue+4;
-	    printf("new pc = %x\n", machStatePtr->trapRegs->nextPc);
+	    if (procDebugStubs) {
+		printf("new pc = %x\n", machStatePtr->trapRegs->nextPc);
+	    }
 	    /*
 	     * Copy the window to the signal stack.
 	     */
 	    Vm_CopyIn(16*sizeof(int), (Address)unixContext.sc_sp, (Address)n);
-	    printf("Regs: %x %x %x, %x %x %x\n", n[0], n[1], n[2], n[8],
-		    n[9], n[10]);
+	    if (procDebugStubs) {
+		printf("Regs: %x %x %x, %x %x %x\n", n[0], n[1], n[2], n[8],
+			n[9], n[10]);
+	    }
 	    machStatePtr->trapRegs->ins[6] += MACH_SAVED_WINDOW_SIZE;
 	    unixContext.sc_wbcnt = 0;
 	    sigStackPtr->contextPtr = (Sig_Context *)
@@ -1544,9 +1554,11 @@ HandleItAgain:
 			    SUCCESS) {
 		return 0;
 	    }
-	    printf("Copied window to %x\n",
-		    (Address)unixContext.sc_sp - sizeof(struct sigcontext)
-			    - 4*sizeof(int) - MACH_SAVED_WINDOW_SIZE);
+	    if (procDebugStubs) {
+		printf("Copied window to %x\n",
+			(Address)unixContext.sc_sp - sizeof(struct sigcontext)
+				- 4*sizeof(int) - MACH_SAVED_WINDOW_SIZE);
+	    }
 	    /*
 	     * Copy the sigStack and sigContext to the signal window.
 	     */
@@ -1560,7 +1572,6 @@ HandleItAgain:
 			    != SUCCESS) {
 		return 0;
 	    }
-	    printf("Unix copies done\n");
 	    return 2;
 	} else {
 	    return 1;
@@ -1580,7 +1591,7 @@ HandleItAgain:
     }
 
     if (procPtr->unixProgress != PROC_PROGRESS_NOT_UNIX &&
-            procPtr->unixProgress != PROC_PROGRESS_UNIX) {
+            procPtr->unixProgress != PROC_PROGRESS_UNIX && procDebugStubs) {
         printf("UnixProgress = %d leaving MachUserReturn\n",
 		procPtr->unixProgress);
     }
