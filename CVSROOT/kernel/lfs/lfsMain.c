@@ -192,6 +192,59 @@ Lfs_DetachDisk(domainPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * Lfs_RereadSummaryInfo --
+ *
+ *	Reread the summary sector associated with the prefix and update
+ *	the domain information. This should be called if the summary
+ *	sector on the disk has been changed since the domain was attached.
+ *	LFS uses this call to reread the superBlock and get any changes made.
+ *
+ * Results:
+ *	SUCCESS 
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+Lfs_RereadSummaryInfo(domainPtr)
+    Fsdm_Domain		*domainPtr;	/* Domain to reread summary for. */
+{
+    Lfs	*lfsPtr = LfsFromDomainPtr(domainPtr);
+    LfsDiskAddr		diskAddr;
+    ReturnStatus status;
+    LfsSuperBlock	newSuperBlock;
+    /*
+     * Read the super block of the file system. Put a lot of trust in the
+     * magic number. 
+     */
+    LfsOffsetToDiskAddr(LFS_SUPER_BLOCK_OFFSET, &diskAddr);
+    status = LfsReadBytes(lfsPtr, diskAddr,  LFS_SUPER_BLOCK_SIZE,
+		 (char *) &newSuperBlock);
+    if (status != SUCCESS) {
+	return status;
+    }
+    /*
+     * Validate the super block here.
+     */
+    if ((newSuperBlock.hdr.magic != LFS_SUPER_BLOCK_MAGIC) ||
+	(newSuperBlock.hdr.version != LFS_SUPER_BLOCK_VERSION)) {
+	return FAILURE;
+    }
+    /*
+     * Looks ok, update our incore version.
+     */
+    bcopy((char *) &newSuperBlock, (char *) &lfsPtr->superBlock,
+		sizeof(LfsSuperBlock));
+    return SUCCESS;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Lfs_DomainWriteBack --
  *
  *	Force all domain information to disk.
