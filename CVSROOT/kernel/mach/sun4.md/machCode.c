@@ -32,6 +32,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <bstring.h>
 #include <compatInt.h>
 #include <ctype.h>
+#include <recov.h>
 
 /*
  *  Number of processors in the system.
@@ -41,7 +42,14 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif NUM_PROCESSORS
 
 int mach_NumProcessors = NUM_PROCESSORS;
-int	storedDataSize = -1;	/* Not initialized. */
+
+/*
+ * The following two variables should be in the initialized data space, but
+ * marked as not initialized.  Then, when they are updated as part of booting,
+ * their new values get preserved over a fast restart.
+ */
+int	storedDataSize = -1;
+char	*mach_RestartTablePtr = (char *) NIL;
 
 /*
  * TRUE if cpu was in kernel mode before the interrupt, FALSE if was in 
@@ -218,15 +226,25 @@ Address			theAddrOfMachPtr = 0;
 Address			oldAddrOfVmPtr = 0; 
 Address			oldAddrOfMachPtr = 0;
 
-MachMonRomVector	*machRomVectorPtr;
+					/*
+					 * Make sure machRomVectorPtr is
+					 * in the initialized data section.
+					 * This is needed when transparent
+					 * recovery is used.
+					 */
+MachMonRomVector	*machRomVectorPtr = (MachMonRomVector *) NIL;
 MachMonBootParam	machMonBootParam;
 #ifdef sun4c
 unsigned char		*machInterruptReg;
 unsigned int		machClockRate;
 struct idprom		machIdProm = {0};
 #endif
-unsigned int		machNumWindows;
-unsigned int		machWimShift;		/* # windows - 1 */
+					/*
+					 * Make sure these variables are
+					 * in the initialized data section.
+					 */
+unsigned int		machNumWindows = 0;
+unsigned int		machWimShift = 0;		/* # windows - 1 */
 
 /*
  * Forward declarations.
@@ -235,6 +253,7 @@ static void FlushTheWindows _ARGS_((int num));
 static void HandleFPUException _ARGS_((Proc_ControlBlock *procPtr, 
 				       Mach_State *machStatePtr));
 
+static void CheckFastRestart _ARGS_((void));
 
 
 /*
@@ -442,15 +461,19 @@ Mach_Init()
      * Keep clock rate precision to 1 decimal place.
      */
     machClockRate /= 100000;
+#ifdef NOTDEF		/* No need to print this stuff. */
     Mach_MonPrintf("PROM: Clock rate is %d.%dMHz\n",
 	machClockRate / 10, machClockRate % 10);
+#endif /* NOTDEF */
 
     if (Mach_MonSearchProm("interrupt-enable", "address",
 	    (char *)&machInterruptReg,
 	    sizeof machInterruptReg) != sizeof machInterruptReg) {
 	panic("Interrupt register not found.\n");
     }
+#ifdef NOTDEF		/* No need to print this stuff. */
     Mach_MonPrintf("PROM: Interrupt register is at %x\n", machInterruptReg);
+#endif /* NOTDEF */
 
     /*
      * This gets turned on by the profiler init when it is called.
@@ -458,8 +481,68 @@ Mach_Init()
     *Mach_InterruptReg &= ~MACH_ENABLE_LEVEL14_INTR;
 #endif
     
+    if (recov_Transparent) {
+	CheckFastRestart();
+    }
 
     return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CheckFastRestart --
+ *
+ *	Check if enough space was allocated for the fast restart.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+CheckFastRestart()
+{
+    char	*src, *dest;
+    int		count;
+    extern	int	edata;
+    extern	int	etext();
+
+    src =  (char *) &etext;
+    dest = (char *) &edata;
+    count = (unsigned int) dest - (unsigned int) src;
+    if (count > MACH_RESTART_DATA_SIZE) {
+	Mach_MonPrintf("Not enough restart space saved for kernel data.\n");
+	Mach_MonAbort();
+    }
+
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_GetRestartTableSize --
+ *
+ *	Return the size allocated for the fast restart table area.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Mach_GetRestartTableSize()
+{
+    return MACH_RESTART_TABLE_SIZE;
 }
 
 
@@ -2103,8 +2186,9 @@ HandleFPUException(procPtr, machStatePtr)
 		    curWindow);
     }
     MachFPULoadState(machStatePtr->trapRegs);
-
 }
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2158,6 +2242,35 @@ jmp_buf *jmpBuf;
     Sig_Return(procPtr, &machStatePtr->sigStack);
     return 0; /* Dummy */
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_FastBoot --
+ *
+ *	Do a fast reboot (using copied initialized heap data, etc.)
+ *
+ * Results:
+ *	FAILURE if we're not set up to do a fast boot.  Otherwise, we don't
+ *	return, but boot instead.
+ *
+ * Side effects:
+ *	Will probably cause fast reboot.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Mach_FastBoot()
+{
+    if (!recov_DoInitDataCopy) {
+	printf("Can fast reboot: initialized data wasn't copied.");
+	return FAILURE;
+    }
+    MachDoFastBoot();
+    return FAILURE;		/* Should never get here. */
+}
+
 
 /*
  *----------------------------------------------------------------------

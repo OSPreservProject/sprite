@@ -60,5 +60,6 @@ extern void MachCallSigReturn _ARGS_((void));
 extern int fuword _ARGS_((caddr_t address));
 extern int fubyte _ARGS_((caddr_t address));
 extern int suword _ARGS_((caddr_t address, int value));
+extern void MachDoFastBoot _ARGS_((void));
 
 #endif /* _MACHINT */

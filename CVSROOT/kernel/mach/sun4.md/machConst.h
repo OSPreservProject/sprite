@@ -335,6 +335,25 @@
 #define	MACH_MAX_NUM_PROCESSORS		1
 
 /*
+ * Fast restart constants.
+ */
+#ifndef RECOV_NOCOPY
+#define	MACH_RESTART_DATA_SIZE	0x14000		/* Enough space for the
+						 * initialized data of the
+						 * kernel to be stored in
+						 * a buffer. */
+#else
+#define	MACH_RESTART_DATA_SIZE	0x14000		/* No space needed. */
+#endif /* RECOV_NOCOPY */
+
+#ifdef RECOV_TRANSPARENT
+/* This must be a multiple of the page size for now. */
+#define	MACH_RESTART_TABLE_SIZE	0xAA000		/* Space for a restart table. */
+#else
+#define	MACH_RESTART_TABLE_SIZE	0x4		/* No space needed. */
+#endif /* RECOV_TRANSPARENT */
+
+/*
  * More window-related constants
  */
 #ifdef sun4c

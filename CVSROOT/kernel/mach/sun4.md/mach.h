@@ -254,4 +254,13 @@ extern	Address	mach_MaxUserStackAddr;
 extern	int	mach_LastUserStackPage;
 extern	Mach_State  *machCurStatePtr;
 
+/*
+ * New fast boot stuff.
+ */
+extern	int	storedDataSize;
+extern	char	storedData[];
+extern	char	*mach_RestartTablePtr;
+extern	ReturnStatus	Mach_FastBoot _ARGS_((void));
+extern	int	Mach_GetRestartTableSize _ARGS_((void));
+
 #endif /* _MACH */
