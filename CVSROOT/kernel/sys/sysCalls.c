@@ -834,7 +834,7 @@ Sys_StatsStub(command, option, argPtr)
 	    if (status != SUCCESS) {
 		break;
 	    }
-	    status = Vm_CopyOut(length, &stats, argPtr);
+	    status = Vm_CopyOut(length, (Address) &stats, argPtr);
 	    break;
 	}
 	case SYS_FS_RECOV_NAMED_INFO: {
