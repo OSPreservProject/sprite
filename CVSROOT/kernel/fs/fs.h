@@ -173,6 +173,7 @@ typedef struct Fs_Stream {
  *
  *	(These open-time bit values are defined below)
  *      FS_FOLLOW - follow symbolic links during look up.
+ *	FS_PREFIX - Set when opening prefixes for export.
  *	FS_SWAP - Set when opening swap files.  They are not cached on
  *		remote clients and this flag is used to set caching state.
  *	FS_OWNERSHIP - ownership permission.  The calling process has to
@@ -217,6 +218,7 @@ typedef struct Fs_Stream {
  */
 #define FS_KERNEL_FLAGS		0xfffff000
 #define FS_FOLLOW		0x00001000
+#define FS_PREFIX		0x00002000
 #define FS_SWAP			0x00004000
 #define FS_USER			0x00008000
 #define FS_OWNERSHIP		0x00010000
