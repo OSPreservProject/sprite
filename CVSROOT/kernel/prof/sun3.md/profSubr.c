@@ -30,6 +30,7 @@ extern	int	etext;
 
 Boolean profEnabled = FALSE;
 
+Address savedStackPtr;
 
 /*
  * A histogram of PC samples is kept for use by gprof. Each sample is a
@@ -156,7 +157,7 @@ Prof_Start()
 	Prof_Init();
     }
 
-    printf("Starting Profiling.\n");
+    printf("Starting Profiling...");
 
     /*
      * Reset the PC sample counters.
@@ -179,10 +180,11 @@ Prof_Start()
     profArcListFreePtr = &profArcList[0];
     profArcListEndPtr = &profArcList[profArcListSize-1];
 
-    profEnabled = TRUE;
     Timer_TimerInit(TIMER_PROFILE_TIMER);
     Timer_TimerStart(TIMER_PROFILE_TIMER);
 
+    profEnabled = TRUE;
+    printf(" done\n");
     return(SUCCESS);
 }
 
