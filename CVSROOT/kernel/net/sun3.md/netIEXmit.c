@@ -159,7 +159,7 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 		    }
 		    if (numBorrowedBytes > 0) {
 			Byte_Copy(numBorrowedBytes, scatterGatherPtr[1].bufAddr,
-				    xmitTempBuffer[length]);
+				    &xmitTempBuffer[length]);
 			scatterGatherPtr[1].length -= numBorrowedBytes;
 			scatterGatherPtr[1].bufAddr += numBorrowedBytes;
 			length += numBorrowedBytes;
