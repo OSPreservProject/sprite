@@ -22,6 +22,7 @@
 #include "proc.h"
 #include "trace.h"
 #include "sys.h"
+#include "net.h"
 
 /*
  * Define a macro to get a valid PCB for a migrated process.  This gets the
@@ -141,6 +142,41 @@ typedef struct {
 #define PROC_MIGTRACE_HOME	0x02
 
 /*
+ * Define a structure to keep track of statistics.
+ */
+
+typedef struct {
+    int			foreign; 	/* Number of foreign processes on
+				     	   this machine */
+    int			remote;		/* Number of processes belonging
+			     	   	   to this host, running elsewhere */
+    int			exports;	/* Number of times we have exported
+			     		   processes */
+    int			imports;	/* Number of times we have imported
+			     	   	   processes */
+    int			evictions;	/* Number of times we have evicted
+				     	   processes from this host */
+    int			returns;	/* Number of times we have had our own
+					   process migrate back to us */
+    int			pagesWritten;	/* Number of pages flushed as a
+					   result of migration */
+    Time		timeToExport;	/* Cumulative time to migrate
+					   running processes */
+    Time		timeToExec;	/* Cumulative time to do remote
+					   exec's */
+    Time		timeToEvict;	/* Cumulative time to evict
+					   processes */
+    int			hostCounts[NET_NUM_SPRITE_HOSTS];
+    					/* Array of counts of
+					   migration to each host */
+    int			rpcKbytes; 	/* Total number of Kbytes sent during
+					   migration. */
+} Proc_MigStats;
+
+  
+
+
+/*
  * Define a structure for passing information via callback for killing
  * a migrated process.  [Not used yet, but potentially.]
  */
@@ -149,13 +185,13 @@ typedef struct Proc_DestroyMigProcData {
     ReturnStatus status;		/* status to return when it exits */
 } Proc_DestroyMigProcData;
 
-
 /*
  * Information for encapsulating process state.
  */
 
 /*
  * Identifiers to match encapsulated states and modules.
+ * Make sure to update PROC_MIG_NUM_CALLBACKS if one is added!
  */
 typedef enum {
     PROC_MIG_ENCAP_PROC,
@@ -164,9 +200,10 @@ typedef enum {
     PROC_MIG_ENCAP_MACH,
     PROC_MIG_ENCAP_PROF,
     PROC_MIG_ENCAP_SIG,
+    PROC_MIG_ENCAP_EXEC,
 } Proc_EncapToken;
 
-#define PROC_MIG_NUM_CALLBACKS 6
+#define PROC_MIG_NUM_CALLBACKS 7
 
 /*
  * Each module that participates has a token defined for it.
@@ -187,6 +224,9 @@ typedef struct {
 					   on failure */
 					   
 } Proc_EncapInfo;
+  
+    
+    
 
 
 /*
@@ -197,9 +237,11 @@ extern int proc_MigrationVersion;	/* to distinguish incompatible
 					   versions of migration */
 extern Boolean proc_DoTrace;		/* controls amount of tracing */
 extern Boolean proc_DoCallTrace;	/* ditto */
+extern Boolean proc_MigDoStats;		/* ditto */
 extern Boolean proc_KillMigratedDebugs;	/* kill foreign processes instead
 					   of putting them in the debugger */
 extern int proc_AllowMigrationState;	/* how much migration to permit */
+extern Proc_MigStats proc_MigStats;	/* migration statistics */
 
 /*
  * Functions for process migration.  [Others should be moved here.]

@@ -56,6 +56,14 @@ Boolean proc_DoTrace = FALSE;
 Boolean proc_DoCallTrace = FALSE;
 
 /*
+ * Allocate variables and structures relating to statistics.
+ */
+#ifndef CLEAN
+Boolean proc_MigDoStats = TRUE;
+Proc_MigStats proc_MigStats;
+#endif /* CLEAN */
+
+/*
  * True if we should convert a SIG_DEBUG into a SIG_KILL for migrated
  * processes.
  */
@@ -68,7 +76,7 @@ int proc_AllowMigrationState = PROC_MIG_ALLOW_DEFAULT;
  * machines of the same architecture and version number.
  */
 #ifndef PROC_MIGRATE_VERSION
-#define PROC_MIGRATE_VERSION 5
+#define PROC_MIGRATE_VERSION 6
 #endif /* PROC_MIGRATE_VERSION */
 
 int proc_MigrationVersion = PROC_MIGRATE_VERSION;
@@ -77,16 +85,22 @@ int proc_MigrationVersion = PROC_MIGRATE_VERSION;
  * Procedures internal to this file
  */
 
-static ReturnStatus GetEncapSize();
+static ReturnStatus GetProcEncapSize();
 static ReturnStatus EncapProcState();
 static ReturnStatus DeencapProcState();
 static ReturnStatus UpdateState();
 
 static ReturnStatus ResumeExecution();
 static ReturnStatus KillRemoteCopy();
-static ReturnStatus InitiateMigration();
 static void	    LockAndSwitch();
 static ENTRY void   WakeupCallers();
+
+/*
+ * Procedures for statistics gathering
+ */
+#ifndef CLEAN
+static ENTRY void   AddMigrateTime();
+#endif /* CLEAN */
 
 #ifdef DEBUG
 int proc_MemDebug = 0;
@@ -110,30 +124,42 @@ typedef struct {
 				      completes or fails */
     Proc_EncapToken token;	   /* identifier to match encap and deencap
 				      functions between two hosts */
+    int whenNeeded;		   /* flags defined below indicate when
+				      needed */
 } EncapCallback;
 
+/*
+ * Flags for the whenNeeded field:
+ */
+#define MIG_ENCAP_MIGRATE 1
+#define MIG_ENCAP_EXEC 2
+#define MIG_ENCAP_ALWAYS (MIG_ENCAP_MIGRATE | MIG_ENCAP_EXEC)
 /*
  * Set up the functions to be called.
  */
 static EncapCallback encapCallbacks[] = {
-    { GetEncapSize, EncapProcState, DeencapProcState, NULL,
-	  PROC_MIG_ENCAP_PROC},
+    { GetProcEncapSize, EncapProcState, DeencapProcState, NULL,
+	  PROC_MIG_ENCAP_PROC, MIG_ENCAP_ALWAYS},
+    { ProcExecGetEncapSize, ProcExecEncapState, ProcExecDeencapState,
+	  ProcExecFinishMigration,
+	  PROC_MIG_ENCAP_EXEC, MIG_ENCAP_EXEC},
 #ifdef notdef
     { Vm_InitiateMigration, Vm_EncapState, Vm_DeencapState, Vm_FinishMigration,
-	  PROC_MIG_ENCAP_VM},
+	  PROC_MIG_ENCAP_VM, MIG_ENCAP_MIGRATE},
 #endif
     { Vm_InitiateMigration, Vm_EncapState, Vm_DeencapState, NULL,
-	  PROC_MIG_ENCAP_VM},
+	  PROC_MIG_ENCAP_VM, MIG_ENCAP_MIGRATE},
     { Fs_InitiateMigration, Fs_EncapFileState, Fs_DeencapFileState, NULL,
-	  PROC_MIG_ENCAP_FS},
+	  PROC_MIG_ENCAP_FS, MIG_ENCAP_ALWAYS},
     { Mach_GetEncapSize, Mach_EncapState, Mach_DeencapState, NULL,
-	  PROC_MIG_ENCAP_MACH},
+	  PROC_MIG_ENCAP_MACH, MIG_ENCAP_ALWAYS},
     { Prof_GetEncapSize, Prof_EncapState, Prof_DeencapState, NULL,
-	  PROC_MIG_ENCAP_PROF},
+	  PROC_MIG_ENCAP_PROF, MIG_ENCAP_ALWAYS},
     { Sig_GetEncapSize, Sig_EncapState, Sig_DeencapState, NULL,
-	  PROC_MIG_ENCAP_SIG}
+	  PROC_MIG_ENCAP_SIG, MIG_ENCAP_ALWAYS},
 };
 
+#define BREAKS_KDBX
 #ifdef BREAKS_KDBX
 static struct {
     char *preFunc;	   /* name of function to call when initiating
@@ -142,7 +168,8 @@ static struct {
     char *deencapFunc;	/* name of function to call to deencapsulate */
     char *postFunc;	/* name of function to call when done */
 } callbackNames[] = {
-    { "GetEncapSize", "EncapProcState", "DeencapProcState", NULL},
+    { "GetProcEncapSize", "EncapProcState", "DeencapProcState", NULL},
+    { "ProcExecGetEncapSize", "ProcExecEncapState", "ProcExecDeencapState", "ProcExecFinishMigration"},
     { "Vm_InitiateMigration", "Vm_EncapState", "Vm_DeencapState",
 	  "Vm_FinishMigration"},
     { "Fs_InitiateMigration", "Fs_EncapFileState", "Fs_DeencapFileState",
@@ -152,6 +179,41 @@ static struct {
     { "Sig_InitiateMigration", "Sig_EncapState", "Sig_DeencapState", NULL}
 };
 #endif
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_MigInit --
+ *
+ *	Initialize data structures relating to process migration.
+ *	This procedure is called at boot time.
+ *	If statistics gathering is enabled at boot time, those
+ * 	structures are set up now, else they are set up when statistics
+ *	gathering is enabled later on.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Calls other initialization procedures.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+#ifdef NEW_NAME
+Proc_MigInit()
+#else
+Proc_RecovInit()
+#endif
+{
+    if (proc_MigDoStats) {
+	bzero((Address) &proc_MigStats, sizeof(proc_MigStats));
+    }
+    ProcRecovInit();
+}
+
 
 
 /*
@@ -296,7 +358,7 @@ Proc_Migrate(pid, hostID)
      * verify that migration is permissible.
      */
     
-    status = InitiateMigration(procPtr, hostID);
+    status = ProcInitiateMigration(procPtr, hostID);
 
 
     if (status != SUCCESS) {
@@ -304,7 +366,14 @@ Proc_Migrate(pid, hostID)
 	return(status);
     }
 
-    Proc_FlagMigration(procPtr, hostID);
+#ifndef CLEAN
+    if (proc_MigDoStats) {
+	proc_MigStats.hostCounts[hostID]++;
+	proc_MigStats.exports++;
+    }
+#endif /* CLEAN */
+    
+    Proc_FlagMigration(procPtr, hostID, FALSE);
 
     Proc_Unlock(procPtr);
 
@@ -367,20 +436,30 @@ Proc_MigrateTrap(procPtr)
     ProcMigCmd cmd;
     Proc_MigBuffer inBuf;
     int failure;
+#ifndef CLEAN
+    Time startTime;
+    Time endTime;
+    Time timeDiff;
+    Time *timePtr;
+#endif /* CLEAN */
+    int maxSize;
+    int whenNeeded;
 
-#ifdef MEM_TRASH
-    int lastMemDebug;
-    lastMemDebug = proc_MemDebug;
-    proc_MemDebug = 1;
-#endif /* MEM_TRASH */
 
     Proc_Lock(procPtr);
 
     if (procPtr->genFlags & PROC_FOREIGN) {
 	foreign = TRUE;
     }
-
+    if (procPtr->genFlags & PROC_REMOTE_EXEC_PENDING) {
+	whenNeeded = MIG_ENCAP_EXEC;
+    } else {
+	whenNeeded = MIG_ENCAP_MIGRATE;
+    }
 #ifndef CLEAN
+    if (proc_MigDoStats) {
+	Timer_GetTimeOfDay(&startTime, (int *) NIL, (Boolean *) NIL);
+    }
     if (proc_DoTrace && proc_MigDebugLevel > 1) {
 	record.processID = procPtr->processID;
 	record.flags = PROC_MIGTRACE_START;
@@ -406,6 +485,9 @@ Proc_MigrateTrap(procPtr)
      * other than SUCCESS. In this case, the process should be continuable!
      */
     for (i = 0; i < PROC_MIG_NUM_CALLBACKS; i++) {
+	if (!(encapCallbacks[i].whenNeeded & whenNeeded)) {
+	    continue;
+	}
 	infoPtr = &info[i];
 	infoPtr->token = encapCallbacks[i].token;
 	infoPtr->processed = 0;
@@ -419,7 +501,7 @@ Proc_MigrateTrap(procPtr)
 	     * This is where we'd like to handle special cases like shared
 	     * memory processes.  For now, bail out.
 	     */
-	    status = FAILURE;
+	    status = GEN_NOT_IMPLEMENTED;
 	}
 	if (status != SUCCESS) {
 	    printf("Warning: Proc_MigrateTrap: error returned by encapsulation procedure %s:\n\t%s.\n",
@@ -429,15 +511,20 @@ Proc_MigrateTrap(procPtr)
 		   "(can't get name)", 
 #endif /* BREAKS_KDBX */
 		   Stat_GetMsg(status));
-	    procPtr->genFlags &= ~PROC_MIGRATING;
+	    procPtr->genFlags &= ~(PROC_MIGRATING|PROC_REMOTE_EXEC_PENDING);
 	    Proc_Unlock(procPtr);
 	    WakeupCallers();
-#ifdef MEM_TRASH
-    proc_MemDebug = lastMemDebug;
-#endif /* MEM_TRASH */
 	    return;
 	}
 	bufSize += infoPtr->size + sizeof(Proc_EncapInfo);
+    }
+    Rpc_MaxSizes(&maxSize, (int *) NIL);
+    if (bufSize > maxSize) {
+	if (proc_MigDebugLevel > 0) {
+	    printf("Can't migrate process: buffer size (%d) exceeds RPC capacity.\n",
+		   bufSize);
+	}
+	return;
     }
     if (proc_MigDebugLevel > 5) {
 	printf("Buffer size is %d\n", bufSize);
@@ -455,6 +542,9 @@ Proc_MigrateTrap(procPtr)
      * that the process will be killed.
      */
     for (i = 0; i < PROC_MIG_NUM_CALLBACKS; i++) {
+	if (!(encapCallbacks[i].whenNeeded & whenNeeded)) {
+	    continue;
+	}
 	infoPtr = &info[i];
 	bcopy((Address) infoPtr, bufPtr, sizeof(Proc_EncapInfo));
 	bufPtr += sizeof(Proc_EncapInfo);
@@ -465,6 +555,7 @@ Proc_MigrateTrap(procPtr)
 						bufPtr);
 #ifdef lint
 	status = EncapProcState(procPtr, hostID, infoPtr, bufPtr);
+	status = ProcExecEncapState(procPtr, hostID, infoPtr, bufPtr);
 	status = Vm_EncapState(procPtr, hostID, infoPtr, bufPtr);
 	status = Fs_EncapFileState(procPtr, hostID, infoPtr, bufPtr);
 	status = Mach_EncapState(procPtr, hostID, infoPtr, bufPtr);
@@ -523,9 +614,12 @@ Proc_MigrateTrap(procPtr)
      */
     bufPtr = buffer;
     for (i = 0; i < PROC_MIG_NUM_CALLBACKS; i++) {
+	if (!(encapCallbacks[i].whenNeeded & whenNeeded)) {
+	    continue;
+	}
 	infoPtr = &info[i];
 	if (infoPtr->processed != 1) {
-	    break;
+	    continue;
 	}
 	bufPtr += sizeof(Proc_EncapInfo);
 	if (encapCallbacks[i].postFunc != NULL) {
@@ -552,8 +646,9 @@ Proc_MigrateTrap(procPtr)
 
     Proc_Lock(procPtr);
 
-    procPtr->genFlags = (procPtr->genFlags & ~PROC_MIGRATING) |
-	PROC_MIGRATION_DONE;
+    procPtr->genFlags = (procPtr->genFlags &
+			 ~(PROC_MIGRATING|PROC_REMOTE_EXEC_PENDING)) |
+			     PROC_MIGRATION_DONE;
     Proc_Unlock(procPtr);
 
 
@@ -590,6 +685,18 @@ Proc_MigrateTrap(procPtr)
     }
 
 #ifndef CLEAN
+    if (proc_MigDoStats) {
+	Timer_GetTimeOfDay(&endTime, (int *) NIL, (Boolean *) NIL);
+	Time_Subtract(startTime, endTime, &timeDiff);
+	if (foreign) {
+	    timePtr = &proc_MigStats.timeToEvict;
+	} else if (whenNeeded == MIG_ENCAP_MIGRATE) {
+	    timePtr = &proc_MigStats.timeToExport;
+	} else {
+	    timePtr = &proc_MigStats.timeToExec;
+	}
+	AddMigrateTime(timeDiff, timePtr);
+    }
     if (proc_DoTrace && proc_MigDebugLevel > 0 && !foreign) {
 	record.processID = procPtr->processID;
 	record.flags = PROC_MIGTRACE_HOME;
@@ -598,9 +705,6 @@ Proc_MigrateTrap(procPtr)
 		     (ClientData) &record);
     }
 #endif /* CLEAN */   
-#ifdef MEM_TRASH
-    proc_MemDebug = lastMemDebug;
-#endif /* MEM_TRASH */
    
     if (foreign) {
 	ProcExitProcess(procPtr, -1, -1, -1, TRUE);
@@ -611,7 +715,7 @@ Proc_MigrateTrap(procPtr)
     return;
 
  failure:
-    procPtr->genFlags &= ~PROC_MIGRATING;
+    procPtr->genFlags &= ~(PROC_MIGRATING|PROC_REMOTE_EXEC_PENDING);
     KillRemoteCopy(procPtr, hostID);
     WakeupCallers();
     if (proc_DoTrace && proc_MigDebugLevel > 0 && !foreign) {
@@ -622,9 +726,6 @@ Proc_MigrateTrap(procPtr)
 		     (ClientData) &record);
     }
     Sig_SendProc(procPtr, SIG_KILL, (int) status);
-#ifdef MEM_TRASH
-    proc_MemDebug = lastMemDebug;
-#endif /* MEM_TRASH */
 
 }
 
@@ -671,13 +772,11 @@ ProcMigReceiveProcess(cmdPtr, procPtr, inBufPtr, outBufPtr)
     bufPtr = inBufPtr->ptr;
     for (i = 0; i < PROC_MIG_NUM_CALLBACKS; i++) {
 	infoPtr = (Proc_EncapInfo *) bufPtr;
-	bufPtr += sizeof(Proc_EncapInfo);
 	if (infoPtr->token != encapCallbacks[i].token) {
-	    if (proc_MigDebugLevel > 0) {
-		panic("ProcMigReceiveProcess: mismatch deencapsulating process (continuable -- but call Fred)");
-	    }
-	    Proc_Unlock(procPtr);
-	    return(PROC_MIGRATION_REFUSED);
+	    /*
+	     * This callback wasn't used.
+	     */
+	    continue;
 	}
 	if (infoPtr->special) {
 	    /*
@@ -693,9 +792,11 @@ ProcMigReceiveProcess(cmdPtr, procPtr, inBufPtr, outBufPtr)
 	if (proc_MigDebugLevel > 5) {
 	    printf("Calling deencapFunc %d\n", i);
 	}
+	bufPtr += sizeof(Proc_EncapInfo);
 	status = (*encapCallbacks[i].deencapFunc)(procPtr, infoPtr, bufPtr);
 #ifdef lint
 	status = DeencapProcState(procPtr, infoPtr, bufPtr);
+	status = ProcExecDeencapState(procPtr, infoPtr, bufPtr);
 	status = Vm_DeencapState(procPtr, infoPtr, bufPtr);
 	status = Fs_DeencapFileState(procPtr, infoPtr, bufPtr);
 	status = Mach_DeencapState(procPtr, infoPtr, bufPtr);
@@ -770,7 +871,7 @@ typedef struct {
 /*
  *----------------------------------------------------------------------
  *
- * GetEncapSize --
+ * GetProcEncapSize --
  *
  *	Determine the size of the encapsulated process state.
  *
@@ -786,7 +887,7 @@ typedef struct {
 
 /* ARGSUSED */
 static ReturnStatus
-GetEncapSize(procPtr, hostID, infoPtr)
+GetProcEncapSize(procPtr, hostID, infoPtr)
     Proc_ControlBlock *procPtr;			/* process being migrated */
     int hostID;					/* host to which it migrates */
     Proc_EncapInfo *infoPtr;			/* area w/ information about
@@ -1173,12 +1274,16 @@ KillRemoteCopy(procPtr, hostID)
  */
 
 void
-Proc_FlagMigration(procPtr, hostID)
+Proc_FlagMigration(procPtr, hostID, exec)
     Proc_ControlBlock 	*procPtr;	/* The process being migrated */
     int hostID;				/* Host to which it migrates */
+    Boolean exec;			/* Whether it's doing a remote exec */
 {
 
     procPtr->genFlags |= PROC_MIG_PENDING;
+    if (exec) {
+	procPtr->genFlags |= PROC_REMOTE_EXEC_PENDING;
+    }
     procPtr->peerHostID = hostID;
     if (procPtr->state == PROC_SUSPENDED) {
 	Sig_SendProc(procPtr, SIG_RESUME, 0);
@@ -1191,7 +1296,7 @@ Proc_FlagMigration(procPtr, hostID)
 /*
  *----------------------------------------------------------------------
  *
- * InitiateMigration --
+ * ProcInitiateMigration --
  *	
  *	Send a message to a specific workstation requesting permission to
  *	migrate a process.
@@ -1211,8 +1316,8 @@ Proc_FlagMigration(procPtr, hostID)
  *----------------------------------------------------------------------
  */
 
-static ReturnStatus
-InitiateMigration(procPtr, hostID)
+ReturnStatus
+ProcInitiateMigration(procPtr, hostID)
     register Proc_ControlBlock *procPtr;    	/* process to migrate */
     int hostID;			      		/* host to which to migrate */
 {
@@ -1249,7 +1354,7 @@ InitiateMigration(procPtr, hostID)
     if (status != SUCCESS) {
 	if (proc_MigDebugLevel > 2) {
 	    printf(
-		   "%s InitiateMigration: Error returned by host %d:\n\t%s\n",
+		   "%s ProcInitiateMigration: Error returned by host %d:\n\t%s\n",
 		   "Warning:", hostID, Stat_GetMsg(status));
 	}
     } else if (!foreign) {
@@ -1380,7 +1485,6 @@ Proc_WaitForMigration(processID)
 
     LOCK_MONITOR;
 
-
     procPtr = Proc_LockPID(processID);
     if (procPtr == NULL) {
 	return(PROC_INVALID_PID);
@@ -1406,6 +1510,37 @@ Proc_WaitForMigration(processID)
     return(status);
 }
 
+
+#ifndef CLEAN
+/*
+ *----------------------------------------------------------------------
+ *
+ * AddMigrateTime --
+ *
+ *	Monitored procedure to add a time to the statistics structure
+ *	atomically.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Adds time.
+ *
+ *----------------------------------------------------------------------
+ */
+static ENTRY void
+AddMigrateTime(time, totalPtr)
+    Time time;
+    Time *totalPtr;
+{
+
+    LOCK_MONITOR;
+
+    Time_Add(time, *totalPtr, totalPtr);
+
+    UNLOCK_MONITOR;
+}
+#endif /* CLEAN */
 
 /*
  *----------------------------------------------------------------------

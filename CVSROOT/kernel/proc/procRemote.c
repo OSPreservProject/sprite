@@ -273,6 +273,8 @@ ProcMigContinueProcess(cmdPtr, procPtr, inBufPtr, outBufPtr)
  *
  *	Resume a migrated user process.  This is the first thing that is
  * 	called when a migrated process continues execution.
+ *	If the process is actually performing a remote exec, then
+ * 	call the routine to perform the exec, which won't return.
  *
  * Results:
  *	Does not return.
@@ -294,6 +296,12 @@ Proc_ResumeMigProc(pc)
 
     procPtr = Proc_GetCurrentProc();
     Proc_Lock(procPtr);
+    if (procPtr->genFlags & PROC_REMOTE_EXEC_PENDING) {
+	ProcDoRemoteExec(procPtr);
+	/*
+	 * NOTREACHED
+	 */
+    }
     procPtr->genFlags &= ~PROC_NO_VM;
     VmMach_ReinitContext(procPtr);
     Proc_Unlock(procPtr);
@@ -303,7 +311,7 @@ Proc_ResumeMigProc(pc)
      */
 
     Mach_StartUserProc(procPtr, (Address) pc);
-    panic("ProcResumeMigProc: Mach_StartUserProc returned.\n");
+    panic("Proc_ResumeMigProc: Mach_StartUserProc returned.\n");
 }
 
 
