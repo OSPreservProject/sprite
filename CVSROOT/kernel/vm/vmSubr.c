@@ -1327,8 +1327,8 @@ Vm_DeleteSharedSegment(procPtr,segProcPtr)
     virtAddr.sharedPtr = segProcPtr;
     UNLOCK_MONITOR;
 
-    VmPageFlush(&virtAddr, segProcPtr->mappedEnd - segProcPtr->mappedStart +1,
-	    TRUE, TRUE);
+    (void) VmPageFlush(&virtAddr, segProcPtr->mappedEnd -
+	    segProcPtr->mappedStart + 1, FALSE, FALSE);
     List_Remove((List_Links *)segProcPtr);
     VmMach_SharedSegFinish(procPtr,segProcPtr->addr);
     free((Address)segProcPtr);
