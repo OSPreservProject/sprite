@@ -46,7 +46,7 @@ typedef struct FsFileReopenParams {
     FsFileID	fileID;		/* File ID of file to reopen. MUST BE FIRST */
     FsFileID	prefixFileID;	/* File ID for the prefix of this file. */
     FsUseCounts	use;		/* Reference counts */
-    Boolean	mustBeCacheable;/* TRUE => This open must not suceed unless the
+    Boolean	haveDirtyBlocks;/* TRUE => This open must not suceed unless the
 				 * file can be cached.  This flag is set when
 				 * dirty blocks remain in the cache for a file.
 				 */
