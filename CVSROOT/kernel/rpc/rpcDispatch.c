@@ -47,12 +47,6 @@ int	rpc_SpriteID = 0;
 extern int sys_ErrorSync;
 
 /*
- * Set to FALSE for debugging a few isolated machines without tons of msgs.
- * Since a few of the errors are printed out every once in a while anyway,
- * we may want to leave this FALSE.
- */
-Boolean	rpc_PrintMismatch = FALSE;
-/*
  * While testing there may be many version mismatch errors.  If
  * rpc_PrintMismatch is FALSE, then we only report a few of these errors
  * every once in a while.
@@ -74,6 +68,7 @@ unsigned int rpcCompleteMask[17] = {
  */
 void RpcScatter();
 int  RpcValidateClient();
+void VersionMismatch();
 
 
 
@@ -114,33 +109,12 @@ Rpc_Dispatch(headerType, headerPtr, rpcHdrAddr, packetLength)
 	    return;
 	}
     } else if (rpcHdrPtr->version != rpc_NativeVersion) {
-	if (rpc_PrintMismatch) {
-	    printf(
-	    "Warning: Rpc_Dispatch version mismatch: %x not %x from client(?) %d\n",
-		rpcHdrPtr->version, rpc_NativeVersion, rpcHdrPtr->clientID);
-	} else {
-	    if (mismatchErrors < 5) {
-		printf("Warning: %s %x not %x from client(?) %d\n",
-		    "Rpc_Dispatch version mismatch:",
-		    rpcHdrPtr->version, rpc_NativeVersion,
-		    rpcHdrPtr->clientID);
-		mismatchErrors++;
-	    } else if (mismatchErrors == 5) {
-		printf("Warning: %s %x not %x from client(?) %d\n%s\n",
-		    "Rpc_Dispatch version mismatch:",
-		    rpcHdrPtr->version, rpc_NativeVersion,
-		    rpcHdrPtr->clientID,
-		    "I'll report no more version mismatches for a while.");
-		mismatchErrors++;
-		printf("Resetting network interface\n");
-		Net_Reset();
-	    } else {
-		mismatchErrors++;
-		if (mismatchErrors > 100) {
-		    mismatchErrors = 0;
-		}
-	    }
-	}
+	/*
+	 * Keep a short list of hosts that aren't talking the
+	 * right version of RPC.  Attempt to print out one message
+	 * about this per host, and then keep quiet.
+	 */
+	VersionMismatch(headerType, headerPtr, rpcHdrPtr, packetLength);
 	return;
     }
     expectedLength =  sizeof(RpcHdr) +
@@ -196,8 +170,9 @@ Rpc_Dispatch(headerType, headerPtr, rpcHdrAddr, packetLength)
 		Net_HdrDestString(headerType, headerPtr, 128, addrBuffer);
 		printf("Warning: Rpc_Dispatch, wrong server ID %d\n",
 			rpcHdrPtr->serverID);
-		printf("\tClient %d rpc %d at address: %s\n",
-		       rpcHdrPtr->clientID, rpcHdrPtr->command, addrBuffer);
+		printf("\tRPC %d flags %x Client %d at address: %s\n",
+		       rpcHdrPtr->command, rpcHdrPtr->flags,
+		       rpcHdrPtr->clientID, addrBuffer);
 
 	    } else {
 		printf("Rpc_Dispatch: junk serverID %d from client %d\n",
@@ -417,4 +392,86 @@ RpcValidateClient(headerType, headerPtr, rpcHdrPtr)
 	printf("Invalid Client Sprite ID (%d)\n", clientID);
     }
     return(result);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VersionMismatch --
+ *
+ *	This is called upon reciept of a packet with a bad RPC version
+ *	number.  This routine keeps a short list of offending hosts,
+ *	and will print out a warning about each one it encounters.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	This adds items to its versionList.
+ *
+ *----------------------------------------------------------------------
+ */
+static int numVersions = 0;
+
+#define ADDR_LEN	40
+typedef struct {
+    int headerType;			/* Type of transport header. */
+    int count;				/* Count of mismatches */
+    char sourceAddr[ADDR_LEN];		/* Storage for source addr string */
+} VersionRecord;
+
+#define NUM_VERSIONS	4
+static VersionRecord versionList[NUM_VERSIONS];
+
+void
+VersionMismatch(headerType, headerPtr, rpcHdrPtr, packetLength)
+    int		headerType;	/* Type of transport header. */
+    Address	headerPtr;	/* Pointer to transport header. */
+    RpcHdr	*rpcHdrPtr;	/* RPC header of packet. */
+    int		packetLength;	/* Size of RPC packet. */
+{
+    char addrBuffer[ADDR_LEN];
+    int i;
+    char *type;
+
+    /*
+     * Get a string value for the sender of the packet and see if
+     * we've already gotten a bad packet from this host.
+     */
+    Net_HdrDestString(headerType, headerPtr, ADDR_LEN, addrBuffer);
+
+    for (i=0 ; i<numVersions ; i++) {
+	if (strcmp(versionList[i].sourceAddr, addrBuffer) == 0) {
+	    versionList[i].count++;
+	    return;
+	}
+    }
+    if (numVersions >= NUM_VERSIONS) {
+	/*
+	 * Bail out if we don't have room in the versionList.
+	 * Alternatively we could replace an entry in the versionList.
+	 */
+	return;
+    }
+
+    if (headerType == NET_ROUTE_ETHER) {
+	type = "ether";
+    } else if (headerType == NET_ROUTE_INET) {
+	type = "inet";
+    } else {
+	type = "unknown addr type";
+    }
+    printf("RPC Version mismatch: %x not %x from %s %s",
+	rpcHdrPtr->version, rpc_NativeVersion, type, addrBuffer);
+    if (rpcHdrPtr->clientID > 0 && rpcHdrPtr->clientID < NET_NUM_SPRITE_HOSTS) {
+	printf(" clientID %d\n", rpcHdrPtr->clientID);
+    } else {
+	printf("\n");
+    }
+    versionList[numVersions].count = 1;
+    versionList[numVersions].headerType = headerType;
+    strncpy(versionList[numVersions].sourceAddr, addrBuffer, ADDR_LEN);
+    numVersions++;
+
+    return;
 }
