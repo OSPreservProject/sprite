@@ -32,8 +32,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsOpTable.h"
 #include "hash.h"
 
-static Sync_Lock fileHashLock = SYNC_LOCK_INIT_STATIC();
-#define	LOCKPTR	&fileHashLock
+static Sync_Lock handleTableLock = Sync_LockInitStatic("Fs:handleTable");
+#define	LOCKPTR	&handleTableLock
 
 /*
  * Synchronization and termination variables for LRU replacement.
@@ -128,18 +128,24 @@ void DoneLRU();
  */
 
 #define REMOVE_HANDLE(hdrPtr) \
-	List_Remove(&(hdrPtr)->lruLinks); 	\
-	if ((hdrPtr)->name != (char *)NIL) {	\
-	    free((hdrPtr)->name);		\
-	}					\
+	if ((hdrPtr)->lruLinks.nextPtr != (List_Links *)NIL) {	\
+	    List_Remove(&(hdrPtr)->lruLinks);		 	\
+	    fsStats.object.lruEntries--;			\
+	}							\
+	if ((hdrPtr)->name != (char *)NIL) {			\
+	    free((hdrPtr)->name);				\
+	}							\
 	free((char *)(hdrPtr));
 
 /*
  * Macro to move a handle to the back (most recent) end of the LRU list.
+ * Note all handle types are in the LRU list.
  */
 
 #define MOVE_HANDLE(hdrPtr) \
-	    List_Move(&(hdrPtr)->lruLinks, LIST_ATREAR(lruList));
+	    if ((hdrPtr)->lruLinks.nextPtr != (List_Links *)NIL) {	\
+		List_Move(&(hdrPtr)->lruLinks, LIST_ATREAR(lruList));	\
+	    }
 
 /*
  * Macro to give name associated with a handle.
@@ -188,6 +194,7 @@ FsHandleInit(fileHashSize)
     fsStats.handle.maxNumber = FS_HANDLE_TABLE_SIZE;
     List_Init(lruList);
     Hash_Init(fileHashTable, fileHashSize, Hash_Size(sizeof(Fs_FileID)));
+    Sync_LockRegister(&handleTableLock);
 }
 
 
@@ -340,8 +347,19 @@ again:
 #else
 	hdrPtr->name = (char *)NIL;
 #endif
-	List_InitElement(&hdrPtr->lruLinks);
-	List_Insert(&hdrPtr->lruLinks, LIST_ATREAR(lruList));
+	/*
+	 * Put the handle in the LRU list only if it has a scavenging
+	 * routine defined for it.  This allows us to avoid checking
+	 * un-reclaimable things.
+	 */
+	if (fsStreamOpTable[fileIDPtr->type].scavenge != (Boolean (*)())NIL) {
+	    List_InitElement(&hdrPtr->lruLinks);
+	    List_Insert(&hdrPtr->lruLinks, LIST_ATREAR(lruList));
+	    fsStats.object.lruEntries++;
+	} else {
+	    hdrPtr->lruLinks.nextPtr = (List_Links *)NIL;
+	    hdrPtr->lruLinks.prevPtr = (List_Links *)NIL;
+	}
 	Hash_SetValue(hashEntryPtr, hdrPtr);
 	FS_TRACE_HANDLE(FS_TRACE_INSTALL_NEW, hdrPtr);
     } else {
@@ -811,6 +829,7 @@ FsHandleAttemptRemove(handlePtr)
     if (handlePtr->hdr.refCount == 0) {
 	free((Address)handlePtr->descPtr);
 	handlePtr->descPtr = (FsFileDescriptor *)NIL;
+	FsFileSyncLockCleanup(handlePtr);
 	FsHandleRemoveInt((FsHandleHeader *)handlePtr);
 	removed = TRUE;
     } else {
