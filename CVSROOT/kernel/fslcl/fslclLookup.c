@@ -659,7 +659,7 @@ FindComponent(parentHandlePtr, component, compLen, isDotDot, curHandlePtrPtr)
 						 * UNLOCKED. */
     Fsio_FileIOHandle	**curHandlePtrPtr;	/* Return, locked handle */
 {
-    register FslclDirEntry *dirEntryPtr;	/* Reference to directory entry */
+    register Fslcl_DirEntry *dirEntryPtr;	/* Reference to directory entry */
     register char	*s1;		/* Pointers into components used */
     register char	*s2;		/*   for fast in-line string compare */
     register int 	blockOffset;	/* Offset within the directory */
@@ -702,7 +702,7 @@ FindComponent(parentHandlePtr, component, compLen, isDotDot, curHandlePtrPtr)
 	    *curHandlePtrPtr = (Fsio_FileIOHandle *)NIL;
 	    return(FS_FILE_NOT_FOUND);
 	}
-	dirEntryPtr = (FslclDirEntry *)cacheBlockPtr->blockAddr;
+	dirEntryPtr = (Fslcl_DirEntry *)cacheBlockPtr->blockAddr;
 	blockOffset = 0;
 	while (blockOffset < length) {
 	    if (dirEntryPtr->recordLength <= 0) {
@@ -781,7 +781,7 @@ FindComponent(parentHandlePtr, component, compLen, isDotDot, curHandlePtrPtr)
 		}
 	    }
 	    blockOffset += dirEntryPtr->recordLength;
-	    dirEntryPtr = (FslclDirEntry *)((int)dirEntryPtr +
+	    dirEntryPtr = (Fslcl_DirEntry *)((int)dirEntryPtr +
 					 dirEntryPtr->recordLength);
 	}
 	dirBlockNum++;
@@ -816,7 +816,7 @@ InsertComponent(curHandlePtr, component, compLen, fileNumber)
     ReturnStatus 	status;
     int			dirBlockNum;	/* Directory block index */
     int 		blockOffset;	/* Offset within a directory block. */
-    FslclDirEntry 		*dirEntryPtr;	/* Reference to directory entry. */
+    Fslcl_DirEntry 		*dirEntryPtr;	/* Reference to directory entry. */
     int 		length;		/* Length variable for read call. */
     int 		recordLength;	/* Length of directory entry for 
 					 * component. */
@@ -827,7 +827,7 @@ InsertComponent(curHandlePtr, component, compLen, fileNumber)
     Fscache_Block	*cacheBlockPtr;	/* Cache block. */
 
     length = FS_BLOCK_SIZE;
-    recordLength = FsDirRecLength(compLen);
+    recordLength = Fslcl_DirRecLength(compLen);
     /*
      * Loop through the directory blocks looking for space of at least
      * recordLength in which to insert the new directory record.
@@ -857,7 +857,7 @@ InsertComponent(curHandlePtr, component, compLen, fileNumber)
 	    bzero(cacheBlockPtr->blockAddr, FS_BLOCK_SIZE);
 	}
 
-	dirEntryPtr = (FslclDirEntry *)cacheBlockPtr->blockAddr;
+	dirEntryPtr = (Fslcl_DirEntry *)cacheBlockPtr->blockAddr;
 	blockOffset = 0;
 	freeSpace = 0;
 	while (blockOffset < length) {
@@ -874,7 +874,7 @@ InsertComponent(curHandlePtr, component, compLen, fileNumber)
 		 * Check the left-over bytes attached to this record.
 		 */
 		extraBytes = dirEntryPtr->recordLength -
-			     FsDirRecLength(dirEntryPtr->nameLength);
+			     Fslcl_DirRecLength(dirEntryPtr->nameLength);
 		if (extraBytes >= recordLength) {
 		    /*
 		     * Can fit new entry in the space left over.
@@ -895,7 +895,7 @@ InsertComponent(curHandlePtr, component, compLen, fileNumber)
 		freeSpace += dirEntryPtr->recordLength;
 	    }
 	    blockOffset += dirEntryPtr->recordLength;
-	    dirEntryPtr = (FslclDirEntry *)((int)dirEntryPtr +
+	    dirEntryPtr = (Fslcl_DirEntry *)((int)dirEntryPtr +
 					 dirEntryPtr->recordLength);
 	}
 	/*
@@ -932,10 +932,10 @@ haveASlot:
 	 * Have to take space away from the end of a valid directory entry.
 	 */
 	int newRecordLength;	/* New length of the existing valid entry */
-	FslclDirEntry *tmpDirEntryPtr;	/* Pointer to new slot */
+	Fslcl_DirEntry *tmpDirEntryPtr;	/* Pointer to new slot */
 
-	newRecordLength = FsDirRecLength(dirEntryPtr->nameLength);
-	tmpDirEntryPtr = (FslclDirEntry *)((int)dirEntryPtr + newRecordLength);
+	newRecordLength = Fslcl_DirRecLength(dirEntryPtr->nameLength);
+	tmpDirEntryPtr = (Fslcl_DirEntry *)((int)dirEntryPtr + newRecordLength);
 	tmpDirEntryPtr->recordLength = dirEntryPtr->recordLength -
 				       newRecordLength;
 	dirEntryPtr->recordLength = newRecordLength;
@@ -975,8 +975,8 @@ DeleteComponent(parentHandlePtr, component, compLen)
 {
     ReturnStatus	status;
     int 		blockOffset;	/* Offset within a directory block */
-    FslclDirEntry 		*dirEntryPtr;	/* Reference to directory entry */
-    FslclDirEntry 		*lastDirEntryPtr;/* Back pointer used when merging 
+    Fslcl_DirEntry 		*dirEntryPtr;	/* Reference to directory entry */
+    Fslcl_DirEntry 		*lastDirEntryPtr;/* Back pointer used when merging 
 					  * adjacent entries after the delete */
     int 		length;		/* Length variable for read call */
     Fscache_Block	*cacheBlockPtr;	/* Cache block. */
@@ -990,8 +990,8 @@ DeleteComponent(parentHandlePtr, component, compLen)
 	    return(FS_FILE_NOT_FOUND);
 	}
 	blockOffset = 0;
-	lastDirEntryPtr = (FslclDirEntry *)NIL;
-	dirEntryPtr = (FslclDirEntry *)cacheBlockPtr->blockAddr;
+	lastDirEntryPtr = (Fslcl_DirEntry *)NIL;
+	dirEntryPtr = (Fslcl_DirEntry *)cacheBlockPtr->blockAddr;
 	while (blockOffset < length) {
 	    if ((dirEntryPtr->fileNumber != 0) &&
 		(dirEntryPtr->nameLength == compLen) &&
@@ -1001,7 +1001,7 @@ DeleteComponent(parentHandlePtr, component, compLen)
 		 */
 		FSLCL_HASH_DELETE(fslclNameTablePtr, component, parentHandlePtr);
 		dirEntryPtr->fileNumber = 0;
-		if (lastDirEntryPtr != (FslclDirEntry *)NIL) {
+		if (lastDirEntryPtr != (Fslcl_DirEntry *)NIL) {
 		    /*
 		     * Grow the previous record so that it now includes
 		     * this one.
@@ -1017,12 +1017,12 @@ DeleteComponent(parentHandlePtr, component, compLen)
 	    }
 	    blockOffset += dirEntryPtr->recordLength;
 	    if ((blockOffset & (FSLCL_DIR_BLOCK_SIZE - 1)) == 0) {
-		 lastDirEntryPtr = (FslclDirEntry *) NIL;
+		 lastDirEntryPtr = (Fslcl_DirEntry *) NIL;
 	    } else {
 		 lastDirEntryPtr = dirEntryPtr;
 	    }
 	    dirEntryPtr = 
-		(FslclDirEntry *)((int)dirEntryPtr + dirEntryPtr->recordLength);
+		(Fslcl_DirEntry *)((int)dirEntryPtr + dirEntryPtr->recordLength);
 	}
 	dirBlockNum++;
 	Fscache_UnlockBlock(cacheBlockPtr, 0, -1, 0, FSCACHE_CLEAR_READ_AHEAD);
@@ -1330,7 +1330,7 @@ WriteNewDirectory(curHandlePtr, parentHandlePtr)
     ReturnStatus	status;
     int			offset;
     int			length;
-    register FslclDirEntry *dirEntryPtr;
+    register Fslcl_DirEntry *dirEntryPtr;
     char		*dirBlock;
 
     /*
@@ -1341,9 +1341,9 @@ WriteNewDirectory(curHandlePtr, parentHandlePtr)
      */
     dirBlock = (char *)malloc(FSLCL_DIR_BLOCK_SIZE);
     bcopy((Address)fslclEmptyDirBlock, (Address)dirBlock, FSLCL_DIR_BLOCK_SIZE);
-    dirEntryPtr = (FslclDirEntry *)dirBlock;
+    dirEntryPtr = (Fslcl_DirEntry *)dirBlock;
     dirEntryPtr->fileNumber = curHandlePtr->hdr.fileID.minor;
-    dirEntryPtr = (FslclDirEntry *)((int)dirEntryPtr +
+    dirEntryPtr = (Fslcl_DirEntry *)((int)dirEntryPtr +
 				 dirEntryPtr->recordLength);
     dirEntryPtr->fileNumber = parentHandlePtr->hdr.fileID.minor;
     offset = 0;
@@ -1622,7 +1622,7 @@ GetParentNumber(curHandlePtr, parentNumberPtr)
 {
     ReturnStatus 	status;
     int 		length;
-    register FslclDirEntry *dirEntryPtr;
+    register Fslcl_DirEntry *dirEntryPtr;
     Fscache_Block	*cacheBlockPtr;
 
     status = Fscache_BlockRead(&curHandlePtr->cacheInfo, 0, &cacheBlockPtr,
@@ -1633,7 +1633,7 @@ GetParentNumber(curHandlePtr, parentNumberPtr)
 	return(FAILURE);
     }
 
-    dirEntryPtr = (FslclDirEntry *)cacheBlockPtr->blockAddr;
+    dirEntryPtr = (Fslcl_DirEntry *)cacheBlockPtr->blockAddr;
     if (dirEntryPtr->nameLength != 1 ||
 	dirEntryPtr->fileName[0] != '.' ||
 	dirEntryPtr->fileName[1] != '\0') {
@@ -1642,7 +1642,7 @@ GetParentNumber(curHandlePtr, parentNumberPtr)
 	status = FAILURE;
     } else {
 	dirEntryPtr = 
-		(FslclDirEntry *)((int)dirEntryPtr + dirEntryPtr->recordLength);
+		(Fslcl_DirEntry *)((int)dirEntryPtr + dirEntryPtr->recordLength);
 	if (dirEntryPtr->nameLength != 2 ||
 	    dirEntryPtr->fileName[0] != '.' ||
 	    dirEntryPtr->fileName[1] != '.' ||
@@ -1682,7 +1682,7 @@ SetParentNumber(curHandlePtr, newParentNumber)
 {
     ReturnStatus	status;
     int 		length;
-    register FslclDirEntry *dirEntryPtr;
+    register Fslcl_DirEntry *dirEntryPtr;
     Fscache_Block	*cacheBlockPtr;
 
     status = Fscache_BlockRead(&curHandlePtr->cacheInfo, 0, &cacheBlockPtr,
@@ -1692,7 +1692,7 @@ SetParentNumber(curHandlePtr, newParentNumber)
     } else if (length == 0) {
 	return(FAILURE);
     }
-    dirEntryPtr = (FslclDirEntry *)cacheBlockPtr->blockAddr;
+    dirEntryPtr = (Fslcl_DirEntry *)cacheBlockPtr->blockAddr;
     if (dirEntryPtr->nameLength != 1 ||
 	dirEntryPtr->fileName[0] != '.' ||
 	dirEntryPtr->fileName[1] != '\0') {
@@ -1701,7 +1701,7 @@ SetParentNumber(curHandlePtr, newParentNumber)
 	Fscache_UnlockBlock(cacheBlockPtr, 0, -1, 0, FSCACHE_CLEAR_READ_AHEAD);
 	return(FAILURE);
     }
-    dirEntryPtr = (FslclDirEntry *)((int)dirEntryPtr + dirEntryPtr->recordLength);
+    dirEntryPtr = (Fslcl_DirEntry *)((int)dirEntryPtr + dirEntryPtr->recordLength);
     if (dirEntryPtr->nameLength != 2 ||
 	dirEntryPtr->fileName[0] != '.' ||
 	dirEntryPtr->fileName[1] != '.' ||
@@ -1936,7 +1936,7 @@ DirectoryEmpty(handlePtr)
 {
     ReturnStatus	status;
     int 		blockOffset;	/* Offset within a directory block */
-    FslclDirEntry 		*dirEntryPtr;	/* Reference to directory entry */
+    Fslcl_DirEntry 		*dirEntryPtr;	/* Reference to directory entry */
     int 		length;		/* Length for read call */
     int			dirBlockNum;
     Fscache_Block	*cacheBlockPtr;
@@ -1952,7 +1952,7 @@ DirectoryEmpty(handlePtr)
 	    return(TRUE);
 	}
 	blockOffset = 0;
-	dirEntryPtr = (FslclDirEntry *)cacheBlockPtr->blockAddr;
+	dirEntryPtr = (Fslcl_DirEntry *)cacheBlockPtr->blockAddr;
 	while (blockOffset < length) {
 	    if (dirEntryPtr->fileNumber != 0) {
 		/*
@@ -1971,7 +1971,7 @@ DirectoryEmpty(handlePtr)
 	    }
 	    blockOffset += dirEntryPtr->recordLength;
 	    dirEntryPtr = 
-		(FslclDirEntry *)((int)dirEntryPtr + dirEntryPtr->recordLength);
+		(Fslcl_DirEntry *)((int)dirEntryPtr + dirEntryPtr->recordLength);
 	}
 	dirBlockNum++;
 	Fscache_UnlockBlock(cacheBlockPtr, 0, -1, 0, FSCACHE_CLEAR_READ_AHEAD);

@@ -58,20 +58,20 @@ char *fslclEmptyDirBlock;
 void
 Fslcl_DomainInit()
 {
-    register FslclDirEntry *dirEntryPtr;
+    register Fslcl_DirEntry *dirEntryPtr;
 
     Fsdm_Init();
 
     fslclEmptyDirBlock = (char *)malloc(FSLCL_DIR_BLOCK_SIZE);
-    dirEntryPtr = (FslclDirEntry *)fslclEmptyDirBlock;
+    dirEntryPtr = (Fslcl_DirEntry *)fslclEmptyDirBlock;
     dirEntryPtr->fileNumber = FSDM_ROOT_FILE_NUMBER;
     dirEntryPtr->nameLength = strlen(".");
-    dirEntryPtr->recordLength = FsDirRecLength(dirEntryPtr->nameLength);
+    dirEntryPtr->recordLength = Fslcl_DirRecLength(dirEntryPtr->nameLength);
     (void)strcpy(dirEntryPtr->fileName, ".");
-    dirEntryPtr = (FslclDirEntry *)((int)dirEntryPtr + dirEntryPtr->recordLength);
+    dirEntryPtr = (Fslcl_DirEntry *)((int)dirEntryPtr + dirEntryPtr->recordLength);
     dirEntryPtr->fileNumber = FSDM_ROOT_FILE_NUMBER;
     dirEntryPtr->nameLength = strlen("..");
-    dirEntryPtr->recordLength = FSLCL_DIR_BLOCK_SIZE - FsDirRecLength(1);
+    dirEntryPtr->recordLength = FSLCL_DIR_BLOCK_SIZE - Fslcl_DirRecLength(1);
     (void)strcpy(dirEntryPtr->fileName, "..");
 }
 
