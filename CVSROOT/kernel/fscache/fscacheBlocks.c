@@ -1060,6 +1060,7 @@ again:
     blockPtr->flags |= FS_IO_IN_PROGRESS;
     blockPtr->fileNum = cacheInfoPtr->hdrPtr->fileID.minor;
     blockPtr->blockNum = blockNum;
+    blockPtr->blockSize = -1;
     blockPtr->timeDirtied = 0;
     *blockPtrPtr = blockPtr;
     Hash_SetValue(hashEntryPtr, blockPtr);
@@ -2089,6 +2090,11 @@ FsCleanBlocks(data, callInfoPtr)
 	    /*
 	     * Write the block.
 	     */
+	    if (blockPtr->blockSize < 0) {
+		Sys_Panic(SYS_FATAL, "FsCleanBlocks, uninitialized block size\n");
+		status = FAILURE;
+		break;
+	    }
 	    status = (*fsStreamOpTable[cacheInfoPtr->hdrPtr->fileID.type].blockWrite)
 		    (cacheInfoPtr->hdrPtr, blockPtr->diskBlock,
 		     blockPtr->blockSize, blockPtr->blockAddr, lastDirtyBlock);
