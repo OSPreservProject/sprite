@@ -1567,7 +1567,7 @@ Fs_NotifyReader(data)
 {
     register	FsDeviceIOHandle *devHandlePtr = (FsDeviceIOHandle *)data;
 
-    if (devHandlePtr->hdr.type != FS_LCL_DEVICE_STREAM) {
+    if (devHandlePtr->hdr.fileID.type != FS_LCL_DEVICE_STREAM) {
 	Sys_Panic(SYS_FATAL, "Fs_NotifyReader, bad data\n");
     }
     if ((devHandlePtr == (FsDeviceIOHandle *)NIL) ||
@@ -1615,7 +1615,7 @@ Fs_NotifyWriter(data)
 {
     register	FsDeviceIOHandle *devHandlePtr = (FsDeviceIOHandle *)data;
 
-    if (devHandlePtr->hdr.type != FS_LCL_DEVICE_STREAM) {
+    if (devHandlePtr->hdr.fileID.type != FS_LCL_DEVICE_STREAM) {
 	Sys_Panic(SYS_FATAL, "Fs_NotifyWriter, bad data\n");
     }
     if ((devHandlePtr == (FsDeviceIOHandle *)NIL) ||
