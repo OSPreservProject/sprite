@@ -126,6 +126,7 @@ Vm_GetKernelStack(progCounter, startFunc)
 	 i++, VmIncPTEPtr(ptePtr, 1), virtAddr.page++) {
 	ptePtr->protection = VM_KRW_PROT;
 	ptePtr->pfNum = VmVirtToPhysPage(VmPageAllocate(&virtAddr, TRUE));
+	vmStat.kernStackPages++;
 	VmPageValidate(&virtAddr);
     }
 
@@ -178,6 +179,7 @@ Vm_FreeKernelStack(stackBase)
     for (i = 1, ptePtr = VmGetPTEPtr(vmSysSegPtr, virtAddr.page);
 	 i < MACH_NUM_STACK_PAGES; 
 	 i++, VmIncPTEPtr(ptePtr, 1), virtAddr.page++) {
+	vmStat.kernStackPages--;
 	VmPageFree((int) VmPhysToVirtPage(ptePtr->pfNum));
 	VmPageInvalidate(&virtAddr);
     }

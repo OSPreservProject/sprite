@@ -74,6 +74,8 @@ typedef struct {
     int	entry;
 } Vm_ExecInfo;
 
+#define	VM_OBJ_FILE_NAME_LENGTH	50
+
 /*
  * The segment table structure.  This shouldn't be external but lint
  * complains like crazy if we try to hide it.  So to make lint happy ...
@@ -88,15 +90,20 @@ typedef struct Vm_Segment {
 					   segment */
     Fs_Stream		*filePtr;	/* Pointer to the file that pages are
 					   being demanded loaded from. */
-    Time		fileModTime;	/* Time that the load file was last
-					 * modified. */
+				        /* Name of object file for code 
+					 * segments. */
+    char		objFileName[VM_OBJ_FILE_NAME_LENGTH];
     Fs_Stream		*swapFilePtr;	/* Structure for an opened swap file.*/
+    char		*swapFileName;  /* The filename associated with the
+					 * swap file. */
     int			offset;		/* Explained above. */
     int			fileAddr;	/* The address in the object file where
 					   data or code for this segment 
 					   begins. */
     int           	type;		/* CODE, STACK, HEAP, or SYSTEM */
     int			numPages;	/* Explained above. */
+    int			resPages;	/* Number of pages in physical memory
+					 * for this segment. */
     int			ptSize;		/* Number of pages in the page table */
     Vm_PTE		*ptPtr;		/* Pointer to the page table for this 
 					   segment */
@@ -110,8 +117,6 @@ typedef struct Vm_Segment {
     int			notExpandCount;	/* The number of times that this 
 					   segment has been prevented from
 					   expanding. */
-    char		*swapFileName;  /* The filename associated with the
-					 * swap file. */
     ClientData		fileHandle;	/* Handle for object file. */
     Vm_ExecInfo		execInfo;	/* Information to allow reuse of 
 					 * sticky segments. */

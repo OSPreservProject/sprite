@@ -90,6 +90,8 @@ VmSegTableAlloc()
     numSegments = 256;
     segmentTable = 
 		(Vm_Segment *) Vm_BootAlloc(sizeof(Vm_Segment) * numSegments);
+    Byte_Zero(numSegments * sizeof(Vm_Segment), (Address)segmentTable);
+
     vmSysSegPtr = &(segmentTable[VM_SYSTEM_SEGMENT]);
 }
 
@@ -119,7 +121,6 @@ VmSegTableInit()
     /*
      * Initialize the free, inactive and dead segment lists.
      */
-
     List_Init(freeSegList);
     List_Init(inactiveSegList);
     List_Init(deadSegList);
@@ -135,8 +136,11 @@ VmSegTableInit()
     vmSysSegPtr->offset = MACH_KERNEL_START >> VM_PAGE_SHIFT;
     vmSysSegPtr->flags = 0;
     vmSysSegPtr->numPages = vmFirstFreePage;
+    vmSysSegPtr->resPages = vmFirstFreePage;
 
     for (i = 0, segPtr = segmentTable; i < numSegments; i++, segPtr++) {
+	segPtr->filePtr = (Fs_Stream *)NIL;
+	segPtr->swapFilePtr = (Fs_Stream *)NIL;
 	segPtr->segNum = i;
 	segPtr->procList = (List_Links *) &(segPtr->procListHdr);
 	List_Init(segPtr->procList);
@@ -235,6 +239,8 @@ CleanSegment(segPtr, spacePtr, fileInfoPtr)
 	 */
 	VmPageFreeInt((int) VmPhysToVirtPage(pte.pfNum));
     }
+
+    segPtr->resPages = 0 ;
 
     /*
      * Do any monitor level machine dependent cleanup.  This routine will
@@ -349,11 +355,11 @@ GetNewSegment(type, filePtr, fileAddr, numPages, offset, procPtr,
     segPtr->fileHandle = (ClientData) NIL;
     segPtr->flags = 0;
     segPtr->refCount = 1;
-    segPtr->filePtr  = filePtr;
-    segPtr->fileAddr  = fileAddr;
-    segPtr->numPages  = numPages;
-    segPtr->type  = type;
-    segPtr->offset  = offset;
+    segPtr->filePtr = filePtr;
+    segPtr->fileAddr = fileAddr;
+    segPtr->numPages = numPages;
+    segPtr->type = type;
+    segPtr->offset = offset;
     segPtr->swapFileName = (char *) NIL;
     VmMachSegInit(segPtr, *spacePtr);
 
@@ -530,6 +536,8 @@ Vm_InitCode(filePtr, segPtr, execInfoPtr)
 					  * object file. */
 {
     register	Vm_Segment	**segPtrPtr;
+    char			*fileNamePtr;
+    int				length;
 
     LOCK_MONITOR;
 
@@ -545,8 +553,21 @@ Vm_InitCode(filePtr, segPtr, execInfoPtr)
 	 */
 	Sync_Broadcast(&codeSegCondition);
     } else {
+	extern	char	*Fs_GetFileName();
+	
 	segPtr->execInfo = *execInfoPtr;
 	segPtr->fileHandle = (ClientData) filePtr->handlePtr;
+	fileNamePtr = Fs_GetFileName(filePtr);
+	if (fileNamePtr != (char *)NIL) {
+	    length = String_Length(fileNamePtr);
+	    if (length >= VM_OBJ_FILE_NAME_LENGTH) {
+		length = VM_OBJ_FILE_NAME_LENGTH - 1;
+	    }
+	    String_NCopy(length, fileNamePtr, segPtr->objFileName);
+	    segPtr->objFileName[length] = '\0';
+	} else {
+	    segPtr->objFileName[0] = '\0';
+	}
     }
 
     UNLOCK_MONITOR;
@@ -1133,6 +1154,7 @@ Vm_SegmentDup(srcSegPtr, procPtr, destSegPtrPtr)
 	if (CopyPage(srcPtePtr, destPtePtr, &srcVirtAddr, &destVirtAddr)) {
 	    destPtePtr->pfNum = 
 		    VmVirtToPhysPage(VmPageAllocate(&destVirtAddr, TRUE));
+	    destSegPtr->resPages++;
 	    VmSetRefBit(destPtePtr);
 	    VmSetModBit(destPtePtr);
 	    VmMachSegDup(&destVirtAddr);
@@ -1378,35 +1400,51 @@ Vm_SegmentIncRef(segPtr, procPtr)
  */
 
 ReturnStatus
-Vm_GetSegInfo(procPtr, segBufPtr)
-    Proc_ControlBlock	*procPtr;
-    Vm_Segment		*segBufPtr;
+Vm_GetSegInfo(procPtr, segNum, segBufPtr)
+    Proc_ControlBlock	*procPtr;	/* User's copy of PCB.  Contains
+					 * pointers to segment structures.
+					 * USER_NIL => Want to use a 
+					 *     specific segment number. */
+    int			segNum;		/* Segment number of get info for.  
+					 * Ignored unless previous argument
+					 * is USER_NIL. */
+    Vm_Segment		*segBufPtr;	/* Where to store segment information.*/
 {
+    int			residentPages;
     Proc_ControlBlock	pcb;
     Vm_Segment		*minSegAddr, *maxSegAddr, *segPtr;
-    int	i, j;
+    int			i, j;
 
-    if (Vm_CopyIn(sizeof(pcb), (Address) procPtr, (Address) &pcb) != SUCCESS) {
-	return(SYS_ARG_NOACCESS);
-    }
-
-    minSegAddr = segmentTable;
-    maxSegAddr = &(segmentTable[numSegments - 1]);
-    for (i = VM_CODE, j = 0; i <= VM_STACK; i++, j++) {
-	if (pcb.genFlags & PROC_KERNEL) {
-	    segPtr = vmSysSegPtr;
-	} else {
-	    segPtr = pcb.segPtrArray[i];
-	    if (segPtr < minSegAddr || segPtr > maxSegAddr) {
-		return(SYS_INVALID_ARG);
-	    }
-	}
-
-	if (Vm_CopyOut(sizeof(Vm_Segment), (Address) segPtr, 
-		       (Address) &segBufPtr[j]) != SUCCESS) { 
+    if (procPtr != (Proc_ControlBlock *)USER_NIL) {
+	if (Vm_CopyIn(sizeof(pcb), (Address) procPtr,
+		      (Address) &pcb) != SUCCESS) {
 	    return(SYS_ARG_NOACCESS);
 	}
-	
+	minSegAddr = segmentTable;
+	maxSegAddr = &(segmentTable[numSegments - 1]);
+	for (i = VM_CODE; i <= VM_STACK; i++, segBufPtr++) {
+	    if (pcb.genFlags & PROC_KERNEL) {
+		segPtr = vmSysSegPtr;
+	    } else {
+		segPtr = pcb.segPtrArray[i];
+		if (segPtr < minSegAddr || segPtr > maxSegAddr) {
+		    return(SYS_INVALID_ARG);
+		}
+	    }
+
+	    if (Vm_CopyOut(sizeof(Vm_Segment), (Address) segPtr, 
+			   (Address)segBufPtr) != SUCCESS) { 
+		return(SYS_ARG_NOACCESS);
+	    }
+	}
+    } else if (segNum < 0 || segNum >= numSegments) {
+	return(SYS_INVALID_ARG);
+    } else {
+	segPtr = &segmentTable[segNum];
+	if (Vm_CopyOut(sizeof(Vm_Segment), (Address) segPtr, 
+		       (Address) segBufPtr) != SUCCESS) { 
+	    return(SYS_ARG_NOACCESS);
+	}
     }
 
     return(SUCCESS);

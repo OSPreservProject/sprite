@@ -55,7 +55,6 @@ Boolean	vmDebug	= FALSE;
  */
 static	VmCore          *coreMap;	/* Pointer to core map that is 
 					   allocated in VmCoreMapAlloc. */
-static	int		numVirtPages;	/* Number of physical page frames. */
 
 /*
  * Minimum fraction of pages that VM wants for itself.  It keeps
@@ -136,9 +135,9 @@ void	PutOnFreeList();
 void
 VmCoreMapAlloc()
 {
-    numVirtPages = VmMachGetNumPages();
-    Sys_Printf("Available memory %d\n", numVirtPages * VM_PAGE_SIZE);
-    coreMap = (VmCore *) Vm_BootAlloc(sizeof(VmCore) * numVirtPages);
+    vmStat.numPhysPages = VmMachGetNumPages();
+    Sys_Printf("Available memory %d\n", vmStat.numPhysPages * VM_PAGE_SIZE);
+    coreMap = (VmCore *) Vm_BootAlloc(sizeof(VmCore) * vmStat.numPhysPages);
 }
 
 
@@ -197,7 +196,7 @@ VmCoreMapInit()
     /*
      * The remaining pages are put onto the free list.
      */
-    for (vmStat.numFreePages = 0; i < numVirtPages; i++, corePtr++) {
+    for (vmStat.numFreePages = 0; i < vmStat.numPhysPages; i++, corePtr++) {
 	corePtr->links.nextPtr = (List_Links *) NIL;
 	corePtr->links.prevPtr = (List_Links *) NIL;
 	PutOnFreeList(corePtr);
@@ -1777,7 +1776,7 @@ Vm_Clock(data, callInfoPtr)
 	 * end of the core map then go back to the first page that may not
 	 * be used by the kernel.
 	 */
-	if (clockHand == numVirtPages - 1) {
+	if (clockHand == vmStat.numPhysPages - 1) {
 	    clockHand = vmFirstFreePage;
 	} else {
 	    clockHand++;
@@ -1890,6 +1889,8 @@ Vm_Cmd(command, arg)
 	    Vm_MakeUnaccessible((Address) arg, numBytes);
 	    break;
 	case VM_GET_STATS:
+	    vmStat.kernMemPages = 
+	    		((int) vmMemEnd - MACH_KERNEL_START) / VM_PAGE_SIZE;
 	    if (Vm_CopyOut(sizeof(Vm_Stat), (Address) &vmStat, 
 			   (Address) arg) != SUCCESS) {
 		status = SYS_ARG_NOACCESS;
