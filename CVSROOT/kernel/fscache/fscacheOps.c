@@ -188,7 +188,8 @@ FsCacheUpdate(cacheInfoPtr, openForWriting, version, cacheable, attrPtr)
  *
  */
 ENTRY void
-FsUpdateAttrFromClient(cacheInfoPtr, attrPtr)
+FsUpdateAttrFromClient(clientID, cacheInfoPtr, attrPtr)
+    int clientID;				/* Client, for warning msg */
     register FsCacheFileInfo *cacheInfoPtr;	/* Cache state to update. */
     register FsCachedAttributes	*attrPtr;	/* Attributes from client */
 {
@@ -199,7 +200,8 @@ FsUpdateAttrFromClient(cacheInfoPtr, attrPtr)
     }
     if (cacheInfoPtr->attr.lastByte > attrPtr->lastByte) {
 	Sys_Panic(SYS_WARNING,
-	"FsUpdateAttrFromClient, \"%s\" <%d,%d> short size %d not %d\n",
+	"FsUpdateAttrFromClient %d: \"%s\" <%d,%d> short size %d not %d\n",
+		clientID,
 		FsHandleName(cacheInfoPtr->hdrPtr),
 		cacheInfoPtr->hdrPtr->fileID.major,
 		cacheInfoPtr->hdrPtr->fileID.minor,
