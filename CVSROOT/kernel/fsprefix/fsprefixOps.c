@@ -873,13 +873,16 @@ PrefixUpdate(prefixPtr, serverID, hdrPtr, domainType, flags)
     if (hdrPtr != (FsHandleHeader *)NIL) {
 	prefixPtr->serverID	= hdrPtr->fileID.serverID;
     } else {
+	/*
+	 * The serverID field is used when locating the server for
+	 * a prefix.  Here we set this field whether the prefix
+	 * table entry has been established or not.  This lets us
+	 * associate a prefix with a particular remote server,
+	 * i.e. a server that is not contacted via broadcast.
+	 */
 	prefixPtr->serverID	= serverID;
     }
-    if ((prefixPtr->hdrPtr != (FsHandleHeader *)NIL) &&
-	(hdrPtr == (FsHandleHeader *)NIL)) {
-	printf("PrefixUpdate: \"%s\" almost lost its handle\n",
-	    prefixPtr->prefix);
-    } else {
+    if (prefixPtr->hdrPtr == (FsHandleHeader *)NIL) {
 	prefixPtr->hdrPtr	= hdrPtr;
 	prefixPtr->domainType	= domainType;
 	prefixPtr->flags	= flags;
