@@ -283,6 +283,7 @@ ExitProcessInt(exitProcPtr, migrated, contextSwitch)
     register	Proc_ControlBlock	*procPtr;
     Proc_State				newState;
     register Proc_PCBLink 		*procLinkPtr;
+    Timer_Ticks 		        ticks;
 
     LOCK_MONITOR;
 
@@ -295,28 +296,34 @@ ExitProcessInt(exitProcPtr, migrated, contextSwitch)
      *  If the parent is still around, add the user and kernel cpu usage
      *  of this process to the parent's summary of children.
      *  If we're detached, don't give this stuff to the parent
-     *  (it might not exist.)
+     *  (it might not exist.)  Keep track of global usage if we're local.
      */
 
-    if (!(exitProcPtr->genFlags & PROC_FOREIGN) &&
-        !(exitProcPtr->exitFlags & PROC_DETACHED)) {
-	register Proc_ControlBlock 	*parentProcPtr;
+    if (!(exitProcPtr->genFlags & PROC_FOREIGN)) {
+	if (!(exitProcPtr->exitFlags & PROC_DETACHED)) {
+	    register Proc_ControlBlock 	*parentProcPtr;
 
-	parentProcPtr = Proc_GetPCB(exitProcPtr->parentID);
-	if (parentProcPtr != (Proc_ControlBlock *) NIL) {
-	    Timer_AddTicks(exitProcPtr->kernelCpuUsage.ticks, 
-			   parentProcPtr->childKernelCpuUsage.ticks, 
-			   &(parentProcPtr->childKernelCpuUsage.ticks));
-	    Timer_AddTicks(exitProcPtr->childKernelCpuUsage.ticks, 
-			   parentProcPtr->childKernelCpuUsage.ticks, 
-			   &(parentProcPtr->childKernelCpuUsage.ticks));
-	    Timer_AddTicks(exitProcPtr->userCpuUsage.ticks, 
-			   parentProcPtr->childUserCpuUsage.ticks, 
-			   &(parentProcPtr->childUserCpuUsage.ticks));
-	    Timer_AddTicks(exitProcPtr->childUserCpuUsage.ticks, 
-			   parentProcPtr->childUserCpuUsage.ticks, 
-			   &(parentProcPtr->childUserCpuUsage.ticks));
+	    parentProcPtr = Proc_GetPCB(exitProcPtr->parentID);
+	    if (parentProcPtr != (Proc_ControlBlock *) NIL) {
+		Timer_AddTicks(exitProcPtr->kernelCpuUsage.ticks, 
+			       parentProcPtr->childKernelCpuUsage.ticks, 
+			       &(parentProcPtr->childKernelCpuUsage.ticks));
+		Timer_AddTicks(exitProcPtr->childKernelCpuUsage.ticks, 
+			       parentProcPtr->childKernelCpuUsage.ticks, 
+			       &(parentProcPtr->childKernelCpuUsage.ticks));
+		Timer_AddTicks(exitProcPtr->userCpuUsage.ticks, 
+			       parentProcPtr->childUserCpuUsage.ticks, 
+			       &(parentProcPtr->childUserCpuUsage.ticks));
+		Timer_AddTicks(exitProcPtr->childUserCpuUsage.ticks, 
+			       parentProcPtr->childUserCpuUsage.ticks, 
+			       &(parentProcPtr->childUserCpuUsage.ticks));
+	    }
 	}
+#ifndef CLEAN
+	Timer_AddTicks(exitProcPtr->kernelCpuUsage.ticks,
+			exitProcPtr->userCpuUsage.ticks, &ticks);
+	ProcRecordUsage(ticks, FALSE);
+#endif /* CLEAN */
     }
 
     
