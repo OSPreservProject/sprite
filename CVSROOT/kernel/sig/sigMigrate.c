@@ -28,7 +28,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 
 typedef struct {
-    Proc_ControlBlock 		*procPtr;
+    Proc_PID 			processID;
     int				sigNum;
     int				code;
 } DeferInfo;
@@ -61,6 +61,7 @@ SigMigSend(procPtr, sigNum, code)
     int				  code;
 {
     ReturnStatus status;
+    Proc_PID processID;
     Proc_PID remoteProcessID;
     int remoteHostID;
     Proc_ControlBlock 	*callerProcPtr; /* The calling process */
@@ -76,19 +77,24 @@ SigMigSend(procPtr, sigNum, code)
 	 * process to finish migrating before signalling it. If
 	 * it's a kernel process, start a background process to
 	 * wait for migration and deliver the signal asynchronously.
+	 * When calling Proc_WaitForMigration, make sure the process isn't
+	 * locked.
 	 */
 	callerProcPtr = Proc_GetActualProc();
 	if (callerProcPtr->genFlags & PROC_KERNEL) {
 	    DeferInfo *infoPtr;
 
 	    infoPtr = (DeferInfo *) malloc(sizeof(*infoPtr));
-	    infoPtr->procPtr = procPtr;
+	    infoPtr->processID = procPtr->processID;
 	    infoPtr->sigNum = sigNum;
 	    infoPtr->code = code;
 	    Proc_CallFunc(DeferSignal, (ClientData) infoPtr, 0);
 	    return(SUCCESS);
 	}
-	status = Proc_WaitForMigration(procPtr);
+	processID = procPtr->processID;
+        Proc_Unlock(procPtr);
+	status = Proc_WaitForMigration(processID);
+	Proc_Lock(procPtr);
 	if (status != SUCCESS) {
 	    return(status);
 	}
@@ -159,11 +165,25 @@ DeferSignal(data)
 {
     DeferInfo *infoPtr = (DeferInfo *) data;
     ReturnStatus status;
+    Proc_ControlBlock *procPtr;
 
-    status = Proc_WaitForMigration(infoPtr->procPtr);
+    status = Proc_WaitForMigration(infoPtr->processID);
     if (status != SUCCESS) {
-	return;
+	goto failure;
     }
-    (void) SigMigSend(infoPtr->procPtr, infoPtr->sigNum, infoPtr->code);
+    procPtr = Proc_LockPID(infoPtr->processID);
+    if (procPtr == NULL) {
+	goto failure;
+    }
+    (void) SigMigSend(procPtr, infoPtr->sigNum, infoPtr->code);
+    Proc_Unlock(procPtr);
+    return;
+
+    failure:
+    if (proc_MigDebugLevel > 0) {
+	printf("DeferSignal: unable to send delayed signal to migrated process %x\n",
+	       infoPtr->processID);
+    }
 }
     
+
