@@ -181,6 +181,7 @@ extern	unsigned int	vmClockSleep;
 extern	Boolean		vmForceRef;
 extern	Boolean		vmForceSwap;
 extern	int		vmMaxDirtyPages;
+extern	Boolean		vmFreeWhenClean;
 
 
 /*
@@ -215,6 +216,9 @@ Vm_Cmd(command, arg)
 			   (Address) arg) != SUCCESS) {
 		status = SYS_ARG_NOACCESS;
 	    }
+	    break;
+	case VM_SET_FREE_WHEN_CLEAN:
+	    vmFreeWhenClean = (Boolean)arg;
 	    break;
 	case VM_SET_MAX_DIRTY_PAGES:
 	    vmMaxDirtyPages = arg;
