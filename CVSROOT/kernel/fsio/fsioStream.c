@@ -979,6 +979,10 @@ Fsio_StreamReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
 	reopenParams.offset   = streamPtr->offset;
 	status = FsrmtReopen(hdrPtr, sizeof(reopenParams),
 		    (Address)&reopenParams, &outSize, (Address)NIL);
+    } else if (((StreamReopenParams *) inData)->ioFileID.type < 0) {
+	printf("Fsio_StreamReopen: fileID type = 0x%x from client %d\n",
+		((StreamReopenParams *) inData)->ioFileID.type, clientID);
+	status = FAILURE;
     } else {
 	/*
 	 * Called on the server side.  We need to first make sure there
