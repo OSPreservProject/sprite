@@ -3995,6 +3995,7 @@ VmMach_MapInBigDevice(devPhysAddr, numBytes, type)
     VmMachPTE		pte;
     int			numPages;
     int			i;
+    Boolean		foundPages;
 
     /*
      * Get the page frame for the physical device so we can
@@ -4034,6 +4035,7 @@ VmMach_MapInBigDevice(devPhysAddr, numBytes, type)
 	 * Use the real hardware size (ignore software klustering) because
 	 * we are at a low level munging page table entries ourselves here.
 	 */
+	foundPages = FALSE;
 	for (page = 0;
 	     page < VMMACH_NUM_PAGES_PER_SEG_INT;
 	     page++, virtAddr += VMMACH_PAGE_SIZE_INT) {
@@ -4082,6 +4084,7 @@ VmMach_MapInBigDevice(devPhysAddr, numBytes, type)
 		}
 		/* Did we find enough pages? */
 		if (i == numPages) {
+		    foundPages = TRUE;
 		    break;
 		}
 		/* The address wasn't good. */
@@ -4091,6 +4094,9 @@ VmMach_MapInBigDevice(devPhysAddr, numBytes, type)
 		page += i;
 		virtAddr += (i * VMMACH_PAGE_SIZE_INT);
 	    }
+	}
+	if (foundPages) {
+	    break;
 	}
     }
 

@@ -49,6 +49,12 @@
 #define	VmMachGetPageType(pte) (((pte) >> 26) & 3)
 #define	VmMachSetPageType(pte, type) (pte |= (type << 26))
 
+/* Value of VMMACH_TYPE_FIELD */
+#define	VMMACH_TYPE_MEM		0		/* Main memory. */
+#define	VMMACH_TYPE_DEV		1		/* Serial ports, net regs... */
+#define VMMACH_TYPE_VME16DATA	2		/* 16-bit vme data. */
+#define	VMMACH_TYPE_VME32DATA	3		/* 32-bit vme data. */
+
 /*
  * Shift pte right by this much to isolate page protection and residence bits.
  */
