@@ -4,8 +4,15 @@
  *	The guts of the Fs_Command system call.  This is used to
  *	set/get various filesystem parameters.
  *
- * Copyright (C) 1985 Regents of the University of California
- * All rights reserved.
+ *
+ * Copyright 1985 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
  */
 
 #ifndef lint
@@ -32,6 +39,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <vm.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <lfs.h>
 
 #define SWAP_TO_BUFFER(int1, buffer) \
     if ((int *)buffer != (int *)NIL && (int *)buffer != (int *)0) {	\
@@ -389,7 +397,12 @@ Fs_Command(command, bufSize, buffer)
 	}
 
 	default:
-	    status = FS_INVALID_ARG;
+	    if ((command >= FS_FIRST_LFS_COMMAND) &&
+	        (command <= FS_LAST_LFS_COMMAND)) {
+		status = Lfs_Command(command, bufSize, buffer);
+	    } else {
+		status = FS_INVALID_ARG;
+	    }
     }
     return(status);
 }
