@@ -429,6 +429,7 @@ Mach_StartUserProc(procPtr, entryPoint)
 					 * executing. */
 {
     register	Mach_State	*statePtr;
+    int		status;
 
     statePtr = procPtr->machStatePtr;
     /*
@@ -449,10 +450,15 @@ Mach_StartUserProc(procPtr, entryPoint)
 #endif NOTDEF
 
 Mach_MonPrintf("Mach_StartUserProc, proc_RunningP's[0] is now 0x%x\n", proc_RunningProcesses[0]);
+Mach_MonPrintf("entryPoint is 0x%x\n", entryPoint);
 Mach_MonPrintf("procPtr->machStatePtr is 0x%x\n", procPtr->machStatePtr);
 Mach_MonPrintf("trapRegs is now 0x%x\n", procPtr->machStatePtr->trapRegs);
 Mach_MonPrintf("Mach_StartUserProc calling MachRunUserProc\n");
+#ifdef NOTDEF
     MachRunUserProc();
+#else
+    MachRunUserProc(entryPoint, procPtr->machStatePtr->trapRegs->ins[MACH_FP_REG]);
+#endif NOTDEF
     /* THIS DOES NOT RETURN */
 }
 
@@ -483,6 +489,7 @@ Mach_ExecUserProc(procPtr, userStackPtr, entryPoint)
 						 * to resume execution. */
 {
     Mach_RegState	tmpTrapState;
+
     /*
      * Ugh.  They set this to a different register set in the sun3 and
      * then set this reg differently in Mach_StartUserProc.  What should I
@@ -1668,11 +1675,6 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
     Boolean		copyInProgress = FALSE;
     ReturnStatus	status;
 
-    DEBUG_ADD(0x11111111);
-    DEBUG_ADD(busErrorReg);
-    DEBUG_ADD(addrErrorReg);
-    DEBUG_ADD(trapPsr);
-    DEBUG_ADD(pcValue);
     procPtr = Proc_GetActualProc();
     if (procPtr == (Proc_ControlBlock *) NIL) {
 	panic("MachPageFault: Current process is NIL!!  Trap pc is 0x%x, addr 0x%x\n",
@@ -1680,7 +1682,6 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
     }
     /* process kernel page fault */
     if (trapPsr & MACH_PS_BIT) {		/* kernel mode before trap */
-	DEBUG_ADD(0x1);
 	if (!(procPtr->genFlags & PROC_USER)) {
 	    /*
 	     * This fault happened inside the kernel and it wasn't on behalf
@@ -1712,8 +1713,7 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
 	/*
 	 * Try to fault in the page.
 	 */
-	DEBUG_ADD(0x11);
-	if (addrErrorReg == NIL) {
+	if (addrErrorReg == (Address) NIL) {
 	    if (copyInProgress) {
 		return MACH_USER_ERROR;
 	    } else {
@@ -1722,33 +1722,23 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
 	}
 	status = Vm_PageIn(addrErrorReg, protError);
 	if (status != SUCCESS) {
-	    DEBUG_ADD(0x111);
 	    if (copyInProgress) {
-		DEBUG_ADD(0x1111);
 		/* user error */
 		return MACH_USER_ERROR;
 	    } else {
-		DEBUG_ADD(0x1112);
 		/* kernel error */
 		panic(
 	    "MachPageFault: couldn't page in kernel page at 0x%x, pc 0x%x\n",
 			addrErrorReg, pcValue);
 	    }
 	}
-	DEBUG_ADD(0x3333);
-	{
-	    int	goo;
-	    goo = VmMachGetPageMap(addrErrorReg);
-	    DEBUG_ADD(goo);
-	    DEBUG_ADD(0x3333);
-	}
 	return MACH_OK;
     }
-    DEBUG_ADD(0x2);
     /* user page fault */
+    printf("Page fault in user process, pc 0x%x, addr 0x%x, busError 0x%x\n",
+	    pcValue, addrErrorReg, (short) busErrorReg);
     protError = busErrorReg & MACH_PROT_ERROR;
     if (Vm_PageIn(addrErrorReg, protError) != SUCCESS) {
-	DEBUG_ADD(0x22);
 	printf(
     "MachPageFault: Bus error in user proc %x, PC = %x, addr = %x BR Reg %x\n",
 		procPtr->processID, pcValue, addrErrorReg, (short) busErrorReg);
@@ -1760,7 +1750,7 @@ MachPageFault(busErrorReg, addrErrorReg, trapPsr, pcValue)
 	Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
 #endif NOTDEF
     }
-    DEBUG_ADD(0x21);
+    printf("Returning okay.\n");
     return(MACH_OK);
 }
 

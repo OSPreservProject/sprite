@@ -377,27 +377,26 @@ _MachRunUserProc:
 	/*
 	 * Get values to restore registers to from the state structure.
 	 */
+#ifdef NOTDEF
 	set	_proc_RunningProcesses, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %VOL_TEMP1		/* procPtr */
-	set	0x44444444, %o3
-	MACH_DEBUG_BUF(%o0, %o1, PrintHereLabel, %o3)
-	MACH_DEBUG_BUF(%o0, %o1, PrintProcLabel, %VOL_TEMP1)
 	set	_machStatePtrOffset, %VOL_TEMP2
 	ld	[%VOL_TEMP2], %VOL_TEMP2		/* get offset */
 	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %VOL_TEMP1		/* machStatePtr */
-	MACH_DEBUG_BUF(%o0, %o1, PrintMachPtrLabel, %VOL_TEMP1)
 	add	%VOL_TEMP1, MACH_TRAP_REGS_OFFSET, %VOL_TEMP1
-	MACH_DEBUG_BUF(%o0, %o1, PrintAddrTrapRegsLabel, %VOL_TEMP1)
 	ld	[%VOL_TEMP1], %VOL_TEMP2	/* machStatePtr->trapRegs */
-	MACH_DEBUG_BUF(%o0, %o1, PrintTrapRegsLabel, %VOL_TEMP2)
-
 	/*
 	 * Restore %fp.  This will be the user's %sp when we return from
 	 * the trap window.
 	 */
 	add	%VOL_TEMP2, MACH_FP_OFFSET, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %fp		/* set %fp - user sp */
+#else
+	mov	%o0, %CUR_PC_REG
+	add	%o0, 4, %NEXT_PC_REG
+	mov	%o1, %fp
+#endif NOTDEF
 	andcc	%fp, 0x7, %fp
 	be	UserStackOkay
 	nop
@@ -416,8 +415,7 @@ UserStackOkay:
 	 */
 	add	%fp, -MACH_FULL_STACK_FRAME, %fp
 
-	MACH_DEBUG_BUF(%o0, %o1, PrintFpLabel, %fp)
-
+#ifdef NOTDEF
 	/*
 	 * Set return from trap pc and next pc.
 	 */
@@ -425,6 +423,7 @@ UserStackOkay:
 	ld	[%VOL_TEMP1], %CUR_PC_REG
 	add	%VOL_TEMP1, 4, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %NEXT_PC_REG
+#endif NOTDEF
 	/*
 	 * Make sure traps are disabled before setting up next psr value.
 	 * Next psr value will have all interrupts enabled, so we make sure

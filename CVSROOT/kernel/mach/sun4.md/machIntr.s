@@ -49,10 +49,6 @@ MachHandleInterrupt:
 	ld	[%VOL_TEMP1], %SAFE_TEMP
 	set	1, %VOL_TEMP2
 	st	%VOL_TEMP2, [%VOL_TEMP1]
-	mov	%psr, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, InterruptDebugLabel1, %OUT_TEMP1)
-	mov	%o0, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, InterruptDebugLabel2, %OUT_TEMP1)
 	call	%o0				/* call specific handler */
 	nop
 

@@ -967,10 +967,8 @@ SaveSomeMore:
 	bne	SaveSomeMore
 	nop
 	set	(MACH_NUM_WINDOWS - 1), %g1
-	MACH_DEBUG_BUF(%g2, %g3, g1Debug1, %g1)
 RestoreSomeMore:
 	restore
-	MACH_DEBUG_BUF(%g2, %g3, g1Debug2, %g1)
 	subcc	%g1, 1, %g1
 	bne	RestoreSomeMore
 	nop
@@ -1218,8 +1216,10 @@ MachHandlePageFault:
 	/* memory address causing the error as second arg */
 	set	VMMACH_ADDR_ERROR_REG, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %o1
+#ifdef NOTDEF
 	/* have to write to memory error address reg to clear the error */
 	st	%g0, [%VOL_TEMP1]
+#endif NOTDEF
 	/* trap value of the psr as third arg */
 	mov	%CUR_PSR_REG, %o2	
 	/* trap value of pc as fourth argument */

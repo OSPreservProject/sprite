@@ -338,10 +338,8 @@ NoEnableLabel:
 	add	reg1, 1, reg1;			\
 	set	500, reg2;			\
 	subcc	reg2, reg1, %g0;		\
-	bg	DebugLabel;			\
+	bgu	DebugLabel;			\
 	nop;					\
-	set	_debugCounter, reg1;		\
-	st	%g0, [reg1];			\
 	clr	reg1;				\
 DebugLabel:					\
 	set	_debugCounter, reg2;		\

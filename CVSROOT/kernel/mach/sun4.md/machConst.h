@@ -210,11 +210,26 @@
  *				strip off the high couple of bits, since 0's
  *				and 1's in them point to the same entry in the
  *				segment table.
+ *				ACTUALLY: it turns out we can't just strip
+ *				those bits, since doing so may put us in the
+ *				invalid hole, since the kernel doesn't start
+ *				right at the bottom of the top part after the
+ *				hole.  I'll have to deal with the user stack
+ *				not being contiguous in some way, so it can
+ *				start beneath the kernel and continue across
+ *				the hole, but for now, I just shrink everything
+ *				so the user process stack must start at the
+ *				top address beneath the hole.  Yuckola.
+ *				
  */
 #define	MACH_FIRST_USER_ADDR		VMMACH_PAGE_SIZE
 #define	MACH_LAST_USER_ADDR		(MACH_MAX_USER_STACK_ADDR - 1)
 #define	MACH_LAST_USER_STACK_PAGE	((MACH_MAX_USER_STACK_ADDR - 1) / VMMACH_PAGE_SIZE)
+#ifdef NOTDEF
 #define	MACH_MAX_USER_STACK_ADDR	(VMMACH_MAP_SEG_ADDR & VMMACH_ADDR_MASK)
+#else
+#define	MACH_MAX_USER_STACK_ADDR	0x20000000
+#endif /* NOTDEF */
 
 /*
  * Constants for getting to offsets in structures:  To make sure these
