@@ -22,8 +22,14 @@
 #ifndef _SPRITE
 #include <sprite.h>
 #endif
+
+#ifdef KERNEL
 #include <mach.h>
 #include <user/netInet.h>
+#else
+#include <kernel/mach.h>
+#include <netInet.h>
+#endif
 
 /*
  * Variable to indicate that dbg wants a packet.

@@ -16,7 +16,11 @@
 #ifndef _SPRITE
 #include <sprite.h>
 #endif
+#ifdef KERNEL
 #include <user/netInet.h>
+#else
+#include <netInet.h>
+#endif
 
 
 /*
