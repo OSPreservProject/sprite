@@ -688,8 +688,6 @@ retry:
     if (xyPtr->flags & XYLOGICS_RETRY) {
 	retries++;
 	xyPtr->flags &= ~(XYLOGICS_RETRY|XYLOGICS_IO_COMPLETE);
-	Sys_Panic(SYS_WARNING, "Xylogics retry at <%d,%d,%d> ",
-		diskAddrPtr->cylinder, diskAddrPtr->head, diskAddrPtr->sector);
 	if (command == XY_READ || command == XY_WRITE) {
 	    Sys_Printf("(%s)", (command == XY_READ) ? "Read" : "Write");
 	} else {
@@ -699,7 +697,8 @@ retry:
 	    Sys_Printf("\n");
 	    goto retry;
 	} else {
-	    Sys_Printf(" FAILED\n");
+	    Sys_Panic(SYS_WARNING, "Xylogics retry at <%d,%d,%d> FAILED\n",
+		diskAddrPtr->cylinder, diskAddrPtr->head, diskAddrPtr->sector);
 	    error = DEV_RETRY_ERROR;
 	}
     }
@@ -885,7 +884,9 @@ retry:
 	     */
 	    error = DevXylogicsStatus(xyPtr);
 	    if (error == DEV_RETRY_ERROR && retries++ < 3) {
+#ifdef notdef
 		Sys_Panic(SYS_WARNING, "Xylogics Retrying...\n");
+#endif
 		goto retry;
 	    }
 	}
