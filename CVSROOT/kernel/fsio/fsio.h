@@ -157,14 +157,12 @@ typedef struct FsStreamTypeOps {
      *  defined this way on the server when a client is reading/writing its
      *  cache and there is no stream.)
      *
-     *	FooRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
-     *	FooWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
-     *		Fs_Stream	*streamPtr;	( !Only use ioHandlePtr! )
-     *		int		flags;		(from the stream)
-     *		Address		buffer;		(Target for data)
-     *		int		*offsetPtr;	(Byte offset In/Out)
-     *		int		*lenPtr;	(Byte count In/Out)
+     *	FooRead(streamPtr, ioPtr, waitPtr, replyPtr)
+     *	FooWrite(streamPtr, ioPtr, waitPtr, replyPtr)
+     *		Fs_Stream	*streamPtr;	( !Only use ioHandlePtr field! )
+     *		Fs_IOParam	*ioPtr;		(Standard parameter block)
      *		Sync_RemoteWaiter *waitPtr;	(For remote waiting)
+     *		Fs_IOReply	*reply;		(For return length and signal)
      */
     ReturnStatus (*read)();
     ReturnStatus (*write)();
