@@ -542,6 +542,8 @@ Fsrmt_RpcReopen(srvToken, clientID, command, storagePtr)
 		&storagePtr->replyParamSize,
 		&storagePtr->replyParamPtr);
 
+    Recov_AddHandleCountToClientState(fileIDPtr->type, clientID, status);
+
     if (status == SUCCESS) {
 	Rpc_ReplyMem	*replyMemPtr;
 
