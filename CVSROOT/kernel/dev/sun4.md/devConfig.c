@@ -33,6 +33,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "scsi3.h"
 #include "xylogics450.h"
 #include "jaguar.h"
+#include "devTMR.h"
 
 /*
  * The controller configuration table.
@@ -44,6 +45,9 @@ DevConfigController devCntrlr[] = {
 				    72, DevXylogics450Intr},
     { "Jaguar0", 0x8800, DEV_VME_D16A16, 0, DevJaguarInit, 211, DevJaguarIntr},
     { "Jaguar1", 0x9000, DEV_VME_D16A16, 1, DevJaguarInit, 215, DevJaguarIntr},
+    { "Jaguar2", 0x9800, DEV_VME_D16A16, 2, DevJaguarInit, 216, DevJaguarIntr},
+    { "Jaguar3", 0xc000, DEV_VME_D16A16, 3, DevJaguarInit, 217, DevJaguarIntr},
+    { "tmr0", 0xFFD14000, DEV_OBIO, 0, Dev_TimerProbe, 0, ((Boolean (*)())0)},
 };
 int devNumConfigCntrlrs = sizeof(devCntrlr) / sizeof(DevConfigController);
 
