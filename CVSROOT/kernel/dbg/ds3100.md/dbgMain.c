@@ -739,7 +739,9 @@ Dbg_Main()
 		    replyPtr->data = *((int *)debugStatePtr + requestPtr->addr);
 		}
 		break;
-            case UWRITE:
+            case UWRITE: {
+		extern void Mach_SwitchPoint();
+
 		if (requestPtr->addr == (unsigned)-1) {
 		    Proc_ControlBlock	*procPtr;
 
@@ -760,7 +762,7 @@ Dbg_Main()
 		    debugStatePtr = &tmpDebugState;
 		    bcopy(procPtr->machStatePtr->switchRegState.regs,
 			  tmpDebugState.regs, 32 * sizeof(int));
-		    tmpDebugState.excPC = (unsigned)(Address)Mach_ContextSwitch;
+		    tmpDebugState.excPC = (unsigned)(Address)Mach_SwitchPoint;
 		    dbgMaxStackAddr = (int)procPtr->machStatePtr->kernStackEnd;
 		    signal = 2;
 		} else if (requestPtr->addr == (unsigned)-2) {
@@ -777,6 +779,7 @@ Dbg_Main()
 		    }
 		}
 		break;
+	    }
             case IREAD:
             case DREAD:
 		if (InRange(requestPtr->addr, 4, FALSE)) {
