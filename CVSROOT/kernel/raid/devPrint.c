@@ -193,5 +193,5 @@ PrintRaid(raidPtr)
 
 PrintTime()
 {
-    printf("TIME: %u\n", LocalTime());
+    printf("TIME: %lg\n", LocalTime());
 }

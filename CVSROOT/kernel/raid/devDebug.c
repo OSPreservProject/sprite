@@ -241,7 +241,7 @@ BlockIOProc(handlePtr, requestPtr)
     (void) printf("status: %d\n", status);
 
     if (Spawn() == 0) {
-	Delay(10);
+	Delay(10.0);
         localRequestPtr->doneProc(localRequestPtr,
 		status, localRequestPtr->bufferLen);
 	Terminate();
@@ -363,7 +363,7 @@ BlockIOProc1(handlePtr, requestPtr)
         /*
          * Child simulates IO Device.
          */
-        Delay(100);
+        Delay(100.0);
 	localRequestPtr->buffer[0] =
 		debugHandlePtr->devPtr->unit/10+'0';
 	localRequestPtr->buffer[1] =
