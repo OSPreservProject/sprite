@@ -83,11 +83,14 @@ typedef struct ProtocolState {
     int			protocol;	/* Ethernet protocol number */
     Boolean		open;		/* TRUE is the device is open.  Packets
 					 * are only queued if it is open. */
+    Boolean		kernel;		/* TRUE if kernel is using this proto */
     PacketQueue		queue;		/* Queue of received packets */
     ProtoStats		stats;		/* Event counters */
     ClientData		fsReadyToken;	/* Used for filesystem callback that
 					 * notifies waiting processes that
 					 * packets are here */
+    int			(*inputProc)();	/* Used when the kernel is using the
+					 * protocol. */
 } ProtocolState;
 
 /*
@@ -153,8 +156,6 @@ DevNet_FsOpen(devicePtr, useFlags, data)
 		status = FS_FILE_BUSY;
 		goto exit;
 	    }
-	    protoPtr->open = TRUE;
-	    devicePtr->data = (ClientData)protoPtr;
 	    goto found;
 	}
     }
@@ -182,6 +183,19 @@ DevNet_FsOpen(devicePtr, useFlags, data)
 
 found:
 
+    /*
+     * Differentiate between user-level reads and the kernel.
+     * DevNetEtherHandler will handle packets differently in
+     * the two cases.  It notifies the user-level process, or
+     * it calls the kernel protocol handler.
+     */
+    if (useFlags & FS_USER) {
+	protoPtr->kernel = FALSE;
+	protoPtr->fsReadyToken = data;
+    } else {
+	protoPtr->kernel = TRUE;
+	protoPtr->inputProc = (int(*)())data;
+    }
     protoPtr->open = TRUE;
     protoPtr->queue.head = 0;
     protoPtr->queue.tail = 0;
@@ -190,7 +204,6 @@ found:
      * These client data fields are set up for call backs to the filesystem
      * and so we can quickly get to the protocol state on read/write etc.
      */
-    protoPtr->fsReadyToken = data;
     devicePtr->data = (ClientData) protoPtr;
 
 exit:
@@ -254,7 +267,18 @@ DevNetEtherHandler(packetPtr, size)
 		      size);
 		protoPtr->queue.size[protoPtr->queue.tail] = size;
 		protoPtr->queue.tail = NextTail(protoPtr->queue);
-		Fs_NotifyReader(protoPtr->fsReadyToken);
+		if (protoPtr->kernel) {
+		    /*
+		     * Indirect to a process to pull the packet off of
+		     * the input queue.  We can't call the protocol handlers
+		     * directly because they use malloc and free.  Note
+		     * that we pass the protoPtr to the packet handler
+		     * so it can call DevNet_FsRead to get the packet.
+		     */
+		    Proc_CallFunc(protoPtr->inputProc, (ClientData)protoPtr, 0);
+		} else {
+		    Fs_NotifyReader(protoPtr->fsReadyToken);
+		}
 	    }
 	    break;
 	}
