@@ -75,3 +75,37 @@ Virtual address space on the sun4:
 	   -	  Invalid page	- 8 Kbytes.
 	0x00000000
 
+New:
+	Address
+	0xFFFFFFFF
+	   -	  Net memory allocation area.
+	0xFFFC0000
+	   - 	  VDMA mapping addresses. 768 Kbytes
+	0xFFF00000	
+	   -	  Device mapping area.	 2048 Kbytes
+	0xFFD00000
+	   -	  Used for IE device mapping and such.  Contains enough space
+		  to avoid cache flushes for mapping scatter gather arrays.
+	0xFFB80000
+	   - 	  File system block cache. 124160 Kbytes (121.25 Meg)
+	0xF83C0000
+	   -	  Hardware segments used to access PMEGs. 512 Kbytes
+	0xF8340000
+	   -	  Lost due to rounding. 128 Kbytes
+	0xF8320000
+	   -	  Area used to map user pages into kernel.   128 KBytes
+	0xF8300000
+	   -	  Kernel Stacks (128 processes).   3072 Kbytes.
+	0xF8000000
+	   - 	  Kernel Code and Data.  32768 Kbytes (32 Meg).
+	0xF6000000
+	   -	  Area for mapping between user's segment. 256 KBytes
+	0xF5FC0000
+	   -	  Not currently in use. 507648 Kbytes (495.75 Meg)
+	0xE0000000
+	   -	  The Hole!! (3072 Meg)
+	0x20000000
+	   - 	  User's virtual address space. 524280 Kbytes (511.99 Meg)
+	0x00002000 
+	   -	  Invalid page	- 8 Kbytes.
+	0x00000000
