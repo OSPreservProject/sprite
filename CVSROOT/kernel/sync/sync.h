@@ -16,6 +16,7 @@
 #define _SYNC
 
 #include "sprite.h"
+#include "list.h"
 
 #ifdef KERNEL
 #include "user/sync.h"
