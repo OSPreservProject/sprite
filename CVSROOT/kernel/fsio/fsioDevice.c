@@ -587,7 +587,7 @@ FsDeviceClose(hdrPtr, clientID, flags, size, data)
  *
  * Side effects:
  *	Removes the client list entry for the client and adjusts the
- *	use counts on the file.
+ *	use counts on the file.  This unlocks the handle.
  *
  * ----------------------------------------------------------------------------
  *
@@ -598,9 +598,9 @@ FsDeviceClientKill(hdrPtr, clientID)
     FsHandleHeader	*hdrPtr;	/* File to clean up */
     int			clientID;	/* Host assumed down */
 {
-    FsDeviceIOHandle *devHandlePtr = (FsDeviceIOHandle *)hdrPtr;
+    register FsDeviceIOHandle *devHandlePtr = (FsDeviceIOHandle *)hdrPtr;
+    register int flags;
     int refs, writes, execs;
-    int flags;
 
     /*
      * Remove the client from the list of users, and see what it was doing.
@@ -632,6 +632,7 @@ FsDeviceClientKill(hdrPtr, clientID)
 		devHandlePtr->use.ref, devHandlePtr->use.write);
 	}
     }
+    FsHandleUnlock(devHandlePtr);
 }
 
 /*
@@ -941,10 +942,11 @@ FsRemoteIOMigStart(hdrPtr, flags, clientID, data)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, sizePtr, dataPtr)
+FsDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
     FsMigInfo	*migInfoPtr;	/* Migration state */
     int		dstClientID;	/* ID of target client */
     int		*flagsPtr;	/* In/Out Stream usage flags */
+    int		*offsetPtr;	/* Return - new stream offset */
     int		*sizePtr;	/* Return - sizeof(FsDeviceState) */
     Address	*dataPtr;	/* Return - pointer to FsDeviceState */
 {
@@ -958,7 +960,7 @@ FsDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, sizePtr, dataPtr)
 	 * The device was local, which is why we were called, but is now remote.
 	 */
 	migInfoPtr->ioFileID.type = FS_RMT_DEVICE_STREAM;
-	return(FsRmtDeviceMigrate(migInfoPtr, dstClientID, flagsPtr,
+	return(FsRmtDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr,
 		sizePtr, dataPtr));
     }
     migInfoPtr->ioFileID.type = FS_LCL_DEVICE_STREAM;
@@ -974,6 +976,13 @@ FsDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, sizePtr, dataPtr)
      */
     streamPtr = FsStreamFind(&migInfoPtr->streamID,
 		(FsHandleHeader *)devHandlePtr, migInfoPtr->flags, &found);
+    if ((streamPtr->flags & FS_RMT_SHARED) == 0) {
+	/*
+	 * We don't think the stream is being shared so we
+	 * grab the offset from the client.
+	 */
+	streamPtr->offset = migInfoPtr->offset;
+    }
     if ((migInfoPtr->flags & FS_RMT_SHARED) == 0) {
 	(void)FsStreamClientClose(&streamPtr->clientList,
 				migInfoPtr->srcClientID);
@@ -1008,6 +1017,7 @@ FsDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, sizePtr, dataPtr)
     *sizePtr = 0;
     *dataPtr = (Address)NIL;
     *flagsPtr = streamPtr->flags;
+    *offsetPtr = streamPtr->offset;
     /*
      * We don't need this reference on the I/O handle; there is no change.
      */
@@ -1040,10 +1050,11 @@ FsDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, sizePtr, dataPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsRmtDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, sizePtr, dataPtr)
+FsRmtDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
     FsMigInfo	*migInfoPtr;	/* Migration state */
     int		dstClientID;	/* ID of target client */
     int		*flagsPtr;	/* In/Out Stream usage flags */
+    int		*offsetPtr;	/* Return - the new stream offset */
     int		*sizePtr;	/* Return - sizeof(FsDeviceState) */
     Address	*dataPtr;	/* Return - pointer to FsDeviceState */
 {
@@ -1054,11 +1065,12 @@ FsRmtDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, sizePtr, dataPtr)
 	 * The device was remote, which is why we were called, but is now local.
 	 */
 	migInfoPtr->ioFileID.type = FS_LCL_DEVICE_STREAM;
-	return(FsDeviceMigrate(migInfoPtr, dstClientID, flagsPtr,
+	return(FsDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr,
 		sizePtr, dataPtr));
     }
     migInfoPtr->ioFileID.type = FS_RMT_DEVICE_STREAM;
-    status = FsNotifyOfMigration(migInfoPtr, flagsPtr, 0, (Address)NIL);
+    status = FsNotifyOfMigration(migInfoPtr, flagsPtr, offsetPtr,
+				0, (Address)NIL);
     if (status != SUCCESS) {
 	Sys_Panic(SYS_WARNING, "FsRmtDeviceMigrate, server error <%x>\n",
 	    status);
