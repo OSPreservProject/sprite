@@ -256,6 +256,8 @@ Fs_ProcInit()
     char		argBuffer[256];
     int			numDefaults;
     Boolean		stdDefaults;
+    Time		waitTime;
+    Time		incrTime;
 
     procPtr = Proc_GetCurrentProc();
     procPtr->fsPtr = fsPtr = mnew(Fs_ProcessState);
@@ -385,7 +387,12 @@ Fs_ProcInit()
      * Try and open /.
      */
     status = FAILURE;
+    Time_Multiply(time_OneSecond, 5, &incrTime);
+    waitTime = time_ZeroSeconds;
     do {
+	if (Time_LT(waitTime, time_OneMinute)) {
+	    Time_Add(waitTime, incrTime, &waitTime);
+	}
 	status = Fs_Open("/", FS_READ, FS_DIRECTORY, 0, &stream);
 	if (status != SUCCESS) {
 	    if (fsDiskAttached) {
@@ -395,8 +402,9 @@ Fs_ProcInit()
 	    /*
 	     *  Wait a bit and retry the open of "/".
 	     */
-	    printf("Can't find server for \"/\", waiting 1 min.\n");
-	    (void)Sync_WaitTime(time_OneMinute);
+	    printf("Can't find server for \"/\", waiting %d seconds.\n",
+		waitTime.seconds);
+	    (void)Sync_WaitTime(waitTime);
 	}
     } while (status != SUCCESS);
     Fs_Close(stream);
