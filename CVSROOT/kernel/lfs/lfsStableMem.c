@@ -170,7 +170,7 @@ LfsStableMemClean(segPtr, sizePtr, numCacheBlocksPtr, clientDataPtr, smemPtr)
 	if (LfsSameDiskAddr(smemPtr->blockIndexPtr[blockPtr[block]], 
 			newDiskAddr)) {
 	    int entryNumber = blockPtr[block] * smemPtr->params.entriesPerBlock;
-	    status = LfsStableMemFetch(smemPtr, entryNumber, FALSE, &entry);
+	    status = LfsStableMemFetch(smemPtr, entryNumber, 0, &entry);
 	    if (status != SUCCESS) {
 		LfsError(segPtr->lfsPtr, status,"Can't clean metadata block\n");
 	    }
@@ -367,19 +367,20 @@ LfsStableMemWriteDone(segPtr, flags, clientDataPtr, smemPtr)
  */
 
 ReturnStatus
-LfsStableMemFetch(smemPtr, entryNumber, releaseEntry, entryPtr)
+LfsStableMemFetch(smemPtr, entryNumber, flags, entryPtr)
     LfsStableMem *smemPtr;	/* Index description. */
     int		 entryNumber;	/* Entry number wanted. */
-    Boolean 	 releaseEntry;	/* If TRUE, entryPtr should be
-				 * release before fetching new block. */
+    int		flags;	/* LFS_STABLE_MEM_MAY_DIRTY | LFS_STABLE_MEM_REL_ENTRY*/
     LfsStableMemEntry *entryPtr; /* IN/OUT: Stable memory entry returned. */
 {
     Fscache_Block	    *blockPtr;
     Boolean		    found;
     int 		blockNum, offset;
     ReturnStatus	status = SUCCESS;
+    Boolean		releaseEntry;
     LfsStableMemBlockHdr *hdrPtr;
 
+    releaseEntry = ((flags & LFS_STABLE_MEM_REL_ENTRY) != 0);
     if ((entryNumber < 0) || (entryNumber >= smemPtr->params.maxNumEntries)) {
 	if (releaseEntry) {
 	    LfsStableMemRelease(smemPtr, entryPtr, entryPtr->modified);
@@ -399,11 +400,16 @@ LfsStableMemFetch(smemPtr, entryNumber, releaseEntry, entryPtr)
     }
     if (blockPtr == (Fscache_Block *) NIL) {
 	Boolean dirtied;
+	int	cacheFlags;
 	/*
 	 * Fetch the block from the cache reading it in if needed.
 	 */
+	cacheFlags = FSCACHE_DESC_BLOCK|FSCACHE_CANT_BLOCK;
+	if (flags & LFS_STABLE_MEM_MAY_DIRTY) {
+	    cacheFlags |= FSCACHE_IO_IN_PROGRESS;
+	}
 	Fscache_FetchBlock(&smemPtr->dataHandle.cacheInfo, blockNum, 
-		  FSCACHE_DESC_BLOCK|FSCACHE_CANT_BLOCK, &blockPtr, &found);
+			     cacheFlags, &blockPtr, &found);
 	dirtied = FALSE;
 	if (!found && (blockPtr != (Fscache_Block *) NIL) ) {
 	    if (LfsIsNilDiskAddr(smemPtr->blockIndexPtr[blockNum])) {

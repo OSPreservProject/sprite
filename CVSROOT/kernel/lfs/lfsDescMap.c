@@ -59,7 +59,7 @@ LfsDescMapGetVersion(lfsPtr, fileNumber, versionNumPtr)
     LfsDescMapEntry   *entryPtr;
     ReturnStatus      status;
 
-    status = LfsStableMemFetch(&(mapPtr->stableMem), fileNumber, FALSE,
+    status = LfsStableMemFetch(&(mapPtr->stableMem), fileNumber, 0,
 		&smemEntry);
     if (status != SUCCESS) {
 	return status;
@@ -105,8 +105,8 @@ LfsDescMapIncVersion(lfsPtr, fileNumber, versionPtr)
     ReturnStatus      status;
     LfsStableMemEntry	smemEntry;
 
-    status = LfsStableMemFetch(&(mapPtr->stableMem), fileNumber, FALSE,
-					&smemEntry);
+    status = LfsStableMemFetch(&(mapPtr->stableMem), fileNumber, 
+			LFS_STABLE_MEM_MAY_DIRTY, &smemEntry);
     if (status != SUCCESS) {
 	return status;
     }
@@ -146,7 +146,7 @@ LfsDescMapGetDiskAddr(lfsPtr, fileNumber, diskAddrPtr)
     ReturnStatus      status;
     LfsStableMemEntry	smemEntry;
 
-    status = LfsStableMemFetch(&(mapPtr->stableMem), fileNumber, FALSE,
+    status = LfsStableMemFetch(&(mapPtr->stableMem), fileNumber, 0,
 			 &smemEntry);
     if (status != SUCCESS) {
 	return status;
@@ -190,8 +190,8 @@ LfsDescMapSetDiskAddr(lfsPtr, fileNumber, diskAddr)
     ReturnStatus	status;
     LfsStableMemEntry	smemEntry;
 
-    status = LfsStableMemFetch(&(mapPtr->stableMem), fileNumber, FALSE,
-				&smemEntry);
+    status = LfsStableMemFetch(&(mapPtr->stableMem), fileNumber, 
+			    LFS_STABLE_MEM_MAY_DIRTY, &smemEntry);
     if (status != SUCCESS) {
 	return status;
     }
@@ -240,7 +240,7 @@ LfsDescMapGetAccessTime(lfsPtr, fileNumber, accessTimePtr)
     ReturnStatus      status;
     LfsStableMemEntry	smemEntry;
 
-    status = LfsStableMemFetch(&(mapPtr->stableMem), fileNumber, FALSE, 
+    status = LfsStableMemFetch(&(mapPtr->stableMem), fileNumber, 0, 
 				&smemEntry);
     if (status != SUCCESS) {
 	return status;
@@ -284,8 +284,8 @@ LfsDescMapSetAccessTime(lfsPtr, fileNumber, accessTime)
     ReturnStatus      status;
     LfsStableMemEntry	smemEntry;
 
-    status = LfsStableMemFetch(&(mapPtr->stableMem), fileNumber, FALSE,
-				&smemEntry);
+    status = LfsStableMemFetch(&(mapPtr->stableMem), fileNumber, 
+				LFS_STABLE_MEM_MAY_DIRTY, &smemEntry);
     if (status != SUCCESS) {
 	return status;
     }
@@ -355,7 +355,8 @@ Lfs_GetNewFileNumber(domainPtr, dirFileNum, fileNumberPtr)
     } else {
 	startDesc = dirFileNum;
     }
-    status = LfsStableMemFetch(&(mapPtr->stableMem), startDesc, FALSE,
+    status = LfsStableMemFetch(&(mapPtr->stableMem), startDesc, 
+			LFS_STABLE_MEM_MAY_DIRTY,
 			&smemEntry);
     if (status != SUCCESS) {
 	return status;
@@ -372,7 +373,9 @@ Lfs_GetNewFileNumber(domainPtr, dirFileNum, fileNumberPtr)
         if (i == maxNumDesc) {
 	    i = 0;
 	}
-	status = LfsStableMemFetch(&(mapPtr->stableMem), i, TRUE, &smemEntry);
+	status = LfsStableMemFetch(&(mapPtr->stableMem), i, 
+			(LFS_STABLE_MEM_MAY_DIRTY| 
+			 LFS_STABLE_MEM_REL_ENTRY), &smemEntry);
 	if (status != SUCCESS) {
 	    return status;
 	}
@@ -422,8 +425,8 @@ Lfs_FreeFileNumber(domainPtr, fileNumber)
 
     LFS_STATS_INC(lfsPtr->stats.desc.free);
 
-    status = LfsStableMemFetch(&(mapPtr->stableMem), fileNumber, FALSE,
-		&smemEntry);
+    status = LfsStableMemFetch(&(mapPtr->stableMem), fileNumber, 
+		    LFS_STABLE_MEM_MAY_DIRTY, &smemEntry);
     if (status != SUCCESS) {
 	return status;
     }

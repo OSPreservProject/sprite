@@ -28,6 +28,15 @@
 
 /* constants */
 
+/*
+ * Flags for LfsStableMemFetch. 
+ * LFS_STABLE_MEM_MAY_DIRTY	- Fetcher may change element.
+ * LFS_STABLE_MEM_REL_ENTRY     - The pasted entry should be released.
+ */
+
+#define	LFS_STABLE_MEM_MAY_DIRTY 1
+#define	LFS_STABLE_MEM_REL_ENTRY 2
+
 /* data structures */
 typedef struct LfsStableMem {
     struct Lfs	      *lfsPtr;		/* File system for stable memory. */
@@ -74,7 +83,7 @@ extern Boolean LfsStableMemLayout _ARGS_((struct LfsSeg *segPtr, int flags,
 extern void LfsStableMemWriteDone _ARGS_((struct LfsSeg *segPtr, int flags, 
 		ClientData *clientDataPtr, LfsStableMem *smemPtr));
 extern ReturnStatus LfsStableMemFetch _ARGS_((LfsStableMem *smemPtr, 
-		int entryNumber, Boolean releaseEntry, 
+		int entryNumber, int flags, 
 		LfsStableMemEntry *entryPtr));
 extern void LfsStableMemRelease _ARGS_((LfsStableMem *smemPtr, 
 		LfsStableMemEntry *entryPtr, Boolean modified));
