@@ -419,39 +419,53 @@ FsServerStreamCreate(ioFileIDPtr, name, naming)
      * pretend the connection is busy to lock out requests.
      */
 
+    SYNC_LOCK_INIT_DYNAMIC(&pdevHandlePtr->lock);
     pdevHandlePtr->flags = PDEV_BUSY;
     if (naming) {
 	pdevHandlePtr->flags |= PDEV_NAMING;
     }
     pdevHandlePtr->selectBits = 0;
+    pdevHandlePtr->serverPID = (Proc_PID)NIL;
+    pdevHandlePtr->clientPID = (Proc_PID)NIL;
 
     pdevHandlePtr->requestBuf.data = (Address)NIL;
     pdevHandlePtr->requestBuf.firstByte = -1;
     pdevHandlePtr->requestBuf.lastByte = -1;
     pdevHandlePtr->requestBuf.size = 0;
 
+    pdevHandlePtr->nextRequestBuffer = (Address)NIL;
+
     pdevHandlePtr->readBuf.data = (Address)NIL;
     pdevHandlePtr->readBuf.firstByte = -1;
     pdevHandlePtr->readBuf.lastByte = -1;
     pdevHandlePtr->readBuf.size = 0;
 
-    pdevHandlePtr->nextRequestBuffer = (Address)NIL;
-
     pdevHandlePtr->operation = 0;
+    pdevHandlePtr->reply.status = NIL;
+    pdevHandlePtr->reply.replySize = 0;
     pdevHandlePtr->replyBuf = (Address)NIL;
-    pdevHandlePtr->serverPID = (Proc_PID)NIL;
-    pdevHandlePtr->clientPID = (Proc_PID)NIL;
+
+    pdevHandlePtr->setup.waiting = 0;
+    pdevHandlePtr->access.waiting = 0;
+    pdevHandlePtr->caughtUp.waiting = 0;
+    pdevHandlePtr->replyReady.waiting = 0;
+
+    List_Init(&pdevHandlePtr->srvReadWaitList);
+
     pdevHandlePtr->clientWait.pid = NIL;
     pdevHandlePtr->clientWait.hostID = NIL;
     pdevHandlePtr->clientWait.waitToken = NIL;
 
-    List_Init(&pdevHandlePtr->srvReadWaitList);
     List_Init(&pdevHandlePtr->cltReadWaitList);
     List_Init(&pdevHandlePtr->cltWriteWaitList);
     List_Init(&pdevHandlePtr->cltExceptWaitList);
 
     pdevHandlePtr->ctrlHandlePtr = (PdevControlIOHandle *)NIL;
+
     pdevHandlePtr->userLevelID = *ioFileIDPtr;
+    pdevHandlePtr->open.clientID = NIL;
+    pdevHandlePtr->open.useFlags = 0;
+    pdevHandlePtr->open.name = (char *)NIL;
 
     return(pdevHandlePtr);
 }
