@@ -14,11 +14,11 @@
 #define _MACHCONST
 
 #ifdef KERNEL
-#include "sprite.h"
-#include "vmSunConst.h"
-#include "sysSysCall.h"
-#include "sys.h"
-#include "status.h"
+#include <sprite.h>
+#include <vmSunConst.h>
+#include <sysSysCall.h>
+#include <sys.h>
+#include <status.h>
 #else
 #include <kernel/vmSunConst.h>
 #include <kernel/sysSysCall.h>

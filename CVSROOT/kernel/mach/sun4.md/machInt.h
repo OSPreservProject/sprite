@@ -21,7 +21,7 @@
 
 #include "sys/types.h"
 #ifdef KERNEL
-#include "mach.h"
+#include <mach.h>
 #else
 #include <kernel/mach.h>
 #endif

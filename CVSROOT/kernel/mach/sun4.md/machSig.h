@@ -21,7 +21,7 @@
 #ifndef _MACHSIG
 #define _MACHSIG
 #ifdef KERNEL
-#include "machConst.h"
+#include <machConst.h>
 #else
 #include <kernel/machConst.h>
 #endif
