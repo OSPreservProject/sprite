@@ -15,7 +15,6 @@
  * makes no representations about the suitability of this
  * software for any purpose.  It is provided "as is" without
  * express or implied warranty.
- * All rights reserved.
  */
 
 #ifndef lint
@@ -72,7 +71,6 @@ void
 Net_Init()
 {
     register int inter;
-    register int machineType;
 
     /*
      * Zero out the statistics struct.

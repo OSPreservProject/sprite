@@ -22,8 +22,14 @@
  *  routines for Timer_Ticks values.  Full generality is obtained by using
  *  the Time module.
  *
- * Copyright 1986 Regents of the University of California
- * All rights reserved.
+ * Copyright 1986, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
  */
 
 #ifndef lint
@@ -165,10 +171,10 @@ Timer_AddIntervalToTicks(absolute, interval, resultPtr)
     unsigned int	interval;	/* Addend 2 */
     Timer_Ticks		*resultPtr;	/* Sum */
 {
-    Time	tmp;
+    unsigned int	overflow;
+    
+    Dev_CounterAddIntToCount(absolute,interval,resultPtr,&overflow);
 
-    Dev_CounterIntToTime(interval, &tmp);
-    Time_Add(absolute, tmp, resultPtr);
 }
 
 
