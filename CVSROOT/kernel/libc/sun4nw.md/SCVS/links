@@ -1,17 +1,3 @@
 # This file is used by scvs and contains symbolic link
 # information.  Each line is of the form "link target"
 # $Header
-_dtou.s                  ../sun4.md/_dtou.s
-_fixunsdfsi.s            ../sun4.md/_fixunsdfsi.s
-alloca.s                 ../sun4.md/alloca.s
-compatMapCode.c          ../sun4.md/compatMapCode.c
-compatSig.c              ../sun4.md/compatSig.c
-compatSig.h              ../sun4.md/compatSig.h
-divide.s                 ../sun4.md/divide.s
-modf.s                   ../sun4.md/modf.s
-multiply.s               ../sun4.md/multiply.s
-ptr_call.s               ../sun4.md/ptr_call.s
-rem.s                    ../sun4.md/rem.s
-stret1.s                 ../sun4.md/stret1.s
-stret2.s                 ../sun4.md/stret2.s
-stret4.s                 ../sun4.md/stret4.s
