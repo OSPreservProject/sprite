@@ -20,12 +20,16 @@
  * Host state flags for use by Recov clients.  These flags are set
  * by users of the Recov module to define/get host states beyond
  * the simple up/down state maintained by the Recov system.
- *	RECOV_IN_PROGESS	The client has crashed and needs to go
+ *	CLT_RECOV_IN_PROGESS	The client has crashed and needs to go
  *				through full recovery.  This is set when
  *				we detect a crash, and reset after the
  *				client tells us it's done re-opening files.
+ *	SRV_RECOV_IN_PROGRESS	This is set on a client while it is reopening
+ *				files in order to ensure only one set of
+ *				reopens is in process.
  */
-#define RECOV_IN_PROGRESS	0x1
+#define CLT_RECOV_IN_PROGRESS	0x1
+#define SRV_RECOV_IN_PROGRESS	0x2
 
 /*
  * Trace types for use with Recov_HostTrace.  Compatible with recov.h bits.
