@@ -1,7 +1,7 @@
 /*
- * fsInt.h --
+ * fsutil.h --
  *
- *      Internal types and definitions for the fs module.
+ *	Declarations of utility routines used by all the file system modules.
  *	This file defines handle types and some sub-structures
  *	that are embedded in various types of handles.  A
  *	"handle" is a data structure that corresponds one-for-one
@@ -11,11 +11,8 @@
  *	and pseudo-devices have many handles associated with one name.
  *	Each handle is identfied by a unique Fs_FileID, and has a standard
  *	header for manipulation by generic routines.
- *	Note: FsHandleHeader is defined in fs.h because it is
- *	embedded in the Fs_Stream type which is exported.
  *
- * Copyright 1987 Regents of the University of California
- * All rights reserved.
+ * Copyright 1989 Regents of the University of California
  * Permission to use, copy, modify, and distribute this
  * software and its documentation for any purpose and without
  * fee is hereby granted, provided that the above copyright
@@ -27,251 +24,46 @@
  * $Header$ SPRITE (Berkeley)
  */
 
-#ifndef _FSINT
-#define _FSINT
+#ifndef _FSUTIL
+#define _FSUTIL
 
-#include "status.h"
-#include "list.h"
-#include "timer.h"
-#include "stdlib.h"
-#include "string.h"
 
+#include "fs.h"
+#include "fsio.h"
+
+/* constants */
 /*
- * Stream Types:
- *	FS_STREAM		Top level type for stream with offset.  Streams
- *				have an ID and are in the handle table to
- *				support migration and shared stream offsets.
- * The remaining types are for I/O handles
- *	FS_LCL_FILE_STREAM	For a regular disk file stored locally.
- *	FS_RMT_FILE_STREAM	For a remote Sprite file.
- *	FS_LCL_DEVICE_STREAM	For a device on this host.
- *	FS_RMT_DEVICE_STREAM	For a remote device.
- *	FS_LCL_PIPE_STREAM	For an anonymous pipe buffered on this host.
- *	FS_RMT_PIPE_STREAM	For an anonymous pipe bufferd on a remote host.
- *				This type arises from process migration.
- *	FS_CONTROL_STREAM	This is the stream used by the server for
- *				a pseudo device to listen for new clients.
- *	FS_SERVER_STREAM	The main state for a pdev request-response
- *				connection.  Refereneced by the server's stream.
- *	FS_LCL_PSEUDO_STREAM	A client's handle on a request-response
- *				connection to a local pdev server.
- *	FS_RMT_PSEUDO_STREAM	As above, but when the pdev server is remote.
- *	FS_PFS_CONTROL_STREAM	Control stream for pseudo-filesystems.
- *	FS_PFS_NAMING_STREAM	The request-response stream used for naming
- *				operations in a pseudo-filesystem.  This
- *				I/O handle is hung off the prefix table.
- *	FS_LCL_PFS_STREAM	A clients' handle on a request-response
- *				connection to a local pfs server.
- *	FS_RMT_PFS_STREAM	As above, but when the pfs server is remote.
- *	FS_RMT_CONTROL_STREAM	Needed only during get/set I/O attributes of
- *				a pseudo-device whose server is remote.
- *	FS_PASSING_STREAM	Used to pass streams from a pseudo-device
- *				server to its client in response to an open.
- *		Internet Protocols
- *	FS_RAW_IP_STREAM	Raw Internet Protocol stream.
- *	FS_UDP_STREAM		UDP protocol stream.
- *	FS_TCP_STREAM		TCP protocol stream.
- *
- * The following streams are not implemented
- *	FS_RMT_NFS_STREAM	NFS access implemented in kernel.
- *	FS_RMT_UNIX_STREAM	For files on the old hybrid unix/sprite server.
- *	FS_LCL_NAMED_PIPE_STREAM Stream to a named pipe whose backing file
- *				is on the local host.
- *	FS_RMT_NAMED_PIPE_STREAM Stream to a named pipe whose backing file
- *				is remote.
+ * Define the types of files that we care about in the kernel, for such
+ * things as statistics gathering, write-through policy, etc.  There is not
+ * necessarily a one-to-one mapping between these and the types defined
+ * in user/fs.h as FS_USER_TYPE_*; for example, FS_USER_TYPE_BINARY and
+ * FS_USER_TYPE_OBJECT were mapped into FSUTIL_FILE_TYPE_DERIVED before they
+ * were separated into two categories.  It would be possible to flag other
+ * derived files (text formatting output, for example) to be in the DERIVED
+ * category as well.  
  */
-#define FS_STREAM			0
-#define FS_LCL_FILE_STREAM		1
-#define FS_RMT_FILE_STREAM		2
-#define FS_LCL_DEVICE_STREAM		3
-#define FS_RMT_DEVICE_STREAM		4
-#define FS_LCL_PIPE_STREAM		5
-#define FS_RMT_PIPE_STREAM		6
-#define FS_CONTROL_STREAM		7
-#define FS_SERVER_STREAM		8
-#define FS_LCL_PSEUDO_STREAM		9
-#define FS_RMT_PSEUDO_STREAM		10
-#define FS_PFS_CONTROL_STREAM		11
-#define FS_PFS_NAMING_STREAM		12
-#define FS_LCL_PFS_STREAM		13
-#define FS_RMT_PFS_STREAM		14
-#define FS_RMT_CONTROL_STREAM		15
-#define FS_PASSING_STREAM		16
-#define FS_RAW_IP_STREAM		17
-#define FS_UDP_STREAM			18
-#define FS_TCP_STREAM			19
+#define FSUTIL_FILE_TYPE_TMP 0
+#define FSUTIL_FILE_TYPE_SWAP 1
+#define FSUTIL_FILE_TYPE_DERIVED 2
+#define FSUTIL_FILE_TYPE_BINARY 3
+#define FSUTIL_FILE_TYPE_OTHER 4
 
-#define FS_NUM_STREAM_TYPES		20
-
-/*
- * Two arrays are used to map between local and remote types.  This has
- * to happen when shipping Fs_FileIDs between clients and servers.
- */
-extern int fsLclToRmtType[];
-extern int fsRmtToLclType[];
-/*
- * FsMapLclToRmtType(type) - Maps from a local to a remote stream type.
- *	This returns -1 if the input type is out-of-range.
- */
-#define FsMapLclToRmtType(localType) \
-    ( ((localType) < 0 || (localType) >= FS_NUM_STREAM_TYPES) ? -1 : \
-	fsLclToRmtType[localType] )
-/*
- * FsMapRmtToLclType(type) - Maps from a remote to a local stream type.
- *	This returns -1 if the input type is out-of-range.
- */
-#define FsMapRmtToLclType(remoteType) \
-    ( ((remoteType) < 0 || (remoteType) >= FS_NUM_STREAM_TYPES) ? -1 : \
-	fsRmtToLclType[remoteType] )
-
-/*
- * The following structures are subfields of the various I/O handles.
- * First we define a use count structure to handle common book keeping needs.
- */
-
-typedef struct FsUseCounts {
-    int		ref;		/* The number of referneces to handle */
-    int		write;		/* The number of writers on handle */
-    int		exec;		/* The number of executors of handle */
-} FsUseCounts;
-
-/*
- * There is a system call to lock a file.  The lock state is kept in
- * the I/O handle on the I/O server so that the lock has network-wide effect.
- */
-
-typedef struct FsLockState {
-    int		flags;		/* Bits defined below */
-    List_Links	waitList;	/* List of processes to wakeup when the
-				 * file gets unlocked */
-    int		numShared;	/* Number of shared lock holders */
-    List_Links	ownerList;	/* List of processes responsible for locks */
-} FsLockState;
-
-/*
- * (The following lock bits are defined in user/fs.h)
- * IOC_LOCK_EXCLUSIVE - only one process may hold an exclusive lock.
- * IOC_LOCK_SHARED    - many processes may hold shared locks as long as
- *	there are no exclusive locks held.  Exclusive locks have to
- *	wait until all shared locks go away.
- */
+/* data structures */
 
 /*
  * Files or devices with remote I/O servers need to keep some recovery
  * state to handle recovery after their server reboots.
  */
 
-typedef struct FsRecoveryInfo {
+typedef struct Fsutil_RecoveryInfo {
     Sync_Lock		lock;		/* This struct is monitored */
     Sync_Condition	reopenComplete;	/* Notified when the handle has been
 					 * re-opened at the I/O server */
     int			flags;		/* defined in fsRecovery.c */
     ReturnStatus	status;		/* Recovery status */
-    FsUseCounts		use;		/* Client's copy of use state */
-} FsRecoveryInfo;
+    Fsutil_UseCounts		use;		/* Client's copy of use state */
+} Fsutil_RecoveryInfo;
 
-
-/*
- * Cache information for each file.
- */
-
-typedef struct FsCachedAttributes {
-    int		firstByte;	/* Cached version of desc. firstByte */
-    int		lastByte;	/* Cached version of desc. lastByte */
-    int		accessTime;	/* Cached version of access time */
-    int		modifyTime;	/* Cached version of modify time */
-    int		createTime;	/* Create time (won't change, but passed
-				 * to clients for use in
-				 * statistics-gathering) */
-    int		userType;	/* user advisory file type, defined in
-				 * user/fs.h */
-    /*
-     * The following fields are needed by Proc_Exec.
-     */
-    int		permissions;	/* File permissions */
-    int		uid;		/* User ID of owner */
-    int		gid;		/* Group Owner ID */
-} FsCachedAttributes;
-
-typedef struct FsCacheFileInfo {
-    List_Links	   links;	   /* Links for the list of dirty files.
-				      THIS MUST BE FIRST in the struct */
-    List_Links	   dirtyList;	   /* List of dirty blocks for this file.
-				    * THIS MUST BE SECOND, see the macro
-				    * in fsBlockCache.c that depends on it. */
-    List_Links	   blockList;      /* List of blocks for the file */
-    List_Links	   indList;	   /* List of indirect blocks for the file */
-    Sync_Lock	   lock;	   /* This is used to serialize cache access */
-    int		   flags;	   /* Flags to indicate the state of the
-				      file, defined in fsBlockCache.h */
-    int		   version;	   /* Used to verify validity of cached data */
-    struct FsHandleHeader *hdrPtr; /* Back pointer to I/O handle */
-    int		   blocksInCache;  /* The number of blocks that this file has
-				      in the cache. */
-    int		   blocksWritten;  /* The number of blocks that have been
-				    * written in a row without requiring a
-				    * sync of the servers cache. */
-    int		   numDirtyBlocks; /* The number of dirty blocks in the cache.*/
-    Sync_Condition noDirtyBlocks;  /* Notified when all write backs done. */
-    int		   lastTimeTried;  /* Time that last tried to see if disk was
-				    * available for this block. */
-    FsCachedAttributes attr;	   /* Local version of descriptor attributes. */
-} FsCacheFileInfo;
-
-
-/*
- * The client use state needed to allow remote client access and to
- * enforce network cache consistency.  A list of state for each client
- * using the file is kept, including the name server itself.  This
- * is used to determine what cache consistency actions to take.
- * There is synchronization over this list between subsequent open
- * operations and the cache consistency actions themselves.
- */
-
-typedef struct FsConsistInfo {
-    Sync_Lock	lock;		/* Monitor lock used to synchronize access
-				 * to cache consistency routines and the
-				 * consistency list. */
-    int		flags;		/* Flags defined in fsCacheConsist.c */
-    int		lastWriter;	/* Client id of last client to have it open
-				   for write caching. */
-    int		openTimeStamp;	/* Generated on the server when the file is
-				 * opened.  Checked on clients to catch races
-				 * between open replies and consistency
-				 * messages */
-    FsHandleHeader *hdrPtr;	/* Back pointer to handle header needed to
-				 * identify the file. */
-    List_Links	clientList;	/* List of clients of this file.  Scanned
-				 * to determine cachability conflicts */
-    List_Links	msgList;	/* List of outstanding cache
-				 * consistency messages. */
-    Sync_Condition consistDone;	/* Opens block on this condition
-				 * until ongoing cache consistency
-				 * actions have completed */
-    Sync_Condition repliesIn;	/* This condition is notified after
-				 * all the clients told to take
-				 * consistency actions have replied. */
-} FsConsistInfo;
-
-/*
- * The I/O descriptor for remote streams.  This is all that is needed for
- *	remote devices, remote pipes, and named pipes that are not cached
- *	on the local machine.  This structure is also embedded into the
- *	I/O descriptor for remote files.  These stream types share some
- *	common remote procedure stubs, and this structure provides
- *	a common interface.
- *	FS_RMT_DEVICE_STREAM, FS_RMT_PIPE_STREAM, FS_RMT_NAMED_PIPE_STREAM,
- *	FS_RMT_PSEUDO_STREAM, FS_RMT_PFS_STREAM
- */
-
-typedef struct FsRemoteIOHandle {
-    FsHandleHeader	hdr;		/* Standard handle header.  The server
-					 * ID field in the hdr is used to
-					 * forward the I/O operation. */
-    FsRecoveryInfo	recovery;	/* For I/O server recovery */
-} FsRemoteIOHandle;
-
-extern void FsRemoteIOHandleInit();
 
 
 /*
@@ -279,161 +71,123 @@ extern void FsRemoteIOHandleInit();
  * it.
  */
 
-extern	int			fsTimeInSeconds;
-extern	Timer_QueueElement	fsTimeOfDayElement;
+extern	int			fsutil_TimeInSeconds;
+extern	Timer_QueueElement	fsutil_TimeOfDayElement;
 
-/*
- * These record the maximum transfer size supported by the RPC system.
- */
-extern int fsMaxRpcDataSize;
-extern int fsMaxRpcParamSize;
-
+extern Boolean fsconsist_Debug;
 /*
  * Whether or not to flush the cache at regular intervals.
  */
 
-extern Boolean fsShouldSyncDisks;
+extern Boolean fsutil_ShouldSyncDisks;
 
-/*
- * TRUE once the file system has been initialized, so we
- * know we can sync the disks safely.
- */
-extern  Boolean fsInitialized;
 
+/* procedures */
 /*
- * The directory that temporary files will live in.
- */
-extern	int	fsTmpDirNum;
-
-/*
- * Define the types of files that we care about in the kernel, for such
- * things as statistics gathering, write-through policy, etc.  There is not
- * necessarily a one-to-one mapping between these and the types defined
- * in user/fs.h as FS_USER_TYPE_*; for example, FS_USER_TYPE_BINARY and
- * FS_USER_TYPE_OBJECT were mapped into FS_FILE_TYPE_DERIVED before they
- * were separated into two categories.  It would be possible to flag other
- * derived files (text formatting output, for example) to be in the DERIVED
- * category as well.
- */
-#define FS_FILE_TYPE_TMP 0
-#define FS_FILE_TYPE_SWAP 1
-#define FS_FILE_TYPE_DERIVED 2
-#define FS_FILE_TYPE_BINARY 3
-#define FS_FILE_TYPE_OTHER 4
-
-/*
- * Whether or not to keep information about file I/O by user file type.
- */
-extern Boolean fsKeepTypeInfo;
-
-/*
- * Fs_StringNCopy
+ * Fsutil_StringNCopy
  *
  *	Copy the null terminated string in srcStr to destStr and return the
  *	actual length copied in *strLengthPtr.  At most numBytes will be
  *	copied if the string is not null-terminated.
  */
 
-#define	Fs_StringNCopy(numBytes, srcStr, destStr, strLengthPtr) \
+#define	Fsutil_StringNCopy(numBytes, srcStr, destStr, strLengthPtr) \
     (Proc_IsMigratedProcess() ? \
 	    Proc_StringNCopy(numBytes, srcStr, destStr, strLengthPtr) : \
 	    Vm_StringNCopy(numBytes, srcStr, destStr, strLengthPtr))
 
 /*
- * Writing policies.
+ * Macros to handle type casting when dealing with handles.
  */
-extern	Boolean	fsDelayTmpFiles;
-extern	Boolean	fsWriteThrough;
-extern	Boolean	fsWriteBackASAP;
-extern	Boolean	fsWriteBackOnClose;
-extern	Boolean	fsWBOnLastDirtyBlock;
+#define Fsutil_HandleFetchType(type, fileIDPtr) \
+    (type *)Fsutil_HandleFetch(fileIDPtr)
 
+#define Fsutil_HandleDupType(type, handlePtr) \
+    (type *)Fsutil_HandleDup((Fs_HandleHeader *)handlePtr)
+
+#define Fsutil_HandleLock(handlePtr) \
+    Fsutil_HandleLockHdr((Fs_HandleHeader *)handlePtr)
+
+#define Fsutil_HandleUnlock(handlePtr) \
+    (void)Fsutil_HandleUnlockHdr((Fs_HandleHeader *)handlePtr)
+
+#define Fsutil_HandleRelease(handlePtr, locked) \
+    Fsutil_HandleReleaseHdr((Fs_HandleHeader *)handlePtr, locked)
+
+#define Fsutil_HandleRemove(handlePtr) \
+    Fsutil_HandleRemoveHdr((Fs_HandleHeader *)handlePtr)
+
+#define Fsutil_HandleName(handlePtr) \
+    ((((Fs_HandleHeader *)handlePtr)->name == (char *)NIL) ? "(no name)" : \
+	((Fs_HandleHeader *)handlePtr)->name)
+
+#define mnew(type)	(type *)malloc(sizeof(type))
+
+extern void		Fsutil_RecoveryInit();
+extern void		Fsutil_RecoverySyncLockCleanup();
+extern void		Fsutil_WantRecovery();
+extern ReturnStatus	Fsutil_WaitForRecovery();
+extern void		Fsutil_Reopen();
+extern Boolean		Fsutil_RecoveryNeeded();
+extern Boolean		Fsutil_RemoteHandleScavenge();
+extern void		Fsutil_ClientCrashed();
+extern void		Fsutil_RemoveClient();
 
 
 /*
  * Wait list routines.  Waiting lists for various conditions are kept
  * hanging of I/O handles.
  */
-extern	void		FsWaitListInsert();
-extern	void		FsWaitListNotify();
-extern	void		FsFastWaitListInsert();
-extern	void		FsFastWaitListNotify();
-extern	void		FsWaitListDelete();
-extern	void		FsWaitListRemove();
-
-/*
- * Name lookup routines that handle iteration over the prefix table.
- */
-extern	ReturnStatus	FsLookupOperation();
-extern	ReturnStatus	FsTwoNameOperation();
-
-/*
- * Cache size control.
- */
-extern	void		FsSetMinSize();
-extern	void		FsSetMaxSize();
+extern	void		Fsutil_WaitListInsert();
+extern	void		Fsutil_WaitListNotify();
+extern	void		Fsutil_FastWaitListInsert();
+extern	void		Fsutil_FastWaitListNotify();
+extern	void		Fsutil_WaitListDelete();
+extern	void		Fsutil_WaitListRemove();
 
 /*
  * File handle routines.
  */
-extern	void 	 	FsHandleInit();
-extern	Boolean     	FsHandleInstall();
-extern	FsHandleHeader 	*FsHandleFetch();
-extern	FsHandleHeader	*FsHandleDup();
-extern  FsHandleHeader	*FsGetNextHandle();
-extern	void 	 	FsHandleLockHdr();
-extern	void	 	FsHandleInvalidate();
-extern	Boolean		FsHandleValid();
-extern	void		FsHandleIncRefCount();
-extern	void		FsHandleDecRefCount();
-extern	Boolean	 	FsHandleUnlockHdr();
-extern	void 	 	FsHandleReleaseHdr();
-extern	void 	 	FsHandleRemoveHdr();
-extern	Boolean	 	FsHandleAttemptRemove();
-extern	void 	 	FsHandleRemoveInt();
-
-/*
- * Macros to handle type casting when dealing with handles.
- */
-#define FsHandleFetchType(type, fileIDPtr) \
-    (type *)FsHandleFetch(fileIDPtr)
-
-#define FsHandleDupType(type, handlePtr) \
-    (type *)FsHandleDup((FsHandleHeader *)handlePtr)
-
-#define FsHandleLock(handlePtr) \
-    FsHandleLockHdr((FsHandleHeader *)handlePtr)
-
-#define FsHandleUnlock(handlePtr) \
-    (void)FsHandleUnlockHdr((FsHandleHeader *)handlePtr)
-
-#define FsHandleRelease(handlePtr, locked) \
-    FsHandleReleaseHdr((FsHandleHeader *)handlePtr, locked)
-
-#define FsHandleRemove(handlePtr) \
-    FsHandleRemoveHdr((FsHandleHeader *)handlePtr)
-
-#define FsHandleName(handlePtr) \
-    ((((FsHandleHeader *)handlePtr)->name == (char *)NIL) ? "(no name)" : \
-	((FsHandleHeader *)handlePtr)->name)
-/*
- * Routines for use by the name component hash table.  They increment the
- * low-level reference count on a handle when it is in the cache.
- */
-extern	void	 	FsHandleIncRefCount();
-extern	void	 	FsHandleDecRefCount();
-
+extern	void 	 	Fsutil_HandleInit();
+extern	Boolean     	Fsutil_HandleInstall();
+extern	Fs_HandleHeader 	*Fsutil_HandleFetch();
+extern	Fs_HandleHeader	*Fsutil_HandleDup();
+extern  Fs_HandleHeader	*Fsutil_GetNextHandle();
+extern	void 	 	Fsutil_HandleLockHdr();
+extern	void	 	Fsutil_HandleInvalidate();
+extern	Boolean		Fsutil_HandleValid();
+extern	void		Fsutil_HandleIncRefCount();
+extern	void		Fsutil_HandleDecRefCount();
+extern	Boolean	 	Fsutil_HandleUnlockHdr();
+extern	void 	 	Fsutil_HandleReleaseHdr();
+extern	void 	 	Fsutil_HandleRemoveHdr();
+extern	Boolean	 	Fsutil_HandleAttemptRemove();
+extern	void 	 	Fsutil_HandleRemoveInt();
 /*
  * Miscellaneous.
  */
-extern	void		FsFileError();
-extern	void		FsUpdateTimeOfDay();
-extern	void		FsClearStreamID();
-extern	void		FsAssignAttrs();
-extern  int	 	FsFindFileType();
-extern	char *		FsFileTypeToString();
-extern  void	 	FsRecordDeletionStats();
+extern	void		Fsutil_FileError();
+extern	void		Fsutil_UpdateTimeOfDay();
+extern	void		Fs_ClearStreamID();
+extern  int	 	Fsdm_FindFileType();
+extern	char *		Fsutil_FileTypeToString();
 
-#define mnew(type)	(type *)malloc(sizeof(type))
+extern ReturnStatus	Fsutil_DomainInfo();
 
-#endif /* _FSINT */
+extern ReturnStatus Fsutil_HandleDescWriteBack();
+extern	void	Fsutil_SyncProc();
+extern	void	Fsutil_Sync();
+extern void Fsutil_SyncStub();
+extern ReturnStatus Fsutil_WaitForHost();
+extern int Fsutil_TraceInit();
+extern ReturnStatus Fsutil_RpcRecovery();
+extern int Fsutil_PrintTraceRecord();
+extern void Fsutil_PrintTrace();
+
+
+extern	void		Fsutil_HandleScavengeStub();
+extern	void		Fsutil_HandleScavenge();
+
+extern  char		*Fsutil_GetFileName();
+
+#endif /* _FSUTIL */

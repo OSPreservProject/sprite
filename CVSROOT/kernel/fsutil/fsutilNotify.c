@@ -20,8 +20,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "fs.h"
-#include "fsInt.h"
-#include "fsOpTable.h"
+#include "fsutil.h"
+#include "fsNameOps.h"
 #include "proc.h"
 #include "sync.h"
 #include "rpc.h"
@@ -34,7 +34,7 @@ static Sync_Lock notifyLock = Sync_LockInitStatic("Fs:notifyLock");
 /*
  *----------------------------------------------------------------------
  *
- * FsWaitListInsert --
+ * Fsutil_WaitListInsert --
  *
  *	Add a process to a list of waiters.  This handles the case where
  *	the process is already on the list.
@@ -49,7 +49,7 @@ static Sync_Lock notifyLock = Sync_LockInitStatic("Fs:notifyLock");
  */
 
 ENTRY void
-FsWaitListInsert(list, waitPtr)
+Fsutil_WaitListInsert(list, waitPtr)
     List_Links *list;		/* List to add waiter to */
     Sync_RemoteWaiter *waitPtr;	/* Info about process for remote waiting */
 {
@@ -83,9 +83,9 @@ FsWaitListInsert(list, waitPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsFastWaitListInsert --
+ * Fsutil_FastWaitListInsert --
  *
- *	An un-monitored version of FsWaitListInsert that depends
+ *	An un-monitored version of Fsutil_WaitListInsert that depends
  *	on handle locking, or something, by higher levels for
  *	synchronization.  Note: the malloc is needed because
  *	of select.  Regular read and write use a Sync_RemoteWaiter
@@ -104,7 +104,7 @@ FsWaitListInsert(list, waitPtr)
  */
 
 ENTRY void
-FsFastWaitListInsert(list, waitPtr)
+Fsutil_FastWaitListInsert(list, waitPtr)
     List_Links *list;		/* List to add waiter to */
     Sync_RemoteWaiter *waitPtr;	/* Info about process for remote waiting */
 {
@@ -133,7 +133,7 @@ FsFastWaitListInsert(list, waitPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsWaitListNotify --
+ * Fsutil_WaitListNotify --
  *
  *      Notify all the processes in a wait-list.  If the process is on a
  *      remote host then an RPC is done to that host.
@@ -150,7 +150,7 @@ FsFastWaitListInsert(list, waitPtr)
  */
 
 ENTRY void
-FsWaitListNotify(list)
+Fsutil_WaitListNotify(list)
     register List_Links *list;	/* List of waiting processes to notify */
 {
     register Sync_RemoteWaiter *waitPtr;
@@ -163,7 +163,7 @@ FsWaitListNotify(list)
 	     * Contact the remote host and get it to notify the waiter.
 	     */
 	    if (waitPtr->hostID > NET_NUM_SPRITE_HOSTS) {
-		printf( "FsWaitListNotify bad hostID %d.\n",
+		printf( "Fsutil_WaitListNotify bad hostID %d.\n",
 			  waitPtr->hostID);
 	    } else {
 		(void)Sync_RemoteNotify(waitPtr);
@@ -183,9 +183,9 @@ FsWaitListNotify(list)
 /*
  *----------------------------------------------------------------------
  *
- * FsFastWaitListNotify --
+ * Fsutil_FastWaitListNotify --
  *
- *      A faster version of FsWaitListNotify that depends on higher
+ *      A faster version of Fsutil_WaitListNotify that depends on higher
  *	level synchronization like handle locking.
  *
  * Results:
@@ -200,7 +200,7 @@ FsWaitListNotify(list)
  */
 
 ENTRY void
-FsFastWaitListNotify(list)
+Fsutil_FastWaitListNotify(list)
     register List_Links *list;	/* List of waiting processes to notify */
 {
     register Sync_RemoteWaiter *waitPtr;
@@ -227,7 +227,7 @@ FsFastWaitListNotify(list)
 /*
  *----------------------------------------------------------------------
  *
- * FsWaitListRemove --
+ * Fsutil_WaitListRemove --
  *
  *	Remove a process from the list of waiters.
  *
@@ -241,7 +241,7 @@ FsFastWaitListNotify(list)
  */
 
 ENTRY void
-FsWaitListRemove(list, waitPtr)
+Fsutil_WaitListRemove(list, waitPtr)
     List_Links *list;		/* List to remove waiter from. */
     Sync_RemoteWaiter *waitPtr;	/* Info about process for remote waiting */
 {
@@ -266,7 +266,7 @@ FsWaitListRemove(list, waitPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FsWaitListDelete --
+ * Fsutil_WaitListDelete --
  *
  *	Delete and Free all entries from a wait list.  This is used
  *	when removing handles.
@@ -281,7 +281,7 @@ FsWaitListRemove(list, waitPtr)
  */
 
 ENTRY void
-FsWaitListDelete(list)
+Fsutil_WaitListDelete(list)
     List_Links *list;		/* List to clean up. */
 {
     register Sync_RemoteWaiter *myWaitPtr;

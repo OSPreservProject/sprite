@@ -1,10 +1,16 @@
 /* 
- * fsSubr.c --
+ * fsTrace.c --
  *
- *	Miscellaneous routines.
+ *	Subroutines for tracing file system events.
  *
- * Copyright 1986 Regents of the University of California
- * All rights reserved.
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
  */
 
 #ifndef lint
@@ -17,64 +23,28 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fs.h"
 #include "vm.h"
 #include "rpc.h"
-#include "fsInt.h"
-#include "fsDisk.h"
-#include "fsLocalDomain.h"
-#include "fsOpTable.h"
-#include "fsPrefix.h"
+#include "fsutil.h"
+#include "fslcl.h"
 #include "fsNameOps.h"
-#include "fsTrace.h"
+#include "fsprefix.h"
+#include "fsutilTrace.h"
 #include "fsStat.h"
-#include "devDiskLabel.h"
-#include "dev.h"
 #include "sync.h"
 #include "timer.h"
 #include "proc.h"
 #include "trace.h"
 #include "hash.h"
-
-/*
- * TEMPORARY STUBS.
- */
-Fs_RpcReply()
-{
-    panic( "Fs_RpcReply called");
-}
-Fs_RpcRequest()
-{
-    panic( "Fs_RpcRequest called");
-}
-
-/*
- * Monitor for OkToScavenge and DoneScavenge
- */
-static Sync_Lock scavengeLock = Sync_LockInitStatic("Fs:scavengeLock");
-#define LOCKPTR (&scavengeLock)
-
-static Boolean OkToScavenge();
-void DoneScavenge();
-
-
-#define	MAX_WAIT_INTERVALS	5
-
-int	fsTimeInSeconds;
-Boolean fsShouldSyncDisks;
-Boolean	fsWriteThrough = FALSE;	
-Boolean	fsWriteBackOnClose  = FALSE;
-Boolean	fsDelayTmpFiles = FALSE;
-int	fsTmpDirNum = -1;	
-Boolean	fsWriteBackASAP = FALSE;
-Boolean fsWBOnLastDirtyBlock = FALSE;
+#include "fsrmt.h"
 
 Trace_Header fsTraceHdr;
-Trace_Header *fsTraceHdrPtr = &fsTraceHdr;
-int fsTraceLength = 256;
-Boolean fsTracing = FALSE;
+Trace_Header *fsutil_TraceHdrPtr = &fsTraceHdr;
+int fsutil_TraceLength = 256;
+Boolean fsutil_Tracing = FALSE;
 Time fsTraceTime;		/* Cost of taking a trace record */
-int fsTracedFile = -1;		/* fileID.minor of traced file */
+int fsutil_TracedFile = -1;		/* fileID.minor of traced file */
 
 typedef struct FsTracePrintTable {
-    FsTraceRecType	type;		/* This determines the format of the
+    Fsutil_TraceRecType	type;		/* This determines the format of the
 					 * trace record client data. */
     char		*string;	/* Human readable record type */
 } FsTracePrintTable;
@@ -120,7 +90,7 @@ static int numTraceTypes = sizeof(fsTracePrintTable)/sizeof(FsTracePrintTable);
 /*
  *----------------------------------------------------------------------
  *
- * FsTraceInit --
+ * Fsutil_TraceInit --
  *
  *	Initialize the filesystem trace record.  This also determines
  *	the cost of taking the trace records so this cost can be
@@ -135,29 +105,29 @@ static int numTraceTypes = sizeof(fsTracePrintTable)/sizeof(FsTracePrintTable);
  *----------------------------------------------------------------------
  */
 int
-FsTraceInit()
+Fsutil_TraceInit()
 {
     Trace_Record *firstPtr, *lastPtr;
 
-    Trace_Init(fsTraceHdrPtr, fsTraceLength, sizeof(FsTraceRecord), 0);
+    Trace_Init(fsutil_TraceHdrPtr, fsutil_TraceLength, sizeof(Fsutil_TraceRecord), 0);
     /*
      * Take 10 trace records with a NIL data field.  This causes a
      * bzero inside Trace_Insert, which is sort of a base case for
      * taking a trace.  The time difference between the first and last
      * record is used to determine the cost of taking the trace records.
      */
-    firstPtr = &fsTraceHdrPtr->recordArray[fsTraceHdrPtr->currentRecord];
-    Trace_Insert(fsTraceHdrPtr, 0, (ClientData)NIL);
-    Trace_Insert(fsTraceHdrPtr, 0, (ClientData)NIL);
-    Trace_Insert(fsTraceHdrPtr, 0, (ClientData)NIL);
-    Trace_Insert(fsTraceHdrPtr, 0, (ClientData)NIL);
-    Trace_Insert(fsTraceHdrPtr, 0, (ClientData)NIL);
-    Trace_Insert(fsTraceHdrPtr, 0, (ClientData)NIL);
-    Trace_Insert(fsTraceHdrPtr, 0, (ClientData)NIL);
-    Trace_Insert(fsTraceHdrPtr, 0, (ClientData)NIL);
-    Trace_Insert(fsTraceHdrPtr, 0, (ClientData)NIL);
-    Trace_Insert(fsTraceHdrPtr, 0, (ClientData)NIL);
-    lastPtr = &fsTraceHdrPtr->recordArray[fsTraceHdrPtr->currentRecord-1];
+    firstPtr = &fsutil_TraceHdrPtr->recordArray[fsutil_TraceHdrPtr->currentRecord];
+    Trace_Insert(fsutil_TraceHdrPtr, 0, (ClientData)NIL);
+    Trace_Insert(fsutil_TraceHdrPtr, 0, (ClientData)NIL);
+    Trace_Insert(fsutil_TraceHdrPtr, 0, (ClientData)NIL);
+    Trace_Insert(fsutil_TraceHdrPtr, 0, (ClientData)NIL);
+    Trace_Insert(fsutil_TraceHdrPtr, 0, (ClientData)NIL);
+    Trace_Insert(fsutil_TraceHdrPtr, 0, (ClientData)NIL);
+    Trace_Insert(fsutil_TraceHdrPtr, 0, (ClientData)NIL);
+    Trace_Insert(fsutil_TraceHdrPtr, 0, (ClientData)NIL);
+    Trace_Insert(fsutil_TraceHdrPtr, 0, (ClientData)NIL);
+    Trace_Insert(fsutil_TraceHdrPtr, 0, (ClientData)NIL);
+    lastPtr = &fsutil_TraceHdrPtr->recordArray[fsutil_TraceHdrPtr->currentRecord-1];
 
     Time_Subtract(lastPtr->time, firstPtr->time, &fsTraceTime);
     Time_Divide(fsTraceTime, 9, &fsTraceTime);
@@ -167,7 +137,7 @@ FsTraceInit()
 /*
  *----------------------------------------------------------------------
  *
- * Fs_PrintTraceRecord --
+ * Fsutil_PrintTraceRecord --
  *
  *	Format and print the client data part of a filesystem trace record.
  *
@@ -180,7 +150,7 @@ FsTraceInit()
  *----------------------------------------------------------------------
  */
 int
-Fs_PrintTraceRecord(clientData, event, printHeaderFlag)
+Fsutil_PrintTraceRecord(clientData, event, printHeaderFlag)
     ClientData clientData;	/* Client data in the trace record */
     int event;			/* Type, or event, from the trace record */
     Boolean printHeaderFlag;	/* If TRUE, a header line is printed */
@@ -198,7 +168,7 @@ Fs_PrintTraceRecord(clientData, event, printHeaderFlag)
 	    printf("%20s ", fsTracePrintTable[event].string);
 	    switch(fsTracePrintTable[event].type) {
 		case FST_IO: {
-		    FsTraceIORec *ioRecPtr = (FsTraceIORec *)clientData;
+		    Fsutil_TraceIORec *ioRecPtr = (Fsutil_TraceIORec *)clientData;
 		    printf("<%2d, %2d, %1d, %4d> ",
 			ioRecPtr->fileID.type, ioRecPtr->fileID.serverID,
 			ioRecPtr->fileID.major, ioRecPtr->fileID.minor);
@@ -213,7 +183,7 @@ Fs_PrintTraceRecord(clientData, event, printHeaderFlag)
 		    break;
 		}
 		case FST_HANDLE: {
-		    FsTraceHdrRec *recPtr = (FsTraceHdrRec *)clientData;
+		    Fsutil_TraceHdrRec *recPtr = (Fsutil_TraceHdrRec *)clientData;
 		    printf("<%2d, %2d, %1d, %4d> ref %d blocks %d ",
 		      recPtr->fileID.type, 
 		      recPtr->fileID.serverID,
@@ -224,7 +194,7 @@ Fs_PrintTraceRecord(clientData, event, printHeaderFlag)
 		    break;
 		}
 		case FST_BLOCK: {
-		    FsTraceBlockRec *blockPtr = (FsTraceBlockRec *)clientData;
+		    Fsutil_TraceBlockRec *blockPtr = (Fsutil_TraceBlockRec *)clientData;
 		    printf("<%2d, %2d, %1d, %4d> block %d flags %x ",
 		      blockPtr->fileID.type, 
 		      blockPtr->fileID.serverID,
@@ -254,7 +224,7 @@ Fs_PrintTraceRecord(clientData, event, printHeaderFlag)
 /*
  *----------------------------------------------------------------------
  *
- * Fs_PrintTrace --
+ * Fsutil_PrintTrace --
  *
  *	Dump out the fs trace.
  *
@@ -268,720 +238,12 @@ Fs_PrintTraceRecord(clientData, event, printHeaderFlag)
  */
 
 void
-Fs_PrintTrace(numRecs)
+Fsutil_PrintTrace(numRecs)
     int numRecs;
 {
     if (numRecs < 0) {
-	numRecs = fsTraceLength;
+	numRecs = fsutil_TraceLength;
     }
     printf("FS TRACE\n");
-    (void)Trace_Print(fsTraceHdrPtr, numRecs, Fs_PrintTraceRecord);
-}
-
-
-int		fsWriteBackInterval = 30;	/* How long blocks have to be
-						 * dirty before they are
-						 * written back. */
-int		fsWriteBackCheckInterval = 5;	/* How often to scan the
-						 * cache for blocks to write
-						 * back. */
-Boolean		fsShouldSyncDisks = TRUE;	/* TRUE means that we should
-						 * sync the disks when
-						 * Fs_SyncProc is called. */
-int		lastHandleWBTime = 0;		/* Last time that wrote back
-						 * file handles. */
-/*
- *----------------------------------------------------------------------
- *
- * Fs_SyncProc --
- *
- *	Process to loop and write back things every thiry seconds.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-void
-Fs_SyncProc(data, callInfoPtr)
-    ClientData		data;		/* IGNORED */
-    Proc_CallInfo	*callInfoPtr;
-{
-    int	blocksLeft;
-
-    if (fsTimeInSeconds - lastHandleWBTime >= fsWriteBackInterval) {
-	(void) FsHandleDescWriteBack(FALSE, -1);
-	lastHandleWBTime = fsTimeInSeconds;
-    }
-
-    if (fsShouldSyncDisks && !fsWriteThrough && !fsWriteBackASAP) {
-	Fs_CacheWriteBack((unsigned) (fsTimeInSeconds - fsWriteBackInterval), 
-			  &blocksLeft, FALSE);
-    }
-    if (fsWriteBackCheckInterval < fsWriteBackInterval) {
-	callInfoPtr->interval = fsWriteBackCheckInterval * timer_IntOneSecond;
-    } else {
-	callInfoPtr->interval = fsWriteBackInterval * timer_IntOneSecond;
-    }
-
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Fs_Sync --
- *
- *	Write back bit maps, file descriptors, and all dirty cache buffers.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Fs_Sync(writeBackTime, shutdown)
-    unsigned int writeBackTime;	/* Write back all blocks in the cache and file
-			           descriptors that were dirtied before 
-				   this time. */
-    Boolean	shutdown;	/* TRUE if the kernel is being shutdown. */
-{
-    int		blocksLeft = 0;
-
-    /*
-     * Force all file descriptors into the cache.
-     */
-    (void) FsHandleDescWriteBack(shutdown, -1);
-    /*
-     * Write back the cache.
-     */
-    Fs_CacheWriteBack(writeBackTime, &blocksLeft, shutdown);
-    if (shutdown) {
-	if (blocksLeft) {
-	    printf("Fs_Sync: %d blocks still locked\n", blocksLeft);
-	}
-	FsCleanBlocks((ClientData) FALSE, (Proc_CallInfo *) NIL);
-    }
-    /*
-     * Finally write all domain information to disk.  This will mark each
-     * domain to indicate that we went down gracefully and recovery is in
-     * fact possible.
-     */
-    FsLocalDomainWriteBack(-1, shutdown, FALSE);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Fs_SyncStub --
- *
- *	Procedure bound to the L1-w keystoke.  This is called at
- *	keyboard interrupt time and so it makes a Proc_CallFunc
- *	to invoke the Fs_Sync procedure.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Attempts to sync the disks.
- *
- *----------------------------------------------------------------------
- */
-void SyncCallBack();
-
-void
-Fs_SyncStub(data)
-    ClientData		data;
-{
-    printf("Queueing call to Fs_Sync() ... ");
-    Proc_CallFunc(SyncCallBack, data, 0);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Fs_SyncCallBack --
- *
- *	Procedure called via Proc_CallFunc to sync the disks.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Syncs the disk.
- *
- *----------------------------------------------------------------------
- */
-void
-SyncCallBack(data, callInfoPtr)
-    ClientData		data;
-    Proc_CallInfo	*callInfoPtr;
-{
-    printf("Syncing disks");
-    Fs_Sync(-1, (Boolean)data);
-    callInfoPtr->interval = 0;
-    printf(".\n");
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * FsUpdateTimeOfDay --
- *
- *	Update the time of day in seconds.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Global time of day variable updated.
- *
- *----------------------------------------------------------------------
- */
-
-void
-FsUpdateTimeOfDay()
-{
-    Time	time;
-
-    Timer_GetTimeOfDay(&time, (int *) NIL, (Boolean *) NIL);
-    fsTimeInSeconds = time.seconds;
-    Timer_ScheduleRoutine(&fsTimeOfDayElement, TRUE);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Fs_CheckSetID --
- *
- *	Determine if the given stream has the set uid or set gid bits set.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	*uidPtr and *gidPtr set to -1 if the respective bit isn't set and set
- *	to the uid and/or gid of the file otherwise.
- *
- *----------------------------------------------------------------------
- */
-void
-Fs_CheckSetID(streamPtr, uidPtr, gidPtr)
-    Fs_Stream	*streamPtr;
-    int		*uidPtr;
-    int		*gidPtr;
-{
-    register	FsCachedAttributes	*cachedAttrPtr;
-
-    switch (streamPtr->ioHandlePtr->fileID.type) {
-	case FS_LCL_FILE_STREAM:
-	    cachedAttrPtr =
-	       &((FsLocalFileIOHandle *)streamPtr->ioHandlePtr)->cacheInfo.attr;
-	    break;
-	case FS_RMT_FILE_STREAM:
-	    cachedAttrPtr =
-	       &((FsRmtFileIOHandle *)streamPtr->ioHandlePtr)->cacheInfo.attr;
-	    break;
-	default:
-	    panic( "Fs_CheckSetID, wrong stream type\n",
-		streamPtr->ioHandlePtr->fileID.type);
-	    return;
-    }
-    if (cachedAttrPtr->permissions & FS_SET_UID) {
-	*uidPtr = cachedAttrPtr->uid;
-    } else {
-	*uidPtr = -1;
-    }
-    if (cachedAttrPtr->permissions & FS_SET_GID) {
-	*gidPtr = cachedAttrPtr->gid;
-    } else {
-	*gidPtr = -1;
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * FsDomainInfo --
- *
- *	Return info about the given domain.
- *	FIX ME FIX ME FIX ME
- *	This should be replaced by a call through the domain switch.
- *	The prefix table module has the domain type, so can do this.
- *	For now, we infer the domain type from the stream type.
- *
- * Results:
- *	A return status.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-ReturnStatus 
-FsDomainInfo(fileIDPtr, domainInfoPtr)
-    Fs_FileID		*fileIDPtr;	/* FileID from the prefix table,
-					 * This can be changed to make
-					 * it match with what a user sees
-					 * when it stats the file.  This
-					 * is important when computing
-					 * the current directory in getwd(). */
-    Fs_DomainInfo	*domainInfoPtr;	/* Fill in with # free blocks, etc */
-{
-    ReturnStatus	status;
-
-    switch (fileIDPtr->type) {
-	case FS_LCL_FILE_STREAM:
-	    status = FsLocalDomainInfo(fileIDPtr, domainInfoPtr);
-	    break;
-	case FS_PFS_NAMING_STREAM:
-	case FS_RMT_FILE_STREAM:
-	    status = FsRemoteDomainInfo(fileIDPtr, domainInfoPtr);
-	    break;
-	case FS_LCL_PSEUDO_STREAM:
-	    status = FsPseudoDomainInfo(fileIDPtr, domainInfoPtr);
-	    break;
-	default:
-	    printf("FsDomainInfo: Unexpected stream type <%d>\n",
-		    fileIDPtr->type);
-	    status = FS_DOMAIN_UNAVAILABLE;
-	    break;
-    }
-    if (status != SUCCESS) {
-	domainInfoPtr->maxKbytes = -1;
-	domainInfoPtr->freeKbytes = -1;
-	domainInfoPtr->maxFileDesc = -1;
-	domainInfoPtr->freeFileDesc = -1;
-	domainInfoPtr->blockSize = -1;
-    }
-
-    return(status);
-}
-
-/*
- *----------------------------------------------------------------------------
- *
- * Fs_GetFileHandle --
- *
- *	Return an opaque handle for a file, really a pointer to its I/O handle.
- *	This is used for a subsequent call to Fs_GetSegPtr.
- *
- * Results:
- *	A pointer to the I/O handle of the file.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------------
- *
- */
-
-ClientData
-Fs_GetFileHandle(streamPtr)
-    Fs_Stream *streamPtr;
-{
-    return((ClientData)streamPtr->ioHandlePtr);
-}
-
-/*
- *----------------------------------------------------------------------------
- *
- * Fs_GetSegPtr --
- *
- *	Return a pointer to a pointer to the segment associated with this
- *	file.
- *
- * Results:
- *	A pointer to the segment associated with this file.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------------
- *
- */
-
-Vm_Segment **
-Fs_GetSegPtr(fileHandle)
-    ClientData fileHandle;
-{
-    FsHandleHeader *hdrPtr = (FsHandleHeader *)fileHandle;
-    Vm_Segment	**segPtrPtr;
-
-    switch (hdrPtr->fileID.type) {
-	case FS_LCL_FILE_STREAM:
-	    segPtrPtr = &(((FsLocalFileIOHandle *)hdrPtr)->segPtr);
-	    break;
-	case FS_RMT_FILE_STREAM:
-	    segPtrPtr = &(((FsRmtFileIOHandle *)hdrPtr)->segPtr);
-	    break;
-	default:
-	    panic( "Fs_RetSegPtr, bad stream type %d\n",
-		    hdrPtr->fileID.type);
-    }
-    fsStats.handle.segmentFetches++;
-    if (*segPtrPtr != (Vm_Segment *) NIL) {
-	fsStats.handle.segmentHits++;
-    }
-    return(segPtrPtr);
-}
-
-/*
- *----------------------------------------------------------------------------
- *
- * Fs_HandleScavengeStub --
- *
- *	This is a thin layer on top of Fs_HandleScavenge.  It is called
- *	when L1-x is pressed at the keyboard, and also from FsHandleInstall
- *	when a threashold number of handles have been created.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Invokes the handle scavenger.
- *
- *----------------------------------------------------------------------------
- *
- */
-/*ARGSUSED*/
-void Fs_HandleScavengeStub(data)
-    ClientData	data;	/* IGNORED */
-{
-    /*
-     * This is called when the L1-x keys are held down at the console.
-     * We set up a call to Fs_HandleScavenge, unless there is already
-     * an extra scavenger scheduled.
-     */
-    if (OkToScavenge()) {
-	Proc_CallFunc(Fs_HandleScavenge, (ClientData)FALSE, 0);
-    }
-}
-
-Boolean		scavengerScheduled = FALSE;
-int		fsScavengeInterval = 2;			/* 2 Minutes */
-int		fsLastScavengeTime = 0;
-
-
-/*
- *----------------------------------------------------------------------------
- *
- * Fs_HandleScavenge --
- *
- *	Go through all of the handles looking for clients that have crashed
- *	and for handles that are no longer needed.  This expects to be
- *	called by a helper kernel processes at regular intervals defined
- *	by fsScavengeInterval.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The handle-specific routines may remove handles.
- *
- *----------------------------------------------------------------------------
- *
- */
-/*ARGSUSED*/
-void
-Fs_HandleScavenge(data, callInfoPtr)
-    ClientData		data;			/* Whether to reschedule again
-						 */
-    Proc_CallInfo	*callInfoPtr;		/* Specifies interval */
-{
-    Hash_Search				hashSearch;
-    register	FsHandleHeader		*hdrPtr;
-
-    /*
-     * Note that this is unsynchronized access to a global variable, which
-     * works fine on a uniprocessor.  We don't want a monitor lock here
-     * because we don't want a locked handle to hang up all Proc_ServerProcs.
-     */
-    fsLastScavengeTime = fsTimeInSeconds;
-
-    Hash_StartSearch(&hashSearch);
-    for (hdrPtr = FsGetNextHandle(&hashSearch);
-	 hdrPtr != (FsHandleHeader *) NIL;
-         hdrPtr = FsGetNextHandle(&hashSearch)) {
-	 if (fsStreamOpTable[hdrPtr->fileID.type].scavenge !=
-		 (Boolean (*)())NIL) {
-	     (*fsStreamOpTable[hdrPtr->fileID.type].scavenge)(hdrPtr);
-	 } else {
-	     FsHandleUnlock(hdrPtr);
-	 }
-    }
-    /*
-     * We are called in two cases.  A regular call background call is indicated
-     * by a TRUE data value, while an extra scavenge that is done in an
-     * attempt to free space is the other case.
-     */
-    if ((Boolean)data) {
-	/*
-	 * Set up next background call.
-	 */
-	callInfoPtr->interval = fsScavengeInterval * timer_IntOneMinute;
-    } else {
-	/*
-	 * Indicate that the extra scavenger has completed.
-	 */
-	callInfoPtr->interval = 0;
-	DoneScavenge();
-    }
-}
-
-/*
- *----------------------------------------------------------------------------
- *
- * OkToScavenge --
- *
- *	Checks for already active scavengers.  Returns FALSE if there
- *	is already a scavenger.
- *
- * Results:
- *	TRUE if there is no scavenging in progress.
- *
- * Side effects:
- *	Sets scavengerScheduled to TRUE if it had been FALSE.
- *
- *----------------------------------------------------------------------------
- *
- */
-static ENTRY Boolean
-OkToScavenge()
-{
-    register Boolean ok;
-    LOCK_MONITOR;
-    ok = !scavengerScheduled;
-    if (ok) {
-	scavengerScheduled = TRUE;
-    }
-    UNLOCK_MONITOR;
-    return(ok);
-}
-
-/*
- *----------------------------------------------------------------------------
- *
- * DoneScavenge --
- *
- *	Called when done scavenging.  This clears the flag that indicates
- *	an extra scavenger is present.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Clears scavengerScheduled.
- *
- *----------------------------------------------------------------------------
- *
- */
-void
-DoneScavenge()
-{
-    LOCK_MONITOR;
-    scavengerScheduled = FALSE;
-    UNLOCK_MONITOR;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * FsFileError --
- *
- *	Print an error message about a file.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-void
-FsFileError(hdrPtr, string, status)
-    FsHandleHeader *hdrPtr;
-    char *string;
-{
-    if (hdrPtr == (FsHandleHeader *)NIL) {
-	printf("(NIL handle) %s: ", string);
-    } else {
-	Net_HostPrint(hdrPtr->fileID.serverID,
-		      FsFileTypeToString(hdrPtr->fileID.type));
-	printf(" \"%s\" <%d,%d> %s: ", FsHandleName(hdrPtr),
-		hdrPtr->fileID.major, hdrPtr->fileID.minor, string);
-    }
-    switch (status) {
-	case SUCCESS:
-	    printf("\n");
-	    break;
-	case FS_DOMAIN_UNAVAILABLE:
-	    printf("domain unavailable\n");
-	    break;
-	case FS_VERSION_MISMATCH:
-	    printf("version mismatch\n");
-	    break;
-	case FAILURE:
-	    printf("cacheable/busy conflict\n");
-	    break;
-	case RPC_TIMEOUT:
-	    printf("rpc timeout\n");
-	    break;
-	case RPC_SERVICE_DISABLED:
-	    printf("server rebooting\n");
-	    break;
-	case FS_STALE_HANDLE:
-	    printf("stale handle\n");
-	    break;
-	case DEV_RETRY_ERROR:
-	case DEV_HARD_ERROR:
-	    printf("DISK ERROR\n");
-	    break;
-	case FS_NO_DISK_SPACE:
-	    printf("out of disk space\n");
-	default:
-	    printf("<%x>\n", status);
-	    break;
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * FsFileTypeToString --
- *
- *	Map a stream type to a string.  Used for error messages.
- *
- * Results:
- *	A string.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-char *
-FsFileTypeToString(type)
-    int type;
-{
-    register char *fileType;
-
-    switch (type) {
-	case FS_STREAM:
-	    fileType = "Stream";
-	    break;
-	case FS_LCL_FILE_STREAM:
-	    fileType = "File";
-	    break;
-	case FS_RMT_FILE_STREAM:
-	    fileType = "RmtFile";
-	    break;
-	case FS_LCL_DEVICE_STREAM:
-	    fileType = "Device";
-	    break;
-	case FS_RMT_DEVICE_STREAM:
-	    fileType = "RmtDevice";
-	    break;
-	case FS_LCL_PIPE_STREAM:
-	    fileType = "Pipe";
-	    break;
-	case FS_RMT_PIPE_STREAM:
-	    fileType = "RmtPipe";
-	    break;
-#ifdef notdef
-	case FS_LCL_NAMED_PIPE_STREAM:
-	    fileType = "NamedPipe";
-	    break;
-	case FS_RMT_NAMED_PIPE_STREAM:
-	    fileType = "RmtNamedPipe";
-	    break;
-#endif
-	case FS_CONTROL_STREAM:
-	    fileType = "PdevControlStream";
-	    break;
-	case FS_SERVER_STREAM:
-	    fileType = "SrvStream";
-	    break;
-	case FS_LCL_PSEUDO_STREAM:
-	    fileType = "LclPdev";
-	    break;
-	case FS_RMT_PSEUDO_STREAM:
-	    fileType = "RmtPdev";
-	    break;
-	case FS_PFS_CONTROL_STREAM:
-	    fileType = "PfsControlStream";
-	    break;
-	case FS_PFS_NAMING_STREAM:
-	    fileType = "PfsNamingStream";
-	    break;
-	case FS_LCL_PFS_STREAM:
-	    fileType = "LclPfs";
-	    break;
-	case FS_RMT_PFS_STREAM:
-	    fileType = "RmtPfs";
-	    break;
-#ifdef INET
-	case FS_RAW_IP_STREAM:
-	    fileType = "RawIp Socket";
-	    break;
-	case FS_UDP_STREAM:
-	    fileType = "UDP Socket";
-	    break;
-	case FS_TCP_STREAM:
-	    fileType = "TCP Socket";
-	    break;
-#endif
-#ifdef notdef
-	case FS_RMT_UNIX_STREAM:
-	    fileType = "UnixFile";
-	    break;
-	case FS_RMT_NFS_STREAM:
-	    fileType = "NFSFile";
-	    break;
-#endif
-	default:
-	    fileType = "<unknown file type>";
-	    break;
-    }
-    return(fileType);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Fs_GetFileName --
- *
- *	Return a pointer to the file name for the given stream.
- *
- * Results:
- *	Pointer to file name from handle of given stream.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-char *
-Fs_GetFileName(streamPtr)
-    Fs_Stream	*streamPtr;
-{
-    if (streamPtr->hdr.name != (char *)NIL) {
-	return(streamPtr->hdr.name);
-    } else if (streamPtr->ioHandlePtr != (FsHandleHeader *)NIL) {
-	return(streamPtr->ioHandlePtr->name);
-    } else {
-	return("(noname)");
-    }
+    (void)Trace_Print(fsutil_TraceHdrPtr, numRecs, Fsutil_PrintTraceRecord);
 }
