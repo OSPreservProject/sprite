@@ -312,11 +312,20 @@ NoEnableLabel:
 
 
 /*
- * For sticking debug info into a buffer.
+ * For sticking debug info into a buffer.  After each value, stamp a special
+ * mark, which gets overwritten by the next value, so we always know where
+ * the end of the list is.
  */
 #define	MACH_DEBUG_BUF(reg1, reg2, DebugLabel, stuff)	\
 	set	_debugCounter, reg1; 		\
 	ld	[reg1], reg1;			\
+	sll	reg1, 2, reg1;			\
+	set	_debugSpace, reg2;		\
+	add	reg2, reg1, reg2;		\
+	st	stuff, [reg2];			\
+	set	_debugCounter, reg1;		\
+	ld	[reg1], reg1;			\
+	add	reg1, 1, reg1;			\
 	set	500, reg2;			\
 	subcc	reg2, reg1, %g0;		\
 	bg	DebugLabel;			\
@@ -325,14 +334,12 @@ NoEnableLabel:
 	st	%g0, [reg1];			\
 	clr	reg1;				\
 DebugLabel:					\
+	set	_debugCounter, reg2;		\
+	st	reg1, [reg2];			\
 	sll	reg1, 2, reg1;			\
 	set	_debugSpace, reg2;		\
 	add	reg2, reg1, reg2;		\
-	st	stuff, [reg2];			\
-	set	_debugCounter, reg1;		\
-	ld	[reg1], reg2;			\
-	add	reg2, 1, reg2;			\
-	st	reg2, [reg1]
-
+	set	0x11100111, reg1;		\
+	st	reg1, [reg2]
 
 #endif /* _MACHASMDEFS */

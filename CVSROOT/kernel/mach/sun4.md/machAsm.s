@@ -152,12 +152,60 @@ ReturnZero:
 	nop
 
 
+/*
+ *---------------------------------------------------------------------
+ *
+ * Mach_GetMachineType -
+ *
+ *	Returns the type of machine that is stored in the id prom.
+ *
+ *	int	Mach_GetMachineType()
+ *
+ * Results:
+ *	The type of machine.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------
+ */
 .globl	_Mach_GetMachineType
 _Mach_GetMachineType:
 	set	VMMACH_MACH_TYPE_ADDR, %o0
 	lduba	[%o0] VMMACH_CONTROL_SPACE, %o0
 	retl
 	nop
+
+/*
+ *---------------------------------------------------------------------
+ *
+ * Mach_MonTrap -
+ *
+ *      Trap to the monitor.  This involves dummying up a trap stack for the
+ *      monitor, allowing non-maskable interrupts and then jumping to the
+ *      monitor trap routine.  When it returns, non-maskable interrupts are
+ *      disabled and we return.
+ *
+ *	void	Mach_MonTrap(address_to_trap_to)
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ * --------------------------------------------------------------------
+ */
+.global	_Mach_MonTrap
+_Mach_MonTrap:
+	save	%sp, -MACH_SAVED_STATE_FRAME, %sp
+	/* enable non-maskable interrupts? */
+	/* get address */
+	call	%i0
+	nop
+	/* disable non-maskable interrupts? */
+	ret
+	restore
 
 
 /*
@@ -194,9 +242,7 @@ _Mach_ContextSwitch:
 	 * is okay here.  Save enough space for the context switch state on
 	 * the stack.
 	 */
-	set	MACH_SAVED_STATE_FRAME, %VOL_TEMP1
-	sub	%g0, %VOL_TEMP1, %VOL_TEMP1
-	save 	%sp, %VOL_TEMP1, %sp
+	save 	%sp, -MACH_SAVED_STATE_FRAME, %sp
 	andn	%sp, 0x7, %sp		/* should already be okay */
 	mov	%psr, %CUR_PSR_REG
 	MACH_SR_HIGHPRIO()		/*

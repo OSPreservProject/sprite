@@ -110,13 +110,16 @@ Address		oldAddrOfVmPtr = 0;
 Address		oldAddrOfMachPtr = 0;
 
 /*
- * For debugging stuff, put values into a circular buffer.
+ * For debugging stuff, put values into a circular buffer.  After each value,
+ * stamp a special mark, which gets overwritten by next value, so we
+ * always know where the end of the list is.
  */
 #define	DEBUG_ADD(thing)	\
+    debugSpace[debugCounter++] = (int)(thing);	\
     if (debugCounter >= 500) {	\
 	debugCounter = 0;	\
     }				\
-    debugSpace[debugCounter++] = (int)(thing);
+    debugSpace[debugCounter] = (int)(0x11100111);
 
 
     

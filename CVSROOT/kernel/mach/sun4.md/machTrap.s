@@ -105,9 +105,7 @@ WindowOkay:
 	 * pointer.  If coming from user mode, I need to get sp from state
 	 * instead.  I don't do that yet.
 	 */
-	mov	%fp, %sp
-	set	MACH_SAVED_STATE_FRAME, %VOL_TEMP1
-	sub	%sp, %VOL_TEMP1, %sp
+	add	%fp, -MACH_SAVED_STATE_FRAME, %sp
 	andn	%sp, 0x7, %sp			/* double-word aligned */
 
 
@@ -195,6 +193,11 @@ WindowOkay:
 	cmp	%VOL_TEMP1, MACH_LEVEL13_INT		/* not yet */
 	set	_MachIntrNotHandledYet, %o0
 	be	MachHandleInterrupt
+	nop
+
+	cmp	%VOL_TEMP1, MACH_TRAP_SYSCALL		/* system call */
+	/* change return pc here so it doesn't re-execute instr? */
+	be	MachSysCallTrap
 	nop
 
 	cmp	%VOL_TEMP1, MACH_TRAP_DEBUGGER		/* enter debugger */
@@ -449,15 +452,12 @@ MachWindowUnderflow:
 	nop
 
 DealWithDebugStack:
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, UnderDebug1, %g0)
 	/* Set stack pointer of next window to regular frame pointer */
 	set	_machSavedRegisterState, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %fp
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, UnderDebug2, %fp)
 	nop
 	
 RegularStack:
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, UnderDebug3, %fp)
 	/*
 	 * It should be ok to use locals here - it's a dead window.
 	 * Note that this means one cannot do a restore and then a save
@@ -507,9 +507,6 @@ MachHandleDebugTrap:
 	 * also use this to restore our stack pointer upon returning from the
 	 * debugger.
 	 */
-	set	0x111, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugDebug1, %OUT_TEMP1)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugDebug2, %sp)
 	set	_machSavedRegisterState, %VOL_TEMP1
 	st	%sp, [%VOL_TEMP1]
 	/*
@@ -526,8 +523,10 @@ SaveSomeMore:
 	bne	SaveSomeMore
 	nop
 	set	(MACH_NUM_WINDOWS - 1), %g1
+	MACH_DEBUG_BUF(%g2, %g3, g1Debug1, %g1)
 RestoreSomeMore:
 	restore
+	MACH_DEBUG_BUF(%g2, %g3, g1Debug2, %g1)
 	subcc	%g1, 1, %g1
 	bne	RestoreSomeMore
 	nop
@@ -539,7 +538,6 @@ RestoreSomeMore:
 	/* put saved reg ptr into o1 */
 	set	_machSavedRegisterState, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %o1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugDebug3, %o1);
 	/*
 	 * Set wim to this window, so that when we return from debugger,
 	 * we'll restore the registers for this window from the stack state
@@ -561,11 +559,29 @@ RestoreSomeMore:
 	/* put saved stack pointer into %sp. */
 	set	_machSavedRegisterState, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %sp
-	set	0x222, %OUT_TEMP1
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugDebug4, %OUT_TEMP1)
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugDebug5, %sp)
 
 	/* finish as for regular trap */
 	set	_MachReturnFromTrap, %VOL_TEMP1
 	jmp	%VOL_TEMP1
 	nop
+
+
+#ifdef NOTDEF
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MachSyscallTrap --
+ *
+ *	This is the code to handle system call traps.
+ *
+ * Results:
+ *	Returns a status to the caller in the caller's %o0 (or %i0).
+ *
+ * Side effects:
+ *	Depends on the kernel call.
+ *
+ * ----------------------------------------------------------------------
+ */
+.globl	MachSyscallTrap
+MachSyscallTrap:
+#endif NOTDEF
