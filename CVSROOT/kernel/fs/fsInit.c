@@ -53,8 +53,8 @@ int fsDefaultDomainNumber = 0;
  * If these are initialized to zero they will be set to the maximum
  * sizes reported back by the RPC system.
  */
-int fsMaxRpcDataSize = 4096;
-int fsMaxRpcParamSize = 1024;
+int fsMaxRpcDataSize = 0;	/* Used to be 4096 */
+int fsMaxRpcParamSize = 0;	/* Used to be 1024 */
 
 /*
  * Statistics structure.
