@@ -1517,18 +1517,23 @@ PutOnFront(corePtr)
  * ----------------------------------------------------------------------------
  */
 ENTRY static void
-PageOutPutAndGet(corePtrPtr, status) 
-    VmCore	**corePtrPtr;	/* IN/OUT:  On input points to page frame
-				 *          to be put back onto allocate list.
-				 *	    On output points to page frame
-				 *	    to be cleaned. */
-    ReturnStatus status;	/* Status from the write. */
+PageOutPutAndGet(corePtrPtr, status, recStreamPtrPtr)
+    VmCore	 **corePtrPtr;		/* On input points to page frame
+					 * to be put back onto allocate list.
+					 * On output points to page frame
+					 * to be cleaned. */
+    ReturnStatus status;		/* Status from the write. */
+    Fs_Stream	 **recStreamPtrPtr;	/* Pointer to stream to do recovery
+					 * on if necessary.  A NIL stream
+					 * pointer is returned if no recovery
+					 * is necessary. */
 {
     Vm_PTE		pte;
     register	VmCore	*corePtr;
 
     LOCK_MONITOR;
 
+    *recStreamPtrPtr = (Fs_Stream *)NIL;
     corePtr = *corePtrPtr;
     if (corePtr == (VmCore *)NIL) {
 	if (swapDown) {
@@ -1541,9 +1546,23 @@ PageOutPutAndGet(corePtrPtr, status)
 	    case RPC_TIMEOUT:
 	    case FS_STALE_HANDLE:
 		if (vmSwapStreamPtr != (Fs_Stream *)NIL) {
-		    Fs_WaitForHost(vmSwapStreamPtr,
-				   FS_NAME_SERVER | FS_NON_BLOCKING, status);
-		    swapDown = TRUE;
+		    if (!swapDown) {
+			/*
+			 * We have not realized that we have an error yet.
+			 * Determine which stream pointer caused the error
+			 * (the segments swap stream if the swap file is 
+			 * already open or the swap directory stream
+			 * otherwise) and mark the swap as down.
+			 */
+			if (corePtr->virtPage.segPtr->swapFilePtr != 
+							    (Fs_Stream *)NIL) {
+			    *recStreamPtrPtr =
+					corePtr->virtPage.segPtr->swapFilePtr;
+			} else {
+			    *recStreamPtrPtr = vmSwapStreamPtr;
+			}
+			swapDown = TRUE;
+		    }
 		    corePtr->flags &= ~VM_PAGE_BEING_CLEANED;
 		    VmListInsert((List_Links *)corePtr,
 				 LIST_ATREAR(dirtyPageList));
@@ -1668,20 +1687,31 @@ PageOut(data, callInfoPtr)
 {
     VmCore		*corePtr;
     ReturnStatus	status = SUCCESS;
+    Fs_Stream		*recStreamPtr;
 
     vmStat.pageoutWakeup++;
 
     corePtr = (VmCore *) NIL;
     while (TRUE) {
-	PageOutPutAndGet(&corePtr, status);
+	PageOutPutAndGet(&corePtr, status, &recStreamPtr);
+	if (recStreamPtr != (Fs_Stream  *)NIL) {
+	    (void) Fs_WaitForHost(recStreamPtr,
+				  FS_NAME_SERVER | FS_NON_BLOCKING, status);
+	}
+
 	if (corePtr == (VmCore *) NIL) {
 	    break;
 	}
 	status = VmPageServerWrite(&corePtr->virtPage, corePtr - coreMap);
-	if (status != SUCCESS && (vmSwapStreamPtr == (Fs_Stream *)NIL ||
-				  (status != RPC_TIMEOUT && 
-				   status != FS_STALE_HANDLE))) {
-	    KillSharers(corePtr->virtPage.segPtr);
+	if (status != SUCCESS) {
+	    if (vmSwapStreamPtr == (Fs_Stream *)NIL ||
+	        (status != RPC_TIMEOUT && status != FS_STALE_HANDLE)) {
+		/*
+		 * Non-recoverable error on page write, so kill all users of 
+		 * this segment.
+		 */
+		KillSharers(corePtr->virtPage.segPtr);
+	    }
 	}
     }
 

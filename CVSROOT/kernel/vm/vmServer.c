@@ -255,6 +255,7 @@ Vm_OpenSwapDirectory(data, callInfoPtr)
 	 * It didn't work, retry in 10 seconds.
 	 */
 	callInfoPtr->interval = 10 * timer_IntOneSecond;
+	vmSwapStreamPtr = (Fs_Stream *)NIL;
     }
 }
 
@@ -283,7 +284,7 @@ VmOpenSwapFile(segPtr)
     Proc_ControlBlock		*procPtr;
     int				origID = NIL;
     char			fileName[FS_MAX_PATH_NAME_LENGTH];
-    char			*swapFileName;
+    char			*swapFileNamePtr;
     Fs_Stream			*origCwdPtr;
 
     if (segPtr->swapFileName == (char *) NIL) {
@@ -312,12 +313,12 @@ VmOpenSwapFile(segPtr)
     origCwdPtr = procPtr->cwdPtr;
     if (vmSwapStreamPtr != (Fs_Stream *)NIL) {
 	procPtr->cwdPtr = vmSwapStreamPtr;
-	Cvt_UtoA((unsigned) segPtr->segNum, fileName);
-	swapFileName = fileName;
+	Cvt_UtoA((unsigned) segPtr->segNum, 10, fileName);
+	swapFileNamePtr = fileName;
     } else {
-	swapFileName = segPtr->swapFileName;
+	swapFileNamePtr = segPtr->swapFileName;
     }
-    status = Fs_Open(swapFileName, 
+    status = Fs_Open(swapFileNamePtr, 
 		     FS_READ | FS_WRITE | FS_CREATE | FS_TRUNC, FS_FILE,
 		     0660, &segPtr->swapFilePtr);
     if (origID != NIL) {
@@ -325,6 +326,7 @@ VmOpenSwapFile(segPtr)
     }
     procPtr->cwdPtr = origCwdPtr;
     if (status != SUCCESS) {
+	segPtr->swapFilePtr = (Fs_Stream *)NIL;
 	Sys_Panic(SYS_WARNING, 
 	    "VmOpenSwapFile: Could not open swap file %s, reason 0x%x\n", 
 		segPtr->swapFileName, status);
