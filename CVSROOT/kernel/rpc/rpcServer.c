@@ -3,7 +3,7 @@
  *
  *      This is the top level code for an RPC server process, plus the
  *      server-side dispatch routine with which the server process must
- *      synchronize.  A server process does some initialization and then
+ *      synchronize.  sA server process does some initialization and then
  *      goes into a service loop receiving request messages and invoking
  *      service stubs.  This file also has utilities for sending replies
  *      and acks.
@@ -106,7 +106,7 @@ Rpc_Server()
 	Sys_Printf("RPC server can't install itself.\n");
 	Proc_Exit(RPC_INTERNAL_ERROR);
     }
-
+    error = SUCCESS;
     for ( ; ; ) {
 	/*
 	 * Synchronize with RpcServerDispatch and await a request message.
@@ -115,6 +115,9 @@ Rpc_Server()
 	MASTER_LOCK(srvPtr->mutex);
 	srvPtr->state &= ~SRV_BUSY;
 	srvPtr->state |= SRV_WAITING;
+	if (error == RPC_NO_REPLY) {
+	    srvPtr->state |= SRV_NO_REPLY;
+	}
 	while ((srvPtr->state & SRV_BUSY) == 0) {
 	    Sync_MasterWait(&srvPtr->waitCondition,
 				&srvPtr->mutex, TRUE);
@@ -197,13 +200,8 @@ Rpc_Server()
 	 * Return an error reply for the stubs.  Note: We could send all
 	 * replies if the stubs were all changed...
 	 */
-	if (error != SUCCESS) {
-	    if (error == RPC_NO_REPLY) {
-		srvPtr->state |= SRV_NO_REPLY;
-	    } else {
-		Rpc_ErrorReply((ClientData)srvPtr, error);
-	    }
-	    error = SUCCESS;
+	if (error != SUCCESS && error != RPC_NO_REPLY) {
+	    Rpc_ErrorReply((ClientData)srvPtr, error);
 	}
 #ifdef TIMESTAMP
 	RPC_TRACE(rpcHdrPtr, RPC_SERVER_OUT, " done");
@@ -481,8 +479,10 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 	if (srvPtr->state & SRV_NO_REPLY) {
 	    /*
 	     * The current RPC was a broadcast which we do not want
-	     * to reply to.
+	     * to reply to.  Keep ourselves free - the allocation routine
+	     * has cleared that state bit.
 	     */
+	    srvPtr->state |= SRV_FREE; 
 	    rpcSrvStat.discards++;
 	} else if (rpcHdrPtr->flags & RPC_ACK) {
 	    if (rpcHdrPtr->flags & RPC_CLOSE) {
