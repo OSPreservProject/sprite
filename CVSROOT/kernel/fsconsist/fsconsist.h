@@ -19,10 +19,15 @@
 #ifndef _FSCONSIST
 #define _FSCONSIST
 
+#ifdef KERNEL
 #include <fs.h>
 #include <fsio.h>
 #include <rpc.h>
-
+#else
+#include <kernel/fs.h>
+#include <kernel/fsio.h>
+#include <kernel/rpc.h>
+#endif
 /*
  * Flags to determine what type of consistency operation is required.
  *
@@ -130,6 +135,7 @@ typedef struct Fsconsist_ClientInfo {
 	List_Remove((List_Links *) clientPtr);	\
 	free((Address) clientPtr);
 
+#ifdef KERNEL
 /*
  * This header file (fsioFile.h) is needed to define Fsio_FileIOHandle for the
  * function prototypes below. It must occur after Fsconsist_Info is defined.
@@ -203,5 +209,6 @@ extern ReturnStatus Fsconsist_RpcConsistReply _ARGS_((ClientData srvToken,
 extern int Fsconsist_NumClients _ARGS_((Fsconsist_Info *consistPtr));
 extern void Fsconsist_AddClient _ARGS_((int clientID));
 
+#endif
 
 #endif _FSCONSIST
