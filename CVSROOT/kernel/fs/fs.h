@@ -239,18 +239,6 @@ typedef struct Fs_Stream {
 #define FS_MAX_LINKS	10
 
 /*
- * Fs_MakeNameAccessible uses Proc_MakeNameAccessible to make a string
- * accessible if it isn't already in the kernel's address space.
- */
-
-#define Fs_MakeNameAccessible(pathPtrPtr, numBytesPtr) \
-		Proc_MakeStringAccessible(FS_MAX_PATH_NAME_LENGTH, \
-		(pathPtrPtr), numBytesPtr, (int *) NIL)
-#ifdef comment
-    char **pathPtrPtr;
-#endif comment
-
-/*
  * Values for  page type for Fs_PageRead.
  */
 typedef enum {
