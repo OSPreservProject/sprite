@@ -12,6 +12,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 #include <sgtty.h>
+#include <stdio.h>
+#include <unistd.h>
 
 /*
  *----------------------------------------------------------------------
@@ -36,14 +38,16 @@ int
 isatty(fd)
     int fd;                             /* stream identifier */
 {
-    struct sgttyb sgttyb;
+#if 0 
+   struct sgttyb sgttyb;
+#endif
 
     printf("isatty not supported in kernel\n");
     return 0;
-/*
+#if 0
     if (ioctl(fd, TIOCGETP, (char *) &sgttyb) == -1) {
 	return 0;
     }
     return 1;
-*/
+#endif
 }
