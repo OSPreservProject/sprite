@@ -360,6 +360,7 @@ MachStringTable	*boot_argv;	/* Boot sequence strings. */
     }
     Mach_ArgParse(buf,&machMonBootParam);
 
+    Mach_MonPrintf("Happy Birthday!!\n");
     /*
      * Get information on the memory bitmap.  This gets clobbered later.
      */
@@ -446,14 +447,9 @@ MachStringTable	*boot_argv;	/* Boot sequence strings. */
  *
  * Mach_SetHandler --
  *
-#ifndef ds5000
- *	Put a interrupt handling routine into the table.
-#else
  *	Register an interrupt handler for R3000 interrupts.  Interrupt
  *	handlers are of the form:
-#endif
  *
-#ifdef ds5000
  *	void
  *	Handler(statusReg, causeReg, pc, data)
  *		unsigned int	statusReg;	Status register.
@@ -463,7 +459,6 @@ MachStringTable	*boot_argv;	/* Boot sequence strings. */
  *		ClientData	data		Callback data
  *	
  *
-#endif
  * Results:
  *     None.
  *
@@ -1901,31 +1896,15 @@ Mach_GetBootArgs(argc, bufferSize, argv, buffer)
 /*
  *----------------------------------------------------------------------
  *
-#ifndef ds5000
- * Mach_GetEtherAddress --
-#else
  * MachMemInterrupt --
-#endif
  *
-#ifndef ds5000
- *	Return the ethernet address out of the rom.
-#else
  *	Handle an interrupt from the memory controller.
-#endif
  *
  * Results:
-#ifndef ds5000
- *	Number of elements returned in argv.
-#else
  *	None.
-#endif
  *
  * Side effects:
-#ifndef ds5000
- *	*etherAddrPtr gets the ethernet address.
-#else
  *	None.
-#endif
  *
  *----------------------------------------------------------------------
  */
@@ -2063,17 +2042,9 @@ MachMemInterrupt(statusReg, causeReg, pc, data)
 /*
  *----------------------------------------------------------------------
  *
-#ifndef ds5000
- * MemErrorInterrupt --
-#else
  * MachIOInterrupt --
-#endif
  *
-#ifndef ds5000
- *	Handler an interrupt for the DZ device.
-#else
  *	Handle an interrupt from one of the IO slots.
-#endif
  *
  * Results:
  *	None.
