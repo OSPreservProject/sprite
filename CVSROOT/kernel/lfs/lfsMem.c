@@ -73,8 +73,8 @@ LfsMemInit(lfsPtr)
     int	segSizeInBlocks, numReserved, segSize;
 
     LOCK_MONITOR;
-    segSizeInBlocks = LfsSegSizeInBlocks(lfsPtr);
     segSize = LfsSegSize(lfsPtr);
+    segSizeInBlocks = segSize/FS_BLOCK_SIZE;
 
 
     numReserved = 0;
