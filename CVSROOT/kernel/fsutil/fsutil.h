@@ -9,10 +9,9 @@
  *	a pipe, or a pseudo-device.  A handle is not always one-for-one
  *	with a file system name.  Devices can have more than one name,
  *	and pseudo-devices have many handles associated with one name.
- *	Each handle is identfied by a unique FsFileID, and has a standard
+ *	Each handle is identfied by a unique Fs_FileID, and has a standard
  *	header for manipulation by generic routines.
- *	Note: some obviously internal things like FsFileID and
- *	FsHandleHeader are defined in fs.h because they are
+ *	Note: FsHandleHeader is defined here because it is
  *	embedded in the Fs_Stream type which is exported.
  *
  * Copyright 1987 Regents of the University of California
@@ -100,7 +99,7 @@
 
 /*
  * Two arrays are used to map between local and remote types.  This has
- * to happen when shipping FsFileIDs between clients and servers.
+ * to happen when shipping Fs_FileIDs between clients and servers.
  */
 extern int fsLclToRmtType[];
 extern int fsRmtToLclType[];
