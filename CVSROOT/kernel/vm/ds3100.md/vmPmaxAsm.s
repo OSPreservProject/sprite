@@ -30,7 +30,7 @@
  *	    unsigned	highEntry;
  *
  *	Results:
- *	    None.
+ *	    Returns the old index corresponding to the high register.
  *
  *	Side effects:
  *	    TLB entry set.
@@ -44,7 +44,9 @@ LEAF(VmMachWriteTLB)
     mtc0	a1, VMMACH_TLB_HI	# Store into the high register.
     nop
     tlbp				# Probe for value.
-    mfc0	v0, VMMACH_TLB_INDEX	# See what index we got.
+    mfc0	v0, VMMACH_TLB_INDEX	# See what index we got.  This value
+					#   is returned as the result of this
+					#   procedure.
     mtc0	a0, VMMACH_TLB_LOW	# Set the low register.
     nop
     bltz	v0, 1f			# index < 0 means not found
