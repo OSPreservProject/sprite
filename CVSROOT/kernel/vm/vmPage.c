@@ -1881,7 +1881,6 @@ Vm_UserUnmap(numBytes, addr)
 {
     Vm_VirtAddr	 		virtAddr;
     Proc_ControlBlock		*procPtr;
-    int				firstPage;
     int				lastPage;
     ReturnStatus		status;
 
@@ -1890,7 +1889,6 @@ Vm_UserUnmap(numBytes, addr)
     } else if (numBytes < 0) {
 	return(SYS_INVALID_ARG);
     }
-    firstPage = (unsigned int)addr >> vmPageShift;
     lastPage = (unsigned int)(addr + numBytes - 1) >> vmPageShift;
 
     /*
