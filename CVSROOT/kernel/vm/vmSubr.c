@@ -24,9 +24,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include <fsio.h>
 #include <stdio.h>
 #include <bstring.h>
+#include <assert.h>
 #ifdef sun4
 #include <machMon.h>
-#endif sun4
+#endif
 /*
  * Declarations of external variables
  */
@@ -245,7 +246,7 @@ int numBytes;
     retAddr = (Address) (((unsigned)retAddr + 7) & ~7);
     vmMemEnd += (numBytes + 7) & ~7;	/* eight byte aligned for SPUR. */
 #else
-#if defined(symm)
+#ifdef sequent
     /*
      * Need 16-byte alignment on Sequent Symmetry.  See comments in
      * mem/memory.c for details.
@@ -610,6 +611,7 @@ VmVirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
     LOCK_SHM_MONITOR;
     LOCK_MONITOR;
 
+    assert(transVirtAddrPtr != (Vm_VirtAddr *) NIL && transVirtAddrPtr != 0);
 #ifdef sun4
     if (!VMMACH_ADDR_CHECK(virtAddr)) {
 	transVirtAddrPtr->segPtr = (Vm_Segment *) NIL;
@@ -617,7 +619,7 @@ VmVirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
 	UNLOCK_SHM_MONITOR;
 	return;
     }
-#endif sun4
+#endif
     transVirtAddrPtr->flags = 0;
     transVirtAddrPtr->sharedPtr = (Vm_SegProcList *) NIL;
     if (VmMach_VirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)) {
@@ -628,8 +630,11 @@ VmVirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
 	UNLOCK_SHM_MONITOR;
 	return;
     }
-	
+
     seg1Ptr = procPtr->vmPtr->segPtrArray[VM_HEAP];
+    assert(seg1Ptr != (Vm_Segment *) NIL);
+    assert(seg1Ptr != 0);
+
     while (seg1Ptr->flags & VM_PT_EXCL_ACC) {
 	Vm_Segment	*tSegPtr;
 	/*
@@ -642,7 +647,7 @@ VmVirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
 
     page = (unsigned int) (virtAddr) >> vmPageShift;
     transVirtAddrPtr->page = page;
-
+    assert(procPtr != (Proc_ControlBlock *) NIL && procPtr != 0);
     if (procPtr->vmPtr->sharedSegs != (List_Links *)NIL &&
 	    virtAddr >= procPtr->vmPtr->sharedStart &&
 	    virtAddr < procPtr->vmPtr->sharedEnd) {
@@ -683,6 +688,7 @@ VmVirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
      * in use count on the page table.
      */
     if (page > seg1Ptr->ptSize + seg1Ptr->offset) {
+	assert(seg2Ptr != (Vm_Segment *) NIL && seg2Ptr != 0);
 	if (page < seg2Ptr->offset) {
 	    int	newPTSize;
 	    newPTSize = ((mach_LastUserStackPage - page)/vmPageTableInc + 1) * 
@@ -742,6 +748,7 @@ VmVirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
     transVirtAddrPtr->segPtr = (Vm_Segment *) NIL;
     UNLOCK_MONITOR;
     UNLOCK_SHM_MONITOR;
+    return;
 }
 
 
