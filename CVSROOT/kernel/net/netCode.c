@@ -296,14 +296,16 @@ Net_Output(spriteID, gatherPtr, gatherLength, mutexPtr, routePtr)
 		gatherPtr->length = 0; 	
 		gatherPtr->done = FALSE;
 		gatherPtr->mutexPtr = mutexPtr;
-		(interPtr->output) (interPtr, 
+		status = (interPtr->output) (interPtr, 
 		    routePtr->headerPtr[NET_PROTO_RAW], 
-		    gatherPtr, gatherLength);
-		while (!gatherPtr->done && mutexPtr != (Sync_Semaphore *)NIL) {
-		    (void) Sync_SlowMasterWait((unsigned int)mutexPtr, 
+		    gatherPtr, gatherLength, TRUE, &status);
+		if (status == SUCCESS) {
+		    while (!gatherPtr->done && 
+			mutexPtr != (Sync_Semaphore *)NIL) {
+			(void) Sync_SlowMasterWait((unsigned int)mutexPtr, 
 				mutexPtr, 0);
+		    }
 		}
-		status = SUCCESS;
 		break;
 	    }
 	case NET_PROTO_INET: {
@@ -351,14 +353,16 @@ Net_Output(spriteID, gatherPtr, gatherLength, mutexPtr, routePtr)
 		length = ipHeaderPtr->checksum + length;
 		ipHeaderPtr->checksum = ~(length + (length >> 16));
 
-		(interPtr->output)(interPtr, 
+		status = (interPtr->output)(interPtr, 
 		    routePtr->headerPtr[NET_PROTO_RAW], gatherPtr, 
-		    gatherLength);
-		while (!gatherPtr->done && mutexPtr != (Sync_Semaphore *)NIL) {
-		    (void) Sync_SlowMasterWait((unsigned int)mutexPtr, 
-				mutexPtr, 0);
+		    gatherLength, FALSE, &status);
+		if (status == SUCCESS) {
+		    while (!gatherPtr->done && 
+			mutexPtr != (Sync_Semaphore *)NIL) {
+			(void) Sync_SlowMasterWait((unsigned int)mutexPtr, 
+				    mutexPtr, 0);
+		    }
 		}
-		status = SUCCESS;
 		break;
 	    }
 	default:
@@ -383,7 +387,10 @@ Net_Output(spriteID, gatherPtr, gatherLength, mutexPtr, routePtr)
  *	Send a packet directly onto the network.
  *
  * Results:
- *	None.
+ *	SUCCESS if the packet made it as far as the network interface,
+ *	a failure code otherwise.  SUCCESS does not imply that the
+ *	packet was actually sent because the interface could have
+ *	rejected it.
  *
  * Side effects:
  *	None.
@@ -391,7 +398,7 @@ Net_Output(spriteID, gatherPtr, gatherLength, mutexPtr, routePtr)
  *----------------------------------------------------------------------
  */
 
-void
+ReturnStatus
 Net_RawOutput(interPtr, headerPtr, gatherPtr, gatherLength)
     Net_Interface	*interPtr;	/* The network interface. */
     Address		headerPtr;	/* Packet header. */
@@ -399,7 +406,8 @@ Net_RawOutput(interPtr, headerPtr, gatherPtr, gatherLength)
 					 * pieces of the packet */
     int 		gatherLength;	/* Number of elements in gatherPtr[] */
 {
-    (interPtr->output)(interPtr, headerPtr, gatherPtr, gatherLength);
+    return (interPtr->output)(interPtr, headerPtr, gatherPtr, gatherLength, 
+		FALSE, (ReturnStatus *) NIL);
 }
 
 
@@ -439,15 +447,19 @@ Net_RecvPoll(interPtr)
  *
  * Net_RawOutputSync --
  *
+ * 	Send a packet on the network. Does not return until the packet
+ *	is actually sent.
+ *
  * Results:
- *	None.
+ *	SUCCESS if the packet was sent correctly, otherwise a standard
+ *	Sprite return status.
  *
  * Side effects:
  *	None.
  *
  *----------------------------------------------------------------------
  */
-void
+ReturnStatus
 Net_RawOutputSync(interPtr, headerPtr, gatherPtr, gatherLength)
     Net_Interface	*interPtr;	/* Network interface. */
     Address		headerPtr;	/* Packet header. */
@@ -455,20 +467,24 @@ Net_RawOutputSync(interPtr, headerPtr, gatherPtr, gatherLength)
 					 * pieces of the packet */
     int 		gatherLength;	/* Number of elements in gatherPtr[] */
 {
+    ReturnStatus	status;
 
     gatherPtr->mutexPtr = &(interPtr->syncOutputMutex);
     gatherPtr->done = FALSE;
 
     MASTER_LOCK(&(interPtr->syncOutputMutex));
 
-    (interPtr->output)(interPtr, headerPtr, gatherPtr, gatherLength);
-    while (!gatherPtr->done) {
-	(void) Sync_SlowMasterWait((unsigned int)&(interPtr->syncOutputMutex), 
-				    &(interPtr->syncOutputMutex), FALSE);
+    status = (interPtr->output)(interPtr, headerPtr, gatherPtr, gatherLength, 
+	FALSE, &status);
+    if (status == SUCCESS) {
+	while (!gatherPtr->done) {
+	    (void) Sync_SlowMasterWait(
+			(unsigned int)&(interPtr->syncOutputMutex), 
+			&(interPtr->syncOutputMutex), FALSE);
+	}
     }
-
     MASTER_UNLOCK(&(interPtr->syncOutputMutex));
-    return;
+    return status;
 }
 
 /*
@@ -626,8 +642,16 @@ Net_Input(interPtr, packetPtr, packetLength)
 	    break;
 	}
 	case NET_NETWORK_ULTRA: {
+	    Net_UltraHeader	*ultraHdrPtr;
+	    ultraHdrPtr = (Net_UltraHeader *) packetPtr;
 	    ultra = TRUE;
-	    packetType = NET_PACKET_SPRITE;
+	    if ((ultraHdrPtr->localAddress.tsapSize == 2) &&
+		(ultraHdrPtr->localAddress.tsap[0] == (unsigned char) 0xff) &&
+		(ultraHdrPtr->localAddress.tsap[1] == (unsigned char) 0xff)) {
+		packetType = NET_PACKET_SPRITE;
+	    } else {
+		packetType = NET_PACKET_UNKNOWN;
+	    }
 	    break;
 	}
 	default : 
