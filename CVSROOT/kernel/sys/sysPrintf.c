@@ -32,7 +32,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 /*
  * Calls to panic and printf are protected.
  */
-static	Sync_Semaphore	sysPrintMutex = Sync_SemInitStatic("sysPrintMutex");
+Sync_Semaphore	sysPrintMutex = Sync_SemInitStatic("sysPrintMutex");
 
 /*
  * Set during a panic to prevent recursion.
