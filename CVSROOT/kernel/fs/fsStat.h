@@ -541,6 +541,15 @@ Fs_TypeStats fs_TypeStats;
         counter &= ~FS_STAT_OVERFLOW; \
     }
 
+#ifdef SOSP91
+typedef	struct	Fs_SospMigStats {
+    Fs_BlockCacheStats	blockCache;
+    Fs_RemoteIOStats	rmtIO;
+} Fs_SospMigStats;
+    
+
+extern	Fs_SospMigStats	fs_SospMigStats;
+#endif SOSP91
 extern	Fs_Stats	fs_Stats;
 
 #endif _FSSTAT
