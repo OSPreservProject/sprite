@@ -240,7 +240,7 @@ GetProcessState(buffer, hostID)
 {
     Proc_ControlBlock 	*procPtr;	/* The process being migrated */
     Proc_PID		pid;
-    int			nameLength;
+    int			argStringLength;
     int			trapStackSize;
     Boolean 		home = FALSE;
 
@@ -329,13 +329,14 @@ GetProcessState(buffer, hostID)
      * Set up the code segment.
      */
 
-    Byte_EmptyBuffer(buffer, int, nameLength);
+    Byte_EmptyBuffer(buffer, int, argStringLength);
 
-#ifdef notdef
-/* FIXME */
-    Byte_Copy(nameLength, buffer, (Address) procPtr->codeFileName);
-    buffer += nameLength;
-#endif notdef
+    if (procPtr->argString != (char *) NIL) {
+	Mem_Free(procPtr->argString);
+    }
+    procPtr->argString = Mem_Alloc(argStringLength);
+    Byte_Copy(argStringLength, buffer, (Address) procPtr->argString);
+    buffer += argStringLength;
 
     /*
      * Set up the stack and frame pointers.
