@@ -28,6 +28,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "hash.h"
 #include "devRaid.h"
 #include "debugMem.h"
+#include "devRaidLock.h"
 
 extern char *malloc();
 
@@ -123,6 +124,16 @@ SLockStripe(raidPtr, stripe)
  *----------------------------------------------------------------------
  */
 
+CheckPointRaid(raidPtr)
+    Raid	*raidPtr;
+{
+    printf("RAID:MSG:Checkpointing RAID\n");
+    LockRaid(raidPtr);
+    SaveRaidState(raidPtr);
+    UnlockRaid(raidPtr);
+    printf("RAID:MSG:Checkpoint Complete\n");
+}
+
 void
 XLockStripe(raidPtr, stripe)
     Raid *raidPtr;
@@ -131,8 +142,21 @@ XLockStripe(raidPtr, stripe)
     char buf[120];
 
     SLockStripe(raidPtr, stripe);
-    sprintf(buf, "L %d\n", stripe);
-    LogEntry(raidPtr, buf);
+/* LOGOFF
+    if (!IsSet(raidPtr->lockedVec, stripe)) {
+	MASTER_LOCK(&raidPtr->mutex);
+	raidPtr->numStripeLocked++;
+	if (raidPtr->numStripeLocked % 100 == 0) {
+	    MASTER_UNLOCK(&raidPtr->mutex);
+	    Proc_CallFunc(CheckPointRaid, raidPtr, 0);
+	} else {
+	    MASTER_UNLOCK(&raidPtr->mutex);
+	}
+	sprintf(buf, "L %d\n", stripe);
+	LogEntry(raidPtr, buf);
+	SetBit(raidPtr->lockedVec, stripe);
+    }
+*/
 }
 
 
@@ -194,10 +218,12 @@ XUnlockStripe(raidPtr, stripe)
     Raid *raidPtr;
     int stripe;
 {
+/*
     char buf[120];
 
     sprintf(buf, "U %d\n", stripe);
     LogEntry(raidPtr, buf);
+*/
     SUnlockStripe(raidPtr, stripe);
 }
 
@@ -215,7 +241,7 @@ XUnlockStripe(raidPtr, stripe)
  *----------------------------------------------------------------------
  */
 
-int
+void
 LockRaid (raidPtr)
     Raid *raidPtr;
 {
