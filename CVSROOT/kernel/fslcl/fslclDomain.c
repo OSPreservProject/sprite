@@ -314,6 +314,13 @@ FslclSetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
     openArgsPtr = &setAttrArgsPtr->openArgs;
     fileIDPtr = (Fs_FileID *)resultsPtr;
 
+#ifdef SOSP91
+    SOSP_ADD_SET_ATTR_TRACE(openArgsPtr->clientID, openArgsPtr->migClientID, 
+	    handlePtr->hdr.fileID);
+    SOSP_REMEMBERED_OP = FS_DOMAIN_SET_ATTR;
+    SOSP_REMEMBERED_CLIENT = openArgsPtr->clientID;
+    SOSP_REMEMBERED_MIG = openArgsPtr->migClientID;
+#endif
     status = FslclLookup(prefixHandlePtr, relativeName, &openArgsPtr->rootID,
 			openArgsPtr->useFlags, openArgsPtr->type,
 			openArgsPtr->clientID,
@@ -322,13 +329,6 @@ FslclSetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
     if (status != SUCCESS) {
 	return(status);
     }
-#ifdef SOSP91
-    SOSP_ADD_SET_ATTR_TRACE(openArgsPtr->clientID, openArgsPtr->migClientID, 
-	    handlePtr->hdr.fileID);
-    SOSP_REMEMBERED_OP = FS_DOMAIN_SET_ATTR;
-    SOSP_REMEMBERED_CLIENT = openArgsPtr->clientID;
-    SOSP_REMEMBERED_MIG = openArgsPtr->migClientID;
-#endif
     /*
      * Set the attributes on the disk descriptor.
      */
