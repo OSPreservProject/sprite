@@ -124,8 +124,6 @@ DevFsTypeOps devFsOpTable[] = {
     {DEV_SCSI_HBA, DevSCSIDeviceOpen, Dev_NullRead, Dev_NullWrite,
 		    DevSCSIDeviceIOControl, DevSCSIDeviceClose, NullSelectProc,
 		    DEV_NO_ATTACH_PROC, NoDevice},
-
-#ifdef USE_RAID
     /*  
      * RAID device.
      */ 
@@ -140,13 +138,6 @@ DevFsTypeOps devFsOpTable[] = {
                     DevRawBlockDevWrite, DevRawBlockDevIOControl,
                     DevRawBlockDevClose, NullProc, DevDebugAttach,
                     DevRawBlockDevReopen},
-#else
-    {DEV_RAID, NoDevice, NullProc, NullProc,
-		    NullProc, NullProc, NullProc, DEV_NO_ATTACH_PROC, NoDevice},
-    {DEV_DEBUG, NoDevice, NullProc, NullProc,
-		    NullProc, NullProc, NullProc, DEV_NO_ATTACH_PROC, NoDevice},
-#endif /* USE_RAID */
-
     /*
      * Event devices for window systems.
      */
