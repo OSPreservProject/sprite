@@ -954,9 +954,28 @@ InitiateMigration(procPtr, nodeID)
     status = Rpc_Call(nodeID, RPC_PROC_MIG_INIT, &storage);
 
     if (status != SUCCESS) {
-	Sys_Panic(SYS_WARNING,
-		  "InitiateMigration: Error %x returned by Rpc_Call.\n",
-		  status);
+	/*
+	 * Sanity checking on storage block.
+	 */
+#define SANITY_CHECK
+#ifdef SANITY_CHECK
+	if ((storage.requestParamPtr != (Address) &procPtr->processID) ||
+	    (storage.requestParamSize != sizeof(Proc_PID)) ||
+	    (storage.requestDataPtr != (Address) NIL) ||
+	    (storage.requestDataSize != 0) ||
+	    (storage.replyParamPtr != (Address) NIL) ||
+	    (storage.replyParamSize != 0) ||
+	    (storage.replyDataPtr != (Address) NIL) ||
+	    (storage.replyDataSize != 0)) {
+	    Sys_Panic(SYS_FATAL, "InitiateMigration: Rpc_Storage corrupted.\n");
+	} else {
+#endif /* SANITY_CHECK */
+	    Sys_Panic((proc_MigDebugLevel > 0) ? SYS_FATAL : SYS_WARNING,
+		  "InitiateMigration: Error %x returned by host %d.\n",
+		  status, nodeID);
+#ifdef SANITY_CHECK
+	}
+#endif /* SANITY_CHECK */
     }
     return(status);
 }
@@ -1289,6 +1308,11 @@ Proc_DestroyMigratedProc(pidData)
 	Proc_Unlock(procPtr);
 	return;
     }
+    /*
+     * Wake up the process if it is asleep.
+     */
+    Sync_RemoveWaiter(procPtr);
+
     /*
      * Unlock the process again, since ProcExitProcess locks it.  [Is
      * there any race condition?  ProcExitProcess must be careful about
