@@ -20,6 +20,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 #include "sprite.h"
+#include "stdio.h"
 #include "mach.h"
 #include "dev.h"
 #include "devInt.h"
@@ -142,7 +143,6 @@ DevVMElinkInit(cntrlPtr)
 {
     unsigned int curStatus;
     volatile CtrlRegs *regPtr = (volatile CtrlRegs *)cntrlPtr->address;
-    int i;
     register VMELinkInfo *linkInfo;
 
     /*
