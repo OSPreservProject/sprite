@@ -18,7 +18,8 @@
 
 typedef struct EventTableType {
 	char		key;		/* Key for dump event. */
-	void		(*routine)();	/* Routine to call upon event. */
+	void		(*routine) _ARGS_((ClientData));
+					/* Routine to call upon event. */
 	ClientData	argument;	/* Argument to routine. */
 	char		*description;	/* Help description of event. */
 } EventTableType;
@@ -31,15 +32,15 @@ typedef struct EventTableType {
  * NULL_ARG - A missing argument pointer.
  */
 
-#define RESERVED_EVENT	((void (*)()) 1)	
-#define	LAST_EVENT	((void (*)()) 0)
+#define RESERVED_EVENT	((void (*) _ARGS_((ClientData)) ) 1)	
+#define	LAST_EVENT	((void (*) _ARGS_((ClientData)) ) 0)
 #define	NULL_ARG	((ClientData) 0)
 
 /*
  * Machine dependent routines for registering dump events.
  */
 
-extern void Dump_Register_Events();
-extern void Dump_Show_Local_Menu();
+extern void Dump_Register_Events _ARGS_((EventTableType *));
+extern void Dump_Show_Local_Menu _ARGS_((void));
 
 #endif /* _DUMPINT */

@@ -25,6 +25,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "proc.h"
 #include "sys.h"
 #include "list.h"
+#include "devVid.h"
 #include "rpc.h"
 #include "fs.h"
 #include "fsutil.h"
@@ -34,26 +35,21 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "recov.h"
 #include "string.h"
 #include "sched.h"
+#include <stdio.h>
 
 /*
  * Forward references that should be in other header files.
  */
 
 void	Mem_DumpStats();
-void	Timer_TimerGetInfo();
-void 	Sched_DumpReadyQueue();
-ReturnStatus 	Dev_VidEnable();
 
 /*
- * Forward references to void procedures internal to this file.
+ * Forward references to procedures internal to this file.
  */
-void	DumpList();
-void	DumpListLinksStruct();
-void	DumpTimerElement();
-void	DumpTimerStats();
-void 	PrintL1Menu();
-static void	PrintVersion();
-static void	PrintTOD();
+static void	PrintL1Menu _ARGS_((ClientData));
+static void	PrintTOD _ARGS_((ClientData));
+static void	PrintVersion _ARGS_((ClientData));
+
 /*
  * Table of routines and their arguments to be called on dump events.
  * Only machine independent dump events should be added to this table.
@@ -112,8 +108,9 @@ static EventTableType eventTable[] = {
  *----------------------------------------------------------------------
  */
 
-void
-PrintL1Menu()
+static void
+PrintL1Menu(arg)
+    ClientData arg;		/* unused */
 {
     EventTableType	*entry;
 
@@ -170,7 +167,8 @@ Dump_Init()
  */
 
 static void
-PrintTOD()
+PrintTOD(arg)
+    ClientData arg;		/* unused */
 {
     Time time1, time2, diff;
 
@@ -207,7 +205,8 @@ PrintTOD()
  */
 
 static void
-PrintVersion()
+PrintVersion(arg)
+    ClientData arg;		/* unused */
 {
     extern char *SpriteVersion();
     char *v;

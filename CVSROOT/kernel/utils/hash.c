@@ -22,8 +22,17 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "string.h"
 #include "list.h"
 #include "sys.h"
+#include "bstring.h"
+#include <stdio.h>
 
-void RebuildTable();
+/* 
+ * Forward declarations:
+ */
+
+static Hash_Entry *ChainSearch _ARGS_((Hash_Table *table, Address key,
+					     List_Links *hashList));
+static int Hash _ARGS_((Hash_Table *table, char *key));
+static void RebuildTable _ARGS_((Hash_Table *table));
 
 /* 
  * The following defines the ratio of # entries to # buckets
@@ -392,6 +401,7 @@ Hash_Delete(table, hashEntryPtr)
  *---------------------------------------------------------
  */
 
+static
 void
 RebuildTable(table)
     register	Hash_Table 	*table;		/* Table to be enlarged. */

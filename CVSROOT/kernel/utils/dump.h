@@ -13,9 +13,6 @@
 #ifndef _DUMP
 #define _DUMP
 
-extern void		Dump_Init();
-extern void		Dump_ProcessTable();
-extern void		Dump_ReadyQueue();
-extern void		Dump_TimerQueue();
+extern void	Dump_Init _ARGS_((void));
 
 #endif /* _DUMP */

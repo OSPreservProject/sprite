@@ -19,11 +19,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "trace.h"
+#include "bstring.h"
 #include "timer.h"
 #include "stdlib.h"
 #include "sys.h"
 #include "sync.h"
 #include "vm.h"
+#include <stdio.h>
 
 /* 
  * Trace module mutex.
@@ -78,15 +80,15 @@ Trace_Init(traceHdrPtr, numRecords, size, flags)
 
     if (size > 0) {
 	clientPtr = Vm_RawAlloc(numRecords * size);
+    } else {
+	clientPtr = (Address) NIL;
     }
     for (i = 0; i < numRecords; i++) {
 	recordPtr[i].flags = TRACE_UNUSED;
 	recordPtr[i].event = NIL;
+	recordPtr[i].traceData = (ClientData *) clientPtr;
 	if (size > 0) {
-	    recordPtr[i].traceData = (ClientData *) clientPtr;
 	    clientPtr += size;
-	} else {
-	    recordPtr[i].traceData = (ClientData *) NIL;
 	}
     }
 }

@@ -126,13 +126,17 @@ typedef struct Hash_Search {
  * the implementation code.
  */
 
-extern void 		Hash_Init();
-extern void		Hash_Stats();
-extern void		Hash_Kill();
-extern Hash_Entry 	*Hash_Find();
-extern Hash_Entry 	*Hash_LookOnly();
-extern void 		Hash_Delete();
-extern void 		Hash_StartSearch();
-extern Hash_Entry	*Hash_Next();
+extern void 		Hash_Init _ARGS_((Hash_Table *table, int numBuckets,
+					  int ptrKeys));
+extern void		Hash_Stats _ARGS_((Hash_Table *table));
+extern void		Hash_Kill _ARGS_((Hash_Table *table));
+extern Hash_Entry 	*Hash_Find _ARGS_((Hash_Table *table, Address key));
+extern Hash_Entry 	*Hash_LookOnly _ARGS_((Hash_Table *table,
+					       Address key));
+extern void 		Hash_Delete _ARGS_((Hash_Table *table,
+					    Hash_Entry *hashEntryPtr));
+extern void 		Hash_StartSearch _ARGS_((Hash_Search *hashSearchPtr));
+extern Hash_Entry	*Hash_Next _ARGS_((Hash_Table *table,
+					   Hash_Search *hashSearchPtr));
 
 #endif /* _HASH */

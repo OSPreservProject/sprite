@@ -63,7 +63,14 @@ typedef struct Trace_Record {
 #define TRACE_UNUSED 		0x01
 #define TRACE_DATA_INVALID	0x10
 
-extern void Trace_Init();	
-extern void Trace_Insert();	
+extern void		Trace_Init _ARGS_((Trace_Header *traceHdrPtr,
+					   int numRecords, int size,
+					   int flags));
+extern void		Trace_Insert _ARGS_((Trace_Header *traceHdrPtr,
+					     int event, ClientData data));
+extern ReturnStatus	Trace_Dump _ARGS_((Trace_Header *traceHdrPtr,
+					   int numRecs, Address addr));
+extern ReturnStatus	Trace_Print _ARGS_((Trace_Header *traceHdrPtr,
+					    int numRecs, int (*printProc)()));
 
 #endif /* _TRACE */
