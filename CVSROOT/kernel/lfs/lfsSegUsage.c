@@ -101,13 +101,17 @@ LfsSegUsageAllocateBytes(lfsPtr, numBytes)
     LfsSegUsage *usagePtr = &(lfsPtr->usageArray);
     LfsSegUsageCheckPoint *cp = &(usagePtr->checkPoint);
     int blocks;
+    char errMsg[1024];
 
     blocks = LfsBytesToBlocks(lfsPtr, numBytes);
     if (cp->freeBlocks - blocks > usagePtr->params.minFreeBlocks) { 
 	return SUCCESS;
     }
-    printf("LfsSegUsageAllocateBytes: no space on %s.\n",
-	   lfsPtr->name);	/* DEBUG */
+    sprintf(errMsg, "LfsSegUsageAllocateBytes: no space on %s.\n",
+	    lfsPtr->name);	/* DEBUG */
+    if (Timer_OkToWhine(errMsg)) {
+	printf(errMsg);
+    }
     return FS_NO_DISK_SPACE;
 }
 
@@ -561,7 +565,7 @@ LfsGetLogTail(lfsPtr, cantWait, logRangePtr, startBlockPtr)
     int		segNumber;
     ReturnStatus      status;
     LfsStableMemEntry smemEntry;
-
+    char errMsg[1024];
 
     if (!cantWait && 
 	(cp->numClean <= 
@@ -585,8 +589,12 @@ LfsGetLogTail(lfsPtr, cantWait, logRangePtr, startBlockPtr)
      * Need to location a new segment.
      */
     if (cp->numClean == 0) {
-	printf("LfsGetLogTail: no space (no clean segments) on %s.\n",
-	       lfsPtr->name);	/* DEBUG */
+	sprintf(errMsg,
+		"LfsGetLogTail: no space (no clean segments) on %s.\n",
+		lfsPtr->name);	/* DEBUG */
+	if (Timer_OkToWhine(errMsg)) {
+	    printf(errMsg);
+	}
 	return FS_NO_DISK_SPACE;
     }
     /*
