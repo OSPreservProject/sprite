@@ -18,23 +18,25 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
+#include <sprite.h>
 
-#include "fs.h"
-#include "vm.h"
-#include "rpc.h"
-#include "fsutil.h"
-#include "fslcl.h"
-#include "fsNameOps.h"
-#include "fsprefix.h"
-#include "fsutilTrace.h"
-#include "fsStat.h"
-#include "sync.h"
-#include "timer.h"
-#include "proc.h"
-#include "trace.h"
-#include "hash.h"
-#include "fsrmt.h"
+#include <fs.h>
+#include <vm.h>
+#include <rpc.h>
+#include <fsutil.h>
+#include <fslcl.h>
+#include <fsNameOps.h>
+#include <fsprefix.h>
+#include <fsutilTrace.h>
+#include <fsStat.h>
+#include <sync.h>
+#include <timer.h>
+#include <proc.h>
+#include <trace.h>
+#include <hash.h>
+#include <fsrmt.h>
+
+#include <stdio.h>
 
 Trace_Header fsTraceHdr;
 Trace_Header *fsutil_TraceHdrPtr = &fsTraceHdr;
@@ -132,6 +134,7 @@ Fsutil_TraceInit()
     Time_Subtract(lastPtr->time, firstPtr->time, &fsTraceTime);
     Time_Divide(fsTraceTime, 9, &fsTraceTime);
 
+    return 0;
 }
 
 /*
@@ -219,6 +222,7 @@ Fsutil_PrintTraceRecord(clientData, event, printHeaderFlag)
 	    printf("(%d)", event);
 	}
     }
+    return 0;
 }
 
 /*
