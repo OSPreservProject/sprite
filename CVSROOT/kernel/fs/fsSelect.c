@@ -24,18 +24,19 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsutil.h"
-#include "fsNameOps.h"
-#include "fsio.h"
-#include "sync.h"
-#include "list.h"
-#include "proc.h"
-#include "sig.h"
-#include "dbg.h"
-#include "timer.h"
-#include "rpc.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsNameOps.h>
+#include <fsio.h>
+#include <sync.h>
+#include <list.h>
+#include <proc.h>
+#include <sig.h>
+#include <dbg.h>
+#include <timer.h>
+#include <rpc.h>
+#include <vm.h>
 
 
 /*
@@ -55,10 +56,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 #define MAX_NUM_ROWS	(MAX_NUM_STREAMS / BITS_PER_ROW)
 
-/*
- * Routine called in FsSelect if the call timed-out.
- */
-static void TimeoutProc();
 
 /*
  * Structure passed to the timeout proc to allow the process to be woken up.
@@ -68,6 +65,10 @@ typedef struct {
     int			timeOut;
 } WakeupInfo;
 
+/*
+ * Routine called in FsSelect if the call timed-out.
+ */
+static void TimeoutProc _ARGS_((Timer_Ticks ticks, ClientData clientData));
 
 
 /*
@@ -127,9 +128,9 @@ Fs_SelectStub(numStreams, userTimeoutPtr, userReadMaskPtr, userWriteMaskPtr,
     register int	mask;		/* Selects bit within a row of
 					 * inReadMasks, inWriteMasks,
 					 * inExceptMasks. */
-    register int	inReadMask;	/* Contents of a row of inReadMasks. */
-    register int	inWriteMask;	/* Contents of a row of inWriteMasks. */
-    int			inExceptMask;	/* Contents of a row of inExceptMasks.*/
+    register int	inReadMask = 0;	/* Contents of a row of inReadMasks. */
+    register int	inWriteMask = 0;/* Contents of a row of inWriteMasks. */
+    int			inExceptMask = 0;/* Contents of a row of inExceptMasks.*/
     int			intsInMask;	/* # of integers in inReadMasks,
 					 * inWriteMasks and inExceptMasks. */
     int			bytesInMask;	/* # of bytes in inReadMasks,
@@ -512,10 +513,11 @@ allDone:
 
 /*ARGSUSED*/
 static void
-TimeoutProc(ticks, wakeupInfoPtr)
+TimeoutProc(ticks, clientData)
     Timer_Ticks	ticks;
-    WakeupInfo	*wakeupInfoPtr;
+    ClientData	clientData;
 {
+    WakeupInfo	*wakeupInfoPtr = (WakeupInfo *) clientData;
     wakeupInfoPtr->timeOut = TRUE;
     Sync_ProcWakeup(wakeupInfoPtr->procPtr->processID,
                     wakeupInfoPtr->procPtr->waitToken);
