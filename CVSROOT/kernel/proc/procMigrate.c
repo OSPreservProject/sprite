@@ -60,7 +60,7 @@ Boolean proc_RefuseMigrations = FALSE;
  * machines of the same architecture and version number.
  */
 #ifndef PROC_MIGRATE_VERSION
-#define PROC_MIGRATE_VERSION 1
+#define PROC_MIGRATE_VERSION 2
 #endif /* PROC_MIGRATE_VERSION */
 
 int proc_MigrationVersion = PROC_MIGRATE_VERSION;
@@ -128,6 +128,13 @@ Proc_Migrate(pid, nodeID)
 	return(SUCCESS);
     }
     
+    /*
+     * We don't really support the PROC_MIG_ANY hostID.
+     */
+    if (nodeID == PROC_MIG_ANY) {
+	return(PROC_INVALID_NODE_ID);
+    }
+
     if (Proc_ComparePIDs(pid, PROC_ALL_PROCESSES)) {
 	status = Proc_EvictForeignProcs();
 	return(status);
@@ -164,6 +171,7 @@ Proc_Migrate(pid, nodeID)
 	    printf("Proc_Migrate: process %x has exited.\n",
 		       procPtr->processID);
 	}
+	Proc_Unlock(procPtr);
 	return(PROC_INVALID_PID);
     }
     if (procPtr->state == PROC_MIGRATED) {
@@ -171,6 +179,16 @@ Proc_Migrate(pid, nodeID)
 	    printf("Proc_Migrate: process %x has already migrated.\n",
 		       procPtr->processID);
 	}
+	Proc_Unlock(procPtr);
+	return(PROC_INVALID_PID);
+    }
+	
+    if (procPtr->genFlags & PROC_FOREIGN) {
+	if (proc_MigDebugLevel > 0) {
+	    printf("Proc_Migrate: process %x is foreign... can't migrate yet.\n",
+		       procPtr->processID);
+	}
+	Proc_Unlock(procPtr);
 	return(PROC_INVALID_PID);
     }
 	
@@ -183,18 +201,10 @@ Proc_Migrate(pid, nodeID)
     }
    
     /*
-     * If no node is specified, pick a node somehow.  Can't do this yet.
-     * Should also check validity of node ID here.  For example, you
-     * are not allowed to migrate to yourself.
-     *
      * Contact the remote workstation to establish communication and
      * verify that migration is permissible.
      */
     
-    if ((nodeID == PROC_MIG_ANY) || (nodeID == rpc_SpriteID)) {
-	return(PROC_INVALID_NODE_ID);
-    }
-
     status = InitiateMigration(procPtr, nodeID);
 
 
