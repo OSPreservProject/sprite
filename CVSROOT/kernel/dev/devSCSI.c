@@ -26,6 +26,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devInt.h"
 #include "scsi.h"
 #include "devSCSI.h"
+#include "devSCSI3Regs.h"	/* To get UDC control block size */
 #include "devMultibus.h"
 #include "devDiskLabel.h"
 #include "devSCSIDisk.h"
@@ -136,11 +137,21 @@ Dev_SCSIInitController(cntrlrPtr)
     DevConfigController *cntrlrPtr;	/* Config info for the controller */
 {
     DevSCSIController *scsiPtr;		/* SCSI specific state */
+    int bufferSize;			/* Total size of small buffers that
+					 * have to be in special DMA memory */
+    Address dmaAreaBuffer;		/* Area with a physical page behind it*/
 
     /*
      * Allocate space for SCSI specific state and
      * initialize the controller itself.
      */
+#ifdef sun2
+    /*
+     * Define these away so we don't have to load the SCSI3 code
+     */
+#define DevSCSI3ProbeOnBoard(address, scsiPtr)		FALSE
+#define DevSCSI3ProbeVME(address, scsiPtr, vector)	FALSE
+#endif
     scsiPtr = (DevSCSIController *)malloc(sizeof(DevSCSIController));
     if (cntrlrPtr->space == DEV_OBIO) {
 	if (!DevSCSI3ProbeOnBoard(cntrlrPtr->address, scsiPtr)) {
@@ -160,27 +171,33 @@ Dev_SCSIInitController(cntrlrPtr)
     (*scsiPtr->resetProc)(scsiPtr);
 
     /*
-     * Allocate the mapped multibus memory to buffers:  one small buffer
+     * Allocate the mapped DMA memory to buffers:  one small buffer
      * for sense data, a one sector buffer for the label, and one buffer
-     * for reading and writing filesystem blocks.  A physical page is
-     * obtained for the sense data and the label.  The general buffer gets
-     * mapped just before a read or write.  It has to be twice as large as
-     * the maximum transfer size so that an unaligned block can be mapped
-     * into it.
+     * for reading and writing filesystem blocks.  One physical page is
+     * obtained for the all the small things.  The general buffer gets
+     * mapped just before a read or write.  
      */
-    scsiPtr->senseBuffer =
-	    (DevSCSISense *)VmMach_DevBufferAlloc(&devIOBuffer,
-					       sizeof(DevSCSISense));
-    VmMach_GetDevicePage((Address)scsiPtr->senseBuffer);
+    bufferSize = sizeof(DevSCSISense) +
+		  DEV_BYTES_PER_SECTOR;
+#ifndef sun2
+    if (scsiPtr->onBoard) {
+	bufferSize += sizeof(DevUDCDMAtable);
+    }
+#endif
+    dmaAreaBuffer = VmMach_DevBufferAlloc(&devIOBuffer, bufferSize);
+    VmMach_GetDevicePage(dmaAreaBuffer);
 
-    scsiPtr->labelBuffer = VmMach_DevBufferAlloc(&devIOBuffer,
-					     DEV_BYTES_PER_SECTOR);
-    VmMach_GetDevicePage((Address)scsiPtr->labelBuffer);
+    scsiPtr->senseBuffer = (DevSCSISense *)dmaAreaBuffer;
+    dmaAreaBuffer += sizeof(DevSCSISense);
+    scsiPtr->labelBuffer = dmaAreaBuffer;
+#ifndef sun2
+    if (scsiPtr->onBoard) {
+	dmaAreaBuffer += DEV_BYTES_PER_SECTOR;
+	scsiPtr->udcDmaTable = (DevUDCDMAtable *)dmaAreaBuffer;
+    }
+#endif
 
-    scsiPtr->IOBuffer = VmMach_DevBufferAlloc(&devIOBuffer,
-            2 * max(FS_BLOCK_SIZE,
-		    MAX_WORM_SECTORS_IO * DEV_BYTES_PER_WORM_SECTOR));
-    
+    scsiPtr->IOBuffer = VmMach_DevBufferAlloc(&devIOBuffer, DEV_MAX_IO_BUF_SIZE);    
     /*
      * Initialize synchronization variables and set the controllers
      * state to alive and not busy.
@@ -425,7 +442,9 @@ DevSCSIRequestSense(scsiPtr, devPtr)
 {
     ReturnStatus status = SUCCESS;
     register DevSCSISense *sensePtr = scsiPtr->senseBuffer;
-    int command;
+    int command;	/* Previous command that generated sense data */
+    int residual;	/* Previous command's residual.  This'll get overwritten
+			 * by our command to get the sense bytes */
 
     if (scsiPtr->flags & SCSI_GETTING_STATUS) {
 	printf("Warning: DevSCSIRequestSense recursed");
@@ -438,6 +457,7 @@ DevSCSIRequestSense(scsiPtr, devPtr)
 	bzero((Address)sensePtr, sizeof(DevSCSISense));
 	scsiPtr->flags |= SCSI_GETTING_STATUS;
 	command = scsiPtr->command;
+	residual = scsiPtr->residual;
 	DevSCSISetupCommand(SCSI_REQUEST_SENSE, devPtr, 0,sizeof(DevSCSISense));
 	status = (*scsiPtr->commandProc)(devPtr->targetID, scsiPtr,
 			    sizeof(DevSCSISense), (Address)sensePtr, WAIT);
@@ -453,6 +473,7 @@ DevSCSIRequestSense(scsiPtr, devPtr)
 			((DevSCSITape *)devPtr->data));
 	}
 	status = (*devPtr->errorProc)(devPtr, sensePtr);
+	scsiPtr->residual = residual;
     }
     return(status);
 }
