@@ -34,7 +34,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsFile.h"
 #include "fsDevice.h"
 #include "fsSpriteDomain.h"
-#include "fsSpriteDomain.h"
 #include "fsPrefix.h"
 #include "fsOpTable.h"
 #include "fsDebug.h"
