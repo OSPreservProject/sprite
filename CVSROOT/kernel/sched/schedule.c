@@ -1271,3 +1271,93 @@ Sched_DumpReadyQueue()
 	}
     }
 }
+
+
+/*
+ * Temporary call-back for printing sched statistics for recovery.
+ */
+Timer_QueueElement      schedStatElement;
+Boolean                 getSchedStats = FALSE;
+
+/*ARGSUSED*/
+void
+SchedPrintSchedStats(time, clientData)
+    Timer_Ticks time;
+    ClientData  clientData;
+{
+    int                 numStats;
+    int                 i;
+
+    /* print stuff */
+    Sched_PrintStat();
+    for (i = 0; i < mach_NumProcessors; i++) {
+	printf("processor %d:\n", i);
+        printf("idleTicksLow: %d\n",
+		sched_Instrument.processor[i].idleTicksLow);
+        printf("idleTicksOverflow: %d\n",
+		sched_Instrument.processor[i].idleTicksOverflow);
+    }
+    printf("\n");
+
+    if (getSchedStats) {
+        Timer_ScheduleRoutine(&schedStatElement, TRUE);
+    }
+    return;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sched_StartSchedStats --
+ *
+ *      Start up the kernel's periodic printing of sched stats.
+ *      Temporary routine for recovery statistics.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Call-back routine scheduled.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Sched_StartSchedStats()
+{
+    schedStatElement.routine = SchedPrintSchedStats;
+    schedStatElement.clientData = 0;
+    schedStatElement.interval = timer_IntOneSecond * 10;
+    getSchedStats = TRUE;
+    Timer_ScheduleRoutine(&schedStatElement, TRUE);
+
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sched_StopSchedStats --
+ *
+ *      Stop the kernel's periodic printing of sched stats.
+ *      Temporary routine for recovery statistics.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Call-back routine descheduled.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Sched_StopSchedStats()
+{
+    getSchedStats = FALSE;
+    (void) Timer_DescheduleRoutine(&schedStatElement);
+
+    return;
+}
+

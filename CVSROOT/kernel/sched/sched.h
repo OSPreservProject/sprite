@@ -141,5 +141,7 @@ extern void			Sched_SetClearUsageFlag();
 extern void			Sched_DumpReadyQueue();
 extern ReturnStatus		Sched_StartProcessor();
 extern ReturnStatus		Sched_IdleProcessor();
+extern void			Sched_StartSchedStats();
+extern void			Sched_StopSchedStats();
 
 #endif /* _SCHED */
