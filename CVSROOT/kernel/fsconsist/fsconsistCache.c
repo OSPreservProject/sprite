@@ -139,6 +139,7 @@ ReturnStatus	EndConsistency();
 void	 	ClientCommand();
 void		ProcessConsist();
 void		ProcessConsistReply();
+char *		ConsistType();
 
 
 /*
@@ -1345,20 +1346,19 @@ ClientCommand(consistPtr, clientPtr, flags)
 	return;
     }
     /*
-     * Map to the client's view of the file (i.e. remote).  The openTimeStamp
-     * lets the client catch races between this message and the reply
-     * to an open it may be making at the same time.
+     * Map to the client's view of the file (i.e. remote).
      */
     consistRpc.fileID = consistPtr->hdrPtr->fileID;
-    switch (consistPtr->hdrPtr->fileID.type) {
-	case FS_LCL_FILE_STREAM:
-	    consistRpc.fileID.type = FS_RMT_FILE_STREAM;
-	    break;
-	default:
+    if (consistRpc.fileID.type != FS_LCL_FILE_STREAM) {
 	    Sys_Panic(SYS_FATAL, "ClientCommand, bad stream type <%d>\n",
-		consistPtr->hdrPtr->fileID.type);
-	    break;
+		consistRpc.fileID.type);
+    } else {
+	consistRpc.fileID.type = FS_RMT_FILE_STREAM;
     }
+    /*
+     * The openTimeStamp lets the client catch races between this message
+     * and the reply to an open it may be making at the same time.
+     */
     consistRpc.flags = flags;
     consistRpc.openTimeStamp = clientPtr->openTimeStamp;
 
@@ -1405,9 +1405,9 @@ ClientCommand(consistPtr, clientPtr, flags)
 		Sys_Panic(SYS_FATAL, "Client %d dropped too many requests\n",
 			    clientPtr->clientID);
 	    } else {
-		Sys_Panic(SYS_WARNING, "Client %d dropped consist request %x\n",
-		    clientPtr->clientID, flags);
-		if (numRefusals > 8) {
+		Sys_Panic(SYS_WARNING, "Client %d dropped consist request %s\n",
+		    clientPtr->clientID, ConsistType(flags));
+		if (numRefusals > 30) {
 		    consistRpc.flags |= FS_DEBUG_CONSIST;
 		}
 	    }
@@ -1423,8 +1423,10 @@ ClientCommand(consistPtr, clientPtr, flags)
 	 * done this for us).
 	 */
 	register ConsistMsgInfo *existingMsgPtr;
-	Sys_Panic(SYS_WARNING, "ClientCommand, msg %x to client %d failed %x\n",
-	    flags, clientPtr->clientID, status);
+	Sys_Panic(SYS_WARNING,
+	    "ClientCommand, %s msg to client %d file <%d,%d> failed %x\n",
+	    ConsistType(flags), clientPtr->clientID,
+	    consistRpc.fileID.major, consistRpc.fileID.minor, status);
 	LIST_FORALL(&(consistPtr->msgList), (List_Links *) existingMsgPtr) {
 	    if (existingMsgPtr == msgPtr) {
 		List_Remove((List_Links *) msgPtr);
@@ -1484,6 +1486,53 @@ Fs_RpcConsist(srvToken, clientID, command, storagePtr)
      * this could cause deadlock.  This may still be true.  3/9/88.
      */
     rmtHandlePtr = FsHandleFetchType(FsRmtFileIOHandle, &consistArgPtr->fileID);
+    if (rmtHandlePtr == (FsRmtFileIOHandle *)NIL) {
+	if (FsPrefixOpenInProgress(&consistArgPtr->fileID) == 0) {
+	    status = FS_STALE_HANDLE;
+	    Sys_Panic(SYS_WARNING,
+		    "Fs_RpcConsist: <%d,%d> %s msg from %d dropped: %s\n",
+		    consistArgPtr->fileID.major,
+		    consistArgPtr->fileID.minor,
+		    ConsistType(consistArgPtr->flags),
+		    consistArgPtr->fileID.serverID,
+		    "no handle");
+	} else {
+	    status = FAILURE;
+	    Sys_Panic(SYS_WARNING,
+		    "Fs_RpcConsist: <%d,%d> %s msg from %d dropped: %s\n",
+		    consistArgPtr->fileID.major,
+		    consistArgPtr->fileID.minor,
+		    ConsistType(consistArgPtr->flags),
+		    consistArgPtr->fileID.serverID,
+		    "open in progress");
+	}
+    } else if (rmtHandlePtr->openTimeStamp != consistArgPtr->openTimeStamp) {
+	if (FsPrefixOpenInProgress(&consistArgPtr->fileID) == 0) {
+	    status = FS_STALE_HANDLE;
+	    Sys_Panic(SYS_WARNING,
+		"Fs_RpcConsist: <%d,%d> %s msg from %d timestamp %d not %d, %s\n",
+		    consistArgPtr->fileID.major,
+		    consistArgPtr->fileID.minor,
+		    ConsistType(consistArgPtr->flags),
+		    consistArgPtr->fileID.serverID,
+		    consistArgPtr->openTimeStamp, rmtHandlePtr->openTimeStamp,
+		    "stale handle");
+	} else {
+	    status = FAILURE;
+	    Sys_Panic(SYS_WARNING,
+		"Fs_RpcConsist: <%d,%d> %s msg from %d timestamp %d not %d, %s\n",
+		    consistArgPtr->fileID.major,
+		    consistArgPtr->fileID.minor,
+		    ConsistType(consistArgPtr->flags),
+		    consistArgPtr->fileID.serverID,
+		    consistArgPtr->openTimeStamp, rmtHandlePtr->openTimeStamp,
+		    "open in progress");
+	}
+    } else {
+	status = SUCCESS;
+    }
+
+#ifdef notdef
     if ((rmtHandlePtr != (FsRmtFileIOHandle *)NIL) &&
 	(rmtHandlePtr->openTimeStamp == consistArgPtr->openTimeStamp)) {
 	status = SUCCESS;
@@ -1496,6 +1545,7 @@ Fs_RpcConsist(srvToken, clientID, command, storagePtr)
 	 */
 	status = FAILURE;
     }
+#endif notdef
     if (rmtHandlePtr != (FsRmtFileIOHandle *)NIL) {
 	FsHandleRelease(rmtHandlePtr, TRUE);
     }
@@ -1510,14 +1560,16 @@ Fs_RpcConsist(srvToken, clientID, command, storagePtr)
 	Proc_CallFunc(ProcessConsist, (ClientData) consistPtr, 0);
     } else if (consistArgPtr->flags & FS_DEBUG_CONSIST) {
 	Sys_Panic(SYS_FATAL, "Fs_RpcConsist: told to enter debugger\n");
+#ifdef notdef
     } else {
 	Sys_Panic(SYS_WARNING,
-	    "Fs_RpcConsist: <%d,%d> %s, action %x\n",
+	    "Fs_RpcConsist: <%d,%d> %s msg dropped: %s\n",
 		    consistArgPtr->fileID.major,
 		    consistArgPtr->fileID.minor,
+		    ConsistType(consistArgPtr->flags),
 		    (status == FS_STALE_HANDLE) ? "stale handle" :
-						  "open/consist race",
-		    consistArgPtr->flags);
+						  "open/consist race");
+#endif notdef
     }
     Rpc_Reply(srvToken, status, storagePtr, (int(*)())NIL, (ClientData)NIL);
     return(SUCCESS);
@@ -1573,8 +1625,8 @@ ProcessConsist(data, callInfoPtr)
 	return;
     }
 
-    FS_CACHE_DEBUG_PRINT2("ProcessConsist: Got request %x for file %d\n", 
-		    consistPtr->args.flags, handlePtr->rmt.hdr.fileID.minor);
+    FS_CACHE_DEBUG_PRINT2("ProcessConsist: Got %s request for file %d\n", 
+	ConsistType(consistPtr->args.flags), handlePtr->rmt.hdr.fileID.minor);
 
     /*
      * Process the request.
@@ -1620,7 +1672,6 @@ ProcessConsist(data, callInfoPtr)
 	    Sys_Panic(SYS_WARNING, 
 		      "ProcessConsist: Bad consistency action %x\n",
 		      consistPtr->args.flags);
-
     }
     /*
      * The server wants the cached file attributes that we have.
@@ -1762,8 +1813,8 @@ ProcessConsistReply(consistPtr, clientID, replyPtr)
 	return;
     }
     if (replyPtr->status != SUCCESS) {
-	Sys_Panic(SYS_WARNING, "ProcessConsist: consistency failed <%x>\n",
-				    replyPtr->status);
+	Sys_Panic(SYS_WARNING, "ProcessConsist: %s request failed <%x>\n",
+		ConsistType(msgPtr->flags), replyPtr->status);
 	consistPtr->flags |= FS_CONSIST_ERROR;
     } else {
 	if (msgPtr->flags & FS_WRITE_BACK_BLOCKS) {
@@ -1813,4 +1864,45 @@ ProcessConsistReply(consistPtr, clientID, replyPtr)
     Mem_Free((Address) msgPtr);
 
     UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConsistType --
+ *
+ *	Utility routine to map from consistency flags to a printable string.
+ *
+ * Results:
+ *	A pointer to a printable string.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+ConsistType(flags)
+    int flags;		/* Cache consistency message flags */
+{
+    register char *result;
+    switch (flags & ~FS_DEBUG_CONSIST) {
+	case FS_WRITE_BACK_BLOCKS:
+	    result = "write-back";
+	    break;
+	case FS_INVALIDATE_BLOCKS:
+	    result = "invalidate";
+	    break;
+	case (FS_WRITE_BACK_BLOCKS|FS_INVALIDATE_BLOCKS):
+	    result = "write-back & invalidate";
+	    break;
+	case FS_DELETE_FILE:
+	    result = "delete";
+	    break;
+	case FS_WRITE_BACK_ATTRS:
+	    result = "return-attrs";
+	    break;
+    }
+    return(result);
 }
