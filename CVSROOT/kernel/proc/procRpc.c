@@ -184,7 +184,17 @@ static CallBack callBackVector[] = {
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_MACH_NUM_PROCESSORS 92 */
     { RSNIL /* Not migrated */,         RSNIL }, /* SYS_PROF_PROFIL 93 */
     { RSNIL /* Not migrated */,		RSNIL }, /* SYS_PROC_REMOTE_EXEC     94 */
-    { RSNIL /* Not migrated */,		RSNIL},  /* SYS_SYS_GETMACHINEINFO_NEW 95 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_SYS_GETMACHINEINFO_NEW  95 */
+    { RSNIL /* Not migrated */,		RSNIL},  /* VM_MMAP 96 */
+    { RSNIL /* Not migrated */,		RSNIL},  /* VM_MUNMAP 97 */
+    { RSNIL /* Not migrated */,		RSNIL},  /* VM_MSYNC 98 */
+    { RSNIL /* Not migrated */,		RSNIL},  /* VM_MLOCK 99 */
+    { RSNIL /* Not migrated */,		RSNIL},  /* VM_MUNLOCK 100 */
+    { RSNIL /* Not migrated */,		RSNIL},  /* VM_MINCORE 101 */
+    { RSNIL /* Not migrated */,		RSNIL},  /* SYNC_SEMCTL 102 */
+    { RSNIL /* Not migrated */,		RSNIL},  /* SYNC_SEMGET 103 */
+    { RSNIL /* Not migrated */,		RSNIL},  /* SYNC_SEMOP 104 */
+    { RSNIL /* Not migrated */,		RSNIL},  /* VM_MPROTECT 105 */
 };
 
 
