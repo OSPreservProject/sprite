@@ -870,8 +870,8 @@ RpcResend(srvPtr)
      */
     if ((srvPtr->replyRpcHdr.flags & RPC_ERROR) == 0 &&
 	(srvPtr->replyRpcHdr.command != srvPtr->requestRpcHdr.command)) {
-	printf("RpcResend: request (%d) reply (%d) mismatch, RPC seq # %x\n",
-	    srvPtr->requestRpcHdr.command, srvPtr->replyRpcHdr.command,
+	printf("RpcResend: RPC %d, client %d, RPC seq # %x, forgot reply?\n",
+	    srvPtr->requestRpcHdr.command, srvPtr->requestRpcHdr.clientID,
 	    srvPtr->requestRpcHdr.ID);
 	return;
     }
