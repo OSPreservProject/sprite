@@ -140,7 +140,7 @@ FsOpenOps fsOpenOpTable[] = {
     /*
      * Special file type for testing new kinds of files.
      */
-    { FS_XTRA_FILE, NoProc},
+    { FS_XTRA_FILE, FsFileSrvOpen},
 };
 /*
  * Domain specific get/set attributes table.  These routines are used
