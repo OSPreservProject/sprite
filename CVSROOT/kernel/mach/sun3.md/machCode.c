@@ -1023,7 +1023,7 @@ MachTrap(trapStack)
 			    *(int *)&trapStack.busErrorReg);
 		(void) Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL, 
 				procPtr->processID, FALSE,
-				trapStack.execStack.tail.addrBusErr.faultAddr);
+				trapStack.excStack.tail.addrBusErr.faultAddr);
 	    }
 	    break;
 	}
@@ -1065,7 +1065,7 @@ MachTrap(trapStack)
 	case MACH_ADDRESS_ERROR:
 	    (void) Sig_Send(SIG_ADDR_FAULT, SIG_ADDR_ERROR,
 			    procPtr->processID, FALSE,
-			    trapStack.execStack.tail.addrBusErr.faultAddr);
+			    trapStack.excStack.tail.addrBusErr.faultAddr);
 	    break;
 	case MACH_ILLEGAL_INST:
 	    (void) Sig_Send(SIG_ILL_INST, SIG_ILL_INST_CODE,
