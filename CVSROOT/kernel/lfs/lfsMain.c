@@ -17,19 +17,30 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "lfs.h"
-#include "lfsInt.h"
-#include "stdlib.h"
-#include "fsioDevice.h"
-#include "fsdm.h"
+#include <sprite.h>
+#include <lfs.h>
+#include <lfsInt.h>
+#include <stdlib.h>
+#include <fsioDevice.h>
+#include <fsdm.h>
+#include <proc.h>
+#include <stdlib.h>
+#include <string.h>
 
 
+typedef struct CheckPointData {
+    Lfs		*lfsPtr;	/* Lfs data structure of file system. */
+    Boolean	interval;	/* Set to TRUE if the checkpoint should
+				 * stop. */
+} CheckPointData;
+
+static void CheckpointCallBack _ARGS_((ClientData clientData, 
+		Proc_CallInfo *callInfoPtr));
 
 /*
  *----------------------------------------------------------------------
  *
- * Init --
+ * Lfs_Init --
  *
  *	Initialized the modules of LFS.
  *
@@ -75,8 +86,9 @@ Lfs_AttachDisk(devicePtr, localName, flags, domainNumPtr)
     int *domainNumPtr;		/* OUT: Domain number allocated. */
 {
     Lfs			*lfsPtr;
+    LfsDiskAddr		diskAddr;
     ReturnStatus	status;
-
+    CheckPointData 	*cpDataPtr;
     /*
      * Allocate space for the Lfs data structure fill in the fields need
      * by the rest of the Lfs module to perform initialization correctly.
@@ -85,18 +97,17 @@ Lfs_AttachDisk(devicePtr, localName, flags, domainNumPtr)
     bzero((char *)lfsPtr, sizeof(*lfsPtr));
     lfsPtr->devicePtr = devicePtr;
     lfsPtr->name = localName;
-    lfsPtr->readOnly = ((flags & FS_ATTACH_READ_ONLY) != 0);
-    lfsPtr->dirty = FALSE;
+    lfsPtr->name = malloc(strlen(localName)+1);
+    (void) strcpy(lfsPtr->name, localName);
+    lfsPtr->attachFlags = flags;
 
-    Sync_LockInitDynamic(&(lfsPtr->lfsLock), "LfsLock");
-    lfsPtr->locked = FALSE;
     /*
      * Read the super block of the file system. Put a lot of trust in the
      * magic number. 
      */
-
-    status = LfsReadBytes(lfsPtr, LFS_SUPER_BLOCK_OFFSET,  
-		LFS_SUPER_BLOCK_SIZE, (char *) &(lfsPtr->superBlock));
+    LfsOffsetToDiskAddr(LFS_SUPER_BLOCK_OFFSET, &diskAddr);
+    status = LfsReadBytes(lfsPtr, diskAddr,  LFS_SUPER_BLOCK_SIZE,
+		 (char *) &(lfsPtr->superBlock));
     if (status != SUCCESS) {
 	free((char *) lfsPtr);
 	return status;
@@ -110,21 +121,31 @@ Lfs_AttachDisk(devicePtr, localName, flags, domainNumPtr)
 	return FAILURE;
     }
     lfsPtr->blockSizeShift = LfsLogBase2((unsigned)LfsBlockSize(lfsPtr));
-    lfsPtr->activeBlockOffset = -1;
-    lfsPtr->writeBackActive = FALSE;
-    lfsPtr->checkForMoreWork = FALSE;
-    lfsPtr->cleanActive = FALSE;
+    lfsPtr->checkpointIntervalPtr = (int *) NIL;
+    Sync_LockInitDynamic(&(lfsPtr->lock), "LfsLock");
+    lfsPtr->activeFlags = 0;
+    lfsPtr->dirModsActive = 0;
     status = LfsLoadFileSystem(lfsPtr, flags); 
     if (status != SUCCESS) { 
 	free((char *)lfsPtr);
 	return status;
     }
-    lfsPtr->cleanBlocks =   Fscache_ReserveBlocks(
-			        lfsPtr->domainPtr->backendPtr, 
-				lfsPtr->superBlock.hdr.maxNumCacheBlocks +
-				LfsSegSizeInBlocks(lfsPtr),
-				2*LfsSegSizeInBlocks(lfsPtr));
+    LfsMemInit(lfsPtr);
     *domainNumPtr = lfsPtr->domainPtr->domainNumber;
+    /*
+     * Make our own copy of the prefix name.
+     */
+    lfsPtr->name = malloc(strlen(localName)+1);
+    (void) strcpy(lfsPtr->name, localName);
+    cpDataPtr = (CheckPointData *) malloc(sizeof(*cpDataPtr));
+    cpDataPtr->lfsPtr = lfsPtr;
+    cpDataPtr->interval = lfsPtr->superBlock.hdr.checkpointInterval *
+				timer_IntOneSecond;
+
+    lfsPtr->checkpointIntervalPtr = &(cpDataPtr->interval);
+
+    Proc_CallFunc(CheckpointCallBack, (ClientData) cpDataPtr,
+			cpDataPtr->interval);
     return status;
 }
 
@@ -152,8 +173,11 @@ Lfs_DetachDisk(domainPtr)
     ReturnStatus status;
 
     status = LfsDetachFileSystem(lfsPtr);
-    Fscache_ReleaseReserveBlocks(domainPtr->backendPtr, lfsPtr->cleanBlocks)
-    Sync_LockClear(&lfsPtr->lfsLock);
+    LfsMemDetach(lfsPtr);
+    Fscache_UnregisterBackend(lfsPtr->domainPtr->backendPtr);
+    lfsPtr->domainPtr->backendPtr = (Fscache_Backend *) NIL;
+    Sync_LockClear(&lfsPtr->lock);
+    free(lfsPtr->name);
     free((char *)lfsPtr);
     return status;
 }
@@ -180,26 +204,72 @@ Lfs_DomainWriteBack(domainPtr, shutdown)
     Boolean	shutdown;	/* TRUE if are syncing to shutdown the system.*/
 {
     Lfs	*lfsPtr = LfsFromDomainPtr(domainPtr);
-    int	flags;
-    ReturnStatus status = SUCCESS;
 
-    flags = 0;
-    if (shutdown) {
-	flags |= LFS_DETACH;
-    }
-    if (lfsPtr->dirty) { 
-	status = LfsCheckPointFileSystem(lfsPtr, flags);
-    }
-#ifdef notdef
-    if (!shutdown && (lfsPtr->usageArray.checkPoint.numDirty > 10)) {
-	LfsSegCleanStart(lfsPtr);
-    }
-#endif
-    return status;
+    return LfsCheckPointFileSystem(lfsPtr, LFS_CHECKPOINT_WRITEBACK);
 
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Lfs_Command --
+ *
+ *	Perform a user specified command on a LFS file system
+ *
+ * Results:
+ *	SUCCESS if the operation succeeded. An ReturnStatus otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
+
+ReturnStatus
+Lfs_Command(command, bufSize, buffer)
+    int command;	/* Command to perform. */
+    int bufSize;	/* Size of the user's input/output buffer. */
+    Address buffer;	/* The user's input or output buffer. */
+{
+    return SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CheckpointCallBack --
+ *
+ *	A Proc_CallFunc for checkpoint LFS file systems.
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+CheckpointCallBack(clientData, callInfoPtr)
+    ClientData       clientData;		/* Lfs structure of LFS */
+    Proc_CallInfo	*callInfoPtr;
+{
+
+    CheckPointData *cpDataPtr = (CheckPointData *) clientData;
+    Lfs	*lfsPtr = cpDataPtr->lfsPtr;
+
+    if (cpDataPtr->interval > 0) {
+	(void) LfsCheckPointFileSystem(lfsPtr, LFS_CHECKPOINT_TIMER);
+	callInfoPtr->interval = cpDataPtr->interval;
+    } else if (cpDataPtr->interval == 0) {
+	free((char *) cpDataPtr);
+	callInfoPtr->interval = 0;
+    } else {
+	callInfoPtr->interval = -cpDataPtr->interval;
+    }
+}
 
 /*
  *----------------------------------------------------------------------
@@ -258,4 +328,5 @@ LfsError(lfsPtr, status, message)
 {
     panic("LfsError: on %s status 0x%x, %s\n", lfsPtr->name, status, message);
 }
+
 

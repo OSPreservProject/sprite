@@ -3,8 +3,8 @@
  *
  *	Declarations defining the disk resident format of the LFS 
  *	descriptor map. The main purpose of the descriptor map is 
- *	to provide a fast lookup a file descriptor address given the
- *	file descriptor number.
+ *	to provide a fast lookup of a file descriptor address given
+ *	the file descriptor number.
  *
  * Copyright 1989 Regents of the University of California
  * Permission to use, copy, modify, and distribute this
@@ -21,19 +21,24 @@
 #ifndef _LFSDESCMAP
 #define _LFSDESCMAP
 
-#include "lfsStableMem.h"
+#ifdef KERNEL
+#include <lfsStableMem.h>
+#else
+#include <kernel/lfsStableMem.h>
+#endif
 
 /*
  * The descriptor map layout on disk is described by the following 
  * super block resident structure. 
- * It must be LFS_DESC_MAP_PARAM_SIZE (currently 32 bytes) in size. 
+ * It must be LFS_DESC_MAP_PARAM_SIZE (currently 64 bytes) in size. 
  */
-#define	LFS_DESC_MAP_PARAM_SIZE	32
+#define	LFS_DESC_MAP_PARAM_SIZE	64
 
 typedef struct LfsDescMapParams {
     unsigned int version;  	/* Version number describing the format of
 				 * this structure and the descriptor map. */
-    int maxDesc;	/* The maximum size in descriptor map in descriptor. */
+    int 	maxDesc;	/* The maximum size in descriptor map in 
+				 * descriptor. */
     char     padding[LFS_DESC_MAP_PARAM_SIZE - sizeof(LfsStableMemParams)-8];	
 				/* Enought padding to make this structure 32
 				 * bytes. */
@@ -44,7 +49,7 @@ typedef struct LfsDescMapParams {
 #define LFS_DESC_MAP_VERSION 1
 
 /*
-/* Following this structure describes the disk format of LFS descriptor map
+ * Following this structure describes the disk format of LFS descriptor map
  * checkpoint.
  * The total size
  * of the checkpoint should be 
@@ -67,7 +72,7 @@ typedef struct LfsDescMapCheckPoint {
  * with 
  */
 typedef struct LfsDescMapEntry {
-    int  blockAddress;		    /* The disk block address of the most
+    LfsDiskAddr  blockAddress;	    /* The disk block address of the most
 				     * current version of the descriptor. */
     unsigned short truncVersion;    /* A version number increamented each 
 				     * time a descriptor is truncated to 
@@ -94,10 +99,4 @@ typedef struct LfsDescMapEntry {
 #define	LFS_DESC_MAP_UNLINKED	0x0002
 
 
-extern ReturnStatus LfsDescMapAttach();
-extern Boolean	    LfsDescMapClean();
-extern Boolean 	    LfsDescMapCheckpoint();
-extern void	    LfsDescMapWriteDone();
-
 #endif /* _LFSDESCMAP */
-

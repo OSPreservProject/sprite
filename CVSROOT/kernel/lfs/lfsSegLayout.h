@@ -45,7 +45,7 @@ typedef struct LfsSegSummary {
 typedef struct LfsSegSummaryHdr {
     unsigned short moduleType;	   /* Module type of this summary region. */
     unsigned short lengthInBytes;  /* Length of this summary region in bytes. */
-    int   numDataBlocks; 	 /* Number data blocks described by this 
+    int   numDataBlocks; 	  /* Number data blocks described by this 
 				    * region. */
 } LfsSegSummaryHdr;
 
@@ -53,8 +53,8 @@ typedef struct LfsSegSummaryHdr {
  * A list of module type and their priorities. 
  */
 #define	LFS_FILE_LAYOUT_MOD 0
-#define	LFS_SEG_USAGE_MOD   1
-#define	LFS_DESC_MAP_MOD    2
+#define	LFS_DESC_MAP_MOD    1
+#define	LFS_SEG_USAGE_MOD   2
 #define	LFS_MAX_NUM_MODS    3
 
 #endif /* _LFSSEGLAYOUT */

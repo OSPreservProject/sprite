@@ -1,6 +1,9 @@
 /* 
- * lfsBlockRead.c --
+ * lfsBlockIO.c --
  *
+ *	Routines for handling block allocate and access of files in a 
+ *	LFS file system. This routines are used by the cache code or
+ *	read and allocate files.
  *
  * Copyright 1989 Regents of the University of California
  * Permission to use, copy, modify, and distribute this
@@ -16,17 +19,17 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "lfs.h"
-#include "lfsInt.h"
-#include "fs.h"
-#include "fsutil.h"
-#include "fsio.h"
-#include "fsioFile.h"
-#include "fslcl.h"
-#include "fscache.h"
-#include "fsdm.h"
-#include "fsStat.h"
+#include <sprite.h>
+#include <lfs.h>
+#include <lfsInt.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsio.h>
+#include <fsioFile.h>
+#include <fslcl.h>
+#include <fscache.h>
+#include <fsdm.h>
+#include <fsStat.h>
 
 
 
@@ -35,10 +38,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  *
  * Lfs_FileBlockRead --
  *
- *	Read in a cache block.  This does a direct disk read if the
- *	file is the 'physical file' used for file descriptors and
- *	indirect blocks.  If it is a regular file data block, then
- *	the indexing structure is used to locate the file on disk.
+ *	Read in a cache block.  This routine uses the files'
+ *	indexing structure to locate the file block on disk.
  *	This always attempts to read in a full block, but will read
  *	less if at the last block and it isn't full.  In this case,
  *	the remainder of the cache block is zero-filled.
@@ -47,15 +48,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  *	The results of the disk read.
  *
  * Side effects:
- *	The buffer is filled with the number of bytes indicated by
- *	the bufSize parameter.  The blockPtr->blockSize is modified to
+ *	The blockPtr->blockSize is modified to
  *	reflect how much data was actually read in.  The unused part
  *	of the block is filled with zeroes so that higher levels can
  *	always assume the block has good stuff in all parts of it.
  *
  *----------------------------------------------------------------------
  */
-/*ARGSUSED*/
 ReturnStatus
 Lfs_FileBlockRead(domainPtr, handlePtr, blockPtr)
     Fsdm_Domain		*domainPtr;	/* Domain of file. */
@@ -70,9 +69,10 @@ Lfs_FileBlockRead(domainPtr, handlePtr, blockPtr)
     register	Fsdm_FileDescriptor *descPtr;
     register			 offset;
     register int		 numBytes;
-    int				diskAddress;
+    LfsDiskAddr			diskAddress;
     ReturnStatus		 status;
 
+    LFS_STATS_INC(lfsPtr->stats.blockio.reads);
     status = SUCCESS;
     blockPtr->blockSize = 0;
     numBytes = FS_BLOCK_SIZE;
@@ -82,7 +82,6 @@ Lfs_FileBlockRead(domainPtr, handlePtr, blockPtr)
      * Is a logical file read. Round the size down to the actual
      * last byte in the file.
      */
-    LFS_STATS_INC(lfsPtr->stats.blockio.reads);
     descPtr = handlePtr->descPtr;
     if (offset > descPtr->lastByte) {
 	goto exit;
@@ -90,24 +89,24 @@ Lfs_FileBlockRead(domainPtr, handlePtr, blockPtr)
 	numBytes = descPtr->lastByte - offset + 1;
     }
 
-    status = LfsFile_GetIndex(handlePtr, offset / FS_BLOCK_SIZE, FALSE,
+    status = LfsFile_GetIndex(handlePtr, offset / FS_BLOCK_SIZE, 0,
 			     &diskAddress);
     if (status != SUCCESS) {
 	printf("Lfs_FileBlockRead: Could not setup indexing\n");
 	goto exit;
     }
 
-    if (diskAddress != FSDM_NIL_INDEX) {
+    if (!LfsIsNilDiskAddr(diskAddress)) {
 	/*
 	 * Read in the block.  Specify the device, the fragment index,
 	 * the number of fragments, and the memory buffer.
 	 */
-	int	numFrag = (numBytes - 1) / FS_FRAGMENT_SIZE + 1;
+	int	ioSize = 
+		LfsBlocksToBytes(lfsPtr, LfsBytesToBlocks(lfsPtr, numBytes));
 	LfsCheckRead(lfsPtr, diskAddress, numBytes);
-	status = LfsReadBytes(lfsPtr, diskAddress, 
-			numFrag * FS_FRAGMENT_SIZE,  blockPtr->blockAddr);
-	LFS_STATS_ADD(lfsPtr->stats.blockio.bytesReads, 
-				numFrag * FS_FRAGMENT_SIZE);
+
+	status = LfsReadBytes(lfsPtr, diskAddress, ioSize, blockPtr->blockAddr);
+	LFS_STATS_ADD(lfsPtr->stats.blockio.bytesReads, ioSize);
     } else {
 	/*
 	 * Zero fill the block.  We're in a 'hole' in the file.
@@ -118,8 +117,8 @@ Lfs_FileBlockRead(domainPtr, handlePtr, blockPtr)
 	bzero(blockPtr->blockAddr, numBytes);
     }
 #ifdef STATS
-    Fs_StatAdd(numBytes, fs_Stats.gen.fileBytesRead,
-	       fs_Stats.gen.fileReadOverflow);
+    Fs_StatAdd(numBytes, fs_Stats.gen.fileBytesRead, 
+		fs_Stats.gen.fileReadOverflow);
 #endif
 exit:
     /*
@@ -143,20 +142,14 @@ exit:
  *
  * Lfs_FileBlockWrite --
  *
- *      Write out a cache block.  This understands about physical
- *      block writes as opposed to file block writes, and it understands
- *      that negative block numbers are used for indirect blocks (gag).
- *      Physical blocks are numbered from the beginning of the disk,
- *      and they are used for file descriptors and indirect blocks.
- *      File blocks are numbered from the beginning of the data block
- *      area, so an offset must be used to calculate their true address.
+ *      Write out a cache block.  Since lfs maintains its own cache
+ *	write back mechanism, this routines should never be called.
  *
  * Results:
- *      The return code from the driver, or FS_DOMAIN_UNAVAILABLE if
- *      the domain has been un-attached.
+ *      FAILURE
  *
  * Side effects:
- *      The device write.
+ *      It panic's.
  *
  *----------------------------------------------------------------------
  */
@@ -168,6 +161,7 @@ Lfs_FileBlockWrite(domainPtr, handlePtr, blockPtr)
     Fscache_Block *blockPtr;	/* Cache block to write out. */
 {
     panic("Lfs_FileBlockWrite called\n");
+    return FAILURE;
 }
 
 
@@ -177,11 +171,11 @@ Lfs_FileBlockWrite(domainPtr, handlePtr, blockPtr)
  * Lfs_BlockAllocate --
  *
  *      Allocate disk space for the given file.  This routine only allocates
- *      one block beginning at offset and going for numBytes.   If
- *      offset + numBytes crosses a block boundary then a panic will occur.
+ *      one block beginning at offset and going for numBytes. 
  *
  * Results:
- *      None.
+ *	SUCCESS or FS_NO_DISK_SPACE
+ *      
  *
  * Side effects:
  *      The file descriptor is modified to contain pointers to the allocated
@@ -189,6 +183,7 @@ Lfs_FileBlockWrite(domainPtr, handlePtr, blockPtr)
  *
  *----------------------------------------------------------------------
  */
+ReturnStatus
 Lfs_BlockAllocate(domainPtr, handlePtr, offset, numBytes, flags, blockAddrPtr,
 		newBlockPtr)
     Fsdm_Domain		*domainPtr;	/* Domain of file. */
@@ -204,44 +199,35 @@ Lfs_BlockAllocate(domainPtr, handlePtr, offset, numBytes, flags, blockAddrPtr,
     int	newLastByte;
     ReturnStatus status;
     Boolean	dirty = FALSE;
-    int		diskAddress;
     register	Fsdm_FileDescriptor *descPtr;
 
+    LFS_STATS_INC(lfsPtr->stats.blockio.allocs);
+    /*
+     * Block allocates while checkpoints are active. This ensure that
+     * the LFS cache backend will be able to clean all LFS files from the
+     * cache. We only need worry about files, directory updates get stopped by
+     * the dirlog mechanism. In fact, waiting for a checkpoint for a 
+     * directory block allocate causes a possible deadlock because the
+     * checkpoint waits for directory operations to finish.
+     */
+    descPtr = handlePtr->descPtr;
+    if (descPtr->fileType != FS_DIRECTORY) {
+	LfsWaitForCheckPoint(lfsPtr);
+    }
     /*
      * First check to see if we can just allocate the bytes.
      */
-    LFS_STATS_INC(lfsPtr->stats.blockio.allocs);
-    descPtr = handlePtr->descPtr;
     newLastByte = offset + numBytes - 1; 
     *blockAddrPtr = FSDM_NIL_INDEX;
-    status = LfsSegUsageAllocateBytes(lfsPtr, numBytes);
+    status = LfsFile_GrowBlock(lfsPtr, handlePtr, offset, numBytes);
     if (status == SUCCESS) {
-	LFS_STATS_INC(lfsPtr->stats.blockio.fastAllocs);
 	*newBlockPtr = FALSE;
 	*blockAddrPtr = offset / FS_BLOCK_SIZE;
 	 if (newLastByte > descPtr->lastByte) {
 	    descPtr->lastByte = newLastByte;
 	    dirty = TRUE;
-	}
-    } else { 
-	/* 
-	 * Can't just allocated the bytes. Check to see if we are
-	 * really allocating bytes or just overwriting
-	 * some bytes.
-	 */
-	 if (newLastByte <= descPtr->lastByte) {
-	    LFS_STATS_INC(lfsPtr->stats.blockio.slowAllocs);
-	    status = LfsFile_GetIndex(handlePtr, offset / FS_BLOCK_SIZE, FALSE,
-			     &diskAddress);
-	    if ((status == SUCCESS) && (diskAddress != FSDM_NIL_INDEX)) {
-		*newBlockPtr = FALSE;
-		*blockAddrPtr = offset / FS_BLOCK_SIZE;
-	    } else {
-		LFS_STATS_INC(lfsPtr->stats.blockio.slowAllocFails);
-		status = FS_NO_DISK_SPACE;
-	    }
 	 }
-    }
+    } 
     if ((status == SUCCESS) && descPtr->firstByte == -1 && 
 	((descPtr->fileType == FS_NAMED_PIPE) ||
 	 (descPtr->fileType == FS_PSEUDO_DEV) ||
@@ -250,7 +236,7 @@ Lfs_BlockAllocate(domainPtr, handlePtr, offset, numBytes, flags, blockAddrPtr,
 	dirty = TRUE;
     }
     if (dirty) { 
-	descPtr->descModifyTime = fsutil_TimeInSeconds;
+	descPtr->descModifyTime = Fsutil_TimeInSeconds();
 	descPtr->flags |= FSDM_FD_SIZE_DIRTY;
     } 
     return(status);

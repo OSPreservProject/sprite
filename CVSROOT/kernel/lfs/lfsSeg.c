@@ -17,42 +17,45 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "lfs.h"
-#include "lfsSeg.h"
-#include "stdlib.h"
-#include "sync.h"
+#include <lfsInt.h>
+#include <lfsSeg.h>
+#include <stdlib.h>
+#include <sync.h>
 
-/*
- * For lint.
- */
-
-#include "lfsFileLayout.h"
-#include "lfsSegUsageInt.h"
-#include "lfsDescMap.h"
+#define	LOCKPTR	&lfsPtr->lock
 
 Boolean	lfsSegWriteDebug = FALSE;
 
 #define	MIN_SUMMARY_REGION_SIZE	16
 
-#define	LOCKPTR	&lfsPtr->lfsLock
 
 enum CallBackType { SEG_LAYOUT, SEG_CLEAN_IN, SEG_CLEAN_OUT, SEG_CHECKPOINT, 
 		   SEG_WRITEDONE};
 
 LfsSegIoInterface *lfsSegIoInterfacePtrs[LFS_MAX_NUM_MODS];
 
-static void SegmentWriteProc();
-static void SegmentCleanProc();
-static LfsSeg	*CreateSegmentToClean();
-static LfsSeg   *GetSegStruct();
-static void  AddSummaryBlock();
+
+static void SegmentCleanProc _ARGS_((ClientData clientData, 
+				     Proc_CallInfo *callInfoPtr));
+static LfsSeg *CreateSegmentToClean _ARGS_((Lfs *lfsPtr, int segNumber, 
+			char *cleaningMemPtr));
+static LfsSeg *CreateSegmentToWrite _ARGS_((Lfs *lfsPtr, Boolean dontBlock));
+static LfsSeg *GetSegStruct _ARGS_((Lfs *lfsPtr, LfsSegLogRange 
+			*segLogRangePtr, int startBlockOffset, char *memPtr));
+static void AddNewSummaryBlock _ARGS_((LfsSeg *segPtr));
+static Boolean DoOutCallBacks _ARGS_((enum CallBackType type, LfsSeg *segPtr, int flags, char *checkPointPtr, int *sizePtr, ClientData *clientDataPtr));
+static ReturnStatus WriteSegment _ARGS_((LfsSeg *segPtr, Boolean full));
+static void RewindCurPtrs _ARGS_((LfsSeg *segPtr));
+static Boolean DoInCallBacks _ARGS_((enum CallBackType type, LfsSeg *segPtr, int flags, int *sizePtr, int *numCacheBlocksPtr, ClientData *clientDataPtr));
+static void DestorySegStruct _ARGS_((LfsSeg *segPtr));
+
 
 /*
  *----------------------------------------------------------------------
  *
  * -- LfsSegIoRegister
  *
- *	Register with the segment module an interface to objects to the log.   
+ *	Register with the segment module an interface to objects in the log.   
  *
  * Results:
  *	None.
@@ -76,13 +79,12 @@ LfsSegIoRegister(moduleType, ioInterfacePtr)
 /*
  *----------------------------------------------------------------------
  *
- * Lfs_StartWriteBack --
+ * LfsSegmentWriteProc --
  *
- *	Request that the segment manager start the segment write sequence
- *	for the specified file system.
+ *	Proc_CallFunc procedure for performing a segment writes.
  *
  * Results:
- *	True is a backend backend was started.
+ *	None.
  *
  * Side effects:
  *	None.
@@ -90,29 +92,45 @@ LfsSegIoRegister(moduleType, ioInterfacePtr)
  *----------------------------------------------------------------------
  */
 
-Boolean
-Lfs_StartWriteBack(cacheInfoPtr)
-    Fscache_FileInfo *cacheInfoPtr;
+/*ARGSUSED*/
+ void
+LfsSegmentWriteProc(clientData, callInfoPtr)
+    ClientData	   clientData;
+    Proc_CallInfo *callInfoPtr;         /* Not used. */
 {
-    Lfs	 *lfsPtr;	/* File system with data to write. */
-    Boolean	retVal;
+    register Lfs *lfsPtr;            /* File system with dirty blocks. */
+    Boolean	full;
+    LfsSeg	*segPtr;
+    ClientData		clientDataArray[LFS_MAX_NUM_MODS];
+    int			i;
+    ReturnStatus	status;
+    Boolean		moreWork;
 
-    lfsPtr = (Lfs *) (cacheInfoPtr->backendPtr->clientData);
-
-    LFS_STATS_INC(lfsPtr->stats.backend.startRequests);
-    LOCK_MONITOR;
-    if (lfsPtr->writeBackActive) {
-	LFS_STATS_INC(lfsPtr->stats.backend.alreadyActive);
-	lfsPtr->checkForMoreWork = TRUE;
-	UNLOCK_MONITOR;
-	return FALSE;
+    lfsPtr = (Lfs *) clientData;
+    moreWork = TRUE;
+    while (moreWork) { 
+	full = TRUE;
+	for (i = 0; i < LFS_MAX_NUM_MODS; i++) {
+	    clientDataArray[i] = (ClientData) NIL;
+	}
+	while (full) {
+	    segPtr = CreateSegmentToWrite(lfsPtr, FALSE);
+	    full = DoOutCallBacks(SEG_LAYOUT, segPtr, 0, (char *) NIL,
+				    (int *) NIL, clientDataArray);
+	    status = WriteSegment(segPtr, full);
+	    if (status != SUCCESS) {
+		LfsError(lfsPtr, status, "Can't write segment to log\n");
+	    }
+	    RewindCurPtrs(segPtr);
+	    (void) DoInCallBacks(SEG_WRITEDONE, segPtr, 0,
+				    (int *) NIL, (int *) NIL, clientDataArray);
+	    DestorySegStruct(segPtr);
+	}
+	moreWork = LfsMoreToWriteBack(lfsPtr);
     }
-    lfsPtr->writeBackActive = TRUE;
-    Proc_CallFunc(SegmentWriteProc, (ClientData) lfsPtr, 0);
-    UNLOCK_MONITOR;
-    return TRUE;
-
+    return;
 }
+
 
 /*
  *----------------------------------------------------------------------
@@ -126,7 +144,7 @@ Lfs_StartWriteBack(cacheInfoPtr)
  *	None.
  *
  * Side effects:
- *	None.
+ *	A segment cleaning process may be started.
  *
  *----------------------------------------------------------------------
  */
@@ -135,16 +153,13 @@ void
 LfsSegCleanStart(lfsPtr)
     Lfs	 *lfsPtr;	/* File system needing segments cleaned. */
 {
-    LOCK_MONITOR;
     LFS_STATS_INC(lfsPtr->stats.cleaning.startRequests);
-    if (lfsPtr->cleanActive) {
+    if (lfsPtr->activeFlags & LFS_CLEANER_ACTIVE) {
 	LFS_STATS_INC(lfsPtr->stats.cleaning.alreadyActive);
-	UNLOCK_MONITOR;
 	return;
     }
-    lfsPtr->cleanActive = TRUE;
+    lfsPtr->activeFlags |= LFS_CLEANER_ACTIVE;
     Proc_CallFunc(SegmentCleanProc, (ClientData) lfsPtr, 0);
-    UNLOCK_MONITOR;
 }
 
 /*
@@ -173,8 +188,7 @@ LfsSegSlowGrowSummary(segPtr, dataBlocksNeeded, sumBytesNeeded, addNewBlock)
     Boolean addNewBlock;		/* Added a new block if necessary. */
 {
     Lfs	*lfsPtr;
-    LfsSegElement *sumBufferPtr;
-    int	 sumBytesLeft, blocksLeft, sumBlocks, sumBytes;
+    int	 sumBytesLeft, blocksLeft, sumBlocks;
 
     /*
      * Test the most common case first. Do the data and summary fit
@@ -197,7 +211,7 @@ LfsSegSlowGrowSummary(segPtr, dataBlocksNeeded, sumBytesNeeded, addNewBlock)
     /*
      * Malloc a new summary buffer and add it to the segment.
      */
-    AddSummaryBlock(segPtr);
+    AddNewSummaryBlock(segPtr);
     return segPtr->curSummaryPtr;
 }
 
@@ -217,12 +231,13 @@ LfsSegSlowGrowSummary(segPtr, dataBlocksNeeded, sumBytesNeeded, addNewBlock)
  *----------------------------------------------------------------------
  */
 
-int
+LfsDiskAddr
 LfsSegSlowDiskAddress(segPtr, segElementPtr)
     register LfsSeg	*segPtr; 	/* Segment of interest. */
     LfsSegElement *segElementPtr; /* Segment element of interest. */
 {
-    int	elementNumber, blockOffset, diskAddress;
+    int	elementNumber, blockOffset;
+    LfsDiskAddr diskAddress, newDiskAddr;
     /*
      * Check the common case that we are asking about the "current"
      * element. 
@@ -238,9 +253,11 @@ LfsSegSlowDiskAddress(segPtr, segElementPtr)
 	    blockOffset += segPtr->segElementPtr[i].lengthInBlocks;
 	}
     }
-    diskAddress = LfsSegNumToDiskAddress(segPtr->lfsPtr, 
-				segPtr->logRange.current);
-    return diskAddress + LfsSegSizeInBlocks(segPtr->lfsPtr) - blockOffset;
+    LfsSegNumToDiskAddress(segPtr->lfsPtr, segPtr->logRange.current, 
+		&diskAddress);
+    blockOffset = LfsSegSizeInBlocks(segPtr->lfsPtr) - blockOffset;
+    LfsDiskAddrPlusOffset(diskAddress, blockOffset, &newDiskAddr);
+    return newDiskAddr;
 }
 
 /*
@@ -295,7 +312,7 @@ LfsSegSlowAddDataBuffer(segPtr, blocks, bufferPtr, clientData)
  *	None.
  *
  * Side effects:
- *	None.
+ *	LfsSeg memories allocated.
  *
  *----------------------------------------------------------------------
  */
@@ -303,19 +320,63 @@ void
 InitSegmentMem(lfsPtr)
     Lfs	*lfsPtr;
 {
-    int	memSize;
+    LfsSeg	*segPtr;
+    int		maxSegElementSize;
+    int		i;
 
-    memSize = LfsBytesToBlocks(lfsPtr,LfsSegSize(lfsPtr)) * 
+    /*
+     * Compute the maximum size of the seg element array. It can't be
+     * bigger than one element per block in segment.
+     */
+
+    maxSegElementSize = LfsBytesToBlocks(lfsPtr,LfsSegSize(lfsPtr)) * 
 				    sizeof(LfsSegElement);
-    lfsPtr->segMemoryPtr = malloc(memSize + sizeof(LfsSeg) +LfsSegSize(lfsPtr));
-    lfsPtr->segMemInUse = FALSE;
-    lfsPtr->cleaningMemPtr = lfsPtr->segMemoryPtr + memSize + sizeof(LfsSeg);
+    /*
+     * Fill in the fixed fields of the preallocated segments.
+     */
+    lfsPtr->segsInUse = 0;
+    lfsPtr->segs = (LfsSeg *) malloc(LFS_NUM_PREALLOC_SEGS *sizeof(LfsSeg));
+    for (i = 0; i < LFS_NUM_PREALLOC_SEGS; i++) { 
+	segPtr = lfsPtr->segs + i;
+	segPtr->lfsPtr = lfsPtr;
+	segPtr->segElementPtr = (LfsSegElement *) malloc(maxSegElementSize);
+    }
+
+
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * AddSummaryBlock --
+ * FreeSegmentMem --
+ *
+ *	Free the memory used by a file systems segment code.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	LfsSeg structures freed.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+FreeSegmentMem(lfsPtr)
+    Lfs	*lfsPtr;
+{
+    int i;
+    lfsPtr->segsInUse = 0;
+    for (i = 0; i < LFS_NUM_PREALLOC_SEGS; i++) { 
+	free((char *)(lfsPtr->segs[i].segElementPtr));
+    }
+    free((char *) (lfsPtr->segs));
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AddNewSummaryBlock --
  *
  *  Add a summary block to a segment.
  *
@@ -323,12 +384,12 @@ InitSegmentMem(lfsPtr)
  *	None.
  *
  * Side effects:
- *	None.
+ *	A new summary block is malloc() and initialized.
  *
  *----------------------------------------------------------------------
  */
 static void
-AddSummaryBlock(segPtr)
+AddNewSummaryBlock(segPtr)
     LfsSeg	*segPtr;	/* Seg to add block to. */
 {
     LfsSegElement *sumBufferPtr;
@@ -347,6 +408,10 @@ AddSummaryBlock(segPtr)
     newSummaryPtr->nextSummaryBlock = -1;
 
     if (segPtr->curSegSummaryPtr != (LfsSegSummary *) NIL) { 
+	/*
+	 * This is not the first summary block in the segment.  Fixup the
+	 * size of the last summary block and point it at the new one. 
+	 */
 	segPtr->curSegSummaryPtr->size = segPtr->curSummaryPtr - 
 				    (char *) (segPtr->curSegSummaryPtr);
 	segPtr->curSegSummaryPtr->nextSummaryBlock = segPtr->curBlockOffset;
@@ -363,6 +428,7 @@ AddSummaryBlock(segPtr)
  *----------------------------------------------------------------------
  *
  * WriteSegment --
+ *	Write a segment to the log.
  *
  * Results:
  *
@@ -377,8 +443,11 @@ WriteSegment(segPtr, full)
     Boolean	full;		/* TRUE if the segment is full. */
 {
     Lfs	*lfsPtr = segPtr->lfsPtr;
-    int element, offset, diskAddress;
-    ReturnStatus status;
+    int element, offset;
+    LfsDiskAddr newDiskAddr, diskAddress;
+    ReturnStatus status = SUCCESS;
+    Boolean	segEmpty;
+    int		newStartBlockOffset;
 #ifdef SUN4HACK
     char	*buffer;
     static char	*dmaBuffer = (char *) NIL; 
@@ -398,7 +467,8 @@ WriteSegment(segPtr, full)
     segPtr->curSegSummaryPtr->size = segPtr->curSummaryPtr - 
 					(char *) segPtr->curSegSummaryPtr;
 
-    lfsPtr->activeBlockOffset = -1;
+    newStartBlockOffset = -1;
+    segEmpty = FALSE;
     if (!full) {
 	if ((segPtr->numBlocks == 1) && 
 	    (segPtr->curSegSummaryPtr->size == sizeof(LfsSegSummary))) {
@@ -407,56 +477,62 @@ WriteSegment(segPtr, full)
 	     * this one yet.
 	     */
 	    LFS_STATS_INC(lfsPtr->stats.log.emptyWrites);
-	    lfsPtr->activeLogRange = segPtr->logRange;
-	    lfsPtr->activeBlockOffset = segPtr->startBlockOffset;
-	    return SUCCESS;
+	    newStartBlockOffset = segPtr->startBlockOffset;
+	    segEmpty = TRUE;
 	} else if ((segPtr->curDataBlockLimit -  segPtr->curBlockOffset) > 
 			       lfsPtr->superBlock.usageArray.wasteBlocks) { 
 	    /*
 	     * If this is considered to be a partial segment write add the
 	     * summary block we needed.
 	     */
-	    AddSummaryBlock(segPtr);
-	    lfsPtr->activeLogRange = segPtr->logRange;
-	    lfsPtr->activeBlockOffset = segPtr->curBlockOffset-1;
+	    AddNewSummaryBlock(segPtr);
+	    newStartBlockOffset = segPtr->curBlockOffset-1;
 	    LFS_STATS_INC(lfsPtr->stats.log.partialWrites);
 	}
     }
-    LFS_STATS_ADD(lfsPtr->stats.log.wasteBlocks,
-			segPtr->curDataBlockLimit -  segPtr->curBlockOffset);
-    diskAddress = LfsSegNumToDiskAddress(lfsPtr, segPtr->logRange.current);
-    offset = LfsSegSizeInBlocks(lfsPtr)	- segPtr->curBlockOffset;
+    if (!segEmpty) { 
+	LFS_STATS_ADD(lfsPtr->stats.log.wasteBlocks,
+			    segPtr->curDataBlockLimit -  segPtr->curBlockOffset);
+	LfsSegNumToDiskAddress(lfsPtr, segPtr->logRange.current, &diskAddress);
+	offset = LfsSegSizeInBlocks(lfsPtr)	- segPtr->curBlockOffset;
 #ifdef SUN4HACK
-    buffer = dmaBuffer;
-    for (element = segPtr->numElements-1; element >= 0; element--) {
-	int	bytes = 
-	    LfsBlocksToBytes(lfsPtr, 
-			segPtr->segElementPtr[element].lengthInBlocks);
-	bcopy(segPtr->segElementPtr[element].address, buffer, bytes);
-	buffer += bytes;
-    }
-    status = LfsWriteBytes(lfsPtr,  diskAddress + offset,
-			buffer - dmaBuffer, dmaBuffer);
-    if (lfsSegWriteDebug) { 
-	printf("LfsSeg wrote segment %d at %d - %d bytes.\n",
-		segPtr->logRange.current, diskAddress + offset,
-				buffer - dmaBuffer);
-    }
-#else
-    for (element = segPtr->numElements-1; element >= 0; element--) {
-	LfsSegElement *elPtr = segPtr->segElementPtr[element];
-	status = LfsWriteBytes(lfsPtr, diskAddress + offset, 
-			LfsBlocksToBytes(lfsPtr, elPtr->lengthInBlocks), 
-				elPtr->address);
-	if (status != SUCCESS) {
-	    break;
+	buffer = dmaBuffer;
+	for (element = segPtr->numElements-1; element >= 0; element--) {
+	    int	bytes = 
+		LfsBlocksToBytes(lfsPtr, 
+			    segPtr->segElementPtr[element].lengthInBlocks);
+	    bcopy(segPtr->segElementPtr[element].address, buffer, bytes);
+	    buffer += bytes;
 	}
-	offset += elPtr->lengthInBlocks;
-    }
+	LfsDiskAddrPlusOffset(diskAddress,offset, &newDiskAddr);
+	status = LfsWriteBytes(lfsPtr, newDiskAddr, buffer - dmaBuffer, dmaBuffer);
+	if (lfsSegWriteDebug) { 
+	    printf("LfsSeg wrote segment %d at %d - %d bytes.\n",
+		    segPtr->logRange.current, LfsDiskAddrToOffset(newDiskAddr),
+				    buffer - dmaBuffer);
+	}
+#else
+	for (element = segPtr->numElements-1; element >= 0; element--) {
+	    LfsSegElement *elPtr = segPtr->segElementPtr[element];
+	    LfsDiskAddrPlusOffset(diskAddress,offset, &newDiskAddr);
+	    status = LfsWriteBytes(lfsPtr, diskAddress,
+			    LfsBlocksToBytes(lfsPtr, elPtr->lengthInBlocks), 
+				    elPtr->address);
+	    if (status != SUCCESS) {
+		break;
+	    }
+	    offset += elPtr->lengthInBlocks;
+	}
 #endif
-    LFS_STATS_ADD(lfsPtr->stats.log.blocksWritten, segPtr->numBlocks);
-    LFS_STATS_ADD(lfsPtr->stats.log.bytesWritten, segPtr->activeBytes);
-    LfsSetSegUsage(lfsPtr, segPtr->logRange.current, segPtr->activeBytes);
+	LFS_STATS_ADD(lfsPtr->stats.log.blocksWritten, segPtr->numBlocks);
+	LFS_STATS_ADD(lfsPtr->stats.log.bytesWritten, segPtr->activeBytes);
+    } 
+    LfsSetLogTail(lfsPtr, &segPtr->logRange, newStartBlockOffset, 
+					segPtr->activeBytes);  
+    LOCK_MONITOR;
+    lfsPtr->activeFlags &= ~LFS_WRITE_ACTIVE;
+    Sync_Broadcast(&lfsPtr->writeWait);
+    UNLOCK_MONITOR;
     return status;
 }
 
@@ -486,31 +562,30 @@ CreateSegmentToWrite(lfsPtr, dontBlock)
     int		startBlock;
     ReturnStatus status;
 
+    LOCK_MONITOR;
+
     /*
-     * See if we current have a current segment that is not full that we 
-     * can use. Otherwise we get a clean segment.
+     * Wait for previous writes to finish.
      */
-    if (lfsPtr->activeBlockOffset == -1) { 
-	startBlock = 0;
-	do { 
-	    LFS_STATS_INC(lfsPtr->stats.log.newSegments);
-	    status = LfsGetCleanSeg(lfsPtr, &segLogRange, dontBlock);
-	    if ((status == FS_WOULD_BLOCK) && !dontBlock) {
-		LFS_STATS_INC(lfsPtr->stats.log.cleanSegWait);
-		LfsWaitDomain(lfsPtr, &lfsPtr->cleanSegments);
-		continue;
-	    }
-	    if (status != SUCCESS) {
-		LfsError(lfsPtr, status, 
-		   "Can't get clean segments to write for cleaning.\n");
-	    }
-	} while (status != SUCCESS);
-    } else {
-	LFS_STATS_INC(lfsPtr->stats.log.useOldSegment);
-	segLogRange = lfsPtr->activeLogRange;
-	startBlock = lfsPtr->activeBlockOffset;
+    while (lfsPtr->activeFlags & LFS_WRITE_ACTIVE) {
+	Sync_Wait(&lfsPtr->writeWait, FALSE);
     }
-    segPtr = GetSegStruct(lfsPtr, &segLogRange, startBlock);
+
+    do { 
+	status = LfsGetLogTail(lfsPtr, dontBlock, &segLogRange, &startBlock);
+	if ((status == FS_WOULD_BLOCK) && !dontBlock) {
+	    LFS_STATS_INC(lfsPtr->stats.log.cleanSegWait);
+	    Sync_Wait(&lfsPtr->cleanSegmentsWait, FALSE);
+	} 
+    } while ((status == FS_WOULD_BLOCK) && !dontBlock);
+
+    if (status == SUCCESS) { 
+	lfsPtr->activeFlags |= LFS_WRITE_ACTIVE;
+	segPtr = GetSegStruct(lfsPtr, &segLogRange, startBlock, (char *) NIL);
+    } else {
+	segPtr = (LfsSeg *) NIL;
+    }
+    UNLOCK_MONITOR;
     return segPtr;
 }
 
@@ -569,11 +644,10 @@ DestorySegStruct(segPtr)
     LfsSeg	*segPtr;	/* Segment to Destory. */
 {
 
-    if ((char *) segPtr == segPtr->lfsPtr->segMemoryPtr) {
-	segPtr->lfsPtr->segMemInUse = FALSE;
-	return;
-    }
-    free((char *) segPtr);
+    int num;
+
+    num = segPtr - segPtr->lfsPtr->segs;
+    segPtr->lfsPtr->segsInUse  &= ~(1 << num);
 }
 
 
@@ -594,31 +668,27 @@ DestorySegStruct(segPtr)
  */
 
 static LfsSeg *
-GetSegStruct(lfsPtr, segLogRangePtr, startBlockOffset)
+GetSegStruct(lfsPtr, segLogRangePtr, startBlockOffset, memPtr)
     Lfs	*lfsPtr;	/* File system. */
     LfsSegLogRange *segLogRangePtr; /* Log range of segment. */
     int		   startBlockOffset; /* Starting block offset into segment */
+    char	   *memPtr;	     /* Memory allocated for segment. */
 {
-    char	*memPtr;
+    int		i;
     LfsSeg	*segPtr;
-    /*
-     * Alloc an LfsSeg structure. Be sure to leave enought room for default 
-     * size LfsSegElement.
-     */
-    if (lfsPtr->segMemInUse) {
-	 int	 memSize;
 
-	 memSize = LfsSegSizeInBlocks(lfsPtr) * 
-					sizeof(LfsSegElement);
-	 memPtr = malloc(memSize + sizeof(LfsSeg));
-    } else {
-	 lfsPtr->segMemInUse = TRUE;
-	 memPtr = lfsPtr->segMemoryPtr;
+    segPtr = (LfsSeg *) NIL;
+    for (i = 0; i < LFS_NUM_PREALLOC_SEGS; i++) { 
+	if (!(lfsPtr->segsInUse & (1 << i))) {
+	    lfsPtr->segsInUse |= (1 << i);
+	    segPtr = lfsPtr->segs + i;
+	    break;
+	}
     }
-    segPtr = (LfsSeg *) memPtr;
-    segPtr->lfsPtr = lfsPtr;
-    segPtr->segMemPtr = memPtr;
-    segPtr->segElementPtr = (LfsSegElement *) (memPtr + sizeof(LfsSeg));
+    if (segPtr == (LfsSeg *) NIL) {
+	panic("GetSegStruct out of segment structures.\n");
+    }
+    segPtr->memPtr = memPtr;
     segPtr->logRange = *segLogRangePtr;
     segPtr->numElements = 0;
     segPtr->numBlocks = 0;
@@ -661,9 +731,9 @@ DoInCallBacks(type, segPtr, flags, sizePtr, numCacheBlocksPtr, clientDataPtr)
     ClientData *clientDataPtr;
 
 {
-    int	moduleType, startOffset, size, numCacheBlocks, next;
-    Boolean full = FALSE;
-    char	*summaryPtr, *endSummaryBlockPtr;
+    int	moduleType, size, numCacheBlocks, next;
+    Boolean error = FALSE;
+    char	 *endSummaryBlockPtr;
     LfsSegElement *bufferPtr;
 
     /*
@@ -673,7 +743,7 @@ DoInCallBacks(type, segPtr, flags, sizePtr, numCacheBlocksPtr, clientDataPtr)
      */
     endSummaryBlockPtr = (char *)segPtr->curSegSummaryPtr + 
 			segPtr->curSegSummaryPtr->size;
-    while(1) { 
+    while(!error) { 
 	while (((char *)segPtr->curSummaryHdrPtr < endSummaryBlockPtr) &&
 	        (segPtr->curSummaryHdrPtr->lengthInBytes > 0))  {
 	    LfsSegIoInterface *intPtr;
@@ -687,14 +757,14 @@ DoInCallBacks(type, segPtr, flags, sizePtr, numCacheBlocksPtr, clientDataPtr)
 	    case SEG_CLEAN_IN:
 		size = 0;
 		numCacheBlocks = 0;
-		full = intPtr->clean(segPtr, &size, &numCacheBlocks, 
+		error = intPtr->clean(segPtr, &size, &numCacheBlocks, 
 			    clientDataPtr + moduleType);
 #ifdef lint
-		full = LfsDescMapClean(segPtr, &size, &numCacheBlocks, 
+		error = LfsDescMapClean(segPtr, &size, &numCacheBlocks, 
 			    clientDataPtr + moduleType);
-		full = LfsSegUsageClean(segPtr, &size, &numCacheBlocks, 
+		error = LfsSegUsageClean(segPtr, &size, &numCacheBlocks, 
 			    clientDataPtr + moduleType);
-		full = LfsFileLayoutClean(segPtr, &size, &numCacheBlocks, 
+		error = LfsFileLayoutClean(segPtr, &size, &numCacheBlocks, 
 			    clientDataPtr + moduleType);
 #endif /* lint */
 		*sizePtr += size;
@@ -718,6 +788,9 @@ DoInCallBacks(type, segPtr, flags, sizePtr, numCacheBlocksPtr, clientDataPtr)
 	      */
 	     segPtr->curSummaryHdrPtr = 
 			(LfsSegSummaryHdr *) segPtr->curSummaryLimitPtr;
+	 }
+	 if (error) {
+		break;
 	 }
 	 /*
 	  * If we ran over the end of current summary block move on to 
@@ -749,7 +822,7 @@ DoInCallBacks(type, segPtr, flags, sizePtr, numCacheBlocksPtr, clientDataPtr)
 	   LfsSegSetBufferPtr(segPtr, bufferPtr);
 	   segPtr->curBlockOffset = next;
     }
-   return full;
+   return error;
 }
 
 
@@ -778,7 +851,7 @@ DoOutCallBacks(type, segPtr, flags, checkPointPtr, sizePtr, clientDataPtr)
     ClientData *clientDataPtr;
 
 {
-    int	moduleType, startOffset, size, numCacheBlocks;
+    int	moduleType, startOffset;
     Boolean full;
     char	*summaryPtr, *endSummaryPtr;
 
@@ -801,15 +874,11 @@ DoOutCallBacks(type, segPtr, flags, checkPointPtr, sizePtr, clientDataPtr)
 	switch (type) {
 	case SEG_CLEAN_OUT:
 	case SEG_LAYOUT: 
-	    full = intPtr->layout(segPtr, (type == SEG_CLEAN_OUT),
-			clientDataPtr + moduleType);
+	    full = intPtr->layout(segPtr, flags, clientDataPtr + moduleType);
 #ifdef lint
-	    full = LfsSegUsageLayout(segPtr, (type == SEG_CLEAN_OUT),
-				clientDataPtr + moduleType);
-	    full = LfsDescMapLayout(segPtr, (type == SEG_CLEAN_OUT),
-				clientDataPtr + moduleType);
-	    full = LfsFileLayoutProc(segPtr, (type == SEG_CLEAN_OUT),
-				clientDataPtr + moduleType);
+	    full = LfsSegUsageLayout(segPtr, flags, clientDataPtr + moduleType);
+	    full = LfsDescMapLayout(segPtr, flags, clientDataPtr + moduleType);
+	    full = LfsFileLayoutProc(segPtr, flags, clientDataPtr + moduleType);
 #endif /* lint */
 	    break;
 	case SEG_CHECKPOINT: {
@@ -855,7 +924,7 @@ DoOutCallBacks(type, segPtr, flags, checkPointPtr, sizePtr, clientDataPtr)
 	     LfsSegSetSummaryPtr(segPtr, summaryPtr);
 	 }
 	 /*
-	  * If we didn't fill the segment in skip do the next module.
+	  * If we didn't fill the segment in skip to the next module.
 	  */
 	 if (full) { 
 	    if (LfsSegSummaryBytesLeft(segPtr) > MIN_SUMMARY_REGION_SIZE) {
@@ -869,64 +938,7 @@ DoOutCallBacks(type, segPtr, flags, checkPointPtr, sizePtr, clientDataPtr)
 }
 
 
-
-/*
- *----------------------------------------------------------------------
- *
- * SegmentWriteProc --
- *
- *	Proc_CallFunc procedure for performing a segment writes.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
 
-/*ARGSUSED*/
-static void
-SegmentWriteProc(lfsPtr, callInfoPtr)
-    register Lfs *lfsPtr;            /* File system with dirty blocks. */
-    Proc_CallInfo *callInfoPtr;         /* Not used. */
-{
-    Boolean	full;
-    LfsSeg	*segPtr;
-    ClientData		clientDataArray[LFS_MAX_NUM_MODS];
-    int			i;
-    ReturnStatus	status;
-again:
-    full = TRUE;
-    for (i = 0; i < LFS_MAX_NUM_MODS; i++) {
-	clientDataArray[i] = (ClientData) NIL;
-    }
-    LfsLockDomain(lfsPtr);
-    while (full) {
-	segPtr = CreateSegmentToWrite(lfsPtr, FALSE);
-	full = DoOutCallBacks(SEG_LAYOUT, segPtr, 0, (char *) NIL,
-				(int *) NIL, clientDataArray);
-	status = WriteSegment(segPtr, full);
-	if (status != SUCCESS) {
-	    LfsError(lfsPtr, status, "Can't write segment to log\n");
-	}
-	RewindCurPtrs(segPtr);
-	(void) DoInCallBacks(SEG_WRITEDONE, segPtr, 0,
-				(char *) NIL, (int *) NIL, clientDataArray);
-	DestorySegStruct(segPtr);
-    }
-    LfsUnLockDomain(lfsPtr, (Sync_Condition *) NIL);
-    LOCK_MONITOR;
-    if (lfsPtr->checkForMoreWork) {
-	lfsPtr->checkForMoreWork = FALSE;
-	UNLOCK_MONITOR;
-	goto again;
-    }
-    lfsPtr->writeBackActive = FALSE;
-    UNLOCK_MONITOR;
-    FscacheBackendIdle(lfsPtr->domainPtr->backendPtr);
-}
 
 /*
  *----------------------------------------------------------------------
@@ -946,67 +958,75 @@ again:
 
 
 static void
-SegmentCleanProc(lfsPtr, callInfoPtr)
-    register Lfs *lfsPtr;            /* File system to clean blocks in */
+SegmentCleanProc(clientData, callInfoPtr)
+    ClientData	  clientData;	/* File system to clean blocks in */
     Proc_CallInfo *callInfoPtr;         /* Not used. */
 
 {
+    register Lfs *lfsPtr = (Lfs *) clientData;       
 #define	MAX_NUM_TO_CLEAN 100
     int		numSegsToClean;
-    int		segNums[MAX_NUM_TO_CLEAN];
+    LfsSegList	segs[MAX_NUM_TO_CLEAN];
     int		i, numCacheBlocksUsed, totalCacheBlocksUsed;
     LfsSeg	 *segPtr;
     Boolean	full;
-    LfsSegLogRange	segLogRange;
     ReturnStatus	status;
     ClientData		clientDataArray[LFS_MAX_NUM_MODS];
-    int			numWritten, numCleaned, totalSize, cleanBlocks;
+    int			numWritten, numCleaned, totalSize, cacheBlocksReserved;
     Boolean		error;
-    Time      		startTime, endTime;
+    char		*memPtr;
 
+    LfsMemReserve(lfsPtr, &cacheBlocksReserved, &memPtr);
     do { 
 	for (i = 0; i < LFS_MAX_NUM_MODS; i++) {
 	    clientDataArray[i] = (ClientData) NIL;
 	}
-	Timer_GetTimeOfDay(&startTime, (int *) NIL, (Boolean *) NIL);
+	numSegsToClean = lfsPtr->superBlock.usageArray.numSegsToClean;
+	if (numSegsToClean > MAX_NUM_TO_CLEAN) {
+	    numSegsToClean = MAX_NUM_TO_CLEAN;
+	}
 	numSegsToClean = LfsGetSegsToClean(lfsPtr, 
-			    lfsPtr->cleanBlocks, MAX_NUM_TO_CLEAN, segNums);
+			 cacheBlocksReserved, numSegsToClean, segs);
 
 	if (numSegsToClean < 2) {
 	    break;
 	}
 	LFS_STATS_INC(lfsPtr->stats.cleaning.getSegsRequests);
 	LFS_STATS_ADD(lfsPtr->stats.cleaning.segsToClean, numSegsToClean);
-	if (lfsSegWriteDebug) { 
-	    printf("Cleaning started\n", numSegsToClean);
+	if (lfsSegWriteDebug || TRUE) { 
+	    printf("Cleaning started - %d segs\n", numSegsToClean);
 	}
 	/*
 	 * Reading in segments to clean.
 	 */
 	totalSize = 0;
 	totalCacheBlocksUsed = 0;
+	numCleaned = 0;
 	for (i = 0; (i < numSegsToClean) && 
-		    (totalCacheBlocksUsed < lfsPtr->cleanBlocks);i++) { 
+		    (totalCacheBlocksUsed < cacheBlocksReserved); i++) { 
 	    int size;
-	    segPtr = CreateSegmentToClean(lfsPtr, segNums[i]);
+	    segPtr = CreateSegmentToClean(lfsPtr, segs[i].segNumber, memPtr);
 	    size = 0;
 	    numCacheBlocksUsed = 0;
 	    error = DoInCallBacks(SEG_CLEAN_IN, segPtr, 0, &size,
 			    &numCacheBlocksUsed, clientDataArray);
+	    if (!error && (segs[i].activeBytes == 0) && (size != 0)) {
+		panic("Warning: Segment %d cleaned found wrong active bytes %d != %d\n", segs[i].segNumber, size, segs[i].activeBytes);
+	    }
+
 	    DestorySegStruct(segPtr);
 	    if (error) {
 		LFS_STATS_ADD(lfsPtr->stats.cleaning.readErrors, 1);
-		segNums[i] = -1;
-	    } else if (size == 0) {
-		LFS_STATS_INC(lfsPtr->stats.cleaning.readEmpty);
-		LfsMarkSegClean(lfsPtr, segNums[i]);
-		segNums[i] = -1;
-		LfsNotify(lfsPtr, &lfsPtr->cleanSegments);
+		segs[i].segNumber = -1;
+	    } else { 
+		if (size == 0) {
+		    LFS_STATS_INC(lfsPtr->stats.cleaning.readEmpty);
+		}
+		numCleaned++;
 	    }
 	    totalSize += size;
 	    totalCacheBlocksUsed += numCacheBlocksUsed;
 	}
-	numCleaned = i;
 	LFS_STATS_ADD(lfsPtr->stats.cleaning.segReads,numCleaned);
 	LFS_STATS_ADD(lfsPtr->stats.cleaning.bytesCleaned,totalSize);
 	LFS_STATS_ADD(lfsPtr->stats.cleaning.cacheBlocksUsed,
@@ -1014,13 +1034,14 @@ SegmentCleanProc(lfsPtr, callInfoPtr)
 	/*
 	 * Write out segments cleaned.
 	 */
+
 	numWritten = 0;
-	LfsLockDomain(lfsPtr);
 	if (totalSize > 0) { 
 	    full = TRUE;
 	    while (full) {
 		segPtr = CreateSegmentToWrite(lfsPtr, TRUE);
-		full = DoOutCallBacks(SEG_CLEAN_OUT, segPtr, 0, (char *) NIL,
+		full = DoOutCallBacks(SEG_CLEAN_OUT, segPtr, 
+				LFS_CLEANING_LAYOUT, (char *) NIL,
 				(int *) NIL, clientDataArray);
 
 		status = WriteSegment(segPtr, full);
@@ -1028,7 +1049,7 @@ SegmentCleanProc(lfsPtr, callInfoPtr)
 		    LfsError(lfsPtr, status, "Can't write segment to log\n");
 		}
 		RewindCurPtrs(segPtr);
-		(void) DoInCallBacks(SEG_WRITEDONE, segPtr, 0,
+		(void) DoInCallBacks(SEG_WRITEDONE, segPtr, LFS_CLEANING_LAYOUT,
 				(int *) NIL, (int *) NIL,  clientDataArray);
 		numWritten++;
 		LFS_STATS_ADD(lfsPtr->stats.cleaning.blocksWritten, 
@@ -1039,67 +1060,82 @@ SegmentCleanProc(lfsPtr, callInfoPtr)
 		DestorySegStruct(segPtr);
 	    }
 	}
-
-	for (i = 0; i < numCleaned; i++) { 
-	    if (segNums[i] != -1) { 
-		LfsMarkSegClean(lfsPtr, segNums[i]);
+	status = LfsCheckPointFileSystem(lfsPtr, LFS_CHECKPOINT_NOSEG_WAIT);
+	if (status != SUCCESS) {
+		LfsError(lfsPtr, status, "Can't checkpoint after cleaning.\n");
+	}
+	for (i = 0; i < numSegsToClean; i++) { 
+	    if (segs[i].segNumber != -1) { 
+		LfsMarkSegClean(lfsPtr, segs[i].segNumber);
 	    }
 	}
-	LfsUnLockDomain(lfsPtr, &lfsPtr->cleanSegments);
-	Timer_GetTimeOfDay(&endTime, (int *) NIL, (Boolean *) NIL);
-	if (lfsSegWriteDebug) { 
-	printf("Cleaned %d segments in %d segments- time (%d,%d) -  (%d,%d)\n",
-	    numCleaned, numWritten, startTime.seconds, startTime.microseconds,
-	    endTime.seconds, endTime.microseconds);
+	if (numCleaned > 0) { 
+	    LOCK_MONITOR;
+	    Sync_Broadcast(&lfsPtr->cleanSegmentsWait);
+	    UNLOCK_MONITOR;
 	}
-    } while (numSegsToClean > 2);
-    lfsPtr->cleanActive = FALSE;
+	if (lfsSegWriteDebug || TRUE) { 
+	    printf("Cleaned %d segments in %d segments\n", numCleaned, 
+			numWritten);
+	}
+    } while (numCleaned > 2);
+    LfsMemRelease(lfsPtr, cacheBlocksReserved, memPtr);
+    LOCK_MONITOR;
+    lfsPtr->activeFlags &= ~LFS_CLEANER_ACTIVE;
+    if (lfsPtr->activeFlags & LFS_CHECKPOINTWAIT_ACTIVE) {
+	UNLOCK_MONITOR;
+	status = LfsCheckPointFileSystem(lfsPtr, 0);
+    } else {
+	UNLOCK_MONITOR;
+    }
+
+
 }
 
 
 static LfsSeg *
-CreateSegmentToClean(lfsPtr, segNumber)
+CreateSegmentToClean(lfsPtr, segNumber, cleaningMemPtr)
     Lfs	*lfsPtr;	/* File system of segment. */
     int	segNumber;	/* Segment number to clean. */
+    char *cleaningMemPtr; /* Memory to use for cleaning. */
 {
     LfsSeg		*segPtr;
-    LfsSegElement *segElementPtr;
     int			segSize;
     ReturnStatus	status;
     LfsSegLogRange	logRange;
     LfsSegSummary	*segSumPtr;
+    LfsDiskAddr		diskAddress;
 
     logRange.prevSeg = -1;
     logRange.current = segNumber;
     logRange.nextSeg = -1;
+
     /*
      * Get a LfsSeg structure.
      */
-
-    segPtr = GetSegStruct(lfsPtr, &logRange, 0);
+    segPtr = GetSegStruct(lfsPtr, &logRange, 0, cleaningMemPtr);
 
     /*
      * Read in the segment in memory.
      */
     segSize = LfsSegSize(lfsPtr);
 
-    status = LfsReadBytes(lfsPtr,
-			(int)LfsSegNumToDiskAddress(lfsPtr, segNumber), 
-				segSize, lfsPtr->cleaningMemPtr);
+    LfsSegNumToDiskAddress(lfsPtr, segNumber, &diskAddress);
+    status = LfsReadBytes(lfsPtr, diskAddress, segSize, cleaningMemPtr);
     if (status != SUCCESS) {
 	LfsError(lfsPtr, status, "Can't read segment to clean.\n");
 	return (LfsSeg *) NIL;
     }
     lfsPtr->segCache.segNum = segNumber;
-    lfsPtr->segCache.startDiskAddress = 
-			LfsSegNumToDiskAddress(lfsPtr, segNumber);
-    lfsPtr->segCache.endDiskAddress = 
-			LfsSegNumToDiskAddress(lfsPtr, segNumber+1);
-    lfsPtr->segCache.memPtr = lfsPtr->cleaningMemPtr;
+    LfsSegNumToDiskAddress(lfsPtr, segNumber, 
+		&lfsPtr->segCache.startDiskAddress);
+    LfsSegNumToDiskAddress(lfsPtr, segNumber+1, 
+		&lfsPtr->segCache.endDiskAddress);
+    lfsPtr->segCache.memPtr = cleaningMemPtr;
     lfsPtr->segCache.valid = TRUE;
 
     segSumPtr = (LfsSegSummary *)
-		(lfsPtr->cleaningMemPtr + segSize - LfsBlockSize(lfsPtr));
+		(cleaningMemPtr + segSize - LfsBlockSize(lfsPtr));
     while (1) { 
 	segPtr->segElementPtr[segPtr->numElements].lengthInBlocks = 0;
 	segPtr->segElementPtr[segPtr->numElements].address = (char *) segSumPtr;
@@ -1188,7 +1224,7 @@ LfsSegAttach(lfsPtr, checkPointPtr, checkPointSize)
 	return status;
     }
     /*
-     * XXX - Back out of error here but shutting down all module.
+     * XXX - Back out of error here by shutting down all module.
      */
     return status;
 }
@@ -1218,19 +1254,62 @@ LfsSegCheckPoint(lfsPtr, flags, checkPointPtr, checkPointSizePtr)
 {
     Boolean	full = TRUE;
     LfsSeg	*segPtr;
-    LfsSegLogRange	segLogRange;
     ClientData		clientDataArray[LFS_MAX_NUM_MODS];
     int			i;
     ReturnStatus	status= SUCCESS;
 
-    *checkPointSizePtr = 0;
+    LOCK_MONITOR;
+
+    /*
+     * If a checkpoint is already active (or cleaner active) and its a 
+     * writeback or timer checkpoint we exit with GEN_EINTR. For 
+     * writeback checkpoints we wait for them to finish.
+     */
+    if ((lfsPtr->activeFlags & (LFS_CLEANER_ACTIVE|LFS_CHECKPOINT_ACTIVE)) &&
+        (flags & (LFS_CHECKPOINT_WRITEBACK|LFS_CHECKPOINT_TIMER))) {
+	if (flags & LFS_CHECKPOINT_WRITEBACK) {
+	    lfsPtr->activeFlags |= LFS_CHECKPOINTWAIT_ACTIVE;
+	    while (lfsPtr->activeFlags & LFS_CHECKPOINTWAIT_ACTIVE) {
+		Sync_Wait(&lfsPtr->checkPointWait, FALSE);
+	    }
+	}
+	UNLOCK_MONITOR;
+	return GEN_EINTR;
+    }
+
+    lfsPtr->activeFlags |= LFS_CHECKPOINT_ACTIVE;
+    /*
+     * Wait for any directory log operations to finish.
+     */
+    while (lfsPtr->dirModsActive > 0) {
+	Sync_Wait(&lfsPtr->checkPointWait, FALSE);
+    }
+    /*
+     * If we a detatching the file system wait for any cleaners to exit.
+     */
+    if (flags & LFS_CHECKPOINT_DETACH) {
+	lfsPtr->activeFlags |= LFS_SHUTDOWN_ACTIVE;
+	while (lfsPtr->activeFlags & LFS_CLEANER_ACTIVE) {
+	    Time time;
+	    time.seconds = 1;
+	    time.microseconds = 0;
+	    Sync_WaitTime(time);
+	}
+    }
+    LFS_STATS_INC(lfsPtr->stats.checkpoint.count);
+    UNLOCK_MONITOR;
+
+    if (flags & LFS_CHECKPOINT_DETACH) {
+	LfsStopWriteBack(lfsPtr);
+    }
+
     for (i = 0; i < LFS_MAX_NUM_MODS; i++) {
 	clientDataArray[i] = (ClientData) NIL;
     }
-    LFS_STATS_INC(lfsPtr->stats.checkpoint.count);
-    LfsLockDomain(lfsPtr);
     while (full) {
-	segPtr = CreateSegmentToWrite(lfsPtr, FALSE);
+	segPtr = CreateSegmentToWrite(lfsPtr, 
+			((flags & LFS_CHECKPOINT_NOSEG_WAIT) != 0));
+	*checkPointSizePtr = 0;
 	full = DoOutCallBacks(SEG_CHECKPOINT, segPtr, flags,
 			    checkPointPtr, checkPointSizePtr, clientDataArray);
 	LFS_STATS_INC(lfsPtr->stats.checkpoint.segWrites);
@@ -1243,12 +1322,24 @@ LfsSegCheckPoint(lfsPtr, flags, checkPointPtr, checkPointSizePtr)
 	    LfsError(lfsPtr, status, "Can't write segment to log\n");
 	}
 	RewindCurPtrs(segPtr);
-	(void) DoInCallBacks(SEG_WRITEDONE, segPtr, 0, (int *) NIL, (int *) NIL,
+	(void) DoInCallBacks(SEG_WRITEDONE, segPtr, flags, (int *) NIL, (int *) NIL,
 				clientDataArray);
         DestorySegStruct(segPtr);
     }
-    lfsPtr->dirty = FALSE;
-    LfsUnLockDomain(lfsPtr, (Sync_Condition *) NIL);
+    LOCK_MONITOR;
+#ifdef ERROR_CHECK
+    { 
+	int numBlocks, numDirty;
+	Fscache_CountBlocks(rpc_SpriteID, lfsPtr->domainPtr->domainNumber,
+				&numBlocks, &numDirty);
+	if (((flags & LFS_CHECKPOINT_DETACH) && numDirty) || (numDirty > 1)) {
+		printf("DirtyBlocks (%d) after a checkpoint\n", numDirty);
+	}
+    }
+#endif
+    lfsPtr->activeFlags &= ~(LFS_CHECKPOINT_ACTIVE|LFS_CHECKPOINTWAIT_ACTIVE);
+    Sync_Broadcast(&lfsPtr->checkPointWait);
+    UNLOCK_MONITOR;
     return status;
 
 }
@@ -1273,66 +1364,20 @@ ReturnStatus
 LfsSegDetach(lfsPtr)
     Lfs	  	    *lfsPtr;		/* File system to checkpoint. */
 {
-    free(lfsPtr->segMemoryPtr);
+
+    FreeSegmentMem(lfsPtr);
     return SUCCESS;
 
 }
 
-/*ARGSUSED*/
-Boolean
-LfsSegNullLayout(segPtr, cleaning)
-    LfsSeg	*segPtr;
-    Boolean 	cleaning;
-{
-	return FALSE;
-}
-
-LfsLockDomain(lfsPtr)
+void
+LfsWaitForCheckPoint(lfsPtr) 
     Lfs	*lfsPtr;
 {
     LOCK_MONITOR;
-    LFS_STATS_INC(lfsPtr->stats.log.locks);
-    while (lfsPtr->locked) {
-	LFS_STATS_INC(lfsPtr->stats.log.lockWaits);
-	Sync_Wait(&lfsPtr->lfsUnlock, FALSE);
+    while (lfsPtr->activeFlags & LFS_CHECKPOINT_ACTIVE) {
+	Sync_Wait(&lfsPtr->checkPointWait, FALSE);
     }
-    lfsPtr->locked = TRUE;
-    UNLOCK_MONITOR;
-}
-LfsUnLockDomain(lfsPtr, condPtr)
-    Lfs	*lfsPtr;
-	    Sync_Condition *condPtr;
-{
-    LOCK_MONITOR;
-    lfsPtr->locked = FALSE;
-    Sync_Broadcast(&lfsPtr->lfsUnlock);
-    if (condPtr != (Sync_Condition *) NIL) {
-	Sync_Broadcast(condPtr);
-    }
-    UNLOCK_MONITOR;
-}
-
-LfsNotify(lfsPtr, condPtr)
-    Lfs	*lfsPtr;
-	    Sync_Condition *condPtr;
-{
-    LOCK_MONITOR;
-    Sync_Broadcast(condPtr);
-    UNLOCK_MONITOR;
-}
-
-LfsWaitDomain(lfsPtr, condPtr)
-    Lfs	*lfsPtr;
-    Sync_Condition *condPtr;
-{
-    LOCK_MONITOR;
-    lfsPtr->locked = FALSE;
-    Sync_Broadcast(&lfsPtr->lfsUnlock);
-    Sync_Wait(condPtr, FALSE);
-    while (lfsPtr->locked) {
-	Sync_Wait(&lfsPtr->lfsUnlock, FALSE);
-    }
-    lfsPtr->locked = TRUE;
     UNLOCK_MONITOR;
 }
 

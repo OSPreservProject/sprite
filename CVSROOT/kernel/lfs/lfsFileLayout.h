@@ -42,16 +42,16 @@ typedef struct LfsFileLayoutSummary {
 /*
  * LfsFileLayoutLog describes the format of directory log in the summary
  * region. 
- * The LfsFileLayoutLog will be followed by numBytes bytes of log.
  */
 
 typedef struct LfsFileLayoutLog {
     unsigned short	blockType;     /* Type of data block. See below. */
-    unsigned short	numBytes;     /* Number of file system blocks covered
+    unsigned short	numBlocks;     /* Number of file system blocks covered
+					* by this summary. */
+    unsigned short	numDataBlocks;     
+				      /* Number of data blocks covered
 				       * by this summary. */
-    /*
-     * LfsFileLayoutLog is followed by numBytes bytes of log entries.
-     */
+    unsigned short 	reserved;
 } LfsFileLayoutLog;
 
 /*
@@ -81,14 +81,6 @@ typedef struct LfsFileLayoutParams {
 
 } LfsFileLayoutParams;
 
-/*
- * Routines for lint purposes only.
- */
-
-extern ReturnStatus LfsFileLayoutAttach();
-extern Boolean	LfsFileLayoutProc(), LfsFileLayoutClean();
-extern Boolean LfsFileLayoutCheckpoint();
-extern void LfsFileLayoutWriteDone();
 
 #endif /* _LFSFILELAYOUT */
 

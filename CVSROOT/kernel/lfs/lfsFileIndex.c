@@ -42,9 +42,19 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fscache.h"
 #include "fsdm.h"
 
-enum IndexOp { GET_ADDR, SET_ADDR};
+/*
+ * Index operation type for AccessBlock routine.
+ */
+enum IndexOp { GET_ADDR, SET_ADDR, GROW_ADDR};
 
-static ReturnStatus	AccessBlock();
+static ReturnStatus AccessBlock _ARGS_((enum IndexOp op, Lfs *lfsPtr, 
+		Fsio_FileIOHandle *handlePtr, int blockNum, int blockSize,
+		int cacheFlags, LfsDiskAddr *diskAddressPtr));
+static ReturnStatus DeleteIndirectBlock _ARGS_((Lfs *lfsPtr, 
+		Fsio_FileIOHandle *handlePtr, int virtualBlockNum,
+		LfsDiskAddr *diskAddrPtr,
+		int startBlockNum, int lastBlockNum, int step, 
+		int lastByteBlock));
 
 
 /*
@@ -64,12 +74,12 @@ static ReturnStatus	AccessBlock();
  */
 
 ReturnStatus
-LfsFile_GetIndex(handlePtr, blockNum, cantBlock, diskAddressPtr)
+LfsFile_GetIndex(handlePtr, blockNum, cacheFlags, diskAddressPtr)
     Fsio_FileIOHandle	*handlePtr;   /* Handle for file that are 
 					      * interest in. */
     int		        blockNum;    /* Block number of interest. */
-    Boolean	cantBlock;	     /* TRUE if we can't block. */
-    int *diskAddressPtr; 	     /* Disk address returned. */
+    int		cacheFlags;	     /* FSCACHE_CANT_BLOCK,FSCACHE_DONT_BLOCK.*/
+    LfsDiskAddr *diskAddressPtr;      /* Disk address returned. */
 {
     Lfs				*lfsPtr;
     Fsdm_Domain			*domainPtr;
@@ -81,7 +91,7 @@ LfsFile_GetIndex(handlePtr, blockNum, cantBlock, diskAddressPtr)
     }
     lfsPtr = LfsFromDomainPtr(domainPtr);
     LFS_STATS_INC(lfsPtr->stats.index.get);
-    status = AccessBlock(GET_ADDR, lfsPtr, handlePtr, blockNum, cantBlock,
+    status = AccessBlock(GET_ADDR, lfsPtr, handlePtr, blockNum, 0, cacheFlags,
 				diskAddressPtr);
     Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
     return status;
@@ -95,6 +105,8 @@ LfsFile_GetIndex(handlePtr, blockNum, cantBlock, diskAddressPtr)
  *	Set the disk address of the specified block of a specified file.
  *
  * Results:
+ *	SUCCESS if operation worked. FS_WOULD_BLOCK if operation would
+ *	block and cantBlock argument set.
  *
  * Side effects:
  *
@@ -102,18 +114,17 @@ LfsFile_GetIndex(handlePtr, blockNum, cantBlock, diskAddressPtr)
  */
 
 ReturnStatus
-LfsFile_SetIndex(handlePtr, blockNum, cantBlock, diskAddress)
+LfsFile_SetIndex(handlePtr, blockNum, blockSize, cacheFlags, diskAddress)
     Fsio_FileIOHandle	      *handlePtr;    /* Handle for file that are 
 					      * interest in. */
-    int		    blockNum; 		     /* Block number of interest. */
-    Boolean	cantBlock;	     /* TRUE if we can't block. */
-    int		 diskAddress; 		     /* Disk address of block. */
+    int		    blockNum; 	     /* Block number of interest. */
+    int		    blockSize;	     /* Size of block in bytes. */
+    int		cacheFlags;	     /* FSCACHE_CANT_BLOCK,FSCACHE_DONT_BLOCK.*/
+    LfsDiskAddr	 diskAddress; 		     /* Disk address of block. */
 {
     Lfs		    	*lfsPtr;
     Fsdm_Domain			*domainPtr;
     ReturnStatus		status;
-    int				segNo;
-
 
     domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, TRUE);
     if (domainPtr == (Fsdm_Domain *)NIL) {
@@ -125,72 +136,84 @@ LfsFile_SetIndex(handlePtr, blockNum, cantBlock, diskAddress)
      * Checking. 
      */
 #ifdef ERROR_CHECK
-   if (diskAddress != FSDM_NIL_INDEX) { 
-	segNo = LfsBlockToSegmentNum(lfsPtr, diskAddress);
+   if (!LfsIsNilDiskAddr(diskAddress)) { 
+        int segNo;
+	segNo = LfsDiskAddrToSegmentNum(lfsPtr, diskAddress);
 	if (!LfsValidSegmentNum(lfsPtr,segNo)) {
 	    panic("LfsFile_SetIndex: bad segment number.\n");
 	}
     }
 #endif
-    status = AccessBlock(SET_ADDR, lfsPtr, handlePtr, blockNum, cantBlock,
-		&diskAddress);
+    status = AccessBlock(SET_ADDR, lfsPtr, handlePtr, blockNum, blockSize,
+		cacheFlags, &diskAddress);
     Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
     return status;
 }
+
 
 /*
  *----------------------------------------------------------------------
  *
  * AccessBlock --
  *
- *	Access and perform a GET ro SET operation on the specified block
+ *	Access and perform a GET or SET operation on the specified block
  *	of the specified file.
  *
  * Results:
- *	None.
+ *	SUCCESS if operation worked ok.
+ *	FS_WOULD_BLOCK if operation would block an cantBlock set.
  *
  * Side effects:
- *	None.
+ *	Index block may be allocated.
  *
  *----------------------------------------------------------------------
  */
 
 static ReturnStatus
-AccessBlock(op, lfsPtr, handlePtr, blockNum, cantBlock, diskAddressPtr)
+AccessBlock(op, lfsPtr, handlePtr, blockNum, blockSize, cacheFlags, 
+		diskAddressPtr)
     enum IndexOp 	      op;	     /* Operation to be performed. 
-					      * Must be GET_ADDR or 
-					      * SET_ADDR. */
+					      * Must be GET_ADDR,  
+					      * SET_ADDR or GROW_ADDR. */
     Fsio_FileIOHandle	      *handlePtr;    /* Handle for file that are 
 					      * interest in. */
     Lfs		*lfsPtr;		     /* File system of file. */
     int		blockNum;		     /* Block number of file. */
-    Boolean	cantBlock;	     /* TRUE if we can't block. */
-    int *diskAddressPtr;	  	    /* Disk address in/out. */
+    int		blockSize;		/* Block size for set operation */
+    int		cacheFlags;	     /* FSCACHE_CANT_BLOCK,FSCACHE_DONT_BLOCK.*/
+    LfsDiskAddr *diskAddressPtr;	    /* Disk address in/out. */
 {
-    int parentIndex, parentBlockNum, parentDiskAddress;
+    int parentIndex, parentBlockNum;
+    LfsDiskAddr parentDiskAddress;
     Fsdm_FileDescriptor 	*descPtr;
     Fscache_Block *parentblockPtr;
     int	modTime;
     Boolean	found;
     ReturnStatus	status;
-    int		cacheFlags;
+    LfsDiskAddr *indirectPtr, *directPtr;
 
     descPtr = handlePtr->descPtr;
+    directPtr = (LfsDiskAddr *)(descPtr->direct);
+    indirectPtr = (LfsDiskAddr *)(descPtr->indirect);
 
     /*
      * First process the data and indirect blocks that are pointed to 
      * by the descriptor.
      */
     if (blockNum < 0) {
+	if (op == GROW_ADDR) {
+	    panic("LfsAccessBlock - Can't grow indirect block\n");
+	    return FAILURE;
+	}
 	if (blockNum >= -FSDM_NUM_INDIRECT_BLOCKS) { 
 	    /*
 	     * This is a direct indirect block.
 	     */
 	    if (op == GET_ADDR) { 
-		*diskAddressPtr = (descPtr->indirect[(-blockNum)-1]);
-	    } else {
-		int *addrPtr = (descPtr->indirect + ((-blockNum)-1));
-		LfsSegUsageFreeBlocks(lfsPtr, FS_BLOCK_SIZE, 1, addrPtr);
+		*diskAddressPtr = indirectPtr[(-blockNum)-1];
+	    } else { /* SET_ADDR */
+		LfsDiskAddr *addrPtr = indirectPtr + ((-blockNum)-1);
+		LfsSegUsageFreeBlocks(lfsPtr, blockSize, 1, addrPtr);
 		*addrPtr = *diskAddressPtr;
 		descPtr->flags |= FSDM_FD_INDEX_DIRTY;
 		(void) Fsdm_FileDescStore(handlePtr, FALSE);
@@ -211,14 +234,29 @@ AccessBlock(op, lfsPtr, handlePtr, blockNum, cantBlock, diskAddressPtr)
 	    /*
 	     * This is a direct data block.
 	     */
-	    if (op == GET_ADDR) { 
-		*diskAddressPtr = (descPtr->direct[blockNum]);
-	    } else {
-		int *addrPtr = (descPtr->direct + blockNum);
-		LfsSegUsageFreeBlocks(lfsPtr, FS_BLOCK_SIZE, 1, addrPtr);
-		*addrPtr = *diskAddressPtr;
-		descPtr->flags |= FSDM_FD_INDEX_DIRTY;
-		(void) Fsdm_FileDescStore(handlePtr, FALSE);
+	    switch (op) {
+		case GET_ADDR: { 
+		    *diskAddressPtr = directPtr[blockNum];
+		    break;
+		}
+		case SET_ADDR: {
+		    LfsDiskAddr *addrPtr = (directPtr + blockNum);
+		    LfsSegUsageFreeBlocks(lfsPtr, blockSize, 1, addrPtr);
+		    *addrPtr = *diskAddressPtr;
+		    descPtr->flags |= FSDM_FD_INDEX_DIRTY;
+		    (void) Fsdm_FileDescStore(handlePtr, FALSE);
+		    break;
+		}
+		case GROW_ADDR: {
+		    LfsDiskAddr diskAddr = directPtr[blockNum];
+		    if (!LfsIsNilDiskAddr(diskAddr)) {
+			LfsSetSegUsage(lfsPtr,
+				   LfsDiskAddrToSegmentNum(lfsPtr, diskAddr),
+				    blockSize);
+		    }
+		    *diskAddressPtr = diskAddr;
+		    break;
+		}
 	    }
 	    return(SUCCESS);
 	}
@@ -240,82 +278,145 @@ AccessBlock(op, lfsPtr, handlePtr, blockNum, cantBlock, diskAddressPtr)
 	}
 
     }
-    cacheFlags = (op == GET_ADDR) ? FSCACHE_IND_BLOCK :
-		   (FSCACHE_IND_BLOCK|FSCACHE_IO_IN_PROGRESS);
+    cacheFlags |= ((op == SET_ADDR) ? 
+				  (FSCACHE_IND_BLOCK|FSCACHE_IO_IN_PROGRESS) 
+				    : FSCACHE_IND_BLOCK);
 
-    if (cantBlock) {
-	cacheFlags |= (FSCACHE_CANT_BLOCK|FSCACHE_DONT_BLOCK);
+
+    switch (op) {
+	case GET_ADDR: {
+	    LFS_STATS_INC(lfsPtr->stats.index.getFetchBlock);
+	    break;
+	}
+	case SET_ADDR: {
+	    LFS_STATS_INC(lfsPtr->stats.index.setFetchBlock);
+	    break;
+	} 
+	case GROW_ADDR: {
+	    LFS_STATS_INC(lfsPtr->stats.index.growFetchBlock);
+	    break;
+	} 
     }
-
-    /* 
+     /* 
      * Lookup the parent block in the cache.
      */
-    if (op == GET_ADDR) {
-	LFS_STATS_INC(lfsPtr->stats.index.getFetchBlock);
-    } else {
-	LFS_STATS_INC(lfsPtr->stats.index.setFetchBlock);
-    } 
-    Fscache_FetchBlock(&handlePtr->cacheInfo, parentBlockNum,
+   Fscache_FetchBlock(&handlePtr->cacheInfo, parentBlockNum,
 		cacheFlags, &parentblockPtr, &found);
-    if (found) {
-	 if (op == GET_ADDR) {
-	    LFS_STATS_INC(lfsPtr->stats.index.getFetchHit);
-	    *diskAddressPtr =  ((int *)parentblockPtr->blockAddr)[parentIndex];
-	    modTime = 0;
-	 } else  { /* SET_ADDR */
-	    int *addrPtr = ((int *)parentblockPtr->blockAddr) + parentIndex; 
-	    LFS_STATS_INC(lfsPtr->stats.index.setFetchHit);
-	    LfsSegUsageFreeBlocks(lfsPtr, FS_BLOCK_SIZE, 1, addrPtr);
-	    *addrPtr = *diskAddressPtr;
-	    modTime = fsutil_TimeInSeconds;
+    if ((parentblockPtr != (Fscache_Block *) NIL) && found) {
+	modTime = 0;
+	 switch (op) {
+	     case GET_ADDR: {
+		LFS_STATS_INC(lfsPtr->stats.index.getFetchHit);
+		*diskAddressPtr = 
+		    ((LfsDiskAddr *)parentblockPtr->blockAddr)[parentIndex];
+		break;
+	     } 
+	     case SET_ADDR: {
+		LfsDiskAddr *addrPtr;
+		addrPtr = ((LfsDiskAddr *)parentblockPtr->blockAddr) + 
+			   parentIndex; 
+		LFS_STATS_INC(lfsPtr->stats.index.setFetchHit);
+		LfsSegUsageFreeBlocks(lfsPtr, blockSize, 1, addrPtr);
+		*addrPtr = *diskAddressPtr;
+		modTime = Fsutil_TimeInSeconds();
+		break;
+	     }
+	     case GROW_ADDR: {
+		*diskAddressPtr = 
+		    ((LfsDiskAddr *)parentblockPtr->blockAddr)[parentIndex];
+		if (!LfsIsNilDiskAddr(*diskAddressPtr)) {
+			LfsSetSegUsage(lfsPtr,
+			    LfsDiskAddrToSegmentNum(lfsPtr, *diskAddressPtr),
+			    blockSize);
+		}
+		break;
+	     } 
 	 }
 	 Fscache_UnlockBlock(parentblockPtr, (unsigned )modTime, parentBlockNum,
 			     FS_BLOCK_SIZE, 0);
 	 return SUCCESS;
     }
+    if (parentblockPtr == (Fscache_Block *) NIL) {
+	return FS_WOULD_BLOCK;
+    }
     /*
      * Not found in cache. Try to read it in. First we need to find the
      * address of the block.
      */
-    status = AccessBlock(GET_ADDR, lfsPtr, handlePtr, parentBlockNum, cantBlock,
-				(int *) &parentDiskAddress);
-    if (parentDiskAddress == FSDM_NIL_INDEX) {
-	if (op == GET_ADDR) {
-	    *diskAddressPtr = FSDM_NIL_INDEX;
-	     Fscache_UnlockBlock(parentblockPtr, (unsigned )0, parentBlockNum,
+    status = AccessBlock(GET_ADDR, lfsPtr, handlePtr, parentBlockNum, 0,
+				cacheFlags,
+				&parentDiskAddress);
+    if (status != SUCCESS) {
+	 Fscache_UnlockBlock(parentblockPtr, (unsigned )0, parentBlockNum,
 			     FS_BLOCK_SIZE, FSCACHE_DELETE_BLOCK);
-	} else { /* SET_ADDR */
-	    register int *intPtr, *limitPtr;
-	    limitPtr = (int *) (parentblockPtr->blockAddr + FS_BLOCK_SIZE);
-	    for (intPtr = (int *)parentblockPtr->blockAddr; intPtr < limitPtr;
-		intPtr++) {
-		*intPtr = FSDM_NIL_INDEX;
+	return status;
+    }
+    if (LfsIsNilDiskAddr(parentDiskAddress)) {
+	switch (op) {
+	    case GROW_ADDR: 
+	    case GET_ADDR: {
+		 LfsSetNilDiskAddr(diskAddressPtr);
+		 Fscache_UnlockBlock(parentblockPtr, (unsigned)0,
+				 parentBlockNum,
+				 FS_BLOCK_SIZE, FSCACHE_DELETE_BLOCK);
+		 break;
 	    }
-	    ((int *)parentblockPtr->blockAddr)[parentIndex] = *diskAddressPtr;
-	     Fscache_UnlockBlock(parentblockPtr, 
-				(unsigned )fsutil_TimeInSeconds,
-				parentBlockNum, FS_BLOCK_SIZE, 0);
+	    case SET_ADDR: {
+		register LfsDiskAddr *intPtr, *limitPtr;
+		limitPtr = (LfsDiskAddr *) (parentblockPtr->blockAddr + 
+					    FS_BLOCK_SIZE);
+		for (intPtr = (LfsDiskAddr *)parentblockPtr->blockAddr;
+			    intPtr < limitPtr; intPtr++) {
+		    LfsSetNilDiskAddr(intPtr);
+		}
+		((LfsDiskAddr *)parentblockPtr->blockAddr)[parentIndex] = 
+			    *diskAddressPtr;
+		 Fscache_UnlockBlock(parentblockPtr, 
+				    (unsigned )Fsutil_TimeInSeconds(),
+				    parentBlockNum, FS_BLOCK_SIZE, 0);
+		 break;
+	    }
 	}
 	return SUCCESS;
      }
 
-     status = LfsReadBytes(lfsPtr, ( int)parentDiskAddress, 
+     status = LfsReadBytes(lfsPtr, parentDiskAddress, 
 		FS_BLOCK_SIZE,  parentblockPtr->blockAddr);
+#ifdef ERROR_CHECK
+     LfsCheckRead(lfsPtr, parentDiskAddress, FS_BLOCK_SIZE);
+#endif
      if (status != SUCCESS) {
+	 Fscache_UnlockBlock(parentblockPtr, (unsigned )0, parentBlockNum,
+			     FS_BLOCK_SIZE, FSCACHE_DELETE_BLOCK);
 	 LfsError(lfsPtr, status, "Can't read indirect block.\n");
 	 return status;
      }
-     if (op == GET_ADDR) {
-        *diskAddressPtr =  ((int *)parentblockPtr->blockAddr)[parentIndex];
-	modTime = 0;
-     } else {
-	int *addrPtr = ((int *)parentblockPtr->blockAddr) + 
-					parentIndex; 
-         LfsSegUsageFreeBlocks(lfsPtr, FS_BLOCK_SIZE, 1, addrPtr);
-	*addrPtr = *diskAddressPtr;
-	modTime = fsutil_TimeInSeconds;
-     }
-
+     modTime = 0;
+     switch (op) {
+	 case GET_ADDR: {
+	    *diskAddressPtr =  
+		    ((LfsDiskAddr *)parentblockPtr->blockAddr)[parentIndex];
+	    break;
+	 }
+	 case SET_ADDR: {
+	    LfsDiskAddr *addrPtr = ((LfsDiskAddr *)parentblockPtr->blockAddr) + 
+					    parentIndex; 
+	    LfsSegUsageFreeBlocks(lfsPtr, blockSize, 1, addrPtr);
+	    *addrPtr = *diskAddressPtr;
+	    modTime = Fsutil_TimeInSeconds();
+	    break;
+	 }
+	 case GROW_ADDR: {
+	    *diskAddressPtr =  
+		    ((LfsDiskAddr *)parentblockPtr->blockAddr)[parentIndex];
+	    if (!LfsIsNilDiskAddr(*diskAddressPtr)) {
+		    LfsSetSegUsage(lfsPtr,
+			LfsDiskAddrToSegmentNum(lfsPtr, *diskAddressPtr),
+			blockSize);
+	    }
+	    break;
+	 }
+    }
     Fscache_UnlockBlock(parentblockPtr, (unsigned) modTime, 
 				parentBlockNum, FS_BLOCK_SIZE, 0);
     return(SUCCESS);
@@ -339,25 +440,27 @@ AccessBlock(op, lfsPtr, handlePtr, blockNum, cantBlock, diskAddressPtr)
  */
 
 static ReturnStatus
-DeleteIndirectBlock(lfsPtr, handlePtr, virtualBlockNum, diskAddr, 
-	startBlockNum, lastBlockNum, step) 
+DeleteIndirectBlock(lfsPtr, handlePtr, virtualBlockNum, diskAddrPtr, 
+	startBlockNum, lastBlockNum, step, lastByteBlock) 
     Lfs	  *lfsPtr;
     Fsio_FileIOHandle	      *handlePtr;    /* Handle for file that are 
 					      * interest in. */
     int	  virtualBlockNum;	/* Virtual block number for this indirect 
 				 * block. */
-    int	  diskAddr;		/* Disk address of block. */
+    LfsDiskAddr	  *diskAddrPtr;	/* Disk address of block. */
     int	  startBlockNum;	/* Starting block number of this virtual
 				 * Block. */
     int	  lastBlockNum;		/* New last block number of file. */
     int	  step;			/* Number of blocks covered by each virtual
 				 * block entry. */
+    int	  lastByteBlock;	/* Block containing last byte of file. */
 {
     Fscache_Block	*cacheBlockPtr;
+    LfsDiskAddr		diskAddr = *diskAddrPtr;
     Boolean		found;
     ReturnStatus	status = SUCCESS;
     int			startElement, cstep, childBlockNum, i;
-    int	*blockArray;
+    LfsDiskAddr	*blockArray;
     /*
      * If this index block hasn't been allocated yet and not in the  
      * cache we don't need to free anything.
@@ -365,7 +468,7 @@ DeleteIndirectBlock(lfsPtr, handlePtr, virtualBlockNum, diskAddr,
     LFS_STATS_INC(lfsPtr->stats.index.deleteFetchBlock);
     Fscache_FetchBlock(&handlePtr->cacheInfo, virtualBlockNum,
        (int)(FSCACHE_IO_IN_PROGRESS|FSCACHE_IND_BLOCK), &cacheBlockPtr,&found);
-    if (!found && (diskAddr == FSDM_NIL_INDEX)) {
+    if (!found && LfsIsNilDiskAddr(diskAddr)) {
 	Fscache_UnlockBlock(cacheBlockPtr, (unsigned )0, virtualBlockNum,
 			     FS_BLOCK_SIZE, FSCACHE_DELETE_BLOCK);
 	return SUCCESS;
@@ -378,6 +481,9 @@ DeleteIndirectBlock(lfsPtr, handlePtr, virtualBlockNum, diskAddr,
 	LFS_STATS_INC(lfsPtr->stats.index.deleteFetchBlockMiss);
 	status = LfsReadBytes(lfsPtr, diskAddr, FS_BLOCK_SIZE, 
 		       cacheBlockPtr->blockAddr);
+#ifdef ERROR_CHECK
+	 LfsCheckRead(lfsPtr, diskAddr, FS_BLOCK_SIZE);
+#endif
 	 if (status != SUCCESS) {
 	     LfsError(lfsPtr, status, "Can't read indirect block.\n");
 	     return status;
@@ -400,45 +506,42 @@ DeleteIndirectBlock(lfsPtr, handlePtr, virtualBlockNum, diskAddr,
 	childBlockNum = -((FSDM_NUM_INDIRECT_BLOCKS+1)+startElement);
 	for (i = startElement; i < FSDM_INDICES_PER_BLOCK; i++) { 
 	    status = DeleteIndirectBlock(lfsPtr, handlePtr, childBlockNum, 
-		    ((int *) cacheBlockPtr->blockAddr)[i],
-		     startBlockNum, lastBlockNum, cstep);
+				((LfsDiskAddr *) cacheBlockPtr->blockAddr) + i,
+				startBlockNum, lastBlockNum, cstep, 
+				lastByteBlock);
 	    startBlockNum += step;
 	    childBlockNum--;
 	}
-    }
-    blockArray =  (int *) cacheBlockPtr->blockAddr + startElement;
-    if (step == 1) {
-	int lastByteBlock;
+    } else { 
+	blockArray =  ((LfsDiskAddr *) cacheBlockPtr->blockAddr) + startElement;
 	/*
 	 * Free the last block in the file handling the case that it
 	 * is a fragment.
 	 */
-	lastByteBlock = handlePtr->descPtr->lastByte/FS_BLOCK_SIZE;
 	if ((lastByteBlock >= startBlockNum) && 
 	    (lastByteBlock < startBlockNum + FSDM_INDICES_PER_BLOCK) &&
 	    (lastByteBlock >= lastBlockNum)) {
 	    int fragSize;
 	    fragSize = handlePtr->descPtr->lastByte - 
-				(lastByteBlock * FS_BLOCK_SIZE);
+				(lastByteBlock * FS_BLOCK_SIZE) + 1;
 	    fragSize = LfsBlocksToBytes(lfsPtr, LfsBytesToBlocks(lfsPtr, 
 							fragSize));
 
 	    (void) LfsSegUsageFreeBlocks(lfsPtr, fragSize, 1,
 			blockArray + (lastByteBlock - startBlockNum));
 	}
-    }
-    (void) LfsSegUsageFreeBlocks(lfsPtr, FS_BLOCK_SIZE, 
+	(void) LfsSegUsageFreeBlocks(lfsPtr, FS_BLOCK_SIZE, 
 			FSDM_INDICES_PER_BLOCK - startElement, blockArray);
+    }
     /*
      * If we deleted all the indexes in this block we can delete the block.
      */
     if (startElement == 0) {
 	Fscache_UnlockBlock(cacheBlockPtr, (unsigned )0, virtualBlockNum,
 			     FS_BLOCK_SIZE, FSCACHE_DELETE_BLOCK);
-	(void) LfsSegUsageFreeBlocks(lfsPtr, FS_BLOCK_SIZE, 1, 
-			( int *) &diskAddr);
+	(void) LfsSegUsageFreeBlocks(lfsPtr, FS_BLOCK_SIZE, 1, diskAddrPtr);
     } else {
-	Fscache_UnlockBlock(cacheBlockPtr, (unsigned )fsutil_TimeInSeconds, 
+	Fscache_UnlockBlock(cacheBlockPtr, (unsigned )Fsutil_TimeInSeconds(), 
 			virtualBlockNum, FS_BLOCK_SIZE, 0);
     }
     return status;
@@ -461,37 +564,41 @@ DeleteIndirectBlock(lfsPtr, handlePtr, virtualBlockNum, diskAddr,
  *----------------------------------------------------------------------
  */
 ReturnStatus 
-LfsFile_TruncIndex(lfsPtr, handlePtr, numBlocks)
+LfsFile_TruncIndex(lfsPtr, handlePtr, length)
     Lfs		    	*lfsPtr;
-    Fsio_FileIOHandle	      *handlePtr;    /* Handle for file that are 
-					      * interest in. */
-    int			      numBlocks;      /* Number of blocks to 
-					      * leave for file. */
+    Fsio_FileIOHandle    *handlePtr;    /* Handle for file that are 
+					 * interest in. */
+    int			 length;      /* Number of bytes to 
+					  * leave in file. */
 {
     Fsdm_FileDescriptor	*descPtr;
     ReturnStatus	status = SUCCESS;
     int			lastByteBlock, fragSize;
+    int			numBlocks;
 
     LFS_STATS_INC(lfsPtr->stats.index.truncs);
-
+    numBlocks = (length + (FS_BLOCK_SIZE-1))/FS_BLOCK_SIZE;
     descPtr = handlePtr->descPtr;
+    lastByteBlock = descPtr->lastByte/FS_BLOCK_SIZE;
+
+
     /*
      * Delete any DBL_INDIRECT blocks first.
      */
     if (numBlocks < (FSDM_NUM_DIRECT_BLOCKS + FSDM_INDICES_PER_BLOCK +
 		     FSDM_INDICES_PER_BLOCK * FSDM_INDICES_PER_BLOCK)) {
 	status = DeleteIndirectBlock(lfsPtr, handlePtr, -2, 
-			descPtr->indirect[1],
+			&(descPtr->indirect[1]),
 			FSDM_NUM_DIRECT_BLOCKS + FSDM_INDICES_PER_BLOCK,
-			numBlocks, FSDM_INDICES_PER_BLOCK);
+			numBlocks, FSDM_INDICES_PER_BLOCK, lastByteBlock);
     }
     /*
      * Followed by any INDIRECT blocks.
      */
     if (numBlocks < (FSDM_INDICES_PER_BLOCK + FSDM_NUM_DIRECT_BLOCKS)) {
 	status = DeleteIndirectBlock(lfsPtr, handlePtr, -1, 
-			descPtr->indirect[0],
-			FSDM_NUM_DIRECT_BLOCKS, numBlocks, 1);
+			&(descPtr->indirect[0]),
+			FSDM_NUM_DIRECT_BLOCKS, numBlocks, 1, lastByteBlock);
     }
     /*
      * Finally the DIRECT blocks.
@@ -500,25 +607,142 @@ LfsFile_TruncIndex(lfsPtr, handlePtr, numBlocks)
 	/*
 	 * The last block in the file may be a fragement. Free it first.
 	 */
-	lastByteBlock = descPtr->lastByte/FS_BLOCK_SIZE;
-	if ((lastByteBlock < FSDM_NUM_DIRECT_BLOCKS) && 
+	if ((descPtr->lastByte >= 0) &&
+	    (lastByteBlock < FSDM_NUM_DIRECT_BLOCKS) && 
 	    (lastByteBlock >= numBlocks)) {
 	    /*
 	     * Compute the size of the fragment and round it into lfs
 	     * blocks.
 	     */
-	    fragSize = descPtr->lastByte - (lastByteBlock * FS_BLOCK_SIZE);
+	    fragSize = descPtr->lastByte - (lastByteBlock * FS_BLOCK_SIZE) + 1;
 	    /*
-	     * Round to the number of LFS blocks it would talk.
+	     * Round to the number of LFS blocks it would take.
 	     */
 	    fragSize = LfsBlocksToBytes(lfsPtr, 
 				LfsBytesToBlocks(lfsPtr, fragSize));
 	    (void) LfsSegUsageFreeBlocks(lfsPtr, fragSize, 1, 
-		    descPtr->direct + lastByteBlock);
+		    ((LfsDiskAddr *)descPtr->direct) + lastByteBlock);
 	}
 	(void) LfsSegUsageFreeBlocks(lfsPtr, FS_BLOCK_SIZE, 
 		    FSDM_NUM_DIRECT_BLOCKS - numBlocks,	
-		    descPtr->direct + numBlocks);
+		    ((LfsDiskAddr *)descPtr->direct) + numBlocks);
+    }
+
+    return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LfsFile_GrowBlock --
+ *
+ *	Grow the specified block of the specified file.
+ *
+ * Results:
+ *	A status indicating whether there was sufficient space to allocate
+ *	block
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+LfsFile_GrowBlock(lfsPtr, handlePtr, offset, numBytes)
+    Lfs				*lfsPtr;
+    Fsio_FileIOHandle	*handlePtr;   /* Handle for file that are 
+				       * interest in. */
+    int		offset;		     /* Offset to allocate at. */
+    int		numBytes;	     /* Number of bytes to make block. */
+{
+    ReturnStatus		status;
+    int	newLastByte,  blockNum;
+    register	Fsdm_FileDescriptor *descPtr;
+    LfsDiskAddr diskAddress;
+    int	 oldSize, oldLastBlock;
+
+
+    /*
+     * Process the common case that we are appending to the end of the file
+     * starting at a block boundry.  We know the block can't already exist
+     * so we don't need to grow it. 
+     */
+    descPtr = handlePtr->descPtr;
+    oldSize = descPtr->lastByte + 1;
+    LFS_STATS_INC(lfsPtr->stats.blockio.fastAllocs);
+    if ((offset % FS_BLOCK_SIZE == 0) && (offset == oldSize)) {
+	return LfsSegUsageAllocateBytes(lfsPtr, numBytes);
+    }
+    newLastByte = offset + numBytes - 1;
+    blockNum = offset / FS_BLOCK_SIZE;
+    oldLastBlock = oldSize / FS_BLOCK_SIZE;
+    if (newLastByte > descPtr->lastByte) {
+	int blocksToGrow, bytesToGrow, lastFragSize, newLastFragSize, 
+	     extraBytes;
+	/*
+	 * We are writing at the end of the file. If the last block is 
+	 * a fragment we must grow it.
+	 */
+	lastFragSize = oldSize % FS_BLOCK_SIZE;
+	newLastFragSize = lastFragSize + (newLastByte - descPtr->lastByte);
+	if (newLastFragSize > FS_BLOCK_SIZE) {
+	    newLastFragSize = FS_BLOCK_SIZE;
+	}
+	blocksToGrow = LfsBytesToBlocks(lfsPtr, newLastFragSize) - 
+			LfsBytesToBlocks(lfsPtr, lastFragSize);
+	if (blocksToGrow > 0) {
+	    bytesToGrow = LfsBlocksToBytes(lfsPtr,blocksToGrow);
+	    /*
+	     * Allocate and grow the last block of the file. At the same
+	     * time we can allocate space if a new last block is being 
+	     * created.
+	     */
+	    extraBytes = (oldLastBlock == blockNum) ? 0 : numBytes;
+	    status = LfsSegUsageAllocateBytes(lfsPtr, bytesToGrow + extraBytes);
+	    if (status == SUCCESS) {
+		 /* If this block is already allocated to disk and we are 
+		  * growing it, increment the segment usage count to reflect 
+		  * the larger block size so it will be correctly freed 
+		  * when it is overwritten or deleted. 
+		  */
+		LFS_STATS_INC(lfsPtr->stats.blockio.slowAllocs);
+		status = AccessBlock(GROW_ADDR, lfsPtr, handlePtr, 
+				  oldLastBlock, bytesToGrow, 0, &diskAddress);
+	    } 
+	} else if (oldLastBlock != blockNum) {
+	    /*
+	     * The last block of the file doesn't need to be grown any but
+	     * the write is creating a new last block that we must allocate
+	     * space for.
+	     */
+	    status = LfsSegUsageAllocateBytes(lfsPtr, numBytes);
+	} else {
+	    /*
+	     * The write is to the last block of the file but doesn't cause
+	     * the file to take any more space on disk because space is 
+	     * rounded to block sizes.
+	     */
+	    status = SUCCESS;
+	}
+    } else {
+	/*
+	 * We are writing into the middle of the file. Check to see if 
+	 * the block previous existed. We can skip this check if we
+	 * know that the file system has enough room for this block.
+	 */
+	LFS_STATS_INC(lfsPtr->stats.blockio.fastAllocs);
+	status = LfsSegUsageAllocateBytes(lfsPtr, numBytes);
+	if (status != SUCCESS) { 
+	    LFS_STATS_INC(lfsPtr->stats.blockio.slowAllocs);
+	    status = AccessBlock(GET_ADDR, lfsPtr, handlePtr, blockNum, 
+				FS_BLOCK_SIZE, 0, &diskAddress);
+	    if ((status != SUCCESS) || LfsIsNilDiskAddr(diskAddress)) {
+		LFS_STATS_INC(lfsPtr->stats.blockio.slowAllocFails);
+		status = FS_NO_DISK_SPACE;
+	    }
+	}
+
     }
 
     return status;

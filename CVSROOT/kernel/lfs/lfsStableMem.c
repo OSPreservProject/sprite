@@ -1,8 +1,9 @@
 /* 
- * LfsStableMemIndex.c --
+ * LfsStableMem.c --
  *
  *	Generic routines for supporting an in memory data structure that
- *	is written to a LFS log at each checkpoint.  
+ *	is written to a LFS log at each checkpoint.  The blocks of the
+ *	data structures are kept as file in the file cache.
  *
  * Copyright 1989 Regents of the University of California
  * Permission to use, copy, modify, and distribute this
@@ -18,14 +19,18 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "lfs.h"
-#include "lfsSeg.h"
-#include "lfsStableMem.h"
-#include "stdlib.h"
-#include "fsdm.h"
+#include <lfsInt.h>
+#include <lfsSeg.h>
+#include <lfsStableMemInt.h>
+#include <stdlib.h>
+#include <fsdm.h>
 
-static Boolean AddBlockToSegment();
+static Boolean AddBlockToSegment _ARGS_((LfsStableMem *smemPtr, 
+			Address address, int blockNum, ClientData clientData,
+			LfsSeg *segPtr));
+static Boolean BlockMatch _ARGS_((Fscache_Block *blockPtr, 
+			ClientData clientData));
+
 
 
 /*
@@ -45,7 +50,7 @@ static Boolean AddBlockToSegment();
  */
 
 ReturnStatus
-LfsStableMemLoad(lfsPtr, smemParamsPtr, checkPointSize, checkPointPtr,smemPtr)
+LfsStableMemLoad(lfsPtr, smemParamsPtr, checkPointSize, checkPointPtr, smemPtr)
     Lfs *lfsPtr;	   /* File system of metadata. */
     LfsStableMemParams  *smemParamsPtr; /* Parameters for this memory. */
     int  checkPointSize;   /* Size of checkpoint data. */
@@ -53,9 +58,9 @@ LfsStableMemLoad(lfsPtr, smemParamsPtr, checkPointSize, checkPointPtr,smemPtr)
     LfsStableMem	*smemPtr; /* In memeory index data structures. */
 {
     int	blockNum, bufferSize; 
-    ReturnStatus  status;
     LfsStableMemCheckPoint *cpPtr;
-    char	*dataPtr;
+    Fscache_Attributes	   attr;
+    static	int	nextMinorNumber = -1;
 
     cpPtr = (LfsStableMemCheckPoint *) 	checkPointPtr;
     /*
@@ -69,36 +74,41 @@ LfsStableMemLoad(lfsPtr, smemParamsPtr, checkPointSize, checkPointPtr,smemPtr)
     /*
      * Fill in the LfsStableMem data structures.
      *
-     * Allocate space for the data buffer.
      */
-    bufferSize = smemParamsPtr->blockSize * smemParamsPtr->maxNumBlocks;
-    smemPtr->dataPtr = malloc(bufferSize);
+    smemPtr->lfsPtr = lfsPtr;
     /*
-     * Allocate and copy the index for the metadata. Be sure to allocated
-     * enought space for the index  and dirty bits area.
+     * Initialize the file handle used for storing blocks in the
+     * file cache.
      */
-    bufferSize = (smemParamsPtr->maxNumBlocks * sizeof(int)) + 
-			(smemParamsPtr->maxNumBlocks + 7)/8;
-    smemPtr->blockIndexPtr = (int *) malloc(bufferSize);
+
+    bzero((Address)&smemPtr->dataHandle, sizeof(smemPtr->dataHandle));
+    smemPtr->dataHandle.hdr.fileID.serverID = rpc_SpriteID;
+    smemPtr->dataHandle.hdr.fileID.major = lfsPtr->domainPtr->domainNumber;
+    smemPtr->dataHandle.hdr.fileID.minor = nextMinorNumber--;
+    smemPtr->dataHandle.hdr.fileID.type = FSIO_LCL_FILE_STREAM;
+    smemPtr->dataHandle.hdr.name = "LfsStableMemFile";
+    smemPtr->dataHandle.descPtr = (Fsdm_FileDescriptor *)NIL;
+
+    bzero((Address)&attr, sizeof(attr));
+    attr.lastByte = smemParamsPtr->blockSize * smemParamsPtr->maxNumBlocks;
+    Fscache_FileInfoInit(&smemPtr->dataHandle.cacheInfo,
+		    (Fs_HandleHeader *) &smemPtr->dataHandle,
+		    0, TRUE, &attr, lfsPtr->domainPtr->backendPtr);
+
+    /*
+     * Allocate and copy the index for the metadata.
+     */
+    bufferSize = smemParamsPtr->maxNumBlocks * sizeof(int);
+    smemPtr->blockIndexPtr = (LfsDiskAddr *) malloc(bufferSize);
     bcopy(checkPointPtr + sizeof(LfsStableMemCheckPoint), 
 		 (char *) smemPtr->blockIndexPtr, 
-		 cpPtr->numBlocks * sizeof(int));
+		 cpPtr->numBlocks * sizeof(LfsDiskAddr));
     for (blockNum = cpPtr->numBlocks; blockNum < smemParamsPtr->maxNumBlocks;
 			blockNum++) {
-	smemPtr->blockIndexPtr[blockNum] = FSDM_NIL_INDEX;
+	LfsSetNilDiskAddr(&smemPtr->blockIndexPtr[blockNum]);
     }
 
-    /*
-     * Mark all blocks as clean.
-     */
-    smemPtr->dirtyBlocksBitMapPtr = (char *)(smemPtr->blockIndexPtr) +
-				     smemParamsPtr->maxNumBlocks * sizeof(int);
-    bzero(smemPtr->dirtyBlocksBitMapPtr,
-		(int)(smemParamsPtr->maxNumBlocks+ 7)/8);
-
-    smemPtr->blockSizeShift = 
-		LfsLogBase2((unsigned int) smemParamsPtr->blockSize);
-
+    smemPtr->numCacheBlocksOut = 0;
     /*
      * Fillin the rest of the LfsStableMem data structure with a copy
      * of the checkPoint and Params data.
@@ -106,36 +116,8 @@ LfsStableMemLoad(lfsPtr, smemParamsPtr, checkPointSize, checkPointPtr,smemPtr)
 
     smemPtr->checkPoint = *cpPtr;
     smemPtr->params = *smemParamsPtr;
-    /*
-     * Read all the blocks of the stable memory from disk.
-     */
-    dataPtr = smemPtr->dataPtr;
-    for (blockNum = 0; blockNum < cpPtr->numBlocks; blockNum++) {
-	int blockIndex = smemPtr->blockIndexPtr[blockNum];
-	if (blockIndex == FSDM_NIL_INDEX) {
-	    bzero(dataPtr,  (smemParamsPtr->blockSize));
-	} else {
-	    status = LfsReadBytes(lfsPtr, blockIndex, 
-				  (smemParamsPtr->blockSize), dataPtr);
-	    if (status != SUCCESS) {
-		    break;
-	    }
-	}
-	dataPtr += smemParamsPtr->blockSize;
-    }
-    /*
-     * Zero out the rest of the buffer.
-     */
-    bzero(dataPtr, (int)((smemParamsPtr->maxNumBlocks - cpPtr->numBlocks) * 
-			smemParamsPtr->blockSize));
-    if (status != SUCCESS) {
-	free((char *) smemPtr->blockIndexPtr);
-	smemPtr->blockIndexPtr = (int *) NIL;
-	free((char *) smemPtr->dataPtr);
-	smemPtr->dataPtr = (char *) NIL;
-    }
 
-    return status;
+    return SUCCESS;
 }
 
 
@@ -167,23 +149,33 @@ LfsStableMemClean(segPtr, sizePtr, numCacheBlocksPtr, clientDataPtr, smemPtr)
     char *summaryPtr;
     int	 *blockPtr;
     int	 numBlocks, block, blockOffset;
-    int blockAddress;
+    LfsDiskAddr blockAddress;
+    ReturnStatus	status;
+    LfsStableMemEntry entry;
 
     summaryPtr = LfsSegGetSummaryPtr(segPtr);
     numBlocks = LfsSegSummaryBytesLeft(segPtr) / sizeof(int);
     blockPtr = (int *) summaryPtr;
     blockAddress = LfsSegDiskAddress(segPtr, LfsSegGetBufferPtr(segPtr));
     blockOffset = 0;
+    /*
+     * For each block that hasn't moved already, fetch and release the
+     * block marking it as dirty.
+     */
     for (block = 0; block < numBlocks; block++) { 
+	LfsDiskAddr newDiskAddr;
 	 blockOffset += LfsBytesToBlocks(segPtr->lfsPtr, 
 					smemPtr->params.blockSize);
-	if (smemPtr->blockIndexPtr[blockPtr[block]] == 
-			    (blockAddress - blockOffset)) {
-	    char *startPtr = smemPtr->dataPtr + 
-			(blockPtr[block] << smemPtr->blockSizeShift);
-	    LfsStableMemMarkDirty(smemPtr, startPtr,  
-			(smemPtr->params.blockSize));
-	    *sizePtr += smemPtr->params.blockSize;
+	LfsDiskAddrPlusOffset(blockAddress, -blockOffset, &newDiskAddr);
+	if (LfsSameDiskAddr(smemPtr->blockIndexPtr[blockPtr[block]], 
+			newDiskAddr)) {
+	    int entryNumber = blockPtr[block] * smemPtr->params.entriesPerBlock;
+	    status = LfsStableMemFetch(smemPtr, entryNumber, FALSE, &entry);
+	    if (status != SUCCESS) {
+		LfsError(segPtr->lfsPtr, status,"Can't clean metadata block\n");
+	    }
+	    LfsStableMemRelease(smemPtr, &entry, TRUE);
+	    (*sizePtr) += smemPtr->params.blockSize;
 	 }
     }
     return FALSE;
@@ -217,66 +209,91 @@ LfsStableMemCheckpoint(segPtr, checkPointPtr, flags, checkPointSizePtr,
     ClientData *clientDataPtr;
     LfsStableMem *smemPtr;	/* Stable memory description. */
 {
-    register char *dirtyBitsPtr;
-    register int  block, bitNum;
     Boolean	full = FALSE;
-    int		numBlocks;
 
+    full = LfsStableMemLayout(segPtr, LFS_CHECKPOINT_LAYOUT,
+			clientDataPtr, smemPtr);
     /*
-     * Find and layout all the dirty metadata blocks. We go thru the
-     * bitmask backward so that the blocks will be laidout in the
-     * forward direction.
-     */
-    numBlocks = ((smemPtr->params.maxNumBlocks+7)/8)*8;
-    dirtyBitsPtr = smemPtr->dirtyBlocksBitMapPtr + numBlocks/8 - 1;
-    for (block = numBlocks-1; block >= 0; ) {
-	if (*dirtyBitsPtr == 0x0) {
-	     /*
-	      * If there are no bits set in this byte we can skip all 
-	      * the block identified by it.
-	      */
-	     block -= sizeof(*dirtyBitsPtr)*8;
-	     dirtyBitsPtr--;
-	     continue;
-	 }
-	 /*
-	  * Layout of dirty blocks represented by this byte.
-	  */
-	 for (bitNum = sizeof(*dirtyBitsPtr)*8-1; bitNum >= 0; bitNum--) {
-		int bit = (1 << bitNum);
-		if (!(*dirtyBitsPtr & bit)) {
-		    block--;
-		    continue;
-		}
-		/*
-		 * Found one - lay it out. 
-		 */
-		full = AddBlockToSegment(smemPtr, block, segPtr);
-		if (full) {
-		    break;
-		}
-		if (smemPtr->checkPoint.numBlocks < (block+1)) {
-		    smemPtr->checkPoint.numBlocks = block+1;
-		}
-		*dirtyBitsPtr ^= bit;
-		block--;
-	  }
-	  if (full) {
-	      break;
-	  }
-	  dirtyBitsPtr--;
-    }
-    /*
-     * If we didn't fill the segment copy the index to the checkpoint buffer.
+     * If we didn't fill the segment, copy the index to the checkpoint buffer.
      */
     if (!full) {
 	*(LfsStableMemCheckPoint *) checkPointPtr = smemPtr->checkPoint;
 	bcopy((char *) smemPtr->blockIndexPtr, 
 		checkPointPtr + sizeof(LfsStableMemCheckPoint), 
-		sizeof(int) * smemPtr->checkPoint.numBlocks);
+		sizeof(LfsDiskAddr) * smemPtr->checkPoint.numBlocks);
 	*checkPointSizePtr = sizeof(int) * smemPtr->checkPoint.numBlocks + 
 				sizeof(LfsStableMemCheckPoint);
 
+    }
+    return full;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LfsStableMemLayout --
+ *
+ *	Routine to handle writing of data for this module.
+ *
+ * Results:
+ *	TRUE if more data needs to be written, FALSE if this module is
+ *	checkpointed.
+ *
+ * Side effects:
+ *	Many
+ *
+ *----------------------------------------------------------------------
+ */
+
+Boolean
+LfsStableMemLayout(segPtr, flags, clientDataPtr, smemPtr)
+    LfsSeg *segPtr;		/* Segment to place data blocks in. */
+    int		flags;		/* Layout flags. */
+    ClientData	*clientDataPtr;
+    LfsStableMem *smemPtr;	/* Stable memory description. */
+{
+    Boolean	full = FALSE;
+    Fscache_FileInfo	*cacheInfoPtr;
+    Fscache_Block	*blockPtr;
+    int			lastDirtyBlock;
+    Boolean		fsyncOnly;
+
+
+    /*
+     * Find and layout all the dirty metadata blocks. 
+     */
+    if (*clientDataPtr == (ClientData) NIL) { 
+	fsyncOnly = ((flags  & LFS_CHECKPOINT_LAYOUT) == 0);
+	cacheInfoPtr = Fscache_GetDirtyFile(
+			    segPtr->lfsPtr->domainPtr->backendPtr,
+			    fsyncOnly, LfsFileMatch, 
+		    (ClientData) (smemPtr->dataHandle.hdr.fileID.minor));
+	if (cacheInfoPtr == (Fscache_FileInfo *) NIL) {
+	    return FALSE;
+	}
+	*clientDataPtr = (ClientData) cacheInfoPtr;
+    } else {
+	cacheInfoPtr = (Fscache_FileInfo *) *clientDataPtr;
+    }
+
+    while(!full) { 
+	blockPtr = Fscache_GetDirtyBlock(cacheInfoPtr, BlockMatch,
+				(ClientData) 0, &lastDirtyBlock);
+	if (blockPtr == (Fscache_Block *) NIL) {
+	    break;
+	}
+	full = AddBlockToSegment(smemPtr, blockPtr->blockAddr, 
+			blockPtr->blockNum, (ClientData) blockPtr, segPtr);
+	if (full) {
+	    Fscache_ReturnDirtyBlock(blockPtr, GEN_EINTR);
+	} else {
+	    smemPtr->numCacheBlocksOut++;
+	}
+
+    }
+    if (!full && (smemPtr->numCacheBlocksOut == 0)) {
+	Fscache_ReturnDirtyFile(cacheInfoPtr, FALSE);
     }
     return full;
 }
@@ -305,27 +322,141 @@ LfsStableMemWriteDone(segPtr, flags, clientDataPtr, smemPtr)
     ClientData *clientDataPtr;
     LfsStableMem *smemPtr;	/* Index description. */
 {
-    LfsSegElement *bufferPtr = LfsSegGetBufferPtr(segPtr);
+    LfsSegElement *bufferLimitPtr, *bufferPtr = LfsSegGetBufferPtr(segPtr);
+    Fscache_Block *blockPtr;
 
-    bufferPtr += LfsSegSummaryBytesLeft(segPtr) / sizeof(int);
+    blockPtr = (Fscache_Block *) NIL;
+    bufferLimitPtr = bufferPtr + LfsSegSummaryBytesLeft(segPtr) / sizeof(int);
+    while (bufferPtr < bufferLimitPtr) {
+	blockPtr = (Fscache_Block *) bufferPtr->clientData;
+	Fscache_ReturnDirtyBlock(blockPtr, SUCCESS);
+	bufferPtr++;
+	smemPtr->numCacheBlocksOut--;
+    }
+    if (smemPtr->numCacheBlocksOut == 0) {
+	Fscache_ReturnDirtyFile((Fscache_FileInfo *)(*clientDataPtr), FALSE);
+    }
     LfsSegSetBufferPtr(segPtr, bufferPtr);
-   /*
+    /*
      * Free up space if we are detaching.
      */
-    if (LFS_DETACH & flags) {
+    if (LFS_CHECKPOINT_DETACH & flags) {
 	free((char *)smemPtr->blockIndexPtr);
-	smemPtr->blockIndexPtr = (int *) NIL;
-	free((char *) smemPtr->dataPtr);
-	smemPtr->dataPtr = (char *) NIL;
+	smemPtr->blockIndexPtr = (LfsDiskAddr *) NIL;
+	Fscache_FileInvalidate(&smemPtr->dataHandle.cacheInfo, 0, 
+	    smemPtr->params.maxNumBlocks);
     }
+}
+/*
+ *----------------------------------------------------------------------
+ *
+ * LfsStableMemFetch --
+ *
+ *	Routine to fetch a stable memory entry and optionally release
+ *	a previously fetched entry.   This routine fetches the data block
+ *	from the file cache reading it in if it is not present.
+ *
+ * Results:
+ *	SUCCESS if entry is fetch. GEN_INVALID_ARG if entryNumber is not
+ *	vaild. Other ReturnStatus if disk read fails.
+ *
+ * Side effects:
+ *	Cache block fetched. Possibly disk I/O performed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+LfsStableMemFetch(smemPtr, entryNumber, releaseEntry, entryPtr)
+    LfsStableMem *smemPtr;	/* Index description. */
+    int		 entryNumber;	/* Entry number wanted. */
+    Boolean 	 releaseEntry;	/* If TRUE, entryPtr should be
+				 * release before fetching new block. */
+    LfsStableMemEntry *entryPtr; /* IN/OUT: Stable memory entry returned. */
+{
+    Fscache_Block	    *blockPtr;
+    Boolean		    found;
+    int 		blockNum, offset;
+    ReturnStatus	status = SUCCESS;
+    LfsStableMemBlockHdr *hdrPtr;
+
+    if ((entryNumber < 0) || (entryNumber >= smemPtr->params.maxNumEntries)) {
+	if (releaseEntry) {
+	    LfsStableMemRelease(smemPtr, entryPtr, entryPtr->modified);
+	}
+	return GEN_INVALID_ARG;
+    }
+    blockNum = entryNumber / smemPtr->params.entriesPerBlock;
+    offset = (entryNumber % smemPtr->params.entriesPerBlock) * 
+		smemPtr->params.entrySize + sizeof(LfsStableMemBlockHdr);
+    blockPtr = (Fscache_Block *) NIL;
+    if (releaseEntry) {
+	if (entryPtr->blockNum == blockNum) { 
+	    blockPtr = (Fscache_Block *) entryPtr->clientData;
+	} else {
+	    LfsStableMemRelease(smemPtr, entryPtr, entryPtr->modified);
+	}
+    }
+    if (blockPtr == (Fscache_Block *) NIL) {
+	Boolean dirtied;
+	/*
+	 * Fetch the block from the cache reading it in if needed.
+	 */
+	Fscache_FetchBlock(&smemPtr->dataHandle.cacheInfo, blockNum, 
+		  FSCACHE_DESC_BLOCK|FSCACHE_CANT_BLOCK, &blockPtr, &found);
+	dirtied = FALSE;
+	if (!found && (blockPtr != (Fscache_Block *) NIL) ) {
+	    if (LfsIsNilDiskAddr(smemPtr->blockIndexPtr[blockNum])) {
+		bzero(blockPtr->blockAddr, smemPtr->params.blockSize);
+		hdrPtr = (LfsStableMemBlockHdr *) blockPtr->blockAddr;
+		hdrPtr->magic = LFS_STABLE_MEM_BLOCK_MAGIC;
+		hdrPtr->memType = smemPtr->params.memType;
+		hdrPtr->blockNum = blockNum;
+		dirtied = TRUE;
+	     } else {
+		status = LfsReadBytes(smemPtr->lfsPtr, 
+				     smemPtr->blockIndexPtr[blockNum],
+				     smemPtr->params.blockSize, 
+				     blockPtr->blockAddr);
+#ifdef ERROR_CHECK
+		 if (smemPtr->params.memType != LFS_SEG_USAGE_MOD) {
+		     LfsCheckRead(smemPtr->lfsPtr, 
+				smemPtr->blockIndexPtr[blockNum], 
+				smemPtr->params.blockSize);
+		  }
+#endif
+	     }
+
+	     if (status != SUCCESS) {
+		Fscache_UnlockBlock(blockPtr, 0, -1, 0, FSCACHE_DELETE_BLOCK);
+	     }
+	}
+	entryPtr->modified = dirtied;
+    }
+    if (blockPtr != (Fscache_Block *) NIL) {
+#ifdef ERROR_CHECK
+	hdrPtr = (LfsStableMemBlockHdr *) blockPtr->blockAddr;
+	if ((hdrPtr->magic != LFS_STABLE_MEM_BLOCK_MAGIC) || 
+	    (hdrPtr->memType != smemPtr->params.memType) ||
+	    (hdrPtr->blockNum != blockNum)) {
+	    LfsError(smemPtr->lfsPtr, FAILURE, "Bad LfsStableMemBlockHdr\n");
+	}
+#endif /* ERROR_CHECK */
+	entryPtr->addr = blockPtr->blockAddr + offset;
+	entryPtr->blockNum = blockNum;
+	entryPtr->clientData = (ClientData) blockPtr;
+    } else {
+	status = FS_WOULD_BLOCK;
+    }
+    return status;
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * LfsStableMemMarkDirty --
+ * LfsStableMemRelease --
  *
- *	Routine to mark blocks of a metadata index as dirty.
+ *	Routine to release a previous fetched stable memory ebtrt,
  *
  * Results:
  *	None.
@@ -337,21 +468,31 @@ LfsStableMemWriteDone(segPtr, flags, clientDataPtr, smemPtr)
  */
 
 void
-LfsStableMemMarkDirty(smemPtr, startPtr, length)
+LfsStableMemRelease(smemPtr, entryPtr, modified)
     LfsStableMem *smemPtr;	/* Index description. */
-    char	 *startPtr;	/* Starting addressed dirtied. */
-    int		length;		/* Number of bytes dirtied. */
+    LfsStableMemEntry *entryPtr; /*  Stable memory entry to return. */
+    Boolean	modified;	/* TRUE if block was modified. */
 {
-    int offset, startBlockNum, endBlockNum;
+    Fscache_Block	    *blockPtr;
+    int			timeDirtied, blockNum;
 
-    offset = (int)(startPtr - smemPtr->dataPtr);
-    startBlockNum = offset >> smemPtr->blockSizeShift;
-    endBlockNum = (offset + length - 1) >> smemPtr->blockSizeShift;
-    while (startBlockNum <= endBlockNum) {
-	smemPtr->dirtyBlocksBitMapPtr[startBlockNum/(8*sizeof(char))] |= 
-				(1 << (startBlockNum % (8*sizeof(char))));
-	startBlockNum++;
+    blockPtr = (Fscache_Block *) entryPtr->clientData;
+    blockNum = blockPtr->blockNum;
+    modified = modified || entryPtr->modified;
+    timeDirtied = modified ? -1 : 0;
+    Fscache_UnlockBlock(blockPtr, timeDirtied, blockNum,  
+			smemPtr->params.blockSize, 0);
+    entryPtr->addr = (Address)NIL;
+    if (modified && !LfsIsNilDiskAddr(smemPtr->blockIndexPtr[blockNum])) {
+        /*
+	 * If the block was modified free the old address up.
+	 */
+	LfsSegUsageFreeBlocks(smemPtr->lfsPtr, 
+		(int)(smemPtr->params.blockSize), 1, 
+		(LfsDiskAddr *) smemPtr->blockIndexPtr + blockNum);
+
     }
+    return;
 }
 
 /*
@@ -372,9 +513,11 @@ LfsStableMemMarkDirty(smemPtr, startPtr, length)
 
 
 static Boolean
-AddBlockToSegment(smemPtr, blockNum, segPtr)
+AddBlockToSegment(smemPtr, address, blockNum, clientData, segPtr)
     LfsStableMem *smemPtr;	/* Index of block. */
-    int		blockNum;	/* Block to add. */
+    Address	  address;	/* Address of block. */
+    int		blockNum;	/* Block number. */
+    ClientData	clientData;	/* Client data for entry. */
     LfsSeg *segPtr;		/* Segment to place data blocks in. */
 {
     int	fsBlocks;
@@ -386,15 +529,43 @@ AddBlockToSegment(smemPtr, blockNum, segPtr)
     if (summaryPtr == (char *)NIL) {
 	return TRUE;
     }
-    bufferPtr = LfsSegAddDataBuffer(segPtr, fsBlocks,
-	 smemPtr->dataPtr + (blockNum << smemPtr->blockSizeShift),
-	 (ClientData) blockNum);
+    bufferPtr = LfsSegAddDataBuffer(segPtr, fsBlocks, address, clientData);
     *(int *)summaryPtr = blockNum;
     LfsSegSetSummaryPtr(segPtr,summaryPtr + sizeof(int));
-    LfsSegUsageFreeBlocks(segPtr->lfsPtr, (int)(smemPtr->params.blockSize), 1, 
-		(int *) smemPtr->blockIndexPtr + blockNum);
+#ifdef ERROR_CHECK
+    if (!LfsIsNilDiskAddr(smemPtr->blockIndexPtr[blockNum])) {
+	panic("StableMem:AddBlockToSegment disk address not NIL\n");
+    }
+#endif
     smemPtr->blockIndexPtr[blockNum] = LfsSegDiskAddress(segPtr, bufferPtr);
     segPtr->activeBytes += smemPtr->params.blockSize;
+    if (blockNum >= smemPtr->checkPoint.numBlocks) {
+	smemPtr->checkPoint.numBlocks = blockNum + 1;
+    }
     return FALSE;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * BlockMatch --
+ *
+ * 	Cache backend block type match.  
+ *
+ * Results:
+ *	TRUE.
+ *
+ * Side effects:
+ *
+ * ----------------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static Boolean
+BlockMatch(blockPtr, clientData)
+    Fscache_Block *blockPtr;
+    ClientData	   clientData;
+{
+    return TRUE;
 }
 

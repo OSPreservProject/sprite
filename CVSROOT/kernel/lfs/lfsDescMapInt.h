@@ -19,7 +19,8 @@
 #ifndef _LFSDESCMAPINT
 #define _LFSDESCMAPINT
 
-#include "lfsDescMap.h"
+#include <lfsDescMap.h>
+#include <lfsStableMemInt.h>
 
 /* constants */
 
@@ -32,6 +33,22 @@ typedef struct LfsDescMap {
 } LfsDescMap;
 
 /* procedures */
+extern void LfsDescMapInit _ARGS_((void));
+
+extern void LfsDescCacheInit _ARGS_((struct Lfs *lfsPtr));
+extern ReturnStatus LfsDescMapGetVersion _ARGS_((struct Lfs *lfsPtr,
+			int fileNumber, unsigned short *versionNumPtr));
+extern ReturnStatus LfsDescMapIncVersion _ARGS_((struct Lfs *lfsPtr, 
+			int fileNumber, int *versionPtr));
+extern ReturnStatus LfsDescMapGetDiskAddr _ARGS_((struct Lfs *lfsPtr, 
+			int fileNumber, LfsDiskAddr *diskAddrPtr));
+extern ReturnStatus LfsDescMapSetDiskAddr _ARGS_((struct Lfs *lfsPtr, 
+			int fileNumber, LfsDiskAddr diskAddr));
+extern ReturnStatus LfsDescMapGetAccessTime _ARGS_((struct Lfs *lfsPtr,
+			int fileNumber, int *accessTimePtr));
+extern ReturnStatus LfsDescMapSetAccessTime _ARGS_((struct Lfs *lfsPtr, 
+			int fileNumber, int accessTime));
+
 
 #endif /* _LFSDESCMAPINT */
 

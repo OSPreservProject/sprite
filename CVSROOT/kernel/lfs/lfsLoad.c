@@ -18,13 +18,13 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "lfsInt.h"
-#include "stdlib.h"
-#include "rpc.h"	/* For rpc_SpriteID. */
+#include <sprite.h>
+#include <lfsInt.h>
+#include <stdlib.h>
+#include <rpc.h>
 
-#include "string.h"
-#include "lfs.h"
+#include <string.h>
+#include <lfs.h>
 
 static Fsdm_DomainOps lfsDomainOps = {
 	Lfs_AttachDisk,
@@ -40,19 +40,11 @@ static Fsdm_DomainOps lfsDomainOps = {
 	Lfs_FileDescStore,
 	Lfs_FileBlockRead,
 	Lfs_FileBlockWrite,
-	Lfs_FileTrunc
-
+	Lfs_FileTrunc,
+	Lfs_DirOpStart,
+	Lfs_DirOpEnd
 };
 
-
-static Fscache_BackendRoutines  lfsBackendRoutines = {
-	    Fsdm_BlockAllocate,
-	    Fsdm_FileBlockRead,
-	    Fsdm_FileBlockWrite,
-	    Lfs_ReallocBlock,
-	    Lfs_StartWriteBack,
-
-};
 
 
 /*
@@ -80,22 +72,28 @@ LfsLoadFileSystem(lfsPtr, flags)
     ReturnStatus	status;
     LfsCheckPointHdr	checkPointHdr[2], *checkPointHdrPtr;
     LfsCheckPointTrailer *trailerPtr;
+    LfsDiskAddr		diskAddr;
     int			choosenOne, maxSize;
     char		*checkPointPtr;
     int			checkPointSize;
 
+    Sync_LockInitDynamic(&(lfsPtr->checkPointLock), "LfsCheckpointLock");
     /*
      * Examine the two checkpoint areas to locate the checkpoint area with the
      * newest timestamp.
      */
-    status = LfsReadBytes(lfsPtr, lfsPtr->superBlock.hdr.checkPointOffset[0],
-			sizeof(LfsCheckPointHdr), (char *) (checkPointHdr+0));
+    LfsOffsetToDiskAddr(lfsPtr->superBlock.hdr.checkPointOffset[0],
+		&diskAddr);
+    status = LfsReadBytes(lfsPtr, diskAddr, sizeof(LfsCheckPointHdr),
+			 (char *) (checkPointHdr+0));
     if (status != SUCCESS) {
 	LfsError(lfsPtr, status, "Can't read checkpoint header #0");
 	return status;
     }
-    status = LfsReadBytes(lfsPtr, lfsPtr->superBlock.hdr.checkPointOffset[1],
-			sizeof(LfsCheckPointHdr), (char *) (checkPointHdr+1));
+    LfsOffsetToDiskAddr(lfsPtr->superBlock.hdr.checkPointOffset[1],
+		&diskAddr);
+    status = LfsReadBytes(lfsPtr, diskAddr, sizeof(LfsCheckPointHdr), 
+		(char *) (checkPointHdr+1));
     if (status != SUCCESS) {
 	LfsError(lfsPtr, status, "Can't read checkpoint header #1");
 	return status;
@@ -109,9 +107,9 @@ LfsLoadFileSystem(lfsPtr, flags)
 				(lfsPtr->superBlock.hdr.maxCheckPointBlocks));
     checkPointPtr = malloc(maxSize);
 
-    status = LfsReadBytes(lfsPtr,
-			lfsPtr->superBlock.hdr.checkPointOffset[choosenOne],
-			 maxSize, checkPointPtr);
+    LfsOffsetToDiskAddr(lfsPtr->superBlock.hdr.checkPointOffset[choosenOne],
+		&diskAddr);
+    status = LfsReadBytes(lfsPtr, diskAddr,  maxSize, checkPointPtr);
     if (status != SUCCESS) {
 	free((char *) checkPointPtr);
 	LfsError(lfsPtr, status, "Can't read checkpoint region");
@@ -141,8 +139,7 @@ LfsLoadFileSystem(lfsPtr, flags)
 	free((char *) checkPointHdrPtr);
 	return (status);
     }
-    lfsPtr->domainPtr->backendPtr = 
-	Fscache_RegisterBackend(&lfsBackendRoutines,(ClientData) lfsPtr, 0);
+    lfsPtr->domainPtr->backendPtr = LfsCacheBackendInit(lfsPtr);
     lfsPtr->domainPtr->domainOpsPtr = &lfsDomainOps;
     lfsPtr->domainPtr->clientData = (ClientData) lfsPtr;
 
@@ -177,8 +174,8 @@ LfsLoadFileSystem(lfsPtr, flags)
      * didn't load from. Also set the timestamp into the future.
      */
     lfsPtr->checkPoint.timestamp = checkPointHdrPtr->timestamp+1;
-    lfsPtr->checkPoint.buffer = (char *) checkPointHdrPtr;
     lfsPtr->checkPoint.nextArea = !choosenOne;
+    lfsPtr->checkPoint.buffer = (char *) checkPointHdrPtr;
 
     /*
      * Fill in the checkPointHdrPtr will the fields that don't change
@@ -192,8 +189,8 @@ LfsLoadFileSystem(lfsPtr, flags)
     (void)strncpy(checkPointHdrPtr->domainPrefix, lfsPtr->name, 
 			sizeof(checkPointHdrPtr->domainPrefix)-1);
     checkPointHdrPtr->domainNumber = lfsPtr->domainPtr->domainNumber;
-    checkPointHdrPtr->attachSeconds = fsutil_TimeInSeconds;
-    checkPointHdrPtr->detachSeconds = fsutil_TimeInSeconds;
+    checkPointHdrPtr->attachSeconds = Fsutil_TimeInSeconds();
+    checkPointHdrPtr->detachSeconds = checkPointHdrPtr->attachSeconds;
     checkPointHdrPtr->serverID = rpc_SpriteID;
 
     return status;
@@ -222,7 +219,9 @@ LfsDetachFileSystem(lfsPtr)
     ReturnStatus	status;
 
 
-    status = LfsCheckPointFileSystem(lfsPtr, LFS_DETACH);
+    (*lfsPtr->checkpointIntervalPtr) = 0;  /* Stop the timer checkpointer. */
+
+    status = LfsCheckPointFileSystem(lfsPtr, LFS_CHECKPOINT_DETACH);
 
     status = LfsSegDetach(lfsPtr);
 
@@ -230,7 +229,7 @@ LfsDetachFileSystem(lfsPtr)
     return status;
 }
 
-
+#define	LOCKPTR &lfsPtr->checkPointLock
 
 /*
  *----------------------------------------------------------------------
@@ -257,6 +256,7 @@ LfsCheckPointFileSystem(lfsPtr, flags)
     LfsCheckPointHdr	*checkPointHdrPtr;
     int			size, blocks;
     LfsCheckPointTrailer *trailerPtr;
+    LfsDiskAddr		diskAddr;
     ReturnStatus	status;
 
     checkPointHdrPtr = (LfsCheckPointHdr *) lfsPtr->checkPoint.buffer;
@@ -264,8 +264,13 @@ LfsCheckPointFileSystem(lfsPtr, flags)
     status = LfsSegCheckPoint(lfsPtr, flags, 
 			(char *)(checkPointHdrPtr+1), &size);
     if (status != SUCCESS) {
+	if ((flags & (LFS_CHECKPOINT_WRITEBACK|LFS_CHECKPOINT_TIMER)) && 
+	    (status == GEN_EINTR)) {
+	    status = SUCCESS;
+	}
 	return status;
     }
+    LOCK_MONITOR;
     /*
      * Fill in check point header and trailer.
      */
@@ -273,7 +278,7 @@ LfsCheckPointFileSystem(lfsPtr, flags)
     checkPointHdrPtr->size = size + sizeof(LfsCheckPointHdr) + 
 			 sizeof(LfsCheckPointTrailer);
     checkPointHdrPtr->version = 1;
-    checkPointHdrPtr->detachSeconds = fsutil_TimeInSeconds;
+    checkPointHdrPtr->detachSeconds = Fsutil_TimeInSeconds();
     trailerPtr = (LfsCheckPointTrailer *) 
 		(lfsPtr->checkPoint.buffer + size + sizeof(LfsCheckPointHdr));
     trailerPtr->timestamp = checkPointHdrPtr->timestamp;
@@ -289,15 +294,23 @@ LfsCheckPointFileSystem(lfsPtr, flags)
 				checkPointHdrPtr->size+LFS_STATS_MAX_SIZE);
     bcopy ((char *) &lfsPtr->stats, (char *) (trailerPtr + 1), 
 		sizeof(lfsPtr->stats));
-    status = LfsWriteBytes(lfsPtr,
+    LfsOffsetToDiskAddr(
 	lfsPtr->superBlock.hdr.checkPointOffset[lfsPtr->checkPoint.nextArea],
+		&diskAddr);
+    status = LfsWriteBytes(lfsPtr, diskAddr, 
 	LfsBlocksToBytes(lfsPtr, blocks), (char *) checkPointHdrPtr);
     if (status != SUCCESS) {
+	UNLOCK_MONITOR;
 	return status;
     }
     /*
      * Set the file system up to use the other checkpoint buffer next time.
      */
     lfsPtr->checkPoint.nextArea = !lfsPtr->checkPoint.nextArea;
+    UNLOCK_MONITOR;
+#ifdef notdef
+    printf("Lfs %s checkpointed at %d\n", lfsPtr->name, 
+		    checkPointHdrPtr->detachSeconds);
+#endif
     return SUCCESS;
 }

@@ -22,13 +22,13 @@
 #ifndef _LFSSEG
 #define _LFSSEG
 
-#include "lfsInt.h"
-#include "lfsSegLayout.h"
+#include <lfsInt.h>
+#include <lfsSegLayout.h>
 
 /* 
- * The interface to writing objects to the LFS log is operated uses a 
+ * The interface to writing objects to the LFS log is operated using a 
  * callback interface.  Any module may start a segment write by calling
- * the LfsSegWriteStart(). The segment write code (lfsSeg.c) then
+ * the LfsSegWriteStart(). The segment write code (in lfsSeg.c) then
  * selects a clean segment on disk, initializes a LfsSeg structure for that
  * segment, and calls the Layout() subroutine for each module.  The Layout()
  * adds data blocks and/or summary bytes to the segment. Data blocks
@@ -52,6 +52,17 @@ typedef struct LfsSegElement {
 } LfsSegElement;
 
 /*
+ * LfsSegLogRange describes the position in the segmented log of a segment. 
+ */
+typedef struct LfsSegLogRange {
+    int		current;	/* Current segment being accessed */
+    int		prevSeg;	/* The segment that was written before the
+				 * current segment. */
+    int		nextSeg;	/* Next segment to be written after the
+				 * current segment. */
+} LfsSegLogRange;
+
+/*
  * The LfsSeg structure is used to describe a segment while objects are being
  * added to the segment during writing and removed from the segment during
  * cleaning.  A segment is divided into two regions: the data block region
@@ -62,12 +73,12 @@ typedef struct LfsSegElement {
  */
 
 typedef struct LfsSeg {
-    Lfs	         *lfsPtr;	/* The LFS file system this segment belongs.
+    struct Lfs	       *lfsPtr;	/* The LFS file system this segment belongs.
 				 * Static segment attributes such as number
 				 * blocks can be found in here. */
-    char	 *segMemPtr;	/* Memory allocated for segment.  */
     LfsSegElement *segElementPtr; /* The SegElements making up the data 
 				   * region of the segment. */
+    char	   *memPtr;	/* Segment memory allocated for segment. */
     LfsSegLogRange logRange;	/* Placement of segment in segmented log. */
     int	    numElements;      /* Number of LfsSegElement describing the 
 			       * segment. */
@@ -102,7 +113,8 @@ typedef struct LfsSeg {
 
 typedef struct LfsSegIoInterface {
 
-    ReturnStatus (*attach)(); 
+    ReturnStatus (*attach) _ARGS_((struct Lfs *lfsPtr, int checkPointSize, 
+				char *checkPointPtr));
 	/* File system attach routine. Calling sequence:
 	 * attach(lfsPtr, checkPointSize, checkPointPtr)
 	 *    Lfs *lfsPtr; -- File system to attach.
@@ -113,24 +125,30 @@ typedef struct LfsSegIoInterface {
 	 * The routine returns SUCCESS if things are going ok.
 	 */
 
-    Boolean (*layout)();   
+    Boolean (*layout) _ARGS_((LfsSeg *segPtr, int flags, 
+			ClientData *clientDataPtr));
 	/* Segment layout routine. Calling sequence:
 	 * layout(segPtr, cleaning)
 	 *     LfsSeg *segPtr; -- Segment to fill in.
-	 *     Boolean cleaning; -- TRUE if for cleaning.
+	 *     int flags; -- Layout flags.
+	 *     ClientData *clientData -- Clientdata for call.
 	 * The module should place all the dirty blocks it can into the log.
 	 * The routine returns TRUE if the module has more data that needs to
 	 * be written to the log. 
 	 */
 
-    Boolean  (*clean)();  
+    Boolean  (*clean) _ARGS_((LfsSeg *segPtr, int *sizePtr, 
+			  int *numCacheBlocksPtr, ClientData *clientDataPtr));
 	/* Segment cleaning routine. Calling sequence:
 	 * clean(segToCleanPtr, sizePtr)
 	 *     LfsSeg *segToCleanPtr;  -- Segment to clean.
 	 *     int    *sizePtr;	       -- Size in blocks to data to clean.
 	 * Copy the alive blocks from the segToClean into the cache.
 	 */
-    Boolean (*checkpoint)();
+    Boolean (*checkpoint) _ARGS_((LfsSeg *segPtr, int flags, 
+			char *checkPointPtr, int *checkPointSizePtr, 
+			ClientData *clientDataPtr));
+
 	/* Segment checkpoint routine. Calling sequence:
 	 * checkpoint(segPtr, flags, checkPointPtr,  checkPointSizePtr)
 	 *     LfsSeg *segPtr; -- Segment to fill in.
@@ -140,7 +158,8 @@ typedef struct LfsSegIoInterface {
 	 * The routine returns TRUE if the module has more data that needs to
 	 * be written to the log. 
 	 */
-    void  (*writeDone)(); 
+    void  (*writeDone)  _ARGS_((LfsSeg *segPtr, int flags, 
+				ClientData *clientDataPtr));
 	/* Segment write finished callback. Calling seq:
 	 * writeDone(segPtr, flags)
 	 *     LfsSeg *segPtr; -- Segment finishing write.
@@ -153,6 +172,12 @@ typedef struct LfsSegIoInterface {
 } LfsSegIoInterface;
 
 
+/*
+ * Layout flags.
+ */
+
+#define	LFS_CLEANING_LAYOUT	0x1000
+#define	LFS_CHECKPOINT_LAYOUT	0x2000
 
 extern LfsSegIoInterface *lfsSegIoInterfacePtrs[];
 
@@ -242,18 +267,28 @@ extern LfsSegIoInterface *lfsSegIoInterfacePtrs[];
 			((segPtr)->curBlockOffset = blockOffset)
 
 #define	LfsSegFetchBytes(segPtr, blockOffset, size) \
-	((segPtr)->lfsPtr->cleaningMemPtr + LfsSegSize((segPtr)->lfsPtr) - \
+	((segPtr)->memPtr + LfsSegSize((segPtr)->lfsPtr) - \
 		LfsBlocksToBytes((segPtr)->lfsPtr, blockOffset))
 /* procedures */
 
-extern void LfsSegIoRegister();
-extern void LfsSegWriteStart();
-extern char *LfsSegSlowGrowSummary();
-extern LfsSegElement *LfsSegSlowAddDataBuffer();
-extern int LfsSegSlowDiskAddress();
-extern int   LfsSegSlowBlocksLeft();
-extern Boolean LfsSegNullLayout();
-extern void LfsDescMapInit();
+extern void LfsSegIoRegister _ARGS_((int moduleType, 
+				LfsSegIoInterface *ioInterfacePtr));
+
+extern char *LfsSegSlowGrowSummary _ARGS_((LfsSeg *segPtr, 
+			int dataBlocksNeeded, int sumBytesNeeded, 
+			Boolean addNewBlock));
+extern LfsDiskAddr LfsSegSlowDiskAddress _ARGS_((LfsSeg *segPtr, 
+			LfsSegElement *segElementPtr));
+extern LfsSegElement *LfsSegSlowAddDataBuffer _ARGS_((LfsSeg *segPtr,
+			int blocks, char *bufferPtr, ClientData clientData));
+
+
+extern ReturnStatus LfsSegAttach _ARGS_((struct Lfs *lfsPtr,
+			char *checkPointPtr, int checkPointSize));
+extern ReturnStatus LfsSegCheckPoint _ARGS_((struct Lfs *lfsPtr, 
+			int flags, char *checkPointPtr, 
+			int *checkPointSizePtr));
+extern ReturnStatus LfsSegDetach _ARGS_((struct Lfs *lfsPtr));
 
 #endif /* _LFSSEG */
 

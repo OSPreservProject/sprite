@@ -2,7 +2,7 @@
  * lfsSuperBlock.h --
  *
  *	Declarations defining the disk resident format of the LFS 
- *	super block. The main purpose of the super blocks is to allow
+ *	super block. The main purpose of the super block is to allow
  *	the file system to be recovered and reattached upon file server
  *	reboot. The super block is divided into two section the static
  *	super block and the checkpoint area.  The super block
@@ -25,10 +25,15 @@
 #ifndef _LFSSUPERBLOCK
 #define _LFSSUPERBLOCK
 
-#include "lfsDescMap.h"
-#include "lfsUsageArray.h"
-#include "lfsFileLayout.h"
-
+#ifdef EKERNEL
+#include <lfsDescMap.h>
+#include <lfsUsageArray.h>
+#include <lfsFileLayout.h>
+#else
+#include <kernel/lfsDescMap.h>
+#include <kernel/lfsUsageArray.h>
+#include <kernel/lfsFileLayout.h>
+#endif
 /*
  * The LfsSuperBlockHdr contains static parameters describing the file system
  * layout on disk. 
@@ -45,18 +50,21 @@ typedef struct LfsSuperBlockHdr {
 	 */
     int maxCheckPointBlocks;  /* Maximum size of checkpoint region in blocks. */
     int checkPointOffset[2];/* The block offset into the device of the
-			  * two checkpoint areas. Two areas are
-			  * used so we never update in place. The
-			  * format the segment is defined below. */
+			     * two checkpoint areas. Two areas are
+			     * used so we never update in place. The
+			     * format the segment is defined below. */
     int logStartOffset;     /* The block offset starting the segmented log. */
-    int maxNumCacheBlocks;  /* Maximum number of blocks to clean at a time. */
-    char padding[LFS_SUPER_BLOCK_HDR_SIZE-8*4];
+    int	 checkpointInterval;	/* Frequency of checkpoint in seconds. */
+    int  maxNumCacheBlocks;     /* Maximum number of blocks to clean at time.*/
+    char reserved[LFS_SUPER_BLOCK_HDR_SIZE-8*sizeof(int)];
+			    /* Reserved, must be set to zero. */
 
 } LfsSuperBlockHdr;
 
 #define	LFS_SUPER_BLOCK_MAGIC		0x106d15c 	/* LogDisc */
 #define	LFS_SUPER_BLOCK_VERSION		1
-#define	LFS_SUPER_BLOCK_SIZE	512
+#define	LFS_SUPER_BLOCK_SIZE		512
+#define LFS_SUPER_BLOCK_OFFSET		64
 /*
  * The format a LFS super block. 
  */
@@ -93,7 +101,6 @@ typedef struct LfsCheckPointRegion {
     unsigned int type;		/* Region type -- see log writing types in
 				 * lfsLogFormat.h. */
     int size;			/* Size of the region in bytes. */
-
 } LfsCheckPointRegion;
 
 typedef struct LfsCheckPointTrailer {
@@ -103,5 +110,4 @@ typedef struct LfsCheckPointTrailer {
 				 * detect partial checkpoint writes. */
 } LfsCheckPointTrailer;
 
-#define LFS_SUPER_BLOCK_OFFSET	64
 #endif /* _LFSSUPERBLOCK */

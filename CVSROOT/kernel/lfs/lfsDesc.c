@@ -21,13 +21,13 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "lfs.h"
-#include "lfsInt.h"
-#include "lfsDesc.h"
-#include "lfsDescMap.h"
-#include "fs.h"
-#include "fsdm.h"
+#include <sprite.h>
+#include <lfs.h>
+#include <lfsInt.h>
+#include <lfsDesc.h>
+#include <lfsDescMap.h>
+#include <fs.h>
+#include <fsdm.h>
 
 
 /*
@@ -65,7 +65,7 @@ Lfs_FileDescFetch(domainPtr, fileNumber, fileDescPtr)
     LfsFileDescriptor	*descPtr;
     Fscache_Block	    *blockPtr;
     ReturnStatus	status;
-    int diskAddr;
+    LfsDiskAddr	       diskAddr;
     int		i;
     Boolean	found;
 
@@ -78,13 +78,18 @@ Lfs_FileDescFetch(domainPtr, fileNumber, fileDescPtr)
      * See if the value is in the descriptor block cache. If it is not 
      * then read it in.
      */
-    Fscache_FetchBlock(&lfsPtr->descCacheHandle.cacheInfo, diskAddr, 
+    Fscache_FetchBlock(&lfsPtr->descCache.handle.cacheInfo, 
+		      LfsDiskAddrToOffset(diskAddr), 
 		      FSCACHE_DESC_BLOCK, &blockPtr, &found);
     if (!found) {
 	LFS_STATS_INC(lfsPtr->stats.desc.fetchCacheMiss);
 	status = LfsReadBytes(lfsPtr, diskAddr, 
 		lfsPtr->fileLayout.params.descPerBlock * sizeof(*descPtr),
 		blockPtr->blockAddr);
+#ifdef ERROR_CHECK
+	 LfsCheckRead(lfsPtr, diskAddr, 
+		lfsPtr->fileLayout.params.descPerBlock * sizeof(*descPtr));
+#endif
 	if (status != SUCCESS) {
 	    printf( "Could not read in file descriptor\n");
 	    Fscache_UnlockBlock(blockPtr, 0, -1, 0, FSCACHE_DELETE_BLOCK);
@@ -107,13 +112,13 @@ Lfs_FileDescFetch(domainPtr, fileNumber, fileDescPtr)
 		  LfsError(lfsPtr, status, "Can't get access time.\n");
 	     }
 	    Fscache_UnlockBlock(blockPtr, 0, -1, FS_BLOCK_SIZE, 0);
-	    return status;
+	    return SUCCESS;
 	}
 	descPtr++;
     }
     Fscache_UnlockBlock(blockPtr, 0, -1, 0, FSCACHE_DELETE_BLOCK);
     panic("Descriptor map foulup, can't find file %d at %d\n", fileNumber,
-			diskAddr);
+			LfsDiskAddrToOffset(diskAddr));
     return FAILURE;
 
 }
@@ -200,7 +205,6 @@ Lfs_FileTrunc(domainPtr, handlePtr, size, delete)
     Fsdm_FileDescriptor	*descPtr;
     ReturnStatus	status = SUCCESS;
     int			newLastByte;
-    int		blocks;
 
     if (size < 0) {
 	return(GEN_INVALID_ARG);
@@ -215,9 +219,7 @@ Lfs_FileTrunc(domainPtr, handlePtr, size, delete)
 	goto exit;
     }
 
-    blocks = (size + (FS_BLOCK_SIZE-1))/FS_BLOCK_SIZE;
-
-    status = LfsFile_TruncIndex(lfsPtr, handlePtr, blocks);
+    status = LfsFile_TruncIndex(lfsPtr, handlePtr, size);
     if (status == SUCCESS) {
 	if (size == 0) {
 	    int	newVersion;
@@ -226,12 +228,15 @@ Lfs_FileTrunc(domainPtr, handlePtr, size, delete)
 			handlePtr->hdr.fileID.minor, &newVersion);
 	}
 	descPtr->lastByte = newLastByte;
-	descPtr->descModifyTime = fsutil_TimeInSeconds;
+	descPtr->descModifyTime = Fsutil_TimeInSeconds();
 	descPtr->flags |= FSDM_FD_SIZE_DIRTY;
     }
 exit:
     if (delete) { 
 	LFS_STATS_INC(lfsPtr->stats.desc.delete);
+	/*
+	 * XXX - need sync here. 
+	 */
 	descPtr->flags &= ~FSDM_FD_DIRTY;
 	status = Fscache_RemoveFileFromDirtyList(&handlePtr->cacheInfo);
     } else {
@@ -280,19 +285,10 @@ Lfs_FileDescInit(domainPtr, fileNumber, type, permissions, uid, gid, fileDescPtr
     fileDescPtr->uid = uid;
     fileDescPtr->gid = gid;
     fileDescPtr->lastByte = -1;
+    fileDescPtr->lastByteXtra = 0;
     fileDescPtr->firstByte = -1;
     fileDescPtr->userType = FS_USER_TYPE_UNDEFINED;
     fileDescPtr->numLinks = 1;
-    fileDescPtr->numKbytes = 0;
-    /*
-     * Give this new file a new version number.  The increment is by 2 to
-     * ensure that a client invalidates any cache blocks associated with
-     * the previous incarnation of the file.  Remember that when a client
-     * opens for writing a version number 1 greater means that its old
-     * cache blocks are still ok, and also remember that clients with
-     * clean blocks are not told when a file is deleted.
-     */
-    fileDescPtr->version = LfsGetCurrentTimestamp(LfsFromDomainPtr(domainPtr));
 
     /*
      * Clear out device info.  It is set up properly by the make-device routine.
@@ -304,10 +300,10 @@ Lfs_FileDescInit(domainPtr, fileNumber, type, permissions, uid, gid, fileDescPtr
     /*
      * Set the time stamps.  These times should come from the client.
      */
-    fileDescPtr->createTime = fsutil_TimeInSeconds;
-    fileDescPtr->accessTime = fsutil_TimeInSeconds;
-    fileDescPtr->descModifyTime = fsutil_TimeInSeconds;
-    fileDescPtr->dataModifyTime = fsutil_TimeInSeconds;
+    fileDescPtr->createTime = Fsutil_TimeInSeconds();
+    fileDescPtr->accessTime = fileDescPtr->createTime;
+    fileDescPtr->descModifyTime = fileDescPtr->createTime;
+    fileDescPtr->dataModifyTime = fileDescPtr->createTime;
 
     for (index = 0; index < FSDM_NUM_DIRECT_BLOCKS ; index++) {
 	fileDescPtr->direct[index] = FSDM_NIL_INDEX;
@@ -315,6 +311,16 @@ Lfs_FileDescInit(domainPtr, fileNumber, type, permissions, uid, gid, fileDescPtr
     for (index = 0; index < FSDM_NUM_INDIRECT_BLOCKS ; index++) {
 	fileDescPtr->indirect[index] = FSDM_NIL_INDEX;
     }
+    fileDescPtr->numKbytes = 0;
+    /*
+     * Give this new file a new version number.  The increment is by 2 to
+     * ensure that a client invalidates any cache blocks associated with
+     * the previous incarnation of the file.  Remember that when a client
+     * opens for writing a version number 1 greater means that its old
+     * cache blocks are still ok, and also remember that clients with
+     * clean blocks are not told when a file is deleted.
+     */
+    fileDescPtr->version = LfsGetCurrentTimestamp(LfsFromDomainPtr(domainPtr));
     return(SUCCESS);
 }
 
@@ -325,6 +331,22 @@ Lfs_FileDescInit(domainPtr, fileNumber, type, permissions, uid, gid, fileDescPtr
  *
  * Start of LFS private routines. 
  */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LfsDescCacheInit --
+ *
+ *	Initialize the descriptor cache for a file system.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 void
 LfsDescCacheInit(lfsPtr)
     Lfs		*lfsPtr;
@@ -334,17 +356,106 @@ LfsDescCacheInit(lfsPtr)
      * Initialize the file handle used to cache descriptor blocks.
      */
 
-    bzero((char *)(&lfsPtr->descCacheHandle), sizeof(lfsPtr->descCacheHandle));
-    lfsPtr->descCacheHandle.hdr.fileID.major = lfsPtr->domainPtr->domainNumber;
-    lfsPtr->descCacheHandle.hdr.fileID.minor = 0;
-    lfsPtr->descCacheHandle.hdr.fileID.type = FSIO_LCL_FILE_STREAM;
-    lfsPtr->descCacheHandle.descPtr = (Fsdm_FileDescriptor *)NIL;
+    bzero((char *)(&lfsPtr->descCache.handle),sizeof(lfsPtr->descCache.handle));
+    lfsPtr->descCache.handle.hdr.fileID.serverID = rpc_SpriteID;
+    lfsPtr->descCache.handle.hdr.fileID.major = lfsPtr->domainPtr->domainNumber;
+    lfsPtr->descCache.handle.hdr.fileID.minor = 0;
+    lfsPtr->descCache.handle.hdr.fileID.type = FSIO_LCL_FILE_STREAM;
+    lfsPtr->descCache.handle.descPtr = (Fsdm_FileDescriptor *)NIL;
 
 
     bzero((Address)&attr, sizeof(attr));
     attr.lastByte = 0x7fffffff;
-    Fscache_FileInfoInit(&lfsPtr->descCacheHandle.cacheInfo,
-		    (Fs_HandleHeader *) &lfsPtr->descCacheHandle,
+    Fscache_FileInfoInit(&lfsPtr->descCache.handle.cacheInfo,
+		    (Fs_HandleHeader *) &lfsPtr->descCache.handle,
 		    0, TRUE, &attr, lfsPtr->domainPtr->backendPtr);
 
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LfsDescCacheBlockInit --
+ *
+ *	Initialize a block into the descriptor cache for a file system.
+ *
+ * Results:
+ *	NIL if the block couldn't be initialized. A clientData otherwise. 
+ *
+ * Side effects:
+ *	Cache block is fetched and held.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ClientData
+LfsDescCacheBlockInit(lfsPtr, diskBlockAddr, cantBlock, blockStartPtr)
+    Lfs		*lfsPtr;	/* File system. */
+    LfsDiskAddr	diskBlockAddr;	/* Descriptor cache block address. */
+    Boolean 	cantBlock;	/* TRUE if process can`t block. */
+    char	**blockStartPtr;	/* OUT: pointer to lock's contents. */
+{
+    Fscache_Block	*blockPtr;
+    int			blockNum;
+    Boolean	found;
+
+    blockNum = LfsDiskAddrToOffset(diskBlockAddr);
+    Fscache_FetchBlock(&lfsPtr->descCache.handle.cacheInfo,
+	    blockNum, (FSCACHE_DESC_BLOCK|FSCACHE_CANT_BLOCK| (cantBlock ? FSCACHE_DONT_BLOCK:0)),
+		    &blockPtr, &found);
+    if (blockPtr == (Fscache_Block *) NIL) {
+	return (ClientData) blockPtr;
+    }
+    if (!found) {
+	if ((*blockStartPtr) != (char *) NIL) {
+	    bcopy(*blockStartPtr, blockPtr->blockAddr,
+	       lfsPtr->fileLayout.params.descPerBlock * 
+			LFS_FILE_DESC_SIZE);
+	} else {
+	    bzero(blockPtr->blockAddr, lfsPtr->fileLayout.params.descPerBlock * 
+			LFS_FILE_DESC_SIZE);
+	}
+	Fscache_IODone(blockPtr);
+    } else {
+#ifdef ERROR_CHECK
+	if (((*blockStartPtr) != (char *) NIL) && 
+	    (bcmp(*blockStartPtr, blockPtr->blockAddr, 
+		lfsPtr->fileLayout.params.descPerBlock * LFS_FILE_DESC_SIZE) 
+		!= 0)) {
+		panic("LfsDescCacheBlockInit found wrong block\n");
+	}
+#endif
+    }
+    if (*blockStartPtr == (char *) NIL) { 
+	*blockStartPtr = blockPtr->blockAddr;
+    }
+    return (ClientData) blockPtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LfsDescCacheBlockRelease --
+ *
+ *	Release a desc cache block return by LfsDescCacheBlockInit.
+ *
+ * Results:
+ *	void
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+LfsDescCacheBlockRelease(lfsPtr, clientData, deleteBlock)
+    Lfs		*lfsPtr;
+    ClientData	clientData;
+    Boolean	deleteBlock; 	/* TRUE if block should be deleted. */
+{
+    Fscache_Block	*blockPtr = (Fscache_Block *) clientData;
+    Fscache_UnlockBlock(blockPtr,(unsigned)0, -1, FS_BLOCK_SIZE, 
+		deleteBlock ? FSCACHE_DELETE_BLOCK : 0);
+}
+

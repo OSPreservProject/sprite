@@ -19,12 +19,15 @@
 #ifndef _LFSFILELAYOUTINT
 #define _LFSFILELAYOUTINT
 
-#include "lfsFileLayout.h"
+#include <lfsFileLayout.h>
 
 typedef struct LfsFileLayout {
     LfsFileLayoutParams	 params;	/* File layout description. */
-    Boolean	writeBackEverything;	/* TRUE is we should write back 
-					 * everything regardless of age. */
 } LfsFileLayout;
+
+extern void LfsFileLayoutInit _ARGS_((void));
+extern Boolean LfsFileMatch _ARGS_((Fscache_FileInfo *cacheInfoPtr,
+			ClientData clientData));
+
 
 #endif /* _LFSFILELAYOUTINT */

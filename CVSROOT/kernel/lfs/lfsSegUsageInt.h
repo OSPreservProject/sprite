@@ -19,25 +19,52 @@
 #ifndef _LFSSEGUSAGEINT
 #define _LFSSEGUSAGEINT
 
-#include "lfsUsageArray.h"
+#include <lfsUsageArray.h>
 
 /* constants */
 
 /* data structures */
 
 typedef struct LfsSegUsage {
+    int	waitCheckpointList;        /* First segments in clean list that is
+				    * waiting to become clean after a 
+				    * checkpoint. */
     LfsStableMem	stableMem;/* Stable memory supporting the map. */
     LfsSegUsageParams	params;	  /* Map parameters taken from super block. */
     LfsSegUsageCheckPoint checkPoint; /* Desc map data written at checkpoint. */
 } LfsSegUsage;
 
+typedef struct LfsSegList {
+    int	segNumber;	/* Segment number of segment. */
+    int activeBytes;	/* Active bytes from the seg usage array. */
+} LfsSegList;
+
 /* procedures */
 
-extern void LfsSetSegUsage();
+extern void LfsSegUsageInit _ARGS_((void));
 
-extern ReturnStatus LfsSegUsageAttach();
-extern Boolean	LfsSegUsageClean(), LfsSegUsageCheckpoint(), LfsSegUsageLayout();
-extern void LfsSegUsageWriteDone();
+extern void LfsSetSegUsage _ARGS_((struct Lfs *lfsPtr, int segNumber, 
+			int activeBytes));
+extern ReturnStatus LfsGetLogTail _ARGS_((struct Lfs *lfsPtr, Boolean cantWait,
+			LfsSegLogRange *logRangePtr, int *startBlockPtr ));
+
+extern void LfsSetLogTail _ARGS_((struct Lfs *lfsPtr, 
+			LfsSegLogRange *logRangePtr, int startBlock, 
+			int activeBytes));
+
+extern void LfsMarkSegClean _ARGS_((struct Lfs *lfsPtr, int segNumber));
+extern void LfsSetDirtyLevel _ARGS_((struct Lfs *lfsPtr, int dirtyActiveBytes));
+
+extern int LfsGetSegsToClean _ARGS_((struct Lfs *lfsPtr, int maxBlocks, 
+			int maxSegArrayLen, LfsSegList *segArrayPtr));
+
+extern ReturnStatus LfsSegUsageFreeBlocks _ARGS_((struct Lfs *lfsPtr, 
+			int blockSize, int blockArrayLen, 
+			LfsDiskAddr *blockArrayPtr));
+extern ReturnStatus LfsSegUsageAllocateBytes _ARGS_((struct Lfs *lfsPtr,				 int numBytes));
+extern ReturnStatus LfsSegUsageFreeBytes _ARGS_((struct Lfs *lfsPtr, 
+			int numBytes));
+
 
 #endif /* _LFSSEGUSAGEINT */
 

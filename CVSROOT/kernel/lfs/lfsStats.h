@@ -139,6 +139,7 @@ typedef struct Lfs_StatsVersion1 {
 	LFSCOUNT    set;    /* Set file index count. */
 	LFSCOUNT getFetchBlock; /* Number of indirect blocks fetched by get.*/
 	LFSCOUNT setFetchBlock; /* Number of indirect blocks fetched by set. */
+	LFSCOUNT growFetchBlock; /* Number of indirect blocks fetched by grow */
 	LFSCOUNT getFetchHit; /* Number of indirect blocks found in cache for 
 			      * get. */
 	LFSCOUNT setFetchHit; /* Number of indirect blocks found in cache for
@@ -173,8 +174,11 @@ typedef struct Lfs_StatsVersion1 {
 	LFSCOUNT blocksCopied;  /* Number of blocks copied during cleaning. */
 	LFSCOUNT blocksCopiedHit; /* Number of blocks founding in cache 
 			      * during cleaning. */
+	LFSCOUNT cleanNoHandle;	/* Files deleted while being cleaned. */
+	LFSCOUNT cleanLockedHandle; /* File cleaning failed due to locked 
+				     * handle. */
 
-	LFSCOUNT padding[16];
+	LFSCOUNT padding[14];
     } layout;
 
     struct LfsSegUsageStats {
@@ -193,11 +197,27 @@ typedef struct Lfs_StatsVersion1 {
 	LFSCOUNT padding[16];
     } backend;
 
+    struct LfsDirLogStats {
+	LFSCOUNT entryAllocNew;	  /* Number of calls to LfsDirLogEntryAlloc for
+				   * new entry. */
+	LFSCOUNT entryAllocOld;	  /* Number of calls to LfsDirLogEntryAlloc for
+				   * old entry. */
+	LFSCOUNT entryAllocFound; /* Number of calls to LfsDirLogEntryAlloc that
+				   * found their entry. */
+	LFSCOUNT entryAllocWaits; /* Number of waits in LfsDirLogEntryAlloc. */
+	LFSCOUNT newLogBlock; /* Number of new block blocks fetched. */
+	LFSCOUNT fastFindFail; 
+	LFSCOUNT findEntrySearch;
+	LFSCOUNT dataBlockWritten;
+	LFSCOUNT blockWritten;
+	LFSCOUNT bytesWritten;
+	LFSCOUNT padding[16];
+    } dirlog;
     LFSCOUNT padding[18];
 } Lfs_StatsVersion1;
 #undef LFSCOUNT
 
-typedef struct Lfs_StatsVersion1 Lfs_Stats;
+typedef Lfs_StatsVersion1 Lfs_Stats;
 
 #endif /* _LFS_STATS */
 

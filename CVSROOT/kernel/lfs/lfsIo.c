@@ -17,12 +17,12 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "lfs.h"
-#include "lfsInt.h"
-#include "dev.h"
-#include "fs.h"
-#include "devFsOpTable.h"
+#include <sprite.h>
+#include <lfs.h>
+#include <lfsInt.h>
+#include <dev.h>
+#include <fs.h>
+#include <devFsOpTable.h>
 
 
 /*
@@ -44,7 +44,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 ReturnStatus
 LfsReadBytes(lfsPtr, diskAddress, numBytes, bufferPtr)
     Lfs		*lfsPtr;	/* Target file system. */
-    int diskAddress;	/* Disk address to read from. */
+    LfsDiskAddr diskAddress;	/* Disk address to read from. */
     int		numBytes;	/* Number of bytes to read. */
     char	*bufferPtr;	/* Buffer to read into. */
 {
@@ -54,20 +54,22 @@ LfsReadBytes(lfsPtr, diskAddress, numBytes, bufferPtr)
     } args;
     ReturnStatus status;
     char	smallBuffer[DEV_BYTES_PER_SECTOR];
+    int	offset;
 
     /*
      * Check in the seg cache.
      */
-    if (lfsPtr->segCache.valid && 
-         (lfsPtr->segCache.startDiskAddress <= diskAddress) &&
-         (lfsPtr->segCache.endDiskAddress > diskAddress + 
-					LfsBytesToBlocks(lfsPtr, numBytes))) {
-	bcopy(lfsPtr->segCache.memPtr + 
-	    LfsBlocksToBytes(lfsPtr, 
-		diskAddress - lfsPtr->segCache.startDiskAddress), bufferPtr,
-		numBytes);
-	LFS_STATS_INC(lfsPtr->stats.blockio.segCacheHits);
-	return SUCCESS;
+    if (lfsPtr->segCache.valid) {
+	if (LfsDiskAddrInRange(diskAddress, LfsBytesToBlocks(lfsPtr, numBytes),
+				lfsPtr->segCache.startDiskAddress,
+				lfsPtr->segCache.endDiskAddress)) {
+	    offset = LfsDiskAddrOffset(diskAddress, 
+			lfsPtr->segCache.startDiskAddress);
+	    offset = LfsBlocksToBytes(lfsPtr, offset);
+	    bcopy(lfsPtr->segCache.memPtr + offset, bufferPtr, numBytes);
+	    LFS_STATS_INC(lfsPtr->stats.blockio.segCacheHits);
+	    return SUCCESS;
+	}
     }
 
 
@@ -80,7 +82,8 @@ LfsReadBytes(lfsPtr, diskAddress, numBytes, bufferPtr)
 	args.readParams.buffer = bufferPtr;
 	args.readParams.length = numBytes;
     }
-    args.readParams.offset = diskAddress * DEV_BYTES_PER_SECTOR;
+    offset = LfsDiskAddrToOffset(diskAddress);
+    args.readParams.offset = offset * DEV_BYTES_PER_SECTOR;
     args.readParams.flags = 
     args.readParams.procID = 0;
     args.readParams.familyID = 0;
@@ -117,7 +120,7 @@ LfsReadBytes(lfsPtr, diskAddress, numBytes, bufferPtr)
 ReturnStatus
 LfsWriteBytes(lfsPtr, diskAddress, numBytes, bufferPtr)
     Lfs		*lfsPtr;	/* Target file system. */
-    int diskAddress;	/* Disk address to send data. */
+    LfsDiskAddr diskAddress;	/* Disk address to send data. */
     int		numBytes;	/* Number of bytes to write. */
     char	*bufferPtr;	/* Buffer to write into. */
 {
@@ -127,8 +130,10 @@ LfsWriteBytes(lfsPtr, diskAddress, numBytes, bufferPtr)
     } args;
     char	smallBuffer[DEV_BYTES_PER_SECTOR];
     ReturnStatus	status;
+    int	offset;
 
 
+    offset = LfsDiskAddrToOffset(diskAddress);
     bzero((char *)&args, sizeof(args));
 
     if (numBytes < DEV_BYTES_PER_SECTOR) { 
@@ -140,7 +145,7 @@ LfsWriteBytes(lfsPtr, diskAddress, numBytes, bufferPtr)
 	args.writeParams.buffer = bufferPtr;
 	args.writeParams.length = numBytes;
     }
-    args.writeParams.offset = diskAddress * DEV_BYTES_PER_SECTOR;
+    args.writeParams.offset = offset * DEV_BYTES_PER_SECTOR;
     args.writeParams.flags = 
     args.writeParams.procID = 0;
     args.writeParams.familyID = 0;
@@ -180,28 +185,3 @@ Lfs_RereadSummaryInfo(domainPtr)
     return SUCCESS;
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * Lfs_ReallocBlock --
- *
- *	Allocate a new block on disk to replace the given block.  This is
- *	intended to be used by the cache when it can't write out a block
- *	because of a disk error.
- *
- * Results:
- * 	None
- *
- * Side effects:
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-void
-Lfs_ReallocBlock(data, callInfoPtr)
-    ClientData		data;			/* Block to move */
-    Proc_CallInfo	*callInfoPtr;	
-{
-    panic("Lfs_ReallocBlock called.\n");
-}

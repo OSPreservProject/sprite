@@ -22,8 +22,11 @@
 #ifndef _LFSUSAGEARRAY
 #define _LFSUSAGEARRAY
 
-#include "lfsStableMem.h"
-
+#ifdef KERNEL
+#include <lfsStableMem.h>
+#else
+#include <kernel/lfsStableMem.h>
+#endif
 /*
  * The segment usage array layout on disk is described by the following 
  * super block resident structure. 
@@ -42,8 +45,9 @@ typedef struct LfsSegUsageParams {
 			   * system to reach. */
     int	  wasteBlocks;	  /* The number of blocks we are willing to wasted at
 			   * the end of a segment. */
+    int	  numSegsToClean;  /* Number of segment to clean at a time. */
+    char  padding[LFS_USAGE_ARRAY_PARAM_SIZE - sizeof(LfsStableMemParams)-6*4];
     LfsStableMemParams	 stableMem; /* Memory for locating the array. */
-    char  padding[LFS_USAGE_ARRAY_PARAM_SIZE - sizeof(LfsStableMemParams)-5*4];
 } LfsSegUsageParams;
 
 
@@ -58,32 +62,27 @@ typedef struct LfsSegUsageCheckPoint {
     int numDirty;	/* Number of dirty segments. */
     int dirtyActiveBytes; /* Number of known active bytes below which a 
 			   * segment is considered dirty. */
-    int	currentSegment;	/* Last segment written. */
-    int cleanLinks[2];	/* List head and tail for clean segment list. */
-    int dirtyLinks[2];	/* List head and tail for dirty segment list. */
+    int	currentSegment;	/* Current segment being written. */
+    int	currentBlockOffset; /* Current block offset into last segment being
+			     * written. -1 means segment filled. */
+    int curSegActiveBytes; /* Active bytes of last segment written. */
+    int	previousSegment;   /* Previous segment written. */
+    int cleanSegList;	/* First segment in the list of clean segemnts. */
 } LfsSegUsageCheckPoint;
 
 /*
- * Index for links.
- *	LFS_SEG_USAGE_NEXT - Next element of list pointer. For list headers
- *			     the first element of list.
- *	LFS_SEG_USAGE_PREV - Previous element of list pointer. For list headers
- *			     the last element of list.
- *
- */
-#define	LFS_SEG_USAGE_NEXT	0
-#define	LFS_SEG_USAGE_PREV	1
-/*
- * For each segment in a LFS, the segment usage arraykeeps an 
+ * For each segment in a LFS, the segment usage are keeped an 
  * entry of type LfsSegUsageEntry. LfsSegUsageEntry are packed into blocks
  * to form an array index by segment number. 
  */
 typedef struct LfsSegUsageEntry {
-    int  links[2];  	 	    /* Used to form doubly linked list of 
-				     * dirty and clean segments. */
     int  activeBytes;     	    /* An estimate of the number of active
-				     * bytes in this segment. A value of 
-				     * zero means the segment is clean. */
+				     * bytes in this segment. If the segment
+				     * is clean (LFS_SEG_USAGE_CLEAN is set
+				     * in flags), then activeBytes contains
+				     * the index of the next clean segment. */
+    int	 timeOfLastWrite;	    /* File system time of last write 
+				     * in seconds. */
     int  flags;     		    /* Flags described below. */
 } LfsSegUsageEntry;
 
