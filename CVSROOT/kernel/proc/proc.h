@@ -591,6 +591,8 @@ extern void			Proc_ResumeProcess();
 extern int			Proc_ExecEnv();
 extern int			Proc_RemoteExec();
 extern ReturnStatus 		Proc_GetHostIDs();
+extern ReturnStatus		Proc_RpcRemoteWait();
+extern ReturnStatus		Proc_RpcGetPCB();
 
 
 extern ReturnStatus		Proc_EvictForeignProcs();
