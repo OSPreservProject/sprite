@@ -86,8 +86,6 @@ Net_ArpInit()
 {
     int i;
 
-    printf("In Net_ArpInit.\n");
-
     Sync_LockInitDynamic(&arpOutputQueueLock, "Net:arpOutputQueueLock");
     Sync_SemInitDynamic(&arpInputMutex, "Net:arpInputMutex");
     Sync_SemInitDynamic(&arpListMutex, "Net:arpListMutex"); 
