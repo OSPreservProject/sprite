@@ -40,4 +40,11 @@ The top level routine Fs_WriteBackIDStub doesn't use Fs_IOControl (yet),
 so this is forward compatible for when that changes over.  This has new
 PageRead and PageWrite FS routines, and a cleaned up interface for
 the BlockRead and BlockWrite FS routines. - BW
+
+1.048	Sat Dec 30 15:29:35 PST 1989
+Bogus version due to error while making kernel.
+
+1.049	Sat Dec 30 15:29:44 PST 1989
+New sun4 kernel linked from the fixed fsio module that Brent installed to
+fix the problem with data not being written back to disk.
     New files linked in from the net library.
