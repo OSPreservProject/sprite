@@ -13,9 +13,15 @@
 #ifndef _VMTRACE
 #define _VMTRACE
 
+#ifdef KERNEL
 #include "vmMachTrace.h"
 #include "vmStat.h"
 #include "time.h"
+#else
+#include <kernel/vmMachTrace.h>
+#include <kernel/vmStat.h>
+#include <time.h>
+#endif
 
 /*
  * Definition for the trace buffer.  The trace buffer is a circular buffer.
