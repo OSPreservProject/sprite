@@ -418,6 +418,7 @@ GetFileState(procPtr, buffer)
     Proc_ControlBlock *procPtr;
     Address buffer;
 {
+    register Fs_ProcessState *fsPtr;
     int fsInfoSize;
     int i;
     int index;
@@ -426,13 +427,14 @@ GetFileState(procPtr, buffer)
     /*
      * Get numStreams and the encapsulated cwd.
      */
-    
+
+    fsPtr = procPtr->fsPtr;
     fsInfoSize = Fs_GetEncapSize();
-    Byte_EmptyBuffer(buffer, int, procPtr->filePermissions);
-    Byte_EmptyBuffer(buffer, int, procPtr->numStreams);
-    procPtr->streamList = (Fs_Stream **)
-	    Mem_Alloc(procPtr->numStreams * sizeof(Fs_Stream *));
-    status = Fs_DeencapStream(buffer, &procPtr->cwdPtr);
+    Byte_EmptyBuffer(buffer, int, fsPtr->filePermissions);
+    Byte_EmptyBuffer(buffer, int, fsPtr->numStreams);
+    fsPtr->streamList = (Fs_Stream **)
+	    Mem_Alloc(fsPtr->numStreams * sizeof(Fs_Stream *));
+    status = Fs_DeencapStream(buffer, &fsPtr->cwdPtr);
     if (status != SUCCESS) {
 	Sys_Panic(SYS_FATAL,
 		  "GetFileState: Fs_DeencapStream returned %x for cwd.\n",
@@ -440,10 +442,10 @@ GetFileState(procPtr, buffer)
     }
     buffer += fsInfoSize;
     
-    for (i = 0; i < procPtr->numStreams; i++) {
+    for (i = 0; i < fsPtr->numStreams; i++) {
 	Byte_EmptyBuffer(buffer, int, index);
 	if (index != NIL) {
-	    status = Fs_DeencapStream(buffer, &procPtr->streamList[index]);
+	    status = Fs_DeencapStream(buffer, &fsPtr->streamList[index]);
 	    if (status != SUCCESS) {
 		if (status != FAILURE) {
 		    Sys_Panic(SYS_FATAL,
@@ -451,10 +453,10 @@ GetFileState(procPtr, buffer)
 			      index, status);
 		    return(status);
 		}
-		procPtr->streamList[index] = (Fs_Stream *) NIL;
+		fsPtr->streamList[index] = (Fs_Stream *) NIL;
 	    }
 	} else {
-	    procPtr->streamList[i] = (Fs_Stream *) NIL;
+	    fsPtr->streamList[i] = (Fs_Stream *) NIL;
 	}
 	buffer += fsInfoSize;
     }
@@ -485,6 +487,7 @@ GetStream(procPtr, buffer)
     Proc_ControlBlock *procPtr;
     Address buffer;
 {
+    register  Fs_ProcessState *fsPtr = procPtr->fsPtr;
     int index;
     ReturnStatus status;
 
@@ -493,13 +496,13 @@ GetStream(procPtr, buffer)
 	/*
 	 * ... should really check to make sure fileList doesn't grow.
 	 */
-	status = Fs_DeencapStream(buffer, &procPtr->streamList[index]);
+	status = Fs_DeencapStream(buffer, &fsPtr->streamList[index]);
 	if (status != SUCCESS) {
 	    if (status != FAILURE) {
 		Sys_Panic(SYS_WARNING,
 			  "GetStream: Fs_DeencapStream returned %x.\n");
 	    }
-	    procPtr->streamList[index] = (Fs_Stream *) NIL;
+	    fsPtr->streamList[index] = (Fs_Stream *) NIL;
 	}
     } else {
 	Sys_Panic(SYS_FATAL, "GetStream: Invalid stream ID.\n");

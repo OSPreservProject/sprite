@@ -152,8 +152,6 @@ InitPCB(pcbPtr, i)
     List_InitElement((List_Links *)&pcbPtr->siblingElement);
     List_InitElement((List_Links *)&pcbPtr->familyElement);
 
-    pcbPtr->numGroupIDs	= 0;
-    pcbPtr->groupIDs	= (int *) NIL;
     pcbPtr->eventHashChain.procPtr = pcbPtr;
     List_InitElement((List_Links *)&pcbPtr->eventHashChain);
 
@@ -161,6 +159,7 @@ InitPCB(pcbPtr, i)
     pcbPtr->peerProcessID = (Proc_PID) NIL;
     pcbPtr->argString = (char *) NIL;
     pcbPtr->vmPtr = (Vm_ProcInfo *)NIL;
+    pcbPtr->fsPtr = (Fs_ProcessState *)NIL;
     pcbPtr->rpcClientProcess = (Proc_ControlBlock *) NIL;
 
     pcbPtr->waitToken = 0;
@@ -262,7 +261,6 @@ Proc_InitMainProc()
     procPtr->childUserCpuUsage  = timer_TicksZeroSeconds;
     procPtr->numQuantumEnds 	= 0;
     procPtr->numWaitEvents 	= 0;
-    procPtr->cwdPtr		= (Fs_Stream *) NIL;
 
     Mach_InitFirstProc(procPtr);
 
@@ -272,9 +270,6 @@ Proc_InitMainProc()
 
     procPtr->userID		= 0;
     procPtr->effectiveUserID	= 0;
-    procPtr->numGroupIDs	= 1;
-    procPtr->groupIDs 		= (int *) Mem_Alloc(1 * sizeof(int));
-    procPtr->groupIDs[0]	= 0;
 
     Vm_ProcInit(procPtr);
     Sig_ProcInit(procPtr);

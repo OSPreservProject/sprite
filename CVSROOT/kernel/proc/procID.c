@@ -166,6 +166,8 @@ Proc_SetIDs(userID, effUserID)
  *	groups IDs in the process's PCB structure if trueNumGidsPtr
  *	is not USER_NIL.
  *
+ *	TODO: Move me to fs.
+ *
  * Results:
  *	SYS_ARG_NOACCESS - 	the arguments were not accessible.
  *	SYS_INVALID_ARG - 	the argument was was invalid.
@@ -185,25 +187,25 @@ Proc_GetGroupIDs(numGIDs, gidArrayPtr, trueNumGIDsPtr)
     int		*trueNumGIDsPtr;	/* Number of group ids actually 
 					 * returned. */
 {
-    register	Proc_ControlBlock 	*procPtr;
+    register	Fs_ProcessState 	*fsPtr;
     int 				trueNumGIDs;
 
-    procPtr = Proc_GetEffectiveProc();
+    fsPtr = (Proc_GetEffectiveProc())->fsPtr;
 
     if (numGIDs < 0) {
 	return(SYS_INVALID_ARG);
     }
-    trueNumGIDs = Min(numGIDs, procPtr->numGroupIDs);
+    trueNumGIDs = Min(numGIDs, fsPtr->numGroupIDs);
     if (trueNumGIDs > 0 && gidArrayPtr != USER_NIL) {
 	if (Proc_ByteCopy(FALSE, trueNumGIDs * sizeof(int),
-			  (Address) procPtr->groupIDs,
+			  (Address) fsPtr->groupIDs,
 			  (Address) gidArrayPtr) != SUCCESS) {
 	    return(SYS_ARG_NOACCESS);
 	}
     }
 
     if (trueNumGIDsPtr != USER_NIL) {
-	if (Proc_ByteCopy(FALSE, sizeof(int), (Address) &procPtr->numGroupIDs,
+	if (Proc_ByteCopy(FALSE, sizeof(int), (Address) &fsPtr->numGroupIDs,
 		      (Address) trueNumGIDsPtr) != SUCCESS) {
 	    return(SYS_ARG_NOACCESS);
 	}
@@ -236,6 +238,7 @@ Proc_SetGroupIDs(numGIDs, gidArrayPtr)
     int		*gidArrayPtr;	/* Array of group ids. */
 {
     register	Proc_ControlBlock	*procPtr;
+    register	Fs_ProcessState		*fsPtr;
     int 				*newGidArrayPtr;
     int 				size;
     int					i;
@@ -245,11 +248,17 @@ Proc_SetGroupIDs(numGIDs, gidArrayPtr)
      * other arguments.
      */
 
-    if ((numGIDs <= 0)  ||  (gidArrayPtr == USER_NIL)) {
+    if ((numGIDs <= 0)  ||  (numGIDs > 128) || (gidArrayPtr == USER_NIL)) {
 	return(SYS_INVALID_ARG);
     }
 
+    /*
+     * Need to protect against abritrary group setting.
+     */
     procPtr = Proc_GetEffectiveProc();
+    if (procPtr->effectiveUserID != 0) {
+	Sys_Panic(SYS_WARNING, "Proc_SetGroupIDs, non-setuid setting groups\n");
+    }
 
     Vm_MakeAccessible(VM_READONLY_ACCESS,
 		    numGIDs * sizeof(int), (Address) gidArrayPtr,
@@ -263,17 +272,16 @@ Proc_SetGroupIDs(numGIDs, gidArrayPtr)
      *	for a larger one.
      */
 
-    if (procPtr->numGroupIDs < numGIDs) {
-	Mem_Free((Address) procPtr->groupIDs);
-	procPtr->groupIDs = (int *) Mem_Alloc(numGIDs * sizeof(int));
+    fsPtr = procPtr->fsPtr;
+    if (fsPtr->numGroupIDs < numGIDs) {
+	Mem_Free((Address) fsPtr->groupIDs);
+	fsPtr->groupIDs = (int *) Mem_Alloc(numGIDs * sizeof(int));
     }
-
-/* HOW ABOUT SOME PROTECTION CHECKING ???? */
 
     for (i=0; i < numGIDs; i++) {
-	procPtr->groupIDs[i] = newGidArrayPtr[i];
+	fsPtr->groupIDs[i] = newGidArrayPtr[i];
     }
-    procPtr->numGroupIDs = numGIDs;
+    fsPtr->numGroupIDs = numGIDs;
 
     Vm_MakeUnaccessible((Address) newGidArrayPtr, size);
 
@@ -298,17 +306,18 @@ Proc_SetGroupIDs(numGIDs, gidArrayPtr)
  */
 void
 ProcAddToGroupList(procPtr, gid)
-    register	Proc_ControlBlock	*procPtr;
-    int					gid;
+    Proc_ControlBlock	*procPtr;
+    int			gid;
 {
+    register	Fs_ProcessState *fsPtr = procPtr->fsPtr;
     int 	*newGidArrayPtr;
     int		i;
 
     /*
      * See if this gid is already in the list.
      */
-    for (i = 0; i < procPtr->numGroupIDs; i++) {
-	if (gid == procPtr->groupIDs[i]) {
+    for (i = 0; i < fsPtr->numGroupIDs; i++) {
+	if (gid == fsPtr->groupIDs[i]) {
 	    return;
 	}
     }
@@ -316,11 +325,11 @@ ProcAddToGroupList(procPtr, gid)
     /*
      * Have to add the new group ID to the list.
      */
-    newGidArrayPtr = (int *)Mem_Alloc((procPtr->numGroupIDs + 1) * sizeof(int));
-    Byte_Copy(sizeof(int) * procPtr->numGroupIDs,
-	      (Address)procPtr->groupIDs, (Address)newGidArrayPtr);
-    Mem_Free((Address)procPtr->groupIDs);
-    procPtr->groupIDs = newGidArrayPtr;
-    procPtr->groupIDs[procPtr->numGroupIDs] = gid;
-    procPtr->numGroupIDs++;
+    newGidArrayPtr = (int *)Mem_Alloc((fsPtr->numGroupIDs + 1) * sizeof(int));
+    Byte_Copy(sizeof(int) * fsPtr->numGroupIDs,
+	      (Address)fsPtr->groupIDs, (Address)newGidArrayPtr);
+    Mem_Free((Address)fsPtr->groupIDs);
+    fsPtr->groupIDs = newGidArrayPtr;
+    fsPtr->groupIDs[fsPtr->numGroupIDs] = gid;
+    fsPtr->numGroupIDs++;
 }

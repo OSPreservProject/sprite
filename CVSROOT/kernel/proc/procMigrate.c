@@ -643,7 +643,8 @@ SendSegment(procPtr, type, nodeID, foreign)
  * SendFileState --
  *
  *	Encapsulate all open file streams and send them to another node.  
- *	The open streams come from procPtr->openFileList[].
+ *
+ *	TODO: Move a chunk of this over to fs.
  *		
  * RPC: Input parameters:
  *		process ID
@@ -667,6 +668,7 @@ SendFileState(procPtr, nodeID, foreign)
     int nodeID;				     /* Node to which it migrates */
     Boolean foreign;			     /* Is it migrating back home? */
 {
+    Fs_ProcessState *fsPtr;
     Address fsInfoPtr;
     register Address ptr;
     int fsInfoSize;
@@ -692,8 +694,9 @@ SendFileState(procPtr, nodeID, foreign)
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_TRANSFER,
 		     (ClientData *) &record);
     }
-   
-    numFiles = procPtr->numStreams;
+
+    fsPtr = procPtr->fsPtr;
+    numFiles = fsPtr->numStreams;
 
     fsInfoSize = Fs_GetEncapSize();
     totalSize = numFiles * (fsInfoSize + sizeof(int)) + sizeof (int) 
@@ -706,10 +709,10 @@ SendFileState(procPtr, nodeID, foreign)
      * Send filePermissions, numStreams, the cwd, and each file.
      */
     
-    Byte_FillBuffer(ptr, int, procPtr->filePermissions);
-    Byte_FillBuffer(ptr, int, procPtr->numStreams);
+    Byte_FillBuffer(ptr, int, fsPtr->filePermissions);
+    Byte_FillBuffer(ptr, int, fsPtr->numStreams);
     
-    status = Fs_EncapStream(procPtr->cwdPtr, ptr);
+    status = Fs_EncapStream(fsPtr->cwdPtr, ptr);
     if (status != SUCCESS) {
 	Sys_Panic(SYS_WARNING,
 		  "SendFileState: Error %x from Fs_EncapStream on cwd.\n",
@@ -719,8 +722,8 @@ SendFileState(procPtr, nodeID, foreign)
     ptr += fsInfoSize;
     numEncap += 1;
 
-    for (i = 0; i < procPtr->numStreams; i++) {
-	streamPtr = procPtr->streamList[i];
+    for (i = 0; i < fsPtr->numStreams; i++) {
+	streamPtr = fsPtr->streamList[i];
 	if (streamPtr != (Fs_Stream *) NIL) {
 	    numEncap += 1;
 	    Byte_FillBuffer(ptr, int, i);
@@ -770,10 +773,10 @@ SendFileState(procPtr, nodeID, foreign)
 		  "SendFileState:Error %x returned by Rpc_Call.\n", status);
 	return(status);
     } else {
-	for (i = 0; i < procPtr->numStreams; i++) {
-	    procPtr->streamList[i] = (Fs_Stream *) NIL;
+	for (i = 0; i < fsPtr->numStreams; i++) {
+	    fsPtr->streamList[i] = (Fs_Stream *) NIL;
 	}
-	procPtr->cwdPtr = (Fs_Stream *) NIL;
+	fsPtr->cwdPtr = (Fs_Stream *) NIL;
 	return(returnInfo.status);
     }
 }
