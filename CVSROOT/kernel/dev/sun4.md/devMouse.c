@@ -162,19 +162,21 @@ DevMouseOpen(devicePtr, useFlags, notifyToken)
     LOCK_MONITOR;
 
     mouseOpenCount += 1;
-    token = notifyToken;
-    keyboardPtr = DevGrabKeyboard(KbdInputProc, (ClientData) 0,
-	    MouseOutputProc, (ClientData) 0);
-    mouseTty.insertOutput = 0;
-    mouseTty.extractOutput = 0;
-    mouseTty.rawProc = DevZ8530RawProc;
-    mouseTty.activateProc = DevZ8530Activate;
-    mouseTty.rawData = (ClientData) &mouse;
-    mouseTty.inputProc = MouseInputProc;
-    mouseTty.inputData = 0;
-    mouseTty.consoleFlags = 0;
-    List_Init(&eventList);
-    (*mouseTty.activateProc)(&mouse);
+    if (mouseOpenCount == 1) {
+	token = notifyToken;
+	keyboardPtr = DevGrabKeyboard(KbdInputProc, (ClientData) 0,
+		MouseOutputProc, (ClientData) 0);
+	mouseTty.insertOutput = 0;
+	mouseTty.extractOutput = 0;
+	mouseTty.rawProc = DevZ8530RawProc;
+	mouseTty.activateProc = DevZ8530Activate;
+	mouseTty.rawData = (ClientData) &mouse;
+	mouseTty.inputProc = MouseInputProc;
+	mouseTty.inputData = 0;
+	mouseTty.consoleFlags = 0;
+	List_Init(&eventList);
+	(*mouseTty.activateProc)(&mouse);
+    }
 
     UNLOCK_MONITOR;
     return SUCCESS;
@@ -223,6 +225,7 @@ DevMouseRead(devicePtr, readPtr, replyPtr)
     }
 
     LOCK_MONITOR;
+
 
     if (List_IsEmpty(&eventList)) {
 	UNLOCK_MONITOR;
@@ -395,23 +398,25 @@ DevMouseClose(devicePtr, useFlags, openCount, writerCount)
     }
     LOCK_MONITOR;
     mouseOpenCount -= 1;
-    while (!List_IsEmpty(&eventList)) {
-	List_Links *eventPtr;
-
-	eventPtr = List_First(&eventList);
-	List_Remove(eventPtr);
-	free((char *) eventPtr);
-    }
-
-    /*
-     * If I/O is still in progress, delay shutting down the device
-     * until the I/O completes.
-     */
-
-    if (outputBuffer == -1) {
-	DevReleaseKeyboard();
-	(void) (*mouseTty.rawProc)(mouseTty.rawData, TD_RAW_SHUTDOWN, 0,
-		(char *) NULL, 0, (char *) NULL);
+    if (mouseOpenCount == 0) {
+	while (!List_IsEmpty(&eventList)) {
+	    List_Links *eventPtr;
+    
+	    eventPtr = List_First(&eventList);
+	    List_Remove(eventPtr);
+	    free((char *) eventPtr);
+	}
+    
+	/*
+	 * If I/O is still in progress, delay shutting down the device
+	 * until the I/O completes.
+	 */
+    
+	if (outputBuffer == -1) {
+	    DevReleaseKeyboard();
+	    (void) (*mouseTty.rawProc)(mouseTty.rawData, TD_RAW_SHUTDOWN, 0,
+		    (char *) NULL, 0, (char *) NULL);
+	}
     }
     UNLOCK_MONITOR;
     return SUCCESS;
