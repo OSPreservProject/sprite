@@ -19,10 +19,10 @@
 #ifndef _DEV
 #define _DEV
 
-#include "status.h"
+#include <status.h>
 #ifdef KERNEL
-#include "devSyslog.h"
-#include "user/sysStats.h"
+#include <devSyslog.h>
+#include <user/sysStats.h>
 #else
 #include <kernel/devSyslog.h>
 #include <sysStats.h>

@@ -13,7 +13,7 @@
 #ifndef _DEVVID
 #define _DEVVID
 
-#include "sprite.h"
+#include <sprite.h>
 
 extern ReturnStatus Dev_VidEnable _ARGS_((Boolean onOff));
 

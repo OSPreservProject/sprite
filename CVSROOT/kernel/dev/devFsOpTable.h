@@ -21,9 +21,9 @@
 #ifndef _DEVOPTABLE 
 #define _DEVOPTABLE
 
-#include "sprite.h"
-#include "user/fs.h"
-#include "devBlockDevice.h"
+#include <sprite.h>
+#include <user/fs.h>
+#include <devBlockDevice.h>
 
 /*
  * Device type specific operations, calling sequence defined below.

@@ -19,9 +19,9 @@
 #ifndef _DEVNET
 #define _DEVNET
 
-#include "sprite.h"
-#include "user/fs.h"
-#include "fs.h"
+#include <sprite.h>
+#include <user/fs.h>
+#include <fs.h>
 
 /*
  * These macros are used to access the information in the unit of the

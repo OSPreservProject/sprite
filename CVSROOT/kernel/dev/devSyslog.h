@@ -13,8 +13,8 @@
 #ifndef _DEVSYSLOG
 #define _DEVSYSLOG
 
-#include "user/fs.h"
-#include "fs.h"
+#include <user/fs.h>
+#include <fs.h>
 
 /*
  * Forward Declarations.

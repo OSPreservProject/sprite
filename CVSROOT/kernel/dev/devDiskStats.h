@@ -19,8 +19,8 @@
 #ifndef _DISKSTATS
 #define _DISKSTATS
 
-#include "user/sysStats.h"
-#include "user/fs.h"
+#include <user/sysStats.h>
+#include <user/fs.h>
 
 /*
  * This structure is used for disk stats instead of a straignt Sys_DiskStats

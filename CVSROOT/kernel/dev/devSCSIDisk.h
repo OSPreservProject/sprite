@@ -21,7 +21,7 @@
 #ifndef _DEVSCSIDISK
 #define _DEVSCSIDISK
 
-#include "devBlockDevice.h"
+#include <devBlockDevice.h>
 
 DevBlockDeviceHandle	*DevScsiDiskAttach();
 
