@@ -1297,13 +1297,31 @@ Fsconsist_Close(consistPtr, clientID, flags, wasCachedPtr)
  * ----------------------------------------------------------------------------
  *
  */
+
+#ifdef SOSP91
+Fsconsist_NumClients(consistPtr, numReadPtr, numWritePtr)
+    register Fsconsist_Info *consistPtr;   /* Handle of file being closed */
+    int	*numReadPtr;		/* Number of clients reading the file. */
+    int	*numWritePtr;		/* Number of clients writing the file. */
+
+#else
+
 ENTRY int
 Fsconsist_NumClients(consistPtr)
-    register Fsconsist_Info *consistPtr;	/* Handle of file being closed */
+    register Fsconsist_Info *consistPtr;    /* Handle of file being closed */
+
+#endif
+
 {
     register int numClients = 0;
     register Fsconsist_ClientInfo *clientPtr;
     register Fsconsist_ClientInfo *nextClientPtr;
+
+#ifdef SOSP91
+    int	numWrite = 0;
+    int numRead = 0;
+#endif
+
 
     LOCK_MONITOR;
 
@@ -1311,8 +1329,8 @@ Fsconsist_NumClients(consistPtr)
 	/*
 	 * Not safe to mess with list during consistency.
 	 */
-	UNLOCK_MONITOR;
-	return(1);
+	numClients = 1;
+	goto exit;
     }
     nextClientPtr = (Fsconsist_ClientInfo *)List_First(&consistPtr->clientList);
     while (!List_IsAtEnd(&consistPtr->clientList, (List_Links *)nextClientPtr)){
@@ -1329,8 +1347,26 @@ Fsconsist_NumClients(consistPtr)
 	    REMOVE_CLIENT(clientPtr);
 	} else {
 	    numClients++;
+#ifdef SOSP91
+	    if (clientPtr->use.write > 0) {
+		numWrite++;
+	    } 
+	    if (clientPtr->use.write - clientPtr->use.ref > 0) {
+		numRead++;
+	    }
+#endif
+
 	}
     }
+exit:
+#ifdef SOSP91
+    if (numWritePtr != (int *) NIL) {
+	*numWritePtr = numWrite;
+    }
+    if (numReadPtr != (int *) NIL) {
+	*numReadPtr = numRead;
+    }
+#endif
     UNLOCK_MONITOR;
     return(numClients);
 }
