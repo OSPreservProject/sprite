@@ -484,7 +484,6 @@ Proc_Dump()
  *
  *----------------------------------------------------------------------
  */
-
 int
 Proc_KillAllProcesses(userProcsOnly)
     Boolean	userProcsOnly;	/* TRUE if only kill user processes. */
@@ -516,6 +515,43 @@ Proc_KillAllProcesses(userProcsOnly)
     return(alive);
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_WakeupAllProcesses --
+ *
+ *	Wakup all waiting processes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	All waiting processes are awakened.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Proc_WakeupAllProcesses()
+{
+    register int		i;
+    register Proc_ControlBlock	*pcbPtr;
+    Proc_ControlBlock		*curProcPtr;
+
+    curProcPtr = Proc_GetActualProc(Sys_GetProcessorNumber());
+
+    for (i = 0; i < proc_MaxNumProcesses; i++) {
+	pcbPtr = proc_PCBTable[i];
+	if (pcbPtr == curProcPtr) {
+	    continue;
+	}
+	Proc_Lock(pcbPtr);
+	if (pcbPtr->state != PROC_UNUSED) {
+	    Sync_WakeWaitingProcess(pcbPtr);
+	}
+	Proc_Unlock(pcbPtr);
+    }
+}
 
 
 /*
