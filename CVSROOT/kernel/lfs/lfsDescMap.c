@@ -533,8 +533,6 @@ LfsDescMapAttach(lfsPtr, checkPointSize, checkPointPtr)
 	return status;
     }
 
-    printf("LfsDescMapAttach - %d allocated descriptors.\n", 
-	    mapPtr->checkPoint.numAllocDesc);
     return status;
 }
 

@@ -129,8 +129,6 @@ again:
 	choosenOne = !choosenOne;
 	goto again;
     }
-    printf("LfsLoad using checkpoint area %d with timestamp %d\n",
-	choosenOne, checkPointHdrPtr->timestamp);
 
     /*
      * Install the domain if we can. 
