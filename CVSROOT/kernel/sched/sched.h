@@ -75,4 +75,4 @@ extern void 			Sched_PrintStat();
 extern void 			Sched_StartProcess();
 extern void			Sched_SetClearUsageFlag();
 
-#endif _SCHED
+#endif /* _SCHED */

@@ -18,4 +18,4 @@
 
 extern List_Links *schedReadyQueueHdrPtr;
 
-#endif _SCHEDINT
+#endif /* _SCHEDINT */

@@ -9,7 +9,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif /* not lint */
 
 #include "sprite.h"
 #include "sched.h"
@@ -152,7 +152,7 @@ Sched_Init()
 #ifdef TESTING
     quantumInterval = timer_IntOneSecond;
     quantumInterval = timer_IntOneHour;
-#endif TESTING
+#endif /* TESTING */
 
     gatherInterval	= GATHER_INTERVAL * timer_IntOneMillisecond;
     Timer_AddIntervalToTicks(gatherTicks, gatherInterval, &gatherTicks);
