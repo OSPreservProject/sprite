@@ -2607,7 +2607,6 @@ Fscache_ReturnDirtyFile(cacheInfoPtr, onFront)
     Fscache_FileInfo	*cacheInfoPtr;	/* File to return. */
     Boolean 		onFront;	/* Put it on the front the of list. */
 {
-    register Fscache_FileInfo  *nextCacheInfoPtr;
 
     LOCK_MONITOR;
 
@@ -2616,15 +2615,17 @@ Fscache_ReturnDirtyFile(cacheInfoPtr, onFront)
      * dirty list or no list at all.
      */
     cacheInfoPtr->flags &= ~FSCACHE_FILE_BEING_WRITTEN;
-
-    if ((cacheInfoPtr->numDirtyBlocks == 0) &&
-	!(cacheInfoPtr->flags & FSCACHE_FILE_DESC_DIRTY)) {
-
-	cacheInfoPtr->flags &= ~(FSCACHE_FILE_FSYNC |
-				    FSCACHE_FILE_BEING_CLEANED);
+    if (cacheInfoPtr->numDirtyBlocks == 0) { 
 	Sync_Broadcast(&cacheInfoPtr->noDirtyBlocks);
+	if (!(cacheInfoPtr->flags & FSCACHE_FILE_DESC_DIRTY)) {
+	    cacheInfoPtr->flags &= ~(FSCACHE_FILE_FSYNC |
+	                             FSCACHE_FILE_BEING_CLEANED);
+	}
+    }
 
-    } else {
+    if (((cacheInfoPtr->numDirtyBlocks > 0) || 
+         (cacheInfoPtr->flags & FSCACHE_FILE_DESC_DIRTY)) &&
+	 !(cacheInfoPtr->flags & FSCACHE_FILE_GONE)) {
 	PutFileOnDirtyList(cacheInfoPtr, 
 			    cacheInfoPtr->oldestDirtyBlockTime);
     }
@@ -2635,7 +2636,6 @@ Fscache_ReturnDirtyFile(cacheInfoPtr, onFront)
 	 */
 	Sync_Broadcast(&closeCondition);
     }
-    cacheInfoPtr = nextCacheInfoPtr;
 
     UNLOCK_MONITOR;
     return;
