@@ -31,7 +31,7 @@ extern int MachFetchArgsEnd();
 /*
  * Copy of the boot parameter structure.
  */
-extern 	MachMonBootParam	machMonBootParam;
+extern 	MachStringTable	machMonBootParam;
 #endif
 
 /*
