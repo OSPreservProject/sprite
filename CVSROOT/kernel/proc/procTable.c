@@ -102,7 +102,7 @@ Proc_InitTable()
 
 	pcbPtr->peerHostID = NIL;
 	pcbPtr->peerProcessID = (Proc_PID) NIL;
-	pcbPtr->codeFileName[0] = '\0';
+	pcbPtr->argString = (char *) NIL;
 	pcbPtr->vmPtr = (Vm_ProcInfo *)NIL;
 	pcbPtr->trapStackPtr = (Exc_TrapStack *) NIL;
 	pcbPtr->rpcClientProcess = (Proc_ControlBlock *) NIL;
