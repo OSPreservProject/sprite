@@ -23,10 +23,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 #include "sprite.h"
 #include "fs.h"
+#include "fsio.h"
 #include "fsutil.h"
 #include "fsNameOps.h"
 #include "fsutilTrace.h"
-#include "fsio.h"
 #include "fsStat.h"
 #include "proc.h"
 #include "rpc.h"
@@ -139,7 +139,7 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
 			     useFlags, name, (Boolean *)NIL, (Boolean *)NIL);
 	streamPtr->nameInfoPtr = nameInfoPtr;
 	Fsutil_HandleUnlock(streamPtr);
-	status = (*fsio_StreamOpTable[openResults.ioFileID.type].cltOpen)
+	status = (*fsio_StreamOpTable[openResults.ioFileID.type].ioOpen)
 		    (&openResults.ioFileID, &streamPtr->flags, rpc_SpriteID,
 		     openResults.streamData, name, &streamPtr->ioHandlePtr);
 	if (status == SUCCESS) {
