@@ -43,7 +43,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "netRoute.h"
 #include "netInt.h"
 #include "sys.h"
-#include "mem.h"
+#include "stdlib.h"
 #include "timer.h"
 #include "sync.h"
 
@@ -116,7 +116,7 @@ typedef struct ArpOutputQueue {
 ArpOutputQueue arpOutputQueue[ARP_OUTPUT_QUEUE_LEN];
 static int nextOutputIndex = 0;
 
-Sync_Lock arpOutputQueueLock = SYNC_LOCK_INIT_STATIC();
+Sync_Lock arpOutputQueueLock; ;
 #define LOCKPTR (&arpOutputQueueLock)
 
 /*
@@ -132,7 +132,7 @@ typedef struct ArpInputQueue {
 #define ARP_INPUT_QUEUE_LEN		5
 ArpInputQueue arpInputQueue[ARP_INPUT_QUEUE_LEN];
 static int nextInputIndex = 0;
-Sync_Semaphore arpInputMutex = SYNC_SEM_INIT_STATIC("arpInputMutex");
+Sync_Semaphore arpInputMutex;
 
 void Net_ArpTimeout();
 void NetArpOutput();
@@ -163,6 +163,8 @@ Net_RouteInit()
     register int i;
     int spriteID;
 
+    Sync_LockInitDynamic(&arpOutputQueueLock, "Net:arpOutputQueueLock");
+    Sync_SemInitDynamic(&arpInputMutex, "Net:arpInputMutex");
     /*
      * The route table.  An array of routes is kept for directing
      * messages to other machines.  It is indexed by Sprite host ids.
@@ -739,7 +741,7 @@ Net_RevArp(etherAddrPtr)
     NetSpriteArp reply;			/* Sprite RARP reply packet data */
     Net_ScatterGather gather;		/* Points to packet data */
     static Sync_Semaphore mutex =
-	SYNC_SEM_INIT_STATIC("Net_RevArp.mutex"); /* Reverse arp is called
+	Sync_SemInitStatic("Net_RevArp.mutex"); /* Reverse arp is called
 					 * during initialization when there is
 					 * no mutex held (unlike regular arp)
 					 * so we need our own mutex for sync */
@@ -753,6 +755,7 @@ Net_RevArp(etherAddrPtr)
     gather.conditionPtr = (Sync_Condition *) NIL;
 
     MASTER_LOCK(&mutex);
+    Sync_SemRegister(&mutex);
     status = NetDoArp(&mutex, NET_SPRITE_REV_ARP_REQUEST, &gather, &reply);
     MASTER_UNLOCK(&mutex);
     if (status == SUCCESS) {

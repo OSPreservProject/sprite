@@ -32,7 +32,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 Net_EtherStats	net_EtherStats;
 NetEtherFuncs	netEtherFuncs;
-static	Sync_Semaphore	outputMutex = SYNC_SEM_INIT_STATIC("outputMutex");
+static	Sync_Semaphore	outputMutex;
 static void	EnterDebugger();
 
 /*
@@ -91,6 +91,7 @@ Net_Init()
 		netInterface[inter].ctrlAddr);
 	} 
     }
+    Sync_SemInitDynamic(&outputMutex, "Net:outputMutex");
     /*
      * Pre-load some addresses, including the broadcast address.
      */
