@@ -1129,7 +1129,7 @@ FsHandleDescWriteBack(shutdown, domain)
 {
     Hash_Search			hashSearch;
     FsDomain			*domainPtr;
-    register FsFileDescriptor	*descPtr;
+    register FsLocalFileIOHandle *handlePtr;
     register FsHandleHeader	*hdrPtr;
     register Hash_Entry		*hashEntryPtr;
     register FsCachedAttributes	*cachedAttrPtr;
@@ -1150,25 +1150,8 @@ FsHandleDescWriteBack(shutdown, domain)
 	     */
 	    continue;
 	}
-	switch (hdrPtr->fileID.type) {
-	    case FS_LCL_FILE_STREAM: {
-		register FsLocalFileIOHandle *handlePtr =
-			(FsLocalFileIOHandle *) hdrPtr;
-		descPtr = handlePtr->descPtr;
-		cachedAttrPtr = &handlePtr->cacheInfo.attr;
-		break;
-	    }
-#ifdef notdef
-	    case FS_LCL_NAMED_PIPE_STREAM: {
-		register FsNamedPipeIOHandle *handlePtr =
-			(FsNamedPipeIOHandle *) hdrPtr;
-		descPtr = handlePtr->descPtr;
-		cachedAttrPtr = &handlePtr->cacheInfo.attr;
-		break;
-	    }
-#endif
-	    default:
-		continue;
+	if (hdrPtr->fileID.type != FS_LCL_FILE_STREAM) {
+	    continue;
 	}
 	if (domain >= 0 && hdrPtr->fileID.major != domain) {
 	    continue;
@@ -1177,41 +1160,14 @@ FsHandleDescWriteBack(shutdown, domain)
 	    lockedDesc++;
 	    continue;
 	}
-	domainPtr = FsDomainFetch(hdrPtr->fileID.major, FALSE);
-	if (domainPtr == (FsDomain *)NIL) {
-	    /*
-	     * The domain for the file has been detached.
-	     */
+	handlePtr = (FsLocalFileIOHandle *)hdrPtr;
+	if (handlePtr->descPtr == (FsFileDescriptor *)NIL) {
+	    printf("FsHandleDescWriteBack, no descPtr for <%d,%d> \"%s\"\n",
+		hdrPtr->fileID.major, hdrPtr->fileID.minor,
+		FsHandleName(hdrPtr));
 	    continue;
 	}
-	/*
-	 * Propogate times from the cache info.
-	 */
-	if (descPtr == (FsFileDescriptor *)NIL) {
-	    UNLOCK_MONITOR;
-	    panic("FsHandleDescWriteBack, no descriptor\n");
-	    return (lockedDesc);
-	}
-	if (descPtr->accessTime < cachedAttrPtr->accessTime) {
-	    descPtr->accessTime = cachedAttrPtr->accessTime;
-	    descPtr->flags |= FS_FD_DIRTY;
-	}
-	if (descPtr->dataModifyTime < cachedAttrPtr->modifyTime) {
-	    descPtr->dataModifyTime = cachedAttrPtr->modifyTime;
-	    descPtr->flags |= FS_FD_DIRTY;
-	}
-	/*
-	 * Write the descriptor back to the cache.
-	 */
-	if (descPtr->flags & FS_FD_DIRTY) {
-	    descPtr->flags &= ~FS_FD_DIRTY;
-	    status =  FsStoreFileDesc(domainPtr, hdrPtr->fileID.minor, descPtr);
-	    if (status != SUCCESS) {
-		printf("FsHandleDescWriteBack: Couldn't store file desc <%x>\n",
-		    status);
-	    }
-	}
-	FsDomainRelease(hdrPtr->fileID.major);
+	(void)FsWriteBackDesc(handlePtr, FALSE);
     }
 
     if (shutdown & lockedDesc) {
