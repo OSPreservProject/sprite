@@ -39,12 +39,10 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 int	rpc_SpriteID = 0;
 
-
 /*
- * Occasionally the Intel ethernet interface wacks out and passes us garbage.
- * We count garbage packets and reset the interface after a series of junk.
+ * We stop handlling requests during a panic().
  */
-int badErrors = 0;
+extern int sysPanicing;
 
 /*
  * Set to FALSE for debugging a few isolated machines without tons of msgs.
@@ -178,8 +176,11 @@ Rpc_Dispatch(headerType, headerPtr, rpcHdrAddr, packetLength)
 	/*
 	 * Don't do anything if we don't know who we are.  This occurs
 	 * at boot time if we get a request before doing reverse ARP.
+	 * Also, don't do anything in the middle of a panic.  If a host
+	 * deadlocks trying to enter the debugger, then callback RPCs
+	 * from file servers should not also hang.
 	 */
-	if (rpc_SpriteID == 0) {
+	if (rpc_SpriteID == 0 || sysPanicing) {
 	    return;
 	}
 	if (rpcHdrPtr->serverID != RPC_BROADCAST_SERVER_ID &&
