@@ -109,7 +109,7 @@ Proc_GetIntervalTimer(timerType, userTimerPtr)
     }
     Proc_Lock(procPtr);
 
-    status = GetCurrentTimer(procPtr, timerType, userTimerPtr);
+    status = GetCurrentTimer(procPtr, timerType, userTimerPtr, TRUE);
 
     Proc_Unlock(procPtr);
 done:
@@ -138,21 +138,30 @@ done:
  */
 
 static INTERNAL ReturnStatus
-GetCurrentTimer(procPtr, timerType, userTimerPtr)
+GetCurrentTimer(procPtr, timerType, timerBufPtr, userMode)
     Proc_ControlBlock	*procPtr;	/* Process to get the timer value 
 					 * from. */
     int			timerType;	/* What type of timer: one of 
 					 * PROC_TIMER_REAL, PROC_TIMER_VIRTUAL,
 					 * PROC_TIMER_PROFILE. */
-    Proc_TimerInterval	*userTimerPtr;	/* Buffer to store the current value 
+    Proc_TimerInterval	*timerBufPtr;	/* Buffer to store the current value 
 					 * of the interval timer. */
+    Boolean		userMode;	/* TRUE if timerBufPtr is in user
+					 * space (normal case).  FALSE
+					 * for encapsulation.
+					 */
 {
     register ProcIntTimerInfo	*timerPtr;
     Proc_TimerInterval	timer;
+    Boolean exists = FALSE;
 
-    timerPtr = &procPtr->timerArray[timerType];
-    if ((procPtr->timerArray == (ProcIntTimerInfo  *) NIL) ||
-	(timerPtr->token == (ClientData) NIL)) {
+    if (procPtr->timerArray != (ProcIntTimerInfo  *) NIL) {
+	timerPtr = &procPtr->timerArray[timerType];
+	if (timerPtr->token != (ClientData) NIL) {
+	    exists = TRUE;
+	}
+    }
+    if (!exists) {
 
 	/*
 	 * No timer is scheduled. Just return zero values.
@@ -174,10 +183,15 @@ GetCurrentTimer(procPtr, timerType, userTimerPtr)
 	Timer_TicksToTime(temp, &timer.curValue);
     }
 
-    if (Proc_ByteCopy(FALSE, sizeof(timer), 
-	    (Address) &timer, (Address) userTimerPtr) != SUCCESS) {
-	return(SYS_ARG_NOACCESS);
+    if (userMode) {
+	if (Proc_ByteCopy(FALSE, sizeof(timer), 
+			  (Address) &timer, (Address) timerBufPtr) != SUCCESS) {
+	    return(SYS_ARG_NOACCESS);
+	}
+    } else {
+	bcopy((Address) &timer, (Address) timerBufPtr, sizeof(timer));
     }
+
     return(SUCCESS);
 }
 
@@ -186,7 +200,8 @@ GetCurrentTimer(procPtr, timerType, userTimerPtr)
  *
  * Proc_SetIntervalTimer --
  *
- *	Start or cancel an interval timer for a process.
+ *	Start or cancel an interval timer for a process.  This is the
+ *	system call version, which calls a more general routine.
  *
  * Results:
  *	SUCCESS			- the timer was started or stopped.
@@ -209,6 +224,44 @@ Proc_SetIntervalTimer(timerType, newTimerPtr, oldTimerPtr)
 					 * the interval timer. */
     Proc_TimerInterval	*oldTimerPtr;	/* Buffer to hold the former value of
 					 * the timer. */
+{
+    return(ProcChangeTimer(timerType, newTimerPtr, oldTimerPtr, TRUE));
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcChangeTimer --
+ *
+ *	Start or cancel an interval timer for a process.  This can
+ *	be called from kernel mode as well as user mode.
+ *
+ * Results:
+ *	SUCCESS			- the timer was started or stopped.
+ *	GEN_INVALID_ARG		- unknown timer type or invalid time value.
+ *	SYS_ARG_NOACCESS	- a timer value could not be accessed.
+ *
+ * Side effects:
+ *	A CallFunc process might be scheduled. The process's PCB entry
+ *	is updated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY ReturnStatus
+ProcChangeTimer(timerType, newTimerPtr, oldTimerPtr, userMode)
+    int			timerType;	/* What type of timer: one of 
+					 * PROC_TIMER_REAL, PROC_TIMER_VIRTUAL,
+					 * PROC_TIMER_PROFILE. */
+    Proc_TimerInterval	*newTimerPtr;	/* Buffer that holds a new value for
+					 * the interval timer. */
+    Proc_TimerInterval	*oldTimerPtr;	/* Buffer to hold the former value of
+					 * the timer. */
+    Boolean		userMode;	/* TRUE if intervals are in user
+					 * space (normal case).  FALSE
+					 * for encapsulation.
+					 */
 {
     register ProcIntTimerInfo	*timerPtr;
     register Proc_ControlBlock	*procPtr;
@@ -251,7 +304,8 @@ Proc_SetIntervalTimer(timerType, newTimerPtr, oldTimerPtr)
      * Return the current value if the user wants it.
      */
     if (oldTimerPtr != USER_NIL) {
-	if (GetCurrentTimer(procPtr, timerType, oldTimerPtr) != SUCCESS) {
+	if (GetCurrentTimer(procPtr, timerType, oldTimerPtr,
+			    userMode) != SUCCESS) {
 	    Proc_Unlock(procPtr);
 	    UNLOCK_MONITOR;
 	    return(SYS_ARG_NOACCESS);
@@ -259,13 +313,17 @@ Proc_SetIntervalTimer(timerType, newTimerPtr, oldTimerPtr)
     }
 
     /*
-     * Copy the new timer value from user space.
+     * Copy the new timer value from user space or a kernel buffer.
      */
-    if (Proc_ByteCopy(TRUE, sizeof(newTimer), 
-	    (Address) newTimerPtr, (Address) &newTimer) != SUCCESS) {
-	Proc_Unlock(procPtr);
-	UNLOCK_MONITOR;
-	return(SYS_ARG_NOACCESS);
+    if (userMode) {
+	if (Proc_ByteCopy(TRUE, sizeof(newTimer), 
+		(Address) newTimerPtr, (Address) &newTimer) != SUCCESS) {
+	    Proc_Unlock(procPtr);
+	    UNLOCK_MONITOR;
+	    return(SYS_ARG_NOACCESS);
+	}
+    } else {
+	bcopy((Address) newTimerPtr, (Address) &newTimer, sizeof(newTimer));
     }
 
     if ((newTimer.curValue.seconds == 0) && 
@@ -297,13 +355,13 @@ Proc_SetIntervalTimer(timerType, newTimerPtr, oldTimerPtr)
 	    return(GEN_INVALID_ARG);
 	}
 	if ((newTimer.curValue.seconds == 0) && 
-	    (newTimer.curValue.microseconds < TIMER_CALLBACK_INTERVAL)) {
-	    newTimer.curValue.microseconds = TIMER_CALLBACK_INTERVAL;
+	    (newTimer.curValue.microseconds < TIMER_CALLBACK_INTERVAL_APPROX)) {
+	    newTimer.curValue.microseconds = TIMER_CALLBACK_INTERVAL_APPROX;
 	}
 	if ((newTimer.interval.seconds == 0) && 
 	    (newTimer.interval.microseconds > 0) &&
-	    (newTimer.interval.microseconds < TIMER_CALLBACK_INTERVAL)) {
-	    newTimer.interval.microseconds = TIMER_CALLBACK_INTERVAL;
+	    (newTimer.interval.microseconds < TIMER_CALLBACK_INTERVAL_APPROX)) {
+	    newTimer.interval.microseconds = TIMER_CALLBACK_INTERVAL_APPROX;
 	}
 
 	Timer_TimeToTicks(newTimer.interval, &timerPtr->interval);
@@ -418,3 +476,46 @@ SendTimerSigFunc(data, infoPtr)
     }
     UNLOCK_MONITOR;
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcDeleteTimers --
+ *
+ *	Cancel all interval timers for a process.  Performed on exit.
+ *	ProcPtr is assumed to be locked on entry.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	A CallFunc process might be descheduled. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+ProcDeleteTimers(procPtr)
+    register Proc_ControlBlock	*procPtr;
+{
+    register ProcIntTimerInfo	*timerPtr;
+    int j;
+
+    LOCK_MONITOR;
+
+    if (procPtr->timerArray == (ProcIntTimerInfo  *) NIL) {
+	goto done;
+    }
+
+    for (j = 0; j <= PROC_MAX_TIMER; j++) {
+	timerPtr = &procPtr->timerArray[j];
+	if (timerPtr->token != (ClientData) NIL) {
+	    Proc_CancelCallFunc(timerPtr->token);
+	    timerPtr->token = (ClientData) NIL;
+	}
+    }
+    done:
+    UNLOCK_MONITOR;
+}
+
