@@ -33,7 +33,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "devNet.h"
 #include "user/netInet.h"
 #include "mem.h"
-#include "byte.h"
 #include "sync.h"
 #include "fs.h"
 #include "user/net.h"
