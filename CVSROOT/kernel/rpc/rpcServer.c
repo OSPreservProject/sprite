@@ -401,10 +401,15 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 
 	if (srvPtr->state & SRV_BUSY) {
 	    /*
-	     * This is an error by the client.  This server is working on
-	     * a service request already and hasn't finished.
+	     * The client has abandoned the RPC and started on a new one.
+	     * This server process may be stuck on some lock, or the
+	     * client may just be in error.  We mark the server process
+	     * as STUCK so subsequent requests will not use this server,
+	     * and the server process will unmark itself when it completes
+	     * what ever its working on.
 	     */
 	    rpcSrvStat.serverBusy++;
+	    srvPtr->state |= SRV_STUCK;
 	    goto unlock;
 	}
 	/*
