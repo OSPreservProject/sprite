@@ -46,10 +46,9 @@ static	char	xmitFiller[NET_ETHER_MIN_BYTES];
 /*
  * Buffer for pieces of a packet that are too small or that start
  * on an odd boundary.  XMIT_TEMP_BUFSIZE limits how big a thing can
- * be and start on an odd address.  Odd addresses come up with pathnames,
- * so this doesn't need to be huge.
+ * be and start on an odd address.
  */
-#define XMIT_TEMP_BUFSIZE	256
+#define XMIT_TEMP_BUFSIZE	(NET_ETHER_MAX_BYTES + 2)
 static char	xmitTempBuffer[XMIT_TEMP_BUFSIZE];
 
 /*
@@ -139,7 +138,10 @@ OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
 	    ((int)(scatterGatherPtr->bufAddr) & 0x1)) {
 
 	    if (length > XMIT_TEMP_BUFSIZE) {
-		Sys_Panic(SYS_WARNING,
+		netIEState.transmitting = FALSE;
+		ENABLE_INTR();
+
+		Sys_Panic(SYS_FATAL,
 			  "IE OutputPacket: Odd addressed buffer too large.");
 		return;
 	    }
