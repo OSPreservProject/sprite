@@ -180,17 +180,19 @@ extern TraceLog_Header *SOSP91TracePtr;
  * currentHostID:	Current client requesting set attr command
  * homeHostID:		HostID of process requesting set attr before migration
  * fileID		The file ID for the file being set attr'ed
+ * userID		The user ID of the person making the request
  */ 
-#define	SOSP_ADD_SET_ATTR_TRACE(currentHostID, homeHostID, fileID)\
+#define	SOSP_ADD_SET_ATTR_TRACE(currentHostID, homeHostID, fileID, userID)\
 {\
-	unsigned int	sospBuffer[28];\
+	unsigned int	sospBuffer[32];\
 \
 	sospBuffer[0] = SOSP_SET_ATTR;\
 	sospBuffer[1] = currentHostID;\
 	sospBuffer[2] = homeHostID;\
 	*((Fs_FileID *) &(sospBuffer[3])) = fileID;\
+	sospBuffer[7] = userID;\
 	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
-		(6 * sizeof (int)), SOSP_SET_ATTR);\
+		(7 * sizeof (int)), SOSP_SET_ATTR);\
 }
 
 
@@ -200,17 +202,19 @@ extern TraceLog_Header *SOSP91TracePtr;
  * currentHostID:	Current client requesting get attr command
  * homeHostID:		HostID of process requesting get attr before migration
  * fileID		The file ID for the file being get attr'ed
+ * userID		The user ID of the person making the request
  */ 
-#define	SOSP_ADD_GET_ATTR_TRACE(currentHostID, homeHostID, fileID)\
+#define	SOSP_ADD_GET_ATTR_TRACE(currentHostID, homeHostID, fileID, userID)\
 {\
-	unsigned int	sospBuffer[28];\
+	unsigned int	sospBuffer[32];\
 \
 	sospBuffer[0] = SOSP_GET_ATTR;\
 	sospBuffer[1] = currentHostID;\
 	sospBuffer[2] = homeHostID;\
 	*((Fs_FileID *) &(sospBuffer[3])) = fileID;\
+	sospBuffer[7] = userID;\
 	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
-		(6 * sizeof (int)), SOSP_GET_ATTR);\
+		(7 * sizeof (int)), SOSP_GET_ATTR);\
 }
 
 /*
