@@ -308,6 +308,8 @@ ds3100: ${OBJS} .PRECIOUS .NOEXPORT
 	nm -n $@ > $@.nm
 	rcp /sprite/src/kernel/sprite/$@ dill:/sprite/src/kernel/nelson/$@
 	rsh dill -n "(cd /sprite/src/kernel/nelson ; Save $@)"
+	update -f $@ /assaultA/new
+	strip /assaultA/new
 	-Save $@
 
 # profile2: ${PROFOBJS} Makefile .PRECIOUS
