@@ -279,12 +279,8 @@ FsAttachDisk(devicePtr, localName, flags)
 		status);
 	domainPtr->flags |= FS_DOMAIN_DOWN;
 	return(status);
-    } else {
-	/*
-	 * WHY RELEASE AND NOT JUST UNLOCK?
-	 */
-	FsHandleRelease(handlePtr, TRUE);
     }
+    FsHandleUnlock(handlePtr);
     /*
      * Install a prefix for the domain.  We always import it so that
      * we can get to the disk locally.  Then we either keep the domain
