@@ -1633,6 +1633,27 @@ Fsio_FileIOControl(streamPtr, ioctlPtr, replyPtr)
 		int firstBlock, lastBlock;
 		int blocksSkipped;
 		int flags = 0;
+		Ioc_WriteBackArgs writeBack;
+
+		if (ioctlPtr->format != mach_Format) {
+		    int fmtStatus;
+		    int size;
+		    size = ioctlPtr->inBufSize;
+		    fmtStatus = Fmt_Convert("w", ioctlPtr->format, &size, 
+				    ioctlPtr->inBuffer, mach_Format, &size,
+				    (Address) &writeBack);
+		    if (fmtStatus != 0) {
+			printf("Format of ioctl failed <0x%x>\n", fmtStatus);
+			status = GEN_INVALID_ARG;
+		    }
+		    if (size != sizeof(Ioc_WriteBackArgs)) {
+			status = GEN_INVALID_ARG;
+		    }
+		    if (status != SUCCESS) {
+			break;
+		    }
+		    argPtr = &writeBack;
+		}
 		if (argPtr->shouldBlock) {
 		    flags |= FSCACHE_FILE_WB_WAIT;
 		}
