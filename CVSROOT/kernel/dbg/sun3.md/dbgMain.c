@@ -441,7 +441,7 @@ void
 Dbg_Init()
 {
     dbgMonPC = 0;
-    dbgTraceLevel = 6;
+    dbgTraceLevel = 0;
     dbgInDebugger = 0;
     dbgIntPending = 0;
     dbgPanic = FALSE;
@@ -552,7 +552,6 @@ ReadRequest(timeout)
 	     */
 	    for (i = 0; ; i++) {
 		interPtr = Net_NextInterface(TRUE, &i);
-		printf("i = %d, interPtr = 0x%x\n", i, interPtr);
 		if (interPtr == (Net_Interface *) NIL) {
 		    break;
 		}
