@@ -61,7 +61,7 @@ extern ReturnStatus Dev_serialBInTrace();
  *	DeviceMMap
  */
 
-
+#ifndef lint
 DevFsTypeOps devFsOpTable[] = {
     /*
      * Serial lines used to implement terminals.
@@ -171,3 +171,12 @@ NoDevice()
 {
     return(FS_INVALID_ARG);
 }
+
+#else /*LINT*/
+
+DevFsTypeOps devFsOpTable[1];
+
+#endif /*LINT*/
+
+int devNumDevices = sizeof(devFsOpTable) / sizeof(DevFsTypeOps);
+

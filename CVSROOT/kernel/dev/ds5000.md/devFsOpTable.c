@@ -62,7 +62,7 @@ extern ReturnStatus Dev_serialBInTrace();
  *	DeviceMMap
  */
 
-
+#ifndef lint
 DevFsTypeOps devFsOpTable[] = {
     /*
      * Serial lines used to implement terminals.
@@ -168,9 +168,6 @@ DevFsTypeOps devFsOpTable[] = {
 		    DEV_NO_ATTACH_PROC, NoDevice, DevStdFBMMap},
 };
 
-int devNumDevices = sizeof(devFsOpTable) / sizeof(DevFsTypeOps);
-
-
 static ReturnStatus
 NullProc()
 {
@@ -183,3 +180,11 @@ NoDevice()
 {
     return(FS_INVALID_ARG);
 }
+#else /* LINT */
+
+DevFsTypeOps devFsOpTable[1];
+
+#endif /* LINT */
+
+int devNumDevices = sizeof(devFsOpTable) / sizeof(DevFsTypeOps);
+

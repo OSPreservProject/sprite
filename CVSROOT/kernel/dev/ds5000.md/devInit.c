@@ -77,7 +77,6 @@ void
 Dev_Config()
 {
     register int			index;
-    ClientData				callBackData;
     register DevConfigController	*cntrlrPtr;
 
     if (devConfigDebug) {
@@ -86,6 +85,6 @@ Dev_Config()
     }
     for (index = 0; index < devNumConfigCntrlrs; index++) {
 	cntrlrPtr = &devCntrlr[index];
-	callBackData = (*cntrlrPtr->initProc)(cntrlrPtr);
+	(void) (*cntrlrPtr->initProc)(cntrlrPtr);
     }
 }

@@ -178,7 +178,6 @@ DevSCSIC90Init(ctrlLocPtr)
     DevConfigController	*ctrlLocPtr;	/* Controller location. */
 {
     int			ctrlNum;
-    Boolean		found;
     Controller 		*ctrlPtr;
     int			i,j;
     Mach_SlotInfo	slotInfo;

@@ -58,7 +58,12 @@ static ReturnStatus     PerformReselect _ARGS_(( Controller *ctrlPtr,
 					      unsigned int interruptReg));
 static ReturnStatus     PerformExtendedMsgIn _ARGS_(( Controller *ctrlPtr,
 					      unsigned int message));
-static int              SpecialSenseProc _ARGS_((void));
+static int              SpecialSenseProc _ARGS_((ScsiCmd *scsiCmdPtr,
+					    ReturnStatus status,
+					    int statusByte,
+					    int byteCount,
+					    int senseLength,
+					    Address senseDataPtr));
 static void             PutCircBuf _ARGS_((int type, char *object));
 
 /*
@@ -741,10 +746,11 @@ DevSCSIC90Intr(clientDataArg)
  *----------------------------------------------------------------------
  */
 /*ARGSUSED*/
+static void
 PerformCmdDone(ctrlPtr,status)
     Controller   *ctrlPtr;
-Controller   *ctrlPtr;
-ReturnStatus status;
+    ReturnStatus status;
+{
     List_Links		*newRequestPtr;
     ClientData		clientData;
 
@@ -870,11 +876,12 @@ unsigned int	sequenceReg;
  *
  *----------------------------------------------------------------------
  */
+/*ARGSUSED*/
 static ReturnStatus
 PerformDataXfer(ctrlPtr, interruptReg, statusReg)
-Controller      *ctrlPtr;
-unsigned int	interruptReg;
-unsigned int	statusReg;
+    Controller      *ctrlPtr;
+    unsigned int	interruptReg;
+    unsigned int	statusReg;
 {
     ReturnStatus status = SUCCESS;
     volatile CtrlRegs	*regsPtr = ctrlPtr->regsPtr;
@@ -1539,6 +1546,7 @@ PrintMsg(msg)
     return;
 }
 
+#ifndef lint
 
 /*
  *----------------------------------------------------------------------
@@ -1638,7 +1646,6 @@ PrintLastPhase(phase)
 
     return;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -1679,7 +1686,7 @@ PrintRegs(regsPtr)
 
     return;
 }
-
+#endif /* LINT */
 
 /*
  *----------------------------------------------------------------------
@@ -1699,9 +1706,16 @@ PrintRegs(regsPtr)
  *
  *----------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 static int
-SpecialSenseProc()
+SpecialSenseProc(scsiCmdPtr, status, statusByte, byteCount, senseLength,
+		 senseDataPtr)
+    ScsiCmd		*scsiCmdPtr;
+    ReturnStatus	status;
+    unsigned char	statusByte;
+    int			byteCount;
+    int			senseLength;
+    Address		senseDataPtr;
 {
     return 0;
 }

@@ -52,6 +52,7 @@ static List_Links	infoList;
  *----------------------------------------------------------------------
  */
 
+/*ARGSUSED*/
 ReturnStatus
 DevStdFBOpen(devicePtr, useFlags, token, flagsPtr)
     Fs_Device	*devicePtr;	/* Device info, unit number, etc. */
@@ -105,7 +106,7 @@ DevStdFBOpen(devicePtr, useFlags, token, flagsPtr)
  *
  *----------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 ReturnStatus
 DevStdFBMMap(devicePtr, startAddr, length, offset, newAddrPtr)
     Fs_Device	*devicePtr;	/* Device to map. */
@@ -149,6 +150,7 @@ DevStdFBMMap(devicePtr, startAddr, length, offset, newAddrPtr)
     }
     infoPtr->addr = (Address) addr;
     *newAddrPtr = (Address) addr; 
+    return status;
 }
 
 /*
@@ -168,6 +170,7 @@ DevStdFBMMap(devicePtr, startAddr, length, offset, newAddrPtr)
  *
  *----------------------------------------------------------------------
  */
+/*ARGSUSED*/
 
 ReturnStatus
 DevStdFBIOControl(devicePtr, ioctlPtr, replyPtr)
@@ -210,7 +213,7 @@ DevStdFBIOControl(devicePtr, ioctlPtr, replyPtr)
  *
  *----------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 ReturnStatus
 DevStdFBClose(devicePtr, useFlags, openCount, writerCount)
     Fs_Device   *devicePtr;		/* Information about device. */
