@@ -182,7 +182,15 @@ Rpc_HistEnd(histPtr, timePtr)
     LOCK_MONITOR;
     Timer_GetRealTimeOfDay(&endTime, (int *)NIL, (Boolean *)NIL);
     Time_Subtract(endTime, *timePtr, timePtr);
-    index = (timePtr->seconds * 1000 + timePtr->microseconds) >>
+    /* 
+     * If the command took more than about a half hour, we run into the 
+     * risk of overflow when we convert seconds to microseconds.  So, treat 
+     * anything greater than 2000 seconds as 2000 seconds.
+     */
+    if (timePtr->seconds > 2000) {
+	timePtr->seconds = 2000;
+    }
+    index = (timePtr->seconds * 1000000 + timePtr->microseconds) >>
 		histPtr->bucketShift;
     if (index >= histPtr->numBuckets) {
 	histPtr->numHighValues++;
