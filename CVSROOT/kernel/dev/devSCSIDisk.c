@@ -919,7 +919,7 @@ BlockIOProc(handlePtr, requestPtr)
 {
     ReturnStatus status;	
     ScsiDisk	*diskPtr = (ScsiDisk *) handlePtr;
-    unsigned int	firstSector, lengthInSectors, lastSector;
+    unsigned int	firstSector, lengthInSectors, sizeInSectors;
 
 
     if (!((requestPtr->operation == FS_READ) ||
@@ -933,25 +933,24 @@ BlockIOProc(handlePtr, requestPtr)
      */
     firstSector = requestPtr->startAddress/DEV_BYTES_PER_SECTOR;
     lengthInSectors = requestPtr->bufferLen/DEV_BYTES_PER_SECTOR;
-    lastSector = (diskPtr->partition == WHOLE_DISK_PARTITION) ?
-				(diskPtr->sizeInSectors - 1)  :
-			diskPtr->map[diskPtr->partition].firstSector +
-		            diskPtr->map[diskPtr->partition].sizeInSectors - 1;
-    if (firstSector > lastSector) {
+    sizeInSectors = (diskPtr->partition == WHOLE_DISK_PARTITION) ?
+				diskPtr->sizeInSectors   :
+		            diskPtr->map[diskPtr->partition].sizeInSectors;
+    if (firstSector >= sizeInSectors) {
 	/*
 	 * The offset is past the end of the partition.
 	 */
-	printf("BlockIOProc: firstSector(%d) > lastSector (%d)\n",
-						    firstSector, lastSector);
+	printf("ScsiDisk request: firstSector(%d) >= size (%d)\n",
+						 firstSector, sizeInSectors);
 	RequestDone(requestPtr,SUCCESS,0);
 	return SUCCESS;
     } 
-    if (((firstSector + lengthInSectors - 1) > lastSector)) {
+    if (((firstSector + lengthInSectors - 1) >= sizeInSectors)) {
 	/*
 	 * The transfer is at the end of the partition.  Reduce the
 	 * sector count so there is no overrun.
 	 */
-	lengthInSectors = lastSector - firstSector + 1;
+	lengthInSectors = sizeInSectors - firstSector;
     } 
     if (diskPtr->partition != WHOLE_DISK_PARTITION) {
 	/*
