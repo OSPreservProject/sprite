@@ -815,10 +815,12 @@ PlaceFileInSegment(lfsPtr, segPtr, cacheInfoPtr, layoutPtr, token,
     int		blocksNeeded, bytesNeeded, blocksLeft;
     ReturnStatus	status;
     Fscache_Block	*blockPtr, *firstBlockPtr;
+    Fsdm_FileDescriptor *descPtr;
 
     if (cacheInfoPtr == (Fscache_FileInfo *) NIL) {
 	return FALSE;
     }
+    descPtr = ((Fsio_FileIOHandle *)(cacheInfoPtr->hdrPtr))->descPtr;
     /*
      * Layout the blocks of the file into the segment starting with the
      * data blocks.
@@ -845,6 +847,16 @@ PlaceFileInSegment(lfsPtr, segPtr, cacheInfoPtr, layoutPtr, token,
 	if (firstBlockPtr == (Fscache_Block *) NIL) {
 	    continue;
 	}
+	if ((firstBlockPtr->blockSize < FS_BLOCK_SIZE) && 
+	    (firstBlockPtr->blockNum != descPtr->lastByte/FS_BLOCK_SIZE)) {
+	    /*
+	     * Only the last block in the file is allowed to be less than 
+	     * FS_BLOCK_SIZE. Sometimes the Fscache_Block->blockSize
+	     * is incorrect so we patch it for them.
+	     */
+	    firstBlockPtr->blockSize = FS_BLOCK_SIZE;
+	}
+
        /*
         * Allocate the layout summary bytes of this file if 
         * we haven't done so already.
@@ -903,6 +915,15 @@ PlaceFileInSegment(lfsPtr, segPtr, cacheInfoPtr, layoutPtr, token,
        blockPtr = firstBlockPtr;
        do {  
 	   LFS_STATS_INC(lfsPtr->stats.layout.dirtyBlocks);
+	    if ((blockPtr->blockSize < FS_BLOCK_SIZE) && 
+		(blockPtr->blockNum != descPtr->lastByte/FS_BLOCK_SIZE)) {
+		/*
+		 * Only the last block in the file is allowed to be less than 
+		 * FS_BLOCK_SIZE. Sometimes the Fscache_Block->blockSize
+		 * is incorrect so we patch it for them.
+		 */
+		blockPtr->blockSize = FS_BLOCK_SIZE;
+	    }
 	   List_Insert((List_Links *) blockPtr, 
 			LIST_ATFRONT(&segLayoutDataPtr->blockList));
 	   blocksLeft -= LfsBytesToBlocks(lfsPtr, blockPtr->blockSize);
@@ -973,7 +994,7 @@ PlaceFileInSegment(lfsPtr, segPtr, cacheInfoPtr, layoutPtr, token,
 	    * Update the modtime time of the segment to reflect this block
 	    * if it is under than the rest.
 	    */
-	   modTime = (((Fsio_FileIOHandle *)(cacheInfoPtr->hdrPtr))->descPtr->dataModifyTime);
+	   modTime = descPtr->dataModifyTime;
 	   if (segPtr->timeOfLastWrite < modTime) {
 	       segPtr->timeOfLastWrite = modTime;
 	   }
@@ -1068,10 +1089,6 @@ PlaceFileInSegment(lfsPtr, segPtr, cacheInfoPtr, layoutPtr, token,
      * as full.
      */
     if (segLayoutDataPtr->numDescSlotsLeft > 0) {
-	  Fsio_FileIOHandle *localHandlePtr;
-	  Fsdm_FileDescriptor *descPtr;
-	  localHandlePtr = (Fsio_FileIOHandle *) (cacheInfoPtr->hdrPtr);
-	  descPtr = localHandlePtr->descPtr;
 	  /*
 	   * XXX - need to do this under lock. 
 	   */
