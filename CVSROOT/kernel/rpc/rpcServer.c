@@ -63,10 +63,11 @@ int rpcMaxServerAge = 10;
 
 /*
  * A histogram is kept of service time.  This is available to user
- * programs via the Sys_Stats SYS_RPC_SERVER_HIST command.
+ * programs via the Sys_Stats SYS_RPC_SERVER_HIST command.  The on/off
+ * flags is settable via Fs_Command FS_SET_RPC_SERVER_HIST
  */
 Rpc_Histogram *rpcServiceTime[RPC_LAST_COMMAND+1];
-Boolean rpcServiceTiming = TRUE;
+Boolean rpcServiceTiming = FALSE;
 
 
 /*
@@ -156,11 +157,16 @@ Rpc_Server()
 	    RpcHostAlive(srvPtr->clientID, rpcHdrPtr->bootID, FALSE);
 	}
 	/*
-	 * Check the procedure ID and branch to the service routine.
-	 * No locks are held during the service routine's exectution.
+	 * Before branching to the service procedure we check that the
+	 * server side of RPC is on, and that the RPC number is good.
+	 * The "disabled service" return code is understood by other
+	 * hosts to mean that we are still alive, but are not yet
+	 * ready to be a server - ie. we are still checking disks etc.
 	 */
 	command = rpcHdrPtr->command;
-	if (command <= 0 || command > RPC_LAST_COMMAND) {
+	if (!rpcServiceEnabled) {
+	    error = RPC_SERVICE_DISABLED;
+	} else if (command <= 0 || command > RPC_LAST_COMMAND) {
 	    error = RPC_INVALID_RPC;
 	} else {
 	    Time histTime;
@@ -656,6 +662,15 @@ Rpc_ErrorReply(srvToken, error)
     srvPtr->reply.paramBuffer.length = 0;
     srvPtr->reply.dataBuffer.length = 0;
 
+    if (Net_IDToRoute(rpcHdrPtr->clientID) == (Net_Route *)NIL) {
+	/*
+	 * Make sure we have a good route back to the client.
+	 */
+	int mutex = 0;
+	MASTER_LOCK(mutex);
+	(void) Net_Arp(rpcHdrPtr->clientID, &mutex);
+	MASTER_UNLOCK(mutex);
+    }
     (void)RpcOutput(rpcHdrPtr->clientID, rpcHdrPtr, &srvPtr->reply,
 					 (RpcBufferSet *)NIL, 0, (int *)NIL);
 }
@@ -766,6 +781,15 @@ Rpc_Reply(srvToken, error, storagePtr, freeReplyProc, freeReplyData)
     srvPtr->reply.dataBuffer.length = storagePtr->replyDataSize;
     srvPtr->reply.dataBuffer.bufAddr = storagePtr->replyDataPtr;
 
+    if (Net_IDToRoute(rpcHdrPtr->clientID) == (Net_Route *)NIL) {
+	/*
+	 * Make sure we have a good route back to the client.
+	 */
+	int mutex = 0;
+	MASTER_LOCK(mutex);
+	(void) Net_Arp(rpcHdrPtr->clientID, &mutex);
+	MASTER_UNLOCK(mutex);
+    }
     (void)RpcOutput(rpcHdrPtr->clientID, rpcHdrPtr, &srvPtr->reply,
 					 srvPtr->fragment, 0, (int *)NIL);
 }
@@ -808,7 +832,10 @@ RpcAck(srvPtr, flags)
 	 */
 	ackHdrPtr->fragMask = srvPtr->fragsReceived;
     }
- 
+    /*
+     * Note, can't try ARP here because of it's synchronization with
+     * a master lock and because we are called at interrupt time.
+     */
     (void)RpcOutput(ackHdrPtr->clientID, ackHdrPtr, &srvPtr->ack,
 					 (RpcBufferSet *)NIL, 0, (int *)NIL);
 }
@@ -832,6 +859,10 @@ void
 RpcResend(srvPtr)
     RpcServerState	*srvPtr;
 {
+    /*
+     * Note, can't try ARP here because of it's synchronization with
+     * a master lock and because we are called at interrupt time.
+     */
     (void)RpcOutput(srvPtr->replyRpcHdr.clientID, &srvPtr->replyRpcHdr,
 		       &srvPtr->reply, srvPtr->fragment,
 		       srvPtr->fragsDelivered, (int *)NIL);
@@ -868,5 +899,5 @@ RpcProbe(srvPtr)
 
     (void)RpcOutput(ackHdrPtr->clientID, ackHdrPtr, &srvPtr->ack,
 					 (RpcBufferSet *)NIL, 0,
-					 (int *)NIL);
+					 &srvPtr->mutex);
 }
