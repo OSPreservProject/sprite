@@ -71,6 +71,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sigInt.h"
 #include "rpc.h"
 #include "net.h"
+#include "vm.h"
+#include <bstring.h>
 
 #define	SigGetBitMask(sig) (1 << (sig - 1))
 
@@ -80,6 +82,9 @@ int		sigCanHoldMask;
 
 Sync_Lock	sigLock;
 Sync_Condition	signalCondition;
+
+static void LocalSend _ARGS_((Proc_ControlBlock *procPtr, int sigNum, int code,
+			Address addr));
 
 
 /*

@@ -48,7 +48,11 @@ extern	int	sigDefActions[];
 extern	Sync_Lock	sigLock;
 #define LOCKPTR &sigLock
 
-extern	void	SigClearPendingMask();
-extern	ReturnStatus SigSendRemoteSignal();
+extern void SigClearPendingMask _ARGS_((Proc_ControlBlock *procPtr,int sigNum));
+extern ReturnStatus SigSendRemoteSignal _ARGS_((int hostID, int sigNum, 
+		int code, Proc_PID id, Boolean familyID, Address addr));
+
+extern ReturnStatus SigMigSend _ARGS_((Proc_ControlBlock *procPtr, int sigNum,
+			int code, Address addr));
 
 #endif /* _SIGINT */

@@ -23,6 +23,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sched.h"
 #include "sigInt.h"
 #include "rpc.h"
+#include <bstring.h>
 
 /* 
  * Information sent when sending a signal.  Needed when doing a callback.
@@ -34,7 +35,7 @@ typedef struct {
     int				code;
 } DeferInfo;
 
-static void DeferSignal();
+static void DeferSignal _ARGS_((ClientData data));
 
 
 /*
@@ -230,7 +231,7 @@ DeferSignal(data)
     if (procPtr == (Proc_ControlBlock *) NIL) {
 	goto failure;
     }
-    (void) SigMigSend(procPtr, infoPtr->sigNum, infoPtr->code);
+    (void) SigMigSend(procPtr, infoPtr->sigNum, infoPtr->code, (Address) 0);
     Proc_Unlock(procPtr);
     return;
 
