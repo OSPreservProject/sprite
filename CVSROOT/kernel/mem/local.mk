@@ -6,7 +6,11 @@
 # By defining MEM_TRACE we turn on extra caller-PC tracing.
 #
 
+NAME = mem
 XCFLAGS += -DMEM_TRACE
+#if empty(TM:Mds3100) && empty(TM:Mcleands3100)
+XCFLAGS += -Wall
+#endif
 
 
 #include	<$(SYSMAKEFILE)>
