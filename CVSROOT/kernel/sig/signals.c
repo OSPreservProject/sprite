@@ -1112,7 +1112,19 @@ Sig_Handle(procPtr, sigStackPtr, pcPtr)
 		procPtr->sigHoldMask |= SigGetBitMask(SIG_MIGRATE_TRAP);
 		return(FALSE);
 	    }
-		
+
+	    /*
+	     * Double-check against process not allowed to migrate.  This
+	     * can happen if a process migrates, opens a pdev as master,
+	     * and gets signalled to migrate home.
+	     */
+	    if (procPtr->genFlags & PROC_DONT_MIGRATE) {
+		if (proc_MigDebugLevel > 0) {
+		    printf("Proc_Migrate: process %x is not allowed to migrate.\n",
+			       pid);
+		}
+		return(FALSE);
+	    }
 	    if (procPtr->peerHostID != NIL) {
 		if (proc_MigDebugLevel > 6) {
 		    printf("Sig_Handle calling Proc_MigrateTrap for process %x.\n",
