@@ -1585,14 +1585,10 @@ ProcessConsist(data, callInfoPtr)
     Proc_CallInfo	*callInfoPtr;
 {
     register FsRmtFileIOHandle 	*handlePtr;
-    register FsCacheFileInfo	*cacheInfoPtr;
     ReturnStatus		status;
     Rpc_Storage			storage;
     ConsistReply		reply;
     register	ConsistItem	*consistPtr;
-    int				firstBlock;
-    int				lastBlock;
-    int				numSkipped;
 
     consistPtr = (ConsistItem *) data;
     callInfoPtr->interval = 0;
