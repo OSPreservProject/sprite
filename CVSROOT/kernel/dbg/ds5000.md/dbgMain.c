@@ -527,6 +527,12 @@ SendReply(dataSize)
  */
 static Boolean	syslogDiverted = FALSE;
 
+/*
+ * Should we sync the disks on entering the debugger?
+ */
+
+Boolean dbgSyncDisks = TRUE;
+
 extern Mach_DebugState	mach_DebugState;
 
 /*
@@ -565,7 +571,7 @@ Dbg_Main()
     int		dataSize;
     int		origMaxStackAddr;
 
-    if (!dbg_BeingDebugged) {
+    if (!dbg_BeingDebugged && dbgSyncDisks) {
 	/*
 	 * Try to sync the disks if we aren't at interrupt level.  If we
 	 * are don't bother because we'll just hang waiting for interrupts.
@@ -597,8 +603,8 @@ Dbg_Main()
 	for (sp = (unsigned *)mach_DebugState.regs[SP]; 
 	     sp < (unsigned *)0x80030000; 
 	     sp++) {
-	    if (*sp < (unsigned int)&etext && *sp >= (unsigned)0x80030000) {
-		Mach_MonPrintf("%x ", *sp);
+	    if ((*sp < (unsigned int)&etext) && (*sp >= (unsigned)0x80030000)) {
+		Mach_MonPrintf("%x\n", *sp);
 	    }
 	}
     }
