@@ -323,11 +323,19 @@ DevScsiFormatInquiry(dataPtr, outputString)
     if (dataPtr->length < 0x1f) {
 	return len;
     } else {
+#ifdef notdef
 	char	v[32], p[32], f[32];
 	CopyAndTerminateString(8,dataPtr->vendorInfo, v);
 	CopyAndTerminateString(8,dataPtr->productInfo, p);
 	CopyAndTerminateString(4,dataPtr->firmwareInfo, f);
 	len += sprintf(outputString+len,"%s %s %s",v,p,f);
+#endif
+	char	v[32], p[32], rl[32], rd[32];
+	CopyAndTerminateString(8,dataPtr->vendorID, v);
+	CopyAndTerminateString(16,dataPtr->productID, p);
+	CopyAndTerminateString(4,dataPtr->revLevel, rl);
+	CopyAndTerminateString(8,dataPtr->revData, rd);
+	len += sprintf(outputString+len,"%s %s %s", v, p, rl, rd);
     }
     return len;
 }
