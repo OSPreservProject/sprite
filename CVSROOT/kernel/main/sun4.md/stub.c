@@ -1,37 +1,12 @@
 #include "sprite.h"
 #include "mach.h"
 
-Rpc_Dispatch()
-{
-}
-
-Sys_HostPrint()
-{
-}
-
-Proc_CallFunc()
-{
-}
-
-Dev_SyslogReturnBuffer()
-{
-}
-
-Dev_SyslogDebug()
-{
-}
-
-Mach_MonReboot()
-{
-}
 int	debugOne = 0;
 int	debugTwo = 0;
 int	debugThree = 0;
 int	debugFour = 0;
 
 int	proc_PCBTable[100];
-
-int	proc_RunningProcesses = 1;
 
 int *
 Mach_GetEtherAddress(etherAddressPtr)
@@ -43,153 +18,89 @@ int *	etherAddressPtr;
 	return etherAddressPtr;
 }
 
-char	*
-SpriteVersion()
-{
-    return "Sun4 kernel.\n";
-}
-
-#ifdef NOTDEF
-VmMach_UnmapIntelPage()
-{
-}
-#endif NOTDEF
-
-DevNetEtherHandler()
-{
-}
-
-#ifdef NOTDEF
-Vm_CopyOut()
-{
-}
-
-Vm_StringNCopy()
-{
-}
-
-Vm_CopyIn()
-{
-}
-#endif NOTDEF
-
-Sched_ContextSwitchInt()
-{
-}
-
-#ifdef NOTDEF
-Vm_StoreTraceTime()
-{
-}
-#endif NOTDEF
-
-Dev_GatherDiskStats()
-{
-}
-
-Sched_GatherProcessInfo()
-{
-}
-
 int	*sched_MutexPtr;
 
-Sched_MoveInQueue()
-{
-}
-
-Mach_CheckSpecialHandling()
-{
-}
-
-Rpc_Call()
-{
-}
-
-Rpc_Reply()
-{
-}
-
-Proc_PushLockStack()
-{
-}
-Proc_RemoveFromLockStack()
-{
-}
-Proc_NeverMigrate()
-{
-}
 VmMachTracePMEG()
 {
+    panic("VmMachTracePMEG called.\n");
 }
-Fs_GetEncapSize()
+
+Dump_Register_Events()
 {
+    panic("Dump_Register_Events called\n");
 }
-Fs_Close()
+
+Dump_Show_Local_Menu()
 {
+    panic("Dump_Show_Local_Menu called.\n");
 }
-Fs_DeencapStream()
+
+Prof_Init()
 {
+    panic("Prof_Init called.\n");
 }
-Fs_StreamCopy()
+
+Prof_Start()
 {
+    panic("Prof_Start called.\n");
 }
-Fs_EncapStream()
+
+Prof_Disable()
 {
+    panic("Prof_Disable called.\n");
 }
-Fs_GetPageFromFS()
+
+Prof_Profil()
 {
+    panic("Prof_Profil called.\n");
 }
-Sig_SendProc()
+
+Prof_End()
 {
+    panic("Prof_End called.\n");
 }
-Sig_Send()
+
+Prof_DumpStub()
 {
+    panic("Prof_DumpStub called.\n");
 }
-Fs_WaitForHost()
+
+Mach_ContextSwitch()
 {
+    panic("Mach_ContextSwitch called.\n");
 }
-Fs_GetSegPtr()
+
+Mach_GetStackPointer()
 {
+    panic("Mach_GetStackPointer called.\n");
 }
-Fs_GetFileHandle()
+
+Mach_MonTrap()
 {
+    panic("Mach_MonTrap called.\n");
 }
-Fs_GetFileName()
+
+Mach_EncapState()
 {
+    panic("Mach_EncapState called.\n");
 }
-Sys_GetHostId()
+
+Mach_GetEncapState()
 {
+    panic("Mach_GetEncapState called.\n");
 }
-Fs_Read()
+
+Mach_GetEncapSize()
 {
+    panic("Mach_GetEncapSize called.\n");
 }
-Fs_Open()
+
+Mach_DeencapState()
 {
+    panic("Mach_DeencapState called.\n");
 }
-Fs_PageRead()
+
+Mach_CanMigrate()
 {
-}
-Fs_PageCopy()
-{
-}
-Proc_GetEffectiveProc()
-{
-}
-Fs_CacheBlocksUnneeded()
-{
-}
-Fs_PageWrite()
-{
-}
-Fs_Remove()
-{
-}
-Proc_Unlock()
-{
-}
-Proc_Lock()
-{
-}
-Fs_Write()
-{
+    panic("Mach_CanMigrate called.\n");
 }
