@@ -437,6 +437,6 @@
  * Default machine cycle time in cycles per second.  
  * 	Currently == 150ns
  */
-#define	MACH_CYCLE_TIME		(1.0/(150e-9))
+#define	MACH_CYCLE_TIME		(unsigned int) ((1.0/(150e-9)))
 
 #endif _MACHCONST

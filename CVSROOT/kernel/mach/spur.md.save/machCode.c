@@ -74,7 +74,7 @@ Address	mach_LastUserAddr;
 Address	mach_MaxUserStackAddr;
 int	mach_LastUserStackPage;
 
-double	mach_CycleTime = MACH_CYCLE_TIME;
+unsigned int	mach_CycleTime = MACH_CYCLE_TIME;
 
 /*
  * The variables and tables below are used by the assembler routine

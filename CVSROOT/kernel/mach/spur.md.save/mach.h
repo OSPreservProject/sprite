@@ -194,7 +194,7 @@ extern	int	mach_LastUserStackPage;
  * is intended for use by the devTimer module.
  */
 
-extern 	double	mach_CycleTime;
+extern 	unsigned int	mach_CycleTime;
 
 
 #endif _MACH
