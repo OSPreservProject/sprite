@@ -562,16 +562,16 @@ FsRemoteGetAttrPath(prefixHandle, relativeName, argsPtr, resultsPtr,
     status = Rpc_Call(prefixHandle->fileID.serverID, RPC_FS_GET_ATTR_PATH,
 			&storage);
      if (status == SUCCESS) {
-	 /*
-	  * The return param area has a fileID that we need.  The
-	  * return parameter area has also been filled in with
-	  * the attributes.
-	  */
-	 *(getAttrResultsPtr->fileIDPtr) =
+	/*
+	 * The return param area has a fileID that we need.  The
+	 * return parameter area has also been filled in with
+	 * the attributes.
+	 */
+	*(getAttrResultsPtr->fileIDPtr) =
 		 getAttrResultsParam.attrResults.fileID;
-	 *(getAttrResultsPtr->attrPtr) =
-		     getAttrResultsParam.attrResults.attrs;
-	} else if (status == FS_LOOKUP_REDIRECT) {
+	*(getAttrResultsPtr->attrPtr) =
+		getAttrResultsParam.attrResults.attrs;
+    } else if (status == FS_LOOKUP_REDIRECT) {
 	/*
 	 * Copy the info from our stack to a buffer for our caller
 	 */
