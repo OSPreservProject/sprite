@@ -411,13 +411,15 @@ Net_Input(packetPtr, packetLength)
     int packetLength;
 {
     register Net_EtherHdr *etherHdrPtr;
+    int		type;
 
     if (dbg_UsingNetwork) {
 	Dbg_InputPacket(packetPtr, packetLength);
 	return;
     }
     etherHdrPtr = (Net_EtherHdr *)packetPtr;
-    switch(etherHdrPtr->type) {
+    type = Net_NetToHostShort(NET_ETHER_HDR_TYPE(*etherHdrPtr));
+    switch(type) {
         case NET_ETHER_SPRITE:
 	    net_EtherStats.bytesReceived += packetLength;
             Rpc_Dispatch(packetPtr, packetLength);
@@ -470,8 +472,13 @@ EnterDebugger(packetPtr, packetLength)
      * Skip over the Ethernet header.
      */
     packetPtr += sizeof(Net_EtherHdr);
+    /*
+     * Copy the length out of the packet into a correctly aligned integer.
+     * Correct its byte order.
+     */
+    Byte_Copy(packetPtr, (Address) &len, sizeof(len));
 
-    len = *(int *) packetPtr;
+    len = Net_NetToHostInt(len);
 
     /*
      * Validate the data length and make sure the name is null-terminated.

@@ -342,8 +342,9 @@ Net_InstallRoute(spriteID, flags, type, clientData, hostname, machType)
 	     * time they send out a packet.
 	     */
 	    etherHdrPtr = (Net_EtherHdr *)Mem_Alloc(sizeof(Net_EtherHdr));
-	    etherHdrPtr->destination = *(Net_EtherAddress *)clientData;
-	    etherHdrPtr->type = NET_ETHER_SPRITE;
+	    NET_ETHER_ADDR_COPY(*(Net_EtherAddress *)clientData,
+				NET_ETHER_HDR_DESTINATION(*etherHdrPtr));
+	    NET_ETHER_HDR_TYPE(*etherHdrPtr) = NET_ETHER_SPRITE;
 	    routePtr->data = (Address)etherHdrPtr;
 	    break;
 	}
@@ -488,13 +489,13 @@ Net_AddrToID(flags, type, routeData)
 	     */
 	    switch (type) {
 		case NET_ROUTE_ETHER: {
-		    register Net_EtherHdr *etherHdrPtr;
-		    register Net_EtherAddress *etherAddrPtr;
+		    Net_EtherHdr *etherHdrPtr;
+		    Net_EtherAddress *etherAddrPtr;
 
 		    etherHdrPtr = (Net_EtherHdr *)routePtr->data;
 		    etherAddrPtr = (Net_EtherAddress *)routeData;
 		    if (NET_ETHER_COMPARE_PTR(etherAddrPtr,
-				 &etherHdrPtr->destination)){
+				 &(NET_ETHER_HDR_DESTINATION(*etherHdrPtr)))){
 			return(routePtr->spriteID);
 		    }
 		    break;
@@ -569,9 +570,10 @@ Net_AddrToName(etherAddressPtr, namePtrPtr)
 	    continue;
 	}
 	if (routePtr->type == NET_ROUTE_ETHER) {
-	    register Net_EtherHdr *etherHdrPtr = (Net_EtherHdr *)routePtr->data;
-	    if (NET_ETHER_COMPARE_PTR(&etherHdrPtr->destination,
-				    etherAddressPtr)) {
+	    Net_EtherHdr *etherHdrPtr = (Net_EtherHdr *)routePtr->data;
+	    if (NET_ETHER_COMPARE_PTR(
+			&NET_ETHER_HDR_DESTINATION(*etherHdrPtr),
+			etherAddressPtr)) {
 		*namePtrPtr = routePtr->name;
 		return;
 	    }
@@ -804,7 +806,7 @@ Net_RevArp(etherAddrPtr)
 
     request.flags = NET_SPRITE_REV_ARP_REQUEST;
     request.spriteHostID = 0;
-    request.etherAddr = *etherAddrPtr;
+    NET_ETHER_ADDR_COPY(*etherAddrPtr,request.etherAddr);
     gather.bufAddr = (Address)&request;
     gather.length = sizeof(NetSpriteArp);
     gather.done = FALSE;
@@ -869,8 +871,9 @@ NetDoArp(mutexPtr, command, gatherPtr, packetPtr)
      */
     routePtr = netRouteArray[NET_BROADCAST_HOSTID];
     etherHdrPtr = (Net_EtherHdr *)routePtr->data;
-    etherHdr.destination = etherHdrPtr->destination;
-    etherHdr.type = NET_ETHER_SPRITE_ARP;
+    NET_ETHER_ADDR_COPY(NET_ETHER_HDR_DESTINATION(*etherHdrPtr),
+			NET_ETHER_HDR_DESTINATION(etherHdr));
+    NET_ETHER_HDR_TYPE(etherHdr) = NET_ETHER_SPRITE_ARP;
 
     /*
      * Use a simple retry loop to get our reply.  The ARP protocol state
@@ -983,7 +986,9 @@ NetArpInput(packetPtr, packetLength)
 		    MASTER_LOCK(arpInputMutex);
 		    arpInputPtr = &arpInputQueue[nextInputIndex];
 		    arpInputPtr->spriteID = arpDataPtr->spriteHostID;
-		    arpInputPtr->destination = inputEtherHdrPtr->source;
+		    NET_ETHER_ADDR_COPY(
+			    NET_ETHER_HDR_DESTINATION(*inputEtherHdrPtr),
+			    arpInputPtr->destination);
 		    nextInputIndex = (nextInputIndex + 1) % ARP_INPUT_QUEUE_LEN;
 		    MASTER_UNLOCK(arpInputMutex);
 		    Proc_CallFunc(NetArpHandler, (ClientData)arpInputPtr, 0);
@@ -1086,7 +1091,7 @@ NetArpHandler(data, callInfoPtr)
     int spriteID;
 
     MASTER_LOCK(arpInputMutex);
-    destination = arpInputPtr->destination;
+    NET_ETHER_ADDR_COPY(arpInputPtr->destination,destination);
     spriteID = arpInputPtr->spriteID;
     MASTER_UNLOCK(arpInputMutex);
 
@@ -1174,7 +1179,8 @@ NetArpOutput(spriteID, destPtr, flags)
 
     packetPtr->flags = flags;
     packetPtr->spriteHostID = spriteID;
-    packetPtr->etherAddr = routeEtherHdrPtr->destination;
+    NET_ETHER_ADDR_COPY(NET_ETHER_HDR_DESTINATION(*routeEtherHdrPtr), 
+			packetPtr->etherAddr);
 
     gatherPtr->bufAddr = (Address)packetPtr;
     gatherPtr->length = sizeof(NetSpriteArp);
@@ -1186,11 +1192,13 @@ NetArpOutput(spriteID, destPtr, flags)
      * For regular arp the destination is the sender of the request.
      */
     if (destPtr == (Net_EtherAddress *)NIL) {
-	etherHdrPtr->destination = routeEtherHdrPtr->destination;
+	NET_ETHER_ADDR_COPY(NET_ETHER_HDR_DESTINATION(*routeEtherHdrPtr),
+			    NET_ETHER_HDR_DESTINATION(*etherHdrPtr));
     } else {
-	etherHdrPtr->destination = *destPtr;
+	NET_ETHER_ADDR_COPY(NET_ETHER_HDR_DESTINATION(*routeEtherHdrPtr),
+			    *destPtr);
     }
-    etherHdrPtr->type = NET_ETHER_SPRITE_ARP;
+    NET_ETHER_HDR_TYPE(*etherHdrPtr) = NET_ETHER_SPRITE_ARP;
 
     if (arpDebug) {
 	Sys_Printf("Sending%sARP reply for Sprite ID %d\n",
