@@ -462,10 +462,10 @@ VmMach_BootInit(pageSizePtr, pageShiftPtr, pageTableIncPtr, kernMemSizePtr,
      * We used to map pages for vmMachKernMemSize of memory.  But now that
      * the kernel size is bigger, there may not be enough pmegs for that.
      * So for now we just map a number of pmegs that is safe and gives us
-     * at least enough for the * code we run on for now.  This amount is
+     * at least enough for the code we run on for now.  This amount is
      * 32 megabytes of pmegs.
      */
-    kernPages = 32 / VMMACH_PAGE_SIZE_INT;
+    kernPages = (32 * 1024 * 1024) / VMMACH_PAGE_SIZE_INT;
     /*
      * Map all of the kernel memory that we might need one for one.  We know
      * that the monitor maps the first part of memory one for one but for some
