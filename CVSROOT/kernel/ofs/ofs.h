@@ -454,7 +454,9 @@ extern ReturnStatus Ofs_FileBlockWrite _ARGS_((Fsdm_Domain *domainPtr,
 		Fsio_FileIOHandle *handlePtr, Fscache_Block *blockPtr));
 extern ReturnStatus Ofs_FileBlockRead _ARGS_((Fsdm_Domain *domainPtr, 
 		Fsio_FileIOHandle *handlePtr, Fscache_Block *blockPtr));
-extern Boolean Ofs_StartWriteBack _ARGS_((Fscache_Backend *backendPtr));
+				/* Second param for ASPLOS only.  Remove when
+				 * done.  -Mary 2/15/92. */
+extern Boolean Ofs_StartWriteBack _ARGS_((Fscache_Backend *backendPtr, Boolean fileFsynced));
 extern void Ofs_ReallocBlock _ARGS_((ClientData data, 
 		Proc_CallInfo *callInfoPtr));
 

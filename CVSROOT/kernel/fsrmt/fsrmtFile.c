@@ -48,7 +48,9 @@ static ReturnStatus FsrmtFileBlockAllocate _ARGS_((Fs_HandleHeader *hdrPtr,
 		Boolean *newBlockPtr));
 static ReturnStatus FsrmtFileTrunc _ARGS_((Fs_HandleHeader *hdrPtr, int size,
 					  Boolean delete));
-static Boolean FsrmtStartWriteBack _ARGS_((Fscache_Backend *backendPtr));
+				/* Second param for ASPLOS only.  Remove
+				 * when that's over.  -Mary 2/15/92. */
+static Boolean FsrmtStartWriteBack _ARGS_((Fscache_Backend *backendPtr, Boolean fileFsynced));
 
 static void FsrmtReallocBlock _ARGS_((ClientData data, 
 		Proc_CallInfo *callInfoPtr));
@@ -1403,8 +1405,9 @@ static void FsrmtCleanBlocks _ARGS_((ClientData	data,
  * ----------------------------------------------------------------------------
  */
 static Boolean
-FsrmtStartWriteBack(backendPtr)
+FsrmtStartWriteBack(backendPtr, fileFsynced)
     Fscache_Backend *backendPtr;	/* Backend to start writeback. */
+    Boolean fileFsynced;		/* For ASPLOS only. */
 {
     LOCK_MONITOR;
 

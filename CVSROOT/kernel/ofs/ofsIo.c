@@ -465,8 +465,10 @@ FileMatch(cacheInfoPtr, clientData)
  * ----------------------------------------------------------------------------
  */
 Boolean
-Ofs_StartWriteBack(backendPtr)
+Ofs_StartWriteBack(backendPtr, fileFsynced)
     Fscache_Backend *backendPtr;	/* Backend to start writeback. */
+    Boolean fileFsynced;		/* For ASPLOS only.  Remove when
+					 * that's done.  -Mary 2/15/92. */
 {
     LOCK_MONITOR;
     if (ofsBlockCleaners < fscache_MaxBlockCleaners) {
