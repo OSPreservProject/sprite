@@ -1045,6 +1045,8 @@ Fsrmt_RpcIOControl(srvToken, clientID, command, storagePtr)
 		oldOffset = *ptr++;
 		size = *ptr++;
 		flags = *ptr;
+	    } else {
+		oldOffset = streamPtr->offset;
 	    }
 #endif
 	}
