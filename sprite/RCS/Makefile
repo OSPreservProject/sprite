@@ -3,41 +3,38 @@
 #
 # No makemake
 #
-LD = /sprite/bin/ld
+LD = /sprite/cmds.${MACHINE}/ld
 
 #ifmake sun3 || profile3
-MACHINE = sun3
+TM = sun3
 #else
-MACHINE = sun2
+TM = sun2
 #endif
 
-CLIB = /sprite/lib/libc.a
+LIBC = -lc
+LIBOLD = -lold
+
 MODULE = sprite
-SPRITEDIR =	..
+SPRITEDIR =	/sprite/src/kernel
 USERH=		/sprite/lib/include
 H =		${SPRITEDIR}/Include
 INSTALLED =	{SPRITEDIR}/Installed/${MODULE}
-LIB =		${SPRITEDIR}/${MACHINE}.md
-PROFD =	${SPRITEDIR}/Profiled/${MACHINE}.md
-ODIR =		${MACHINE}.md
-IFLAGS=	-I. -I${H} -I${USERH}
+LIB =		${SPRITEDIR}/${TM}.md
+PROFD =	${SPRITEDIR}/Profiled/${TM}.md
+ODIR =		${TM}.md
+IFLAGS=	-I. -I${H} -I${USERH} -I${USERH}/${TM}.md -I${H}/${TM}.md
 #PROFILE =	-p -DPROFILE
 PROFILE =
-CFLAGS =	-m68010 -g ${PROFILE} ${IFLAGS}
+CFLAGS =	-m68010 -g -DKERNEL ${PROFILE} ${IFLAGS}
 LINTFLAGS =	-I. -I${H}
 LINTLIBS =	${LINT}/*.ln
 
 # symbol looked for by 'make nm'
 NM = mcount
 
-UPDATE = /sprite/bin/update
-DEPEND = /sprite/bin/depend.csh
-DEPENDSCRIPT = /sprite/lib/ex.depend
-MKVERSION = /sprite/bin/mkversion
+UPDATE = /sprite/cmds.${MACHINE}/update
+MKVERSION = /sprite/cmds.${MACHINE}/mkversion
 
-ENDOBJ=${LIB}/end.o
-
-ALLSPICE = allspice.Berkeley.EDU
 GINGER = ginger.Berkeley.EDU
 ENVY = envy.Berkeley.EDU
 
@@ -45,25 +42,37 @@ ENVY = envy.Berkeley.EDU
 #  Unprofiled object files
 #
 
-DBG = ../dbg/${ODIR}
-DEV = ../dev/${ODIR}
-FS = ../fs/${ODIR}
-FSNEW = ../fs.new/${ODIR}
+#
+# For tracing undefined symbols
+TRACE =
+
+#
+#  Uninstalled object files
+#
+TOP = ${SPRITEDIR}
+
+MACH = ${TOP}/mach/${ODIR}
+DBG = ${TOP}/dbg/${ODIR}
+DEV = ${TOP}/dev/${ODIR}
+FS = ${TOP}/fs/${ODIR}
+FSNEW = ${TOP}/fs.new/${ODIR}
 HOOK= mainHook.o
-MAIN = ../main/${ODIR}
-NET = ../net/${ODIR}
-PROC = ../proc/${ODIR}
-PROF = ../prof/${ODIR}
-RECOV = ../recov/${ODIR}
-RPC = ../rpc/${ODIR}
-SCHED = ../sched/${ODIR}
-SIG = ../sig/${ODIR}
-MACH = ../mach/${ODIR}
-SYNC = ../sync/${ODIR}
-SYS = ../sys/${ODIR}
-TIMER = ../timer/${ODIR}
-UTILS = ../utils/${ODIR}
-VM = ../vm/${ODIR}
+MAIN = ${TOP}/main/${ODIR}
+NET = ${TOP}/net/${ODIR}
+PROC = ${TOP}/proc/${ODIR}
+PROF = ${TOP}/prof/${ODIR}
+RECOV = ${TOP}/recov/${ODIR}
+RPC_O = ${TOP}/rpc/${ODIR}/rpc.o
+RPC = ${TOP}/rpc/${ODIR}
+SCHED = ${TOP}/sched/${ODIR}
+SIG = ${TOP}/sig/${ODIR}
+SYNC = ${TOP}/sync/${ODIR}
+SYS = ${TOP}/sys/${ODIR}
+TIMER = ${TOP}/timer/${ODIR}
+UTILS = ${TOP}/utils/${ODIR}
+VM = ${TOP}/vm/${ODIR}
+MEM = ${TOP}/mem/${ODIR}
+
 
 OBJS = 	${LIB}/mach.o \
 	${HOOK} \
@@ -103,53 +112,53 @@ ALLSRCS= Makefile version.c
 
 HDRS = sprite.h
 
-sun2: ${OBJS} ${ENDOBJ} Makefile
+sun2: ${OBJS} Makefile .PRECIOUS
 	rm -f $@ version.o
-	@${MKVERSION} -p "SPRITE VERSION 1.0 (Sun2)" > version.h
-	 cc -c ${CFLAGS} version.c
+	${MKVERSION} -p "SPRITE VERSION 1.0 (Sun2)" > version.h
+	cc -c ${CFLAGS} version.c
 	${LD} -X -o $@ -e start -T 804000 ${OBJS} version.o \
-	    ${CLIB} ${ENDOBJ} -lg
+	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBC}
 	@ls -l $@
 	@size $@
 	update -f -s $@ /sprite/kernels/$@.sprite
 	rcp /sprite/kernels/$@.sprite ${ENVY}:/bnf2/sprite/sun2
 	nm $@ | sort > $@.nm
 
-sun3: ${OBJS} ${ENDOBJ} Makefile
+sun3: ${OBJS} Makefile .PRECIOUS
 	rm -f $@
-	@${MKVERSION} -p "SPRITE VERSION 1.0 (sun3)" > version.h
-	@cc -c ${CFLAGS} version.c
+	${MKVERSION} -p "SPRITE VERSION 1.0 (sun3)" > version.h
+	cc -c ${CFLAGS} version.c
 	${LD} -X -o $@ -e start -T f004000 ${OBJS} version.o \
-	    ${CLIB} ${ENDOBJ} -lg
+	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBC}
 	@ls -l $@
 	@size $@
 	update -f -s $@ /sprite/kernels/$@.sprite
-	rcp /sprite/kernels/$@.sprite allspice:/sprite/tmp/$@
-	rcp $@ rosemary:/sprite/brent/$@.sprite
+	rcp /sprite/kernels/$@.sprite ${GINGER}:/sprite/tmp/$@
+	rcp $@ rosemary:/tmp/sprite/$@.sprite
 	nm $@ | sort > $@.nm
 
-profile2: ${PROFOBJS} ${ENDOBJ} Makefile
+profile2: ${PROFOBJS} Makefile .PRECIOUS
 	rm -f $@
 	@${MKVERSION} -p "SPRITE VERSION 1.0 (profile2)" > version.h
 	@cc -c ${CFLAGS} version.c
 	${LD} -X -o $@ -e start -T 804000 ${PROFOBJS} version.o \
-	    ${CLIB} ${ENDOBJ} -lg
+	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBC}
 	@ls -l $@
 	@size $@
 	update -f -s $@ /sprite/kernels/$@.sprite
 	rcp /sprite/kernels/$@.sprite ${ENVY}:/bnf2/sprite/sun2
 	nm $@ | sort > $@.nm
 
-profile3: ${PROFOBJS} ${ENDOBJ} Makefile
+profile3: ${PROFOBJS} Makefile .PRECIOUS
 	rm -f $@
 	@${MKVERSION} -p "SPRITE VERSION 1.0 (profile3)" > version.h
 	@cc -c ${CFLAGS} version.c
 	${LD} -X -o $@ -e start -T f004000 ${PROFOBJS} version.o \
-	    ${CLIB} ${ENDOBJ} -lg
+	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBC}
 	@ls -l $@
 	@size $@
 	update -f -s $@ /sprite/kernels/$@.sprite
-	rcp /sprite/kernels/$@.sprite allspice:/sprite/tmp/$@
+	rcp /sprite/kernels/$@.sprite ${GINGER}:/sprite/tmp/$@
 	nm $@ | sort > $@.nm
 
 
