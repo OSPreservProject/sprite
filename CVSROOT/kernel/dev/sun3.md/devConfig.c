@@ -55,6 +55,7 @@ DevConfigDevice devDevice[] = {
 /* cntrlrID, slaveID, flags, initproc */
     { 0, 0, DEV_SCSI_DISK, Dev_SCSIInitDevice},		/* Units 0-7 */
 /*  { 0, 1, DEV_SCSI_DISK, Dev_SCSIInitDevice}, */
+    { 0, 3, DEV_SCSI_WORM, Dev_SCSIInitDevice},
     { 0, 4, DEV_SCSI_TAPE, Dev_SCSIInitDevice},
 
 /*  { 1, 0, DEV_SCSI_DISK, Dev_SCSIInitDevice},		/* Units 8-15 */
