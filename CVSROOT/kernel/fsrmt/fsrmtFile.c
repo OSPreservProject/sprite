@@ -703,6 +703,9 @@ FsrmtFileRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
 		fs_Stats.rmtIO.sharedStreamBytesRead += replyPtr->length;
 	    } else {
 		fs_Stats.rmtIO.uncacheableBytesRead += replyPtr->length;
+		if (handlePtr->cacheInfo.flags & FSCACHE_IS_DIR) {
+		    fs_Stats.rmtIO.uncacheableDirBytesRead += replyPtr->length;
+		}
 	    }
 	}
     }
@@ -790,121 +793,151 @@ FsrmtFilePageRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
     int savedOffset = readPtr->offset;
     int savedLength = readPtr->length;
     Address savedBuffer = readPtr->buffer;
+    int blockNum, firstBlock, lastBlock, size, toRead;
+    Fscache_Block *blockPtr;
+    Boolean found;
 
     /*
      * This should check if the file is cached if:
      * a) it is not a FS_SWAP file or
      * b) it is a shared file (which will be FS_SWAP)
      * but for now we'll just always check.  - Ken
+     *
+     * This used to be
+     *		if ((readPtr->flags & FS_SWAP) == 0) {
+     * The problem is that shared files are marked swap, and we don't want
+     * to look in the cache for regular swap files, but we must for shared
+     * files.  We need another flag and there isn't one.  If we know it's
+     * a swap page, we should just do an Fsrmt_Read.
      */
-    if (1 || (readPtr->flags & FS_SWAP) == 0) {
-	int blockNum, firstBlock, lastBlock, size, toRead;
-	Fscache_Block *blockPtr;
-	Boolean found;
-	/*
-	 * This is either a CODE or HEAP page, so we check in our cache
-	 * to see if we have it there;  we may have just written it.
-	 * We are now, once again, attempting to special-case HEAP pages.
-	 * We want to keep the clean copies in the cache so they can
-	 * be re-read.
-	 */
-	size = readPtr->length;
-	firstBlock = (unsigned int) readPtr->offset / FS_BLOCK_SIZE;
-	lastBlock = (unsigned int) (readPtr->offset + size - 1) /
-		    FS_BLOCK_SIZE;
-	for (blockNum = firstBlock;
-	     blockNum <= lastBlock; blockNum++) {
-	    toRead = size;
-	    if ((unsigned int) (readPtr->offset + size - 1)
-		    / FS_BLOCK_SIZE > blockNum) {
-		toRead = (blockNum + 1) * FS_BLOCK_SIZE - readPtr->offset;
+
+    /*
+     * This may be a CODE or HEAP page, so we check in our cache
+     * to see if we have it there;  we may have just written it.
+     * We are now, once again, attempting to special-case HEAP pages.
+     * We want to keep the clean copies in the cache so they can
+     * be re-read.
+     */
+    size = readPtr->length;
+    firstBlock = (unsigned int) readPtr->offset / FS_BLOCK_SIZE;
+    lastBlock = (unsigned int) (readPtr->offset + size - 1) /
+		FS_BLOCK_SIZE;
+    for (blockNum = firstBlock;
+	 blockNum <= lastBlock; blockNum++) {
+	toRead = size;
+	if ((unsigned int) (readPtr->offset + size - 1)
+		/ FS_BLOCK_SIZE > blockNum) {
+	    toRead = (blockNum + 1) * FS_BLOCK_SIZE - readPtr->offset;
+	}
+	Fscache_FetchBlock(&handlePtr->cacheInfo, blockNum,
+		FSCACHE_DATA_BLOCK, &blockPtr, &found);
+	fs_Stats.blockCache.readAccesses++;
+	if (found) {
+            if (blockPtr->timeDirtied != 0) {
+                fs_Stats.blockCache.readHitsOnDirtyBlock++;
+            } else {
+                fs_Stats.blockCache.readHitsOnCleanBlock++;
+            }
+            if (blockPtr->flags & FSCACHE_READ_AHEAD_BLOCK) {
+                fs_Stats.blockCache.readAheadHits++;
+            }
+	    /*
+	     * Update bytesRead after the successful FetchBlock.  The
+	     * bytesRead counter counts all bytes read from the cache,
+	     * including misses.
+	     */
+	    Fs_StatAdd(toRead, fs_Stats.blockCache.bytesRead,
+		    fs_Stats.blockCache.bytesReadOverflow);
+	    fs_Stats.rmtIO.hitsOnVMBlock++;
+	    bcopy(blockPtr->blockAddr + (readPtr->offset &
+		    FS_BLOCK_OFFSET_MASK), readPtr->buffer, toRead);
+	    if (blockPtr->flags & FSCACHE_READ_AHEAD_BLOCK) {
+		fs_Stats.blockCache.readAheadHits++;
 	    }
 	    /*
-	     * NOTE:  After SOSP stats are taken, fix the bytesRead counter
-	     * to include bytes fetched for VM from this Fscache_FetchBlock
-	     * call.  Update readAccesses, readHits and readMisses accordingly.
-	     * To see how to do this, look at how the counters are updated
-	     * in Fscache_Read after the call to Fscache_FetchBlock.  We can't
-	     * do this before the SOSP stats are done, since the postprocessors
-	     * already know to adjust for this problem.
+	     * Let heap pages sit in the cache.
 	     */
-	    Fscache_FetchBlock(&handlePtr->cacheInfo, blockNum,
-		    FSCACHE_DATA_BLOCK, &blockPtr, &found);
-	    if (found) {
-		fs_Stats.rmtIO.hitsOnVMBlock++;
-		bcopy(blockPtr->blockAddr + (readPtr->offset &
-			FS_BLOCK_OFFSET_MASK), readPtr->buffer, toRead);
-		if (blockPtr->flags & FSCACHE_READ_AHEAD_BLOCK) {
-		    fs_Stats.blockCache.readAheadHits++;
+	    if (readPtr->flags & FS_HEAP) {
+		fs_Stats.rmtIO.hitsOnHeapBlock++;
+		Fscache_UnlockBlock(blockPtr, 0, -1, 0,
+			FSCACHE_CLEAR_READ_AHEAD);
+	    } else {
+		if (readPtr->flags & FS_SWAP) {
+		    fs_Stats.rmtIO.hitsOnSwapPage++;
+		} else if ((readPtr->flags & (FS_HEAP | FS_SWAP)) == 0) {
+		    /* It's a code page */
+		    fs_Stats.rmtIO.hitsOnCodePage++;
 		}
-		/*
-		 * Let heap pages sit in the cache.
-		 */
-		if (readPtr->flags & FS_HEAP) {
-		    fs_Stats.rmtIO.hitsOnHeapBlock++;
+		Fscache_UnlockBlock(blockPtr, 0, -1, 0,
+			FSCACHE_CLEAR_READ_AHEAD | FSCACHE_BLOCK_UNNEEDED);
+	    }
+	} else {	/* Not found. */
+	    fs_Stats.rmtIO.missesOnVMBlock++;
+	    /*
+	     * It's an initialized heap page.  Read it into the
+	     * cache.
+	     */
+	    if ((readPtr->flags & FS_HEAP) &&
+		    blockPtr != (Fscache_Block *) NIL) {
+		Fscache_FileInfo	*cacheInfoPtr;
+
+		fs_Stats.rmtIO.missesOnHeapBlock++;
+		cacheInfoPtr = &handlePtr->cacheInfo;
+		status = (cacheInfoPtr->backendPtr->ioProcs.blockRead)
+			(cacheInfoPtr->hdrPtr, blockPtr, remoteWaitPtr);
+		if (status == SUCCESS) {
+		    /* Copy to vm block */
+		    bcopy(blockPtr->blockAddr + (readPtr->offset &
+			    FS_BLOCK_OFFSET_MASK), readPtr->buffer, toRead);
+		    /*
+		     * Update bytesRead after the read into a cache block.  The
+		     * bytesRead counter counts all bytes read from the cache,
+		     * including misses.  We don't update bytesRead for the
+		     * non-heap block reads, since those won't be read into
+		     * the cache.
+		     */
+		    Fs_StatAdd(toRead, fs_Stats.blockCache.bytesRead,
+			    fs_Stats.blockCache.bytesReadOverflow);
+		    fs_Stats.rmtIO.bytesReadForVM += toRead;
+		    fs_Stats.rmtIO.bytesReadForHeap += toRead;
 		    Fscache_UnlockBlock(blockPtr, 0, -1, 0,
 			    FSCACHE_CLEAR_READ_AHEAD);
 		} else {
-		    Fscache_UnlockBlock(blockPtr, 0, -1, 0,
-			    FSCACHE_CLEAR_READ_AHEAD | FSCACHE_BLOCK_UNNEEDED);
-		}
-	    } else {
-		fs_Stats.rmtIO.missesOnVMBlock++;
-		/*
-		 * It's an initialized heap page.  Read it into the
-		 * cache.
-		 */
-		if ((readPtr->flags & FS_HEAP) &&
-			blockPtr != (Fscache_Block *) NIL) {
-		    Fscache_FileInfo	*cacheInfoPtr;
-
-		    fs_Stats.rmtIO.missesOnHeapBlock++;
-		    cacheInfoPtr = &handlePtr->cacheInfo;
-		    status = (cacheInfoPtr->backendPtr->ioProcs.blockRead)
-			    (cacheInfoPtr->hdrPtr, blockPtr, remoteWaitPtr);
-		    if (status == SUCCESS) {
-			/* Copy to vm block */
-			bcopy(blockPtr->blockAddr + (readPtr->offset &
-				FS_BLOCK_OFFSET_MASK), readPtr->buffer, toRead);
-			fs_Stats.rmtIO.bytesReadForVM += toRead;
-			fs_Stats.rmtIO.bytesReadForHeap += toRead;
-			Fscache_UnlockBlock(blockPtr, 0, -1, 0,
-				FSCACHE_CLEAR_READ_AHEAD);
-		    }
-		}
-		if (status != SUCCESS || !(readPtr->flags & FS_HEAP) ||
-			blockPtr == (Fscache_Block *) NIL) {
-		    if (blockPtr != (Fscache_Block *)NIL) {
-			Fscache_UnlockBlock(blockPtr, 0, -1, 0,
-			    FSCACHE_DELETE_BLOCK);
-		    }
-		    readPtr->length = toRead;
-		    status = Fsrmt_Read(streamPtr, readPtr, remoteWaitPtr, replyPtr);
-		    if (status != SUCCESS) {
-			break;
-		    }
-		    fs_Stats.rmtIO.bytesReadForVM += toRead;
-		    if (readPtr->flags & FS_HEAP) {
-			fs_Stats.rmtIO.bytesReadForHeapUncached += toRead;
-		    }
+		    fs_Stats.blockCache.domainReadFails++;
 		}
 	    }
-	    /*
-	     * Successfully read one FS block, either remotely or from
-	     * the cache.  Update pointers and loop.
-	     */
-	    size -= toRead;
-	    readPtr->offset += toRead;
-	    readPtr->buffer += toRead;
+	    if (status != SUCCESS || !(readPtr->flags & FS_HEAP) ||
+		    blockPtr == (Fscache_Block *) NIL) {
+		if (blockPtr != (Fscache_Block *)NIL) {
+		    Fscache_UnlockBlock(blockPtr, 0, -1, 0,
+			FSCACHE_DELETE_BLOCK);
+		}
+		if (readPtr->flags & FS_SWAP) {
+		    fs_Stats.rmtIO.missesOnSwapPage++;
+		} else if ((readPtr->flags & (FS_HEAP | FS_SWAP)) == 0) {
+		    /* It's a code page. */
+		    fs_Stats.rmtIO.missesOnCodePage++;
+		}
+
+		readPtr->length = toRead;
+		status = Fsrmt_Read(streamPtr, readPtr, remoteWaitPtr,
+			replyPtr);
+		if (status != SUCCESS) {
+		    break;
+		}
+		fs_Stats.rmtIO.bytesReadForVM += toRead;
+		if (readPtr->flags & FS_HEAP) {
+		    fs_Stats.rmtIO.bytesReadForHeapUncached += toRead;
+		}
+	    }
 	}
-    } else {
 	/*
-	 * Page-in of non-cacheable data (swap file).
+	 * Successfully read one FS block, either remotely or from
+	 * the cache.  Update pointers and loop.
 	 */
-	status = Fsrmt_Read(streamPtr, readPtr, remoteWaitPtr, replyPtr);
-	if (status == SUCCESS) {
-	    fs_Stats.rmtIO.bytesReadForVM += replyPtr->length;
-	}
+	size -= toRead;
+	readPtr->offset += toRead;
+	readPtr->buffer += toRead;
     }
     if (status != SUCCESS) {
 	readPtr->offset = savedOffset;
@@ -1419,6 +1452,9 @@ FsrmtCleanBlocks(data, callInfoPtr)
     while (cacheInfoPtr != (Fscache_FileInfo *)NIL) {
 	blockPtr = Fscache_GetDirtyBlock(cacheInfoPtr, BlockMatch,
 			(ClientData) 0,  &lastDirtyBlock);
+	if (lastDirtyBlock) {
+	    lastDirtyBlock = FS_LAST_DIRTY_BLOCK;
+	}
 	while (blockPtr != (Fscache_Block *) NIL) {
 	    /*
 	     * Write the block.
