@@ -129,14 +129,14 @@ DbgRs232ReadChar(channel)
 	    reg = Dev_ZilogReadReg(zilogAddrA, 0); 
 #else
 	    Sys_Panic(SYS_WARNING, "DbgRs232ReadChar called on channel A.\n");
-	    return;
+	    return(0);
 #endif USE_CHAN_A
 	} else {
 #ifdef USE_CHAN_B
 	    reg = Dev_ZilogReadReg(zilogAddrB, 0); 
 #else
 	    Sys_Panic(SYS_WARNING, "DbgRs232ReadChar called on channel B.\n");
-	    return;
+	    return(0);
 #endif USE_CHAN_B
 	}
 	if (reg & READ0_RX_READY) {
