@@ -274,12 +274,21 @@ RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
 
 		    /*
 		     * The network routines expect an array of scatter/gather
-		     * elements.  The RpcBufferSet is a struct of 3 of
+		     * elements.  The RpcBufferSet is a struct of 4 of
 		     * these so we cast its address into a (Net_ScatterGather *)
+		     *
+		     * Note that we only pass our mutex to Net on the last
+		     * fragment.  With a mutex the packet transmission is
+		     * synchronous, the Net_Output call doesn't return until
+		     * the packet has been transmitted.  We only want this
+		     * on the last fragment to prevent the obscure case where
+		     * otherwise we might time out and retransmit before
+		     * the packet is even on the wire.
 		     */
 		    (void) Net_Output(spriteID,
 				(Net_ScatterGather *)&fragment[frag], 4,
-				mutexPtr);
+				((fragRpcHdrPtr->flags & RPC_LASTFRAG) ?
+				 mutexPtr : (Sync_Semaphore *)NIL ) );
 
 		    /*
 		     * Insert a delay after all but the last fragment.
