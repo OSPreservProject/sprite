@@ -11,10 +11,9 @@
  * $Header$ SPRITE (Berkeley)
  */
 
+#include "vmMach.h"
 #ifndef _VMMACHINT
 #define _VMMACHINT
-
-typedef unsigned int	VmMachPTE;	
 
 extern	Address		vmMachPTESegAddr;
 extern	Address		vmMachPMEGSegAddr;
