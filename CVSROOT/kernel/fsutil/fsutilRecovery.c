@@ -75,7 +75,8 @@ FsReopen(serverID, clientData)
     /*
      * Ensure only one instance of FsReopen by doing a set-and-test.
      */
-    if (Recov_SetClientState(serverID, RECOV_IN_PROGRESS) & RECOV_IN_PROGRESS) {
+    if (Recov_SetClientState(serverID, SRV_RECOV_IN_PROGRESS)
+	    & SRV_RECOV_IN_PROGRESS) {
 	return;
     }
     /*
@@ -107,7 +108,7 @@ FsReopen(serverID, clientData)
      */
     Vm_Recovery();
 
-    Recov_ClearClientState(serverID, RECOV_IN_PROGRESS);
+    Recov_ClearClientState(serverID, SRV_RECOV_IN_PROGRESS);
 }
 
 /*
@@ -183,22 +184,28 @@ FsHandleReopen(serverID)
          hdrPtr = FsGetNextHandle(&hashSearch)) {
 	 if ((hdrPtr->fileID.type == FS_STREAM) &&
 		 (hdrPtr->fileID.serverID == serverID)) {
-	    status = (*fsStreamOpTable[hdrPtr->fileID.type].reopen)(hdrPtr,
-		rpc_SpriteID, (ClientData)NIL, (int *)NIL, (ClientData *)NIL);
-	    if (status != SUCCESS) {
-		FsFileError(hdrPtr, "Reopen failed", status);
-		FsFileError(((Fs_Stream *)hdrPtr)->ioHandlePtr, "I/O handle",
-			    status);
-		if ((status == RPC_TIMEOUT) ||
-		    (status == RPC_SERVICE_DISABLED)) {
-		    FsHandleUnlock(hdrPtr);
-		    goto reopenReturn;
-		}
-		/*
-		 * Don't remove stream handles because the user-level
-		 * close will remove them later.
-		 */
+	    if (!FsHandleValid(((Fs_Stream *)hdrPtr)->ioHandlePtr)) {
+		FsFileError(hdrPtr, "Invalid I/O handle", SUCCESS);
 		FsHandleInvalidate(hdrPtr);
+	    } else {
+		status = (*fsStreamOpTable[hdrPtr->fileID.type].reopen)(hdrPtr,
+		    rpc_SpriteID, (ClientData)NIL, (int *)NIL,
+		    (ClientData *)NIL);
+		if (status != SUCCESS) {
+		    FsFileError(hdrPtr, "Reopen failed", status);
+		    FsFileError(((Fs_Stream *)hdrPtr)->ioHandlePtr,"I/O handle",
+				status);
+		    if ((status == RPC_TIMEOUT) ||
+			(status == RPC_SERVICE_DISABLED)) {
+			FsHandleUnlock(hdrPtr);
+			goto reopenReturn;
+		    }
+		    /*
+		     * Don't remove stream handles because the user-level
+		     * close will remove them later.
+		     */
+		    FsHandleInvalidate(hdrPtr);
+		}
 	    }
 	}
 	FsHandleUnlock(hdrPtr);
@@ -321,9 +328,9 @@ FsWaitForRecovery(hdrPtr, rpcStatus)
      */
     if (rpcStatus == FS_STALE_HANDLE) {
 	FsFileError(hdrPtr, "", rpcStatus);
-	if (!Recov_IsHostDown(hdrPtr->fileID.serverID)) {
-	    FsReopen(hdrPtr->fileID.serverID, (ClientData)NIL);
-	}
+    }
+    if (!Recov_IsHostDown(hdrPtr->fileID.serverID)) {
+	FsReopen(hdrPtr->fileID.serverID, (ClientData)NIL);
     }
     status = RecoveryWait(&((FsRemoteIOHandle *)hdrPtr)->recovery);
     return(status);
@@ -550,7 +557,7 @@ OkToScavenge(recovPtr)
  *
  * Side effects:
  *	Cleans up references the client had to files.  Clears the
- *	RECOV_IN_PROGRESS bit from the client recovery state.
+ *	CLT_RECOV_IN_PROGRESS bit from the client recovery state.
  *
  *----------------------------------------------------------------------
  */
@@ -565,7 +572,7 @@ FsClientCrashed(spriteID, clientData)
      * client crashed during recovery) so the client can open files
      * the next time it boots.
      */
-    Recov_ClearClientState(spriteID, RECOV_IN_PROGRESS);
+    Recov_ClearClientState(spriteID, CLT_RECOV_IN_PROGRESS);
     /*
      * Clean up references to our files.
      */
@@ -631,7 +638,7 @@ FsRecoveryStarting(serverID)
     int serverID;		/* Server we are recovering with */
 {
     Rpc_Storage storage;
-    int flags = RECOV_IN_PROGRESS;
+    int flags = CLT_RECOV_IN_PROGRESS;
 
     storage.requestParamPtr = (Address)&flags;
     storage.requestParamSize = sizeof(int);
@@ -720,12 +727,12 @@ Fs_RpcRecovery(srvToken, clientID, command, storagePtr)
 				 * be passed to Rpc_Reply */
 {
     int *flagsPtr = (int *)storagePtr->requestParamPtr;
-    if (*flagsPtr & RECOV_IN_PROGRESS) {
+    if (*flagsPtr & CLT_RECOV_IN_PROGRESS) {
 	Net_HostPrint(clientID, "started recovery\n");
-	Recov_SetClientState(clientID, RECOV_IN_PROGRESS);
+	Recov_SetClientState(clientID, CLT_RECOV_IN_PROGRESS);
     } else {
 	Net_HostPrint(clientID, "completed recovery\n");
-	Recov_ClearClientState(clientID, RECOV_IN_PROGRESS);
+	Recov_ClearClientState(clientID, CLT_RECOV_IN_PROGRESS);
     }
     Rpc_Reply(srvToken, SUCCESS, storagePtr, (int(*)())NIL, (ClientData)NIL);
     return(SUCCESS);
