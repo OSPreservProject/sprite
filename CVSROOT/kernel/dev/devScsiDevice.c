@@ -27,6 +27,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fs.h"
 #include "sync.h"	
 #include "stdlib.h"
+#include "bstring.h"
 
 
 
@@ -393,7 +394,7 @@ DevScsiStartStopUnit(scsiDevicePtr, start)
     cmdPtr->start = (start == TRUE) ? 1 : 0;
     len = 0;
     status = DevScsiSendCmdSync(scsiDevicePtr,&scsiCmd, &statusByte,
-				&len, NIL, NIL);
+				&len, (int *) NIL, (Address) NIL);
     return status;
 }
 
