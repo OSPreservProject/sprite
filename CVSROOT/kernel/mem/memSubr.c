@@ -118,8 +118,10 @@ static	int	smallMinNum = 1;
 static	int	largeMinNum = 1;
 static	int	largeMaxSize = 10000;
 
+/* ARGSUSED */
 void
-Mem_DumpStats()
+Mem_DumpStats(dummy)
+    ClientData dummy;
 {
     Mem_PrintStatsSubrInt(PrintProc, (ClientData) 0, smallMinNum, largeMinNum,
 	    largeMaxSize);

@@ -16,7 +16,7 @@
 #include <sprite.h>
 #include <stdlib.h>
 
-extern void Mem_DumpStats _ARGS_((void));
+extern void Mem_DumpStats _ARGS_((ClientData dummy));
 extern void Mem_Bin _ARGS_((int numBytes));
 extern void Mem_DumpTrace _ARGS_((int blocksize));
 extern void Mem_PrintConfig _ARGS_((void));
