@@ -20,7 +20,7 @@
 #define FS_TRACE_OPEN_START	1
 #define FS_TRACE_LOOKUP_START	2
 #define FS_TRACE_LOOKUP_DONE	3
-#define FS_TRACE_4		4
+#define FS_TRACE_DEL_LAST_WR	4
 #define FS_TRACE_OPEN_DONE	5
 #define FS_TRACE_BLOCK_WAIT	6
 #define FS_TRACE_BLOCK_HIT	7
@@ -38,13 +38,20 @@
 #define FS_TRACE_SRV_WRITE_2	19
 #define FS_TRACE_SRV_GET_ATTR_1	20
 #define FS_TRACE_SRV_GET_ATTR_2	21
-#define FS_TRACE_OPEN	22
-#define FS_TRACE_READ	23
-#define FS_TRACE_WRITE	24
-#define FS_TRACE_CLOSE	25
+#define FS_TRACE_OPEN		22
+#define FS_TRACE_READ		23
+#define FS_TRACE_WRITE		24
+#define FS_TRACE_CLOSE		25
 #define	FS_TRACE_RA_SCHED	26
 #define	FS_TRACE_RA_BEGIN	27
 #define	FS_TRACE_RA_END		28
+#define FS_TRACE_DEL_BLOCK	29
+#define FS_TRACE_BLOCK_WRITE	30
+#define FS_TRACE_31
+#define FS_TRACE_32
+#define FS_TRACE_33
+#define FS_TRACE_34
+#define FS_TRACE_35
 
 extern Trace_Header *fsTraceHdrPtr;
 extern int fsTraceLength;
@@ -88,6 +95,8 @@ typedef struct FsTraceRecord {
     } un;
 } FsTraceRecord;
 
+extern int fsTracedFile;
+
 #ifndef CLEAN
 
 #define FS_TRACE(event) \
@@ -96,7 +105,8 @@ typedef struct FsTraceRecord {
     }
 
 #define FS_TRACE_IO(event, zfileID, zoffset, znumBytes) \
-    if (fsTracing) {						\
+    if (fsTracing &&						\
+	(fsTracedFile < 0 || fsTracedFile == zfileID.minor)) {	\
 	FsTraceIORec ioRec;					\
 	ioRec.fileID = zfileID;					\
 	ioRec.offset = zoffset;					\
@@ -113,7 +123,8 @@ typedef struct FsTraceRecord {
 #define FS_TRACE_NAME(event, pathName)
 
 #define FS_TRACE_HANDLE(event, hdrPtr) \
-    if (fsTracing) {							\
+    if (fsTracing &&							\
+	(fsTracedFile < 0 || fsTracedFile == hdrPtr->fileID.minor)) {	\
 	FsTraceHdrRec hdrRec;						\
 	hdrRec.fileID = hdrPtr->fileID;					\
 	hdrRec.refCount = hdrPtr->refCount;				\
@@ -126,7 +137,9 @@ typedef struct FsTraceRecord {
     }
 
 #define FS_TRACE_BLOCK(event, blockPtr) \
-    if (fsTracing) {							\
+    if (fsTracing &&							\
+	(fsTracedFile < 0 ||						\
+	 fsTracedFile == (blockPtr)->cacheInfoPtr->hdrPtr->fileID.minor)) { \
 	FsTraceBlockRec blockRec;					\
 	blockRec.fileID = (blockPtr)->cacheInfoPtr->hdrPtr->fileID;	\
 	blockRec.blockNum = (blockPtr)->blockNum;			\
