@@ -39,6 +39,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sys.h"
 #include "dbg.h"
 #include "rpc.h"
+#include "prof.h"
 #include "sched.h"
 #include "sync.h"
 #include "sysSysCall.h"
@@ -60,17 +61,14 @@ Boolean proc_DoCallTrace = FALSE;
  */
 Boolean proc_KillMigratedDebugs = TRUE;
 
-/*
- * Set to true to refuse ALL migrations onto this machine.
- */
-Boolean proc_RefuseMigrations = FALSE;
+int proc_AllowMigrationState = PROC_MIG_ALLOW_DEFAULT;
 
 /*
  * Set the migration version number.  Machines can only migrate to other
  * machines of the same architecture and version number.
  */
 #ifndef PROC_MIGRATE_VERSION
-#define PROC_MIGRATE_VERSION 3
+#define PROC_MIGRATE_VERSION 4
 #endif /* PROC_MIGRATE_VERSION */
 
 int proc_MigrationVersion = PROC_MIGRATE_VERSION;
@@ -79,19 +77,81 @@ int proc_MigrationVersion = PROC_MIGRATE_VERSION;
  * Procedures internal to this file
  */
 
-static ReturnStatus SendProcessState();
-static ReturnStatus SendSegment();
-static ReturnStatus SendFileState();
+static ReturnStatus GetEncapSize();
+static ReturnStatus EncapProcState();
+static ReturnStatus DeencapProcState();
+static ReturnStatus UpdateState();
+
 static ReturnStatus ResumeExecution();
 static ReturnStatus KillRemoteCopy();
 static ReturnStatus InitiateMigration();
 static void	    LockAndSwitch();
 static ENTRY void   WakeupCallers();
 
+#ifdef DEBUG
+int proc_MemDebug = 0;
+#endif /* DEBUG */
 /*
- * External procedures.
+ * Define the structure for keeping track of callbacks for migrating
+ * a process.  (This is done after procedure declarations since
+ * some things are static and we need the forward reference.)
+ *
+ * See the comments in Proc_MigrateTrap for further explanation.
  */
-extern Address malloc();
+typedef struct {
+    ReturnStatus (*preFunc)();	   /* function to call when initiating
+				      migration (returning size); should not
+				      have side-effects requiring further
+				      callback */
+    ReturnStatus (*encapFunc)();   /* function to call to encapsulate data */
+    ReturnStatus (*deencapFunc)(); /* function to call to deencapsulate
+					data on other end */
+    ReturnStatus (*postFunc)();	   /* function to call after migration
+				      completes or fails */
+    Proc_EncapToken token;	   /* identifier to match encap and deencap
+				      functions between two hosts */
+} EncapCallback;
+
+/*
+ * Set up the functions to be called.
+ */
+static EncapCallback encapCallbacks[] = {
+    { GetEncapSize, EncapProcState, DeencapProcState, NULL,
+	  PROC_MIG_ENCAP_PROC},
+#ifdef notdef
+    { Vm_InitiateMigration, Vm_EncapState, Vm_DeencapState, Vm_FinishMigration,
+	  PROC_MIG_ENCAP_VM},
+#endif
+    { Vm_InitiateMigration, Vm_EncapState, Vm_DeencapState, NULL,
+	  PROC_MIG_ENCAP_VM},
+    { Fs_InitiateMigration, Fs_EncapFileState, Fs_DeencapFileState, NULL,
+	  PROC_MIG_ENCAP_FS},
+    { Mach_GetEncapSize, Mach_EncapState, Mach_DeencapState, NULL,
+	  PROC_MIG_ENCAP_MACH},
+    { Prof_GetEncapSize, Prof_EncapState, Prof_DeencapState, NULL,
+	  PROC_MIG_ENCAP_PROF},
+    { Sig_GetEncapSize, Sig_EncapState, Sig_DeencapState, NULL,
+	  PROC_MIG_ENCAP_SIG}
+};
+
+#ifdef BREAKS_KDBX
+static struct {
+    char *preFunc;	   /* name of function to call when initiating
+				      migration */
+    char *encapFunc;	/* name of function to call to encapsulate */
+    char *deencapFunc;	/* name of function to call to deencapsulate */
+    char *postFunc;	/* name of function to call when done */
+} callbackNames[] = {
+    { "GetEncapSize", "EncapProcState", "DeencapProcState", NULL},
+    { "Vm_InitiateMigration", "Vm_EncapState", "Vm_DeencapState",
+	  "Vm_FinishMigration"},
+    { "Fs_InitiateMigration", "Fs_EncapFileState", "Fs_DeencapFileState",
+	  "Fs_MigDone"},
+    { "Mach_InitiateMigration", "Mach_EncapState", "Mach_DeencapState", NULL},
+    { "Prof_InitiateMigration", "Prof_EncapState", "Prof_DeencapState", NULL},
+    { "Sig_InitiateMigration", "Sig_EncapState", "Sig_DeencapState", NULL}
+};
+#endif
 
 
 /*
@@ -102,7 +162,7 @@ extern Address malloc();
  *	Migrates a process to another workstation.  The process may be
  *    	PROC_MY_PID, PROC_ALL_PROCESSES, or a process ID.
  *    	PROC_ALL_PROCESSES implies evicting all foreign processes, in
- *    	which case the nodeID is ignored.  The workstation may be
+ *    	which case the hostID is ignored.  The workstation may be
  *    	PROC_MIG_ANY or a particular workstation.  (For now, the
  *    	workstation argument must be a specific workstation.)
  *
@@ -110,7 +170,9 @@ extern Address malloc();
  *
  * Results:
  *	PROC_INVALID_PID -	the pid argument was illegal.
- *	PROC_INVALID_NODE -	the node argument was illegal.
+ *	PROC_INVALID_NODE_ID -	the host argument was illegal.
+ *	GEN_NO_PERMISSION -	the user or process is not permitted to
+ *				migrate.
  *	Other results may be returned from the VM and RPC modules.
  *
  * Side effects:
@@ -120,31 +182,28 @@ extern Address malloc();
  */
 
 ReturnStatus
-Proc_Migrate(pid, nodeID)
+Proc_Migrate(pid, hostID)
     Proc_PID pid;
-    int	     nodeID;
+    int	     hostID;
 {
     register Proc_ControlBlock *procPtr;
     ReturnStatus status;
     Proc_TraceRecord record;
     Boolean migrateSelf = FALSE;
+    int permMask;
 
     /*
      * It is possible for a process to try to migrate onto the machine
      * on which it is currently executing.
      */
 
-    if (nodeID == rpc_SpriteID) {
+    if (hostID == rpc_SpriteID) {
 	return(SUCCESS);
     }
-    
-    /*
-     * We don't really support the PROC_MIG_ANY hostID.
-     */
-    if (nodeID == PROC_MIG_ANY) {
-	return(PROC_INVALID_NODE_ID);
+    if (hostID <= 0 || hostID > NET_NUM_SPRITE_HOSTS) {
+	return(GEN_INVALID_ARG);
     }
-
+    
     if (Proc_ComparePIDs(pid, PROC_ALL_PROCESSES)) {
 	status = Proc_EvictForeignProcs();
 	return(status);
@@ -167,8 +226,8 @@ Proc_Migrate(pid, nodeID)
 
 
     if (proc_MigDebugLevel > 3) {
-	printf("Proc_Migrate: migrate process %x to node %d.\n",
-		   procPtr->processID, nodeID);
+	printf("Proc_Migrate: migrate process %x to host %d.\n",
+		   procPtr->processID, hostID);
     }
 
     /*
@@ -205,9 +264,24 @@ Proc_Migrate(pid, nodeID)
 		       pid);
 	}
 	Proc_Unlock(procPtr);
-	return(PROC_INVALID_PID);
+	return(GEN_NO_PERMISSION);
+    }
+    
+    if (procPtr->effectiveUserID == PROC_SUPER_USER_ID) {
+	permMask = PROC_MIG_EXPORT_ROOT;
+    } else {
+	permMask = PROC_MIG_EXPORT_ALL;
+    }
+ 
+    if ((proc_AllowMigrationState & permMask) != permMask) {
+	if (proc_MigDebugLevel > 0) {
+	    printf("Proc_Migrate: user does not have permission to migrate.\n");
+	}
+	Proc_Unlock(procPtr);
+	return(GEN_NO_PERMISSION);
     }
 	
+#ifndef CLEAN
     if (proc_DoTrace && proc_MigDebugLevel > 0) {
 	record.processID = procPtr->processID;
 	record.flags = PROC_MIGTRACE_START | PROC_MIGTRACE_HOME;
@@ -215,13 +289,14 @@ Proc_Migrate(pid, nodeID)
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_BEGIN_MIG,
 		     (ClientData) &record);
     }
+#endif /* CLEAN */   
    
     /*
      * Contact the remote workstation to establish communication and
      * verify that migration is permissible.
      */
     
-    status = InitiateMigration(procPtr, nodeID);
+    status = InitiateMigration(procPtr, hostID);
 
 
     if (status != SUCCESS) {
@@ -229,7 +304,7 @@ Proc_Migrate(pid, nodeID)
 	return(status);
     }
 
-    Proc_FlagMigration(procPtr, nodeID);
+    Proc_FlagMigration(procPtr, hostID);
 
     Proc_Unlock(procPtr);
 
@@ -269,8 +344,8 @@ Proc_Migrate(pid, nodeID)
  *	No value is returned.
  *
  * Side effects:
- *	A remote procedure call is performed and the process state
- *	is transferred.
+ *	The process state is transferred by performing callbacks
+ *	to each module with state to transfer.
  *
  *----------------------------------------------------------------------
  */
@@ -279,15 +354,25 @@ void
 Proc_MigrateTrap(procPtr)
     register Proc_ControlBlock 	*procPtr; /* The process being migrated */
 {
-    int nodeID;			/* node to which it migrates */
-    Proc_PCBLink *procLinkPtr;
-    register Proc_ControlBlock *procItemPtr;
-    List_Links *sharersPtr;
-    int numSharers;
-    List_Links *itemPtr;
+    int hostID;			/* host to which it migrates */
     ReturnStatus status;
     Proc_TraceRecord record;
     Boolean foreign = FALSE;
+    Address buffer;
+    Address bufPtr;
+    int bufSize;
+    register int i;
+    Proc_EncapInfo info[PROC_MIG_NUM_CALLBACKS];
+    Proc_EncapInfo *infoPtr;
+    ProcMigCmd cmd;
+    Proc_MigBuffer inBuf;
+    int failure;
+
+#ifdef MEM_TRASH
+    int lastMemDebug;
+    lastMemDebug = proc_MemDebug;
+    proc_MemDebug = 1;
+#endif /* MEM_TRASH */
 
     Proc_Lock(procPtr);
 
@@ -295,6 +380,7 @@ Proc_MigrateTrap(procPtr)
 	foreign = TRUE;
     }
 
+#ifndef CLEAN
     if (proc_DoTrace && proc_MigDebugLevel > 1) {
 	record.processID = procPtr->processID;
 	record.flags = PROC_MIGTRACE_START;
@@ -305,120 +391,194 @@ Proc_MigrateTrap(procPtr)
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_MIGTRAP,
 		     (ClientData) &record);
     }
+#endif /* CLEAN */   
    
     procPtr->genFlags = (procPtr->genFlags & ~PROC_MIG_PENDING) |
 	PROC_MIGRATING;
     
-    nodeID = procPtr->peerHostID;
-    (void) Vm_FreezeSegments(procPtr, nodeID, &sharersPtr, &numSharers);
+    hostID = procPtr->peerHostID;
+    bufSize = 0;
 
     /*
-     * Go through the list of processes sharing memory.  This routine was
-     * originally coded to migrate everything immediately but needs
-     * to be changed to flag them for migration and WAIT for them to hit
-     * Proc_MigrateTrap.  For now, work under the assumption that only
-     * one process will be migrated.
+     * Go through the list of callbacks to generate the size of the buffer
+     * we'll need.  In unusual circumstances, a caller may return a status
+     * other than SUCCESS. In this case, the process should be continuable!
      */
-    if (numSharers > 1) {
-	printf("Warning: Proc_MigrateTrap: cannot handle shared heaps.\n");
-	return;
+    for (i = 0; i < PROC_MIG_NUM_CALLBACKS; i++) {
+	infoPtr = &info[i];
+	infoPtr->token = encapCallbacks[i].token;
+	infoPtr->processed = 0;
+	infoPtr->special = 0;
+	if (proc_MigDebugLevel > 5) {
+	    printf("Calling preFunc %d\n", i);
+	}
+	status = (*encapCallbacks[i].preFunc)(procPtr, hostID, infoPtr);
+	if (status == SUCCESS && infoPtr->special) {
+	    /*
+	     * This is where we'd like to handle special cases like shared
+	     * memory processes.  For now, bail out.
+	     */
+	    status = FAILURE;
+	}
+	if (status != SUCCESS) {
+	    printf("Warning: Proc_MigrateTrap: error returned by encapsulation procedure %s:\n\t%s.\n",
+#ifdef BREAKS_KDBX
+		   callbackNames[i].preFunc,
+#else /* BREAKS_KDBX */
+		   "(can't get name)", 
+#endif /* BREAKS_KDBX */
+		   Stat_GetMsg(status));
+	    procPtr->genFlags &= ~PROC_MIGRATING;
+	    Proc_Unlock(procPtr);
+	    WakeupCallers();
+#ifdef MEM_TRASH
+    proc_MemDebug = lastMemDebug;
+#endif /* MEM_TRASH */
+	    return;
+	}
+	bufSize += infoPtr->size + sizeof(Proc_EncapInfo);
     }
-#ifdef notdef
-    LIST_FORALL(sharersPtr, itemPtr) {
-	procLinkPtr = (Proc_PCBLink *) itemPtr;
-	procItemPtr = procLinkPtr->procPtr;
-	/*
-	 * Tell the others to migrate here...
-	 */
+    if (proc_MigDebugLevel > 5) {
+	printf("Buffer size is %d\n", bufSize);
     }
-#endif
-    if (proc_MigDebugLevel > 7) {
-	printf("Proc_Migrate: Sending process state.\n");
+    buffer = malloc(bufSize);
+    if (proc_MigDebugLevel > 5) {
+	printf("past malloc\n", bufSize);
     }
-    status = SendProcessState(procPtr, nodeID, foreign);
-    if (status != SUCCESS) {
-	printf("Warning: Error %x returned by SendProcessState.\n",
-	       status);
-	goto failure;
-    }
+    bufPtr = buffer;
+    failure = 0;
 
     /*
-     * Send the virtual memory, and set up the process so the kernel
-     * knows the process has no VM on this machine.
+     * This time, go through the list of callbacks to fill in the
+     * encapsulated data.  From this point on, failure indicates
+     * that the process will be killed.
      */
-	
-    procPtr->genFlags |= PROC_NO_VM;
-    if (proc_MigDebugLevel > 7) {
-	printf("Proc_Migrate: Sending code.\n");
-    } 
-    status = SendSegment(procPtr, VM_CODE, nodeID, foreign);
-    if (status != SUCCESS) {
-	printf("Warning: Error returned by SendSegment on code: %s.\n",
-	       Stat_GetMsg(status));
-	goto failure;
+    for (i = 0; i < PROC_MIG_NUM_CALLBACKS; i++) {
+	infoPtr = &info[i];
+	bcopy((Address) infoPtr, bufPtr, sizeof(Proc_EncapInfo));
+	bufPtr += sizeof(Proc_EncapInfo);
+	if (proc_MigDebugLevel > 5) {
+	    printf("Calling encapFunc %d\n", i);
+	}
+	status = (*encapCallbacks[i].encapFunc)(procPtr, hostID, infoPtr,
+						bufPtr);
+#ifdef lint
+	status = EncapProcState(procPtr, hostID, infoPtr, bufPtr);
+	status = Vm_EncapState(procPtr, hostID, infoPtr, bufPtr);
+	status = Fs_EncapFileState(procPtr, hostID, infoPtr, bufPtr);
+	status = Mach_EncapState(procPtr, hostID, infoPtr, bufPtr);
+	status = Prof_EncapState(procPtr, hostID, infoPtr, bufPtr);
+	status = Sig_EncapState(procPtr, hostID, infoPtr, bufPtr);
+#endif /* lint */
+	if (status != SUCCESS) {
+	    printf("Warning: Proc_MigrateTrap: error returned by encapsulation procedure %s:\n\t%s.\n",
+#ifdef BREAKS_KDBX
+		   callbackNames[i].encapFunc,
+#else /* BREAKS_KDBX */
+		   "(can't get name)", 
+#endif /* BREAKS_KDBX */
+		   Stat_GetMsg(status));
+	    failure = 1;
+	    break;
+	}
+	bufPtr += infoPtr->size;
+	infoPtr->processed = 1;
     }
-    /*
-     * The process doesn't need to be locked while we're flushing its
-     * address space, and in fact, we want it not to be locked so that
-     * an error while writing its pages to disk won't cause the pageout
-     * daemon to block trying to signal the proces.
-     */
+
     Proc_Unlock(procPtr);
-    if (proc_MigDebugLevel > 7) {
-	printf("Proc_Migrate: Sending stack.\n");
-    }
-    status = SendSegment(procPtr, VM_STACK, nodeID, foreign);
-    if (status != SUCCESS) {
-	printf("Warning: Error returned by SendSegment on stack: %s.\n",
-	       Stat_GetMsg(status));
-        Proc_Lock(procPtr);
-	goto failure;
-    }
-    if (proc_MigDebugLevel > 7) {
-	printf("Proc_Migrate: Sending heap.\n");
-    }
-#ifdef SHARED
-    status = SendSharedSegment(sharersPtr, numSharers, VM_HEAP, nodeID,
-			       foreign);
-#else SHARED
-    status = SendSegment(procPtr, VM_HEAP, nodeID, foreign);
-#endif				/* SHARED */
     /*
-     * Lock the process again now that we're done flushing.
+     * Send the encapsulated data in the buffer to the other host.  
      */
+    if (!failure) {
+	/*
+	 * Set up for the RPC.
+	 */
+	cmd.command = PROC_MIGRATE_CMD_ENTIRE;
+	cmd.remotePid = procPtr->peerProcessID;
+	inBuf.size = bufSize;
+	inBuf.ptr = buffer;
+
+	if (proc_MigDebugLevel > 5) {
+	    printf("Sending encapsulated state.\n");
+	}
+	status = ProcMigCommand(procPtr->peerHostID, &cmd, &inBuf,
+				(Proc_MigBuffer *) NIL);
+
+	if (status != SUCCESS) {
+	    printf("Warning: Proc_MigrateTrap: error encountered sending encapsulated state:\n\t%s.\n",
+		   Stat_GetMsg(status));
+	    failure = 1;
+	}
+    }
+    /*
+     * Finally, go through the list of callbacks to clean up.  Only call
+     * routines that were processed last time (in the case of failure
+     * partway through).  Note that the process pointer is UNLOCKED
+     * during these callbacks (as well as the RPC to transfer state).
+     * This is primarily because Vm_FinishMigration is the only callback
+     * so far and it needs it unlocked, and we have to unlock for the rpc
+     * anyway so that we don't deadlock on the process once the migrated
+     * version resumes (a side effect of the RPC).
+     */
+    bufPtr = buffer;
+    for (i = 0; i < PROC_MIG_NUM_CALLBACKS; i++) {
+	infoPtr = &info[i];
+	if (infoPtr->processed != 1) {
+	    break;
+	}
+	bufPtr += sizeof(Proc_EncapInfo);
+	if (encapCallbacks[i].postFunc != NULL) {
+	    if (proc_MigDebugLevel > 5) {
+		printf("Calling postFunc %d\n", i);
+	    }
+	    status = (*encapCallbacks[i].postFunc)(procPtr, hostID, infoPtr,
+						   bufPtr, failure);
+#ifdef lint
+	    status = Vm_FinishMigration(procPtr, hostID, infoPtr, bufPtr,
+					failure);
+#endif /* lint */
+	}
+	if (status != SUCCESS) {
+	    failure = 1;
+	}
+	bufPtr += infoPtr->size;
+    }
+    free(buffer);
+
+    if (failure) {
+	goto failure;
+    }
+
     Proc_Lock(procPtr);
-    if (status != SUCCESS) {
-	printf("Warning: Error returned by SendSegment on heap: %s.\n",
-	       Stat_GetMsg(status));
-	goto failure;
-    }
 
-
-
-    status = SendFileState(procPtr, nodeID, foreign);
-    if (status != SUCCESS) {
-	printf("Warning: Error in SendFileState.\n");
-	goto failure;
-    }
-
-    if (proc_MigDebugLevel > 4) {
-	printf("Proc_MigrateTrap: calling ResumeExecution.\n");
-    }
-    status = ResumeExecution(procPtr, nodeID, foreign);
-    if (status != SUCCESS) {
-	printf("Warning: Error returned by ResumeExecution: %s.\n",
-	       Stat_GetMsg(status));
-	goto failure;
-    }
     procPtr->genFlags = (procPtr->genFlags & ~PROC_MIGRATING) |
 	PROC_MIGRATION_DONE;
     Proc_Unlock(procPtr);
+
+
+    /*
+     * Tell the other host to resume the process.
+     */
+    cmd.command = PROC_MIGRATE_CMD_RESUME;
+    cmd.remotePid = procPtr->peerProcessID;
+
+    if (proc_MigDebugLevel > 5) {
+	printf("Issuing resume command.\n");
+    }
+    status = ProcMigCommand(procPtr->peerHostID, &cmd, (Proc_MigBuffer *) NIL,
+			    (Proc_MigBuffer *) NIL);
+
+    if (status != SUCCESS) {
+	printf("Warning: Proc_MigrateTrap: error encountered resuming process:\n\t%s.\n",
+	       Stat_GetMsg(status));
+	goto failure;
+    }
 
     /*
      * If not migrating back home, note the dependency on the other host.
      */
     if (!foreign) {
-	Proc_AddMigDependency(procPtr->processID, nodeID);
+	Proc_AddMigDependency(procPtr->processID, hostID);
     }
     
     WakeupCallers();
@@ -428,6 +588,7 @@ Proc_MigrateTrap(procPtr)
 		     (ClientData) &record);
     }
 
+#ifndef CLEAN
     if (proc_DoTrace && proc_MigDebugLevel > 0 && !foreign) {
 	record.processID = procPtr->processID;
 	record.flags = PROC_MIGTRACE_HOME;
@@ -435,6 +596,10 @@ Proc_MigrateTrap(procPtr)
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_END_MIG,
 		     (ClientData) &record);
     }
+#endif /* CLEAN */   
+#ifdef MEM_TRASH
+    proc_MemDebug = lastMemDebug;
+#endif /* MEM_TRASH */
    
     if (foreign) {
 	ProcExitProcess(procPtr, -1, -1, -1, TRUE);
@@ -446,8 +611,7 @@ Proc_MigrateTrap(procPtr)
 
  failure:
     procPtr->genFlags &= ~PROC_MIGRATING;
-    Proc_Unlock(procPtr);
-    KillRemoteCopy(procPtr, nodeID, foreign);
+    KillRemoteCopy(procPtr, hostID);
     WakeupCallers();
     if (proc_DoTrace && proc_MigDebugLevel > 0 && !foreign) {
 	record.processID = procPtr->processID;
@@ -456,66 +620,383 @@ Proc_MigrateTrap(procPtr)
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_END_MIG,
 		     (ClientData) &record);
     }
-    Sig_SendProc(procPtr, SIG_KILL, status);
+    Sig_SendProc(procPtr, SIG_KILL, (int) status);
+#ifdef MEM_TRASH
+    proc_MemDebug = lastMemDebug;
+#endif /* MEM_TRASH */
 
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcMigReceiveProcess --
+ *
+ *	Receive the encapsulated state of a process from another host
+ *	and deencapsulate it by calling the appropriate callback routines.
+ *	If deencapsulation succeeds, resume the migrated process.
+ *
+ * Results:
+ *	A ReturnStatus indicates whether deencapsulation succeeds.  If
+ * 	a module returns an error, the first error is returned and the
+ *	rest of the state is not deencapsulated.
+ *
+ * Side effects:
+ *	The process is resumed on this host.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+ReturnStatus
+ProcMigReceiveProcess(cmdPtr, procPtr, inBufPtr, outBufPtr)
+    ProcMigCmd *cmdPtr;/* contains ID of process on this host */
+    Proc_ControlBlock *procPtr; /* ptr to process control block */
+    Proc_MigBuffer *inBufPtr;	/* input buffer */
+    Proc_MigBuffer *outBufPtr;	/* output buffer (stays NIL) */
+{
+    ReturnStatus status;
+    Address bufPtr;
+    register int i;
+    Proc_EncapInfo *infoPtr;
+
+    Proc_Lock(procPtr);
+
+    /*
+     * Go through the list of callbacks to generate the size of the buffer
+     * we'll need.  In unusual circumstances, a caller may return a status
+     * other than SUCCESS. In this case, the process should be continuable!
+     */
+    bufPtr = inBufPtr->ptr;
+    for (i = 0; i < PROC_MIG_NUM_CALLBACKS; i++) {
+	infoPtr = (Proc_EncapInfo *) bufPtr;
+	bufPtr += sizeof(Proc_EncapInfo);
+	if (infoPtr->token != encapCallbacks[i].token) {
+	    if (proc_MigDebugLevel > 0) {
+		panic("ProcMigReceiveProcess: mismatch deencapsulating process (continuable -- but call Fred)");
+	    }
+	    Proc_Unlock(procPtr);
+	    return(PROC_MIGRATION_REFUSED);
+	}
+	if (infoPtr->special) {
+	    /*
+	     * This is where we'd like to handle special cases like shared
+	     * memory processes.  For now, this should never happen.
+	     */
+	    if (proc_MigDebugLevel > 0) {
+		panic("ProcMigReceiveProcess: special flag set?! (continuable -- but call Fred)");
+	    }
+	    Proc_Unlock(procPtr);
+	    return(PROC_MIGRATION_REFUSED);
+	}
+	if (proc_MigDebugLevel > 5) {
+	    printf("Calling deencapFunc %d\n", i);
+	}
+	status = (*encapCallbacks[i].deencapFunc)(procPtr, infoPtr, bufPtr);
+#ifdef lint
+	status = DeencapProcState(procPtr, infoPtr, bufPtr);
+	status = Vm_DeencapState(procPtr, infoPtr, bufPtr);
+	status = Fs_DeencapFileState(procPtr, infoPtr, bufPtr);
+	status = Mach_DeencapState(procPtr, infoPtr, bufPtr);
+	status = Prof_DeencapState(procPtr, infoPtr, bufPtr);
+	status = Sig_DeencapState(procPtr, infoPtr, bufPtr);
+#endif /* lint */
+	if (status != SUCCESS) {
+	    printf("Warning: ProcMigReceiveProcess: error returned by deencapsulation procedure %s:\n\t%s.\n",
+#ifdef BREAKS_KDBX
+		   callbackNames[i].deencapFunc,
+#else /* BREAKS_KDBX */
+		   "(can't get name)", 
+#endif /* BREAKS_KDBX */
+		   Stat_GetMsg(status));
+	    Proc_Unlock(procPtr);
+	    return(status);
+	}
+	bufPtr += infoPtr->size;
+    }
+
+    Proc_Unlock(procPtr);
+
+    return(status);
 }
 
 
 
 /*
+ * Define the process state that is sent during migration.
+ * See proc.h for explanations of these fields.
+ * This structure is followed by a variable-length string containing
+ * procPtr->argString, padded to an integer boundary.
+ */
+typedef struct {
+    Proc_PID		parentID;
+    int			familyID;
+    int			userID;
+    int			effectiveUserID;
+    int			genFlags;
+    int			syncFlags;
+    int			schedFlags;
+    int			exitFlags;
+    int 		billingRate;
+    unsigned int 	recentUsage;
+    unsigned int 	weightedUsage;
+    unsigned int 	unweightedUsage;
+    Proc_Time		kernelCpuUsage;
+    Proc_Time		userCpuUsage;
+    Proc_Time		childKernelCpuUsage;
+    Proc_Time		childUserCpuUsage;
+    int 		numQuantumEnds;
+    int			numWaitEvents;
+    unsigned int 	schedQuantumTicks;
+    int			argStringLength;
+} EncapState;
+
+#define COPY_STATE(from, to, field) to->field = from->field
+
+/*
+ * A process is allowed to update its userID, effectiveUserID,
+ * billingRate, or familyID.  If any of these fields is modified, all
+ * of them are transferred to the remote host.
+ */
+
+typedef struct {
+    int			familyID;
+    int			userID;
+    int			effectiveUserID;
+    int 		billingRate;
+} UpdateEncapState;
+
+/*
  *----------------------------------------------------------------------
  *
- * SendProcessState --
+ * GetEncapSize --
  *
- *	Send the state of a process to another node.  This requires
+ *	Determine the size of the encapsulated process state.
+ *
+ * Results:
+ *	SUCCESS is returned directly; the size of the encapsulated state
+ *	is returned in infoPtr->size.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+static ReturnStatus
+GetEncapSize(procPtr, hostID, infoPtr)
+    Proc_ControlBlock *procPtr;			/* process being migrated */
+    int hostID;					/* host to which it migrates */
+    Proc_EncapInfo *infoPtr;			/* area w/ information about
+						 * encapsulated state */
+{
+    infoPtr->size = sizeof(EncapState) +
+	Byte_AlignAddr(strlen(procPtr->argString) + 1);
+    /*
+     * The clientData part of the EncapInfo struct is used to indicate
+     * that the process is migrating home.
+     */
+    if (procPtr->genFlags & PROC_FOREIGN) {
+	infoPtr->data = (ClientData) 1;
+	if (proc_MigDebugLevel > 4) {
+	    printf("Encapsulating foreign process %x.\n", procPtr->processID);
+	}
+    } else {
+	infoPtr->data = (ClientData) 0;
+	if (proc_MigDebugLevel > 4) {
+	    printf("Encapsulating local process %x.\n", procPtr->processID);
+	}
+    }
+
+    return(SUCCESS);	
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * EncapProcState --
+ *
+ *	Encapsulate the state of a process from the Proc_ControlBlock
+ *	and return it in the buffer provided.
+ *
+ * Results:
+ *	SUCCESS.  The buffer is filled.
+ *
+ * Side effects:
+ *	None.
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+static ReturnStatus
+EncapProcState(procPtr, hostID, infoPtr, bufPtr)
+    register Proc_ControlBlock 	*procPtr; /* The process being migrated */
+    int hostID;				  /* host to which it migrates */
+    Proc_EncapInfo *infoPtr;
+    Address bufPtr;
+{
+    int argStringLength;
+    EncapState *encapPtr = (EncapState *) bufPtr;
+
+    COPY_STATE(procPtr, encapPtr, parentID);
+    COPY_STATE(procPtr, encapPtr, familyID);
+    COPY_STATE(procPtr, encapPtr, userID);
+    COPY_STATE(procPtr, encapPtr, effectiveUserID);
+    COPY_STATE(procPtr, encapPtr, genFlags);
+    COPY_STATE(procPtr, encapPtr, syncFlags);
+    COPY_STATE(procPtr, encapPtr, schedFlags);
+    COPY_STATE(procPtr, encapPtr, exitFlags);
+    COPY_STATE(procPtr, encapPtr, billingRate);
+    COPY_STATE(procPtr, encapPtr, recentUsage);
+    COPY_STATE(procPtr, encapPtr, weightedUsage);
+    COPY_STATE(procPtr, encapPtr, unweightedUsage);
+    COPY_STATE(procPtr, encapPtr, kernelCpuUsage);
+    COPY_STATE(procPtr, encapPtr, userCpuUsage);
+    COPY_STATE(procPtr, encapPtr, childKernelCpuUsage);
+    COPY_STATE(procPtr, encapPtr, childUserCpuUsage);
+    COPY_STATE(procPtr, encapPtr, numQuantumEnds);
+    COPY_STATE(procPtr, encapPtr, numWaitEvents);
+    COPY_STATE(procPtr, encapPtr, schedQuantumTicks);
+
+    bufPtr += sizeof(EncapState);
+    argStringLength = Byte_AlignAddr(strlen(procPtr->argString) + 1);
+    encapPtr->argStringLength = argStringLength;
+    strncpy(bufPtr, procPtr->argString, argStringLength);
+
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DeencapProcState --
+ *
+ *	Get information from a Proc_ControlBlock from another host.
+ *	The information is contained in the parameter ``buffer''.
+ *	The process control block should be locked on entry and exit.
+ *
+ * Results:
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	None.
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+static ReturnStatus
+DeencapProcState(procPtr, infoPtr, bufPtr)
+    register Proc_ControlBlock 	*procPtr; /* The process being migrated */
+    Proc_EncapInfo *infoPtr;		  /* information about the buffer */
+    Address bufPtr;			  /* buffer containing data */
+{
+    Boolean 		home;
+    EncapState *encapPtr = (EncapState *) bufPtr;
+
+    if (infoPtr->data == 0) {
+	if (proc_MigDebugLevel > 4) {
+	    printf("Deencapsulating foreign process %x.\n", procPtr->processID);
+	}
+	home = FALSE;
+    } else {
+	if (proc_MigDebugLevel > 4) {
+	    printf("Deencapsulating local process %x.\n", procPtr->processID);
+	}
+	home = TRUE;
+    }
+
+
+    COPY_STATE(encapPtr, procPtr, parentID);
+    COPY_STATE(encapPtr, procPtr, familyID);
+    COPY_STATE(encapPtr, procPtr, userID);
+    COPY_STATE(encapPtr, procPtr, effectiveUserID);
+    COPY_STATE(encapPtr, procPtr, genFlags);
+    COPY_STATE(encapPtr, procPtr, syncFlags);
+    COPY_STATE(encapPtr, procPtr, schedFlags);
+    COPY_STATE(encapPtr, procPtr, exitFlags);
+    COPY_STATE(encapPtr, procPtr, billingRate);
+    COPY_STATE(encapPtr, procPtr, recentUsage);
+    COPY_STATE(encapPtr, procPtr, weightedUsage);
+    COPY_STATE(encapPtr, procPtr, unweightedUsage);
+    COPY_STATE(encapPtr, procPtr, kernelCpuUsage);
+    COPY_STATE(encapPtr, procPtr, userCpuUsage);
+    COPY_STATE(encapPtr, procPtr, childKernelCpuUsage);
+    COPY_STATE(encapPtr, procPtr, childUserCpuUsage);
+    COPY_STATE(encapPtr, procPtr, numQuantumEnds);
+    COPY_STATE(encapPtr, procPtr, numWaitEvents);
+    COPY_STATE(encapPtr, procPtr, schedQuantumTicks);
+
+    bufPtr += sizeof(*encapPtr);
+    if (procPtr->argString != (char *) NIL) {
+	free(procPtr->argString);
+    }
+    procPtr->argString = (char *) malloc(encapPtr->argStringLength);
+    bcopy(bufPtr, (Address) procPtr->argString, encapPtr->argStringLength);
+
+    procPtr->genFlags |= PROC_NO_VM;
+    if (home) {
+	procPtr->genFlags &= (~PROC_FOREIGN);
+	procPtr->kcallTable = mach_NormalHandlers;
+    } else {
+	procPtr->genFlags |= PROC_FOREIGN;
+	procPtr->kcallTable = mach_MigratedHandlers;
+    }
+    procPtr->genFlags &= ~(PROC_MIG_PENDING | PROC_MIGRATING);
+    procPtr->schedFlags &=
+	~(SCHED_STACK_IN_USE | SCHED_CONTEXT_SWITCH_PENDING);
+
+    /*
+     * Initialize some of the fields as if for a new process.  If migrating
+     * home, these are already set up.   Fix up dependencies.
+     */
+    procPtr->state 		= PROC_NEW;
+    Vm_ProcInit(procPtr);
+    procPtr->event			= NIL;
+
+    if (!home) {
+	/*
+	 *  Initialize our child list to remove any old links.
+	 */
+	List_Init((List_Links *) procPtr->childList);
+
+	/*
+	 * Remember the dependency on the other host.
+	 */
+	Proc_AddMigDependency(procPtr->processID, procPtr->peerHostID);
+    } else {
+	/*
+	 * Forget the dependency on the other host; we're running
+	 * locally now.
+	 */
+	Proc_RemoveMigDependency(procPtr->processID);
+    }
+
+
+    if (proc_MigDebugLevel > 4) {
+	printf("Received process state for process %x.\n", procPtr->processID);
+    }
+
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_MigUpdateInfo --
+ *
+ *	Send the updateable portions of the state of a process to the
+ *	host on which it is currently executing.  This requires
  *	packaging the relevant information from the Proc_ControlBlock
  *	and sending it via an RPC.
  *
- *
- *	The relevant fields are as follows, with contiguous entries
- * 	listed with vertical bars:
- *
- *    	Proc_PID	processID    [not stored contiguously on remote]
- *    | Proc_PID	parentID
- *    | int		familyID
- *    | int		userID
- *    |	int		effectiveUserID
- *   |	int		genFlags
- *   |	int		syncFlags
- *   |	int		schedFlags
- *   |	int		exitFlags
- * |	int 		billingRate
- * |	unsigned int 	recentUsage
- * |	unsigned int 	weightedUsage
- * |	unsigned int 	unweightedUsage
- * |    Timer_Ticks 	kernelCpuUsage.ticks
- * |    Timer_Ticks 	userCpuUsage.ticks
- * | 	Timer_Ticks 	childKernelCpuUsage.ticks
- * |    Timer_Ticks 	childUserCpuUsage.ticks
- * |    int 		numQuantumEnds
- * |    int		numWaitEvents
- * |    unsigned int 	schedQuantumTicks
- *  |	int		sigHoldMask
- *  |	int		sigPendingMask
- *  |	int		sigActions[SIG_NUM_SIGNALS]
- *  |	int		sigMasks[SIG_NUM_SIGNALS]
- *  |	int		sigCodes[SIG_NUM_SIGNALS]
- *  |	int		sigFlags
- *	variable: encapsulated machine state, profiling state
- *
- *	Note that if the Proc_ControlBlock structure is changed, it may
- * 	be necessary to change the logic of this procedure to copy
- *	fields separately.
- *
- * RPC: Input parameters:
- *		process ID
- *		process control block information
- *	Return parameters:
- *		ReturnStatus
- *		process ID of process on remote node
+ * 	The process is assumed to be locked.
  *
  * Results:
- *	A ReturnStatus is returned, along with the remote process ID.
+ *	A ReturnStatus is returned to indicate the status of the RPC.
  *
  * Side effects:
  *	A remote procedure call is performed and the process state
@@ -524,427 +1005,118 @@ Proc_MigrateTrap(procPtr)
  *----------------------------------------------------------------------
  */
 
-static ReturnStatus
-SendProcessState(procPtr, nodeID, foreign)
-    register Proc_ControlBlock 	*procPtr; /* The process being migrated */
-    int nodeID;				  /* node to which it migrates */
-    Boolean foreign;			  /* Is it migrating back home? */
+ReturnStatus
+Proc_MigUpdateInfo(procPtr)
+    Proc_ControlBlock 	*procPtr; /* The migrated process */
 {
-    Address procBuffer;
-    Address ptr;
-    int procBufferSize;
-    int machStateSize;
-    int profStateSize;
-    ReturnStatus error;
-    Rpc_Storage storage;
-    Proc_MigrateCommand migrateCommand;
-    Proc_MigrateReply returnInfo;
-    int argStringLength;
-    Proc_TraceRecord record;
+    ReturnStatus status;
+    ProcMigCmd cmd;
+    UpdateEncapState state;
+    UpdateEncapState *statePtr = &state;
+    Proc_MigBuffer inBuf;
 
-    if (proc_DoTrace && proc_MigDebugLevel > 2) {
-	record.processID = procPtr->processID;
-	record.flags = PROC_MIGTRACE_START;
-	if (!foreign) {
-	    record.flags |= PROC_MIGTRACE_HOME;
-	}
-	record.info.command.type = PROC_MIGRATE_PROC;
-	record.info.command.data = (ClientData) NIL;
-	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_TRANSFER,
-		     (ClientData) &record);
-    }
-   
-    machStateSize = Mach_GetEncapSize();
-    profStateSize = Prof_GetEncapSize();
-    
-    argStringLength = Byte_AlignAddr(strlen(procPtr->argString) + 1);
-    procBufferSize = 2 * sizeof(Proc_PID) +
-	    (PROC_NUM_ID_FIELDS + PROC_NUM_FLAGS +
-	     PROC_NUM_SCHED_FIELDS + 1) * sizeof(int) +
-	    SIG_INFO_SIZE + machStateSize + profStateSize + argStringLength;
-    procBuffer = malloc(procBufferSize);
-
-    ptr = procBuffer;
-
-    if (foreign) {
-	Byte_FillBuffer(ptr, Proc_PID, procPtr->peerProcessID);
-    } else {
-	Byte_FillBuffer(ptr, Proc_PID, NIL);
-    }
-
-    /*
-     * Copy in IDs, flags, scheduling information, and machine-dependent
-     * state.
-     */
-    Byte_FillBuffer(ptr, Proc_PID, procPtr->processID);
-    bcopy((Address) &procPtr->parentID, ptr, PROC_NUM_ID_FIELDS * sizeof (int));
-    ptr += PROC_NUM_ID_FIELDS * sizeof(int);
-    bcopy((Address) &procPtr->genFlags, ptr, PROC_NUM_FLAGS * sizeof (int));
-    ptr += PROC_NUM_FLAGS * sizeof(int);
-
-    bcopy((Address) &procPtr->billingRate, ptr,
-	    PROC_NUM_SCHED_FIELDS * sizeof (int));
-    ptr += PROC_NUM_SCHED_FIELDS * sizeof(int);
-
-    bcopy((Address) &procPtr->sigHoldMask, ptr, SIG_INFO_SIZE);
-    ptr += SIG_INFO_SIZE;
-
-    Mach_EncapState(procPtr, ptr);
-    ptr += machStateSize;
-
-    Prof_EncapState(procPtr, ptr);
-    ptr += profStateSize;
-
-    Byte_FillBuffer(ptr, int, argStringLength);
-    bcopy((Address) procPtr->argString, ptr, argStringLength);
-    ptr += argStringLength;
+    COPY_STATE(procPtr, statePtr, familyID);
+    COPY_STATE(procPtr, statePtr, userID);
+    COPY_STATE(procPtr, statePtr, effectiveUserID);
+    COPY_STATE(procPtr, statePtr, billingRate);
 
     /*
      * Set up for the RPC.
      */
-    migrateCommand.command = PROC_MIGRATE_PROC;
-    migrateCommand.remotePID = NIL;
-    storage.requestParamPtr = (Address) &migrateCommand;
-    storage.requestParamSize = sizeof(Proc_MigrateCommand);
+    cmd.command = PROC_MIGRATE_CMD_UPDATE;
+    cmd.remotePid = procPtr->peerProcessID;
+    inBuf.size = sizeof(UpdateEncapState);
+    inBuf.ptr = (Address) statePtr;
 
-    storage.requestDataPtr = procBuffer;
-    storage.requestDataSize = procBufferSize;
+    status = ProcMigCommand(procPtr->peerHostID, &cmd, &inBuf,
+			    (Proc_MigBuffer *) NIL);
 
-    storage.replyParamPtr = (Address) &returnInfo;
-    storage.replyParamSize = sizeof(Proc_MigrateReply);
-    storage.replyDataPtr = (Address) NIL;
-    storage.replyDataSize = 0;
-
-
-    error = Rpc_Call(nodeID, RPC_PROC_MIG_INFO, &storage);
-
-    free(procBuffer);
-
-    if (proc_DoTrace && proc_MigDebugLevel > 2) {
-	record.flags = (foreign ? 0 : PROC_MIGTRACE_HOME);
-	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_TRANSFER,
-		     (ClientData) &record);
+    if (status != SUCCESS && proc_MigDebugLevel > 0) {
+	printf("Warning: Proc_MigUpdateInfo: error returned updating information on host %d:\n\t%s.\n",
+		procPtr->peerHostID,Stat_GetMsg(status));
     }
-   
-    if (error != SUCCESS) {
-	printf("Warning: SendProcessState:Error %x returned by Rpc_Call.\n",
-		error);
-	return(error);
-    } else {
-	if (!foreign) {
-	    procPtr->peerProcessID = returnInfo.remotePID;
-	}
-	return(returnInfo.status);
-    }
+    return(status);
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * SendSegment --
+ * ProcMigGetUpdate --
  *
- *	Send the information for a segment to another node.  The
- *	information includes the process ID, segment type, and segment
- * 	info as encapsulated by the vm module.
- *
- * RPC: Input parameters:
- *		process ID
- *		segment type
- *		VM segment information
- *	Return parameters:
- *		ReturnStatus
+ *	Receive the updateable portions of the state of a process from its
+ *	home node.
  *
  * Results:
- *	A ReturnStatus is returned.
+ *	SUCCESS.
  *
  * Side effects:
- *	A remote procedure call is performed and the segment information
- *	is transferred.
+ *	The process's control block is locked and then updated.
  *
  *----------------------------------------------------------------------
  */
 
-static ReturnStatus
-SendSegment(procPtr, type, nodeID, foreign)
-    register Proc_ControlBlock 	*procPtr;    /* The process being migrated */
-    int type;				     /* The type of segment */
-    int nodeID;				     /* Node to which it migrates */
-    Boolean foreign;			     /* Is it migrating back home? */
+/* ARGSUSED */
+ReturnStatus
+ProcMigGetUpdate(cmdPtr, procPtr, inBufPtr, outBufPtr)
+    ProcMigCmd *cmdPtr;/* contains ID of process on this host */
+    Proc_ControlBlock *procPtr; /* ptr to process control block */
+    Proc_MigBuffer *inBufPtr;	/* input buffer */
+    Proc_MigBuffer *outBufPtr;	/* output buffer (stays NIL) */
 {
-    Address segBuffer;
-    int segBufferSize;
-    Proc_MigrateReply returnInfo;
-    ReturnStatus error;
-    ReturnStatus status;
-    Rpc_Storage storage;
-    Proc_MigrateCommand migrateCommand;
-    Proc_TraceRecord record;
-    int numPages;			     /* Number of pages flushed */
+    UpdateEncapState *statePtr = (UpdateEncapState *) inBufPtr->ptr;
 
-    if (proc_DoTrace && proc_MigDebugLevel > 2) {
-	record.processID = procPtr->processID;
-	record.flags = PROC_MIGTRACE_START;
-	if (!foreign) {
-	    record.flags |= PROC_MIGTRACE_HOME;
-	}
-	record.info.command.type = PROC_MIGRATE_VM;
-	record.info.command.data = (ClientData) NIL;
-	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_TRANSFER,
-		     (ClientData) &record);
-    }
-   
-    status = Vm_MigrateSegment(procPtr->vmPtr->segPtrArray[type], &segBuffer,
-            &segBufferSize, &numPages);
+    Proc_Lock(procPtr);
+    COPY_STATE(statePtr, procPtr, familyID);
+    COPY_STATE(statePtr, procPtr, userID);
+    COPY_STATE(statePtr, procPtr, effectiveUserID);
+    COPY_STATE(statePtr, procPtr, billingRate);
+    Proc_Unlock(procPtr);
+    return(SUCCESS);
 
-    if (proc_MigDebugLevel > 5) {
-	printf("SendSegment: Vm_MigrateSegment(%d) wrote %d pages, returned %x.\n",
-		   type, numPages, status);
-    }
-    if (status != SUCCESS) {
-	return(status);
-    }
-    /*
-     * Set up for the RPC.
-     */
-    migrateCommand.command = PROC_MIGRATE_VM;
-    migrateCommand.remotePID = procPtr->peerProcessID;
-    storage.requestParamPtr = (Address) &migrateCommand;
-    storage.requestParamSize = sizeof(Proc_MigrateCommand);
-
-    storage.requestDataPtr = segBuffer;
-    storage.requestDataSize = segBufferSize;
-
-    storage.replyParamPtr = (Address) &returnInfo;
-    storage.replyParamSize = sizeof(Proc_MigrateReply);
-    storage.replyDataPtr = (Address) NIL;
-    storage.replyDataSize = 0;
-
-
-    error = Rpc_Call(nodeID, RPC_PROC_MIG_INFO, &storage);
-
-    free(segBuffer);
-
-    /*
-     * Free up the segment on the home node.
-     */
-    Vm_SegmentDelete(procPtr->vmPtr->segPtrArray[type], procPtr);
-    if (proc_DoTrace && proc_MigDebugLevel > 2) {
-	record.flags = (foreign ? 0 : PROC_MIGTRACE_HOME);
-	record.info.command.data = (ClientData) numPages;
-	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_TRANSFER,
-		     (ClientData) &record);
-    }
-   
-    if (error != SUCCESS) {
-	printf("Warning: SendSegment:Error %x returned by Rpc_Call.\n", error);
-	return(error);
-    } else {
-	return(returnInfo.status);
-    }
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * SendFileState --
+ * ProcMigEncapCallback --
  *
- *	Transfer the file state of a process to another node.  
- *
- * RPC: Input parameters:
- *		encapsulated file state
- *	Return parameters:
- *		ReturnStatus
+ *	Handle a callback on behalf of a module requesting more data.
+ *	Not yet implemented.
  *
  * Results:
- *	SUCCESS, or a ReturnStatus from rpc or fs routines.
+ *	A ReturnStatus, dependenet on the module doing the callback.
  *
  * Side effects:
- *	A remote procedure call is performed and the file information
- *	is transferred.
+ *	Variable.
  *
  *----------------------------------------------------------------------
  */
 
-static ReturnStatus
-SendFileState(procPtr, nodeID, foreign)
-    register Proc_ControlBlock 	*procPtr;    /* The process being migrated */
-    int nodeID;				     /* Node to which it migrates */
-    Boolean foreign;			     /* Is it migrating back home? */
+/* ARGSUSED */
+ReturnStatus
+ProcMigEncapCallback(cmdPtr, procPtr, inBufPtr, outBufPtr)
+    ProcMigCmd *cmdPtr;/* contains ID of process on this host */
+    Proc_ControlBlock *procPtr; /* ptr to process control block */
+    Proc_MigBuffer *inBufPtr;	/* input buffer */
+    Proc_MigBuffer *outBufPtr;	/* output buffer (stays NIL) */
 {
-    Address buffer;
-    int totalSize;
-    Proc_MigrateReply returnInfo;
-    ReturnStatus status;
-    Rpc_Storage storage;
-    Proc_MigrateCommand migrateCommand;
-    int numEncap;
-    Proc_TraceRecord record;
-
-    if (proc_DoTrace && proc_MigDebugLevel > 2) {
-	record.processID = procPtr->processID;
-	record.flags = PROC_MIGTRACE_START;
-	if (!foreign) {
-	    record.flags |= PROC_MIGTRACE_HOME;
-	}
-	record.info.command.type = PROC_MIGRATE_FILES;
-	record.info.command.data = (ClientData) NIL;
-	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_TRANSFER,
-		     (ClientData) &record);
-    }
-
-    if (proc_MigDebugLevel > 6) {
-	printf("SendFileState: calling Fs_EncapFileState.\n");
-    }
-    status = Fs_EncapFileState(procPtr, &buffer, &totalSize, &numEncap);
-    if (status != SUCCESS) {
-	if (proc_MigDebugLevel > 6) {
-	    printf(
-	    "Warning: SendFileState: error %x returned by Fs_EncapFileState",
-		      status);
-	}
-	return (status);
-    }
-	
-    /*
-     * Set up for the RPC.
-     */
-    migrateCommand.command = PROC_MIGRATE_FILES;
-    migrateCommand.remotePID = procPtr->peerProcessID;
-    storage.requestParamPtr = (Address) &migrateCommand;
-    storage.requestParamSize = sizeof(Proc_MigrateCommand);
-
-    storage.requestDataPtr = buffer;
-    storage.requestDataSize = totalSize;
-
-    storage.replyParamPtr = (Address) &returnInfo;
-    storage.replyParamSize = sizeof(Proc_MigrateReply);
-    storage.replyDataPtr = (Address) NIL;
-    storage.replyDataSize = 0;
-
-
-    status = Rpc_Call(nodeID, RPC_PROC_MIG_INFO, &storage);
-
-    free(buffer);
-
-    if (proc_DoTrace && proc_MigDebugLevel > 2) {
-	record.flags = (foreign ? 0 : PROC_MIGTRACE_HOME);
-	record.info.command.data = (ClientData) numEncap;
-	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_TRANSFER,
-		     (ClientData) &record);
-    }
-   
-    if (status != SUCCESS) {
-	printf("Warning: SendFileState:Error %x returned by Rpc_Call.\n",
-		status);
-	return(status);
-    } else {
-#ifndef TO_BE_REMOVED
-	Fs_ClearFileState(procPtr);
-#endif
-	return(returnInfo.status);
-    }
+    return(FAILURE);
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * ResumeExecution --
- *
- *	Inform the remote node that the state has been transferred and the
- *	process is ready to resume execution.
- *
- * RPC: Input parameters:
- *		remote process ID
- *	Return parameters:
- *		ReturnStatus
- *
- * Results:
- *	A ReturnStatus is returned.
- *
- * Side effects:
- *	A remote procedure call is performed and the migrated process
- *	returns to its state prior to migration (READY, WAITING, etc.)
- *
- *----------------------------------------------------------------------
- */
-
-static ReturnStatus
-ResumeExecution(procPtr, nodeID, foreign)
-    register Proc_ControlBlock 	*procPtr;    /* The process being migrated */
-    int nodeID;				     /* Node to which it migrates */
-    Boolean foreign;			     /* Is it migrating back home? */
-{
-    ReturnStatus status;
-    Proc_MigrateReply returnInfo;
-    Rpc_Storage storage;
-    Proc_MigrateCommand migrateCommand;
-    Proc_TraceRecord record;
-
-    if (proc_DoTrace && proc_MigDebugLevel > 2) {
-	record.processID = procPtr->processID;
-	record.flags = PROC_MIGTRACE_START;
-	if (!foreign) {
-	    record.flags |= PROC_MIGTRACE_HOME;
-	}
-	record.info.command.type = PROC_MIGRATE_RESUME;
-	record.info.command.data = (ClientData) NIL;
-	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_TRANSFER,
-		     (ClientData) &record);
-    }
-   
-
-    /*
-     * Set up for the RPC.
-     */
-    migrateCommand.command = PROC_MIGRATE_RESUME;
-    migrateCommand.remotePID = procPtr->peerProcessID;
-    storage.requestParamPtr = (Address) &migrateCommand;
-    storage.requestParamSize = sizeof(Proc_MigrateCommand);
-
-    storage.requestDataPtr = (Address) NIL;
-    storage.requestDataSize = 0;
-
-    storage.replyParamPtr = (Address) &returnInfo;
-    storage.replyParamSize = sizeof(Proc_MigrateReply);
-    storage.replyDataPtr = (Address) NIL;
-    storage.replyDataSize = 0;
-
-
-    status = Rpc_Call(nodeID, RPC_PROC_MIG_INFO, &storage);
-
-    if (proc_DoTrace && proc_MigDebugLevel > 2) {
-	record.flags = (foreign ? 0 : PROC_MIGTRACE_HOME);
-	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_TRANSFER,
-		     (ClientData) &record);
-    }
-   
-    if (status != SUCCESS) {
-	printf("Warning: ResumeExecution:Error %x returned by Rpc_Call.\n",
-		status);
-	return(status);
-    } else {
-	return(returnInfo.status);
-    }
-}
 
 /*
  *----------------------------------------------------------------------
  *
  * KillRemoteCopy --
  *
- *	Inform the remote node that a failure occurred during migration,
- * 	so the incomplete process on the remote node will kill the process.
- *
- * RPC: Input parameters:
- *		remote process ID
- *	Return parameters:
- *		ReturnStatus (ignored)
+ *	Inform the remote host that a failure occurred during migration,
+ * 	so the incomplete process on the remote host will kill the process.
+ *	This just sets up and issues a MigCommand.
  *
  * Results:
- *	None.
+ *	A ReturnStatus is returned, from the RPC.
  *
  * Side effects:
  *	A remote procedure call is performed and the migrated process
@@ -954,55 +1126,22 @@ ResumeExecution(procPtr, nodeID, foreign)
  */
 
 static ReturnStatus
-KillRemoteCopy(procPtr, nodeID, foreign)
+KillRemoteCopy(procPtr, hostID)
     register Proc_ControlBlock 	*procPtr;    /* The process being migrated */
-    int nodeID;				     /* Node to which it migrates */
-    Boolean foreign;			     /* Is it migrating back home? */
+    int hostID;				     /* Host to which it migrates */
 {
     ReturnStatus status;
-    Proc_MigrateReply returnInfo;
-    Rpc_Storage storage;
-    Proc_MigrateCommand migrateCommand;
-    Proc_TraceRecord record;
-
-    if (proc_DoTrace && proc_MigDebugLevel > 2) {
-	record.processID = procPtr->processID;
-	record.flags = PROC_MIGTRACE_START;
-	if (!foreign) {
-	    record.flags |= PROC_MIGTRACE_HOME;
-	}
-	record.info.command.type = PROC_MIGRATE_DESTROY;
-	record.info.command.data = (ClientData) NIL;
-	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_TRANSFER,
-		     (ClientData) &record);
-    }
-   
+    ProcMigCmd cmd;
 
     /*
      * Set up for the RPC.
      */
-    migrateCommand.command = PROC_MIGRATE_DESTROY;
-    migrateCommand.remotePID = procPtr->peerProcessID;
-    storage.requestParamPtr = (Address) &migrateCommand;
-    storage.requestParamSize = sizeof(Proc_MigrateCommand);
+    cmd.command = PROC_MIGRATE_CMD_DESTROY;
+    cmd.remotePid = procPtr->peerProcessID;
 
-    storage.requestDataPtr = (Address) NIL;
-    storage.requestDataSize = 0;
+    status = ProcMigCommand(hostID, &cmd, (Proc_MigBuffer *) NIL,
+			    (Proc_MigBuffer *) NIL);
 
-    storage.replyParamPtr = (Address) &returnInfo;
-    storage.replyParamSize = sizeof(Proc_MigrateReply);
-    storage.replyDataPtr = (Address) NIL;
-    storage.replyDataSize = 0;
-
-
-    status = Rpc_Call(nodeID, RPC_PROC_MIG_INFO, &storage);
-
-    if (proc_DoTrace && proc_MigDebugLevel > 2) {
-	record.flags = (foreign ? 0 : PROC_MIGTRACE_HOME);
-	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_TRANSFER,
-		     (ClientData) &record);
-    }
-   
     if (status != SUCCESS && proc_MigDebugLevel > 2) {
 	printf("Warning: KillRemoteCopy: error returned by Rpc_Call: %s.\n",
 		Stat_GetMsg(status));
@@ -1033,13 +1172,13 @@ KillRemoteCopy(procPtr, nodeID, foreign)
  */
 
 void
-Proc_FlagMigration(procPtr, nodeID)
+Proc_FlagMigration(procPtr, hostID)
     Proc_ControlBlock 	*procPtr;	/* The process being migrated */
-    int nodeID;				/* Node to which it migrates */
+    int hostID;				/* Host to which it migrates */
 {
 
     procPtr->genFlags |= PROC_MIG_PENDING;
-    procPtr->peerHostID = nodeID;
+    procPtr->peerHostID = hostID;
     if (procPtr->state == PROC_SUSPENDED) {
 	Sig_SendProc(procPtr, SIG_RESUME, 0);
     }
@@ -1058,9 +1197,11 @@ Proc_FlagMigration(procPtr, nodeID)
  *
  * Results:
  *	SUCCESS is returned if permission is granted.
- *	PROC_MIGRATION_REFUSED is returned if the node is not accepting
+ *	PROC_MIGRATION_REFUSED is returned if the host is not accepting
  *		migrated processes or it is not at the right migration
  *		level.
+ *	GEN_INVALID_ID if the user doesn't have permission to migrate
+ *		from this host or to the other host.
  *	Other errors may be returned by the rpc module.
  *
  * Side effects:
@@ -1070,236 +1211,146 @@ Proc_FlagMigration(procPtr, nodeID)
  */
 
 static ReturnStatus
-InitiateMigration(procPtr, nodeID)
+InitiateMigration(procPtr, hostID)
     register Proc_ControlBlock *procPtr;    	/* process to migrate */
-    int nodeID;			      		/* node to which to migrate */
+    int hostID;			      		/* host to which to migrate */
 {
-    Rpc_Storage storage;
     ReturnStatus status;
-    ProcMigInitiateCmd cmd;
+    ProcMigInitiateCmd init;
+    ProcMigCmd cmd;
+    Proc_MigBuffer inBuf;
+    Proc_MigBuffer outBuf;
+    Proc_PID pid;
+    int foreign;
     
 
-    cmd.pid = procPtr->processID;
-    cmd.version = proc_MigrationVersion;
+    init.processID = procPtr->processID;
+    init.version = proc_MigrationVersion;
+    init.userID = procPtr->effectiveUserID;
+    init.clientID = rpc_SpriteID;
+    if (procPtr->genFlags & PROC_FOREIGN) {
+	foreign = 1;
+	cmd.remotePid = procPtr->peerProcessID;
+    } else {
+	foreign = 0;
+	cmd.remotePid = (Proc_PID) NIL;
+    }
+    cmd.command = PROC_MIGRATE_CMD_INIT;
     
-    storage.requestParamPtr = (Address) &cmd;
-    storage.requestParamSize = sizeof(ProcMigInitiateCmd);
+    inBuf.ptr = (Address) &init;
+    inBuf.size = sizeof(ProcMigInitiateCmd);
 
-    storage.requestDataPtr = (Address) NIL;
-    storage.requestDataSize = 0;
+    outBuf.ptr = (Address) &pid;
+    outBuf.size = sizeof(Proc_PID);
 
-    storage.replyParamPtr = (Address) NIL;
-    storage.replyParamSize = 0;
-
-    storage.replyDataPtr = (Address) NIL;
-    storage.replyDataSize = 0;
-
-    status = Rpc_Call(nodeID, RPC_PROC_MIG_INIT, &storage);
+    status = ProcMigCommand(hostID, &cmd, &inBuf, &outBuf);
 
     if (status != SUCCESS) {
-	/*
-	 * Sanity checking on storage block.
-	 */
-#undef SANITY_CHECK
-#ifdef SANITY_CHECK
-	if ((storage.requestParamPtr != (Address) &procPtr->processID) ||
-	    (storage.requestParamSize != sizeof(Proc_PID)) ||
-	    (storage.requestDataPtr != (Address) NIL) ||
-	    (storage.requestDataSize != 0) ||
-	    (storage.replyParamPtr != (Address) NIL) ||
-	    (storage.replyParamSize != 0) ||
-	    (storage.replyDataPtr != (Address) NIL) ||
-	    (storage.replyDataSize != 0)) {
-	    panic("InitiateMigration: Rpc_Storage corrupted.\n");
-	} else {
-#endif /* SANITY_CHECK */
-	    if (proc_MigDebugLevel > 0) {
-		printf(
-		    "%s InitiateMigration: Error returned by host %d:\n\t%s\n",
-		    "Warning:", nodeID, Stat_GetMsg(status));
-	    }
-#ifdef SANITY_CHECK
+	if (proc_MigDebugLevel > 0) {
+	    printf(
+		   "%s InitiateMigration: Error returned by host %d:\n\t%s\n",
+		   "Warning:", hostID, Stat_GetMsg(status));
 	}
-#endif /* SANITY_CHECK */
+    } else if (!foreign) {
+	procPtr->peerProcessID = pid;
     }
     return(status);
 }
+
 
 
 /*
  *----------------------------------------------------------------------
  *
- * Proc_GetEffectiveProc --
+ * ProcMigCommand --
  *
- *	Get a pointer to the Proc_ControlBlock for the process that is
- *	*effectively* running on the current processor.  Thus, for an
- *	RPC server performing a system call on behalf of a migrated process,
- *	the "effective" process will be the process that invoked the system
- *	call.  In all other cases, the "effective" process will be the
- *	same as the "actual" process.
+ *	Send a process migration-related command to another host.
+ *	This sets up and performs the RPC itself.
+ *
+ * RPC: Input parameters:
+ *		process ID
+ *		command to perform
+ *		data buffer
+ *	Return parameters:
+ *		ReturnStatus
+ *		data buffer
  *
  * Results:
- *	A pointer to the process is returned.  If no process is active,
- *	NIL is returned.
+ *	A ReturnStatus is returned to indicate the status of the RPC.
+ *	The data buffer is filled by the RPC if a result is returned by
+ *	the other host.
  *
  * Side effects:
  *	None.
  *
  *----------------------------------------------------------------------
  */
-Proc_ControlBlock *
-Proc_GetEffectiveProc()
-{
-    Proc_ControlBlock *procPtr;
-
-    procPtr = proc_RunningProcesses[Mach_GetProcessorNumber()];
-    if (procPtr == (Proc_ControlBlock *) NIL ||
-	    procPtr->rpcClientProcess ==  (Proc_ControlBlock *) NIL) {
-	return(procPtr);
-    }
-    return(procPtr->rpcClientProcess);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Proc_SetEffectiveProc --
- *
- *	Set the "effective" process on the current processor.  If the
- *	process is (Proc_ControlBlock) NIL, the effective process is
- *	the same as the real process.
- *
- * Results:
- *	None.  
- *
- * Side effects:
- *	The "rpcClientProcess" field of the current process's
- *	Proc_ControlBlock is set to hold the effective process.
- *
- *----------------------------------------------------------------------
- */
-void
-Proc_SetEffectiveProc(procPtr)
-    Proc_ControlBlock *procPtr;
-{
-    Proc_ControlBlock *actualProcPtr;
-
-    actualProcPtr = Proc_GetActualProc();
-    if (actualProcPtr == (Proc_ControlBlock *) NIL) {
-	panic("Proc_SetEffectiveProcess: current process is NIL.\n");
-    } else {
-	actualProcPtr->rpcClientProcess = procPtr;
-    }
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Proc_MigSendUserInfo --
- *
- *	Send the updateable portions of the state of a process to the
- *	node on which it is currently executing.  This requires
- *	packaging the relevant information from the Proc_ControlBlock
- *	and sending it via an RPC.
- *
- *
- *	The relevant fields are as follows:
- *
- *	int		userID
- *	int		effectiveUserID
- * 	int 		billingRate
- *
- * RPC: Input parameters:
- *		process ID
- *		process control block information
- *	Return parameters:
- *		ReturnStatus
- *
- * Results:
- *	A ReturnStatus is returned to indicate the status of the RPC.
- *
- * Side effects:
- *	A remote procedure call is performed and the process state
- *	is transferred.
- *
- *----------------------------------------------------------------------
- */
 
 ReturnStatus
-Proc_MigSendUserInfo(procPtr)
-    register Proc_ControlBlock 	*procPtr; /* The migrated process */
+ProcMigCommand(host, cmdPtr, inPtr, outPtr)
+    int host;			 /* host to send command to */
+    ProcMigCmd *cmdPtr; /* command to send */
+    Proc_MigBuffer *inPtr;	 /* pair of <size, ptr> for input */
+    Proc_MigBuffer *outPtr;	 /* pair of <size, ptr> for output */
 {
-    Address procBuffer;
-    Address ptr;
-    int procBufferSize;
-    ReturnStatus error;
+    ReturnStatus status;
     Rpc_Storage storage;
-    Proc_MigrateCommand migrateCommand;
-    Proc_MigrateReply returnInfo;
     Proc_TraceRecord record;
 
+#ifndef CLEAN
     if (proc_DoTrace && proc_MigDebugLevel > 2) {
-	record.processID = procPtr->processID;
-	record.flags = PROC_MIGTRACE_START | PROC_MIGTRACE_HOME;
-	record.info.command.type = PROC_MIGRATE_USER_INFO;
+	record.processID = cmdPtr->remotePid;
+	record.flags = PROC_MIGTRACE_START;
+	record.info.command.type = cmdPtr->command;
 	record.info.command.data = (ClientData) NIL;
-	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_TRANSFER,
+	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_COMMAND,
 		     (ClientData) &record);
     }
-
-    /*
-     * Note: this depends on the size of a Proc_PID being the size of
-     * an int.
-     */
-    procBufferSize = PROC_NUM_USER_INFO_FIELDS * sizeof(int);
-    procBuffer = malloc(procBufferSize);
-
-    ptr = procBuffer;
-
-    /*
-     * Copy in user IDs and scheduling information.
-     */
-    Byte_FillBuffer(ptr, int, procPtr->userID);
-    Byte_FillBuffer(ptr, int, procPtr->effectiveUserID);
-    Byte_FillBuffer(ptr, int, procPtr->familyID);
-    Byte_FillBuffer(ptr, int, procPtr->billingRate);
+#endif /* CLEAN */   
 
     /*
      * Set up for the RPC.
      */
-    migrateCommand.command = PROC_MIGRATE_USER_INFO;
-    migrateCommand.remotePID = procPtr->peerProcessID;
-    storage.requestParamPtr = (Address) &migrateCommand;
-    storage.requestParamSize = sizeof(Proc_MigrateCommand);
+    storage.requestParamPtr = (Address) cmdPtr;
+    storage.requestParamSize = sizeof(ProcMigCmd);
 
-    storage.requestDataPtr = procBuffer;
-    storage.requestDataSize = procBufferSize;
+    if (inPtr == (Proc_MigBuffer *) NIL) {
+	storage.requestDataPtr = (Address) NIL;
+	storage.requestDataSize = 0;
+    } else {
+	storage.requestDataPtr = inPtr->ptr;
+	storage.requestDataSize = inPtr->size;
+    }
 
-    storage.replyParamPtr = (Address) &returnInfo;
-    storage.replyParamSize = sizeof(Proc_MigrateReply);
-    storage.replyDataPtr = (Address) NIL;
-    storage.replyDataSize = 0;
+    storage.replyParamPtr = (Address) NIL;
+    storage.replyParamSize = 0;
+
+    if (outPtr == (Proc_MigBuffer *) NIL) {
+	storage.replyDataPtr = (Address) NIL;
+	storage.replyDataSize = 0;
+    } else {
+	storage.replyDataPtr = outPtr->ptr;
+	storage.replyDataSize = outPtr->size;
+    }
 
 
-    error = Rpc_Call(procPtr->peerHostID, RPC_PROC_MIG_INFO, &storage);
+    status = Rpc_Call(host, RPC_PROC_MIG_COMMAND, &storage);
 
-    free(procBuffer);
-
+#ifndef CLEAN
     if (proc_DoTrace && proc_MigDebugLevel > 2) {
-	record.flags = PROC_MIGTRACE_HOME;
-	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_TRANSFER,
+	record.flags = 0;
+	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_COMMAND,
 		     (ClientData) &record);
     }
-   
-    if (error != SUCCESS) {
-	printf("%s Proc_MigSendUserInfo:Error %x returned by Rpc_Call.\n",
-		"Warning:", error);
-	return(error);
-    } else {
-	return(returnInfo.status);
+#endif /* CLEAN */   
+
+    if (status != SUCCESS) {
+	if (proc_MigDebugLevel > 6) {
+	    printf("%s ProcMigCommand: error %x returned by Rpc_Call.\n",
+		"Warning:", status);
+	}
     }
+    return(status);
 }
 
 
@@ -1372,7 +1423,6 @@ Proc_WaitForMigration(processID)
  *
  *----------------------------------------------------------------------
  */
-
 static ENTRY void
 WakeupCallers()
 {
@@ -1422,11 +1472,15 @@ Proc_MigrateStartTracing()
  *
  * Proc_DestroyMigratedProc --
  *
- *	Kill a process, presumably when its peer host (the home node
+ *	Kill a process, presumably when its peer host (the home host
  *	of a foreign process, or the remote host of a migrated process)
  *	is down.  It may also be done if the process is
- *	unsuccessfully killed with a signal, even if the remote node
+ *	unsuccessfully killed with a signal, even if the remote host
  *	hasn't been down long enough to be sure it has crashed.
+ *
+ *	This procedure is distinct from Proc_KillRemoteCopy, which issues
+ * 	a command to do a similar thing on the host to which the process
+ * 	is migrating.  In this case, we're killing our own copy of it.
  *
  * Results:
  *	None.
@@ -1469,12 +1523,6 @@ Proc_DestroyMigratedProc(pidData)
 	Proc_RemoveMigDependency(pid);
 	return;
     }
-#ifdef notdef
-    /*
-     * Wake up the process if it is asleep.
-     */
-    Sync_RemoveWaiter(procPtr);
-#endif
 
     if (procPtr->state == PROC_MIGRATED ||
 	(procPtr->genFlags & PROC_MIGRATING) ||
@@ -1495,14 +1543,13 @@ Proc_DestroyMigratedProc(pidData)
 	 * Let it get killed the normal way, and let the exit routines
 	 * handle cleaning up dependencies.
 	 */
-	Sig_SendProc(procPtr, SIG_KILL, PROC_NO_PEER);
+	Sig_SendProc(procPtr, SIG_KILL, (int) PROC_NO_PEER);
 	Proc_Unlock(procPtr);
     }
 
 }
 
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -1622,7 +1669,71 @@ Proc_NeverMigrate(procPtr)
     Proc_Unlock(procPtr);
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_GetEffectiveProc --
+ *
+ *	Get a pointer to the Proc_ControlBlock for the process that is
+ *	*effectively* running on the current processor.  Thus, for an
+ *	RPC server performing a system call on behalf of a migrated process,
+ *	the "effective" process will be the process that invoked the system
+ *	call.  In all other cases, the "effective" process will be the
+ *	same as the "actual" process.
+ *
+ * Results:
+ *	A pointer to the process is returned.  If no process is active,
+ *	NIL is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+Proc_ControlBlock *
+Proc_GetEffectiveProc()
+{
+    Proc_ControlBlock *procPtr;
 
+    procPtr = proc_RunningProcesses[Mach_GetProcessorNumber()];
+    if (procPtr == (Proc_ControlBlock *) NIL ||
+	    procPtr->rpcClientProcess ==  (Proc_ControlBlock *) NIL) {
+	return(procPtr);
+    }
+    return(procPtr->rpcClientProcess);
+}
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_SetEffectiveProc --
+ *
+ *	Set the "effective" process on the current processor.  If the
+ *	process is (Proc_ControlBlock) NIL, the effective process is
+ *	the same as the real process.
+ *
+ * Results:
+ *	None.  
+ *
+ * Side effects:
+ *	The "rpcClientProcess" field of the current process's
+ *	Proc_ControlBlock is set to hold the effective process.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Proc_SetEffectiveProc(procPtr)
+    Proc_ControlBlock *procPtr;
+{
+    Proc_ControlBlock *actualProcPtr;
 
+    actualProcPtr = Proc_GetActualProc();
+    if (actualProcPtr == (Proc_ControlBlock *) NIL) {
+	panic("Proc_SetEffectiveProcess: current process is NIL.\n");
+    } else {
+	actualProcPtr->rpcClientProcess = procPtr;
+    }
+}
 

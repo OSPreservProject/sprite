@@ -4,7 +4,7 @@
  *	Declarations of types for process migration used only by the proc
  * 	module.
  *
- * Copyright 1986, 1988 Regents of the University of California
+ * Copyright 1986, 1988, 1989 Regents of the University of California
  * Permission to use, copy, modify, and distribute this
  * software and its documentation for any purpose and without
  * fee is hereby granted, provided that the above copyright
@@ -20,32 +20,6 @@
 #ifndef _MIGRATE
 #define _MIGRATE
 
-/* 
- * Define the number of 4-byte fields transferred in a shot when
- * updating user information.  Note: Timer_Ticks count as multiple
- * fields.  Proc_PIDs are 4-byte fields just like ints. See the
- * comments in SendProcessState for a list of fields that are
- * transferred.
- */
-
-#define PROC_NUM_FLAGS 4
-#define PROC_NUM_ID_FIELDS 4
-#define PROC_NUM_SCHED_FIELDS (7 + 4 * (sizeof(Timer_Ticks) / sizeof(int)))
-
-/*
- * A process is allowed to update its userID, effectiveUserID, billingRate,
- * or familyID.
- * If any of these fields is modified, all of them are transferred to
- * the remote node.
- */
-#define PROC_NUM_USER_INFO_FIELDS 4
-
-/*
- * Size of various fields of the PCB structure copied upon migration.
- */
-
-#define SIG_INFO_SIZE (((3 * SIG_NUM_SIGNALS) + 4) * sizeof(int))
-
 /*
  * Parameters for a remote Proc_Wait.
  */
@@ -58,13 +32,52 @@ typedef struct {
 } ProcRemoteWaitCmd;
 
 /*
- * Parameters when initiating migration to another machine.
+ * Types of commands passed related to migration:
+ *
+ * PROC_MIGRATE_CMD_INIT	- Initiate a migration.
+ * PROC_MIGRATE_CMD_ENTIRE	- Process control block.
+ * PROC_MIGRATE_CMD_UPDATE	- Update user information that may change, 
+ *		  		  such as priorities or IDs.
+ * PROC_MIGRATE_CMD_CALLBACK 	- Callback by another module to transfer
+ *				  additional encapsulated state.
+ * PROC_MIGRATE_CMD_DESTROY	- Destroy a migrated process due to an error
+ *				  during migration.
+ * PROC_MIGRATE_CMD_RESUME	- Resume a migrated process after transfer.
+ */
+
+#define PROC_MIGRATE_CMD_INIT		0
+#define PROC_MIGRATE_CMD_ENTIRE		1
+#define PROC_MIGRATE_CMD_UPDATE		2
+#define PROC_MIGRATE_CMD_CALLBACK	3
+#define PROC_MIGRATE_CMD_DESTROY	4
+#define PROC_MIGRATE_CMD_RESUME		5
+
+#define PROC_MIGRATE_CMD_NUM_TYPES	5
+    
+/* 
+ * Data sent to the other host related to migration.  This is done
+ * either to perform the entire state transfer or parts (see above).
+ * It always specifies a processID, which may be NIL to indicate a new
+ * process is to be created (only during PROC_MIGRATE_INIT).
  */
 
 typedef struct {
-    Proc_PID 	pid;	    /* ID of process being migrated */
+    Proc_PID			remotePid;
+    int			  	command;
+} ProcMigCmd;
+    
+
+/*
+ * Parameters when initiating migration to another machine.  This is done
+ * to check permission as well as incompatible versions.
+ */
+
+typedef struct {
     int 	version;    /* Migration version number of machine starting
-			     * migration */
+			     * migration (should come first) */
+    Proc_PID 	processID;    /* ID of process being migrated */
+    int		userID;	    /* userID of process being migrated */
+    int		clientID;   /* ID of host issuing command */
 } ProcMigInitiateCmd;
 
 /*
@@ -73,5 +86,16 @@ typedef struct {
  */
 
 #define PROC_MAX_RPC_RETRIES 2
+
+/*
+ * Various proc-internal procedures.
+ */
+extern ReturnStatus ProcMigAcceptMigration();
+extern ReturnStatus ProcMigReceiveProcess();
+extern ReturnStatus ProcMigGetUpdate();
+extern ReturnStatus ProcMigEncapCallback();
+extern ReturnStatus ProcMigDestroyCmd();
+extern ReturnStatus ProcMigCommand();
+extern ReturnStatus ProcMigContinueProcess();
 
 #endif /* _MIGRATE */

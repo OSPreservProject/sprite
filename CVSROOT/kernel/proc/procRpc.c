@@ -174,6 +174,33 @@ static CallBack callBackVector[] = {
 
 
 /*
+ * Define an array of callbacks to do when handling migration commands.
+ * Each of these procedures is called with the following arguments:
+ *
+ *	func(cmdPtr, procPtr, inBufSize, inBufPtr, outBufSizePtr,
+ *	      outBufPtrPtr)
+ *
+ * cmdPtr is a pointer to a ProcMigCommand structure containing the
+ * processID of the process on this host, and the input and output
+ * buffers are dependent on the command.  The output buffer arguments
+ * may be left alone, or set to point to a newly allocated buffer.
+ * procPtr is generally a pointer to a locked control block for the
+ * process being operated on, or is NIL in the case of
+ * ProcMigAcceptMigration creating a new process.
+ */
+static PRS commandCallbacks[] = {
+    ProcMigAcceptMigration,
+    ProcMigReceiveProcess,
+    ProcMigGetUpdate,
+    ProcMigEncapCallback,
+    ProcMigDestroyCmd,
+    ProcMigContinueProcess,
+};
+
+
+
+
+/*
  *----------------------------------------------------------------------
  *
  * RpcRemoteCall --
@@ -854,121 +881,37 @@ Proc_RpcRemoteWait(srvToken, clientID, command, storagePtr)
     return(status);
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * Proc_RpcMigInit --
- *
- *	Handle a request to start process migration.
- *	This could check things like the number of remote processes,
- *	load, or whatever. For now, just check against a global flag
- *	that says whether to refuse migrations, and compare architecture
- *	types and version numbers.
- *
- * Results:
- *	SUCCESS is returned if permission is granted.
- *	PROC_MIGRATION_REFUSED is returned if the node is not accepting
- *		migrated processes, or there is a mismatch.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-ReturnStatus
-Proc_RpcMigInit(srvToken, clientID, command, storagePtr)
-    ClientData srvToken;	/* Handle on server process passed to
-				 * Rpc_Reply */
-    int clientID;		/* Sprite ID of client host */
-    int command;		/* Command identifier */
-    Rpc_Storage *storagePtr;	/* The request fields refer to the request
-				 * buffers and also indicate the exact amount
-				 * of data in the request buffers.  The reply
-				 * fields are initialized to NIL for the
-				 * pointers and 0 for the lengths.  This can
-				 * be passed to Rpc_Reply */
-{
-    ProcMigInitiateCmd *cmdPtr;
-    char *machType;
-
-    if (proc_RefuseMigrations) {
-	goto error;
-    }
-    if (storagePtr->requestParamSize != sizeof(ProcMigInitiateCmd)) {
-	/*
-	 * Implicit version mismatch if they're not the same size.
-	 */
-	if (proc_MigDebugLevel > 0) {
-	    printf("Migration version mismatch: size of initiation request");
-	    printf(" is %d, not %d.\n", storagePtr->requestParamSize,
-	           sizeof(ProcMigInitiateCmd));
-        }
-	goto error;
-    }
-
-    cmdPtr = (ProcMigInitiateCmd *) storagePtr->requestParamPtr;
-    /*
-     * Note: the processID is ignored, at least for now. But we look
-     * at the version number passed across, plus what we know about this
-     * sprite host.
-     */
-    if (cmdPtr->version != proc_MigrationVersion) {
-	if (proc_MigDebugLevel > 1) {
-	    printf("Migration version mismatch: we are level %d; client %d is level %d.\n",
-		   proc_MigrationVersion, clientID, cmdPtr->version);
-	}
-	goto error;
-    }
-    machType = Net_SpriteIDToMachType(clientID);
-    if (machType == (char *) NIL) {
-	printf("Warning: Proc_RpcMigInit: couldn't get machine type for client %d.\n",
-	       clientID);
-	goto error;
-    }
-    if (strcmp(machType, mach_MachineType)) {
-	if (proc_MigDebugLevel > 0) {
-	    printf("Warning: Proc_RpcMigInit: client %d (%s) tried to migrate to this machine.\n",
-		   clientID, machType);
-	}
-	goto error;
-    }
-    Rpc_Reply(srvToken, SUCCESS, storagePtr, (int(*)()) NIL, (ClientData) NIL);
-    return(SUCCESS);
-
-error:
-    Rpc_Reply(srvToken, PROC_MIGRATION_REFUSED,
-	      storagePtr, (int(*)()) NIL, (ClientData) NIL);
-    return(SUCCESS);
-}
 
 
 /*
  *----------------------------------------------------------------------
  *
- * Proc_RpcMigInfo --
+ * Proc_RpcMigCommand --
  *
- *	Handle a request to transfer information for process migration.
- *
- *	Note: now that this has been moved into the proc module, it
- *	can be collapsed into the routine it calls....
+ *	Handle a request regarding process migration.  This may be a
+ *	request to initiate migration, a buffer containing part or all
+ *	of the encapsulated state of a process, a callback by another
+ *	module during state transfer, or a command to asynchronously
+ *	kill a migrated process due to some error.
  *
  * Results:
- *	A return status.
+ *	SUCCESS is returned to the rpc daemon invoking this procedure.
+ *	Various ReturnStatus values may be returned via the RPC itself.
+ *	It is either SUCCESS or some error returned by a lower level routine
+ *	(e.g., no such process). In addition, the called routine may
+ *	return arbitrary data.
  *
  * Side effects:
- *	Process state (process control block, virtual memory, or file state)
- * 	is copied onto the remote workstation (the RPC server).
+ *	Variable (see above).
  *
  *----------------------------------------------------------------------
  */
 /*ARGSUSED*/
 ReturnStatus
-Proc_RpcMigInfo(srvToken, clientID, command, storagePtr)
+Proc_RpcMigCommand(srvToken, hostID, command, storagePtr)
     ClientData srvToken;	/* Handle on server process passed to
 				 * Rpc_Reply */
-    int clientID;		/* Sprite ID of client host */
+    int hostID;			/* Sprite ID of host invoking RPC */
     int command;		/* Command identifier */
     Rpc_Storage *storagePtr;	/* The request fields refer to the request
 				 * buffers and also indicate the exact amount
@@ -979,26 +922,54 @@ Proc_RpcMigInfo(srvToken, clientID, command, storagePtr)
 {
     ReturnStatus status;
     Rpc_ReplyMem	*replyMemPtr;
-    Proc_MigrateReply *returnInfoPtr;
+    ProcMigCmd *commandPtr =
+	(ProcMigCmd *) storagePtr->requestParamPtr;
+    Proc_MigBuffer	inBuf;
+    Proc_MigBuffer	outBuf;
+    Proc_ControlBlock *procPtr;
 
-    returnInfoPtr = (Proc_MigrateReply *) malloc(sizeof(Proc_MigrateReply));
-    status = Proc_MigReceiveInfo(clientID,
-            (Proc_MigrateCommand *) storagePtr->requestParamPtr,
-	    storagePtr->requestDataSize,
- 	    storagePtr->requestDataPtr,
-	    returnInfoPtr);
-    if (status == SUCCESS) {
-	storagePtr->replyParamPtr = (Address) returnInfoPtr;
-	storagePtr->replyParamSize = sizeof(Proc_MigrateReply);
-
-	replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
-	replyMemPtr->paramPtr = (Address) returnInfoPtr;
-	replyMemPtr->dataPtr = (Address) NIL;
-	Rpc_Reply(srvToken, SUCCESS, storagePtr, Rpc_FreeMem,
-		(ClientData) replyMemPtr);
+    if (commandPtr->remotePid != (Proc_PID) NIL) {
+	PROC_GET_VALID_PCB(commandPtr->remotePid, procPtr);
+	if (procPtr == (Proc_ControlBlock *) NIL) {
+	    if (proc_MigDebugLevel > 3) {
+		panic("Invalid pid: %x.\n", commandPtr->remotePid);
+	    }
+	    status = PROC_NO_PEER;
+	    goto failure;
+	}
+    } else {
+	procPtr = (Proc_ControlBlock *) NIL;
     }
 
-    return(status);
+    inBuf.size = storagePtr->requestDataSize;
+    inBuf.ptr = storagePtr->requestDataPtr;
+    outBuf.size = 0;
+    outBuf.ptr = (Address) NIL;
+
+    status = (*commandCallbacks[commandPtr->command])
+	(commandPtr, procPtr, &inBuf, &outBuf);
+#ifdef lint
+    status = ProcMigAcceptMigration(commandPtr, procPtr, &inBuf, &outBuf);
+    status = ProcMigReceiveProcess(commandPtr, procPtr, &inBuf, &outBuf);
+    status = ProcMigUpdateState(commandPtr, procPtr, &inBuf, &outBuf);
+    status = ProcMigEncapCallback(commandPtr, procPtr, &inBuf, &outBuf);
+    status = ProcMigDestroyCmd(commandPtr, procPtr, &inBuf, &outBuf);
+#endif /* lint */
+    if (status == SUCCESS && outBuf.size > 0) {
+	storagePtr->replyDataPtr = outBuf.ptr;
+	storagePtr->replyDataSize = outBuf.size;
+
+	replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
+	replyMemPtr->paramPtr = (Address) NIL;
+	replyMemPtr->dataPtr = outBuf.ptr;
+	Rpc_Reply(srvToken, SUCCESS, storagePtr, Rpc_FreeMem,
+		(ClientData) replyMemPtr);
+    } else {
+failure:
+	Rpc_Reply(srvToken, status,
+		  storagePtr, (int(*)()) NIL, (ClientData) NIL);
+    }
+    return(SUCCESS);
 }
 
 

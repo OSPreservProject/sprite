@@ -23,15 +23,6 @@
 #include "trace.h"
 #include "sys.h"
 
-extern int proc_MigDebugLevel;
-extern int proc_MigrationVersion;
-extern Boolean proc_DoTrace;
-extern Boolean proc_DoCallTrace;
-extern Boolean proc_KillMigratedDebugs;
-
-
-#define PROC_MIG_ANY 0
-
 /*
  * Define a macro to get a valid PCB for a migrated process.  This gets the
  * PCB corresponding to the process ID, and if it is a valid PCB the macro
@@ -49,53 +40,6 @@ extern Boolean proc_KillMigratedDebugs;
 	}
 
 /*
- * Information returned upon first transferring a process state.
- */
-
-typedef struct {
-    ReturnStatus	status;
-    Proc_PID		remotePID;
-    unsigned int	filler;
-} Proc_MigrateReply;
-
-/*
- * Types of information passed during a migration:
- *
- * PROC_MIGRATE_PROC		- Process control block.
- * PROC_MIGRATE_VM		- Vm segment.
- * PROC_MIGRATE_FILES		- All files.
- * PROC_MIGRATE_FS_STREAM 	- A particular Fs_Stream.
- * PROC_MIGRATE_USER_INFO 	- User information that may change, such as
- *		  		  priorities or IDs.
- *
- * Other commands that may be sent via RPC:
- *
- * PROC_MIGRATE_RESUME	- Resume execution of a migrated process.
- * PROC_MIGRATE_DESTROY	- Destroy a migrated process due to an error during
- *			  migration.
- */
-
-typedef enum {
-    PROC_MIGRATE_PROC,
-    PROC_MIGRATE_VM,
-    PROC_MIGRATE_FILES,
-    PROC_MIGRATE_FS_STREAM,
-    PROC_MIGRATE_USER_INFO,
-    PROC_MIGRATE_RESUME,
-    PROC_MIGRATE_DESTROY
-} Proc_MigrateCommandType;
-    
-/* 
- * Information sent when transferring a segment.
- */
-
-typedef struct {
-    Proc_PID			remotePID;
-    Proc_MigrateCommandType  	command;
-    unsigned int		filler;
-} Proc_MigrateCommand;
-    
-/*
  * Structure to contain information for the arguments to a system call
  * for a migrated process.    The size is the size of the argument passed
  * to or from the other node.  The disposition is SYS_PARAM_IN and/or
@@ -106,6 +50,16 @@ typedef struct {
     int size;
     int disposition;
 } Proc_ParamInfo;
+
+/*
+ * Define a simple buffer for passing both buffer size and pointer in
+ * a single argument.  (This simplifies the case when the buffer is NIL).
+ */
+
+typedef struct {
+    int size;
+    Address ptr;
+} Proc_MigBuffer;
 
 /* 
  * Generic information sent when migrating a system call back to the
@@ -141,14 +95,14 @@ extern Trace_Header *proc_TraceHdrPtr;
  *
  *	PROC_MIGTRACE_BEGIN_MIG 	- starting to transfer a process
  *	PROC_MIGTRACE_END_MIG 		- completed transferring a process
- *	PROC_MIGTRACE_TRANSFER  	- a particular transfer operation
+ *	PROC_MIGTRACE_COMMAND  	- a particular transfer operation
  *	PROC_MIGTRACE_CALL		- a migrated system call
  *	
  */
 
 #define PROC_MIGTRACE_BEGIN_MIG 	0
 #define PROC_MIGTRACE_END_MIG 		1
-#define PROC_MIGTRACE_TRANSFER  	2
+#define PROC_MIGTRACE_COMMAND  	2
 #define PROC_MIGTRACE_CALL		3
 #define PROC_MIGTRACE_MIGTRAP		4
 
@@ -158,7 +112,7 @@ typedef struct {
 } Proc_SysCallTrace;
 
 typedef struct {
-    Proc_MigrateCommandType type;
+    int type;
     ClientData data;
 } Proc_CommandTrace;
 
@@ -196,6 +150,101 @@ typedef struct Proc_DestroyMigProcData {
 } Proc_DestroyMigProcData;
 
 /*
+ * Define the state of this machine w.r.t accepting migrated processes.
+ * A machine must always be willing to accept its own processes if they
+ * are migrated home.  Other than that, a host may allow migrations onto
+ * it under various sets of criteria, and may allow migrations away from
+ * it under similar sets of criteria.
+ *
+ *	PROC_MIG_IMPORT_NEVER		- never allow migrations to this host.
+ *	PROC_MIG_IMPORT_ROOT 		- allow migrations to this host only
+ *					  by root.
+ *	PROC_MIG_IMPORT_ALL  		- allow migrations by anyone.
+ *	PROC_MIG_IMPORT_ANYINPUT 	- don't check keyboard input when
+ *					  determining availability.
+ *	PROC_MIG_IMPORT_ANYLOAD  	- don't check load average when
+ *					  determining availability.
+ *	PROC_MIG_IMPORT_ALWAYS  	- don't check either.
+ *	PROC_MIG_EXPORT_NEVER    	- never export migrations from this
+ * 					  host.
+ *	PROC_MIG_EXPORT_ROOT	        - allow only root to export.
+ *	PROC_MIG_EXPORT_ALL	        - allow anyone to export.
+ *
+ * For example, a reasonable default for a file server might be to import
+ * and export only for root; for a user's machine, it might be to allow
+ * anyone to migrate; and for a compute server, it might never export
+ * and import always regardless of load average or keyboard input.  (The
+ * load average would not have to be exceptionally low to determine
+ * availability; the host still would only be selected if the load average
+ * were low enough to gain something by migrating to it.)
+ */
+
+#define PROC_MIG_IMPORT_NEVER 			 0
+#define PROC_MIG_IMPORT_ROOT    	0x00000001
+#define PROC_MIG_IMPORT_ALL     	0x00000003
+#define PROC_MIG_IMPORT_ANYINPUT	0x00000010
+#define PROC_MIG_IMPORT_ANYLOAD		0x00000020
+#define PROC_MIG_IMPORT_ALWAYS  \
+			(PROC_MIG_IMPORT_ANYINPUT | PROC_MIG_IMPORT_ANYLOAD)
+#define PROC_MIG_EXPORT_NEVER			 0
+#define PROC_MIG_EXPORT_ROOT		0x00010000
+#define PROC_MIG_EXPORT_ALL		0x00030000
+
+#define PROC_MIG_ALLOW_DEFAULT (PROC_MIG_IMPORT_ALL | PROC_MIG_EXPORT_ALL)
+
+
+/*
+ * Information for encapsulating process state.
+ */
+
+/*
+ * Identifiers to match encapsulated states and modules.
+ */
+typedef enum {
+    PROC_MIG_ENCAP_PROC,
+    PROC_MIG_ENCAP_VM,
+    PROC_MIG_ENCAP_FS,
+    PROC_MIG_ENCAP_MACH,
+    PROC_MIG_ENCAP_PROF,
+    PROC_MIG_ENCAP_SIG,
+} Proc_EncapToken;
+
+#define PROC_MIG_NUM_CALLBACKS 6
+
+/*
+ * Each module that participates has a token defined for it.
+ * It also provides routines to encapsulate and deencapsulate data,
+ * as well as optional routines that may be called prior to migration
+ * and subsequent to migration.  This structure is passed around to
+ * other modules performing encapsulation.
+ */
+typedef struct {
+    Proc_EncapToken	token;		/* info about encapsulated data */
+    int			size;		/* size of encapsulated data */
+    ClientData		data;		/* for use by encapsulator */
+    int			special;	/* indicates special action required */
+    ClientData		specialToken;	/* for use during special action */
+    int			processed;	/* indicates this module did possibly
+					   destructive encapsulation operation
+					   and should be called to clean up
+					   on failure */
+					   
+} Proc_EncapInfo;
+
+
+/*
+ * External declarations of variables and procedures.
+ */
+extern int proc_MigDebugLevel;		/* amount of debugging info to print */
+extern int proc_MigrationVersion;	/* to distinguish incompatible
+					   versions of migration */
+extern Boolean proc_DoTrace;		/* controls amount of tracing */
+extern Boolean proc_DoCallTrace;	/* ditto */
+extern Boolean proc_KillMigratedDebugs;	/* kill foreign processes instead
+					   of putting them in the debugger */
+extern int proc_AllowMigrationState;	/* how much migration to permit */
+
+/*
  * Functions for process migration.  [Others should be moved here.]
  */
 extern void Proc_ResumeMigProc();
@@ -206,6 +255,8 @@ extern void Proc_AddMigDependency();
 extern ReturnStatus Proc_WaitForHost();
 extern ReturnStatus Proc_WaitForMigration();
 
+extern ReturnStatus Proc_RpcMigCommand();
+extern ReturnStatus Proc_RpcRemoteCall();
 
 
 #endif /* _PROCMIGRATE */
