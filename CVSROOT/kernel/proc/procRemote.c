@@ -615,7 +615,7 @@ ProcResumeMigProc()
     procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
     Proc_Lock(procPtr);
     procPtr->genFlags &= ~PROC_NO_VM;
-    VmMach_SetupContext(procPtr);
+    VmMach_ReinitContext(procPtr);
     Proc_Unlock(procPtr);
 
     /*

@@ -249,7 +249,7 @@ Proc_KernExec(fileName, argPtrArray)
     procPtr->genFlags |= PROC_USER;
     Proc_Unlock(procPtr);
 
-    VmMach_SetupContext(procPtr);
+    VmMach_ReinitContext(procPtr);
 
     status = DoExec(fileName, String_Length(fileName),
 		    argPtrArray, PROC_MAX_EXEC_ARGS, (char **) NIL, 0,
