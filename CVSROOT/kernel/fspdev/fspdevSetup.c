@@ -355,8 +355,8 @@ exit:
  * Side effects:
  *	Creates the client's I/O handle.  Calls FsServerStreamCreate
  *	which sets up the servers corresponding I/O handle.
- *	Top-level streams are not created, that is left to our caller because
- *	of the various ways the connection will be used and set up.
+ *	This changes the ioFileIDPtr->type from FS_LCL_PSEUDO_STREAM to
+ *	FS_SERVER_STREAM.
  *
  *----------------------------------------------------------------------
  */
@@ -512,9 +512,10 @@ FsServerStreamCreate(ioFileIDPtr, name)
  *
  *	Complete a remote client's stream to a pseudo-device.
  *	The client is on a different host than the server process.  This
- *	makes an RPC to the server's host to invoke FsPseudoStreamCltOpen.
- *	This host only keeps a FsRemoteIOHandle, and the FsRemoteIOClose
- *	routine is used to close it.
+ *	makes an RPC to the pseudo-device server's host to invoke
+ *	FsPseudoStreamCltOpen, which sets up the pdev connection.
+ *	This host only keeps a FsRemoteIOHandle that implicitly references
+ *	the pdev connection on the pdev server's host.
  * 
  * Results:
  *	SUCCESS unless the server process has died recently, then DEV_OFFLINE.
@@ -537,53 +538,21 @@ FsRmtPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 					 * I/O to a pseudo device, or NIL */
 {
     register ReturnStatus status;
+    register Proc_ControlBlock *procPtr;
     register FsPdevState *pdevStatePtr = (FsPdevState *)streamData;
-    register FsRecoveryInfo *recovPtr;
-    Proc_ControlBlock *procPtr;
-    FsRemoteIOHandle *rmtHandlePtr;
-    int myStreamType;
-    int serverStreamType = -1;
-    Boolean found;
 
     /*
-     * We are called for both FS_RMT_PFS_STREAM and FS_RMT_PSEUDO_STREAM.
-     * These two differ only in the CltOpen routine called on the server.
-     */
-    myStreamType = ioFileIDPtr->type;
-    if (myStreamType > 0 && myStreamType < FS_NUM_STREAM_TYPES) {
-	serverStreamType = fsRmtToLclType[myStreamType];
-    }
-    if (serverStreamType != FS_LCL_PSEUDO_STREAM &&
-	serverStreamType != FS_LCL_PFS_STREAM) {
-	Sys_Panic(SYS_FATAL, "FsRmtPseudoStreamCltOpen, bad call\n");
-	return(FAILURE);
-    }
-    /*
-     * Use RPC to invoke either FsPseudoStreamCltOpen or FsPfsStreamCltOpen.
+     * Use RPC to invoke FsPseudoStreamCltOpen which sets up the connection.
      */
     procPtr = Proc_GetEffectiveProc();
     pdevStatePtr->procID = procPtr->processID;
     pdevStatePtr->uid = procPtr->effectiveUserID;
-    ioFileIDPtr->type = serverStreamType;
+    ioFileIDPtr->type = FS_LCL_PSEUDO_STREAM;
     status = FsDeviceRemoteOpen(ioFileIDPtr, *flagsPtr,	sizeof(FsPdevState),
 				(ClientData)pdevStatePtr);
     if (status == SUCCESS) {
-	/*
-	 * Install a remote I/O handle and initialize its recovery state.
-	 */
-	ioFileIDPtr->type = myStreamType;
-	found = FsHandleInstall(ioFileIDPtr, sizeof(FsRemoteIOHandle), name,
-		(FsHandleHeader **)&rmtHandlePtr);
-	recovPtr = &rmtHandlePtr->recovery;
-	if (!found) {
-	    FsRecoveryInit(recovPtr);
-	}
-	recovPtr->use.ref++;
-	if (*flagsPtr & FS_WRITE) {
-	    recovPtr->use.write++;
-	}
-	*ioHandlePtrPtr = (FsHandleHeader *)rmtHandlePtr;
-	FsHandleUnlock(rmtHandlePtr);
+	ioFileIDPtr->type = FS_RMT_PSEUDO_STREAM;
+	FsRemoteIOHandleInit(ioFileIDPtr, *flagsPtr, name, ioHandlePtrPtr);
     }
     Mem_Free((Address)pdevStatePtr);
     return(status);
