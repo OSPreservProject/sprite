@@ -25,9 +25,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "timer.h"
 #include "dbg.h"
 #include "varg.h"
-#include "user/byte.h"
 #include "user/list.h"
-#include "user/char.h"
 
 /*
  * Definition of mutual exclusion variable.
@@ -136,7 +134,7 @@ Dev_SyslogRead(devicePtr, offset, bufSize, bufPtr, lenPtr)
 	    toRead = bytesLeft;
 	    firstIndex += toRead;
 	}
-	Byte_Copy(toRead, copyAddr, bufPtr);
+	bcopy(copyAddr, bufPtr,toRead);
 	bufPtr += toRead;
 	bytesLeft -= toRead;
     }
@@ -150,7 +148,7 @@ Dev_SyslogRead(devicePtr, offset, bufSize, bufPtr, lenPtr)
 	    toRead = bytesLeft;
 	    firstIndex += toRead;
 	}
-	Byte_Copy(toRead, copyAddr, bufPtr);
+	bcopy(copyAddr, bufPtr,toRead);
 	bytesLeft -= toRead;
     }
     MASTER_UNLOCK(syslogMutex);
@@ -211,7 +209,7 @@ Dev_SyslogWrite(devicePtr, offset, bufSize, bufPtr, bytesWrittenPtr)
 	if (toWrite > bufSize) {
 	    toWrite = bufSize;
 	}
-	Byte_Copy(toWrite, bufPtr, &syslogBuffer[lastIndex + 1]);
+	bcopy(bufPtr, &syslogBuffer[lastIndex + 1], toWrite);
 	bufSize -= toWrite;
 	bufPtr += toWrite;
 	lastIndex += toWrite;
@@ -244,7 +242,7 @@ Dev_SyslogWrite(devicePtr, offset, bufSize, bufPtr, bytesWrittenPtr)
 	    if (toWrite > bufSize) {
 		toWrite = bufSize;
 	    }
-	    Byte_Copy(toWrite, bufPtr, syslogBuffer);
+	    bcopy(bufPtr, syslogBuffer, toWrite);
 	    lastIndex = nextIndex + toWrite - 1;
 	    bufSize -= toWrite;
 	}

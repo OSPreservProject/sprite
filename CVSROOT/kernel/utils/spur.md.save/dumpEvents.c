@@ -83,7 +83,7 @@ Dump_Show_Local_Menu()
 
     EventTableType	*entry;
     for (entry = spurEventTable; entry->routine != LAST_EVENT; entry++) {
-	Sys_Printf("%c - %s\n",entry->key, entry->description);
+	printf("%c - %s\n",entry->key, entry->description);
     }
 }
 

@@ -154,10 +154,10 @@ Sig_ProcInit(procPtr)
 {
     procPtr->sigHoldMask = 0;
     procPtr->sigPendingMask = 0;
-    Byte_Copy(sizeof(sigDefActions), (Address)sigDefActions, 
-	      (Address)procPtr->sigActions);
-    Byte_Zero(sizeof(procPtr->sigMasks), (Address)procPtr->sigMasks);
-    Byte_Zero(sizeof(procPtr->sigCodes), (Address)procPtr->sigCodes);
+    bcopy((Address)sigDefActions,(Address)procPtr->sigActions,
+              sizeof(sigDefActions));
+    bzero((Address)procPtr->sigMasks,sizeof(procPtr->sigMasks)); 
+    bzero((Address)procPtr->sigCodes,sizeof(procPtr->sigCodes));
     procPtr->sigFlags = 0;
 }
 
@@ -192,13 +192,13 @@ Sig_Fork(parProcPtr, childProcPtr)
     childProcPtr->sigHoldMask = parProcPtr->sigHoldMask |
 	    SigGetBitMask(SIG_MIGRATE_TRAP);
     childProcPtr->sigPendingMask = 0;
-    Byte_Copy(sizeof(childProcPtr->sigActions), 
-	      (Address)parProcPtr->sigActions, 
-	      (Address)childProcPtr->sigActions);
-    Byte_Copy(sizeof(childProcPtr->sigMasks), 
-	      (Address)parProcPtr->sigMasks, 
-	      (Address)childProcPtr->sigMasks);
-    Byte_Zero(sizeof(childProcPtr->sigCodes), (Address)childProcPtr->sigCodes);
+    bcopy((Address)parProcPtr->sigActions, 
+	  (Address)childProcPtr->sigActions,
+	  sizeof(childProcPtr->sigActions)); 
+    bcopy((Address)parProcPtr->sigMasks, 
+	  (Address)childProcPtr->sigMasks,
+    	  sizeof(childProcPtr->sigMasks)); 
+    bzero((Address)childProcPtr->sigCodes,sizeof(childProcPtr->sigCodes));
     childProcPtr->sigFlags = 0;
 }
 
@@ -305,8 +305,8 @@ Sig_ChangeState(procPtr, actions, sigMasks, pendingMask, sigCodes, holdMask)
     procPtr->sigPendingMask = pendingMask;
 
     procPtr->sigHoldMask = holdMask & sigCanHoldMask;
-    Byte_Copy(sizeof(procPtr->sigCodes), (Address) sigCodes, 
-		(Address) procPtr->sigCodes);
+    bcopy((Address) sigCodes, (Address) procPtr->sigCodes,
+          sizeof(procPtr->sigCodes));
     procPtr->specialHandling = 1;
 
     UNLOCK_MONITOR;
@@ -552,7 +552,7 @@ Sig_Send(sigNum, code, id, familyID)
 	if (Proc_ComparePIDs(id, PROC_MY_PID)) {
 	    procPtr = Proc_GetEffectiveProc();
 	    if (procPtr == (Proc_ControlBlock *) NIL) {
-		Sys_Panic(SYS_FATAL, "Sig_Send: procPtr == NIL\n");
+		panic("Sig_Send: procPtr == NIL\n");
 	    }
 	    Proc_Lock(procPtr);
 	} else {
@@ -1039,13 +1039,13 @@ Sig_Handle(procPtr, sigStackPtr, pcPtr)
      */
     switch (procPtr->sigActions[sigNum]) {
 	case SIG_IGNORE_ACTION:
-	    Sys_Panic(SYS_WARNING, 
-	    "Sig_Handle:  An ignored signal was in a signal pending mask.\n");
+	    printf("Warning: %s\n",
+	    "Sig_Handle:  An ignored signal was in a signal pending mask.");
 	    return(FALSE);
 
 	case SIG_KILL_ACTION:
 	    Proc_ExitInt(PROC_TERM_SIGNALED, sigNum, procPtr->sigCodes[sigNum]);
-	    Sys_Panic(SYS_FATAL, "Sig_Handle: Proc_Exit returned!\n");
+	    panic("Sig_Handle: Proc_Exit returned!\n");
 
 	case SIG_SUSPEND_ACTION:
 	case SIG_DEBUG_ACTION:
@@ -1080,7 +1080,7 @@ Sig_Handle(procPtr, sigStackPtr, pcPtr)
 		
 	    if (procPtr->peerHostID != NIL) {
 		if (proc_MigDebugLevel > 6) {
-		    Sys_Printf("Sig_Handle calling Proc_MigrateTrap for process %x.\n",
+		    printf("Sig_Handle calling Proc_MigrateTrap for process %x.\n",
 			       procPtr->processID);
 		}
 		Proc_MigrateTrap(procPtr);
@@ -1088,8 +1088,7 @@ Sig_Handle(procPtr, sigStackPtr, pcPtr)
 	    return(FALSE);
 
 	case SIG_DEFAULT_ACTION:
-	    Sys_Panic(SYS_FATAL, 
-		 "Sig_Handle: SIG_DEFAULT_ACTION found in array of actions?\n");
+	    panic("Sig_Handle: SIG_DEFAULT_ACTION found in array of actions?\n");
     }
 
     /*

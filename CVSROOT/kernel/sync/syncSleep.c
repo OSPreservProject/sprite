@@ -179,7 +179,7 @@ WaitTimeSubr(wakeupTime)
 	if (wokeUp) {
 	    sync_Instrument.numSpuriousWakeups++;
 #ifdef DEBUG
-	    Sys_Printf("Sync_WaitTime: woke up for wrong reason.\n");
+	    printf("Sync_WaitTime: woke up for wrong reason.\n");
 #endif /* DEBUG */
 	}
 	sigPending = SyncEventWaitInt((unsigned int) procPtr, TRUE);

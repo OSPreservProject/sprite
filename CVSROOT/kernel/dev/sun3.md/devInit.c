@@ -96,7 +96,7 @@ Dev_Config()
 				 * kernel virtual space */
 
     if (devConfigDebug) {
-	Sys_Printf("Dev_Config calling debugger:");
+	printf("Dev_Config calling debugger:");
 	DBG_CALL;
     }
     for (index = 0 ; index < devNumConfigCntrlrs ; index++) {
@@ -219,7 +219,7 @@ Dev_Config()
 	if (cntrlrPtr->address != NIL) {
 	    cntrlrPtr->exists = (*cntrlrPtr->initProc)(cntrlrPtr);
 	    if (cntrlrPtr->exists) {
-		Sys_Printf("%s-%d at kernel address %x\n", cntrlrPtr->name,
+		printf("%s-%d at kernel address %x\n", cntrlrPtr->name,
 			      cntrlrPtr->controllerID, cntrlrPtr->address);
 		if (cntrlrPtr->vectorNumber > 0) {
 		    Mach_SetHandler(cntrlrPtr->vectorNumber,
@@ -302,7 +302,7 @@ Dev_GetDiskStats(diskStatArr, numEntries)
 	 index++) {
 	cntrlrPtr = &devCntrlr[index];
 	if (cntrlrPtr->exists) {
-	    (void)String_Copy(cntrlrPtr->name, diskStatArr->name);
+	    (void)strcpy(diskStatArr->name, cntrlrPtr->name);
 	    diskStatArr->controllerID = cntrlrPtr->controllerID;
 	    diskStatArr->numSamples = cntrlrPtr->numSamples;
 	    diskStatArr->idleCount = cntrlrPtr->idleCount;

@@ -139,6 +139,7 @@ extern 	void 		Sync_PrintStat();
  *----------------------------------------------------------------------------
  */
 
+#if (MACH_MAX_NUM_PROCESSORS == 1) /* uniprocessor implementation */
 #ifndef lint
 #define MASTER_LOCK(semaphore) \
     { \
@@ -148,8 +149,7 @@ extern 	void 		Sync_PrintStat();
 	    mach_NumDisableIntrsPtr[0]++; \
 	} \
 	if ((semaphore)++ == 1) { \
-	    Sys_Panic(SYS_FATAL, "Deadlock!!! (semaphore @ 0x%x)\n", \
-			(int)&(semaphore)); \
+ 	    panic("Deadlock!!! (semaphore @ 0x%x)\n",(int)&(semaphore)); \
 	} \
     }
 #else /* lint */
@@ -157,16 +157,27 @@ extern 	void 		Sync_PrintStat();
     { \
         sync_Instrument.numLocks++; \
 	if (!Mach_AtInterruptLevel()) { \
-	    Mach_DisableIntr(); \
+          Mach_DisableIntr(); \
 	    mach_NumDisableIntrsPtr[0]++; \
 	} \
 	(semaphore)++; \
 	if ((semaphore) == 1) { \
-	    Sys_Panic(SYS_FATAL, "Deadlock!!! (semaphore @ 0x%x)\n", \
-			(int)&(semaphore)); \
+	    panic("Deadlock!!! (semaphore @ 0x%x)\n", (int)&(semaphore)); \
 	} \
     }
 #endif /* lint */
+#else  			/* multiprocessor implementation */
+#define MASTER_LOCK(semaphore) \
+    { \
+        sync_Instrument.numLocks++; \
+	if (!Mach_AtInterruptLevel()) { \
+	    Mach_DisableIntr(); \
+	    mach_NumDisableIntrsPtr[0]++; \
+	} \
+	while(Mach_TestAndSet(&(semaphore)) != 0){ \
+	} \
+    }
+#endif
 
 /*
  *----------------------------------------------------------------------------

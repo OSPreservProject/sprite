@@ -149,7 +149,7 @@ DevNet_FsOpen(devicePtr, useFlags, data)
     LIST_FORALL(&etherProtos, (List_Links *)protoPtr) {
 	if (protoPtr->protocol == protocol) {
 	    if (protoPtr->open) {
-		Sys_Panic(SYS_WARNING, "DevNet_FsOpen: Extra open of net device");
+		printf("Warning: DevNet_FsOpen: Extra open of net device");
 		status = FS_FILE_BUSY;
 		goto exit;
 	    }
@@ -169,8 +169,7 @@ DevNet_FsOpen(devicePtr, useFlags, data)
     List_Insert((List_Links *)protoPtr, LIST_ATREAR(&etherProtos));
 
     protoPtr->protocol = protocol;
-    Byte_Zero(sizeof(ProtoStats), (Address)&protoPtr->stats);
-
+    bzero((Address)&protoPtr->stats,sizeof(ProtoStats));
     /*
      * Pre-allocate buffer space for the input queue.  This seems excessive,
      * we could go to a global buffer pool...
@@ -197,7 +196,7 @@ found:
 exit:
 
     if (devNetEtherDebug) {
-	Sys_Printf("DevNet_FsOpen: Open proto 0x%x status 0x%x\n", 
+	printf("DevNet_FsOpen: Open proto 0x%x status 0x%x\n", 
 			devicePtr->unit, status);
     }
 
@@ -242,7 +241,7 @@ DevNetEtherHandler(packetPtr, size)
     }
 
     if (devNetEtherDebug) {
-	Sys_Printf("EtherHandler 0x%x %d\n", NET_ETHER_HDR_TYPE(*etherHdrPtr),
+	printf("EtherHandler 0x%x %d\n", NET_ETHER_HDR_TYPE(*etherHdrPtr),
 			size);
     }
     LIST_FORALL(&etherProtos, (List_Links *)protoPtr) {
@@ -251,8 +250,8 @@ DevNetEtherHandler(packetPtr, size)
 	    if (QueueFull(protoPtr->queue)) {
 		protoPtr->stats.drops++;
 	    } else {
-		Byte_Copy(size, packetPtr,
-				protoPtr->queue.packet[protoPtr->queue.tail]);
+		bcopy(packetPtr,protoPtr->queue.packet[protoPtr->queue.tail],
+		      size);
 		protoPtr->queue.size[protoPtr->queue.tail] = size;
 		protoPtr->queue.tail = NextTail(protoPtr->queue);
 		Fs_NotifyReader(protoPtr->fsReadyToken);
@@ -305,7 +304,7 @@ DevNet_FsRead(devicePtr, offset, bufSize, buffer, lenPtr)
 	size = 0;
 	status = FS_WOULD_BLOCK;
 	if (devNetEtherDebug) {
-	    Sys_Printf("DevNet_FsRead: empty queue, proto 0x%x\n",
+	    printf("DevNet_FsRead: empty queue, proto 0x%x\n",
 				protoPtr->protocol);
 	}
     } else {
@@ -317,11 +316,11 @@ DevNet_FsRead(devicePtr, offset, bufSize, buffer, lenPtr)
 	if (size > bufSize) {
 	    size = bufSize;
 	}
-	Byte_Copy(size, packetPtr, buffer);
+	bcopy(packetPtr, buffer,size);
 
 	status = SUCCESS;
 	if (devNetEtherDebug) {
-	    Sys_Printf("DevNet_FsRead: Found packet proto 0x%x, size %d\n",
+	    printf("DevNet_FsRead: Found packet proto 0x%x, size %d\n",
 				protoPtr->protocol, size);
 	}
     }

@@ -93,7 +93,7 @@ Sync_Init()
     for (i=0 ; i<PROC_HASHBUCKETS ; i++) {
 	List_Init(&eventChainHeaders[i]);
     }
-    Byte_Zero(sizeof(sync_Instrument), (Address) &sync_Instrument);
+    bzero((Address) &sync_Instrument,sizeof(sync_Instrument));
 }
 
 
@@ -335,7 +335,7 @@ SyncEventWakeupInt(event)
     register	List_Links		*itemPtr;
 
     if (!sched_Mutex) {
-	Sys_Panic(SYS_FATAL, "SyncEventWakeupInt: master lock not held.\n");
+	panic("SyncEventWakeupInt: master lock not held.\n");
     }
     
     sync_Instrument.numWakeupCalls++;
@@ -354,18 +354,16 @@ SyncEventWakeupInt(event)
 	    case PROC_WAITING:
 	        break;
 	    case PROC_MIGRATING:
-		Sys_Panic(SYS_FATAL,
-			  "Can't handle waking up a migrating proc.\n");
+		panic("Can't handle waking up a migrating proc.\n");
 	        break;
 	    case PROC_MIGRATED:
 		/*
 		 * Need to handle waking up migrated processes.
 		 */
-		Sys_Panic(SYS_FATAL,
-			  "Can't handle waking up a migrated proc.\n");
+		panic("Can't handle waking up a migrated proc.\n");
 		break;
 	    default:
-		Sys_Panic(SYS_FATAL, "%s %s",  
+		panic("%s %s",  
 			  "Sync_EventWakeupInt:",
 			  "Tried to wakeup a non-waiting proc.\n");
 	    break;
@@ -419,12 +417,26 @@ Sync_EventWakeup(event)
  *      Wake up a particular process as though the local or remote event it is 
  *	awaiting has occurred.
  *
+ *	This code was originally written for a uniprocessor. As a result, the
+ *	case of signaling a running process was never dealt with. We must
+ *	prevent a running process from going to sleep in between the time
+ *	we see it is running, and the time it gets the signal. It would seem
+ *	we could do this by locking the pcb, but unfortunately 
+ *	Sync_EventWaitInt does not grab this lock. This means we have to grab
+ *	the sched_Mutex. Ideally we would grab the mutex in the sig module
+ *	(Sig_Send perhaps). If we did that, then we would deadlock in this
+ *	routine. The bottom line is that this routine must do more than its
+ *	name implies, due to some weirdness in the way the system is
+ *	structured. If a process is ready, nothing is done. If a process
+ *	is running, the other processor is interrupted to force it into the
+ *	kernel, at which point it sees the signal.
+ *
  * Results:
  *	None.
  *
  * Side effects:
  *      If waiting on an event, removes the given process from its event hash 
- *	chain and makes it runnable.
+ *	chain and makes it runnable. If running, interrupts other processor.
  *
  *----------------------------------------------------------------------------
  */
@@ -439,13 +451,14 @@ Sync_WakeWaitingProcess(procPtr)
 	procPtr->event = NIL;
 	procPtr->state = PROC_READY;
 	Sched_MoveInQueue(procPtr);
-    } else {
-	if (procPtr->state == PROC_WAITING) {
+    } else if (procPtr->state == PROC_WAITING) {
 	    if (!(procPtr->syncFlags & SYNC_WAIT_REMOTE)) {
-		Sys_Panic(SYS_FATAL, "Sync_WakeWaitingProcess: Proc waiting but event and remote wait NIL\n");
+		panic("Sync_WakeWaitingProcess: Proc waiting but event and remote wait NIL\n");
 	    }
 	    ProcessWakeup(procPtr, procPtr->waitToken);
-	}
+    } else if (procPtr->state == PROC_RUNNING &&
+	       procPtr->processor != Mach_GetProcessorNumber()) {
+	Mach_CheckSpecialHandling(procPtr->processor);
     }
     MASTER_UNLOCK(sched_Mutex);
 }
@@ -477,12 +490,10 @@ Sync_RemoveWaiter(procPtr)
     if (procPtr->event != NIL) {
 	List_Remove(&procPtr->eventHashChain.links);
 	procPtr->event = NIL;
-	procPtr->state = PROC_READY;
-	Sched_MoveInQueue(procPtr);
     } else {
 	if (procPtr->state == PROC_WAITING) {
 	    if (!(procPtr->syncFlags & SYNC_WAIT_REMOTE)) {
-		Sys_Panic(SYS_FATAL, "Sync_RemoveWaiter: Proc waiting but event and remote wait NIL\n");
+		panic("Sync_RemoveWaiter: Proc waiting but event and remote wait NIL\n");
 	    }
 	    procPtr->syncFlags |= SYNC_WAIT_COMPLETE;
 	}
