@@ -58,5 +58,6 @@ timer		kernel/timer
 utils		kernel/utils
 vm		kernel/vm
 
-# Testing
-timer.test	kernel/timer.test
+# For testing and debugging scvs et al.
+
+Test		kernel/Test
