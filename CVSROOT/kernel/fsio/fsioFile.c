@@ -610,6 +610,15 @@ Fsio_FileClose(streamPtr, clientID, procID, flags, dataSize, closeData,
 				(Fscache_Attributes *)closeData);
 	(void)Fsdm_UpdateDescAttr(handlePtr, &handlePtr->cacheInfo.attr, -1);
     }
+
+    Fsio_LockClose(&handlePtr->lock, &streamPtr->hdr.fileID);
+
+    /*
+     * Update use counts and handle pending deletions.
+     */
+    status = Fsio_FileCloseInt(handlePtr, 1, (flags & FS_WRITE) != 0,
+				     (flags & FS_EXECUTE) != 0,
+				     clientID, TRUE);
 #ifdef SOSP91
     {
 	int offset;
@@ -623,18 +632,9 @@ Fsio_FileClose(streamPtr, clientID, procID, flags, dataSize, closeData,
 	}
 	SOSP_ADD_CLOSE_TRACE(streamPtr->hdr.fileID, offset, 
 	    handlePtr->cacheInfo.attr.lastByte + 1, streamPtr->flags,
-	    rwFlags);
+	    rwFlags, handlePtr->use.ref);
     }
 #endif
-
-    Fsio_LockClose(&handlePtr->lock, &streamPtr->hdr.fileID);
-
-    /*
-     * Update use counts and handle pending deletions.
-     */
-    status = Fsio_FileCloseInt(handlePtr, 1, (flags & FS_WRITE) != 0,
-				     (flags & FS_EXECUTE) != 0,
-				     clientID, TRUE);
     if (status == FS_FILE_REMOVED) {
 	if (clientID == rpc_SpriteID) {
 	    status = SUCCESS;

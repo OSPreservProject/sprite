@@ -220,10 +220,12 @@ extern TraceLog_Header *SOSP91TracePtr;
  * fileSize		Size of file being closed
  * flags		Stream flags.
  * rwflags		The RW flags from the streamPtr->hdr.flags.
+ * refCount		Number of references to stream.  Only valid if
+ *			FS_RMT_SHARED is set in the flags.
  */ 
-#define	SOSP_ADD_CLOSE_TRACE(streamID, currentOffset, fileSize, flags, rwflags)\
+#define	SOSP_ADD_CLOSE_TRACE(streamID, currentOffset, fileSize, flags, rwflags, refCount) \
 {\
-	unsigned int	sospBuffer[9];\
+	unsigned int	sospBuffer[10];\
 \
 	sospBuffer[0] = SOSP_CLOSE;\
 	*((Fs_FileID *) &(sospBuffer[1])) = streamID;\
@@ -231,8 +233,9 @@ extern TraceLog_Header *SOSP91TracePtr;
 	sospBuffer[6] = fileSize;\
 	sospBuffer[7] = flags;\
 	sospBuffer[8] = rwflags;\
+	sospBuffer[9] = refCount;\
 	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
-		(9 * sizeof (int)),SOSP_CLOSE);\
+		(10 * sizeof (int)),SOSP_CLOSE);\
 }
 
 /*
