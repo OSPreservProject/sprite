@@ -106,6 +106,27 @@ typedef struct FsMakeDeviceArgs {
 } FsMakeDeviceArgs;
 
 /*
+ * FS_DOMAIN_RENAME and FS_DOMAIN_HARD_LINK
+ */
+typedef struct Fs2PathParams {
+    FsLookupArgs	lookupArgs;
+    Fs_FileID		prefixID2;
+} Fs2PathParams;
+
+typedef struct Fs2PathData {
+    char		path1[FS_MAX_PATH_NAME_LENGTH];
+    char		path2[FS_MAX_PATH_NAME_LENGTH];
+} Fs2PathData;
+
+typedef struct Fs2PathReply {
+    int		prefixLength;	/* Length of returned prefix on re-direct */
+    Boolean	name1ErrorP;	/* TRUE if the error returned, which is either
+				 * a re-direct or stale-handle, applies to
+				 * the first of the two pathnames, FALSE if
+				 * it applies to the second pathname */
+} Fs2PathReply;
+
+/*
  * All pathname operations may potentially return new prefix information
  * from the server, or redirected lookups.
  */
@@ -118,6 +139,19 @@ typedef struct FsRedirectInfo {
 				 * from the server when its lookup is about
 				 * to leave its domain. */
 } FsRedirectInfo;
+
+typedef struct Fs2PathRedirectInfo {
+    int name1ErrorP;		/* TRUE if redirection or other error applies
+				 * to the first pathname, FALSE if the error
+				 * applies to second pathname, or no error */
+    int	prefixLength;		/* The length of the prefix embedded in
+				 * fileName.  This is used when a server hits
+				 * a remote link and has to return a new file
+				 * name plus an indication of a new prefix. */
+    char fileName[FS_MAX_PATH_NAME_LENGTH];	/* A new file name.  Returned
+				 * from the server when its lookup is about
+				 * to leave its domain. */
+} Fs2PathRedirectInfo;
 
 
 /*

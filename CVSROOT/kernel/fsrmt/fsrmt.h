@@ -94,28 +94,6 @@ typedef struct FsSpriteBlockCopyParams {
 } FsSpriteBlockCopyParams;
 
 /*
- * Parameters for the two path name rpcs (link and rename).
- */
-
-typedef struct FsSprite2PathParams {
-    FsLookupArgs	lookupArgs;	/* Includes first prefixID */
-    Fs_FileID		prefixID2;
-} FsSprite2PathParams;
-
-typedef struct FsSprite2PathData {
-    char		path1[FS_MAX_PATH_NAME_LENGTH];
-    char		path2[FS_MAX_PATH_NAME_LENGTH];
-} FsSprite2PathData;
-
-typedef struct FsSprite2PathReplyParams {
-    int		prefixLength;	/* Length of returned prefix on re-direct */
-    Boolean	name1ErrorP;	/* TRUE if the error returned, which is either
-				 * a re-direct or stale-handle, applies to
-				 * the first of the two pathnames, FALSE if
-				 * it applies to the second pathname */
-} FsSprite2PathReplyParams;
-
-/*
  * Sprite Domain functions called via FsLookupOperation.
  * These are called with a pathname.
  */
