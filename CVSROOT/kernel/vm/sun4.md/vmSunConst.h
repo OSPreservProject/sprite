@@ -77,8 +77,10 @@
  * of the sun4 address space.
  */
 #define	VMMACH_ADDR_CHECK(virtAddr)	\
-    (	((unsigned int) (virtAddr)) >= VMMACH_BOTTOM_OF_HOLE &&	\
-	((unsigned int) (virtAddr)) <= VMMACH_TOP_OF_HOLE ? FALSE : TRUE)
+    (	((unsigned int) (virtAddr)) >=	\
+		    ((unsigned int) VMMACH_BOTTOM_OF_HOLE) &&	\
+	((unsigned int) (virtAddr)) <=	\
+		    ((unsigned int) VMMACH_TOP_OF_HOLE) ? FALSE : TRUE)
 
 /*
  * Check, in assembly, whether a virtual address falls inside the hole in
