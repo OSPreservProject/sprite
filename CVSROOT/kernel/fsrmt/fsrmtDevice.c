@@ -640,8 +640,6 @@ Fsrmt_DeviceReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
     ClientData		*outDataPtr;	/* Returned data, NIL here */
 {
     Fsio_DeviceIOHandle	*devHandlePtr;
-    Fsutil_UseCounts		oldUse;
-    Boolean		found;
     ReturnStatus	status;
     register		devIndex;
     register FsRmtDeviceReopenParams *paramPtr =
@@ -650,7 +648,7 @@ Fsrmt_DeviceReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
     *outDataPtr = (ClientData) NIL;
     *outSizePtr = 0;
 
-    found = FsioDeviceHandleInit(&paramPtr->fileID, (char *)NIL, &devHandlePtr); 
+    (void) FsioDeviceHandleInit(&paramPtr->fileID, (char *)NIL, &devHandlePtr); 
 
     devIndex = DEV_TYPE_INDEX(devHandlePtr->device.type);
     if (devIndex >= devNumDevices) {

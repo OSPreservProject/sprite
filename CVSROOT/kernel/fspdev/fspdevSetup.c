@@ -670,10 +670,10 @@ FspdevPseudoStreamMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr,
      * by FsIOClient{Open,Close} and are different for pdevs than
      * other files -- namely, the flags are set to 0 before calls to these
      * routines.  The only flag we have to make sure to pass is
-     * whether it's a new stream, since this is used by Fsio_IOClientMigrate
+     * whether it's a new stream, since this is used by Fsio_MigrateClient
      * itself.
      */
-    Fsio_IOClientMigrate(&cltHandlePtr->clientList, migInfoPtr->srcClientID,
+    Fsio_MigrateClient(&cltHandlePtr->clientList, migInfoPtr->srcClientID,
 		      dstClientID, migInfoPtr->flags & FS_NEW_STREAM,
 		      closeSrcClient);
 
