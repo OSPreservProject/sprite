@@ -45,12 +45,8 @@ static MachCpcEntry machCPCData[MACH_MAX_NUM_PROCESSORS];
 /*
  * Interrupt number for cross processor signal. 
  */
-static unsigned int	mach_CpcInterruptNumber;
+unsigned int	mach_CpcInterruptNumber;
 
-/*
- * Forward routine declarations.
- */
-static void ExecuteCall();
 
 #define	TIMEOUT		10000000
 
@@ -85,7 +81,8 @@ Mach_CPC_Init()
      * Allocate an external interrupt for CPCs. 
      */
     mach_CpcInterruptNumber = MACH_EXT_INTERRUPT_ANY;
-    Mach_AllocExtIntrNumber(ExecuteCall,&mach_CpcInterruptNumber);
+    Mach_AllocExtIntrNumber(machExecuteCall,&mach_CpcInterruptNumber);
+    Mach_SetNonmaskableIntr(1 << mach_CpcInterruptNumber);
 }
 
 
@@ -153,7 +150,7 @@ Mach_CallProcessor(processorNumber, routine, argument, wait, returnValue)
 	if (!machCPCData[processorNumber].done) {
 	    status = machCPCData[processorNumber].status;
 	} else { 
-	   printf("Warning: Processor %d appears hung.\n", processorNumber);
+	   Mach_MonPrintf("Warning: Processor %d appears hung.\n", processorNumber);
 	   status = FAILURE;
 	}
 	MASTER_UNLOCK(&(machCPCData[processorNumber].lock));
@@ -165,7 +162,7 @@ Mach_CallProcessor(processorNumber, routine, argument, wait, returnValue)
 /* 
  *----------------------------------------------------------------------
  *
- * ExecuteCall --
+ * machExecuteCall --
  *
  *	Execute a routine called from a different SPUR processor. ExecuteCall
  *	is called from the interrupt handler upon the reception of a
@@ -180,8 +177,8 @@ Mach_CallProcessor(processorNumber, routine, argument, wait, returnValue)
  * 
  */
 
-static void
-ExecuteCall(intrStatusPtr)
+void
+machExecuteCall(intrStatusPtr)
     unsigned int	intrStatusPtr;	/* Not used. */
 
 {
