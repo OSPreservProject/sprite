@@ -546,22 +546,23 @@ ProcExitProcess(exitProcPtr, reason, status, code, thisProcess)
     Proc_Unlock(exitProcPtr);
 
     /*
-     * Note: the fs is closed before the vm, because there is
-     * a race involving data sent to a pseudo-device after its
-     * vm has been destroyed.  Closing the fs first prevents this.
-     * The old comments (below) imply closing the fs first will
-     * cause swap files to linger around, but this doesn't seem
-     * to happen. --Ken Shirriff 8/90
+     * We have to do the Fs_CloseState in two phases:
      *
-     * |Clean up the filesystem state of the exiting process.
-     * |Do this after deleting VM segments so we can remove swap files.
-     * If the process is the home "surrogate" process for a migrated
-     * |process, don't clean up its state -- the state is on the foreign
-     * |node, not this one.
+     * We must close pseudo-devices before destroying vm.
+     * Otherwise there is a race (hit by migd) when a pseudo-device
+     * is destroyed because data may be sent to the pseudo-device after
+     * it loses its vm but before it is removed from the file system.
+     * We will then crash because it has no vm for the data.
+     *
+     * We need to close swap files after deleting all the VM segments.
+     * Otherwise we die if a COW segment has swapped-out data.  The
+     * problem is we get the data from swap when we delete the segment.
+     * Thus we must delete the segment before we close down the swap files.
+     * --Ken Shirriff 10/90
      */
 
     if (exitProcPtr->fsPtr != (struct Fs_ProcessState *) NIL) {
-	Fs_CloseState(exitProcPtr);
+	Fs_CloseState(exitProcPtr,0);
     }
 
     /*
@@ -604,6 +605,10 @@ ProcExitProcess(exitProcPtr, reason, status, code, thisProcess)
 	    Vm_SegmentDelete(exitProcPtr->vmPtr->segPtrArray[i], exitProcPtr);
 	    exitProcPtr->vmPtr->segPtrArray[i] = (Vm_Segment *)NIL;
 	}
+    }
+
+    if (exitProcPtr->fsPtr != (struct Fs_ProcessState *) NIL) {
+	Fs_CloseState(exitProcPtr,1);
     }
 
     /*
