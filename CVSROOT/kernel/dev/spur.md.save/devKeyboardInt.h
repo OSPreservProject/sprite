@@ -20,10 +20,11 @@
 #ifndef _DEVKEYBOARDINT
 #define _DEVKEYBOARDINT
 
+#include "sync.h"
 /*
  * Master lock for keyboard/mouse driver.
  */
 
-extern int	devKbdMutex;
+extern Sync_Semaphore	devKbdMutex;
 
 #endif _DEVKEYBOARDINT

@@ -184,7 +184,7 @@ Dev_KbdServiceInterrupt()
 						   interrupt was for output */
     dev_KbdInstrument.numInterrupts++;
 
-    MASTER_LOCK(devKbdMutex);
+    MASTER_LOCK(&devKbdMutex);
 
     /*
      * Check the serial port Uart chip for interrupts.
@@ -381,6 +381,6 @@ Dev_KbdServiceInterrupt()
 	Timer_GetTimeOfDay(kbdMostRecentIntrPtr, (int *) NIL,
 			   (Boolean *) NIL);
     }
-    MASTER_UNLOCK(devKbdMutex);
+    MASTER_UNLOCK(&devKbdMutex);
 
 }
