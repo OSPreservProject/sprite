@@ -1111,21 +1111,33 @@ Proc_PushLockStack(pcbPtr, type, lockPtr)
 {
     static Boolean	firstOverflow = TRUE;
 
+    /*
+     *  Modifying the lock stack of a process has to be an atomic operation,
+     *  but we don't want to use a lock to do this, since this is part of
+     *  the code used when locking or unlocking. Using a lock would lead
+     *  to a circularity and probably a deadlock. All we really need to
+     *  prevent is an interrupt handler from grabbing a lock while we're
+     *  modifying the lock stack. A process only modifies its own
+     *  lock stack, so turning off interrupts should be good enough.
+     */
+    DISABLE_INTR();
     if (pcbPtr->lockStackSize >= PROC_LOCKSTACK_SIZE) {
 	if (firstOverflow) {
 	    printf("Proc_PushLockStack: stack overflow in pcb 0x%x.\n",pcbPtr);
 	    firstOverflow = FALSE;
 	}
-	return;
+	goto exit;
     }
     if (pcbPtr->lockStackSize < 0 ) {
 	printf("Proc_PushLockStack: stack underflow (%d) in pcb 0x%x.\n",
 	       pcbPtr->lockStackSize, pcbPtr);
-        return;
+        goto exit;
     }
     pcbPtr->lockStack[pcbPtr->lockStackSize].type = type;
     pcbPtr->lockStack[pcbPtr->lockStackSize].lockPtr = lockPtr;
     pcbPtr->lockStackSize++;
+exit:
+    ENABLE_INTR();
 }
 
 /*
@@ -1153,12 +1165,14 @@ Proc_RemoveFromLockStack(pcbPtr, lockPtr)
     int		stackTop;
     Boolean 	found = FALSE;
 
+    DISABLE_INTR();
     if (pcbPtr->lockStackSize < 0) {
+	ENABLE_INTR();
 	panic("Lock stack underflow (1).\n");
-	return;
+	goto exit;
     }
     if (pcbPtr->lockStackSize == 0) {
-	return;
+	goto exit;
     }
     stackTop = pcbPtr->lockStackSize - 1;
     for (i = pcbPtr->lockStackSize - 1; i >= 0; i--) {
@@ -1170,9 +1184,9 @@ Proc_RemoveFromLockStack(pcbPtr, lockPtr)
 	}
     }
     if (!found) {
-	return;
+	goto exit;
     }
-    for (i = pcbPtr->lockStackSize - 1; i >= 0; i--) {
+    for (i = stackTop; i >= 0; i--) {
 	if (pcbPtr->lockStack[i].lockPtr != (Address) NIL) {
 	    break;
 	}
@@ -1181,6 +1195,7 @@ Proc_RemoveFromLockStack(pcbPtr, lockPtr)
     if (pcbPtr->lockStackSize < 0) {
 	printf("lockStackSize %d\n",pcbPtr->lockStackSize);
     }
-    pcbPtr->lockStackSize = 0;
+exit:
+    ENABLE_INTR();
 }
 
