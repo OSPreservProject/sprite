@@ -88,7 +88,7 @@ typedef struct RecovHostState {
     int			state;		/* flags defined below */
     int			clientState;	/* flags defined in recov.h */
     int			spriteID;	/* Sprite Host ID */
-    int			bootID;		/* Boot timestamp from RPC header */
+    unsigned int	bootID;		/* Boot timestamp from RPC header */
     Time		time;		/* Time of last message */
     Sync_Condition	alive;		/* Notified when host comes up */
     Sync_Condition	recovery;	/* Notified when recovery is complete */
@@ -315,7 +315,7 @@ Recov_CrashRegister(crashCallBackProc, crashData)
 ENTRY void
 Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
     int spriteID;		/* Host ID of the message sender */
-    int bootID;			/* Boot time stamp from message header */
+    unsigned int bootID;	/* Boot time stamp from message header */
     Boolean asyncRecovery;	/* TRUE means do recovery call-backs in
 				 * the background. FALSE causes the process
 				 * to wait until crash recovery is complete. */
