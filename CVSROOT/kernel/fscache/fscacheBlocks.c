@@ -1373,9 +1373,12 @@ FsCacheFileInvalidate(cacheInfoPtr, firstBlock, lastBlock)
 {
     LOCK_MONITOR;
 
-    if ((lastBlock == FS_LAST_BLOCK) &&
-	(cacheInfoPtr->attr.lastByte > 0)) {
-	lastBlock = cacheInfoPtr->attr.lastByte / FS_BLOCK_SIZE;
+    if (lastBlock == FS_LAST_BLOCK) {
+	if (cacheInfoPtr->attr.lastByte > 0) {
+	    lastBlock = cacheInfoPtr->attr.lastByte / FS_BLOCK_SIZE;
+	} else {
+	    lastBlock = 0;
+	}
     }
     CacheFileInvalidate(cacheInfoPtr, firstBlock, lastBlock);
 
@@ -1643,9 +1646,12 @@ FsCacheFileWriteBack(cacheInfoPtr, firstBlock, lastBlock, flags,
 
     SET_BLOCK_HASH_KEY(blockHashKey, cacheInfoPtr, 0);
 
-    if ((lastBlock == FS_LAST_BLOCK) &&
-	(cacheInfoPtr->attr.lastByte > 0)) {
-	lastBlock = cacheInfoPtr->attr.lastByte / FS_BLOCK_SIZE;
+    if (lastBlock == FS_LAST_BLOCK) {
+	if (cacheInfoPtr->attr.lastByte > 0) {
+	    lastBlock = cacheInfoPtr->attr.lastByte / FS_BLOCK_SIZE;
+	} else {
+	    lastBlock = 0;
+	}
     }
     for (i = firstBlock; i <= lastBlock; i++) {
 	/*
@@ -3068,22 +3074,21 @@ Fs_DumpCacheStats()
 		block->maxCacheBlocks, block->maxNumBlocks,
 		block->numFreeBlocks, block->blocksPitched);
 
-    printf("OBJECTS stream %d stmClient %d file %d rmtFile %d\n",
-	    fsStats.object.streams,
-	    fsStats.object.streamClients, fsStats.object.files,
-	    fsStats.object.rmtFiles);
-    printf("OBJECTS   pipe %d dev %d control %d pdev %d remote %d\n",
-	    fsStats.object.pipes, fsStats.object.devices,
-	    fsStats.object.controls, fsStats.object.pseudoStreams,
-	    fsStats.object.remote);
-    printf("HANDLES limit %d exist %d created %d lruScans %d scavenged %d objects %d\n",
-	    fsStats.handle.maxNumber, fsStats.handle.exists,
-	    fsStats.handle.created,
-	    fsStats.object.lruScans, fsStats.object.scavenges,
+    printf("OBJECTS stream %d (clt %d) file %d rmtFile %d pipe %d\n",
+	    fsStats.object.streams, fsStats.object.streamClients,
+	    fsStats.object.files, fsStats.object.rmtFiles,
+	    fsStats.object.pipes);
+    printf("OBJECTS dev %d pdevControl %d pdev %d remote %d Total %d\n",
+	    fsStats.object.devices, fsStats.object.controls,
+	    fsStats.object.pseudoStreams, fsStats.object.remote,
 	    fsStats.object.streams + fsStats.object.files +
 	    fsStats.object.rmtFiles + fsStats.object.pipes +
 	    fsStats.object.devices + fsStats.object.controls +
 	    2 * fsStats.object.pseudoStreams + fsStats.object.remote);
+    printf("HANDLES max %d exist %d scans %d scavenged %d (dirs %d)\n",
+	    fsStats.handle.maxNumber, fsStats.handle.exists,
+	    fsStats.object.lruScans, fsStats.object.scavenges,
+	    fsStats.object.dirFlushed);
 }
 
 
