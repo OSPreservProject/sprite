@@ -27,8 +27,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 
 #include "sprite.h"
-#include "fs.h"
 #include "fsutil.h"
+#include "fs.h"
 #include "fsNameOps.h"
 #include "fsprefix.h"
 #include "fsdm.h"
@@ -212,6 +212,7 @@ FslclLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
 	while (*curCharPtr != '/' && *curCharPtr != '\0') {
 	    if (*curCharPtr == '$' &&
 		(strncmp(curCharPtr, SPECIAL, SPECIAL_LEN) == 0)) {
+		char machTypeBuffer[32];
 		char *machType;
 
 		if (fslclComponentTrace) {
@@ -228,12 +229,14 @@ FslclLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
 		     */
 		    machType = mach_MachineType;
 		} else {
-		    machType = Net_SpriteIDToMachType(clientID);
-		    if (machType == (char *)NIL) {
+		    Net_SpriteIDToMachType(clientID, 32, machTypeBuffer);
+		    if (*machTypeBuffer == '\0') {
 			printf(
 			 "FslclLookup, no machine type for client %d\n",
 				clientID);
 			machType = "unknown";
+		    } else {
+			machType = machTypeBuffer;
 		    }
 		}
 		while (*machType != '\0') {
