@@ -29,6 +29,14 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "mem.h"
 
 /*
+ * An on/off switch for the service side of the RPC system.  Hosts do not
+ * initially respond to RPC requests so they can configure themselves
+ * as needed at boot time.  This means we are dependent on a user program
+ * to execute and turn on this flag.
+ */
+Boolean rpcServiceEnabled = FALSE;
+
+/*
  * The server state table.  It has a maximum size which constrains the
  * number of server processes that can be created.  The number of free
  * servers is maintained, as well as the total number of created servers.
@@ -54,7 +62,8 @@ int		 rpcNoServers = 0;
 int rpcMaxServerAge = 10;
 
 /*
- * A histogram is kept of service time.
+ * A histogram is kept of service time.  This is available to user
+ * programs via the Sys_Stats SYS_RPC_SERVER_HIST command.
  */
 Rpc_Histogram *rpcServiceTime[RPC_LAST_COMMAND+1];
 Boolean rpcServiceTiming = TRUE;
@@ -499,10 +508,12 @@ RpcServerDispatch(srvPtr, rpcHdrPtr)
 		     * Reset srvPtr->replyRpcHdr.ID so that we can accept
 		     * new requests from the client.
 		     */
-	    Sys_Printf("Unexpected Server state %x, Rpc ID <%x> flags <%x>\n",
-			    srvPtr->state, rpcHdrPtr->ID, rpcHdrPtr->flags);
+	    Sys_Printf("Unexpected Server state %x, idx %d, Rpc ID <%x> flags <%x>\n",
+			    srvPtr->index, srvPtr->state, rpcHdrPtr->ID,
+			    rpcHdrPtr->flags);
 		    rpcSrvStat.badState++;
 		    srvPtr->replyRpcHdr.ID = 0;
+		    srvPtr->state = SRV_FREE;
 		    break;
 		case SRV_FREE: 
 		    /*
