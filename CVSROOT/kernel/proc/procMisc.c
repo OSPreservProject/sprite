@@ -102,9 +102,13 @@ Proc_GetPCBInfo(firstPid, lastPid, hostID, bufferPtr, argsPtr,
 
     /*
      * Determine whether to get process table entries for this machine.
+     * Currently, the information for this machine is returned unless
+     * another machine is explicitly specified; i.e., migrated processes
+     * get information for their current machine rather than their home.
      */
 
     if (hostID == PROC_MY_HOSTID) {
+#ifdef FORWARD_MIGRATED_GET_PCBS
 	procPtr = Proc_GetCurrentProc();
 	Proc_Lock(procPtr);
 	if (procPtr->genFlags & PROC_FOREIGN) {
@@ -113,6 +117,7 @@ Proc_GetPCBInfo(firstPid, lastPid, hostID, bufferPtr, argsPtr,
 	    remote = TRUE;
 	} 
 	Proc_Unlock(procPtr);
+#endif /* FORWARD_MIGRATED_GET_PCBS */
     } else if (hostID != rpc_SpriteID) {
 	remote = TRUE;
     }
@@ -923,5 +928,63 @@ Proc_SetServerPriority(pid)
     Proc_PID	pid;
 {
     Proc_GetPCB(pid)->billingRate = PROC_NO_INTR_PRIORITY;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_GetHostIDs --
+ *
+ *	Returns the sprite IDs corresponding to the machines on which
+ *	the current process is effectively executing and on which
+ *	it is physically executing.  These hosts are called the virtualHost
+ *	and physicalHost, respectively.  For an unmigrated process, these
+ *	two are identical.
+ *
+ * Results:
+ *	SUCCESS 		The call was successful.
+ *	SYS_ARG_NOACCESS	The user arguments were not accessible.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Proc_GetHostIDs(virtualHostPtr, physicalHostPtr)
+    int	*virtualHostPtr;   	/* Buffer to hold virtual host ID. */
+    int	*physicalHostPtr;   	/* Buffer to hold physical host ID. */
+{
+
+    Proc_ControlBlock *procPtr;
+    int host;
+
+    if (physicalHostPtr != (int *) USER_NIL) {
+
+	if (Vm_CopyOut(sizeof(int), (Address) &rpc_SpriteID, 
+				(Address) virtualHostPtr) != SUCCESS) {
+	    return(SYS_ARG_NOACCESS);
+	}
+    }
+
+
+    if (virtualHostPtr != (int *) USER_NIL) {
+	procPtr = Proc_GetCurrentProc();
+	Proc_Lock(procPtr);
+	host = procPtr->peerHostID;
+	Proc_Unlock(procPtr);
+	if (host == NIL) {
+	    host = rpc_SpriteID;
+	}
+	if (Vm_CopyOut(sizeof(int), (Address) &host, 
+				(Address) physicalHostPtr) != SUCCESS) {
+	    return(SYS_ARG_NOACCESS);
+	}
+    }
+
+    return(SUCCESS);
 }
 
