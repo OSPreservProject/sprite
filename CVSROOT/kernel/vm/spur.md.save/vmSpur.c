@@ -1158,6 +1158,7 @@ VmMach_PageValidate(virtAddrPtr, pte)
     page = virtAddrPtr->page & ~(VMMACH_SEG_REG_MASK >> VMMACH_PAGE_SHIFT);
     ptePtr = GetPageTablePtr(segDataPtr, page);
     *ptePtr = VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT |
+	     VMMACH_REFERENCED_BIT | VMMACH_MODIFIED_BIT | 
               SetPageFrame(VirtToPhysPage(Vm_GetPageFrame(pte)));
     if (virtAddrPtr->segPtr == vm_SysSegPtr) {
 	*ptePtr |= VMMACH_KRW_UNA_PROT;
@@ -1252,13 +1253,12 @@ VmMach_MapInDevice(devPhysAddr, numBytes)
     ptePtr = Get2ndPageTablePtr(vm_SysSegPtr->machPtr, firstPTPage);
     ptAddr = (VmMachPTE *)(vm_SysSegPtr->machPtr->ptBasePtr) + 
 			    (firstPTPage << VMMACH_SEG_PT2_SHIFT);
-
     /*
      * Allocate the kernel page table which will map the device pages.
      */
     for (ptePtr = Get2ndPageTablePtr(vm_SysSegPtr->machPtr, firstPTPage);
 	 firstPTPage <= lastPTPage;
-	 firstPTPage++, ptePtr++, ptAddr += VMMACH_PAGE_SIZE) {
+	 firstPTPage++, ptePtr++, ptAddr += VMMACH_PTES_IN_PAGE) {
 	if (!(*ptePtr & VMMACH_RESIDENT_BIT)) {
 	    *ptePtr = VMMACH_RESIDENT_BIT | VMMACH_CACHEABLE_BIT | 
 		      VMMACH_KRW_URO_PROT | 
@@ -1269,8 +1269,9 @@ VmMach_MapInDevice(devPhysAddr, numBytes)
     /*
      * Now initialize the mappings in the page table.
      */
-    pte = VMMACH_RESIDENT_BIT | VMMACH_KRW_URO_PROT |
-	  SetPageFrame((unsigned)devPhysAddr >> VMMACH_PAGE_SHIFT);
+    pte = VMMACH_RESIDENT_BIT | VMMACH_KRW_URO_PROT | VMMACH_REFERENCED_BIT | 
+		  VMMACH_MODIFIED_BIT | 
+	          SetPageFrame((unsigned)devPhysAddr >> VMMACH_PAGE_SHIFT);
     for (i = 0, ptePtr = GetPageTablePtr(vm_SysSegPtr->machPtr, nextDevPage);
          i < numPages;
 	 i++, pte = IncPageFrame(pte), ptePtr++) {
