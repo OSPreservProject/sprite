@@ -247,7 +247,7 @@ static Boolean InRange(addr, numBytes, writeable)
 	return(FALSE);
     }
     if ((int) (addr) & 0x1) {
-	Sys_Printf("Dbg: odd address: %x\n", addr);
+	printf("Dbg: odd address: %x\n", addr);
 	return(FALSE);
     }
 
@@ -364,11 +364,11 @@ ReadBytes(numBytes, bytePtr, ack)
 	justAcked = FALSE;
 	bytePtr[i] = DbgRs232ReadChar(dbgChannel);
 	if (dbgTraceLevel >= 4) {
-	    Sys_Printf("Read byte = %x\n", bytePtr[i]);
+	    printf("Read byte = %x\n", bytePtr[i]);
 	}
 	if (ack && (i + 1) % 3 == 0) {
 	    if (dbgTraceLevel >= 4) {
-		Sys_Printf("Acking read\n");
+		printf("Acking read\n");
 	    }
 	    justAcked = TRUE;
 	    DbgRs232WriteChar(dbgChannel, 0);
@@ -376,7 +376,7 @@ ReadBytes(numBytes, bytePtr, ack)
     }
     if (ack && !justAcked) {
 	if (dbgTraceLevel >= 4) {
-	    Sys_Printf("Acking read\n");
+	    printf("Acking read\n");
 	}
 	DbgRs232WriteChar(dbgChannel, 0);
     }
@@ -408,8 +408,8 @@ WriteBytes(numBytes, bytePtr)
     int		  i;
 
     if (dbgTraceLevel >= 3) {
-	Byte_Copy(4, bytePtr, (char *) &i);
-	Sys_Printf("\r\nWriting: %d", i);
+	bcopy(bytePtr, (char *) &i, 4);
+	printf("\r\nWriting: %d", i);
     }
 
     for (i = 0; i < numBytes; i++) {
@@ -440,7 +440,7 @@ void
 DbgComplain(trapStack)
     Mach_TrapStack	trapStack;
 {
-    Sys_Printf("%s exception in the debugger at pc %x addr %x\n",
+    printf("%s exception in the debugger at pc %x addr %x\n",
 			TranslateException(trapStack.trapType), 
 				trapStack.excStack.pc,
 				trapStack.excStack.tail.addrBusErr.faultAddr);
@@ -504,7 +504,7 @@ Dbg_InputPacket(packetPtr, packetLength)
     etherHdrPtr = (Net_EtherHdr *)packetPtr;
     if (etherHdrPtr->type != NET_ETHER_IP) {
 	if (dbgTraceLevel >= 5) {
-	    Sys_Printf("Non-IP (Type=0x%x) ", (int)etherHdrPtr->type);
+	    printf("Non-IP (Type=0x%x) ", (int)etherHdrPtr->type);
 	}
 	return;
     }
@@ -512,19 +512,19 @@ Dbg_InputPacket(packetPtr, packetLength)
 	return;
     }
     if (dbgTraceLevel >= 4) {
-	Sys_Printf("Validating packet\n");
+	printf("Validating packet\n");
     }
     if (Dbg_ValidatePacket(packetLength - sizeof(Net_EtherHdr),
 			   (Net_IPHeader *)(packetPtr + sizeof(Net_EtherHdr)),
 			   &dataLength, &dataPtr,
 			   &dbgMyIPAddr, &dbgSrcIPAddr, &dbgSrcPort)) {
 	if (dbgTraceLevel >= 4) {
-	    Sys_Printf("Got a packet: length=%d\n", dataLength);
+	    printf("Got a packet: length=%d\n", dataLength);
 	}
-	Byte_Copy(sizeof(Net_EtherHdr), (Address)etherHdrPtr,
-		 (Address)&dbgEtherHdr);
+	bcopy((Address)etherHdrPtr, (Address)&dbgEtherHdr,
+		sizeof(Net_EtherHdr));
 	gotPacket = TRUE;
-	Byte_Copy(dataLength, dataPtr, requestBuffer);
+	bcopy(dataPtr, requestBuffer, dataLength);
     }
 }
 
@@ -572,7 +572,7 @@ ReadRequest(timeout)
 	    requestOffset = 4;
 	    curMsgNum = *(int *)(requestBuffer);
 	    if (dbgTraceLevel >= 4) {
-		Sys_Printf("MsgNum = %d\n", curMsgNum);
+		printf("MsgNum = %d\n", curMsgNum);
 	    }
 	}
 
@@ -604,7 +604,7 @@ GetRequestBytes(numBytes, dest)
     if (dbg_Rs232Debug) {
 	ReadBytes(numBytes, dest, TRUE);
     } else {
-	Byte_Copy(numBytes, requestBuffer + requestOffset, dest);
+	bcopy(requestBuffer + requestOffset, dest, numBytes);
 	requestOffset += numBytes;
     }
 }
@@ -631,10 +631,10 @@ PutReplyBytes(numBytes, src)
     Address	src;
 {
     if (replyOffset + numBytes > DBG_MAX_REPLY_SIZE) {
-	Sys_Printf("PutReplyBytes: Buffer overflow\n");
+	printf("PutReplyBytes: Buffer overflow\n");
 	numBytes = DBG_MAX_REPLY_SIZE - replyOffset;
     }
-    Byte_Copy(numBytes, src, &replyBuffer[replyOffset]);
+    bcopy(src, &replyBuffer[replyOffset], numBytes);
     replyOffset += numBytes;
 }
 
@@ -665,7 +665,7 @@ SendReply()
 	Net_EtherHdr		*etherHdrPtr;
 
 	if (dbgTraceLevel >= 4) {
-	    Sys_Printf("Sending reply\n");
+	    printf("Sending reply\n");
 	}
 	etherHdrPtr = (Net_EtherHdr *) replyBuffer;
 	etherHdrPtr->source = dbgEtherHdr.destination;
@@ -680,7 +680,7 @@ SendReply()
 		     replyBuffer + sizeof(Net_EtherHdr));
 	Net_OutputRawEther(etherHdrPtr, &dbgGather, 1);
 	if (dbgTraceLevel >= 4) {
-	    Sys_Printf("Sent reply\n");
+	    printf("Sent reply\n");
 	}
     }
 }
@@ -763,7 +763,7 @@ Dbg_Main(stackHole, dbgStack)
     VmMachSetKernelContext(VMMACH_KERN_CONTEXT);
 
     /*
-     * Put us at interrupt level so that Sys_Printf won't accidently enable
+     * Put us at interrupt level so that printf won't accidently enable
      * interrupts.
      */
     atInterruptLevel = mach_AtInterruptLevel;
@@ -786,7 +786,7 @@ Dbg_Main(stackHole, dbgStack)
     if (dbgTraceLevel >= 1 || !dbg_BeingDebugged || 
         (dbgStack.trapStack.trapType != MACH_TRACE_TRAP && 
          dbgStack.trapStack.trapType != MACH_BRKPT_TRAP)) { 
-	Sys_Printf("Entering debugger with a %s exception at PC 0x%x\r\n",
+	printf("Entering debugger with a %s exception at PC 0x%x\r\n",
 		   TranslateException(dbgStack.trapStack.trapType),
 		   (unsigned) dbgStack.trapStack.excStack.pc);
     }
@@ -811,7 +811,7 @@ Dbg_Main(stackHole, dbgStack)
     excStackLength = Mach_GetExcStackSize(&dbgStack.trapStack.excStack);
     dbgStackLength = sizeof(DbgStack) - sizeof(Mach_ExcStack) + excStackLength;
 
-    Byte_Copy(dbgStackLength, (Address) &dbgStack, (Address) &dbgGlobalStack);
+    bcopy((Address) &dbgStack, (Address) &dbgGlobalStack, dbgStackLength);
 
     dbgGlobalStack.gprs[SP] += excStackLength + STACK_INC + 
 			       MACH_TRAP_INFO_SIZE;
@@ -879,9 +879,9 @@ Dbg_Main(stackHole, dbgStack)
 	     */
 	    Net_OutputRawEther((Net_EtherHdr *)replyBuffer, &dbgGather, 1);
 	    if (dbgTraceLevel >= 5) {
-		Sys_Printf("DBG: Timeout\n");
+		printf("DBG: Timeout\n");
 	    }
-	    Sys_Printf("TI ");
+	    printf("TI ");
 	} while (TRUE);
     } else {
 	if (dbg_Rs232Debug) {
@@ -914,7 +914,7 @@ Dbg_Main(stackHole, dbgStack)
     done = FALSE;
     while (!done) {
 	if (dbgTraceLevel >= 2) {
-	    Sys_Printf("Request: %s ", TranslateOpcode(opcode));
+	    printf("Request: %s ", TranslateOpcode(opcode));
 	}
 
 	/*
@@ -935,15 +935,15 @@ Dbg_Main(stackHole, dbgStack)
 		    stopInfo.maxStackAddr =
 			(int)(procPtr->machStatePtr->kernStackStart + 
 			      mach_KernStackSize);
-		    Byte_Copy(sizeof(procPtr->machStatePtr->switchRegs),
-			    (Address) procPtr->machStatePtr->switchRegs,
-			    (Address) stopInfo.genRegs);
+		    bcopy((Address) procPtr->machStatePtr->switchRegs,
+			    (Address) stopInfo.genRegs,
+			    sizeof(procPtr->machStatePtr->switchRegs));
 		    stopInfo.pc = (int) ((Address) Mach_ContextSwitch);
 		} else {
 		    stopInfo.maxStackAddr = dbgMaxStackAddr;
-		    Byte_Copy(sizeof(dbgGlobalStack.gprs),
-			    (Address) dbgGlobalStack.gprs, 
-			    (Address) stopInfo.genRegs);
+		    bcopy((Address) dbgGlobalStack.gprs, 
+			    (Address) stopInfo.genRegs,
+			    sizeof(dbgGlobalStack.gprs));
 		    stopInfo.pc = dbgGlobalStack.trapStack.excStack.pc;
 		}
 		stopInfo.termReason = dbgTermReason;
@@ -971,7 +971,7 @@ Dbg_Main(stackHole, dbgStack)
 		char	*version;
 
 		version = SpriteVersion();
-		PutReplyBytes(String_Length(version) + 1, version);
+		PutReplyBytes(strlen(version) + 1, version);
 		SendReply();
 		break;
 	    }
@@ -983,7 +983,7 @@ Dbg_Main(stackHole, dbgStack)
 
 		GetRequestBytes(sizeof(readMem), (Address) &readMem); 
 		if (dbgTraceLevel >= 2) {
-		    Sys_Printf("Addr=%x Numbytes=%d ",
+		    printf("Addr=%x Numbytes=%d ",
 				readMem.address, readMem.numBytes);
 		}
 
@@ -995,7 +995,7 @@ Dbg_Main(stackHole, dbgStack)
 		    PutReplyBytes(readMem.numBytes, (Address)readMem.address);
 		} else {
 		    if (dbgTraceLevel >= 2) {
-			Sys_Printf("FAILURE ");
+			printf("FAILURE ");
 		    }
 		    status = 0;
 		    PutReplyBytes(sizeof(status), (Address)&status);
@@ -1019,7 +1019,7 @@ Dbg_Main(stackHole, dbgStack)
 		    SendReply();
 		}
 		if (dbgTraceLevel >= 2) {
-		    Sys_Printf("pid %x ", pid);
+		    printf("pid %x ", pid);
 		}
 		if (pid == 0) {
 		    procPtr = (Proc_ControlBlock *) NIL;
@@ -1030,7 +1030,7 @@ Dbg_Main(stackHole, dbgStack)
 			procPtr->state == PROC_UNUSED ||
 		        procPtr->state == PROC_DEAD ||
 			procPtr->state == PROC_NEW) {
-			Sys_Printf("Can't backtrace stack for process %x\n",
+			printf("Can't backtrace stack for process %x\n",
 					pid);
 			procPtr = (Proc_ControlBlock *) NIL;
 		    }
@@ -1070,7 +1070,7 @@ Dbg_Main(stackHole, dbgStack)
 		 */
 		GetRequestBytes(2 * sizeof(int), (Address) &writeMem);
 		if (dbgTraceLevel >= 2) {
-		    Sys_Printf("Addr=%x Numbytes=%d ",
+		    printf("Addr=%x Numbytes=%d ",
 				writeMem.address, writeMem.numBytes);
 		}
 
@@ -1092,7 +1092,7 @@ Dbg_Main(stackHole, dbgStack)
 		    char	buf[100];
 
 		    if (dbgTraceLevel >= 2) {
-			Sys_Printf("FAILURE ");
+			printf("FAILURE ");
 		    }
 		    GetRequestBytes(writeMem.numBytes, buf);
 		    ch = 0;
@@ -1120,7 +1120,7 @@ Dbg_Main(stackHole, dbgStack)
 		    SendReply();
 		}
 		if (dbgTraceLevel >= 2) {
-		    Sys_Printf("register %d data %x ", writeGPR.regNum, 
+		    printf("register %d data %x ", writeGPR.regNum, 
 				writeGPR.regVal);
 		}
 		dbgGlobalStack.gprs[writeGPR.regNum] = writeGPR.regVal;
@@ -1145,8 +1145,8 @@ Dbg_Main(stackHole, dbgStack)
 		 */
 		savedDbgStackLength = dbgStackLength;
 		savedExcStackLength = excStackLength;
-		Byte_Copy(dbgStackLength, (Address)&dbgGlobalStack,
-			  (Address)&savedDbgStack);
+		bcopy((Address)&dbgGlobalStack, (Address)&savedDbgStack,
+			dbgStackLength);
 
 		dbgGlobalStack.trapStack.excStack.vor.stackFormat = MACH_SHORT;
 		excStackLength =
@@ -1182,8 +1182,8 @@ Dbg_Main(stackHole, dbgStack)
 		     */
 		    dbgStackLength = savedDbgStackLength;
 		    excStackLength = savedExcStackLength;
-		    Byte_Copy(sizeof(dbgGlobalStack), (Address)&savedDbgStack,
-			      (Address)&dbgGlobalStack);
+		    bcopy((Address)&savedDbgStack, (Address)&dbgGlobalStack,
+			    sizeof(dbgGlobalStack));
 		    callInProgress = FALSE;
 		}
 		/*
@@ -1230,7 +1230,7 @@ Dbg_Main(stackHole, dbgStack)
 		GetRequestBytes(sizeof(int), 
 			    (Address) &dbgGlobalStack.trapStack.excStack.pc);
 		if (dbgTraceLevel >= 2) {
-		    Sys_Printf("Continuing from pc %x ",
+		    printf("Continuing from pc %x ",
 				dbgGlobalStack.trapStack.excStack.pc);
 		}
 		if (!dbg_Rs232Debug) {
@@ -1251,7 +1251,7 @@ Dbg_Main(stackHole, dbgStack)
 		GetRequestBytes(sizeof(int), 
 			    (Address) &dbgGlobalStack.trapStack.excStack.pc);
 		if (dbgTraceLevel >= 2) {
-		    Sys_Printf("Stepping from pc %x ",
+		    printf("Stepping from pc %x ",
 				dbgGlobalStack.trapStack.excStack.pc);
 		}
 		if (!dbg_Rs232Debug) {
@@ -1278,7 +1278,7 @@ Dbg_Main(stackHole, dbgStack)
 		GetRequestBytes(sizeof(int), 
 			    (Address) &dbgGlobalStack.trapStack.excStack.pc);
 		if (dbgTraceLevel >= 2) {
-		    Sys_Printf("Detaching at pc %x ",
+		    printf("Detaching at pc %x ",
 				dbgGlobalStack.trapStack.excStack.pc);
 		}
 		if (!dbg_Rs232Debug) {
@@ -1290,12 +1290,12 @@ Dbg_Main(stackHole, dbgStack)
 
 		dbg_BeingDebugged = FALSE;
 		done = TRUE;
-		Sys_Printf("Sprite is now detached from the debugger\r\n");
+		printf("Sprite is now detached from the debugger\r\n");
 		break;
 	}
 
 	if (dbgTraceLevel >= 2) {
-	    Sys_Printf("\r\n");
+	    printf("\r\n");
 	}
 	if (!done) {
 	    (void)ReadRequest(FALSE);
@@ -1313,7 +1313,7 @@ Dbg_Main(stackHole, dbgStack)
     dbgSavedSP = dbgGlobalStack.gprs[SP] - dbgStackLength;
     dbgGlobalStack.gprs[SP] -= excStackLength + STACK_INC  +
 			          MACH_TRAP_INFO_SIZE;
-    Byte_Copy(dbgStackLength, (Address) &dbgGlobalStack, (Address) dbgSavedSP);
+    bcopy((Address) &dbgGlobalStack, (Address) dbgSavedSP, dbgStackLength);
 
     VmMachSetKernelContext(oldContext);
     mach_AtInterruptLevel = atInterruptLevel;
