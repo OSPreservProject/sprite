@@ -139,7 +139,7 @@ NetIEInit(name, number, ctrlAddr)
      */
 
     Mach_GetEtherAddress(&netIEState.etherAddress);
-    Sys_Printf("%s-%d Ethernet address %x:%x:%x:%x:%x:%x\n", name, number,
+    printf("%s-%d Ethernet address %x:%x:%x:%x:%x:%x\n", name, number,
 	      netIEState.etherAddress.byte1 & 0xff,
 	      netIEState.etherAddress.byte2 & 0xff,
 	      netIEState.etherAddress.byte3 & 0xff,
@@ -284,12 +284,12 @@ NetIEReset()
 
     netIEState.intSysConfPtr = (NetIEIntSysConfPtr *) NetIEMemAlloc();
     if (netIEState.intSysConfPtr == (NetIEIntSysConfPtr *) NIL) {
-	Sys_Panic(SYS_FATAL, "Intel: No memory for the scp.\n");
+	panic("Intel: No memory for the scp.\n");
     }
 
     netIEState.scbPtr = (NetIESCB *) NetIEMemAlloc();
     if (netIEState.scbPtr == (NetIESCB *) NIL) {
-	Sys_Panic(SYS_FATAL, "Intel: No memory for the scb.\n");
+	panic("Intel: No memory for the scb.\n");
     }
 
 
@@ -353,13 +353,13 @@ NetIEReset()
 	if (netIEState.intSysConfPtr->busy || 
 	    !netIEState.scbPtr->statusWord.cmdUnitNotActive ||
 	    !netIEState.controlReg->intrPending) {
-	    Sys_Panic(SYS_WARNING, "Could not initialize Intel chip.\n");
+	    printf("Warning: Could not initialize Intel chip.\n");
 	}
 	if (netIEState.scbPtr->statusWord.cmdUnitStatus == NET_IE_CUS_IDLE) {
 	    break;
 	}
 
-	Sys_Panic(SYS_WARNING, "Intel cus not idle after reset\n");
+	printf("Warning: Intel cus not idle after reset\n");
 	NET_IE_CHIP_RESET;
     }
 
@@ -369,7 +369,7 @@ NetIEReset()
 
     netIEState.cmdBlockPtr = (NetIECommandBlock *) NetIEMemAlloc();
     if (netIEState.cmdBlockPtr == (NetIECommandBlock *) NIL) {
-	Sys_Panic(SYS_FATAL, "NetIE: No memory for the command block.\n");
+	panic("NetIE: No memory for the command block.\n");
     }
     netIEState.scbPtr->cmdListOffset =
 			NetIEOffsetFrom68000Addr((int) netIEState.cmdBlockPtr);
@@ -379,11 +379,11 @@ NetIEReset()
      */
 
     diagCmdPtr = netIEState.cmdBlockPtr;
-    Byte_Zero(sizeof(*diagCmdPtr), (Address) diagCmdPtr);
+    bzero((Address) diagCmdPtr, sizeof(*diagCmdPtr));
     diagCmdPtr->cmdNumber = NET_IE_DIAGNOSE;
     NetIEExecCommand(diagCmdPtr);
     if (!diagCmdPtr->cmdOK) {
-	Sys_Panic(SYS_FATAL, "Intel failed diagnostics.\n");
+	panic("Intel failed diagnostics.\n");
     }
 
     /*
@@ -391,7 +391,7 @@ NetIEReset()
      */
 
     addressCommandPtr = (NetIEIASetupCB *) netIEState.cmdBlockPtr;
-    Byte_Zero(sizeof(NetIEIASetupCB), (Address) addressCommandPtr);
+    bzero((Address) addressCommandPtr, sizeof(NetIEIASetupCB));
     addressCommandPtr->cmdBlock.cmdNumber = NET_IE_IA_SETUP;
     addressCommandPtr->etherAddress = netIEState.etherAddress;
     NetIEExecCommand((NetIECommandBlock *) addressCommandPtr);
@@ -502,7 +502,7 @@ NetIEIntr(polling)
      * If we got a bus error then panic.
      */
     if (netIEStatePtr->controlReg->busError) {
-	Sys_Panic(SYS_WARNING, "Intel: Bus error on chip.\n");
+	printf("Warning: Intel: Bus error on chip.\n");
 	NetIERestart();
 	return;
     }
@@ -514,7 +514,7 @@ NetIEIntr(polling)
     if (!netIEStatePtr->controlReg->intrEnable || 
 	!netIEStatePtr->controlReg->intrPending) {
 	/*
-	Sys_Printf("Intel: Spurious interrupt <%x>\n", status);
+	printf("Intel: Spurious interrupt <%x>\n", status);
 	return;
 	*/
     } 
@@ -522,7 +522,7 @@ NetIEIntr(polling)
     status = NET_IE_CHECK_STATUS(scbPtr->statusWord);
     if (status == 0) {
 	if (!polling) {
-	    Sys_Printf("Intel: Spurious interrupt (2)\n");
+	    printf("Intel: Spurious interrupt (2)\n");
 	}
 	return;
     }
