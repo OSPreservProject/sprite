@@ -292,16 +292,16 @@ VmCOWCopySeg(segPtr)
     int				lastPage;
     ReturnStatus		status = SUCCESS;
 
+    cowInfoPtr = (VmCOWInfo *)NIL;
+    if (!COWStart(segPtr, &cowInfoPtr)) {
+	return(SUCCESS);
+    }
     if (segPtr->type == VM_STACK) {
 	firstPage = mach_LastUserStackPage - segPtr->numPages + 1;
     } else {
 	firstPage = segPtr->offset;
     }
     lastPage = firstPage + segPtr->numPages - 1;
-    cowInfoPtr = (VmCOWInfo *)NIL;
-    if (!COWStart(segPtr, &cowInfoPtr)) {
-	return(SUCCESS);
-    }
     virtAddr.segPtr = segPtr;
     virtAddr.flags = 0;
     for (virtAddr.page = firstPage, ptePtr = VmGetPTEPtr(segPtr, firstPage);
@@ -309,6 +309,7 @@ VmCOWCopySeg(segPtr)
 	 virtAddr.page++, VmIncPTEPtr(ptePtr, 1)) {
 	if (*ptePtr & VM_COW_BIT) {
 	    COW(&virtAddr, ptePtr, IsResident(ptePtr), FALSE);
+	    VmPageValidate(&virtAddr);
 	} else if (*ptePtr & VM_COR_BIT) {
 	    status = COR(&virtAddr, ptePtr);
 	    if (status != SUCCESS) {
