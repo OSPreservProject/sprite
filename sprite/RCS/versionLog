@@ -549,4 +549,11 @@ count of kernel pages
 
 ds5000.md/mainInit.c:
 Fixed initialization of variables.
+
+1.097	Tue Jul 30 20:44:06 PDT 1991
+Added Unix compatibility code.
+
+1.098	Mon Aug 12 10:57:50 PDT 1991
+Made some fixes to Unix compatibility.
+There is a fix in the dev module for a SCSI problem.
     New files linked in from the net library.
