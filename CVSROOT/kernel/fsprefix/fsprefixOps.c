@@ -1760,19 +1760,16 @@ Fs_PrefixDump(index, argPtr)
 	} else if (i == index) {
 	    Fs_Prefix userPrefix;
 	    if (prefixPtr->hdrPtr != (FsHandleHeader *)NIL) {
-		register Fs_FileID *fileIDPtr =
-			&prefixPtr->hdrPtr->fileID;
+
+		Fs_FileID fileID;
+		register Fs_FileID *fileIDPtr = &fileID;
+
+		*fileIDPtr = prefixPtr->hdrPtr->fileID;
+		(void) FsDomainInfo(fileIDPtr, &userPrefix.domainInfo);
 		userPrefix.serverID	= fileIDPtr->serverID;
 		userPrefix.domain	= fileIDPtr->major;
 		userPrefix.fileNumber	= fileIDPtr->minor;
 		userPrefix.version	= fileIDPtr->type;
-		if (FsDomainInfo(prefixPtr->hdrPtr,
-				 &userPrefix.domainInfo) != SUCCESS) {
-		    userPrefix.domainInfo.maxKbytes = -1;
-		    userPrefix.domainInfo.freeKbytes = -1;
-		    userPrefix.domainInfo.maxFileDesc = -1;
-		    userPrefix.domainInfo.freeFileDesc = -1;
-		}
 	    } else {
 		userPrefix.serverID	= -1;
 		userPrefix.domain	= -1;
