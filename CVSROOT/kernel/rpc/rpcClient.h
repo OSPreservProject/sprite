@@ -31,16 +31,19 @@ typedef struct RpcConst {
     /*
      * The initial wait period is defined by retryWait, in ticks.  It
      * is initialized from the millisecond valued retryMsec.  This is
-     * how long we wait after sending the first request packet.
+     * how long we wait after sending the first request packet.  If
+     * we are sending a fragmented packet we have a longer retry period.
      */
     int  		retryMsec;
     unsigned int 	retryWait;
+    int  		fragRetryMsec;
+    unsigned int	fragRetryWait;
     /*
      * The wait period increases if we have to resend.  If we are recieving
      * acknowledgments then we increase the timout until maxAckWait (ticks),
      * which is initialized from maxAckMsec.  If we are not getting acks
      * then we still back off a bit (as a heuristic in case  we are talking
-     * to a slow host) until the timout periodis maxTimeoutWait, which
+     * to a slow host) until the timout period is maxTimeoutWait, which
      * is initialized from maxTimeoutMsec.
      */
     int  		maxAckMsec;
@@ -58,12 +61,12 @@ typedef struct RpcConst {
     int 		maxAcks;
 } RpcConst;
 
-extern RpcConst rpc;
-extern int rpcRetryMsec;
-extern int rpcMaxAckMsec;
-extern int rpcMaxTimeoutMsec;
-extern int rpcMaxTries;
-extern int rpcMaxAcks;
+/*
+ * Two sets of timeouts are defined, one for local ethernet, one for IP.
+ */
+extern RpcConst rpcEtherConst;
+extern RpcConst rpcInetConst;
+
 
 /*
  * Global used by Rpc_Call and initialized by Rpc_Start.  This is set
@@ -80,10 +83,54 @@ extern unsigned int rpcBootId;
  */
 typedef struct RpcClientChannel {
     /*
+     * The Channel Index is a self reference to this channel.
+     * It is this channels index in the array of channel pointers.
+     * It is kept here because it will be part of the packet header.
+     */
+    int			index;
+    /*
+     * Rpc transaction state:  There are state bits to drive the algorithm,
+     * the values are described below with their definitions.
+     */
+    int			state;
+    /*
      * The ID of the server the channel is being used with.
      * A value of -1 means the channel has not been used yet.
      */
     int			serverID;
+    /*
+     * These timeout parameters depend on the server being used.
+     */
+    RpcConst		*constPtr;
+    /*
+     * A channel may wait on input, and be taken out of the timeout queue
+     * at interrupt time.  The timer queue element is stored here so
+     * it is accessable by the interrupt time routine.
+     */
+    Timer_QueueElement timeoutItem;
+    /*
+     * RpcDoCall and RpcClientDispatch synchronize with a master lock.
+     * The interrupt level routine notifies waitCondition when the waiting
+     * process should wakeup and check for input.
+     */
+    Sync_Semaphore	mutex;
+    Sync_Condition	waitCondition;
+    /*
+     * This bitmask indicates which fragments in the current
+     * request message the server has received.
+     */
+    int			fragsDelivered;
+    /*
+     * This bitmask indicates which fragments in the current reply
+     * message we have received.
+     */
+    int			fragsReceived;
+    /*
+     * Two temporaries are needed to record the
+     * amount of data actually returned by the server.
+     */
+    int			actualDataSize;
+    int			actualParamSize;
     /*
      * The header and buffer specifications for the request message.
      */
@@ -101,51 +148,6 @@ typedef struct RpcClientChannel {
      */
     RpcHdr		replyRpcHdr;
     RpcBufferSet	reply;
-
-    /*
-     * Two temporaries are needed to record the
-     * amount of data actually returned by the server.
-     */
-    int			actualDataSize;
-    int			actualParamSize;
-
-    /*
-     * The Channel Index is a self reference to this channel.
-     * It is this channels index in the array of channel pointers.
-     * It is kept here because it will be part of the packet header.
-     */
-    int			index;
-    /*
-     * Rpc transaction state:  There are state bits to drive the algorithm,
-     * the values are described below with their definitions.
-     */
-    int			state;
-    /*
-     * This bitmask indicates which fragments in the current
-     * request message the server has received.
-     */
-    int			fragsDelivered;
-    /*
-     * This bitmask indicates which fragments in the current reply
-     * message we have received.
-     */
-    int			fragsReceived;
-
-    /*
-     * A channel may wait on input, and be taken out of the timeout queue
-     * at interrupt time.  The timer queue element is stored here so
-     * it is accessable by the interrupt time routine.
-     */
-    Timer_QueueElement timeoutItem;
-
-    /*
-     * RpcDoCall and RpcClientDispatch synchronize with a master lock.
-     * The interrupt level routine notifies waitCondition when the waiting
-     * process should wakeup and check for input.
-     */
-    Sync_Semaphore	mutex;
-    Sync_Condition	waitCondition;
-
 } RpcClientChannel;
 
 /*
