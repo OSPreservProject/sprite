@@ -18,9 +18,9 @@
 #define _MACHCONST
 
 #ifdef KERNEL
-#include "vmPmaxConst.h"
+#include "vm3maxConst.h"
 #else
-#include <kernel/vmPmaxConst.h>
+#include <kernel/vm3maxConst.h>
 #endif
 
 /*
