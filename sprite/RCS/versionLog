@@ -126,4 +126,25 @@ L1-o reenables the display.
 Migration of floating point programs fixed
 Vm_PageIn fixed to have proper error handling when the disk fills up.
 (This version won't boot on Allspice, a sun4.)
+
+1.061	Wed Mar 14 10:39:49 PST 1990
+Added code to Fscache_OkToScavenge that looks for
+inconsistencies with respect to the dirty list.
+----------------------------
+Added Fscache_DeleteFile.  This procedure is to be called after
+a file has been deleted from disk.  It ensures that no cache
+blocks remain for the file and that the file is not on the dirty list.
+----------------------------
+Fixed the race present in 1.059 and 1.060 that allows multiple processes
+to be doing the reboot callbacks.  The RECOV_FAILED bit was added
+to account for failures during the reboot callbacks.  This causes
+the reboot callbacks to be retried (if a failure occurs during them).
+----------------------------
+Changed the panic about a bad server ID in Rpc_Call to a printf
+----------------------------
+increased limit on ds3100 kernel heap to 16 MB
+----------------------------
+Patched called to VmMach_GetContext() to handle processes without context
+loaded.  sun4c only.  This allows kernel stack traces during debug sessions.
+
     New files linked in from the net library.
