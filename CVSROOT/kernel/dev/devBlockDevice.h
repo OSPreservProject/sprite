@@ -149,12 +149,13 @@ typedef struct DevBlockDeviceHandle {
  *	may also be called running at interrupt level. 
  *
  * IOControlProc calling sequences:
- * 	ReturnStatus IOControlProc(blockDevHandlePtr, command, inBufSize, 
- *		  		   inBuffer,  outBufSize, outBuffer);
+ * 	ReturnStatus IOControlProc(blockDevHandlePtr, command, byteOrder,
+ *				inBufSize, inBuffer,  outBufSize, outBuffer);
  *
  *  	 DevBlockDeviceHandle	*blockDevHandlePtr;
  *				    / * Handle of the device to operate on. * /
  *	 int	command;	/ * IO control to be performed. * /
+ *	 int	byteOrder;	/ * Caller's byte ordering. * /
  *	 int	inBufSize;	/ * Size of the input buffer - inBuffer. * /
  *	 Address inBuffer;	/ * The input buffer. * /
  *	 int	outBufSize;	/ * Size of the output buffer - outBuffer. * /
@@ -191,8 +192,8 @@ extern ReturnStatus Dev_BlockDeviceIOControl();
 #define	Dev_BlockDeviceIO(handlePtr, requestPtr) \
        (((handlePtr)->blockIOProc)((handlePtr),(requestPtr)))
 
-#define	Dev_BlockDeviceIOControl(handle, cmd, isize, ibuf, osize, obuf) \
-       (((handle)->IOControlProc)((handle),(cmd),(isize),(ibuf),(osize),(obuf)))
+#define	Dev_BlockDeviceIOControl(handle, cmd, byteOrder, isize, ibuf, osize, obuf) \
+       (((handle)->IOControlProc)((handle),(cmd),(byteOrder),(isize),(ibuf),(osize),(obuf)))
 
 
 #endif /* lint */
