@@ -243,10 +243,12 @@
 #define	MACH_EXT_INTERRUPT_ANY		(MACH_NUM_INTR_TYPES+1)
 
 /*
- * Interrupt used to spin up at boot time a sleeping slave processor.
+ * Interrupt number and mask used to spin up at boot time a 
+ * sleeping slave processor.
  */
 
 #define	MACH_SPINUP_INTERRUPT MACH_EXT_INTR_0
+#define	MACH_SPINUP_INTERRUPT_NUM 0
 /*
  * Bits in the KPSW (see SPUR-ISA page 36).
  */
@@ -493,7 +495,7 @@
  * Maximum number of processors configuable.
  */
 
-#define	MACH_MAX_NUM_PROCESSORS		1
+#define	MACH_MAX_NUM_PROCESSORS		4
 /*
  * Bound on the kernel's address space.
  *
@@ -569,6 +571,14 @@
 #define	MACH_NUM_PHYS_PAGES	(2048 - MACH_NUM_RESERVED_PAGES)
 
 /*
+ * Slave processor entry point.
+ */
+
+#define	MACH_SLAVE_START	(MACH_MEM_SLOT_MASK | \
+				   ((MACH_FIRST_PHYS_PAGE * VMMACH_PAGE_SIZE)+\
+				     MACH_CODE_START))
+
+/*
  *---------------------------------------------------------------------------
  * 
  * User trap handler information.
@@ -608,4 +618,5 @@
  * Define PATCH_IBUFFER if ibuffer is to be enabled.
  */
 #define	PATCH_IBUFFER 
+#define	FAST_REFRESH
 #endif _MACHCONST
