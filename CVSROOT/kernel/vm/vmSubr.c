@@ -1375,6 +1375,21 @@ Vm_DeleteSharedSegment(procPtr,segProcPtr)
 	 * through with it.
 	 */
 	segPtr->flags &= ~VM_SWAP_FILE_OPENED;
+	if (segPtr->filePtr != (Fs_Stream *)NIL) {
+	    if (((Fs_HandleHeader *)segPtr->filePtr)->refCount==0) {
+		printf("Vm_DeleteSharedSegment: not closing %x; ref=0\n",
+			segPtr->filePtr);
+	    } else {
+		(void)Fs_Close(segPtr->filePtr);
+	    }
+	} else {
+	    if (((Fs_HandleHeader *)segPtr->swapFilePtr)->refCount==0) {
+		printf("Vm_DeleteSharedSegment: not closing %x; ref=0\n",
+			segPtr->swapFilePtr);
+	    } else {
+		(void)Fs_Close(segPtr->swapFilePtr);
+	    }
+	}
 	Vm_SegmentDelete(segPtr,procPtr);
 	if (!done) {
 	    dprintf("Vm_DeleteSharedSegment: Restoring VM_SWAP_FILE_OPENED\n");
