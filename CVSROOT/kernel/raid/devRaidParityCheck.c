@@ -88,7 +88,8 @@ static void
 parityCheckDoneProc(reconstructionControlPtr)
     RaidReconstructionControl	*reconstructionControlPtr;
 {
-    reconstructionControlPtr->doneProc(reconstructionControlPtr->clientData);
+    reconstructionControlPtr->doneProc(reconstructionControlPtr->clientData,
+	    reconstructionControlPtr->status);
     FreeReconstructionControl(reconstructionControlPtr);
 }
 
@@ -209,12 +210,14 @@ parityCheckReadDoneProc(reconstructionControlPtr, numFailed)
 
     if (numFailed > 0) {
 	ReportParityCheckFailure(reconstructionControlPtr->stripeID);
+	reconstructionControlPtr->status = FAILURE;
     } else {
 	XorRaidRequests(reqControlPtr, raidPtr, parityBuf);
 #ifndef NODATA
 	bzero(readBuf, raidPtr->bytesPerStripeUnit);
 	if (bcmp(parityBuf, readBuf, raidPtr->bytesPerStripeUnit) != 0) {
 	    ReportParityCheckFailure(reconstructionControlPtr->stripeID);
+	    reconstructionControlPtr->status = FAILURE;
 	}
 #endif
     }
