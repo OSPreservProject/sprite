@@ -15,7 +15,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "vm.h"
 #include "vmInt.h"
 #include "list.h"
-#include "machine.h"
 #include "mem.h"
 #include "proc.h"
 #include "sched.h"
@@ -97,7 +96,7 @@ VmStackInit()
  *
  * Vm_GetKernelStack --
  *
- *      Allocate and initialize a stack for a kernel process.
+ *      Allocate a stack for a kernel process.
  *
  * Results:
  *      The base of the new stack.
@@ -107,14 +106,8 @@ VmStackInit()
  *
  * ----------------------------------------------------------------------------
  */
-ENTRY int
-Vm_GetKernelStack(progCounter, startFunc)
-    int		progCounter;	/* Program counter of where to start 
-				 * execution of new process.  */
-    void	(*startFunc)();	/* The function to call when the process
-				 * first starts executing.  This function will
-				 * initialize things and then start the
-				 * process running at progCounter. */
+ENTRY Address
+Vm_GetKernelStack()
 {
     register	Vm_PTE		*ptePtr;
     register	StackList	*stackListPtr;
@@ -128,7 +121,7 @@ Vm_GetKernelStack(progCounter, startFunc)
      */
     if (List_IsEmpty(freeList)) {
 	UNLOCK_MONITOR;
-	return(-1);
+	return((Address)NIL);
     }
     stackListPtr = (StackList *) List_First(freeList);
     List_Move((List_Links *) stackListPtr, LIST_ATREAR(activeList));
@@ -150,15 +143,9 @@ Vm_GetKernelStack(progCounter, startFunc)
 	VmPageValidate(&virtAddr);
     }
 
-    /*
-     * Call hardware dependent routine to initialize the stack.
-     */
-    Mach_InitStack((int) stackListPtr->startAddr, startFunc,
-		    (Address) progCounter);
-
     UNLOCK_MONITOR;
 
-    return((int) stackListPtr->startAddr);
+    return(stackListPtr->startAddr);
 }
 
 
