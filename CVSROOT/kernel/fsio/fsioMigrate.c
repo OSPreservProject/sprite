@@ -470,10 +470,9 @@ FsNotifyOfMigration(migInfoPtr, flagsPtr, offsetPtr, outSize, outData)
 /*
  *----------------------------------------------------------------------
  *
- * Fs_RpcNotifyOfMigration --
- * Fs_RpcStartMigration --
+ * Fs_RpcMigrateStream --
  *
- *	The service stub for FsNotifyOfMigration (and FsStreamMigCallback).
+ *	The service stub for FsNotifyOfMigration.
  *	This invokes the Migrate routine for the I/O handle given in
  *	the encapsulated stream state.
  *
@@ -489,7 +488,7 @@ FsNotifyOfMigration(migInfoPtr, flagsPtr, offsetPtr, outSize, outData)
  */
 /*ARGSUSED*/
 ReturnStatus
-Fs_RpcStartMigration(srvToken, clientID, command, storagePtr)
+Fs_RpcMigrateStream(srvToken, clientID, command, storagePtr)
     ClientData srvToken;	/* Handle on server process passed to
 				 * Rpc_Reply */
     int clientID;		/* Sprite ID of client host */
@@ -512,19 +511,10 @@ Fs_RpcStartMigration(srvToken, clientID, command, storagePtr)
 
     migInfoPtr = (FsMigInfo *) storagePtr->requestParamPtr;
 
-    /*
-     * This is getting hacked up.  Should we add a new RPC used only to
-     * call FsStreamMigrate (which should really be FsStreamRelease!)
-     */
-    if (migInfoPtr->ioFileID.type == FS_STREAM) {
-	hdrPtr = (FsHandleHeader *)FsStreamClientVerify(&migInfoPtr->ioFileID,
-						    migInfoPtr->srcClientID);
-    } else {
-	hdrPtr = (*fsStreamOpTable[migInfoPtr->ioFileID.type].clientVerify)
-		(&migInfoPtr->ioFileID, migInfoPtr->srcClientID, (int *)NIL);
-    }
+    hdrPtr = (*fsStreamOpTable[migInfoPtr->ioFileID.type].clientVerify)
+	    (&migInfoPtr->ioFileID, migInfoPtr->srcClientID, (int *)NIL);
     if (hdrPtr == (FsHandleHeader *) NIL) {
-	panic("Fs_RpcStartMigration, unknown %s handle <%d,%d>\n",
+	panic("Fs_RpcMigrateStream, unknown %s handle <%d,%d>\n",
 	    FsFileTypeToString(migInfoPtr->ioFileID.type),
 	    migInfoPtr->ioFileID.major, migInfoPtr->ioFileID.minor);
 	return(FS_STALE_HANDLE);
@@ -546,7 +536,7 @@ Fs_RpcStartMigration(srvToken, clientID, command, storagePtr)
 	    bcopy(dataPtr, (Address) &migParamPtr->data, dataSize);
 	    free(dataPtr);
 	} else {
-	    panic("Fs_RpcStartMigration: migrate returned oversized buffer.\n");
+	    panic("Fs_RpcMigrateStream: migrate returned oversized buffer.\n");
 	    return(FAILURE);
 	}
     } 
@@ -560,7 +550,6 @@ Fs_RpcStartMigration(srvToken, clientID, command, storagePtr)
 		(ClientData)replyMemPtr);
     return(SUCCESS);
 }
-
 
 /*
  * ----------------------------------------------------------------------------
