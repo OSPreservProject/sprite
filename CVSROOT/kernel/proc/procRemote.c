@@ -314,8 +314,13 @@ GetProcessState(buffer, hostID)
 	 * Remember the dependency on the other host.
 	 */
 	Proc_AddMigDependency(procPtr->processID, procPtr->peerHostID);
+    } else {
+	/*
+	 * Forget the dependency on the other host; we're running
+	 * locally now.
+	 */
+	Proc_RemoveMigDependency(procPtr->processID);
     }
-
 
     pid = procPtr->processID;
     Proc_Unlock(procPtr);
