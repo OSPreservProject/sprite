@@ -203,7 +203,9 @@ found:
 	protoPtr->fsReadyToken = data;
     } else {
 	protoPtr->kernel = TRUE;
+#ifndef lint
 	protoPtr->inputProc = (int(*)())data;
+#endif /* lint */
     }
     protoPtr->open = TRUE;
     protoPtr->queue.head = 0;

@@ -198,6 +198,9 @@ ScsiDiskIdleCheck(clientData)
     ClientData	clientData;
 {
     ScsiDevice *devPtr = (ScsiDevice *) clientData;
+#ifdef lint
+    devPtr = devPtr;
+#endif /* lint */
 	/* need to fix this. */
     return TRUE;
 }
@@ -567,7 +570,6 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
      */
 	case   IOC_HBA_DISK_IO_TEST: {
 	    register int count, i;
-	    int	     max = 0;
 	    register DevHBADiskTest  *cmds;
 	    ScsiCmd	*scsiCmds;
 	    ReturnStatus       errorStatus;
@@ -619,8 +621,9 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 		   free(dmem);
 	   }
 	   free(mem);
-	   if (status)
+	   if (status) {
 	       return status;
+	    }
 	   return errorStatus;
 
 	}
@@ -657,8 +660,9 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 		}
 	   }
 	   free((char *) scsiCmds);
-	   if (status)
+	   if (status) {
 	       return status;
+	    }
 	   return errorStatus;
 
 	}
