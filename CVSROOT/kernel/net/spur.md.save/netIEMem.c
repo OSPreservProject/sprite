@@ -93,7 +93,7 @@ NetIEMemInit()
 
     if (!netIEState.running && netIEState.mapped) {
 	netIEState.memBase = netIEState.deviceBase;
-	Sys_Printf("Initializing Intel memory.\n");
+	printf("Initializing Intel memory.\n");
     }
     memAddr =  netIEState.memBase;
     memEndAddr = memAddr + NET_IE_FREE_MEM_SIZE; 
