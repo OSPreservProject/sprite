@@ -344,14 +344,14 @@ typedef struct Fsio_StreamTypeOps {
 
 extern Fsio_StreamTypeOps fsio_StreamOpTable[];
 
-typedef struct FsStreamClientInfo {
+typedef struct FsioStreamClient {
     List_Links links;		/* This hangs off the stream */
     int		clientID;	/* The sprite ID of the client */
-    int		useFlags;	/* Usage flags from the stream */
-} FsStreamClientInfo;
+} FsioStreamClient;
 
 /*
  * Structure that is transfered when a process is migrated.
+ * SHOULD CHANGE NAME TO Fsio_MigInfo
  */
 
 typedef struct FsMigInfo {
@@ -368,6 +368,7 @@ typedef struct FsMigInfo {
 /*
  * The following structures are subfields of the various I/O handles.
  * First we define a use count structure to handle common book keeping needs.
+ * SHOULD CHANGE NAME TO Fsio_UseCounts
  */
 
 typedef struct Fsutil_UseCounts {
@@ -377,6 +378,20 @@ typedef struct Fsutil_UseCounts {
 } Fsutil_UseCounts;
 
 
+/*
+ * Initialization
+ */
+extern void Fsio_InstallStreamOps();
+extern void Fsio_InstallSrvOpenOp();
+
+extern ReturnStatus Fsio_CreatePipe();
+
+extern void Fsio_Bin();
+extern void Fsio_InitializeOps();
+
+/*
+ * Stream client list functions.
+ */
 extern Boolean		Fsio_StreamClientOpen();
 extern Boolean		Fsio_StreamClientClose();
 extern Boolean		Fsio_StreamClientFind();
@@ -394,6 +409,9 @@ extern void		Fsio_StreamDestroy();
 extern Boolean		Fsio_StreamScavenge();
 extern ReturnStatus	Fsio_StreamReopen();
 
+/*
+ * flock() support
+ */
 extern void		Fsio_LockInit();
 extern ReturnStatus	Fsio_IocLock();
 extern ReturnStatus	Fsio_Lock();
@@ -401,26 +419,36 @@ extern ReturnStatus	Fsio_Unlock();
 extern void		Fsio_LockClose();
 extern void		Fsio_LockClientKill();
 
+/*
+ * ftrunc() support
+ */
 extern ReturnStatus	Fsio_FileTrunc();
 
 
-extern void Fsio_InstallStreamOps();
-extern void Fsio_InstallSrvOpenOp();
-
-extern ReturnStatus Fsio_CreatePipe();
-
+/*
+ * Device support
+ */
 extern void Fsio_DevNotifyException();
 extern void Fsio_DevNotifyReader();
 extern void Fsio_DevNotifyWriter();
 
 extern ReturnStatus Fsio_VanillaDevReopen();
 
+/*
+ * Migration support
+ */
+extern ReturnStatus	Fsio_EncapStream();
+extern ReturnStatus	Fsio_DeencapStream();
+extern ReturnStatus	Fsio_MigrateUseCounts();
+extern void		Fsio_MigrateClient();
+
+/*
+ * Null procs for switch tables.
+ */
 extern void Fsio_NullClientKill();
 extern ReturnStatus Fsio_NoProc();
 extern ReturnStatus Fsio_NullProc();
 extern Fs_HandleHeader *Fsio_NoHandle();
-extern void Fsio_Bin();
 
-extern void Fsio_InitializeOps();
 
 #endif
