@@ -82,6 +82,41 @@ Dev_CCOpen(devicePtr, useFlags, notifyToken)
 /*
  *----------------------------------------------------------------------
  *
+ * Dev_CCReopen --
+ *
+ *	Reopen the /dev/cc device.  This uses Dev_CCReopen.
+ *
+ * Results:
+ *	SUCCESS		- the device was opened.
+ * 	DEV_OFFLINE	- the device unit number pointed to a
+ *			  nonacitve processor.
+ *
+ * Side effects:
+ *	None here, see Dev_CCOpen.
+ *
+ *----------------------------------------------------------------------
+ */
+
+
+/*ARGSUSED*/
+ReturnStatus
+Dev_CCReopen(devicePtr, refs, writes, notifyToken)
+    Fs_Device *devicePtr;	/* Specifies type and unit number. */
+    int refs;			/* Number of streams being reopened */
+    int writes;			/* Number of write streams */
+    ClientData notifyToken;	/* Used for Fs call-back to notify waiting
+				 * processes that the console device is ready.*/
+{
+    int useFlags = FS_READ;
+    if (writes) {
+	useFlags |= FS_WRITE;
+    }
+    return Dev_CCOpen(devicePtr, useFlags, notifyToken) ;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Dev_CCRead --
  *
  *	Read data from the CC registers.  
@@ -97,33 +132,33 @@ Dev_CCOpen(devicePtr, useFlags, notifyToken)
  */
 /*ARGSUSED*/
 ReturnStatus
-Dev_CCRead(devicePtr, offset, bufSize, bufPtr, lenPtr)
+Dev_CCRead(devicePtr, readPtr, replyPtr)
     Fs_Device	*devicePtr;
-    int		offset;	  	/* Offset to start read */
-    int		bufSize;	/* Size of buffer. */
-    Address	bufPtr;		/* Place to store data. */
-    register int *lenPtr;  	/* Maximum number of chars to read 
-				 * before returning. */ 
+    Fs_IOParam	*readPtr;	/* Read parameter block */
+    Fs_IOReply	*replyPtr;	/* Return length and signal */ 
 {
     ReturnStatus 	status = SUCCESS;
-    unsigned int	startOffset = (unsigned int) offset;
-    int		 	bytesToRead = *lenPtr;
-    int			pnum = devicePtr->unit;
+    unsigned int	startOffset;
+    int		 	bytesToRead;
+    int			pnum;
 
+    startOffset = (unsigned int) readPtr->offset;
+    bytesToRead = readPtr->length;
+    pnum = devicePtr->unit;
     if (startOffset > DEV_CC_MAX_OFFSET) {
-	*lenPtr = 0;
+	replyPtr->length = 0;
 	return (SUCCESS);
     }
     if (startOffset + bytesToRead > DEV_CC_MAX_OFFSET) {
 	bytesToRead = DEV_CC_MAX_OFFSET - startOffset;
     }
     if (pnum == Mach_GetProcessorNumber()) {
-	    DevCCReadBytesFromRegs(startOffset, bytesToRead, bufPtr);
+	    DevCCReadBytesFromRegs(startOffset, bytesToRead, readPtr->buffer);
     } else {
 	    status = RemoteCCReadBytesFromRegs(pnum,startOffset, bytesToRead, 
-					       bufPtr);
+					       readPtr->buffer);
     }
-    *lenPtr = bytesToRead;
+    replyPtr->length = bytesToRead;
     return (SUCCESS);
 }
 
@@ -147,17 +182,19 @@ Dev_CCRead(devicePtr, offset, bufSize, bufPtr, lenPtr)
 
 /*ARGSUSED*/
 ReturnStatus
-Dev_CCWrite(devicePtr, offset, bufSize, bufPtr, bytesWrittenPtr)
-    Fs_Device     *devicePtr;	
-    int		 offset;		/* Ignored. */
-    int		 bufSize;		/* Number of bytes to write. */
-    register Address  bufPtr;		/* Place to find data */
-    int 	 *bytesWrittenPtr;	/* Number of chars written */ 
+Dev_CCWrite(devicePtr, writePtr, replyPtr)
+    Fs_Device	*devicePtr;	/* Indicates device */	
+    Fs_IOParam	*writePtr;	/* Standard write parameter block */
+    Fs_IOReply	*replyPtr;	/* Return length and signal */
 {
     ReturnStatus status;
-    unsigned int	startOffset = (unsigned int) offset;
-    int			pnum = devicePtr->unit;
+    unsigned int	startOffset;
+    int			pnum;
+    int			bufSize;
 
+    startOffset = (unsigned int) writePtr->offset;
+    pnum = devicePtr->unit;
+    bufSize = writePtr->length;
     if (startOffset > DEV_CC_MAX_OFFSET ) {
 	return (SUCCESS);
     }
@@ -173,14 +210,14 @@ Dev_CCWrite(devicePtr, offset, bufSize, bufPtr, bytesWrittenPtr)
     }
 
     if (pnum == Mach_GetProcessorNumber()) {
-	    DevCCWriteBytesFromRegs(startOffset, bufSize, bufPtr);
+	    DevCCWriteBytesFromRegs(startOffset, bufSize, writePtr->buffer);
 	    status = SUCCESS;
     } else {
 	    status = RemoteCCWriteBytesFromRegs(pnum,startOffset, bufSize, 
-				bufPtr);
+				writePtr->buffer);
 
     }
-    *bytesWrittenPtr = bufSize;
+    replyPtr->length = bufSize;
     return (status);
 }
 
@@ -232,25 +269,21 @@ Dev_CCClose(devicePtr, useFlags, openCount, writerCount)
  */
 
 ReturnStatus
-Dev_CCIOControl(devicePtr, command, inBufSize, inBuffer, outBufSize,
-		     outBuffer)
+Dev_CCIOControl(devicePtr, ioctlPtr, replyPtr)
     Fs_Device	        *devicePtr;
-    int			command;
-    int			inBufSize;
-    Address		inBuffer;
-    int			outBufSize;
-    Address		outBuffer;
+    Fs_IOCParam		*ioctlPtr;
+    Fs_IOReply		*replyPtr;
 {
     ReturnStatus	status;
     int			pnum = devicePtr->unit;
 
-    switch (command) {
+    switch (ioctlPtr->command) {
 	case 	IOC_CCDEV_SET_MODE: {
 	    unsigned int	newMode, oldMode; 
-	    if (inBufSize != sizeof(char)) {
+	    if (ioctlPtr->inBufSize != sizeof(char)) {
 		return (GEN_INVALID_ARG);
 	    } 
-	    newMode = *(unsigned char *) inBuffer;
+	    newMode = *(unsigned char *) ioctlPtr->inBuffer;
 	    if (pnum == Mach_GetProcessorNumber()) { 
 		    Mach_DisableNonmaskableIntr();
 		    oldMode = Mach_Read8bitCCReg(MACH_MODE_REG);
@@ -271,7 +304,7 @@ Dev_CCIOControl(devicePtr, command, inBufSize, inBuffer, outBufSize,
 	    Timer_Ticks		counter;
 	    extern void Timer_ReadT0();
 
-	    if (outBufSize != sizeof(Timer_Ticks)) {
+	    if (ioctlPtr->outBufSize != sizeof(Timer_Ticks)) {
 		return (GEN_INVALID_ARG);
 	    } 
 	    if (pnum == Mach_GetProcessorNumber()) {
@@ -282,7 +315,7 @@ Dev_CCIOControl(devicePtr, command, inBufSize, inBuffer, outBufSize,
 					 (ClientData) &counter,
 					 TRUE, (ClientData *) NIL);
 	    }
-	    bcopy((char *) &counter, outBuffer, sizeof(Timer_Ticks));
+	    bcopy((char *) &counter, ioctlPtr->outBuffer, sizeof(Timer_Ticks));
 	    return (status);
 	}
 
@@ -313,10 +346,10 @@ Dev_CCIOControl(devicePtr, command, inBufSize, inBuffer, outBufSize,
 	    int		startOffset, bytesWritten;
 	    ReturnStatus	status;
 
-	    if (inBufSize != sizeof(int)) {
+	    if (ioctlPtr->inBufSize != sizeof(int)) {
 		return (GEN_INVALID_ARG);
 	    }
-	    bcopy(inBuffer,(char *) &startOffset,sizeof(int));
+	    bcopy(ioctlPtr->inBuffer,(char *) &startOffset,sizeof(int));
 	    status = Dev_CCWrite(devicePtr, startOffset, DEV_CC_MAX_OFFSET, 
 					Zero, &bytesWritten);
 	    return(status);
@@ -672,6 +705,41 @@ Dev_PCCOpen(devicePtr, useFlags, notifyToken)
 /*
  *----------------------------------------------------------------------
  *
+ * Dev_PCCReopen --
+ *
+ *	Reopen the /dev/pcc device.  This uses Dev_PCCReopen.
+ *
+ * Results:
+ *	SUCCESS		- the device was opened.
+ * 	DEV_OFFLINE	- the device unit number pointed to a
+ *			  nonacitve processor.
+ *
+ * Side effects:
+ *	None here, see Dev_PCCOpen.
+ *
+ *----------------------------------------------------------------------
+ */
+
+
+/*ARGSUSED*/
+ReturnStatus
+Dev_PCCReopen(devicePtr, refs, writes, notifyToken)
+    Fs_Device *devicePtr;	/* Specifies type and unit number. */
+    int refs;			/* Number of streams being reopened */
+    int writes;			/* Number of write streams */
+    ClientData notifyToken;	/* Used for Fs call-back to notify waiting
+				 * processes that the console device is ready.*/
+{
+    int useFlags = FS_READ;
+    if (writes) {
+	useFlags |= FS_WRITE;
+    }
+    return Dev_PCCOpen(devicePtr, useFlags, notifyToken) ;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Dev_PCCRead --
  *
  *	Read data from the PCC registers.  
@@ -687,21 +755,19 @@ Dev_PCCOpen(devicePtr, useFlags, notifyToken)
  */
 /*ARGSUSED*/
 ReturnStatus
-Dev_PCCRead(devicePtr, offset, bufSize, bufPtr, lenPtr)
-    Fs_Device	*devicePtr;
-    int		offset;	  	/* Offset to start read */
-    int		bufSize;	/* Size of buffer. */
-    Address	bufPtr;		/* Place to store data. */
-    register int *lenPtr;  	/* Maximum number of chars to read 
-				 * before returning. */ 
+Dev_PCCRead(devicePtr, readPtr, replyPtr)
+    Fs_Device	*devicePtr;	/* Indicates device */
+    Fs_IOParam	*readPtr;	/* Read parameter block */
+    Fs_IOReply	*replyPtr;	/* Return length and signal */ 
 {
     ReturnStatus 	status = SUCCESS;
-    unsigned int	startOffset = (unsigned int) offset;
-    int		 	bytesToRead = *lenPtr;
-    int			pnum;
+    unsigned int	startOffset;
+    int		 	bytesToRead;
 
+    startOffset = (unsigned int) readPtr->offset;
+    bytesToRead = readPtr->length;
     if (startOffset > sizeof(PCCdev)) {
-	*lenPtr = 0;
+	replyPtr->length = 0;
 	return (SUCCESS);
     }
     if (startOffset + bytesToRead > sizeof(PCCdev)) {
@@ -712,10 +778,10 @@ Dev_PCCRead(devicePtr, offset, bufSize, bufPtr, lenPtr)
      */
     MASTER_LOCK(&devPCCMutex);
     DoPCCMemUpdate();
-    bcopy(((char *) &PCCdevMem)+startOffset,bufPtr,bytesToRead);
+    bcopy(((char *) &PCCdevMem)+startOffset,readPtr->buffer,bytesToRead);
     MASTER_UNLOCK(&devPCCMutex);
 
-    *lenPtr = bytesToRead;
+    replyPtr->length = bytesToRead;
     return (SUCCESS);
 }
 
@@ -737,14 +803,11 @@ Dev_PCCRead(devicePtr, offset, bufSize, bufPtr, lenPtr)
 
 /*ARGSUSED*/
 ReturnStatus
-Dev_PCCWrite(devicePtr, offset, bufSize, bufPtr, bytesWrittenPtr)
-    Fs_Device     *devicePtr;	
-    int		 offset;		/* Ignored. */
-    int		 bufSize;		/* Number of bytes to write. */
-    register Address  bufPtr;		/* Place to find data */
-    int 	 *bytesWrittenPtr;	/* Number of chars written */ 
+Dev_PCCWrite(devicePtr, writePtr, replyPtr)
+    Fs_Device	*devicePtr;	/* Indicates device */	
+    Fs_IOParam	*writePtr;	/* Standard write parameter block */
+    Fs_IOReply	*replyPtr;	/* Return length and signal */
 {
-    ReturnStatus status;
 
     return (DEV_NO_DEVICE);
 }
@@ -797,19 +860,15 @@ Dev_PCCClose(devicePtr, useFlags, openCount, writerCount)
  */
 
 ReturnStatus
-Dev_PCCIOControl(devicePtr, command, inBufSize, inBuffer, outBufSize,
-		     outBuffer)
+Dev_PCCIOControl(devicePtr, ioctlPtr, replyPtr)
     Fs_Device	        *devicePtr;
-    int			command;
-    int			inBufSize;
-    Address		inBuffer;
-    int			outBufSize;
-    Address		outBuffer;
+    Fs_IOCParam		*ioctlPtr;
+    Fs_IOReply		*replyPtr;
 {
     ReturnStatus	status;
     int			pnum;
 
-    switch (command) {
+    switch (ioctlPtr->command) {
 	case 	IOC_CCDEV_SET_MODE: {
     	    Fs_Device	        device;
     	    Fs_Device	        *newDevicePtr = &device;
@@ -819,9 +878,7 @@ Dev_PCCIOControl(devicePtr, command, inBufSize, inBuffer, outBufSize,
 	    device = *devicePtr;
 	    for (pnum = 0; pnum < mach_NumProcessors; pnum++) {
 		newDevicePtr->unit = pnum;
-		status = Dev_CCIOControl(newDevicePtr, command, inBufSize,
-					inBuffer, outBufSize,outBuffer);
-
+		status = Dev_CCIOControl(newDevicePtr, ioctlPtr, replyPtr);
 	     }
 	    return (status);
 	}
@@ -849,16 +906,18 @@ Dev_PCCIOControl(devicePtr, command, inBufSize, inBuffer, outBufSize,
 	case	IOC_TRUNCATE: {
     	    Fs_Device	        device;
     	    Fs_Device	        *newDevicePtr = &device;
+	    Fs_IOCParam		ioctl;
 	    int		pnum;
 		/*
 		 * Zero  counters. 
 		 */
 	    device = *devicePtr;
+	    ioctl = *ioctlPtr;
+	    ioctl.command = IOC_TRUNCATE;
 	    MASTER_LOCK(&devPCCMutex);
 	    for(pnum = 0; pnum < mach_NumProcessors; pnum++) { 
 		newDevicePtr->unit = pnum;
-		status = Dev_CCIOControl(newDevicePtr,IOC_TRUNCATE,inBufSize, 
-					inBuffer,outBufSize,outBuffer);
+		status = Dev_CCIOControl(newDevicePtr, &ioctl, replyPtr);
 	    }
 	    bzero((char *) &PCCdevMem,sizeof(PCCdevMem));
 	    MASTER_UNLOCK(&devPCCMutex);
