@@ -1283,7 +1283,7 @@ VmPageFreeInt(pfNum)
 	}
     }
 }
-	    
+
 
 /*
  * ----------------------------------------------------------------------------
@@ -1307,6 +1307,41 @@ VmPageFree(pfNum)
     LOCK_MONITOR;
 
     VmPageFreeInt(pfNum);
+
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Vm_ReservePage --
+ *
+ *      Take a page out of the available pages because this page is
+ *	being used by the hardware dependent module.  This routine is
+ *	called at boot time.
+ *
+ * Results:
+ *     	None.
+ *
+ * Side effects:
+ *     	None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+ENTRY void
+Vm_ReservePage(pfNum)
+    unsigned	int	pfNum;		/* The page frame to be freed. */
+{
+    register	VmCore	*corePtr;
+
+    LOCK_MONITOR;
+
+    corePtr = &coreMap[pfNum];
+    TakeOffAllocList(corePtr);
+    corePtr->virtPage.segPtr = vm_SysSegPtr;
+    corePtr->flags = 0;
+    corePtr->lockCount = 1;
 
     UNLOCK_MONITOR;
 }
@@ -1666,6 +1701,244 @@ VmKillSharers(segPtr)
 
     LIST_FORALL(segPtr->procList, (List_Links *) procLinkPtr) {
 	Sig_SendProc(procLinkPtr->procPtr, SIG_KILL, PROC_VM_READ_ERROR); 
+    }
+
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Vm_UserMap --
+ *
+ *      Hardwire pages for all user addresses between firstAddr and
+ *	lastAddr.
+ *
+ * Results:
+ *     SUCCESS if the page-in was successful and FAILURE otherwise.
+ *
+ * Side effects:
+ *     Pages between firstAddr and lastAddr are wired down in memory.
+ *
+ * ----------------------------------------------------------------------------
+ */
+ReturnStatus
+Vm_UserMap(firstAddr, lastAddr)
+    Address 	firstAddr;	/* The address to start mapping at. */
+    Address	lastAddr;	/* Where to map up to. */
+{
+    Vm_VirtAddr	 		virtAddr;
+    Proc_ControlBlock		*procPtr;
+    int				firstPage;
+    int				lastPage;
+    int				i;
+    ReturnStatus		status;
+
+    firstPage = (unsigned int)firstAddr >> vmPageShift;
+    lastPage = (unsigned int)(lastAddr - 1) >> vmPageShift;
+    if (lastPage - firstPage < 0 ||
+        lastPage - firstPage > VM_MAX_USER_MAP_PAGES) {
+	return(SYS_INVALID_ARG);
+    }
+
+    for (i = firstPage; i <= lastPage; i++) {
+	/*
+	 * Page in all of the pages.
+	 */
+	if (Vm_PageIn(i << vmPageShift, FALSE) != SUCCESS) {
+	    return(SYS_ARG_NOACCESS);
+	}
+    }
+
+    /*
+     * Make sure that all pages between first and last addr fall into the
+     * same segment
+     */
+    procPtr = Proc_GetCurrentProc();
+    VmVirtAddrParse(procPtr, firstAddr, &virtAddr);
+    if (lastPage - virtAddr.segPtr->offset >= virtAddr.segPtr->numPages) {
+	status = SYS_ARG_NOACCESS;
+	goto done;
+    }
+
+    /*
+     * Now all of the pages should be resident unless they got swapped
+     * out before we had a chance to use them.  Lock all the pages down.
+     */
+    for (; virtAddr.page <= lastPage; virtAddr.page++) {
+	while (!PageLocked(&virtAddr)) {
+	    if (Vm_PageIn(virtAddr.page << vmPageShift, FALSE) != SUCCESS) {
+		return(SYS_ARG_NOACCESS);
+	    }
+	}
+    }
+
+done:
+    if (virtAddr.flags & VM_HEAP_PT_IN_USE) {
+	/*
+	 * The heap segment has been made not expandable by VmVirtAddrParse
+	 * so that the address parse would remain valid.  Decrement the
+	 * in use count now.
+	 */
+	VmDecPTUserCount(procPtr->vmPtr->segPtrArray[VM_HEAP]);
+    }
+
+    return(status);
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * PageLocked --
+ *
+ *      Hardwire pages for all user addresses between firstAddr and
+ *	lastAddr.
+ *
+ * Results:
+ *     TRUE if the page was resident and FALSE otherwise.
+ *
+ * Side effects:
+ *     Core map entry lock count and flags may be modified.
+ *
+ * ----------------------------------------------------------------------------
+ */
+Boolean
+PageLocked(virtAddrPtr)
+    Vm_VirtAddr	*virtAddrPtr;
+{
+    register	VmCore	*corePtr;
+    register	Vm_PTE	*ptePtr;
+    Boolean		retVal;
+
+    LOCK_MONITOR;
+
+    ptePtr = VmGetPTEPtr(virtAddrPtr->segPtr, virtAddrPtr->page);
+    while (*ptePtr & VM_IN_PROGRESS_BIT) {
+	Sync_Wait(&virtAddrPtr->segPtr->condition, FALSE);
+    }
+    if (!(*ptePtr & VM_PHYS_RES_BIT)) {
+	retVal = FALSE;
+    } else {
+	corePtr = &coreMap[Vm_GetPageFrame(*ptePtr)];
+	if (!(corePtr->flags & VM_USER_WIRED_PAGE)) {
+	    corePtr->lockCount++;
+	    corePtr->flags |= VM_USER_WIRED_PAGE;
+	}
+	retVal = TRUE;
+    }
+
+    UNLOCK_MONITOR;
+
+    return(retVal);
+}
+
+void	PageUnlock();
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Vm_UserUnmap --
+ *
+ *      Unlock all pages between firstAddr and lastAddr.
+ *	lastAddr.
+ *
+ * Results:
+ *     SUCCESS if the page-in was successful and FAILURE otherwise.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+ReturnStatus
+Vm_UserUnmap(firstAddr, lastAddr)
+    Address 	firstAddr;	/* The address to start mapping at. */
+    Address	lastAddr;	/* Where to map up to. */
+{
+    Vm_VirtAddr	 		virtAddr;
+    Proc_ControlBlock		*procPtr;
+    int				firstPage;
+    int				lastPage;
+    ReturnStatus		status;
+
+    firstPage = (unsigned int)firstAddr >> vmPageShift;
+    lastPage = (unsigned int)(lastAddr - 1) >> vmPageShift;
+    if (lastPage - firstPage < 0 ||
+        lastPage - firstPage > VM_MAX_USER_MAP_PAGES) {
+	return(SYS_INVALID_ARG);
+    }
+
+    /*
+     * Make sure that all pages between first and last addr fall into the
+     * same segment
+     */
+    procPtr = Proc_GetCurrentProc();
+    VmVirtAddrParse(procPtr, firstAddr, &virtAddr);
+    if (lastPage - virtAddr.segPtr->offset >= virtAddr.segPtr->numPages) {
+	status = SYS_ARG_NOACCESS;
+	goto done;
+    }
+
+    /*
+     * Now unlock all of the pages.
+     */
+    for (; virtAddr.page <= lastPage; virtAddr.page++) {
+	PageUnlock(&virtAddr);
+    }
+
+done:
+    if (virtAddr.flags & VM_HEAP_PT_IN_USE) {
+	/*
+	 * The heap segment has been made not expandable by VmVirtAddrParse
+	 * so that the address parse would remain valid.  Decrement the
+	 * in use count now.
+	 */
+	VmDecPTUserCount(procPtr->vmPtr->segPtrArray[VM_HEAP]);
+    }
+
+    return(status);
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * PageUnlock --
+ *
+ *      Unlock pages for all user addresses between firstAddr and
+ *	lastAddr.
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	Core map entry lock count and flags field may be modified.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+PageUnlock(virtAddrPtr)
+    Vm_VirtAddr	*virtAddrPtr;
+{
+    register	VmCore	*corePtr;
+    register	Vm_PTE	*ptePtr;
+
+    LOCK_MONITOR;
+
+    ptePtr = VmGetPTEPtr(virtAddrPtr->segPtr, virtAddrPtr->page);
+    while (*ptePtr & VM_IN_PROGRESS_BIT) {
+	Sync_Wait(&virtAddrPtr->segPtr->condition, FALSE);
+    }
+
+    if (*ptePtr & VM_PHYS_RES_BIT) {
+	corePtr = &coreMap[Vm_GetPageFrame(*ptePtr)];
+	if (corePtr->flags & VM_USER_WIRED_PAGE) {
+	    corePtr->lockCount--;
+	    corePtr->flags &= ~VM_USER_WIRED_PAGE;
+	}
     }
 
     UNLOCK_MONITOR;

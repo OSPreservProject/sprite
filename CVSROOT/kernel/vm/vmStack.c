@@ -107,7 +107,8 @@ VmStackInit()
  * ----------------------------------------------------------------------------
  */
 ENTRY Address
-Vm_GetKernelStack()
+Vm_GetKernelStack(invalidPage)
+    int	invalidPage;	/*Which of the stack pages to make invalid. */
 {
     register	Vm_PTE		*ptePtr;
     register	StackList	*stackListPtr;
@@ -132,15 +133,16 @@ Vm_GetKernelStack()
      * is protected.
      */
     virtAddr.segPtr = vm_SysSegPtr;
-    virtAddr.page = 
-	    (((unsigned int) stackListPtr->startAddr) >> vmPageShift) + 1;
+    virtAddr.page = ((unsigned int) stackListPtr->startAddr) >> vmPageShift;
     virtAddr.offset = 0;
-    for (i = 1, ptePtr = VmGetPTEPtr(vm_SysSegPtr, virtAddr.page);
+    for (i = 0, ptePtr = VmGetPTEPtr(vm_SysSegPtr, virtAddr.page);
 	 i < numStackPages;
 	 i++, VmIncPTEPtr(ptePtr, 1), virtAddr.page++) {
-	*ptePtr |= VmPageAllocate(&virtAddr, VM_CAN_BLOCK);
-	vmStat.kernStackPages++;
-	VmPageValidate(&virtAddr);
+	if (i != invalidPage) {
+	    *ptePtr |= VmPageAllocate(&virtAddr, VM_CAN_BLOCK);
+	    vmStat.kernStackPages++;
+	    VmPageValidate(&virtAddr);
+	}
     }
 
     UNLOCK_MONITOR;
@@ -180,14 +182,16 @@ Vm_FreeKernelStack(stackBase)
      * Unmap the stack and free its pages.
      */
     virtAddr.segPtr = vm_SysSegPtr;
-    virtAddr.page = ((unsigned int) (stackBase) >> vmPageShift) + 1;
+    virtAddr.page = (unsigned int) (stackBase) >> vmPageShift;
     virtAddr.offset = 0;
-    for (i = 1, ptePtr = VmGetPTEPtr(vm_SysSegPtr, virtAddr.page);
+    for (i = 0, ptePtr = VmGetPTEPtr(vm_SysSegPtr, virtAddr.page);
 	 i < numStackPages; 
 	 i++, VmIncPTEPtr(ptePtr, 1), virtAddr.page++) {
-	vmStat.kernStackPages--;
-	VmPageFree(Vm_GetPageFrame(*ptePtr));
-	VmPageInvalidate(&virtAddr);
+	if (*ptePtr & VM_PHYS_RES_BIT) {
+	    vmStat.kernStackPages--;
+	    VmPageFree(Vm_GetPageFrame(*ptePtr));
+	    VmPageInvalidate(&virtAddr);
+	}
     }
 
     /*

@@ -1096,7 +1096,7 @@ VmAddToSeg(segPtr, firstPage, lastPage)
     if (oldSpace.spaceToFree && oldSpace.ptPtr != (Vm_PTE *)NIL) {
 	Mem_Free((Address)oldSpace.ptPtr);
     }
-    VmMach_SegExpand(segPtr);
+    VmMach_SegExpand(segPtr, firstPage, lastPage);
 
     EndExpansion(segPtr);
 
