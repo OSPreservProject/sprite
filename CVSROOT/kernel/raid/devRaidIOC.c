@@ -153,10 +153,8 @@ FailRaidDisk(raidPtr, col, row, version)
     if (version == diskPtr->version &&
 	    (diskPtr->state == RAID_DISK_READY || 
 		    diskPtr->state == RAID_DISK_RECONSTRUCT) ){
-#ifndef TESTING
 	diskPtr->state = RAID_DISK_FAILED;
 	diskPtr->numValidSector = 0;
-#endif TESTING
         MASTER_UNLOCK(&diskPtr->mutex);
 	printf("RAID:DISK_FAILED:raid %d %d:pos %d %d %d:dev %d %d\n",
 	        raidPtr->devicePtr->type, raidPtr->devicePtr->unit,

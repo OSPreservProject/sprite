@@ -1,4 +1,4 @@
-/* 
+/*
  * devDebug.h --
  *
  * Copyright 1989 Regents of the University of California
@@ -20,4 +20,4 @@
 
 DevBlockDeviceHandle	*DevDebugAttach();
 
-#endif _DEVDEBUG
+#endif /* _DEVDEBUG */

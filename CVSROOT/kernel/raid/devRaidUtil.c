@@ -792,7 +792,7 @@ XorRaidRangeRequests(reqControlPtr, raidPtr, destBuf, rangeOffset, rangeLen)
 /*
  *----------------------------------------------------------------------
  *
- * AddRaidParityRequest --
+ * AddRaidParityRangeRequest --
  *
  *	Add a RaidBlockRequest for the indicated parity sectors to
  *	reqControlPtr.
@@ -841,7 +841,7 @@ AddRaidParityRangeRequest(reqControlPtr, raidPtr, operation,
 	if ( IsInRange(reqPtr->diskPtr, diskSector, numSectorsToTransfer) ) {
 	    reqPtr->state = REQ_READY;
 	} else {
-	    reqPtr->state = REQ_FAILED;
+	    reqPtr->state = REQ_INVALID;
 	    reqControlPtr->numFailed++;
 	    reqControlPtr->failedReqPtr = reqPtr;
 	}
@@ -856,7 +856,7 @@ AddRaidParityRangeRequest(reqControlPtr, raidPtr, operation,
 /*
  *----------------------------------------------------------------------
  *
- * AddRaidDataRequests --
+ * AddRaidDataRangeRequests --
  *
  *	Add RaidBlockRequest's for the indicated data sectors to
  *	reqControlPtr.
@@ -916,7 +916,7 @@ AddRaidDataRangeRequests(reqControlPtr, raidPtr, operation,
 	    if (IsInRange(reqPtr->diskPtr, diskSector,rangeSectorsToTransfer)) {
 		reqPtr->state = REQ_READY;
 	    } else {
-		reqPtr->state = REQ_FAILED;
+		reqPtr->state = REQ_INVALID;
 		reqControlPtr->numFailed++;
 		reqControlPtr->failedReqPtr = reqPtr;
 	    }

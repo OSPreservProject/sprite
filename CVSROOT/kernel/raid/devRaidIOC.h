@@ -1,4 +1,4 @@
-/* 
+/*
  * devRaidIOC.h --
  *
  * Copyright 1989 Regents of the University of California
@@ -23,4 +23,4 @@ extern void ReportReconstructionFailure();
 extern void FailRaidDisk();
 extern void ReplaceRaidDisk();
 
-#endif _DEVRAIDIOC
+#endif /* _DEVRAIDIOC */

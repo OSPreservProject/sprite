@@ -1,4 +1,4 @@
-/* 
+/*
  * strUtil.h --
  *
  * Copyright 1989 Regents of the University of California
@@ -20,4 +20,4 @@ extern ReturnStatus ReadFile();
 char * ScanLine();
 char * ScanWord();
 
-#endif _STRUTIL
+#endif /* _STRUTIL */

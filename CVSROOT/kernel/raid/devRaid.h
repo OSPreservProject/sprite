@@ -1,4 +1,4 @@
-/* 
+/*
  * devRaid.h --
  *
  *	Declarations for RAID device drivers.
@@ -25,14 +25,22 @@
 
 #ifndef MIN
 #define MIN(a,b) ( (a) < (b) ? (a) : (b) )
-#endif  MIN
+#endif /*  MIN */
 
 #ifndef MAX
 #define MAX(a,b) ( (a) > (b) ? (a) : (b) )
-#endif  MAX
+#endif /*  MAX */
 
 /*
  * Data structure for each disk used by raid device.
+ *
+ * RAID_DISK_INVALID	==> could not attach device
+ * RAID_DISK_READY	==> device operational
+ * RAID_DISK_FAILED	==> device considered failed (a write error occured)
+ * RAID_DISK_REPLACED	==> the device is nolonger a part of the array
+ * RAID_DISK_RECONSTRUCT==> the device is currently being reonstructed
+ *				(IO's to the reconstructed part of the device
+ *				 are allowed)
  */
 typedef enum {
     RAID_DISK_INVALID, RAID_DISK_READY, RAID_DISK_FAILED, RAID_DISK_REPLACED,
@@ -51,6 +59,12 @@ typedef struct RaidDisk {
 
 /*
  * Data structure each RAID device.
+ *
+ * RAID_INVALID	==> array has not been configured
+ * RAID_BUSY	==> the configuration of the array is currently being changed
+ *			(used to ensure only one configuration process per
+ *			 array is ever active)
+ * RAID_VALID	==> array is configured
  */
 typedef enum { RAID_INVALID, RAID_BUSY, RAID_VALID } RaidState;
 
@@ -89,9 +103,15 @@ typedef struct RaidHandle {		/* Subclass of DevBlockDeviceHandle. */
 
 /*
  * RaidBlockRequest
+ *
+ * REQ_INVALID	==> the request is to a failed device
+ * REQ_FAILED	==> an error code was returned by the device
+ * REQ_READY	==> the request is ready to be issued
+ * REQ_COMPLETED==> the request has successfully completed
+ * REQ_PENDING 	==> the request has been issued and is waiting for completion
  */
 typedef enum RaidBlockRequestState {	/* Subclass of DevBlockDeviceRequest */
-    REQ_FAILED, REQ_READY, REQ_COMPLETED, REQ_PENDING
+    REQ_INVALID, REQ_FAILED, REQ_READY, REQ_COMPLETED, REQ_PENDING
 } RaidBlockRequestState;
 
 typedef struct RaidBlockRequest {
@@ -157,4 +177,4 @@ typedef struct RaidReconstructionControl {
     char		*readBuf;
 } RaidReconstructionControl;
 
-#endif _DEVRAID
+#endif /* _DEVRAID */

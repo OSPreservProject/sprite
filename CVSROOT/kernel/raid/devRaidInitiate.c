@@ -999,6 +999,7 @@ InitiateHardInit(raidPtr, startStripe, numStripe, ctrlData)
 hardInitDoneProc(reconstructionControlPtr)
     RaidReconstructionControl	*reconstructionControlPtr;
 {
+    printf("RAID:MSG:Initialization completed.\n");
     FreeReconstructionControl(reconstructionControlPtr);
 }
 
@@ -1127,7 +1128,7 @@ hardInitReadDoneProc(reconstructionControlPtr, numFailed)
 /*
  *----------------------------------------------------------------------
  *
- * blockIODoneProc --
+ * hardInitWriteDoneProc --
  *
  *	Callback procedure for hardInitReadDoneProc.
  *
@@ -1293,6 +1294,7 @@ InitiateStripeReconstruction(reconstructionControlPtr)
     unsigned	        nthSector;
 
     if (diskPtr->numValidSector == raidPtr->sectorsPerDisk) {
+        printf("RAID:MSG:Reconstruction completed.\n");
 	reconstructionDoneProc(reconstructionControlPtr);
 	return;
     }
