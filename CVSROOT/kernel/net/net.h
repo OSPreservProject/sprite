@@ -88,6 +88,7 @@ typedef struct {
 extern	Net_EtherStats	net_EtherStats;
 
 extern	void	Net_Init();
+extern  void    Net_Bin();
 extern	void	Net_Reset();
 extern	void	Net_Input();
 extern	ReturnStatus	Net_Output();
@@ -113,4 +114,4 @@ extern int	Net_RevArp();
 
 extern void	Net_HostPrint();	/* Moved to Sys_HostPrint */
 
-#endif _NET
+#endif /* _NET */
