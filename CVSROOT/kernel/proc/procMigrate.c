@@ -267,7 +267,7 @@ Proc_Migrate(pid, hostID)
 	return(GEN_NO_PERMISSION);
     }
     
-    if (procPtr->effectiveUserID == PROC_SUPER_USER_ID) {
+    if (procPtr->userID == PROC_SUPER_USER_ID) {
 	permMask = PROC_MIG_EXPORT_ROOT;
     } else {
 	permMask = PROC_MIG_EXPORT_ALL;
@@ -1226,7 +1226,7 @@ InitiateMigration(procPtr, hostID)
 
     init.processID = procPtr->processID;
     init.version = proc_MigrationVersion;
-    init.userID = procPtr->effectiveUserID;
+    init.userID = procPtr->userID;
     init.clientID = rpc_SpriteID;
     if (procPtr->genFlags & PROC_FOREIGN) {
 	foreign = 1;
