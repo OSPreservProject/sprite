@@ -223,12 +223,13 @@ extern 	void 		Sync_PrintStat();
 	     * wait until semaphore looks free -- avoid bouncing between \
 	     * processor caches. \
 	     */ \
-	    while((semaphore)->value) != 0) { \
+	    while((semaphore)->value != 0) { \
 	    } \
 	    if(Mach_TestAndSet(&((semaphore)->value)) == 0) { \
 		break; \
-	    } else { \
+	    } else if (missFlag == 0) { \
 		(semaphore)->miss++; \
+		missFlag = 1; \
 	    } \
 	} \
 	(semaphore)->pc = Mach_GetPC(); \
