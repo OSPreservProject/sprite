@@ -122,6 +122,8 @@ Fs_InitData()
     Fspdev_InitializeOps();
 
     bzero((Address) &fs_Stats, sizeof(Fs_Stats));
+    fs_Stats.statsVersion = FS_STAT_VERSION;
+
     /*
      * The handle cache and the block cache start out with a hash table of
      * a given size which grows on demand.  Thus the numbers passed to
