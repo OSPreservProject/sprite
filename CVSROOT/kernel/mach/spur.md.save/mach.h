@@ -88,8 +88,19 @@ typedef struct {
  */
 typedef struct {
     Mach_RegState	trapRegState;	/* State of process at trap. */
-    Address		minSWP;		/* Min and max values for the saved */
-    Address		maxSWP;		/* 	window pointer. */
+    Address		specPageAddr;	/* The base address of the special
+					 * page that contains user trap
+					 * handler and context switch state.
+					 * This is always "swpBase - 
+					 * VMMACH_PAGE_SIZE". */
+    Address		swpBaseAddr;	/* Where the saved window stack
+					 * begins. */
+    Address		swpMaxAddr;	/* Where the saved window stack
+					 * ends. */
+    Address		minSWP;		/* Current min and max values for the*/
+    Address		maxSWP;		/*    saved window pointer.   These  */
+					/*    correspond to the pages that   */
+					/*    are wired down in memory.      */
     /*
      * Signal information.
      */
@@ -120,12 +131,45 @@ typedef struct Mach_State {
 /*
  * Machine dependent signal context.
  */
-typedef struct	Mach_SigContext {
+typedef struct Mach_SigContext {
     Address		faultAddr;	/* The fault address if the signal
 					 * was sent because of a fault. */
     Mach_RegState	regState;	/* Register state at the time of the
 					 * trap that caused the signal. */
 } Mach_SigContext;
+
+/*
+ * The trap handler information.
+ */
+typedef struct Mach_TrapHandler {
+    void	(*handler)();		/* The trap handler to call. */
+    int		handlerType;		/* The type of trap handler.  One of
+					 * MACH_PLAIN_INTERFACE, 
+					 * MACH_INT_OPERAND_INTERFACE or
+					 * MACH_FLOAT_OPERAND_INTERFACE. */
+} Mach_TrapHandler;
+
+/*
+ * The state that is saved for users.
+ */
+typedef struct Mach_SavedState {
+    Mach_RegState	regState;
+    Address		swpBaseAddr;
+    Address		swpMaxAddr;
+} Mach_SavedState;
+
+/*
+ * The format of the special user page.
+ */
+typedef struct Mach_SpecPage {
+    Mach_SavedState	switchState;	/* Where the registers are saved on
+					 * on a user context switch trap. */
+    Mach_SavedState	savedState;	/* Where the state is saved/restored
+					 * to/from on user save and restore
+					 * traps. */
+    Mach_TrapHandler	trapTable[MACH_NUM_USER_CMP_TRAPS + 
+				  MACH_NUM_OTHER_USER_TRAPS];
+} Mach_SpecPage;
 
 /*
  * Macro to get processor number

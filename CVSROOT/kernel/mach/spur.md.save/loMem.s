@@ -133,6 +133,7 @@
 	.globl _MachUserAction
 	.globl _machNonmaskableIntrMask
 	.globl _machIntrMask 
+	.globl _machTrapTableOffset
 
 /*
  * The KPSW value to set and 
@@ -229,6 +230,7 @@ _machStatePtrOffset:		.long 0
 _machSpecialHandlingOffset:	.long 0
 _machMaxSysCall	:		.long 0
 _machKcallTableOffset:		.long 0
+_machTrapTableOffset:		.long 0
 _machIntrMask:			.long 0
 _machNonmaskableIntrMask:	.long 0
 
@@ -319,6 +321,44 @@ OpRecov2:
 	add_nt		r31, r27, $0
 	add_nt		r31, r28, $0
 	add_nt		r31, r29, $0
+
+/*
+ * Jump table to set a register.  r9 contains the value to set.
+ */
+SetReg:
+	add_nt		r0, r9, $0
+	add_nt		r1, r9, $0
+	add_nt		r2, r9, $0
+	add_nt		r3, r9, $0
+	add_nt		r4, r9, $0
+	add_nt		r5, r9, $0
+	add_nt		r6, r9, $0
+	add_nt		r7, r9, $0
+	add_nt		r8, r9, $0
+	add_nt		r9, r9, $0
+	add_nt		r10, r9, $0
+	add_nt		r11, r9, $0
+	add_nt		r12, r9, $0
+	add_nt		r13, r9, $0
+	add_nt		r14, r9, $0
+	add_nt		r15, r9, $0
+	add_nt		r16, r9, $0
+	add_nt		r17, r9, $0
+	add_nt		r18, r9, $0
+	add_nt		r19, r9, $0
+	add_nt		r20, r9, $0
+	add_nt		r21, r9, $0
+	add_nt		r22, r9, $0
+	add_nt		r23, r9, $0
+	add_nt		r24, r9, $0
+	add_nt		r25, r9, $0
+	add_nt		r26, r9, $0
+	add_nt		r27, r9, $0
+	add_nt		r28, r9, $0
+	add_nt		r29, r9, $0
+	add_nt		r30, r9, $0
+	add_nt		r31, r9, $0
+
 /*
  ****************************************************************************
  *
@@ -1337,6 +1377,15 @@ CmpTrap:
 	 */
 	FETCH_CUR_INSTRUCTION(SAFE_TEMP1)
 	and		SAFE_TEMP1, SAFE_TEMP1, $0x1ff 
+	/*
+	 * If is one of the special user traps then handle these 
+	 * specially and as quickly as possible.
+	 */
+	cmp_br_delayed	lt, SAFE_TEMP1, $MACH_USER_RET_TRAP_TRAP, 1f
+	nop
+	jump		SpecialUserTraps
+	nop
+1:
 	/* 
 	 * See if are coming from kernel mode or not.
 	 */
@@ -1381,6 +1430,18 @@ cmpTrap_CallFunc:
 	Nop
 	jump		GetWinMemTrap
 	Nop
+	jump		cmpTrap_SaveStateTrap
+	nop
+	jump		cmpTrap_RestoreStateTrap
+	nop
+	jump		cmpTrap_TestAndSetTrap
+	nop
+	jump		cmpTrap_UserCSTrap
+	nop
+	jump		cmpTrap_BadSWPTrap
+	nop
+	jump		cmpTrap_CmpTrapTrap
+	nop
 	jump		cmpTrap_FPUTrap
 	Nop
 	jump		cmpTrap_IllegalTrap
@@ -1389,9 +1450,25 @@ cmpTrap_CallFunc:
 	Nop
 	jump		cmpTrap_OverflowTrap
 	Nop
-	jump		cmpTrap_BadSWPTrap
+
+cmpTrap_BadSWPTrap:
+	add_nt		OUTPUT_REG1, r0, $MACH_USER_BAD_SWP
+	jump		UserErrorTrap
 	Nop
-	jump		cmpTrap_TestFaultTrap
+
+	/*
+	 * A user context switch trap.  We were called as
+	 *
+	 *	UserCS(swpBaseAddr, swpMaxAddr, newSWP)
+	 *	    Address	swpBaseAddr;	* Base of saved window stack.
+	 *	    Address	swpMaxAddr;	* Max addr of saved window
+	 *					* stack.
+	 *	    Address	newSWP;		* The new swp.
+	 */
+
+cmpTrap_CmpTrapTrap:
+	add_nt		OUTPUT_REG1, r0, $MACH_BAD_TRAP_TYPE
+	jump		UserErrorTrap
 	Nop
 
 cmpTrap_FPUTrap:
@@ -1413,17 +1490,50 @@ cmpTrap_OverflowTrap:
 	add_nt		OUTPUT_REG1, r0, $MACH_USER_OVERFLOW
 	jump		UserErrorTrap
 	Nop
+cmpTrap_UserCSTrap:
+	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
+	wr_kpsw		VOL_TEMP1, $0
+	add_nt		OUTPUT_REG1, INPUT_REG1, $0
+	add_nt		OUTPUT_REG2, INPUT_REG2, $0
+	add_nt		OUTPUT_REG3, INPUT_REG3, $0
+	call		_MachUserContextSwitch
+	nop
+	jump		ReturnTrap
+	nop
 
-cmpTrap_BadSWPTrap:
-	add_nt		OUTPUT_REG1, r0, $MACH_USER_BAD_SWP
-	jump		UserErrorTrap
-	Nop
+	/*
+	 * Save the user's state in the special page.
+	 */
+cmpTrap_SaveStateTrap:
+	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
+	wr_kpsw		VOL_TEMP1, $0
+	call		_MachSaveUserState
+	nop
+	jump		ReturnTrap
+	nop
 
-cmpTrap_TestFaultTrap:
-	add_nt		CUR_PC_REG, CUR_PC_REG, $8
-	add_nt		NEXT_PC_REG, r0, $0
-	jump		FaultIntr
-	Nop
+	/*
+	 * Restore the user's state from the special page.
+	 */
+cmpTrap_RestoreStateTrap:
+	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
+	wr_kpsw		VOL_TEMP1, $0
+	call		_MachRestoreUserState
+	nop
+	jump		ReturnTrap
+	nop
+
+	/* 
+	 * User level test and set.  We were passed the address to set.
+	 */
+cmpTrap_TestAndSetTrap:
+	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
+	wr_kpsw		VOL_TEMP1, $0
+	add_nt		OUTPUT_REG1, INPUT_REG1, $0
+	call		_MachUserTestAndSet
+	nop
+	jump		ReturnTrap
+	nop
 
 cmpTrap_RefreshTrap:
 	rd_special	VOL_TEMP1, upsw
@@ -1443,6 +1553,14 @@ cmpTrap_RefreshTrap:
 	return_trap	NEXT_PC_REG, $0
 	Nop
 
+cmpTrap_BadUserTrap:
+	/*
+	 * Error handling user traps.
+	 */
+	add_nt		OUTPUT_REG1, r0, $MACH_BAD_TRAP_TYPE
+	jump		UserErrorTrap
+	Nop
+
 cmpTrap_BadTrapType:
 	/*
 	 * A trap type greater than the maximum value was specified.  If
@@ -1455,10 +1573,8 @@ cmpTrap_BadTrapType:
 	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
 	wr_kpsw		VOL_TEMP1, $0
 	add_nt		OUTPUT_REG1, r0, $MACH_BAD_TRAP_TYPE
-	rd_insert	VOL_TEMP2
 	call		_MachUserError
 	Nop
-	wr_insert	VOL_TEMP2
 	jump		ReturnTrap
 	Nop
 
@@ -1901,6 +2017,267 @@ GetWinMemTrap:
 	add_nt		RETURN_VAL_REG, r0, $MACH_NORM_RETURN
 	jump		ReturnTrap
 	Nop
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * SpecialUserTraps --
+ *
+ *	Handle special user traps.  The compare trap type was passed in
+ *	register SAFE_TEMP1.  There are three types of traps:
+ *	
+ *	1) Return from user trap hander trap
+ *	2) One of FPU, illegal, fixnum and overflow
+ *	3) Compare traps.
+ *
+ *----------------------------------------------------------------------------
+ */
+
+SpecialUserTraps:
+	cmp_br_delayed	eq, SAFE_TEMP1, $MACH_USER_RET_TRAP_TRAP, UserRetTrapTrap
+	nop
+	/*
+	 * On the four traps that happened in user mode we stored the
+	 * current pc and next pc in the temporaries and then we trapped
+	 * back into the kernel.
+	 */
+	cmp_br_delayed	gt, SAFE_TEMP1, $MACH_USER_OVERFLOW_TRAP, 1f
+	nop
+	add_nt		CUR_PC_REG, NON_INTR_TEMP1, $0
+	add_nt		NEXT_PC_REG, NON_INTR_TEMP2, $0
+1:
+	/*
+	 * Enable traps and fetch the current instruction.  We have to
+	 * enable all traps because fetching the instruction could cause
+	 * a fault.
+	 */
+	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
+	wr_kpsw		VOL_TEMP1, $0
+	ld_32		OUTPUT_REG2, CUR_PC_REG, $0
+	and		VOL_TEMP1, VOL_TEMP1, $~MACH_KPSW_INTR_TRAP_ENA
+	wr_kpsw		VOL_TEMP1, $0
+	/*
+	 * Recover the operands.  We pass the pc to return to in OUTPUT_REG1
+	 * and the instruction to recover from in OUTPUT_REG2.  We get back 
+	 * the opcode in OUTPUT_REG3, the dest register
+	 * in OUTPUT_REG4, the first operand in OUTPUT_REG2, and 
+	 * the second operand in OUTPUT_REG5.
+	 */
+	and		VOL_TEMP1, KPSW_REG, $~MACH_KPSW_INTR_TRAP_ENA
+	or		VOL_TEMP1, VOL_TEMP1, $MACH_KPSW_ALL_TRAPS_ENA
+	wr_kpsw		VOL_TEMP1, $0
+	rd_special	OUTPUT_REG1, pc
+	add_nt		OUTPUT_REG1, OUTPUT_REG1, $16
+	jump		UserOperandRecov
+	nop
+	/*
+	 * We now have the operands.  Switch back to user mode.
+	 */
+	or		KPSW_REG, KPSW_REG, $(MACH_KPSW_CUR_MODE|MACH_KPSW_ALL_TRAPS_ENA)
+	wr_kpsw		KPSW_REG, $0
+	/*
+	 * We are now in user mode so we can determine what trap handler
+	 * to call for this trap.  We already have the trap type in
+	 * SAFE_TEMP1.  Now we want to determine the traps offset into the
+	 * trap table.  The first four entries of the table are for
+	 * fpu, illegal, fixnum and overflow exceptions.  The following
+	 * entry is the first compare trap type.  The following code
+	 * sets SAFE_TEMP1 to be equal to the index into the trap table for
+	 * the given trap type.
+	 */
+	add_nt		SAFE_TEMP2, SAFE_TEMP1, $0
+	cmp_br_delayed	gt, SAFE_TEMP1, $MACH_USER_OVERFLOW_TRAP, 1f
+	nop
+	/*
+	 * This is one of the 4 traps in addition to the compare traps.
+	 */
+	sub		SAFE_TEMP1, SAFE_TEMP1, $MACH_USER_FPU_EXCEPT_TRAP
+	jump		2f
+	nop
+1:
+	/* 
+	 * We have a compare trap.
+	 */
+	add_nt		VOL_TEMP1, r0, $MACH_LAST_USER_CMP_TRAP
+	cmp_br_delayed	gt, SAFE_TEMP1, VOL_TEMP1, specialUserTraps_Error
+	nop
+	add_nt		VOL_TEMP1, r0, $MACH_FIRST_USER_CMP_TRAP
+	cmp_br_delayed	lt, SAFE_TEMP1, VOL_TEMP1, specialUserTraps_Error
+	nop
+	sub		SAFE_TEMP1, SAFE_TEMP1, $(MACH_FIRST_USER_CMP_TRAP - MACH_NUM_OTHER_USER_TRAPS)
+
+2:
+	/*
+	 * Attempt to call the trap handler.  We do this by getting 
+	 * a pointer to the trap table and then looking at the handler there.
+	 * If the handler is non-zero then it is a valid handler.  Otherwise
+	 * we have a bad user trap type.
+	 */
+	ld_32		VOL_TEMP1, r0, $_machCurStatePtr
+	ld_32		VOL_TEMP2, r0, $_machTrapTableOffset
+	ld_32		VOL_TEMP1, VOL_TEMP1, $MACH_SPEC_PAGE_ADDR_OFFSET
+	nop
+	add		VOL_TEMP1, VOL_TEMP1, VOL_TEMP2
+	/*
+	 * VOL_TEMP1 now contains the address of the base of the trap table.
+	 * See if there is anything to call.  Each entry is 8 bytes long
+	 * so we shift SAFE_TEMP1 (the trap table index) by 3 to get the
+	 * trap table offset.
+	 */
+	sll		SAFE_TEMP1, SAFE_TEMP1, $3
+	ld_32		SAFE_TEMP1, VOL_TEMP1, SAFE_TEMP1
+	cmp_br_delayed	eq, SAFE_TEMP1, $0, specialUserTraps_Error
+	nop
+	/*
+	 * We now know that we have a good handler to call.  Set up
+	 * the args and call it.  We call the routine as:
+	 *
+	 *	Handler(curPC, nextPC, opcode, destReg, operands)
+	 *	
+	 * where operands is a pointer to the stack and the two 
+	 * source operands.  OUTPUT_REG3 and OUTPUT_REG4 have already been
+	 * set correctly by the operand recovery routine.
+	 */
+	sub		SPILL_SP, SPILL_SP, $16
+	st_40		OUTPUT_REG2, SPILL_SP, $0
+	st_40		OUTPUT_REG5, SPILL_SP, $8
+	add_nt		OUTPUT_REG1, CUR_PC_REG, $0
+	add_nt		OUTPUT_REG2, NEXT_PC_REG, $0
+	add_nt		OUTPUT_REG5, SPILL_SP, $0
+	jump_reg	SAFE_TEMP1, $0
+	nop
+
+specialUserTraps_Error:
+	/*
+	 * We got an error trying to call the trap handler.  Trap back
+	 * into the kernel after shifting our window back to the original
+	 * window that we were executing in so we reenter kernel in a normal 
+	 * trap state.  Since we are shifting our window back and we don't 
+	 * want to lose the current and next PC's we put those in the
+	 * non-intr-temp registers so they don't get trashed in case
+	 * an interrupt sneaks in.
+	 */
+	sub		SPILL_SP, SPILL_SP, $8
+	st_32		SAFE_TEMP2, SPILL_SP, $0
+	add_nt		NON_INTR_TEMP1, CUR_PC_REG, $0
+	add_nt		NON_INTR_TEMP2, NEXT_PC_REG, $0
+	rd_special	VOL_TEMP1, pc
+	return		VOL_TEMP1, $12
+	nop
+	/*
+	 * We use r1 as the trap type.  Since we are in the window that 
+	 * caused the error we can't use a local.
+	 */
+	st_32		r1, SPILL_SP, $4
+	ld_32		r1, SPILL_SP, $0
+	/* 
+	 * Set our first output register to the type of error and trap.
+	 */
+	nop
+	cmp_br_delayed	ne, r1, $MACH_USER_FPU_EXCEPT_TRAP, 1f
+	nop
+	ld_32		r1, SPILL_SP, $4
+	add_nt		SPILL_SP, SPILL_SP, $8
+	cmp_trap	always, r0, r0, $MACH_FPU_ERROR_TRAP
+1:
+	cmp_br_delayed	ne, r1, $MACH_USER_ILLEGAL_TRAP, 1f
+	nop
+	ld_32		r1, SPILL_SP, $4
+	add_nt		SPILL_SP, SPILL_SP, $8
+	cmp_trap	always, r0, r0, $MACH_ILLEGAL_ERROR_TRAP
+1:
+	cmp_br_delayed	ne, r1, $MACH_USER_FIXNUM_TRAP, 1f
+	nop
+	ld_32		r1, SPILL_SP, $4
+	add_nt		SPILL_SP, SPILL_SP, $8
+	cmp_trap	always, r0, r0, $MACH_FIXNUM_ERROR_TRAP
+1:
+	cmp_br_delayed	ne, r1, $MACH_USER_OVERFLOW_TRAP, 1f
+	nop
+	ld_32		r1, SPILL_SP, $4
+	add_nt		SPILL_SP, SPILL_SP, $8
+	cmp_trap	always, r0, r0, $MACH_OVERFLOW_ERROR_TRAP
+1:
+	ld_32		r1, SPILL_SP, $4
+	add_nt		SPILL_SP, SPILL_SP, $8
+	cmp_trap	always, r0, r0, $MACH_CMP_TRAP_ERROR_TRAP
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * UserRetTrapTrap --
+ *
+ *	Return a value from a user trap handler.  We were passed the value
+ *	to return in INPUT_REG1, the first pc in INPUT_REG2, the next pc in 
+ *	INPUT_REG3 and the register to set in INPUT_REG4.  The window
+ *	that we want to put the value in is three windows back.
+ *
+ *----------------------------------------------------------------------------
+ */
+UserRetTrapTrap:
+	/*
+	 * Enable all traps and disable interrupts so that we can pop a few
+	 * windows.
+	 */
+	or		VOL_TEMP1, KPSW_REG, $MACH_KPSW_ALL_TRAPS_ENA
+	and		VOL_TEMP1, VOL_TEMP1, $~MACH_KPSW_INTR_TRAP_ENA
+	wr_kpsw		VOL_TEMP1, $0
+	/*
+	 * Pop the first window.  This will get us back into the window that
+	 * the trap handler was executing in.
+	 */
+	rd_special	VOL_TEMP1, pc
+	return		VOL_TEMP1, $12
+	nop
+	/*
+	 * Move our 4 values into our input registers and go back yet another
+	 * window.
+	 */
+	add_nt		INPUT_REG1, OUTPUT_REG1, $0
+	add_nt		INPUT_REG2, OUTPUT_REG2, $0
+	add_nt		INPUT_REG3, OUTPUT_REG3, $0
+	add_nt		INPUT_REG4, OUTPUT_REG4, $0
+	rd_special	VOL_TEMP1, pc
+	return		VOL_TEMP1, $12
+	nop
+	/*
+	 * Now we are in the window after the one where the trap occured.  
+	 * Store to the register in the previous window.  r9 is the value
+	 * to set and r1 is the register to set.
+	 */
+	add_nt		VOL_TEMP1, r9, $0
+	add_nt		VOL_TEMP2, r1, $0
+	add_nt		r9, OUTPUT_REG1, $0
+	add_nt		r1, OUTPUT_REG4, $0
+	rd_special	VOL_TEMP3, pc
+	return		VOL_TEMP3, $12
+	nop
+	sll		r1, r1, $2
+	jump_reg	r1, $SetReg	
+	jump		1f
+1:
+	/*
+	 * Go back to the current next window.
+	 */
+	call		1f
+	nop
+1:
+	add_nt		r9, VOL_TEMP1, $0
+	add_nt		r1, VOL_TEMP2, $0
+	/*
+	 * We now can finally do a normal return.   If the next PC
+	 * (OUTPUT_REG3) is zero then return to just the current PC.
+	 */
+	rd_kpsw		VOL_TEMP1
+	or		VOL_TEMP1, VOL_TEMP1, $(MACH_KPSW_INTR_TRAP_ENA|MACH_KPSW_CUR_MODE)
+	wr_kpsw		VOL_TEMP1, $0
+	cmp_br_delayed	eq, OUTPUT_REG3, $0, 1f
+	nop
+	jump_reg	OUTPUT_REG2, $0
+	return		OUTPUT_REG3, $0
+1:
+	return		OUTPUT_REG2, $0
+	nop
 
 /*
  *----------------------------------------------------------------------------
@@ -2937,6 +3314,17 @@ parse_end:
 	add_nt		r15, SAVED_R15, $0		/* Restore pre-parse r15 */
 	jump_reg	RET_ADDR, r0			/* Go back to caller */
 	Nop
+
+/*
+ * Do operand recovery for a user trap.  For now this is a dummy routine.
+ */
+UserOperandRecov:
+	add_nt		OUTPUT_REG3, r0, $0x12
+	add_nt		OUTPUT_REG4, r0, $17
+	add_nt		OUTPUT_REG2, r0, $0x321
+	add_nt		OUTPUT_REG5, r0, $0x654
+	jump_reg	OUTPUT_REG1, $0
+	nop
 
 /*
  * Leave room for the stacks.

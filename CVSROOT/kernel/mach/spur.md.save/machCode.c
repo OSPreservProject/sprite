@@ -105,6 +105,8 @@ extern int machStatePtrOffset;		/* Byte offset of the machStatePtr
 					 * field in a Proc_ControlBlock. */
 extern int machSpecialHandlingOffset;	/* Byte offset of the special handling
 					 * flag in the proc table. */
+extern int machTrapTableOffset;		/* The offset of the trap table
+					 * within the special user page. */
 /* 
  * Pointer to the state structure for the current process.
  */
@@ -163,6 +165,10 @@ Mach_Init()
     mach_MaxUserStackAddr = (Address)MACH_MAX_USER_STACK_ADDR;
     mach_LastUserStackPage = MACH_LAST_USER_STACK_PAGE;
 
+    /* 
+     * Initialize the trap handler offset.
+     */
+    machTrapTableOffset = (int) ((Mach_SpecPage *) 0)->trapTable;
     /*
      * Initialize some of the dispatching information.  The rest is
      * initialized by Mach_InitSysCall below.
@@ -341,8 +347,15 @@ Mach_SetupNewState(procPtr, parStatePtr, startFunc, startPC, user)
 	bcopy((Address)&parStatePtr->userState.trapRegState,
 	      (Address)&statePtr->userState.trapRegState,
 	      sizeof(statePtr->userState.trapRegState));
-	statePtr->userState.minSWP = 0;
-	statePtr->userState.maxSWP = 0;
+	/* 
+	 * User processes also inherit saved window state from their
+	 * parent.
+	 */
+	statePtr->userState.specPageAddr = parStatePtr->userState.specPageAddr;
+	statePtr->userState.swpBaseAddr = parStatePtr->userState.swpBaseAddr;
+	statePtr->userState.swpMaxAddr = parStatePtr->userState.swpMaxAddr;
+	statePtr->userState.minSWP = parStatePtr->userState.minSWP;
+	statePtr->userState.maxSWP = parStatePtr->userState.maxSWP;
     } else {
 	/*
 	 * Kernel processes start executing at startPC.
@@ -405,15 +418,16 @@ Mach_StartUserProc(procPtr, entryPoint)
 {
     register	Mach_State	*statePtr;
 
-    statePtr = procPtr->machStatePtr;
-    statePtr->userState.minSWP = (Address)MACH_SAVED_WINDOW_STACK_BASE;
-    statePtr->userState.maxSWP = (Address)(MACH_SAVED_WINDOW_STACK_BASE + 
-					   VMMACH_PAGE_SIZE);
     /*
      * Allocate memory for the saved window stack.
      */
-    (void)Vm_PinUserMem(VM_READWRITE_ACCESS, VMMACH_PAGE_SIZE,
-	          (Address)MACH_SAVED_WINDOW_STACK_BASE);
+    statePtr = procPtr->machStatePtr;
+    if (Vm_PinUserMem(VM_READWRITE_ACCESS, 
+			statePtr->userState.maxSWP - statePtr->userState.minSWP,
+	                statePtr->userState.minSWP) != SUCCESS) {
+	Sys_Panic(SYS_FATAL, "Mach_StartUserProc: Couldn't pin pages.\n");
+    }
+
     MachRunUserProc();
     /* THIS DOES NOT RETURN */
 }
@@ -452,18 +466,24 @@ Mach_ExecUserProc(procPtr, userStackPtr, entryPoint)
      * Free up the old saved window stack.
      */
     if (statePtr->userState.maxSWP != 0) {
-	(void)Vm_UnpinUserMem(statePtr->userState.maxSWP - 
-					statePtr->userState.minSWP,
+	Vm_UnpinUserMem(statePtr->userState.maxSWP - statePtr->userState.minSWP,
 		              statePtr->userState.minSWP);
     }
     /*
      * Allocate a new saved window stack.
      */
-    statePtr->userState.minSWP = (Address)MACH_SAVED_WINDOW_STACK_BASE;
-    statePtr->userState.maxSWP = (Address)(MACH_SAVED_WINDOW_STACK_BASE + 
-					   VMMACH_PAGE_SIZE);
-    (void)Vm_PinUserMem(VM_READWRITE_ACCESS, VMMACH_PAGE_SIZE,
-	          (Address)MACH_SAVED_WINDOW_STACK_BASE);
+    statePtr->userState.specPageAddr = (Address)MACH_SAVED_WINDOW_STACK_BASE;
+    statePtr->userState.swpBaseAddr = statePtr->userState.specPageAddr +
+							    VMMACH_PAGE_SIZE;
+    statePtr->userState.swpMaxAddr = (Address) (MACH_SAVED_WINDOW_STACK_BASE +
+						MACH_SW_STACK_SIZE);
+    statePtr->userState.minSWP = statePtr->userState.swpBaseAddr;
+    statePtr->userState.maxSWP = statePtr->userState.swpBaseAddr +
+							    VMMACH_PAGE_SIZE;
+    if (Vm_PinUserMem(VM_READWRITE_ACCESS, VMMACH_PAGE_SIZE,
+	                statePtr->userState.minSWP) != SUCCESS) {
+	Sys_Panic(SYS_FATAL, "Mach_ExecUserProc: Couldn't pin stack.\n");
+    }
 
     regStatePtr = &statePtr->userState.trapRegState;
     regStatePtr->regs[MACH_SPILL_SP][0] = (int)userStackPtr;
@@ -486,8 +506,8 @@ Mach_ExecUserProc(procPtr, userStackPtr, entryPoint)
      * fact another page of windows below the swp.  
      */
     regStatePtr->cwp = 4 << 2;
-    regStatePtr->swp = (Address)(MACH_SAVED_WINDOW_STACK_BASE + 
-				 2 * MACH_SAVED_WINDOW_SIZE);
+    regStatePtr->swp = statePtr->userState.swpBaseAddr + 
+						2 * MACH_SAVED_WINDOW_SIZE;
     MachRunUserProc();
     /* THIS DOES NOT RETURN */
 }
@@ -1152,7 +1172,7 @@ MachGetWinMem()
 	/*
 	 * Allocate more memory at the low end.
 	 */
-	if (statePtr->userState.minSWP <= (Address)MACH_SAVED_WINDOW_STACK_BASE) {
+	if (statePtr->userState.minSWP <= statePtr->userState.swpBaseAddr) {
 	    /*
 	     * We are already at the bottom of the stack so we can't allocated
 	     * any more memory.
@@ -1166,13 +1186,15 @@ MachGetWinMem()
 	     * full pages at once.
 	     */
 	    statePtr->userState.maxSWP -= VMMACH_PAGE_SIZE;
-	    (void)Vm_UnpinUserMem(VMMACH_PAGE_SIZE, statePtr->userState.maxSWP);
+	    Vm_UnpinUserMem(VMMACH_PAGE_SIZE, statePtr->userState.maxSWP);
 	}
 	statePtr->userState.minSWP -= VMMACH_PAGE_SIZE;
-	(void)Vm_PinUserMem(VM_READWRITE_ACCESS,
-		   statePtr->userState.maxSWP - statePtr->userState.minSWP, 
-		   statePtr->userState.minSWP);
-    } else if (swp >= statePtr->userState.maxSWP - 2 * MACH_SAVED_REG_SET_SIZE) {
+	if (Vm_PinUserMem(VM_READWRITE_ACCESS, VMMACH_PAGE_SIZE, 
+				statePtr->userState.minSWP) != SUCCESS) {
+	    Sys_Panic(SYS_WARNING, "MachGetWinMem: Low pin failed\n");
+	    Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
+	}
+    } else if (swp > statePtr->userState.maxSWP - 2 * MACH_SAVED_REG_SET_SIZE){
 	/*
 	 * Need to allocate more at the high end.
 	 */
@@ -1185,13 +1207,24 @@ MachGetWinMem()
 	     * Free the lowest page because we never want more than two
 	     * full pages at once.
 	     */
-	    (void)Vm_UnpinUserMem(VMMACH_PAGE_SIZE, statePtr->userState.minSWP);
+	    Vm_UnpinUserMem(VMMACH_PAGE_SIZE, statePtr->userState.minSWP);
 	    statePtr->userState.minSWP += VMMACH_PAGE_SIZE;
 	}
+	if (statePtr->userState.maxSWP + VMMACH_PAGE_SIZE >=
+					statePtr->userState.swpMaxAddr) {
+	    /*
+	     * We are already at the top of the stack so we can't allocated
+	     * any more memory.
+	     */
+	    Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
+	}
+
+	if (Vm_PinUserMem(VM_READWRITE_ACCESS, VMMACH_PAGE_SIZE, 
+				statePtr->userState.maxSWP) != SUCCESS) {
+	    Sys_Panic(SYS_WARNING, "MachGetWinMem: High pin failed\n");
+	    Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
+	}
 	statePtr->userState.maxSWP += VMMACH_PAGE_SIZE;
-	(void)Vm_PinUserMem(VM_READWRITE_ACCESS,
-		   statePtr->userState.maxSWP - statePtr->userState.minSWP, 
-		   statePtr->userState.minSWP);
     }
 }
 
@@ -1343,4 +1376,297 @@ int
 Mach_GetMachineArch()
 {
     return (SYS_SPUR);
+}
+
+static	ReturnStatus	PinSWP();
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MachUserContextSwitch --
+ *
+ *	Perform a user level context switch.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+MachUserContextSwitch(specPageAddr, swpMaxAddr, newSWP)
+    register	Address	specPageAddr;	/* The new base of the saved window 
+					 * stack. */
+    Address		swpMaxAddr;	/* The new max address of the saved 
+					 * window stack. */
+    Address		newSWP;		/* The value of the new swp. */
+{
+    register	Mach_SpecPage	*specPagePtr;
+    register	Mach_State	*statePtr;
+    register	Address		swpBaseAddr;
+    Address			minSWP;
+    Address			maxSWP;
+    Proc_ControlBlock		*procPtr;
+    ReturnStatus		status = SUCCESS;
+    int				savedKPSW;
+
+    procPtr = Proc_GetCurrentProc();
+    statePtr = procPtr->machStatePtr;
+
+    /*
+     * Page align the spec page addr and then add one page to it to point
+     * to the actual base of the saved window stack.
+     */
+    specPageAddr = (Address)((unsigned)specPageAddr & ~(VMMACH_PAGE_SIZE - 1));
+    swpBaseAddr = specPageAddr + VMMACH_PAGE_SIZE;
+
+    status = PinSWP(swpBaseAddr, swpMaxAddr, newSWP, &minSWP, &maxSWP);
+    if (status != SUCCESS) {
+	goto done;
+    }
+
+    /*
+     * Copy the current state out onto the current stack.
+     */
+    specPagePtr = (Mach_SpecPage *)statePtr->userState.specPageAddr;
+    if (Vm_CopyOut(sizeof(Mach_RegState),
+		   (Address)&statePtr->userState.trapRegState,
+		   (Address)&specPagePtr->switchState.regState) != SUCCESS) {
+	status = SYS_ARG_NOACCESS;
+	Vm_UnpinUserMem(maxSWP - minSWP, minSWP);
+	goto done;
+    }
+    /*
+     * Put out the current bounds of the saved window stack.  We don't have
+     * to use copy-out here because we know that *specPagePtr points to a valid
+     * page because otherwise we wouldn't have gotten this far.
+     */
+    specPagePtr->switchState.swpBaseAddr = statePtr->userState.specPageAddr;
+    specPagePtr->switchState.swpMaxAddr = statePtr->userState.swpMaxAddr;
+
+    /*
+     * Copy in the new state.
+     */
+    specPagePtr = (Mach_SpecPage *)specPageAddr;
+    savedKPSW = statePtr->userState.trapRegState.kpsw;
+    if (Vm_CopyIn(sizeof(Mach_RegState),
+		  (Address)&specPagePtr->switchState.regState,
+		  (Address)&statePtr->userState.trapRegState) != SUCCESS) {
+	status = SYS_ARG_NOACCESS;
+	Vm_UnpinUserMem(maxSWP - minSWP, minSWP);
+	goto done;
+    }
+    statePtr->userState.trapRegState.kpsw = savedKPSW | 
+	    (statePtr->userState.trapRegState.kpsw & MACH_KPSW_USE_CUR_PC);
+    /*
+     * Free up the old stack and store the pointers to the new one.
+     */
+    Vm_UnpinUserMem(statePtr->userState.maxSWP - statePtr->userState.minSWP,
+		    statePtr->userState.minSWP);
+    statePtr->userState.specPageAddr = specPageAddr;
+    statePtr->userState.swpBaseAddr = swpBaseAddr;
+    statePtr->userState.swpMaxAddr = swpMaxAddr;
+    statePtr->userState.minSWP = minSWP;
+    statePtr->userState.maxSWP = maxSWP;
+
+done:
+    statePtr->userState.trapRegState.regs[MACH_RETURN_VAL_REG][0] = status;
+    return(MACH_NORM_RETURN);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PinSWP --
+ *
+ *	Pin down new saved window stack.
+ *
+ * Results:
+ *	SYS_ARG_NOACCESS if couldn't wire down the saved window stack,
+ *	SUCCESS otherwise.
+ *
+ * Side effects:
+ *	*minSWPPtr and *maxSWPPtr are set to point to the minimum
+ *	and maximum address that we pinned.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+PinSWP(swpBaseAddr, swpMaxAddr, swp, minSWPPtr, maxSWPPtr)
+    register	Address	swpBaseAddr;
+    register	Address	swpMaxAddr;
+    register	Address	swp;
+    register	Address	*minSWPPtr;
+    register	Address	*maxSWPPtr;
+{
+    if (swp < swpBaseAddr || swp >= swpMaxAddr) {
+	return(SYS_ARG_NOACCESS);
+    }
+
+    /*
+     * Compute the new minimum and maximum addresses for the saved window
+     * stack.
+     */
+    *minSWPPtr = (Address) ((unsigned)(swp - MACH_SAVED_WINDOW_SIZE) &
+				      ~(VMMACH_PAGE_SIZE - 1));
+    *maxSWPPtr = swp + 2 * MACH_SAVED_REG_SET_SIZE + VMMACH_PAGE_SIZE -
+						    MACH_SAVED_WINDOW_SIZE;
+    *maxSWPPtr = (Address) ((unsigned)*maxSWPPtr & ~(VMMACH_PAGE_SIZE - 1));
+    if (*minSWPPtr < swpBaseAddr || *maxSWPPtr > swpMaxAddr) {
+	return(SYS_ARG_NOACCESS);
+    }
+    /*
+     * Pin down the new stack.
+     */
+    if (Vm_PinUserMem(VM_READWRITE_ACCESS, *maxSWPPtr - *minSWPPtr,
+		      *minSWPPtr) != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    }
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MachSaveUserState --
+ *
+ *	Save the current user processes state into the special page.
+ *
+ * Results:
+ *	MACH_NORM_RETURN
+ *
+ * Side effects:
+ *	The user's special page saved state is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+MachSaveUserState()
+{
+    register	Mach_State	*statePtr;
+    Proc_ControlBlock		*procPtr;
+    Mach_SpecPage		*specPagePtr;
+
+    procPtr = Proc_GetCurrentProc();
+    statePtr = procPtr->machStatePtr;
+    specPagePtr = (Mach_SpecPage *)statePtr->userState.specPageAddr;
+
+    if (Vm_CopyOut(sizeof(Mach_RegState),
+		        (Address)&statePtr->userState.trapRegState,
+		    (Address)&specPagePtr->savedState.regState) != SUCCESS) {
+	Sys_Panic(SYS_FATAL, "MachSaveUserState: Save failed\n");
+    }
+    /*
+     * Put out the current bounds of the saved window stack.  We don't have
+     * to use copy-out here because we know that *specPagePtr points to a valid
+     * page because otherwise we wouldn't have gotten this far.
+     */
+    specPagePtr->savedState.swpBaseAddr = (Address)specPagePtr;
+    specPagePtr->savedState.swpMaxAddr = statePtr->userState.swpMaxAddr;
+
+    return(MACH_NORM_RETURN);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MachRestoreUserState --
+ *
+ *	Restore the current user processes state from the special page.
+ *
+ * Results:
+ *	MACH_NORM_RETURN
+ *
+ * Side effects:
+ *	The user's special page saved state is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+MachRestoreUserState()
+{
+    register	Mach_State	*statePtr;
+    register	Mach_SpecPage	*specPagePtr;
+    Proc_ControlBlock		*procPtr;
+    int				savedKPSW;
+    Address			minSWP;
+    Address			maxSWP;
+    ReturnStatus		status;
+
+    procPtr = Proc_GetCurrentProc();
+    statePtr = procPtr->machStatePtr;
+    specPagePtr = (Mach_SpecPage *)statePtr->userState.specPageAddr;
+
+    savedKPSW = statePtr->userState.trapRegState.kpsw;
+    /*
+     * Copy in the state to restore.  Note that once we can copy in the
+     * state we know that we can get the rest without a copy-in because
+     * the page must be valid if the copy-in succeeds.
+     */
+    if (Vm_CopyIn(sizeof(Mach_RegState),
+		  (Address)&specPagePtr->savedState.regState,
+		  (Address)&statePtr->userState.trapRegState) != SUCCESS) {
+	Sys_Panic(SYS_FATAL, "MachRestoreUserState: Restore failed\n");
+    }
+    statePtr->userState.specPageAddr =
+		    (Address)((unsigned)specPagePtr->savedState.swpBaseAddr & 
+					~(VMMACH_PAGE_SIZE - 1));
+    statePtr->userState.swpBaseAddr = 
+			statePtr->userState.specPageAddr + VMMACH_PAGE_SIZE;
+    statePtr->userState.swpMaxAddr = specPagePtr->savedState.swpMaxAddr;
+
+    statePtr->userState.trapRegState.kpsw = savedKPSW | 
+	    (statePtr->userState.trapRegState.kpsw & MACH_KPSW_USE_CUR_PC);
+    status = PinSWP(statePtr->userState.swpBaseAddr, 
+		    statePtr->userState.swpMaxAddr, 
+		    statePtr->userState.trapRegState.swp, &minSWP, &maxSWP);
+    if (status != SUCCESS) {
+	Proc_ExitInt(PROC_TERM_DESTROYED, PROC_BAD_STACK, 0);
+    }
+    Vm_UnpinUserMem(statePtr->userState.maxSWP - statePtr->userState.minSWP,
+		    statePtr->userState.minSWP);
+    statePtr->userState.minSWP = minSWP;
+    statePtr->userState.maxSWP = maxSWP;
+
+    return(MACH_NORM_RETURN);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MachUserTestAndSet --
+ *
+ *	User level test and set.  This is a hack for now until they figure
+ *	out how to do a real test and set at user level in hardware
+ *	(won't work with interrupts enable).
+ *
+ * Results:
+ *	MACH_NORM_RETURN
+ *
+ * Side effects:
+ *	The given pointer is test and set and the user's return val reg
+ *	is set to the value returned by test and set.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+MachUserTestAndSet(tasAddr)
+    Address	tasAddr;	/* Address to test and set. */
+{
+    ReturnStatus	status;
+    Proc_ControlBlock	*procPtr;
+    Mach_State		*statePtr;
+
+    procPtr = Proc_GetCurrentProc();
+    statePtr = procPtr->machStatePtr;
+
+    status = Vm_PinUserMem(VM_READWRITE_ACCESS, 4, tasAddr);
+    if (status == SUCCESS) {
+	statePtr->userState.trapRegState.regs[27][0] = Mach_TestAndSet(tasAddr);
+    }
+    statePtr->userState.trapRegState.regs[28][0] = status;
+    Vm_UnpinUserMem(4, tasAddr);
 }

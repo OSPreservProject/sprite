@@ -35,6 +35,7 @@
  *	      /sprite/src/lib/c/syscall/spur.md/userSysCallInt.h will have
  *	      to be changed accordingly and all user programs will 
  *	      have to be recompiled (so don't change it!!!!).
+ *
  */
 #define	MACH_BREAKPOINT_TRAP		0
 #define	MACH_SINGLE_STEP_TRAP		1
@@ -43,13 +44,48 @@
 #define	MACH_SYS_CALL_TRAP		4
 #define	MACH_SIG_RETURN_TRAP		5
 #define	MACH_GET_WIN_MEM_TRAP		6
-#define	MACH_USER_FPU_EXCEPT_TRAP	7
-#define	MACH_USER_ILLEGAL_TRAP		8
-#define	MACH_USER_FIXNUM_TRAP		9
-#define	MACH_USER_OVERFLOW_TRAP		10
+#define	MACH_USER_SAVE_STATE_TRAP	7
+#define	MACH_USER_RESTORE_STATE_TRAP	8
+#define	MACH_USER_TEST_AND_SET_TRAP	9
+#define	MACH_USER_CS_TRAP		10
 #define	MACH_USER_BAD_SWP_TRAP		11
-#define	MACH_TEST_FAULT_TRAP		12
-#define	MACH_MAX_TRAP_TYPE		12
+#define	MACH_CMP_TRAP_ERROR_TRAP	12
+#define	MACH_FPU_ERROR_TRAP		13
+#define	MACH_ILLEGAL_ERROR_TRAP		14
+#define	MACH_FIXNUM_ERROR_TRAP		15
+#define	MACH_OVERFLOW_ERROR_TRAP	16
+
+/*
+ * These four trap types need to be grouped together in order and at the end
+ * of the traps because they are special.
+ */
+#define	MACH_USER_RET_TRAP_TRAP		17
+#define	MACH_USER_FPU_EXCEPT_TRAP	18
+#define	MACH_USER_ILLEGAL_TRAP		19
+#define	MACH_USER_FIXNUM_TRAP		20
+#define	MACH_USER_OVERFLOW_TRAP		21
+
+#define	MACH_MAX_TRAP_TYPE		21
+
+/*
+ * The first and last user compare traps and how many there are.
+ */
+#define	MACH_FIRST_USER_CMP_TRAP	100
+#define	MACH_LAST_USER_CMP_TRAP		400
+#define	MACH_NUM_USER_CMP_TRAPS		(MACH_LAST_USER_CMP_TRAP - MACH_FIRST_USER_CMP_TRAP + 1)
+
+/*
+ * The number of trap types in addition to compare trap.
+ */
+#define	MACH_NUM_OTHER_USER_TRAPS	4
+
+/*
+ * The different type of user trap handlers.
+ */
+#define	MACH_PLAIN_INTERFACE		0
+#define	MACH_INT_OPERAND_INTERFACE	1
+#define	MACH_FLOAT_OPERAND_INTERFACE	2
+
 
 /*
  * The return codes from the C trap handler routine:
@@ -385,7 +421,10 @@
 /*
  * Other misc. fields of the user state structure.
  */
-#define	MACH_MIN_SWP_OFFSET		(MACH_TRAP_CWP_OFFSET + 4)
+#define	MACH_SPEC_PAGE_ADDR_OFFSET	(MACH_TRAP_CWP_OFFSET + 4)
+#define	MACH_SWP_BASE_ADDR_OFFSET	(MACH_SPEC_PAGE_ADDR_OFFSET + 4)
+#define	MACH_SWP_MAX_ADDR_OFFSET	(MACH_SWP_BASE_ADDR_OFFSET + 4)
+#define	MACH_MIN_SWP_OFFSET		(MACH_SWP_MAX_ADDR_OFFSET + 4)
 #define	MACH_MAX_SWP_OFFSET		(MACH_MIN_SWP_OFFSET + 4)
 #define	MACH_NEW_CUR_PC_OFFSET		(MACH_MAX_SWP_OFFSET + 4)
 #define	MACH_SIG_NUM_OFFSET		(MACH_NEW_CUR_PC_OFFSET + 4)
