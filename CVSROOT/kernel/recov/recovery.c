@@ -97,7 +97,7 @@ typedef struct RecovHostState {
 } RecovHostState;
 
 #define RECOV_INIT_HOST(hostPtr, zspriteID, zstate, zbootID) \
-    hostPtr = (RecovHostStat *) malloc(sizeof (RecovHostStat)); \
+    hostPtr = (RecovHostState *) malloc(sizeof (RecovHostState)); \
     (void)bzero((Address)hostPtr, sizeof(RecovHostState)); \
     List_Init(&(hostPtr)->rebootList); \
     (hostPtr)->spriteID = zspriteID; \
