@@ -23,4 +23,4 @@
 extern	Sync_Lock vmMonitorLock;
 #define LOCKPTR &vmMonitorLock
 
-#endif _VMLOCK
+#endif /* _VMLOCK */

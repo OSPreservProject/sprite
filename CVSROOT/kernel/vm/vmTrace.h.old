@@ -63,7 +63,7 @@ extern	Vm_TraceStats	vmTraceStats;
 
 /*
  * The different record types.  The first short of each record determines its
- * type.  If it is not one of the three types below then it is a page 
+ * type.  If it is not one of the three types below then it is a page
  * reference, modify record type since these types never have the sign bit set.
  *
  *	VM_TRACE_START_REC	A record of type Vm_TraceStart.
@@ -110,7 +110,7 @@ typedef struct {
     Address	stackStartAddr;		/* The start of the range of virtual
 					 * addresses that are used for kernel
 					 * stacks (runs up to mapStartAddr). */
-    Address	mapStartAddr;		/* The start of kernel virtual 
+    Address	mapStartAddr;		/* The start of kernel virtual
 					 * addresses used for mapping stuff
 					 * (runs up to cacheStartAddr). */
     Address	cacheStartAddr;		/* The start of the FS cache. */
@@ -169,7 +169,7 @@ typedef struct {
     short	segNum;		/* The segment being created. */
     short	parSegNum;	/* The parent segment. */
     char	segType;	/* The type of segment. */
-    char	cor;		/* TRUE if the segment was created 
+    char	cor;		/* TRUE if the segment was created
 				 * copy-on-reference. */
 } Vm_TraceSegCreate;
 
@@ -209,7 +209,7 @@ typedef struct {
  *	VM_TRACE_LAST_COR		The last copy-on-reference slave
  *					was removed.
  *	VM_TRACE_COW_TO_NORMAL		A page is being changed from COW to
- *					normal protection because of a 
+ *					normal protection because of a
  *					copy-on-write fault.
  *	VM_TRACE_GIVEN_FROM_MASTER	The master segment is invalidating
  *					its copy of the page so that it can
@@ -239,8 +239,8 @@ typedef struct {
     short		recType;	/* Always VM_TRACE_PAGE_FAULT_REC. */
     short		segNum;		/* The segment that the page is in. */
     unsigned short	pageNum;	/* The virtual page number. */
-    short		faultType;	/* One of VM_TRACE_ZERO_FILL, 
-					 * VM_TRACE_OBJ_FILE, 
+    short		faultType;	/* One of VM_TRACE_ZERO_FILL,
+					 * VM_TRACE_OBJ_FILE,
 					 * VM_TRACE_SWAP_FILE. */
 } Vm_TracePageFault;
 
@@ -292,4 +292,4 @@ extern	void		VmTraceDump();
 extern	void		VmStoreTraceRec();
 extern	void		VmCheckTraceOverflow();
 
-#endif _VMTRACE
+#endif /* _VMTRACE */

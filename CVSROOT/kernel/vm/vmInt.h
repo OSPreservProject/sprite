@@ -1,7 +1,7 @@
 /*
  * vmInt.h --
  *
- *	Machine independent virtual memory data structures and procedure 
+ *	Machine independent virtual memory data structures and procedure
  *	headers used internally by the virtual memory module.
  *
  * Copyright (C) 1985 Regents of the University of California
@@ -21,7 +21,7 @@
 #include "sync.h"
 #include "proc.h"
 #include "status.h"
-#else 
+#else
 #include <kernel/vmMach.h>
 #include <kernel/fs.h>
 #include <kernel/sync.h>
@@ -49,8 +49,8 @@
  * | Kernel code + data.  Current end	|
  * | is vmMemEnd which is incremented	|
  * | each time Vm_RawAlloc is called.	|
- * | The absolute end is		| 
- * | mach_CodeStart + vmKernMemSize.	|			
+ * | The absolute end is		|
+ * | mach_CodeStart + vmKernMemSize.	|
  * |					|
  * -------------------------------------- mach_CodeStart + vmKernMemSize
  * |					|
@@ -73,21 +73,21 @@
  * |					|
  * -------------------------------------- vmBlockCacheEndAddr and mach_KernEnd
  *
- * 
+ *
  * USER VIRTUAL ADDRESS SPACE
  *
  * A users virtual address space is divided into three segments:
  * code, heap and stack.  The code is in the lowest part of the
  * VAS and is followed by the heap segment which grows towards the stack.
  * The stack is at the top of the virtual address and grows towards the
- * heap.  The two fields offset and numPages in each segment table entry 
+ * heap.  The two fields offset and numPages in each segment table entry
  * define the bounds of a segment.  offset is the virtual page number that
- * maps to page table entry zero.  Thus the index into the page table for any 
- * page is the page number minus the offset.  The offset for the code and 
- * heap segment is fixed and the offset for the stack segment will change 
- * as the page table grows.  numPages is the number of pages that can be 
+ * maps to page table entry zero.  Thus the index into the page table for any
+ * page is the page number minus the offset.  The offset for the code and
+ * heap segment is fixed and the offset for the stack segment will change
+ * as the page table grows.  numPages is the number of pages that can be
  * accessed for a segment.  Thus for code and heap segments, offset is the
- * lowest accessible page and (numPages + offset - 1) is the highest 
+ * lowest accessible page and (numPages + offset - 1) is the highest
  * accessible page.  For a stack segment the highest accessible page is fixed
  * at mach_LastUserStackPage and the lowest accessible page is
  * (mach_LastUserStackPage - numPages + 1).
@@ -114,7 +114,7 @@
  * |					|
  * -------------------------------------- (heapSeg.offset + heapSeg.ptSize) *
 *		    |			   			vm_PageSize
- *		    V			
+ *		    V
  *
  *		    A
  *		    |
@@ -122,13 +122,13 @@
  * |					|
  * | Stack for the process.  There are	|
  * | stackSeg.numPages worth of virtual |<- First addr in stack segment =
- * | pages for the segment.  However,   |   (mach_LastUserStackPage - 
+ * | pages for the segment.  However,   |   (mach_LastUserStackPage -
  * | like the heap segment the actual	|    stackSeg.numPages + 1) *
  * | size corresponds to the size of the|	vm_PageSize
  * | page table.			|
  * |					|
  * -------------------------------------- mach_MaxUserStackAddr
- * 
+ *
  * SYNCHRONIZATION
  *
  * There are four types of synchronization in virtual memory:
@@ -168,7 +168,7 @@
  * from a segment - operations that require the page table to be reallocated
  * and copied, some of which must be done outside of the monitor lock.
  *
- * The page table locking is only used for heap segments.  Code segments don't 
+ * The page table locking is only used for heap segments.  Code segments don't
  * need to do the locking because they never expand.  Stack segments don't
  * need it because they can't be shared so the calling process doesn't have to
  * worry about someone else mucking with its page tables.
@@ -178,7 +178,7 @@
  * a page from a segment and it does not pay attention to either of the two
  * levels of locking for page tables.  Thus although most parts of a page
  * table entry can be changed at non-monitor level, the resident bit must
- * be examined inside of the monitor.  Also copying and expanding of page 
+ * be examined inside of the monitor.  Also copying and expanding of page
  * tables must also be done inside of the monitor.
  *
  * The last form of synchronization is for copy-on-write.  See the file
@@ -193,7 +193,7 @@
 
 extern	int	vmFirstFreePage;	/* The first page frame that is not
 					 * owned by the kernel. */
-extern	Boolean	vmNoBootAlloc;		/* TRUE implies can no longer use 
+extern	Boolean	vmNoBootAlloc;		/* TRUE implies can no longer use
 					 * Vm_BootAlloc. */
 extern	Fs_Stream *vmSwapStreamPtr;	/* Swap directory stream. */
 extern	int	vmPageShift;		/* Log base 2 of vm_PageSize. */
@@ -217,11 +217,11 @@ extern	Address	vmBlockCacheBaseAddr;	/* Base of the file system cache. */
 extern	Address	vmBlockCacheEndAddr;	/* End of the file system cache. */
 extern	int	vmMaxMachSegs;		/* Maximum number of machine segments
 					 * that the hardware will allow. */
-extern	Boolean	vmFreeWhenClean;	/* TRUE if pages should be freed after 
+extern	Boolean	vmFreeWhenClean;	/* TRUE if pages should be freed after
 					 * they have been cleaned. */
 extern	Boolean	vmAlwaysRefuse;		/* TRUE if VM should always refuse the
 					 * file systems requests for memory. */
-extern	Boolean	vmAlwaysSayYes;		/* TRUE if VM should always satisfy 
+extern	Boolean	vmAlwaysSayYes;		/* TRUE if VM should always satisfy
 					 * file system requests for memory. */
 extern	int	vmMaxDirtyPages;	/* Maximum number of dirty pages
 					 * before waiting for a page to be
@@ -241,17 +241,17 @@ extern	Boolean		vmUseFSReadAhead;/* Should have FS do read ahead on
 
 /*
  * Variables to control negotiations between the file system and the virtual
- * memory system.  Each time that FS asks for a page its reference time is 
+ * memory system.  Each time that FS asks for a page its reference time is
  * penalized depending on how many pages that it has allocated to it.  The
- * penalty is enforced by subtracting vmCurPenalty seconds from its access time 
- * or adding vmCurPenalty to the VM access time.  This is done in the 
- * following way.  Let vmPagesPerGroup = total-available-pages / 
- * vmNumPageGroups,  vmCurPenalty = 0 and vmBoundary = vmPagesPerGroup. 
+ * penalty is enforced by subtracting vmCurPenalty seconds from its access time
+ * or adding vmCurPenalty to the VM access time.  This is done in the
+ * following way.  Let vmPagesPerGroup = total-available-pages /
+ * vmNumPageGroups,  vmCurPenalty = 0 and vmBoundary = vmPagesPerGroup.
  * Whenever the number of pages allocated to FS exceeds vmBoundary, vmBoundary
- * is incremented by vmPagesPerGroup and vmCurPenalty is incremented by 
+ * is incremented by vmPagesPerGroup and vmCurPenalty is incremented by
  * vmFSPenalty.  Whenever the number of pages allocated to FS goes under
  * vmBoundary, vmBoundary is decremented by vmPagesPerGroup and vmCurPenalty is
- * decremented by vmFSPenalty.  
+ * decremented by vmFSPenalty.
  */
 extern	int	vmFSPenalty;	/* Number of seconds FS is penalized when it
 				 * asks for page. */
@@ -267,12 +267,12 @@ extern	int	vmBoundary;	/* The current number of pages that must be
 /*
  * Variables to control use of modify and reference bits.
  */
-extern	Boolean	vmWriteablePageout;	/* Page out all pages that are 
+extern	Boolean	vmWriteablePageout;	/* Page out all pages that are
 					 * writeable before recycling them
 					 * whether they have been modified
 					 * or not. */
 extern	Boolean	vmWriteableRefPageout;	/* Page out all pages that have been
-					 * referenced and are writeable 
+					 * referenced and are writeable
 					 * before recycling them whether they
 					 * have been modified or not. */
 
@@ -298,7 +298,7 @@ extern	Boolean	vmWriteableRefPageout;	/* Page out all pages that have been
  * the reference count is non-zero then the segment is actively being used.
  * If the reference count is zero then the segment table entry is either in the
  * inactive segment list or the free segment list.  The inactive segment list
- * is a list of segment table entries that are not currently in use by 
+ * is a list of segment table entries that are not currently in use by
  * any process but contain code segments that can be reused if a new process
  * needs the code segment.  The free segment list is a list of segment
  * table entries that are not being used by any process and do not contain code
@@ -313,7 +313,7 @@ extern	Boolean	vmWriteableRefPageout;	/* Page out all pages that have been
  */
 
 /*
- * An element of a linked list of processes sharing a segment.  Each 
+ * An element of a linked list of processes sharing a segment.  Each
  * element of the linked list points to the proc table entry of the process
  * that is sharing the segment.
  */
@@ -393,18 +393,18 @@ typedef enum {
 /*---------------------------------------------------------------------------*/
 
 /*
- * 			Core map structure.  
+ * 			Core map structure.
  *
  * The core map contains one entry for each page in physical memory.
  * There are four lists that run through the core map: the allocate list,
  * the dirty list, the free list and the reserve list.  All pages that aren't
  * be used by any segment are on the free list.  All pages that are being
  * used by users processes are on the allocate list or the dirty list.
- * The allocate list is used to keep track of which pages are the best 
- * candidates to use when a new page is needed.  All pages that are not 
- * attached to any segment are at the front of the allocate list and the 
+ * The allocate list is used to keep track of which pages are the best
+ * candidates to use when a new page is needed.  All pages that are not
+ * attached to any segment are at the front of the allocate list and the
  * rest of the pages on the allocate list are kept in LRU order.  The dirty
- * list is a list of pages that are being written to disk.  The reserve 
+ * list is a list of pages that are being written to disk.  The reserve
  * list is a list of pages that are kept in case the kernel needs memory
  * and no clean pages are available.
  *
@@ -420,14 +420,14 @@ typedef struct VmCore {
 				 * wired down by users. */
     int		lockCount;	/* The number of times that this page has been
 				   locked down (i.e. made unpageable). */
-    int 	flags;		/* Flags that indicate the state of the page 
+    int 	flags;		/* Flags that indicate the state of the page
 				   as defined below. */
     int		lastRef;	/* Time in seconds that pages reference bit
 				 * last cleared by clock. */
 } VmCore;
 
 /*
- * The following defines the state of the page:  
+ * The following defines the state of the page:
  *
  * VM_FREE_PAGE    		The page is not attached to any segment.
  * VM_DIRTY_PAGE   		The page is on the dirty list.
@@ -479,7 +479,7 @@ typedef struct VmCOWInfo {
 
 /*----------------------------------------------------------------------------*/
 
-/* 
+/*
  * Initialization routines.
  */
 extern	void		VmSegTableAlloc();
@@ -586,4 +586,4 @@ extern	void		VmPrefetch();
  * Vm tracing.
  */
 extern	void		VmTraceSegStart();
-#endif _VMINT
+#endif /* _VMINT */
