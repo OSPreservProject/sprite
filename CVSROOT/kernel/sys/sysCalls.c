@@ -832,14 +832,67 @@ Sys_StatsStub(command, option, argPtr)
 	    }
 	    status = Fsutil_FsRecovInfo(length, resultPtr, &lengthNeeded);
 	    if (status != SUCCESS) {
+		if (resultPtr != (Address) NIL) {
+		    free(resultPtr);
+		}
 		break;
 	    }
 	    status = Vm_CopyOut(length, resultPtr, argPtr);
 	    if (status != SUCCESS) {
+		if (resultPtr != (Address) NIL) {
+		    free(resultPtr);
+		}
 		break;
 	    }
 	    status = Vm_CopyOut(sizeof (int), (Address) &lengthNeeded,
 		    (Address) option);
+	    if (resultPtr != (Address) NIL) {
+		free(resultPtr);
+	    }
+	    break;
+	}
+	case SYS_RECOV_CLIENT_INFO: {
+	    int		length;
+	    Address	resultPtr;
+	    int		lengthNeeded;
+
+	    resultPtr = argPtr;
+	    /* option is actually an in/out param */
+	    status = Vm_CopyIn(sizeof (int), (Address) option,
+		    (Address) &length);
+	    if (status != SUCCESS) {
+		break;
+	    }
+	    if (length != 0 && (resultPtr == (Address) NIL || resultPtr ==
+		    (Address) 0 || resultPtr == (Address) USER_NIL)) {
+		status = GEN_INVALID_ARG;
+		break;
+	    }
+	    if (length > 0) {
+		resultPtr = (Address) malloc(length);
+	    } else {
+		resultPtr = (Address) NIL;
+	    }
+	    status = Recov_DumpClientRecovInfo(length, resultPtr,
+		    &lengthNeeded);
+	    if (status != SUCCESS) {
+		if (resultPtr != (Address) NIL) {
+		    free(resultPtr);
+		}
+		break;
+	    }
+	    status = Vm_CopyOut(length, resultPtr, argPtr);
+	    if (status != SUCCESS) {
+		if (resultPtr != (Address) NIL) {
+		    free(resultPtr);
+		}
+		break;
+	    }
+	    status = Vm_CopyOut(sizeof (int), (Address) &lengthNeeded,
+		    (Address) option);
+	    if (resultPtr != (Address) NIL) {
+		free(resultPtr);
+	    }
 	    break;
 	}
 	default:
