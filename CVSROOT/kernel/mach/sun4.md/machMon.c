@@ -15,7 +15,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "machMon.h"
 #include "machConst.h"
 #include "machInt.h"
-#include "devTimer.h"
 #include "char.h"
 #include "vmMachInt.h"
 #include "mach.h"
