@@ -150,6 +150,7 @@ typedef struct Lfs {
 #define	LFS_NUM_PREALLOC_SEGS	3
     int		segsInUse;
     struct LfsSeg *segs;
+    char   *writeBuffers[2];    /* Buffers used to speed segment writes. */
     LfsMem	mem;		/* Memory resources allocated to file system. */
 } Lfs;
 
