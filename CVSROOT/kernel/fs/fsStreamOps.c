@@ -677,6 +677,10 @@ Fs_IOControl(streamPtr, ioctlPtr, replyPtr)
      */
     streamType = streamPtr->ioHandlePtr->fileID.type;
     do {
+	if (!Fsutil_HandleValid((Fs_HandleHeader *)streamPtr) ||
+	    !Fsutil_HandleValid((Fs_HandleHeader *)streamPtr->ioHandlePtr)) {
+	    return(FS_STALE_HANDLE);
+	}
 	retry = FALSE;
 	replyPtr->length = ioctlPtr->outBufSize;
 	replyPtr->flags = 0;
