@@ -11,19 +11,21 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include "sprite.h"
-#include "sched.h"
-#include "schedInt.h"
-#include "proc.h"
-#include "list.h"
-#include "timer.h"
-#include "sync.h"
-#include "sys.h"
-#include "dbg.h"
-#include "mach.h"
+#include <sprite.h>
+#include <sched.h>
+#include <schedInt.h>
+#include <proc.h>
+#include <list.h>
+#include <timer.h>
+#include <sync.h>
+#include <sys.h>
+#include <dbg.h>
+#include <mach.h>
+#include <bstring.h>
+#include <stdio.h>
 
 #ifdef spur
-#include "devCC.h"
+#include <devCC.h>
 #endif
 
 static int	foundOnDeck[MACH_MAX_NUM_PROCESSORS];
@@ -118,9 +120,11 @@ Sched_OnDeck	sched_OnDeck[MACH_MAX_NUM_PROCESSORS];
 /*
  * Forward Declarations.
  */
-static Proc_ControlBlock *IdleLoop();
-static void QuantumEnd();
-static void RememberUsage();
+static void RememberUsage _ARGS_((Proc_ControlBlock *curProcPtr));
+static Proc_ControlBlock *IdleLoop _ARGS_((void));
+static void QuantumEnd _ARGS_((Proc_ControlBlock *procPtr));
+extern void SchedPrintSchedStats _ARGS_((Timer_Ticks time, 
+				ClientData clientData));
 
 
 /*
@@ -1285,7 +1289,6 @@ SchedPrintSchedStats(time, clientData)
     Timer_Ticks time;
     ClientData  clientData;
 {
-    int                 numStats;
     int                 i;
 
     /* print stuff */

@@ -14,10 +14,10 @@
 #define _SCHED
 
 #ifdef KERNEL
-#include "timer.h"
-#include "proc.h"
-#include "mach.h"
-#include "sync.h"
+#include <timer.h>
+#include <proc.h>
+#include <mach.h>
+#include <sync.h>
 #else
 #include <kernel/timer.h>
 #include <kernel/proc.h>
@@ -123,25 +123,24 @@ extern Sched_Instrument sched_Instrument;   /* Counters for instrumentation. */
 extern int sched_Quantum;		/* Timer interrupts per quantum. */
 extern Sched_OnDeck	sched_OnDeck[MACH_MAX_NUM_PROCESSORS];
 
-extern void			Sched_MakeReady();
-extern void			Sched_StartUserProc();
-extern void			Sched_StartKernProc();
-extern void 			Sched_ContextSwitch();
-extern void 			Sched_ContextSwitchInt();
-extern void 			Sched_ForgetUsage();
-extern void 			Sched_GatherProcessInfo();
-extern void 			Sched_Init();
-extern void 			Sched_TimeTicks();
-extern void 			Sched_LockAndSwitch();
-extern void 			Sched_MakeReady();
-extern void 			Sched_InsertInQueue();
-extern void 			Sched_PrintStat();
-extern void 			Sched_StartProcess();
-extern void			Sched_SetClearUsageFlag();
-extern void			Sched_DumpReadyQueue();
-extern ReturnStatus		Sched_StartProcessor();
-extern ReturnStatus		Sched_IdleProcessor();
-extern void			Sched_StartSchedStats();
-extern void			Sched_StopSchedStats();
+extern void Sched_MakeReady _ARGS_((register Proc_ControlBlock *procPtr));
+extern void Sched_StartUserProc _ARGS_((Address pc));
+extern void Sched_StartKernProc _ARGS_((void (*func)()));
+extern void Sched_ContextSwitch _ARGS_((Proc_State state));
+extern void Sched_ContextSwitchInt _ARGS_((register Proc_State state));
+extern void Sched_ForgetUsage _ARGS_((Timer_Ticks time));
+extern void Sched_GatherProcessInfo _ARGS_((unsigned int interval));
+extern void Sched_Init _ARGS_((void));
+extern void Sched_TimeTicks _ARGS_((void));
+extern void Sched_LockAndSwitch _ARGS_((void));
+extern ReturnStatus Sched_StartProcessor _ARGS_((int pnum));
+extern ReturnStatus Sched_IdleProcessor _ARGS_((int pnum));
+extern void Sched_InsertInQueue _ARGS_((Proc_ControlBlock *procPtr, 
+					Proc_ControlBlock **runPtrPtr));
+extern void Sched_PrintStat _ARGS_((void));
+extern void Sched_SetClearUsageFlag _ARGS_((void));
+extern void Sched_DumpReadyQueue _ARGS_((void));
+extern void Sched_StartSchedStats _ARGS_((void));
+extern void Sched_StopSchedStats _ARGS_((void));
 
 #endif /* _SCHED */

@@ -14,7 +14,7 @@
 #ifndef _SCHEDINT
 #define _SCHEDINT
 
-#include "list.h"
+#include <list.h>
 
 #define SCHED_MAX_DUMP_SIZE 100
 
