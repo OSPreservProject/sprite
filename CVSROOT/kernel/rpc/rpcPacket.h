@@ -66,7 +66,8 @@ typedef struct RpcHdr {
 					 * field should be ZERO.  On partial
 					 * acknowledgments this contains
 					 * the receiver's summary bitmask */
-    int			command;	/* Rpc command, see rpcCall.h */
+    int			command;	/* Rpc command (see rpcCall.h) or
+					 * error code if RPC_ERROR is set */
     int			paramSize;	/* Size of the parameter area */
     int			dataSize;	/* Size of the data data area */
     int			paramOffset;	/* This is the starting offset for the
@@ -118,7 +119,8 @@ typedef struct RpcNewHdr {
 					 * field should be ZERO.  On partial
 					 * acknowledgments this contains
 					 * the receiver's summary bitmask */
-    int			command;	/* Rpc command, see rpcCall.h */
+    int			command;	/* Rpc command (see rpcCall.h) or
+					 * error code if RPC_ERROR is set */
     int			paramSize;	/* Size of the parameter area */
     int			dataSize;	/* Size of the data data area */
     int			paramOffset;	/* This is the starting offset for the
