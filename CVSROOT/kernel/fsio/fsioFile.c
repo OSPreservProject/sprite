@@ -25,6 +25,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fs.h"
 #include "fsutil.h"
 #include "fsio.h"
+#include "fsioFile.h"
 #include "fslcl.h"
 #include "fsNameOps.h"
 #include "fscache.h"
@@ -567,9 +568,9 @@ Fsio_FileClose(streamPtr, clientID, procID, flags, dataSize, closeData)
 	if (flags & FS_WB_ON_LDB) {
 	    int blocksSkipped;
 	    status = Fscache_FileWriteBack(&handlePtr->cacheInfo, 0, 
-				    FSCACHE_LAST_BLOCK,
-				    FSCACHE_FILE_WB_WAIT | FSCACHE_WRITE_BACK_INDIRECT,
-				    &blocksSkipped);
+			FSCACHE_LAST_BLOCK,
+			FSCACHE_FILE_WB_WAIT | FSCACHE_WRITE_BACK_INDIRECT,
+			&blocksSkipped);
 	    if (status != SUCCESS) {
 		printf("Fsio_FileClose: write back <%d,%d> \"%s\" err <%x>\n",
 		    handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
@@ -638,27 +639,34 @@ Fsio_FileCloseInt(handlePtr, ref, write, exec, clientID, callback)
 
     /*
      * Handle pending deletes
+     *	0. Make sure it isn't being deleted already.
      *	1. Scan the client list and call-back to the last writer if
-     *		it is not the client doing the close.
+     *		it is not the client doing the close.  The handle gets
+     *		temporarily unlocked during the callback, so we are
+     *		are careful to ensure only one process does the delete.
      *	2. Mark the disk descriptor as deleted,
      *	3. Remove the file handle.
      *	4. Return FS_FILE_REMOVED so clients know to nuke their cache.
      */
-    if ((handlePtr->use.ref == 0) && (handlePtr->flags & FSIO_FILE_DELETED)) {
-	if (handlePtr->descPtr->fileType == FS_DIRECTORY) {
-	    fs_Stats.object.directory--;
-	} else {
-	    fs_Stats.object.files--;
+    if ((handlePtr->use.ref == 0) &&
+	(handlePtr->flags & FSIO_FILE_NAME_DELETED)) {
+	if ((handlePtr->flags & FSIO_FILE_DESC_DELETED) == 0) {
+	    handlePtr->flags |= FSIO_FILE_DESC_DELETED;
+	    if (handlePtr->descPtr->fileType == FS_DIRECTORY) {
+		fs_Stats.object.directory--;
+	    } else {
+		fs_Stats.object.files--;
+	    }
+	    if (callback) {
+		Fsconsist_ClientRemoveCallback(&handlePtr->consist, clientID);
+	    }
+	    (void)Fslcl_DeleteFileDesc(handlePtr);
+	    Fsio_FileSyncLockCleanup(handlePtr);
+	    if (callback) {
+		Fsutil_HandleRelease(handlePtr, TRUE);
+	    }
+	    Fsutil_HandleRemove(handlePtr);
 	}
-	if (callback) {
-	    Fsconsist_ClientRemoveCallback(&handlePtr->consist, clientID);
-	}
-	(void)Fslcl_DeleteFileDesc(handlePtr);
-	Fsio_FileSyncLockCleanup(handlePtr);
-	if (callback) {
-	    Fsutil_HandleRelease(handlePtr, TRUE);
-	}
-	Fsutil_HandleRemove(handlePtr);
 	status = FS_FILE_REMOVED;
     } else {
 	status = SUCCESS;
@@ -758,13 +766,14 @@ Fsio_FileScavenge(hdrPtr)
      * We can reclaim the handle if the following holds.
      *	1. There are no active users of the file.
      *  2. The file is not undergoing deletion
-     *		(The deletion will handle removing the handle)
+     *		(The deletion will remove the handle soon)
      *  3. There are no remote clients of the file.  In particular,
      *		the last writer might not be active, but we can't
      *		nuke the handle until after it writes back.
      */
     noUsers = (handlePtr->use.ref == 0) &&
-	     ((handlePtr->flags & FSIO_FILE_DELETED) == 0) &&
+	     ((handlePtr->flags & (FSIO_FILE_DESC_DELETED|
+				   FSIO_FILE_NAME_DELETED)) == 0) &&
 	      (Fsconsist_NumClients(&handlePtr->consist) == 0);
     if (noUsers && handlePtr->descPtr->fileType == FS_DIRECTORY) {
 	/*
@@ -960,13 +969,14 @@ Fsio_FileMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
 	 * We only close the orignial client if the stream is unshared,
 	 * i.e. there are no references left there.
 	 */
-	Fsio_StreamMigClient(migInfoPtr, dstClientID, (Fs_HandleHeader *)handlePtr,
-			&closeSrcClient);
+	Fsio_StreamMigClient(migInfoPtr, dstClientID,
+		(Fs_HandleHeader *)handlePtr, &closeSrcClient);
 
 	/*
 	 * Adjust use counts on the I/O handle to reflect any new sharing.
 	 */
-	Fsio_MigrateUseCounts(migInfoPtr->flags, closeSrcClient, &handlePtr->use);
+	Fsio_MigrateUseCounts(migInfoPtr->flags, closeSrcClient,
+			      &handlePtr->use);
 
 	/*
 	 * Update the client list, and take any required cache consistency
@@ -974,7 +984,8 @@ Fsio_FileMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
 	 */
 	fileStatePtr = mnew(Fsio_FileState);
 	Fsutil_HandleUnlock(handlePtr);
-	status = Fsconsist_MigrateConsistency(handlePtr, migInfoPtr->srcClientID,
+	status = Fsconsist_MigrateConsistency(handlePtr,
+		migInfoPtr->srcClientID,
 		dstClientID, migInfoPtr->flags, closeSrcClient,
 		&fileStatePtr->cacheable, &fileStatePtr->openTimeStamp);
 	if (status == SUCCESS) {
@@ -1023,8 +1034,8 @@ Fsio_FileRead(streamPtr, readPtr, remoteWaitPtr, replyPtr)
 	    (Fsio_FileIOHandle *)streamPtr->ioHandlePtr;
     register ReturnStatus status;
 
-    status = Fscache_Read(&handlePtr->cacheInfo, readPtr->flags, readPtr->buffer,
-			    readPtr->offset, &readPtr->length, remoteWaitPtr);
+    status = Fscache_Read(&handlePtr->cacheInfo, readPtr->flags,
+	    readPtr->buffer, readPtr->offset, &readPtr->length, remoteWaitPtr);
     replyPtr->length = readPtr->length;
     return(status);
 }
@@ -1061,7 +1072,8 @@ Fsio_FileWrite(streamPtr, writePtr, remoteWaitPtr, replyPtr)
      * Get a reference to the domain so it can't be dismounted during the I/O.
      * Then synchronize with read ahead before actually doing the write.
      */
-    if (Fsdm_DomainFetch(handlePtr->hdr.fileID.major, FALSE) == (Fsdm_Domain *)NIL) {
+    if (Fsdm_DomainFetch(handlePtr->hdr.fileID.major, FALSE) ==
+	    (Fsdm_Domain *)NIL) {
 	return(FS_DOMAIN_UNAVAILABLE);
     }
     FscacheWaitForReadAhead(&handlePtr->readAhead);
@@ -1327,7 +1339,8 @@ Fsio_FileBlockCopy(srcHdrPtr, dstHdrPtr, blockNum)
     }
     if (numBytes != FS_BLOCK_SIZE) {
 	if (numBytes != 0) {
-	    Fscache_UnlockBlock(cacheBlockPtr, 0, -1, 0, FSCACHE_CLEAR_READ_AHEAD);
+	    Fscache_UnlockBlock(cacheBlockPtr, 0, -1, 0,
+			FSCACHE_CLEAR_READ_AHEAD);
 	}
 	return(VM_SHORT_READ);
     }
@@ -1525,9 +1538,12 @@ Fsio_FileTrunc(handlePtr, size, flags)
     ReturnStatus status;
     Fscache_Trunc(&handlePtr->cacheInfo, size, flags);
     status = Fsdm_FileDescTrunc(handlePtr, size);
-    if ((flags & FSCACHE_TRUNC_DELETE) && handlePtr->cacheInfo.blocksInCache > 0) {
-	panic("Fsio_FileTrunc (delete) %d blocks left over\n",
-		    handlePtr->cacheInfo.blocksInCache);
+    if ((flags & FSCACHE_TRUNC_DELETE) &&
+	handlePtr->cacheInfo.blocksInCache > 0) {
+	printf("Fsio_FileTrunc (delete) %d blocks left over <%d,%d> \"%s\"\n",
+		    handlePtr->cacheInfo.blocksInCache,
+		    handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
+		    Fsutil_HandleName(handlePtr));
     }
     return(status);
 }
