@@ -334,9 +334,10 @@ typedef struct Fscache_ReadAheadInfo {
 #endif not CLEAN
 
 /* Data. */
-extern int fscache_MaxBlockCleaners;
-extern Boolean fscache_RATracing;
-extern int fscache_NumReadAheadBlocks;
+extern int	fscache_MaxBlockCleaners;
+extern Boolean	fscache_RATracing;
+extern int	fscache_NumReadAheadBlocks;
+
 extern List_Links *fscacheFullWaitList;
 
 /* procedures */
@@ -387,6 +388,7 @@ extern void             Fscache_UpdateCachedAttr();
 extern void             Fscache_UpdateDirSize();
 extern void             Fscache_GetCachedAttr();
 
+extern Boolean		Fscache_AllBlocksInCache();
 extern Boolean		Fscache_OkToScavenge();
 
 /*
@@ -394,6 +396,10 @@ extern Boolean		Fscache_OkToScavenge();
  */
 extern void		Fscache_ReadAheadInit();
 extern void		Fscache_ReadAheadSyncLockCleanup();
+extern void		Fscache_WaitForReadAhead();
+extern void		Fscache_AllowReadAhead();
+
+extern void		FscacheReadAhead();
 
 #endif /* _FSCACHE */
 
