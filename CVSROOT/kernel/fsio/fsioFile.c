@@ -697,6 +697,15 @@ Fsio_FileCloseInt(handlePtr, ref, write, exec, clientID, callback)
 		Fsutil_HandleRelease(handlePtr, FALSE);
 	    }
 	    Fsutil_HandleRemove(handlePtr);
+	} else {
+	    /*
+	     * The following printf is a mousetrap to verify that the 
+	     * bug where Proc_ServerProcs leave files locked was fixed.
+	     * Remove it once we are positive the bug is fixed. JHH 11/5/90
+	     */
+	    printf(
+    "Fsio_FileCloseInt: almost returned FS_FILE_REMOVED w/ handle locked\n");
+	    Fsutil_HandleUnlock(handlePtr);
 	}
 	status = FS_FILE_REMOVED;
     } else {
