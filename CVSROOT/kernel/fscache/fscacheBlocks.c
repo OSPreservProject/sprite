@@ -1052,12 +1052,6 @@ Fscache_FetchBlock(cacheInfoPtr, blockNum, flags, blockPtrPtr, foundPtr)
 	blockPtr = (Fscache_Block *) Hash_GetValue(hashEntryPtr);
 	if (blockPtr != (Fscache_Block *) NIL) {
 	    *foundPtr = TRUE;
-	    if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
-		UNLOCK_MONITOR;
-		panic("Fscache_FetchBlock hashing error\n");
-		*foundPtr = FALSE;
-		return;
-	    }
 	    if (((flags & FSCACHE_IO_IN_PROGRESS) && 
 		 blockPtr->refCount > 0) ||
 		(blockPtr->flags & FSCACHE_IO_IN_PROGRESS)) {
@@ -1492,12 +1486,7 @@ Fscache_BlockTrunc(cacheInfoPtr, blockNum, newBlockSize)
     hashEntryPtr = GetUnlockedBlock(&blockHashKey, blockNum);
     if (hashEntryPtr != (Hash_Entry *) NIL) {
 	blockPtr = (Fscache_Block *) Hash_GetValue(hashEntryPtr);
-
-	if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
-	    panic( "CacheBlockTrunc, hashing error\n");
-	} else {
-	    blockPtr->blockSize = newBlockSize;
-	}
+	blockPtr->blockSize = newBlockSize;
     }
 
     UNLOCK_MONITOR;
@@ -1595,10 +1584,6 @@ CacheFileInvalidate(cacheInfoPtr, firstBlock, lastBlock)
 		continue;
 	    }
 	    blockPtr = (Fscache_Block *) Hash_GetValue(hashEntryPtr);
-	    if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
-		panic( "CacheFileInvalidate, hashing error\n");
-		continue;
-	    }
 
 	    /*
 	     * Remove it from the hash table.
@@ -1757,12 +1742,6 @@ again:
 	}
 
 	blockPtr = (Fscache_Block *) Hash_GetValue(hashEntryPtr);
-
-	if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
-	    panic( "Fscache_FileWriteBack, hashing error\n");
-	    UNLOCK_MONITOR;
-	    return(FAILURE);
-	}
 
 	if (flags & (FSCACHE_WRITE_BACK_AND_INVALIDATE | FSCACHE_FILE_WB_WAIT)) {
 	    /*
@@ -1988,11 +1967,6 @@ FscacheBlocksUnneeded(cacheInfoPtr, offset, numBytes)
 
 	blockPtr = (Fscache_Block *) Hash_GetValue(hashEntryPtr);
 
-	if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
-	    panic( "CacheBlocksUnneeded, hashing error\n");
-	    continue;
-	}
-
 	if (blockPtr->refCount > 0) {
 	    /*
 	     * The block is locked.  This means someone is doing something with
@@ -2157,11 +2131,6 @@ CacheWriteBack(writeBackTime, blocksSkippedPtr, shutdown, writeTmpFiles)
     listPtr = lruList;
     LIST_FORALL(listPtr, (List_Links *) blockPtr) {
 	cacheInfoPtr = blockPtr->cacheInfoPtr;
-	if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
-	    printf("CacheWriteBack, skipping bad block on LRU list, file %d not %d\n",
-		blockPtr->fileNum, cacheInfoPtr->hdrPtr->fileID.minor);
-	    continue;
-	}
 	if (fsutil_DelayTmpFiles && !writeTmpFiles &&
 	    Fsdm_FindFileType(cacheInfoPtr) == FSUTIL_FILE_TYPE_TMP) {
 	    continue;
@@ -2273,10 +2242,6 @@ Fscache_CleanBlocks(data, callInfoPtr)
     while (cacheInfoPtr != (Fscache_FileInfo *)NIL) {
 	numDirtyFiles++;
 	while (blockPtr != (Fscache_Block *)NIL) {
-	    if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
-		panic( "Fscache_CleanBlocks, bad block\n");
-		continue;
-	    }
 	    if (blockPtr->blockSize < 0) {
 		panic( "Fscache_CleanBlocks, uninitialized block size\n");
 		status = FAILURE;
@@ -2550,12 +2515,6 @@ GetDirtyBlockInt(cacheInfoPtr, blockPtrPtr, lastDirtyBlockPtr)
 
     LIST_FORALL(&cacheInfoPtr->dirtyList, dirtyPtr) {
 	blockPtr = DIRTY_LINKS_TO_BLOCK(dirtyPtr);
-	if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
-	    UNLOCK_MONITOR;
-	    panic( "GetDirtyBlock, bad block\n");
-	    LOCK_MONITOR;
-	    continue;
-	}
 	if (blockPtr->refCount > 0) {
 	    /*
 	     * Being actively used.  Wait until it is not in use anymore in
@@ -2997,6 +2956,10 @@ FscacheAllBlocksInCache(cacheInfoPtr)
  *	called from Fscache_OkToScavenge which
  *	has already grabbed the per-file cache lock.
  *
+ *	Note:  this has some extra code to check against various bugs.
+ *	ideally it should only have to check against blocks in the
+ *	cache and being on the dirty list.
+ *
  * Results:
  *	TRUE if there are no blocks (clean or dirty) in the cache for this file.
  *
@@ -3019,7 +2982,12 @@ FscacheBlockOkToScavenge(cacheInfoPtr)
     numBlocks = cacheInfoPtr->blocksInCache;
     LIST_FORALL(&cacheInfoPtr->blockList, (List_Links *)linkPtr) {
 	blockPtr = FILE_LINKS_TO_BLOCK(linkPtr);
-	if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
+	/*
+	 * Verify that the block is attached to the right file.  Note that
+	 * if the file has been invalidated its minor field is negated.
+	 */
+	if ((blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) &&
+	    (blockPtr->fileNum != - cacheInfoPtr->hdrPtr->fileID.minor)) {
 	    UNLOCK_MONITOR;
 	    panic( "FsCacheFileBlocks, bad block\n");
 	    return(FALSE);
@@ -3039,6 +3007,33 @@ FscacheBlockOkToScavenge(cacheInfoPtr)
     }
     ok = (numBlocks == 0) &&
 	((cacheInfoPtr->flags & FSCACHE_FILE_ON_DIRTY_LIST) == 0);
+    if (ok) {
+	if (cacheInfoPtr->flags & FSCACHE_FILE_BEING_WRITTEN) {
+	    UNLOCK_MONITOR;
+	    panic("Fscache_OkToScavenge: FSCACHE_FILE_BEING_WRITTEN (continuable)\n");
+	    LOCK_MONITOR;
+	    ok = FALSE;
+	}
+	/*
+	 * Verify that this really isn't on the dirty list.
+	 */
+	linkPtr = dirtyList->nextPtr;
+	while (linkPtr != (List_Links *)NIL && linkPtr != dirtyList) {
+	    if (linkPtr == (List_Links *)cacheInfoPtr) {
+		UNLOCK_MONITOR;
+		panic("Fscache_OkToScavenge: file on dirty list (continuable)\n");
+		LOCK_MONITOR;
+		ok = FALSE;
+	    }
+	    linkPtr = linkPtr->nextPtr;
+	    if (linkPtr == (List_Links *)NIL) {
+		UNLOCK_MONITOR;
+		panic("Fscache_OkToScavenge: NIL on dirty list (continuable)\n");
+		LOCK_MONITOR;
+		ok = FALSE;
+	    }
+	}
+    }
     UNLOCK_MONITOR;
     return(ok);
 }
