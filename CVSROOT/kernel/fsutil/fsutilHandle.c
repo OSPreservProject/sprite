@@ -698,6 +698,7 @@ FsHandleReleaseHdr(hdrPtr, locked)
 	 * The handle has been removed, we are the last reference, and
 	 * noone in GetNextHandle is trying to grab this handle.
 	 */
+	fsStats.object.limbo--;
 	FS_TRACE_HANDLE(FS_TRACE_RELEASE_FREE, hdrPtr);
         REMOVE_HANDLE(hdrPtr);
      } else {
@@ -743,6 +744,7 @@ FsHandleRemoveInt(hdrPtr)
 	    LOCK_MONITOR;
 	    return;
 	}
+	Hash_SetValue(hashEntryPtr, NIL);
 	Hash_Delete(fileHashTable, hashEntryPtr);
     }
     fsStats.handle.exists--;
@@ -759,6 +761,7 @@ FsHandleRemoveInt(hdrPtr)
 	 * or simply has a reference to it.  GetNextHandle or HandleRelease
 	 * will free the handle for us later.
 	 */
+	fsStats.object.limbo++;
 	FS_TRACE_HANDLE(FS_TRACE_REMOVE_LEAVE, hdrPtr);
 	hdrPtr->flags |= FS_HANDLE_REMOVED;
     } else {
@@ -902,6 +905,7 @@ FsGetNextHandle(hashSearchPtr)
 	    UNLOCK_HANDLE(hdrPtr);
 	    if (hdrPtr->refCount == 0) {
 		FS_TRACE_HANDLE(FS_TRACE_GET_NEXT_FREE, hdrPtr);
+		fsStats.object.limbo--;
 		REMOVE_HANDLE(hdrPtr);
 	    }
 	    continue;
@@ -1051,6 +1055,7 @@ FsHandleInvalidate(hdrPtr)
 			hdrPtr->fileID.major, hdrPtr->fileID.minor);
 	    return;
 	}
+	Hash_SetValue(hashEntryPtr, NIL);
 	Hash_Delete(fileHashTable, hashEntryPtr);
 	hdrPtr->fileID.minor = -hdrPtr->fileID.minor;
     }
@@ -1099,9 +1104,10 @@ FsHandleDescWriteBack(shutdown, domain)
 	 hashEntryPtr = Hash_Next(fileHashTable, &hashSearch)) {
 	hdrPtr = (FsHandleHeader *) Hash_GetValue(hashEntryPtr);
 	if (hdrPtr == (FsHandleHeader *)NIL) {
-	    UNLOCK_MONITOR;
-	    panic("FsHandleDescWriteBack, no handle\n");
-	    return (lockedDesc);
+	    /*
+	     * Handle has been removed.
+	     */
+	    continue;
 	}
 	switch (hdrPtr->fileID.type) {
 	    case FS_LCL_FILE_STREAM: {
