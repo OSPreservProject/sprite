@@ -1738,13 +1738,13 @@ Fs_RpcConsist(srvToken, clientID, command, storagePtr)
     } else if (rmtHandlePtr->openTimeStamp != consistArgPtr->openTimeStamp) {
 	if (FsPrefixOpenInProgress(&consistArgPtr->fileID) == 0) {
 	    status = FS_STALE_HANDLE;
-	    printf("Fs_RpcConsist: <%d,%d> %s msg from %d timestamp %d not %d, %s\n",
+	    printf("Fs_RpcConsist: <%d,%d> %s msg from %d timestamp %d not %d\n\t version %d and %d, returning stale handle\n",
 		    consistArgPtr->fileID.major,
 		    consistArgPtr->fileID.minor,
 		    ConsistType(consistArgPtr->flags),
 		    consistArgPtr->fileID.serverID,
 		    consistArgPtr->openTimeStamp, rmtHandlePtr->openTimeStamp,
-		    "stale handle");
+		    consistArgPtr->version, rmtHandlePtr->cacheInfo.version);
 	} else {
 	    /*
 	     * Timestamp mis-match and an open in progress.
