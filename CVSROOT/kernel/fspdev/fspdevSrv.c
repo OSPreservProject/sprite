@@ -1589,10 +1589,7 @@ RequestResponse(pdevHandlePtr, requestPtr,
 	    /*
 	     * There is no room left at the end of the buffer.
 	     * We wait and then put the request at the beginning.
-	     * The server is poked in case we have been generating
-	     * requests that do not need a reply.
 	     */
-	    FsFastWaitListNotify(&pdevHandlePtr->srvReadWaitList);
 	    while (pdevHandlePtr->requestBuf.firstByte <
 		   pdevHandlePtr->requestBuf.lastByte) {
 		DBG_PRINT( (" (catch up) ") );
@@ -1644,22 +1641,24 @@ RequestResponse(pdevHandlePtr, requestPtr,
     }
 
     /*
-     * If this operation needs a reply we wait for it.  We save the client's
-     * reply buffer address and processID in the stream state so the
-     * kernel can copy the reply directly from the server's address space
-     * to the client's when the server makes the IOC_PDEV_REPLY IOControl.
+     * Poke the server so it can read the new pointer values.
+     * This is done here even if write-behind is enabled, even though our
+     * scheduler tends to wake up the server too soon.
+     * Although it is possible to put a notify in about 3 other places
+     * to catch cases where the client does a write-behind and then waits,
+     * not all clients are clever enough to use select.  That solution results
+     * in cases where a write can linger a long time in the request buffer.
+     * (cat /dev/syslog in a tx window is a good test case.)
      */
+    FsFastWaitListNotify(&pdevHandlePtr->srvReadWaitList);
 
-    if (replySize >= 0) {
+    if (replySize >= 0) {  
 	/*
-	 * Poke the server so it can read the new pointer values.
-	 * This is done here to avoid waking up the server if we
-	 * don't need a reply.  However, this also requires a
-	 * patch in FsPseudoStreamSelect to notify this condition.
-	 * Otherwise the server can get lost in select if the
-	 * client also goes into select after an asynchronous write.
+	 * If this operation needs a reply we wait for it.  We save the client's
+	 * reply buffer address and processID in the stream state so the
+	 * kernel can copy the reply directly from the server's address space
+	 * to the client's when the server makes the IOC_PDEV_REPLY IOControl.
 	 */
-	FsFastWaitListNotify(&pdevHandlePtr->srvReadWaitList);
     
 	procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
 	pdevHandlePtr->replyBuf = replyBuf;
@@ -1886,13 +1885,8 @@ FsPseudoStreamRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
 	    firstByte += toRead;
 	    pdevHandlePtr->readBuf.firstByte = firstByte;
 	    pdevHandlePtr->flags |= PDEV_READ_PTRS_CHANGED;
+	    FsFastWaitListNotify(&pdevHandlePtr->srvReadWaitList);
 	}
-	/*
-	 * Always notify the server.  Either we just changed the
-	 * read pointers, or perhaps the last thing we did was an
-	 * asynchronous write in which we didn't notify the server.
-	 */
-	FsFastWaitListNotify(&pdevHandlePtr->srvReadWaitList);
     } else {
 	Proc_ControlBlock	*procPtr;
 
@@ -2222,12 +2216,6 @@ FsPseudoStreamSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
             *exceptPtr = 0;
 	    FsFastWaitListInsert(&pdevHandlePtr->cltExceptWaitList, waitPtr);
 	}
-	/*
-	 * We have to notify the server in case our last operation
-	 * did not require a reply.  In that case we don't notify the
-	 * server (FIX THE SCHEDULER) so we have to here.
-	 */
-	FsFastWaitListNotify(&pdevHandlePtr->srvReadWaitList);
 	status = SUCCESS;
     }
     UNLOCK_MONITOR;
