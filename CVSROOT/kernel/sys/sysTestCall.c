@@ -25,11 +25,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 
 #if !defined(sun4) && !defined(sun4c)
+struct test_args {
+    int argArray[SYS_MAX_ARGS];
+};
+
 int 
 Test_PrintOut(args)
-    struct {
-	int argArray[SYS_MAX_ARGS];
-    } args;
+    struct test_args args;
 {
     struct {
 	int 	arg;
