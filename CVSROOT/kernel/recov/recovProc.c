@@ -259,24 +259,18 @@ RecovAddHostToPing(spriteID)
  */
 
 static void
-Deactivate(spriteID)
-    int spriteID;
-{
+Deactivate(pingPtr)
     RecovPing *pingPtr;
+{
     LOCK_MONITOR;
 
-    LIST_FORALL(recovPingList, (List_Links *)pingPtr) {
-	if (pingPtr->spriteID == spriteID) {
-	    if (pingPtr->active) {
-		recov_Stats.numHostsPinged--;
-		pingPtr->active = FALSE;
-	    }
-	    UNLOCK_MONITOR;
-	    return;
-	}
+    if (pingPtr->active) {
+	recov_Stats.numHostsPinged--;
+	pingPtr->active = FALSE;
     }
 
     UNLOCK_MONITOR;
+
 }
 
 
