@@ -255,6 +255,7 @@ typedef struct Fsdm_FileDescriptor {
  * FSDM_LOG_START_ENTRY		Start of change entry
  * FSDM_LOG_END_ENTRY		End of change entry
  * FSDM_LOG_STILL_OPEN		File is still open after last unlink.
+ * FSDM_LOG_IS_DIRECTORY	File is a directory.
  */
 
 #define	FSDM_LOG_CREATE		1
@@ -268,7 +269,7 @@ typedef struct Fsdm_FileDescriptor {
 #define	FSDM_LOG_START_ENTRY	0x100
 #define	FSDM_LOG_END_ENTRY	0x200
 #define	FSDM_LOG_STILL_OPEN	0x1000
-
+#define FSDM_LOG_IS_DIRECTORY	0x2000
 
 #ifdef KERNEL
 /*
