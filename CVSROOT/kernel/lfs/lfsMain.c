@@ -402,6 +402,25 @@ Lfs_Command(command, bufSize, buffer)
 	    Fsdm_DomainRelease(domainPtr->domainNumber);
 	    return status;
 	}
+	case FS_ADJUST_SEG_USAGE_LFS_COMMAND: {
+	    int	segNumber, activeBytes;
+	    status = GetDomainFromCmdArgs(&bufSize, &buffer, &domainPtr);
+	    if (status != SUCCESS) {
+		return status;
+	    }
+	    lfsPtr = (Lfs *) domainPtr->clientData;
+	    if (bufSize >= sizeof(int)*2) {
+		bcopy(buffer, (char *) &segNumber, sizeof(int));
+		bcopy(buffer+sizeof(int), (char *) &activeBytes, sizeof(int));
+		printf("LfsSetSegUsage(%s,%d,%d)\n", lfsPtr->name, 
+				segNumber, activeBytes);
+		LfsSetSegUsage(lfsPtr, segNumber, activeBytes);
+	    } else {
+		status = GEN_INVALID_ARG;
+	    }
+
+	    return status;
+	}
 	default: {
 	    status = GEN_INVALID_ARG;
 	}
