@@ -19,8 +19,9 @@
 #ifndef _FSCONSIST
 #define _FSCONSIST
 
-#include "fs.h"
-#include "fsio.h"
+#include <fs.h>
+#include <fsio.h>
+#include <rpc.h>
 
 /*
  * Flags to determine what type of consistency operation is required.
@@ -90,7 +91,7 @@ typedef struct Fsconsist_Info {
 typedef struct Fsconsist_ClientInfo {
     List_Links	links;		/* This hangs in a list off the I/O handle */
     int		clientID;	/* The sprite ID of this client. */
-    Fsutil_UseCounts use;		/* Usage info for the client.  Used to clean
+    Fsio_UseCounts use;		/* Usage info for the client.  Used to clean
 				 * up summary counts when client crashes. */
     /*
      * The following fields are only used by regular files.
@@ -130,40 +131,77 @@ typedef struct Fsconsist_ClientInfo {
 	free((Address) clientPtr);
 
 /*
+ * This header file (fsioFile.h) is needed to define Fsio_FileIOHandle for the
+ * function prototypes below. It must occur after Fsconsist_Info is defined.
+ */
+#include <fsioFile.h>
+/*
  * Client list routines.
  */
-extern void		Fsconsist_ClientInit();
-extern Fsconsist_ClientInfo	*Fsconsist_IOClientOpen();
-extern Boolean		Fsconsist_IOClientClose();
-extern Boolean		Fsconsist_IOClientRemoveWriter();
-extern void		Fsconsist_IOClientKill();
-extern void		Fsconsist_IOClientStatus();
+extern void Fsconsist_ClientInit _ARGS_((void));
+extern Fsconsist_ClientInfo *Fsconsist_IOClientOpen _ARGS_((
+			List_Links *clientList, int clientID, int useFlags,
+			Boolean cached));
+extern Boolean Fsconsist_IOClientReopen _ARGS_((List_Links *clientList, 
+			int clientID, Fsio_UseCounts *usePtr));
+extern Boolean Fsconsist_IOClientClose _ARGS_((List_Links *clientList, 
+			int clientID, int flags, Boolean *cachePtr));
+extern Boolean Fsconsist_IOClientRemoveWriter _ARGS_((List_Links *clientList,
+			int clientID));
+extern void Fsconsist_IOClientKill _ARGS_((List_Links *clientList, int clientID,
+			int *refPtr, int *writePtr, int *execPtr));
+extern void Fsconsist_IOClientStatus _ARGS_((List_Links *clientList, 
+			int clientID, Fsio_UseCounts *clientUsePtr));
 
 
-extern void		Fsconsist_ClientScavenge();
 
 /*
  * Cache consistency routines.
  */
-extern void		Fsconsist_Init();
-extern void		Fsconsist_SyncLockCleanup();
-extern ReturnStatus	Fsconsist_FileConsistency();
-extern void		Fsconsist_ReopenClient();
-extern ReturnStatus	Fsconsist_ReopenConsistency();
-extern ReturnStatus	Fsconsist_MigrateConsistency();
-extern void		Fsconsist_GetClientAttrs();
-extern Boolean		Fsconsist_Close();
-extern void		Fsconsist_DeleteLastWriter();
-extern void		Fsconsist_ClientRemoveCallback();
-extern void		Fsconsist_Kill();
-extern void		Fsconsist_GetAllDirtyBlocks();
-extern void		Fsconsist_FetchDirtyBlocks();
+extern void Fsconsist_Init _ARGS_(( Fsconsist_Info *consistPtr,
+			Fs_HandleHeader *hdrPtr));
+extern void Fsconsist_SyncLockCleanup _ARGS_((Fsconsist_Info *consistPtr));
+extern ReturnStatus Fsconsist_MappedConsistency _ARGS_((
+			Fsio_FileIOHandle *handlePtr, int clientID, 
+			int isMapped));
+extern ReturnStatus Fsconsist_FileConsistency _ARGS_((
+			Fsio_FileIOHandle *handlePtr, int clientID, 
+			int useFlags, Boolean *cacheablePtr, 
+			int *openTimeStampPtr));
 
-extern ReturnStatus	Fsconsist_RpcConsist();
-extern ReturnStatus	Fsconsist_RpcConsistReply();
+extern void Fsconsist_ReopenClient _ARGS_((Fsio_FileIOHandle *handlePtr, 
+			int clientID, Fsio_UseCounts use, 
+			Boolean haveDirtyBlocks));
+extern ReturnStatus Fsconsist_ReopenConsistency _ARGS_((
+			Fsio_FileIOHandle *handlePtr, int clientID, 
+			Fsio_UseCounts use, int swap, Boolean *cacheablePtr, 
+			int *openTimeStampPtr));
+extern ReturnStatus Fsconsist_MigrateConsistency _ARGS_((
+			Fsio_FileIOHandle *handlePtr, int srcClientID, 
+			int dstClientID, int useFlags, Boolean closeSrc, 
+			Boolean *cacheablePtr, int *openTimeStampPtr));
+extern void Fsconsist_GetClientAttrs _ARGS_((Fsio_FileIOHandle *handlePtr, 
+			int clientID, Boolean *isExecedPtr));
+extern Boolean Fsconsist_Close _ARGS_((register Fsconsist_Info *consistPtr, 
+			int clientID, int flags, Boolean *wasCachedPtr));
 
-extern int Fsconsist_NumClients();
-extern Boolean		Fsconsist_IOClientReopen();
-extern void Fsconsist_AddClient();
+extern void Fsconsist_DeleteLastWriter _ARGS_((Fsconsist_Info *consistPtr, 
+			int clientID));
+extern void Fsconsist_ClientRemoveCallback _ARGS_((Fsconsist_Info *consistPtr,
+			int clientID));
+extern void Fsconsist_Kill _ARGS_((Fsconsist_Info *consistPtr, int clientID, 
+			int *refPtr, int *writePtr, int *execPtr));
+extern void Fsconsist_GetAllDirtyBlocks _ARGS_((int domain, Boolean invalidate));
+extern void Fsconsist_FetchDirtyBlocks _ARGS_((Fsconsist_Info *consistPtr, 
+			Boolean invalidate));
+
+extern ReturnStatus Fsconsist_RpcConsist _ARGS_((ClientData srvToken, 
+			int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsconsist_RpcConsistReply _ARGS_((ClientData srvToken, 
+			int clientID, int command, Rpc_Storage *storagePtr));
+
+extern int Fsconsist_NumClients _ARGS_((Fsconsist_Info *consistPtr));
+extern void Fsconsist_AddClient _ARGS_((int clientID));
+
 
 #endif _FSCONSIST
