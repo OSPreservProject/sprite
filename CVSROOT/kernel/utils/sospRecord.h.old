@@ -1,0 +1,354 @@
+#ifdef SOSP91
+/*
+ * sospRecord.h --
+ *
+ *	Declarations of macros to insert log records for the sosp paper
+ *	measurements.
+ *
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header$ SPRITE (Berkeley)
+ */
+
+#ifndef _SOSP_RECORD
+#define _SOSP_RECORD
+
+
+#ifdef KERNEL
+#include <traceLog.h>
+#include <fs.h>
+#endif
+
+/*
+ * Definitions for the types of log records.  These are the events being
+ * traced.
+ */
+#define	SOSP_OPEN	1
+#define	SOSP_DELETE	2
+#define	SOSP_CREATE	3
+#define	SOSP_MKLINK	4
+#define	SOSP_SET_ATTR	5
+#define	SOSP_GET_ATTR	6
+#define	SOSP_LSEEK	7
+#define	SOSP_CLOSE	8
+#define	SOSP_MIGRATE	9
+#define	SOSP_TRUNCATE	10
+#define	SOSP_CONSIST	11
+#define	SOSP_READ	12
+
+#ifdef KERNEL
+/*
+ * The following are macros to call for each type of event to trace.  All
+ * parameters are int's, unless otherwise marked (such as Fs_FileID's).
+ */
+
+/*
+ * Trace an open command.  The parameters are
+ *
+ * currentHostID:	Current client requesting open command
+ * homeHostID:		HostID of process requesting open before migration
+ * fileID		The file ID for the file being opened
+ * streamID		Fs_FileID in the header of stream returned for this open
+ * userID:		User id associated with process doing the open
+ * mode			Mode flags of the open command
+ * numAlreadyReading	Number of clients with file already open for reading
+ * numAlreadyWriting	Number of clients with file already open for writing
+ * fileAge		The create time for the file
+ * fileSize		Size in bytes of the file
+ * fileIDSetPtr		A pointer to Fs_FileIDs for path components of the file,
+ *			arranged one right right after another in memory.
+ * numFileIDs		The number of file IDs in the previous parameter
+ */
+#define	SOSP_ADD_OPEN_TRACE(currentHostID, homeHostID, fileID, streamID,\
+	userID, mode, numAlreadyReading, numAlreadyWriting, fileAge,\
+	fileSize, fileIDSetPtr, numFileIDs)\
+{\
+	unsigned int	sospBuffer[512];\
+\
+	sospBuffer[0] = SOSP_OPEN;\
+	sospBuffer[1] = currentHostID;\
+	sospBuffer[2] = homeHostID;\
+	sospBuffer[3] = userID;\
+	*((Fs_FileID *) &(sospBuffer[4])) = fileID;\
+	*((Fs_FileID *) &(sospBuffer[8])) = streamID;\
+	sospBuffer[12] = mode;\
+	sospBuffer[13] = numAlreadyReading;\
+	sospBuffer[14] = numAlreadyWriting;\
+	sospBuffer[15] = fileAge;\
+	sospBuffer[16] = fileSize;\
+	bcopy((char *) fileIDSetPtr, (char *) &(sospBuffer[17]),\
+		numFileIDs * sizeof (Fs_FileID));\
+	TraceLog_Insert(SOSP91Trace, (ClientData *) sospBuffer,\
+		(17 * sizeof (int)) + (numFileIDs * sizeof (Fs_FileID)),\
+		SOSP_OPEN);\
+}
+
+/*
+ * Trace a delete operation.  The fields are
+ * 
+ * currentHostID:	Current client requesting delete
+ * homeHostID:		HostID of process requesting delete before migration
+ * fileID		The file ID for the file being deleted
+ * fileAge		The create time for the file
+ * fileSize		Size in bytes of the file
+ * fileIDSetPtr		A pointer to Fs_FileIDs for path components of the file,
+ *			arranged one right right after another in memory.
+ * numFileIDs		The number of file IDs in the previous parameter
+ */ 
+#define	SOSP_ADD_DELETE_TRACE(currentHostID, homeHostID, fileID,\
+	fileAge, fileSize, fileIDSetPtr, numFileIDs)\
+{\
+	unsigned int	sospBuffer[512];\
+\
+	sospBuffer[0] = SOSP_DELETE;\
+	sospBuffer[1] = currentHostID;\
+	sospBuffer[2] = homeHostID;\
+	*((Fs_FileID *) &(sospBuffer[3])) = fileID;\
+	sospBuffer[7] = fileAge;\
+	sospBuffer[8] = fileSize;\
+	bcopy((char *) fileIDSetPtr, (char *) &(sospBuffer[9]),\
+		numFileIDs * sizeof (Fs_FileID));\
+	TraceLog_Insert(SOSP91Trace, (ClientData *) sospBuffer,\
+		(9 * sizeof (int)) + (numFileIDs * sizeof (Fs_FileID)),\
+		SOSP_DELETE);\
+}
+	
+/*
+ * Trace a create operation.  The fields are
+ * 
+ * currentHostID:	Current client requesting create command
+ * homeHostID:		HostID of process requesting create before migration
+ * fileID		The file ID for the file being created
+ * fileIDSetPtr		A pointer to Fs_FileIDs for path components of the file,
+ *			arranged one right right after another in memory.
+ * numFileIDs		The number of file IDs in the previous parameter
+ */ 
+#define	SOSP_ADD_CREATE_TRACE(currentHostID, homeHostID, fileID,\
+	fileIDSetPtr, numFileIDs)\
+{\
+	unsigned int	sospBuffer[512];\
+\
+	sospBuffer[0] = SOSP_DELETE;\
+	sospBuffer[1] = currentHostID;\
+	sospBuffer[2] = homeHostID;\
+	*((Fs_FileID *) &(sospBuffer[3])) = fileID;\
+	bcopy((char *) fileIDSetPtr, (char *) &(sospBuffer[7]),\
+		numFileIDs * sizeof (Fs_FileID));\
+	TraceLog_Insert(SOSP91Trace, (ClientData *) sospBuffer,\
+		(7 * sizeof (int)) + (numFileIDs * sizeof (Fs_FileID)),\
+		SOSP_DELETE);\
+}
+
+/*
+ * Trace a mklink operation.  The fields are
+ * 
+ * currentHostID:	Current client requesting mklink command
+ * homeHostID:		HostID of process requesting mklink before migration
+ * fileID		The file ID for the file being mklink'ed
+ * fileIDSetPtr		A pointer to Fs_FileIDs for path components of the file,
+ *			arranged one right right after another in memory.
+ * numFileIDs		The number of file IDs in the previous parameter
+ */ 
+#define	SOSP_ADD_MKLINK_TRACE(currentHostID, homeHostID, fileID,\
+	fileIDSetPtr, numFileIDs)\
+{\
+	unsigned int	sospBuffer[512];\
+\
+	sospBuffer[0] = SOSP_MKLINK;\
+	sospBuffer[1] = currentHostID;\
+	sospBuffer[2] = homeHostID;\
+	*((Fs_FileID *) &(sospBuffer[3])) = fileID;\
+	bcopy((char *) fileIDSetPtr, (char *) &(sospBuffer[7]),\
+		numFileIDs * sizeof (Fs_FileID));\
+	TraceLog_Insert(SOSP91Trace, (ClientData *) sospBuffer,\
+		(7 * sizeof (int)) + (numFileIDs * sizeof (Fs_FileID)),\
+		SOSP_MKLINK);\
+}
+
+
+/*
+ * Trace a set attr operation.  The fields are
+ * 
+ * currentHostID:	Current client requesting set attr command
+ * homeHostID:		HostID of process requesting set attr before migration
+ * fileID		The file ID for the file being set attr'ed
+ * fileIDSetPtr		A pointer to Fs_FileIDs for path components of the file,
+ *			arranged one right right after another in memory.
+ * numFileIDs		The number of file IDs in the previous parameter
+ */ 
+#define	SOSP_ADD_SET_ATTR_TRACE(currentHostID, homeHostID, fileID,\
+	fileIDSetPtr, numFileIDs)\
+{\
+	unsigned int	sospBuffer[512];\
+\
+	sospBuffer[0] = SOSP_SET_ATTR;\
+	sospBuffer[1] = currentHostID;\
+	sospBuffer[2] = homeHostID;\
+	*((Fs_FileID *) &(sospBuffer[3])) = fileID;\
+	bcopy((char *) fileIDSetPtr, (char *) &(sospBuffer[7]),\
+		numFileIDs * sizeof (Fs_FileID));\
+	TraceLog_Insert(SOSP91Trace, (ClientData *) sospBuffer,\
+		(7 * sizeof (int)) + (numFileIDs * sizeof (Fs_FileID)),\
+		SOSP_SET_ATTR);\
+}
+
+
+/*
+ * Trace a get attr operation.  The fields are
+ * 
+ * currentHostID:	Current client requesting get attr command
+ * homeHostID:		HostID of process requesting get attr before migration
+ * fileID		The file ID for the file being get attr'ed
+ * fileIDSetPtr		A pointer to Fs_FileIDs for path components of the file,
+ *			arranged one right right after another in memory.
+ * numFileIDs		The number of file IDs in the previous parameter
+ */ 
+#define	SOSP_ADD_GET_ATTR_TRACE(currentHostID, homeHostID, fileID,\
+	fileIDSetPtr, numFileIDs)\
+{\
+	unsigned int	sospBuffer[512];\
+\
+	sospBuffer[0] = SOSP_GET_ATTR;\
+	sospBuffer[1] = currentHostID;\
+	sospBuffer[2] = homeHostID;\
+	*((Fs_FileID *) &(sospBuffer[3])) = fileID;\
+	bcopy((char *) fileIDSetPtr, (char *) &(sospBuffer[7]),\
+		numFileIDs * sizeof (Fs_FileID));\
+	TraceLog_Insert(SOSP91Trace, (ClientData *) sospBuffer,\
+		(7 * sizeof (int)) + (numFileIDs * sizeof (Fs_FileID)),\
+		SOSP_GET_ATTR);\
+}
+
+/*
+ * Trace an lseek operation.  The fields are
+ * 
+ * streamID		Fs_FileID in the header of stream for this operation
+ * oldOffset		Offset of stream before lseek
+ * newOffset		Offset of stream after lseek
+ */ 
+#define	SOSP_ADD_LSEEK_TRACE(streamID, oldOffset, newOffset)\
+{\
+	unsigned int	sospBuffer[7];\
+\
+	sospBuffer[0] = SOSP_LSEEK;\
+	*((Fs_FileID *) &(sospBuffer[1])) = streamID;\
+	sospBuffer[5] = oldOffset;\
+	sospBuffer[6] = newOffset;\
+	TraceLog_Insert(SOSP91Trace, (ClientData *) sospBuffer,\
+		(7 * sizeof (int)),SOSP_LSEEK);\
+}
+
+/*
+ * Trace a close operation.  The fields are
+ * 
+ * streamID		Fs_FileID in the header of stream for this operation
+ * currentOffset	Offset of stream
+ * fileSize		Size of file being closed
+ */ 
+#define	SOSP_ADD_CLOSE_TRACE(streamID, currentOffset, fileSize)\
+{\
+	unsigned int	sospBuffer[7];\
+\
+	sospBuffer[0] = SOSP_CLOSE;\
+	*((Fs_FileID *) &(sospBuffer[1])) = streamID;\
+	sospBuffer[5] = currentOffset;\
+	sospBuffer[6] = fileSize;\
+	TraceLog_Insert(SOSP91Trace, (ClientData *) sospBuffer,\
+		(7 * sizeof (int)),SOSP_CLOSE);\
+}
+
+/*
+ * Trace a migrate operation.  The fields are
+ * 
+ * fromHostID:		Current client requesting migrate command
+ * toHostID:		HostID of machine to which to migrate
+ * streamID		Fs_FileID in the header of stream for this operation
+ * currentOffset	Offset of stream
+ */ 
+#define	SOSP_ADD_MIGRATE_TRACE(fromHostID, toHostID, streamID, currentOffset)\
+{\
+	unsigned int	sospBuffer[8];\
+\
+	sospBuffer[0] = SOSP_MIGRATE;\
+	sospBuffer[1] = fromHostID;\
+	sospBuffer[2] = toHostID;\
+	*((Fs_FileID *) &(sospBuffer[3])) = streamID;\
+	sospBuffer[7] = currentOffset;\
+	TraceLog_Insert(SOSP91Trace, (ClientData *) sospBuffer,\
+	(8 * sizeof (int)),SOSP_MIGRATE);\
+}
+
+/*
+ * Trace a truncate operation.  The fields are
+ * 
+ * streamID		Fs_FileID in the header of stream for this operation
+ * newLength		New length of the file
+ */ 
+#define	SOSP_ADD_TRUNCATE_TRACE(streamID, newLength)\
+{\
+	unsigned int	sospBuffer[8];\
+\
+	sospBuffer[0] = SOSP_TRUNCATE;\
+	*((Fs_FileID *) &(sospBuffer[1])) = streamID;\
+	sospBuffer[5] = newLength;\
+	TraceLog_Insert(SOSP91Trace, (ClientData *) sospBuffer,\
+		(8 * sizeof (int)),SOSP_TRUNCATE);\
+}
+
+/*
+ * Trace a consistency operation.  The fields are
+ * 
+ * causingHostID:	ID of host causing the consistency change
+ * affectedHostID:	ID of host affected by consistency change
+ * streamID		Stream ID of file causing the fuss
+ * flushCache		Whether the action to take on the client is flushing
+			the cache (TRUE) or invalidating the cache (FALSE)
+ */ 
+#define	SOSP_ADD_CONSISTENCY_TRACE(causingHostID, affectedHostID, streamID,\
+	flushCache)\
+{\
+	unsigned int	sospBuffer[8];\
+\
+	sospBuffer[0] = SOSP_CONSISTENCY;\
+	sospBuffer[1] = causingHostID;\
+	sospBuffer[2] = affectedHostID;\
+	*((Fs_FileID *) &(sospBuffer[3])) = streamID;\
+	sospBuffer[7] = flushCache;\
+	TraceLog_Insert(SOSP91Trace, (ClientData *) sospBuffer,\
+		(8 * sizeof (int)),SOSP_CONSISTENCY);\
+}
+
+/*
+ * Trace a read operation on a write-shared file.  The fields are
+ * 
+ * hostID:		ID of host causing the consistency change
+ * streamID		Stream ID of file causing the fuss
+ * readIt		Whether the request is to read the file (TRUE) or
+ *			to write the file (FALSE)
+ * offset		Offset in the file at which to start operation
+ * numBytes		Number of bytes to read or write
+ */ 
+#define	SOSP_ADD_READ_TRACE(hostID, streamID, readIt, offset, numBytes)\
+{\
+	unsigned int	sospBuffer[9];\
+\
+	sospBuffer[0] = SOSP_READ;\
+	sospBuffer[1] = hostID;\
+	*((Fs_FileID *) &(sospBuffer[2])) = streamID;\
+	sospBuffer[6] = readIt;\
+	sospBuffer[7] = offset;\
+	sospBuffer[8] = numBytes;\
+	TraceLog_Insert(SOSP91Trace, (ClientData *) sospBuffer,\
+		(9 * sizeof (int)),SOSP_READ);\
+}
+
+#endif /* KERNEL */
+#endif /* _SOSP_RECORD */
+#endif /* SOSP91 */
