@@ -25,7 +25,7 @@
 #include "proc.h"
 
 /*
- * (New) Parameters for the read and write RPCs.
+ * Parameters for the read and write RPCs.
  */
 
 typedef struct FsRemoteIOParam {
@@ -36,7 +36,7 @@ typedef struct FsRemoteIOParam {
 } FsRemoteIOParam;
 
 /*
- * (New) Parameters for the I/O Control RPC.
+ * Parameters for the I/O Control RPC.
  */
 
 typedef struct FsRemoteIOCParam {
@@ -44,38 +44,6 @@ typedef struct FsRemoteIOCParam {
     Fs_FileID	streamID;	/* Stream to the file, needed for locking */
     Fs_IOCParam	ioc;		/* IOControl parameter block */
 } FsRemoteIOCParam;
-
-/*
- * Parameters for the read RPC.
- */
-
-typedef struct FsRemoteReadParams {
-    Fs_FileID	fileID;			/* Identifies file to read from */
-    Fs_FileID	streamID;		/* Identifies stream (for offset) */
-    int		offset;			/* Byte offset at which to read */
-    int		length;			/* Byte amount to read */
-    int		flags;			/* FS_CLIENT_CACHE_READ if file is
-					 * being cached. FS_RMT_SHARED if
-					 * the server's offset is to be used */
-    Sync_RemoteWaiter waiter;		/* Process info for remote waiting */
-    Proc_PID	pid, familyID;		/* Process ID and Family ID of this
-					 * process used to read from
-					 * a remote device */
-} FsRemoteReadParams;
-
-/*
- * Parameters for the write RPC.
- */
-
-typedef struct FsRemoteWriteParams {
-    Fs_FileID	fileID;			/* File to write to */
-    Fs_FileID	streamID;		/* Stream to write to (for offset) */
-    int		offset;			/* Byte offset at which to write */
-    int		length;			/* Byte amout to write */
-    int		flags;			/* FS_APPEND | FS_CLIENT_CACHE_WRITE
-					 * FS_LAST_DIRTY_BLOCK | FS_RMT_SHARED*/
-    Sync_RemoteWaiter waiter;		/* Process info for remote waiting */
-} FsRemoteWriteParams;
 
 
 /*
