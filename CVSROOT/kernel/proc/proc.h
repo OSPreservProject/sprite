@@ -612,6 +612,7 @@ extern	Boolean			Proc_HasPermission();
 
 extern	void			Proc_ServerInit();
 extern	void			Proc_CallFunc();
+extern	void			Proc_CancelCallFunc();
 extern	ClientData		Proc_CallFuncAbsTime();
 extern	void			Proc_ServerProc();
 extern	int			proc_NumServers;
