@@ -180,7 +180,7 @@ static char	buffer[8192];
 
 void	SetVal();
 
-#define SETVAR(var, val) SetVal("var", val, (int *)&(var))
+#define SETVAR(var, val) SetVal(#var, val, (int *)&(var))
 
 
 /*
