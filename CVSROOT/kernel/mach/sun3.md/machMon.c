@@ -15,7 +15,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "machMon.h"
 #include "machConst.h"
 #include "machInt.h"
-#include "char.h"
+#include "ctype.h"
 #include "vmMachInt.h"
 #include "mach.h"
 #include "sys.h"
@@ -49,7 +49,7 @@ Mach_MonPutChar(ch)
 {
     int		oldContext;
 
-    if (!Char_IsAscii(ch)) {
+    if (!isascii(ch)) {
 	return;
     }
     DISABLE_INTR();
