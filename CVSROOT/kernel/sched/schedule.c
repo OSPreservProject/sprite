@@ -614,9 +614,12 @@ IdleLoop()
     if (procPtr->state != PROC_READY) {
 	/*
 	 * Unlock sched_Mutex because panic tries to grab it somewhere.
+	 * Do the panic by hand, without syncing the disks, because
+	 * we still deadlock someplace.
 	 */
 	MASTER_UNLOCK(sched_MutexPtr);
-	panic("Non-ready process found in ready queue.\n");
+	printf("Fatal Error: Non-ready process found in ready queue.\n");
+	DBG_CALL;
 	MASTER_LOCK(sched_MutexPtr);
     }
     ((List_Links *)procPtr)->prevPtr->nextPtr =
