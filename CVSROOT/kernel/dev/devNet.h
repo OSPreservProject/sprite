@@ -73,8 +73,9 @@
 #define DEV_NET_PROTO_RARP	0x2	/* Rarp packets. */
 #define DEV_NET_PROTO_IP	0x3	/* IP packets. */
 #define DEV_NET_PROTO_DEBUG	0x4	/* Sprite debugger packets. */
+#define DEV_NET_PROTO_MOP	0x5	/* MOP packets. */
 
-#define DEV_NET_NUM_PROTO	5
+#define DEV_NET_NUM_PROTO	6
 
 /*
  * Forward routines.

@@ -742,7 +742,8 @@ ProtocolFromDevice(unitProto, interPtr, protoPtr)
 	     NET_ETHER_ARP, 
 	     NET_ETHER_REVARP,
 	     NET_ETHER_IP, 
-	     NET_ETHER_SPRITE_DEBUG},
+	     NET_ETHER_SPRITE_DEBUG,
+	     NET_ETHER_MOP},
 	/* NET_NETWORK_ULTRA */
 	    {0, /* Doesn't match any. */
 	     0,
