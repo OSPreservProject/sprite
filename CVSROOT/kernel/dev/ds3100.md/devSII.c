@@ -866,11 +866,13 @@ entryAvailProc(clientData, newRequestPtr)
    ClientData	clientData;	/* Really the Device this request ready. */
    List_Links	*newRequestPtr;	/* The new SCSI request. */
 {
-    register Device	 *devPtr = (Device *) clientData;
-    register Controller	*ctrlPtr = devPtr->ctrlPtr;
-    register ScsiCmd	*scsiCmdPtr = (ScsiCmd *) newRequestPtr;
+    register Device	 *devPtr;
+    register Controller	*ctrlPtr;
+    register ScsiCmd	*scsiCmdPtr;
     ReturnStatus	status;
 
+    devPtr = (Device *) clientData;
+    ctrlPtr = devPtr->ctrlPtr;
     /*
      * If we are busy (have an active request) just return. Otherwise 
      * start the request.
@@ -879,6 +881,9 @@ entryAvailProc(clientData, newRequestPtr)
     if (ctrlPtr->scsiCmdPtr != (ScsiCmd *) NIL) {
 	return FALSE;
     }
+again:
+    scsiCmdPtr = (ScsiCmd *) newRequestPtr;
+    devPtr = (Device *) clientData;
     status = SendCommand((Device *) devPtr, scsiCmdPtr);
     /*	
      * If the command couldn't be started do the callback function.
@@ -887,6 +892,13 @@ entryAvailProc(clientData, newRequestPtr)
 	 MASTER_UNLOCK(&(ctrlPtr->mutex));
 	 RequestDone(devPtr,scsiCmdPtr,status,0,0);
 	 MASTER_LOCK(&(ctrlPtr->mutex));
+    }
+    if (ctrlPtr->scsiCmdPtr == (ScsiCmd *) NIL) {
+        newRequestPtr = Dev_QueueGetNextFromSet(ctrlPtr->devQueues,
+                                DEV_QUEUE_ANY_QUEUE_MASK,&clientData);
+        if (newRequestPtr != (List_Links *) NIL) {
+            goto again;
+        }
     }
     return TRUE;
 
