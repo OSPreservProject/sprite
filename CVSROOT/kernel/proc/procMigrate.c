@@ -118,11 +118,6 @@ Proc_Migrate(pid, nodeID)
 	return(status);
     }
     
-    /*
-     * Currently not allowed to migrate yourself.   (Worth trying sometime,
-     * though.)
-     */
-    
     if (Proc_ComparePIDs(pid, PROC_MY_PID)) {
 	migrateSelf = TRUE;
 	procPtr = Proc_GetActualProc();
@@ -355,6 +350,14 @@ Proc_MigrateTrap(procPtr)
     procPtr->genFlags = (procPtr->genFlags & ~PROC_MIGRATING) |
 	    PROC_MIGRATION_DONE;
     Proc_Unlock(procPtr);
+
+    /*
+     * If not migrating back home, note the dependency on the other host.
+     */
+    if (!foreign) {
+	Proc_AddMigDependency(procPtr->processID, nodeID);
+    }
+    
     WakeupCallers();
     if (proc_DoTrace && proc_MigDebugLevel > 1) {
 	record.flags = (foreign ? 0 : PROC_MIGTRACE_HOME);
@@ -1230,16 +1233,11 @@ Proc_MigrateStartTracing()
  *
  * Proc_DestroyMigratedProc --
  *
- *	Kill a local copy of a migrated process (this is an asynchronous
- *	Proc_Exit performed on behalf of a migrated process that has
- *	been signaled, and the signal has timed out).
- *
- * 	Right now, this happens only if the process is killed with a
- *	SIG_KILL.  We should also be able to kill local copies of a
- *	process that is interrupted with ^C, but determining whether
- *	the ^C would be caught requires a few other changes we haven't
- *	made yet, such as keeping the signal state up-to-date on the
- *	home node.
+ *	Kill a process, presumably when its peer host (the home node
+ *	of a foreign process, or the remote host of a migrated process)
+ *	is down.  It may also be done if the process is
+ *	unsuccessfully killed with a signal, even if the remote node
+ *	hasn't been down long enough to be sure it has crashed.
  *
  * Results:
  *	None.
@@ -1251,16 +1249,40 @@ Proc_MigrateStartTracing()
  */
 
 void 
-Proc_DestroyMigratedProc(procPtr, reason, status, code) 
-    Proc_ControlBlock 		*procPtr;	/* Exiting process. */
-    int 			reason;		/* Why the process is dying: 
-						 * EXITED, SIGNALED, 
-						 * DESTROYED  */
-    int				status;		/* Exit status, signal # or 
-						 * destroy status. */
-    int 			code;		/* Signal sub-status */
+Proc_DestroyMigratedProc(pid) 
+    ClientData pid;		/* the process ID, as a ClientData */
 {
-    ProcExitProcess(procPtr, reason, status, code, FALSE);
+    Proc_ControlBlock 		*procPtr; /* Process to kill. */
+
+    procPtr = Proc_LockPID((Proc_PID) pid);
+    if (procPtr == (Proc_ControlBlock *) NIL) {
+	if (proc_MigDebugLevel > 0) {
+	    Sys_Panic(SYS_WARNING,
+		      "Proc_DestroyMigratedProc: process %x not found.\n",
+		      (int) pid);
+	}
+	return;
+    }
+    if ((procPtr->state != PROC_MIGRATED) &&
+	!(procPtr->genFlags & PROC_FOREIGN)) {
+	if (proc_MigDebugLevel > 0) {
+	    Sys_Panic(SYS_WARNING,
+		      "Proc_DestroyMigratedProc: process %x not migrated.\n",
+		      (int) pid);
+	}
+	Proc_Unlock(procPtr);
+	return;
+    }
+    /*
+     * Unlock the process again, since ProcExitProcess locks it.  [Is
+     * there any race condition?  ProcExitProcess must be careful about
+     * the process it's passed.]
+     */
+    Proc_Unlock(procPtr);
+    
+    ProcExitProcess(procPtr, PROC_TERM_DESTROYED, PROC_NO_PEER, 0, FALSE);
+
+    Proc_RemoveMigDependency(pid);
 }
 
 
@@ -1352,4 +1374,8 @@ Proc_EvictProc(pid)
     status = Sig_Send(SIG_MIGRATE_HOME, 0, pid, FALSE);
     return(status); 
 }
+
+
+
+
 
