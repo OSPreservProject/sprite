@@ -246,7 +246,6 @@ Exc_Trap(trapStack)
 				>= (unsigned) Vm_CopyIn)
 			    && (((unsigned) trapStack.excStack.pc)
 				< (unsigned) Vm_CopyEnd)) {
-			Sys_Printf("Page fault during copy\n");
 			copyInProgress = TRUE;
 		    } else if (procPtr->vmPtr->vmFlags & VM_COPY_IN_PROGRESS) {
 			copyInProgress = TRUE;
