@@ -3078,18 +3078,23 @@ Fs_DumpCacheStats()
 		block->writeZeroFills1, block->writeZeroFills2,
 		block->appendWrites,
 		block->overWrites);
-    printf("FRAG upgrades %d hits %d zero fills\n",
-		block->fragAccesses,
-		block->fragHits,
-		block->fragZeroFills);
-    printf("FILE DESC reads %d hits %d writes %d hits %d\n", 
-		block->fileDescReads, block->fileDescReadHits,
-		block->fileDescWrites, block->fileDescWriteHits);
-    printf("INDIRECT BLOCKS Accesses %d hits %d\n", 
-		block->indBlockAccesses, block->indBlockHits);
-    printf("VM requests %d/%d/%d, gave up %d\n",
-		block->vmRequests, block->triedToGiveToVM, block->vmGotPage,
-		block->gavePageToVM);
+    if (block->fragAccesses > 0) {
+	printf("FRAG upgrades %d hits %d zero fills\n",
+		    block->fragAccesses,
+		    block->fragHits,
+		    block->fragZeroFills);
+    }
+    if (block->fileDescReads > 0) {
+	printf("FILE DESC reads %d hits %d writes %d hits %d\n", 
+		    block->fileDescReads, block->fileDescReadHits,
+		    block->fileDescWrites, block->fileDescWriteHits);
+    }
+    if (block->indBlockAccesses > 0) {
+	printf("INDIRECT BLOCKS Accesses %d hits %d\n", 
+		    block->indBlockAccesses, block->indBlockHits);
+    }
+    printf("VM asked %d, we tried %d, gave up %d\n",
+		block->vmRequests, block->triedToGiveToVM, block->vmGotPage);
     printf("BLOCK free %d new %d lru %d part free %d\n",
 		block->totFree, block->unmapped,
 		block->lru, block->partFree);
@@ -3110,10 +3115,10 @@ Fs_DumpCacheStats()
 	    fsStats.object.devices + fsStats.object.controls +
 	    fsStats.object.directory +
 	    2 * fsStats.object.pseudoStreams + fsStats.object.remote);
-    printf("HANDLES max %d exist %d scans %d scavenged %d (dirs %d)\n",
+    printf("HANDLES max %d exist %d. In %d scans replaced %d of %d (dirs %d)\n",
 	    fsStats.handle.maxNumber, fsStats.handle.exists,
-	    fsStats.object.lruScans, fsStats.object.scavenges,
-	    fsStats.object.dirFlushed);
+	    fsStats.handle.lruScans, fsStats.handle.lruChecks,
+	    fsStats.handle.lruHits, fsStats.object.dirFlushed);
 }
 
 
