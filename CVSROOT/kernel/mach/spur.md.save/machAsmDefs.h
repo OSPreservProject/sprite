@@ -667,14 +667,14 @@
  */
 
 #define	LD_CURRENT_PCB_PTR(destReg) \
-	rd_kpsw		destReg; \
-	extract		destReg, destReg, $3; \
-	sll		destReg,destReg,$2; \
-	ld_32		destReg, destReg, $runningProcesses ; \
+	rd_kpsw		VOL_TEMP1; \
+	extract		VOL_TEMP1, VOL_TEMP1, $3; \
+	sll		VOL_TEMP1,VOL_TEMP1,$2; \
+	ld_32		destReg, r0, $runningProcesses ; \
 	Nop ; \
-	ld_32		destReg, destReg, $0 ; \
+	ld_32		destReg, destReg,$0  ; \
 	Nop ; \
-	ld_32		destReg, destReg, $0 
+	ld_32		destReg, destReg,VOL_TEMP1
 
 /*
  * GET_PNUM_FROM_BOARD(pnumReg) 
