@@ -458,8 +458,8 @@ static Sys_CallParam paramsArray[] = {
 #define LOCAL_CALL 0
 #define FOREIGN_CALL 1
 int sys_NumCalls[SYS_NUM_SYSCALLS];
-#define RESET_NUMCALLS() Byte_Zero(SYS_NUM_SYSCALLS * sizeof(int), \
-				   (Address) sys_NumCalls)
+#define RESET_NUMCALLS() bzero((Address) sys_NumCalls, \
+				SYS_NUM_SYSCALLS * sizeof(int));
 
 
 /*
