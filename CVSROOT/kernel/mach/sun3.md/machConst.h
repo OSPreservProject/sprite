@@ -194,6 +194,13 @@
 #define	MACH_LAST_USER_STACK_PAGE	((MACH_MAX_USER_STACK_ADDR - 1) / VMMACH_PAGE_SIZE)
 #define	MACH_MAX_USER_STACK_ADDR	VMMACH_MAP_SEG_ADDR
 
+
+/*
+ * Maximum number of processors configuable.
+ */
+
+#define	MACH_MAX_NUM_PROCESSORS		1
+
 #ifdef SUN3
 /*
  * Constants to access bits in the interrupt register.
