@@ -13,23 +13,25 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsutil.h"
-#include "fsNameOps.h"
-#include "fsprefix.h"
-#include "fsutilTrace.h"
-#include "fslcl.h"
-#include "fscache.h"
-#include "fspdev.h"
-#include "fsStat.h"
-#include "timer.h"
-#include "user/fsCmd.h"
-#include "rpc.h"
-#include "sched.h"
-#include "fsrmt.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsNameOps.h>
+#include <fsprefix.h>
+#include <fsutilTrace.h>
+#include <fslcl.h>
+#include <fscache.h>
+#include <fspdev.h>
+#include <fsStat.h>
+#include <fsdm.h>
+#include <timer.h>
+#include <user/fsCmd.h>
+#include <rpc.h>
+#include <sched.h>
+#include <fsrmt.h>
+#include <vm.h>
 #include <stdlib.h>
-
+#include <stdio.h>
 
 #define SWAP_TO_BUFFER(int1, buffer) \
     if ((int *)buffer != (int *)NIL && (int *)buffer != (int *)0) {	\
@@ -381,8 +383,8 @@ Fs_Command(command, bufSize, buffer)
 	    /*
 	     * Set the block allocation gap.
 	     */
-	    extern int fsdm_AllocGap;
-	    SWAP_TO_BUFFER(fsdm_AllocGap, buffer);
+	    extern int ofs_AllocGap;
+	    SWAP_TO_BUFFER(ofs_AllocGap, buffer);
 	    break;
 	}
 
