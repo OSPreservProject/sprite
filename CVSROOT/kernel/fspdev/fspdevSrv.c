@@ -2497,6 +2497,7 @@ FsPseudoStreamCloseInt(pdevHandlePtr)
 		    (Sync_RemoteWaiter *)NIL);
     pdevHandlePtr->flags &= ~(PDEV_BUSY|FS_USER);
 exit:
+    Sync_LockClear(&pdevHandlePtr->lock);
     Sync_Broadcast(&pdevHandlePtr->access);
     UNLOCK_MONITOR;
 }
