@@ -122,7 +122,6 @@ DbgRs232ReadChar(channel)
     Dbg_Rs232Channel	channel;	/* Channel to read from */
 {
     int reg;
-    int oldContext;
 
     /*
      * Busy wait until a character is ready.
@@ -155,13 +154,9 @@ DbgRs232ReadChar(channel)
      */
 
     if (channel == DBG_RS232_CHANNELA) {
-#ifdef USE_CHAN_A
 	return(Dev_ZilogReadReg(zilogAddrA, 8));
-#endif USE_CHAN_A
     } else {
-#ifdef USE_CHAN_B
 	return(Dev_ZilogReadReg(zilogAddrB, 8));
-#endif USE_CHAN_B
     }
 }
 
