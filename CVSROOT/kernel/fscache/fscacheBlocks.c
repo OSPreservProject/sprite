@@ -219,20 +219,10 @@ static void		PutFileOnDirtyList();
 static void		PutBlockOnDirtyList();
 static Boolean		CreateBlock();
 static Boolean		DestroyBlock();
-#ifndef sun4
 static FsCacheBlock	*FetchBlock();
 static void		CacheWriteBack();
 static void		StartBlockCleaner();
 static void		ProcessCleanBlock();
-#else
-/*
- * The sun4 compiler doesn't seem to allow this sort of redeclaration.
- */
-extern FsCacheBlock	*FetchBlock();
-extern void		CacheWriteBack();
-extern void		StartBlockCleaner();
-extern void		ProcessCleanBlock();
-#endif sun4
 static void		CacheFileInvalidate();
 static void		GetDirtyFile();
 static void		GetDirtyBlock();
@@ -302,7 +292,7 @@ FsCacheInfoInit(cacheInfoPtr, hdrPtr, version, cacheable, attrPtr)
  */
 void
 FsCacheInfoSyncLockCleanup(cacheInfoPtr)
-    register FsCacheFileInfo *cacheInfoPtr;
+    FsCacheFileInfo *cacheInfoPtr;
 {
     Sync_LockClear(&cacheInfoPtr->lock);
 }
@@ -333,14 +323,14 @@ FsBlockCacheInit(blockHashSize)
     register	FsCacheBlock	*blockPtr;
     register	int		i;
 
-    fsStats.blockCache.minCacheBlocks = 64;
-    fsStats.blockCache.maxCacheBlocks = 64;
-
     Vm_FsCacheSize(&blockCacheStart, &blockCacheEnd);
     pageSize = Vm_GetPageSize();
     blocksPerPage = pageSize / FS_BLOCK_SIZE;
     fsStats.blockCache.maxNumBlocks = 
 			(blockCacheEnd - blockCacheStart + 1) / FS_BLOCK_SIZE;
+
+    fsStats.blockCache.minCacheBlocks = FS_MIN_CACHE_BLOCKS;
+    fsStats.blockCache.maxCacheBlocks = fsStats.blockCache.maxNumBlocks;
 
     /*
      * Allocate space for the cache block list.
@@ -699,7 +689,7 @@ DestroyBlock(retOnePage, pageNumPtr)
  *
  * ----------------------------------------------------------------------------
  */
-INTERNAL FsCacheBlock *
+static INTERNAL FsCacheBlock *
 FetchBlock(canWait)
     Boolean	canWait;	/* TRUE implies can sleep if all of memory is 
 				 * dirty. */
@@ -2077,7 +2067,7 @@ Fs_CacheEmpty(numLockedBlocksPtr)
  * ----------------------------------------------------------------------------
  *
  */
-INTERNAL void
+static INTERNAL void
 CacheWriteBack(writeBackTime, blocksSkippedPtr, shutdown, writeTmpFiles)
     unsigned int writeBackTime;	   /* Write back all blocks that were 
 				      dirtied before this time. */
@@ -2283,7 +2273,7 @@ FsCleanBlocks(data, callInfoPtr)
  *
  * ----------------------------------------------------------------------------
  */
-INTERNAL void
+static INTERNAL void
 StartBlockCleaner(cacheInfoPtr)
     FsCacheFileInfo *cacheInfoPtr;	/* Cache info for the file. */
 {
@@ -2533,7 +2523,7 @@ GetDirtyBlockInt(cacheInfoPtr, blockPtrPtr, lastDirtyBlockPtr)
  *
  * ----------------------------------------------------------------------------
  */
-ENTRY void
+static ENTRY void
 ProcessCleanBlock(cacheInfoPtr, blockPtr, status, useSameBlockPtr,
 		  lastDirtyBlockPtr) 
     register	FsCacheFileInfo	*cacheInfoPtr;
