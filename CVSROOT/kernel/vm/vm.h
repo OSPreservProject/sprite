@@ -222,7 +222,7 @@ typedef struct Vm_ProcInfo {
 
 /*
  * Maximum number of pages that a user process can wire down with the
- * Vm_UserMap call.
+ * Vm_PinUserMem call.
  */
 #define	VM_MAX_USER_MAP_PAGES	4
 
@@ -315,8 +315,8 @@ extern	void		Vm_Recovery();
 extern	Address		Vm_GetKernelStack();
 extern	void		Vm_FreeKernelStack();
 extern	void		Vm_ProcInit();
-extern	ReturnStatus	Vm_UserMap();
-extern	ReturnStatus	Vm_UserUnmap();
+extern	ReturnStatus	Vm_PinUserMem();
+extern	ReturnStatus	Vm_UnpinUserMem();
 
 /*
  * Routines to provide access to internal virtual memory stuff for the machine

@@ -1715,7 +1715,7 @@ Boolean	PageLocked();
 /*
  * ----------------------------------------------------------------------------
  *
- * Vm_UserMap --
+ * Vm_PinUserMem --
  *
  *      Hardwire pages for all user addresses between firstAddr and
  *	lastAddr.
@@ -1729,7 +1729,7 @@ Boolean	PageLocked();
  * ----------------------------------------------------------------------------
  */
 ReturnStatus
-Vm_UserMap(mapType, numBytes, addr)
+Vm_PinUserMem(mapType, numBytes, addr)
     int		mapType;	/* VM_READONLY_ACCESS | VM_READWRITE_ACCESS */
     int		numBytes;	/* Number of bytes to map. */
     Address	addr;		/* Where to start mapping at. */
@@ -1861,7 +1861,7 @@ void	PageUnlock();
 /*
  * ----------------------------------------------------------------------------
  *
- * Vm_UserUnmap --
+ * Vm_UnpinUserMem --
  *
  *      Unlock all pages between firstAddr and lastAddr.
  *	lastAddr.
@@ -1875,7 +1875,7 @@ void	PageUnlock();
  * ----------------------------------------------------------------------------
  */
 ReturnStatus
-Vm_UserUnmap(numBytes, addr)
+Vm_UnpinUserMem(numBytes, addr)
     int		numBytes;	/* The number of bytes to map. */
     Address 	addr;		/* The address to start mapping at. */
 {
