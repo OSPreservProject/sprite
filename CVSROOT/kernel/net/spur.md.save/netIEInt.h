@@ -743,5 +743,5 @@ extern	Address		NetIEAddrToSPURAddr();
 
 #define	NetIEShortSwap(s)	(s)
 
-#endif _NETIEINT
+#endif /* _NETIEINT */
 

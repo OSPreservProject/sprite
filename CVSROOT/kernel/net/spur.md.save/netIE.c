@@ -154,7 +154,7 @@ ReadConfigROM()
 			(int *) NET_IE_SLOT_OFFSET(CHANNEL_ATTN_REG_OFFSET);
 
     netIEState.sysConfPtr = 
-	(NetIESysConfPtr *) NET_IE_SLOT_OFFSET(SYS_CONF_PTR_OFFSET);
+	(volatile NetIESysConfPtr *) NET_IE_SLOT_OFFSET(SYS_CONF_PTR_OFFSET);
 
     /*
      * Finally, check to see that the board is configured with enought 
@@ -355,7 +355,7 @@ NetIEReset()
      * Nil out all pointers.
      */
 
-    netIEState.scbPtr = (NetIESCB *) NIL;
+    netIEState.scbPtr = (volatile NetIESCB *) NIL;
     netIEState.recvFrDscHeadPtr = (NetIERecvFrameDesc *) NIL;
     netIEState.recvFrDscTailPtr = (NetIERecvFrameDesc *) NIL;
     netIEState.recvBufDscHeadPtr = (NetIERecvBufDesc *) NIL;
@@ -378,14 +378,15 @@ NetIEReset()
      * system control block.
      */
 
-    netIEState.intSysConfPtr = 
-	    (NetIEIntSysConfPtr *) NetIEMemAlloc(sizeof(NetIEIntSysConfPtr));
+    netIEState.intSysConfPtr =  (NetIEIntSysConfPtr *)
+	NetIEMemAlloc(sizeof(NetIEIntSysConfPtr));
+
     if (netIEState.intSysConfPtr == (NetIEIntSysConfPtr *) NIL) {
 	panic("Intel Ethernet: No memory for the scp.\n");
     }
 
-    netIEState.scbPtr = (NetIESCB *) NetIEMemAlloc(sizeof(NetIESCB));
-    if (netIEState.scbPtr == (NetIESCB *) NIL) {
+    netIEState.scbPtr = (volatile NetIESCB *) NetIEMemAlloc(sizeof(NetIESCB));
+    if (netIEState.scbPtr == (volatile NetIESCB *) NIL) {
 	panic("Intel Ethernet: No memory for the scb.\n");
     }
 
@@ -597,7 +598,7 @@ NetIEIntr(polling)
     Boolean	polling;	/* TRUE if are being polled instead of
 				 * processing an interrupt. */
 {
-    register	NetIESCB	*scbPtr;
+    register	volatile NetIESCB	*scbPtr;
     register	int		status;
 
     scbPtr = netIEState.scbPtr;
