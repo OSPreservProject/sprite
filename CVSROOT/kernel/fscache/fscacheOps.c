@@ -26,6 +26,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "fs.h"
 #include "fsInt.h"
+#include "fsCacheOps.h"
 #include "fsBlockCache.h"
 #include "fsOpTable.h"
 #include "fsDisk.h"
@@ -105,6 +106,12 @@ FsCacheUpdate(cacheInfoPtr, openForWriting, version, cacheable, attrPtr)
 	    cacheInfoPtr->attr = *attrPtr;
 	}
     }
+    if (cacheInfoPtr->flags & FS_FILE_GONE) {
+	if (!outOfDate) {
+	    Sys_Panic(SYS_FATAL, "Removed file not out-of-date\n");
+	}
+	cacheInfoPtr->flags &= ~FS_FILE_GONE;
+    }
 
     /*
      * If we were caching and the file is no longer cacheable, or our copy
@@ -178,6 +185,36 @@ FsUpdateAttrFromClient(cacheInfoPtr, attrPtr)
     }
     cacheInfoPtr->attr.lastByte = attrPtr->lastByte;
     cacheInfoPtr->attr.firstByte = attrPtr->firstByte;
+    UNLOCK_MONITOR;
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * FsUpdateDirSize --
+ *
+ * 	This is used on the server to update the size of a directory
+ *	when it grows due to additions.  Note that directories don't
+ *	get smaller.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Updates the last byte index.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+ENTRY void
+FsUpdateDirSize(cacheInfoPtr, newLastByte)
+    register FsCacheFileInfo *cacheInfoPtr;	/* Cache state to update. */
+    register int newLastByte;			/* New last byte index */
+{
+    LOCK_MONITOR;
+    if (newLastByte > cacheInfoPtr->attr.lastByte) {
+	cacheInfoPtr->attr.lastByte = newLastByte;
+    }
     UNLOCK_MONITOR;
 }
 
@@ -545,7 +582,20 @@ FsCacheWrite(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
     LOCK_MONITOR;
 
     if (cacheInfoPtr->flags & FS_FILE_NOT_CACHEABLE) {
+	/*
+	 * Not cached.  The flag is checked here under monitor lock.
+	 */
 	status = FS_NOT_CACHEABLE;
+	goto exit;
+    }
+    if (cacheInfoPtr->flags & FS_FILE_GONE) {
+	/*
+	 * A delayed write is arriving as the file is being deleted.
+	 */
+	Sys_Panic(SYS_WARNING, "Write to deleted file #%d\n",
+		    cacheInfoPtr->hdrPtr->fileID.minor);
+	status = FS_FILE_REMOVED;
+	*lenPtr = 0;
 	goto exit;
     }
     /*
@@ -872,16 +922,21 @@ exit:
  *----------------------------------------------------------------------
  */
 void
-FsCacheTrunc(cacheInfoPtr, length, consume)
+FsCacheTrunc(cacheInfoPtr, length, flags)
     FsCacheFileInfo *cacheInfoPtr;
     int length;
-    Boolean consume;
+    Boolean flags;	/* FS_TRUNC_CONSUME | FS_TRUNC_DELETE */
 {
     int firstBlock;
     int lastBlock;
-    
+
+    LOCK_MONITOR;
+
+    if (flags & FS_TRUNC_DELETE) {
+	cacheInfoPtr->flags |= FS_FILE_GONE;
+    }
     if ((cacheInfoPtr->flags & FS_NOT_CACHEABLE) == 0) {
-	if (consume) {
+	if (flags & FS_TRUNC_CONSUME) {
 	    /*
 	     * Truncation on consuming streams is defined to be truncation
 	     * from the front of the file, ie. the most recently written
@@ -929,7 +984,11 @@ FsCacheTrunc(cacheInfoPtr, length, consume)
 		FsCacheBlockTrunc(cacheInfoPtr, firstBlock - 1,
 				  length - (firstBlock - 1) * FS_BLOCK_SIZE);
 	    }
+	    if ((flags & FS_TRUNC_DELETE) && cacheInfoPtr->blocksInCache > 0) {
+		Sys_Panic(SYS_FATAL, "CacheTrunc (delete) blocks left over\n");
+	    }
         }
 	cacheInfoPtr->attr.modifyTime = fsTimeInSeconds;
     }
+    UNLOCK_MONITOR;
 }
