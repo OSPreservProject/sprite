@@ -322,7 +322,7 @@ _Mach_ContextSwitch:
 	 *  execute a "st %fsr". The "st fsr" will pause until all FPU ops
 	 *  are compete.  If any FPU execptions are pending we will get a
 	 *  FP_EXCEPTION trap on the instruction marked by the label 
-	 *  _machFPUSyncInst. The routine MachHandleWeirdoInstruction in
+	 *  _machFPUSyncInst. The routine MachHandleTrap in
 	 *  machCode.c will catch this fault and note it in the processes
 	 *  PCB.  
 	 */

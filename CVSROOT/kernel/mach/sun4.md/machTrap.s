@@ -222,7 +222,7 @@ NotAnInterrupt:
 	mov	%VOL_TEMP1, %o0
 	mov	%CUR_PC_REG, %o1
 	mov	%CUR_PSR_REG, %o2
-	be	_MachHandleWeirdoInstruction		/* C routine */
+	be	_MachHandleTrap		/* C routine */
 	nop
 
 	cmp	%VOL_TEMP1, MACH_PRIV_INSTR		/* privileged instr */
@@ -230,7 +230,7 @@ NotAnInterrupt:
 	mov	%VOL_TEMP1, %o0
 	mov	%CUR_PC_REG, %o1
 	mov	%CUR_PSR_REG, %o2
-	be	_MachHandleWeirdoInstruction		/* C routine */
+	be	_MachHandleTrap		/* C routine */
 	nop
 
 	cmp	%VOL_TEMP1, MACH_MEM_ADDR_ALIGN		/* addr not aligned */
@@ -238,7 +238,7 @@ NotAnInterrupt:
 	mov	%VOL_TEMP1, %o0
 	mov	%CUR_PC_REG, %o1
 	mov	%CUR_PSR_REG, %o2
-	be	_MachHandleWeirdoInstruction		/* C routine */
+	be	_MachHandleTrap		/* C routine */
 	nop
 
 	cmp	%VOL_TEMP1, MACH_TAG_OVERFLOW		/* tagged instr ovfl */
@@ -246,7 +246,7 @@ NotAnInterrupt:
 	mov	%VOL_TEMP1, %o0
 	mov	%CUR_PC_REG, %o1
 	mov	%CUR_PSR_REG, %o2
-	be	_MachHandleWeirdoInstruction		/* C routine */
+	be	_MachHandleTrap		/* C routine */
 	nop
 
 	cmp	%VOL_TEMP1, MACH_FP_EXCEP		/* fp unit badness */
@@ -254,7 +254,7 @@ NotAnInterrupt:
 	mov	%VOL_TEMP1, %o0
 	mov	%CUR_PC_REG, %o1
 	mov	%CUR_PSR_REG, %o2
-	be	_MachHandleWeirdoInstruction		/* C routine */
+	be	_MachHandleTrap		/* C routine */
 	nop
 
 	cmp	%VOL_TEMP1, MACH_FP_DISABLED		/* fp unit disabled */
@@ -262,7 +262,7 @@ NotAnInterrupt:
 	mov	%VOL_TEMP1, %o0
 	mov	%CUR_PC_REG, %o1
 	mov	%CUR_PSR_REG, %o2
-	be	_MachHandleWeirdoInstruction		/* C routine */
+	be	_MachHandleTrap		/* C routine */
 	nop
 
 	/*

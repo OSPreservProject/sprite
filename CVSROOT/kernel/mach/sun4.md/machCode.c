@@ -1452,7 +1452,7 @@ HandleItAgain:
 /*
  *----------------------------------------------------------------------
  *
- * MachHandleWeirdoInstruction --
+ * MachHandleTrap --
  *
  *	Handle an instruction trap, such as an illegal instruction trap,
  *	an unaligned address, or a floating point problem.
@@ -1467,7 +1467,7 @@ HandleItAgain:
  *----------------------------------------------------------------------
  */
 void
-MachHandleWeirdoInstruction(trapType, pcValue, trapPsr)
+MachHandleTrap(trapType, pcValue, trapPsr)
     int			trapType;
     Address		pcValue;
     unsigned	int	trapPsr;
@@ -1484,7 +1484,7 @@ MachHandleWeirdoInstruction(trapType, pcValue, trapPsr)
 		   machFPUSaveProcPtr : Proc_GetCurrentProc();
     if ((procPtr == (Proc_ControlBlock *) NIL)) {
 	    printf("%s: pc = 0x%x, trapType = %d\n",
-		"MachHandleWeirdoInstruction", pcValue, trapType);
+		"MachHandleTrap", pcValue, trapType);
 	    panic("Current process was NIL!\n");
     }
     /*
@@ -1493,19 +1493,19 @@ MachHandleWeirdoInstruction(trapType, pcValue, trapPsr)
     if (trapPsr & MACH_PS_BIT) {
 	switch (trapType) {
 	case MACH_ILLEGAL_INSTR:
-	    printf("%s %s\n", "MachHandleWeirdoInstruction: illegal",
+	    printf("%s %s\n", "MachHandleTrap: illegal",
 		    "instruction trap in the kernel!");
 	    break;
 	case MACH_PRIV_INSTR:
-	    printf("%s %s\n", "MachHandleWeirdoInstruction: privileged",
+	    printf("%s %s\n", "MachHandleTrap: privileged",
 		    "instruction trap in the kernel!");
 	    break;
 	case MACH_MEM_ADDR_ALIGN:
-	    printf("%s %s\n", "MachHandleWeirdoInstruction: unaligned",
+	    printf("%s %s\n", "MachHandleTrap: unaligned",
 		    "address trap in the kernel!");
 	    break;
 	case MACH_TAG_OVERFLOW:
-	    printf("%s %s\n", "MachHandleWeirdoInstruction: tag",
+	    printf("%s %s\n", "MachHandleTrap: tag",
 		    "overflow trap in the kernel!");
 	    break;
 	case MACH_FP_EXCEP: {
@@ -1534,20 +1534,20 @@ MachHandleWeirdoInstruction(trapType, pcValue, trapPsr)
 		  return;
 	    } 
 	    printf("%s. ",
-	"MachHandleWeirdoInstruction: FPU exception from kernel process.");
+	"MachHandleTrap: FPU exception from kernel process.");
 	    break;
 	}
 	case MACH_FP_DISABLED:
-	    printf("%s %s\n", "MachHandleWeirdoInstruction: fp unit",
+	    printf("%s %s\n", "MachHandleTrap: fp unit",
 		    "disabled trap in the kernel!");
 	    break;
 	default:
-	    printf("%s %s\n", "MachHandleWeirdoInstruction: hit default",
+	    printf("%s %s\n", "MachHandleTrap: hit default",
 		    "in case statement - bad trap instruction called us!");
 	    break;
 	}
 	panic("%s %s %s %x %s %x\n",
-		"MachHandleWeirdoInstruction: the error occured in a",
+		"MachHandleTrap: the error occured in a",
 		procPtr->genFlags & PROC_USER ? "user" : "kernel",
 		"process, with procPtr =", (unsigned int) procPtr,
 		"and pc =", pcValue);
@@ -1612,11 +1612,11 @@ MachHandleWeirdoInstruction(trapType, pcValue, trapPsr)
 	break;
 	}
     case MACH_TAG_OVERFLOW:
-	panic("%s %s\n", "MachHandleWeirdoInstruction: tag",
+	panic("%s %s\n", "MachHandleTrap: tag",
 		"overflow trap in user process, but I don't deal with it yet.");
 	break;
     default:
-	panic("%s %s\n", "MachHandleWeirdoInstruction: hit default",
+	panic("%s %s\n", "MachHandleTrap: hit default",
 		"in case statement - bad trap instruction from user mode.");
 	break;
 
