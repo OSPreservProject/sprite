@@ -22,8 +22,8 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
-#include <string.h>
 #include "sync.h"
+#include <string.h>
 #include "sprite.h"
 #include "fs.h"
 #include "dev.h"
@@ -195,16 +195,22 @@ ReleaseProc(handlePtr)
  *----------------------------------------------------------------------
  */
 
-static void
-initHardDoneProc()
-{
-    printf("RAID:MSG:Initialization completed.\n");
-}
+typedef struct {
+    Sema	 sema;
+    ReturnStatus status;
+} IOCControl;
 
 static void
-initParityCheckDoneProc()
+iocDoneProc(iocCtrlPtr, status)
+    IOCControl	*iocCtrlPtr;
+    ReturnStatus status;
 {
-    printf("RAID:MSG:Paritycheck completed.\n");
+    printf("RAID:MSG:IOC completed.\n");
+    if (status != SUCCESS) {
+	printf("RAID:ERR:IOC failed.\n");
+    }
+    iocCtrlPtr->status = status;
+    UpSema(&iocCtrlPtr->sema);
 }
 
 static ReturnStatus
@@ -223,6 +229,7 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
     int		  row;
     char	  fileName[80];
     ReturnStatus  status;
+    IOCControl	  iocCtrl;
 
     if (raidIOCParamPtr == (RaidIOCParam *) NIL) {
 	printf("RAID:MSG:IOControlProc IOC == NIL\n");
@@ -240,17 +247,6 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
     case IOC_DEV_RAID_RECONFIG:
 	status = RaidConfigure(raidPtr, raidIOCParamPtr->buf);
 	return status;
-    case IOC_DEV_RAID_HARDINIT:
-	InitiateHardInit(raidPtr,
-		raidIOCParamPtr->startStripe, raidIOCParamPtr->numStripe,
-		initHardDoneProc, (ClientData) NIL, raidIOCParamPtr->ctrlData);
-	return SUCCESS;
-    case IOC_DEV_RAID_PARITYCHECK:
-	InitiateParityCheck(raidPtr,
-		raidIOCParamPtr->startStripe, raidIOCParamPtr->numStripe,
-		initParityCheckDoneProc, (ClientData) NIL,
-		raidIOCParamPtr->ctrlData);
-	return SUCCESS;
     case IOC_DEV_RAID_FAIL:
 	if (row < 0 || row >= raidPtr->numRow) {
 	    printf("RAID:MSG:row=%d out of range on ioctl call", row);
@@ -274,12 +270,31 @@ IOControlProc(handlePtr, ioctlPtr, replyPtr)
 	ReplaceRaidDisk(raidPtr, col, row, raidPtr->disk[col][row]->version,
 		raidIOCParamPtr->type, raidIOCParamPtr->unit, 0);
 	return SUCCESS;
+    case IOC_DEV_RAID_HARDINIT:
+	InitSema(&iocCtrl.sema, "Raid HardInit", 0);
+	InitiateHardInit(raidPtr,
+		raidIOCParamPtr->startStripe, raidIOCParamPtr->numStripe,
+		iocDoneProc, (ClientData) &iocCtrl,
+		raidIOCParamPtr->ctrlData);
+	DownSema(&iocCtrl.sema);
+	return iocCtrl.status;
+    case IOC_DEV_RAID_PARITYCHECK:
+	InitSema(&iocCtrl.sema, "Raid ParityCheck", 0);
+	InitiateParityCheck(raidPtr,
+		raidIOCParamPtr->startStripe, raidIOCParamPtr->numStripe,
+		iocDoneProc, (ClientData) &iocCtrl,
+		raidIOCParamPtr->ctrlData);
+	DownSema(&iocCtrl.sema);
+	return iocCtrl.status;
     case IOC_DEV_RAID_RECONSTRUCT:
+	InitSema(&iocCtrl.sema, "Raid Reconstruct", 0);
 	InitiateReconstruction(raidPtr, col, row,
 		raidPtr->disk[col][row]->version,
 		raidIOCParamPtr->numStripe, raidIOCParamPtr->uSec,
+		iocDoneProc, (ClientData) &iocCtrl,
 		raidIOCParamPtr->ctrlData);
-	return SUCCESS;
+	DownSema(&iocCtrl.sema);
+	return iocCtrl.status;
     case IOC_DEV_RAID_IO:
 	if (!IObuf) {
 	    IObuf = (char *) malloc(1024*1024);
