@@ -558,8 +558,7 @@ Sig_SendProc(procPtr, sigNum, code)
  *
  *	Send a signal to a process.  This entails marking the signal into
  *	the signal pending mask for the process and waking up the process
- *	if it is asleep.  When we go to a multi-processor this routine must
- *	be rewritten to possibly interrupt a running process.
+ *	if it is asleep.   
  *
  * Results:
  *	An error is the signal or the process id are invalid.  SUCCESS 
