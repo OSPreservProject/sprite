@@ -39,6 +39,8 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "hash.h"
 #include "stdlib.h"
 #include "trace.h"
+#include "fsutil.h"
+#include "bstring.h"
 
 /*
  * Other kernel modules arrange call-backs when a host crashes or reboots.
@@ -172,19 +174,16 @@ Boolean recovTracing = TRUE;
  * Forward declarations.
  */
 
-extern void Recov_PrintState();
-extern void RecovPrintExtraState();
-extern void RecovPrintPingList();
-extern void RecovRebootCallBacks();
-extern void RecovCrashCallBacks();
-extern void RecovDelayedCrashCallBacks();
-extern char *RecovState();
+static void CrashCallBacks _ARGS_((ClientData data, Proc_CallInfo *callInfoPtr));
+extern void DelayedCrashCallBacks _ARGS_((ClientData data, Proc_CallInfo *callInfoPtr));
+static void CallBacksDone _ARGS_((int spriteID));
+static void MarkRecoveryComplete _ARGS_((int spriteID));
+static void MarkHostDead _ARGS_((int spriteID));
+static void GetRebootList _ARGS_((List_Links *notifyListHdr, int spriteID));
+static char *GetState _ARGS_((int state));
+static void PrintExtraState _ARGS_((RecovHostState *hostPtr));
 
-static void CallBacksDone();
-static void MarkRecoveryComplete();
-static void MarkHostDead();
-static void GetRebootList();
-static void CheckHost();
+
 
 
 /*
@@ -380,13 +379,11 @@ Recov_RebootUnRegister(spriteID, rebootCallBackProc, rebootData)
 	if (found) {
 	    notifyPtr->refCount--;
 	    if (notifyPtr->refCount <= 0) {
-		extern void	Fsutil_Reopen();
 		int		num;
 		/*
 		 * Mousetrap for debugging recovery reference count problem.
 		 */
 		if (notifyPtr->proc == (void((*)())) Fsutil_Reopen) {
-		    extern int	Fsutil_TestForHandles();
 
 		    if (recov_PrintLevel >= RECOV_PRINT_CRASH) {
 			printf(
@@ -522,7 +519,7 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
 	    /*
 	     * A crash occured un-detected.  We do the crash call-backs
 	     * first, and block server processes in the meantime.
-	     * RECOV_CRASH_CALLBACKS flag is cleared by RecovCrashCallBacks.
+	     * RECOV_CRASH_CALLBACKS flag is cleared by CrashCallBacks.
 	     */
 	    hostPtr->state &=
 		    ~(RECOV_HOST_ALIVE|RECOV_HOST_DYING|RECOV_HOST_DEAD);
@@ -531,7 +528,7 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
 	    if ((hostPtr->state & RECOV_CRASH_CALLBACKS) == 0) {
 		hostPtr->state |= RECOV_CRASH_CALLBACKS;
 		RECOV_TRACE(spriteID, hostPtr->state, RECOV_CUZ_CRASH_UNDETECTED);
-		Proc_CallFunc(RecovCrashCallBacks, (ClientData)spriteID, 0);
+		Proc_CallFunc(CrashCallBacks, (ClientData)spriteID, 0);
 	    }
 	}
     } else  if ( ! (hostPtr->state &
@@ -719,14 +716,14 @@ Recov_HostDead(spriteID)
 	     */
 #ifdef dying_state
 	    hostPtr->state |= RECOV_HOST_DYING;
-	    Proc_CallFunc(RecovDelayedCrashCallBacks, (ClientData)spriteID,
+	    Proc_CallFunc(DelayedCrashCallBacks, (ClientData)spriteID,
 			    recov_CrashDelay);
 #else
 	    hostPtr->state |= RECOV_HOST_DEAD|RECOV_CRASH_CALLBACKS;
 	    RecovHostPrint(RECOV_PRINT_CRASH, spriteID,
 		    "crash call-backs made\n");
 	    RECOV_TRACE(spriteID, hostPtr->state, RECOV_CUZ_CRASH);
-	    Proc_CallFunc(RecovCrashCallBacks, (ClientData)spriteID, 0);
+	    Proc_CallFunc(CrashCallBacks, (ClientData)spriteID, 0);
 #endif
 	    break;
     }
@@ -1044,7 +1041,7 @@ Recov_AddHandleCountToClientState(type, clientID, status)
 ENTRY ReturnStatus
 Recov_DumpClientRecovInfo(length, resultPtr, lengthNeededPtr)
     int			length;			/* size of data buffer */
-    RecovPerHostInfo	*resultPtr;		/* Array of info structs. */
+    Address		resultPtr;		/* Array of info structs. */
     int			*lengthNeededPtr;	/* to return space needed */
 {
     Hash_Entry		*hashPtr;
@@ -1053,8 +1050,6 @@ Recov_DumpClientRecovInfo(length, resultPtr, lengthNeededPtr)
     RecovPerHostInfo	*infoPtr;
     int			numNeeded;
     int			numAvail;
-    extern		int	fsutil_NumRecovering;
-
 
     LOCK_MONITOR;
 
@@ -1066,13 +1061,13 @@ Recov_DumpClientRecovInfo(length, resultPtr, lengthNeededPtr)
 	UNLOCK_MONITOR;
 	return FAILURE;
     }
-    if (resultPtr != (RecovPerHostInfo *) NIL) {
+    if (resultPtr != (Address) NIL) {
 	bzero(resultPtr, length);
     }
     numNeeded = 0;
     numAvail = length / sizeof (RecovPerHostInfo);
 
-    infoPtr = resultPtr;
+    infoPtr = (RecovPerHostInfo *) resultPtr;
     Hash_StartSearch(&hashSearch);
     for (hashPtr = Hash_Next(recovHashTable, &hashSearch);
 	    hashPtr != (Hash_Entry *) NIL;
@@ -1254,7 +1249,7 @@ CallBacksDone(spriteID)
 /*
  *----------------------------------------------------------------------
  *
- * RecovCrashCallBacks --
+ * CrashCallBacks --
  *
  *	Invoked asynchronously so that other modules
  *	can clean up behind the crashed host.  When done the host
@@ -1271,8 +1266,8 @@ CallBacksDone(spriteID)
  *----------------------------------------------------------------------
  */
 
-void
-RecovCrashCallBacks(data, callInfoPtr)
+static void
+CrashCallBacks(data, callInfoPtr)
     ClientData data;
     Proc_CallInfo *callInfoPtr;
 {
@@ -1294,7 +1289,7 @@ RecovCrashCallBacks(data, callInfoPtr)
 /*
  *----------------------------------------------------------------------
  *
- * RecovDelayedCrashCallBacks --
+ * DelayedCrashCallBacks --
  *
  *	Invoked asynchronously from Recov_HostDead.  This is called after
  *	a grace period defined by recov_CrashDelay so that, for example,
@@ -1312,8 +1307,8 @@ RecovCrashCallBacks(data, callInfoPtr)
  *----------------------------------------------------------------------
  */
 
-void
-RecovDelayedCrashCallBacks(data, callInfoPtr)
+static void
+DelayedCrashCallBacks(data, callInfoPtr)
     ClientData data;
     Proc_CallInfo *callInfoPtr;
 {
@@ -1361,6 +1356,7 @@ RecovDelayedCrashCallBacks(data, callInfoPtr)
 
 ENTRY static void
 MarkRecoveryComplete(spriteID)
+    int	spriteID;
 {
     register Hash_Entry *hashPtr;
     register RecovHostState *hostPtr;
@@ -1399,6 +1395,7 @@ MarkRecoveryComplete(spriteID)
 
 ENTRY static void
 MarkHostDead(spriteID)
+    int	spriteID;
 {
     register Hash_Entry *hashPtr;
     register RecovHostState *hostPtr;
@@ -1540,6 +1537,7 @@ RecovGetLastHostState(spriteID)
 
 ENTRY int
 RecovCheckHost(spriteID)
+    int	spriteID;
 {
     register Hash_Entry *hashPtr;
     register RecovHostState *hostPtr = (RecovHostState *)NIL;
@@ -1774,7 +1772,7 @@ Recov_PrintTraceRecord(clientData, event, printHeaderFlag)
 	} else {
 	    printf("%10s ", name);
 	}
-	printf("%-8s", RecovState(recPtr->state));
+	printf("%-8s", GetState(recPtr->state));
 	printf("%3s", (recPtr->state & RECOV_CRASH_CALLBACKS) ?
 			    " C " : "   ");
 	printf("%3s", (recPtr->state & RECOV_PINGING_HOST) ?
@@ -1890,7 +1888,7 @@ Recov_PrintState()
 	if (hostPtr != (RecovHostState *)NIL) {
 
 	    Net_SpriteIDToName(hostPtr->spriteID, &hostName);
-	    printf("%-14s %-8s", hostName, RecovState(hostPtr->state));
+	    printf("%-14s %-8s", hostName, GetState(hostPtr->state));
 	    printf(" bootID 0x%8x", hostPtr->bootID);
 
 	    /*
@@ -1911,7 +1909,7 @@ Recov_PrintState()
 	     * Print seconds ago we last heard from host.
 	     */
 	    printf("    %d ", currentTime.seconds - hostPtr->time.seconds);
-	    RecovPrintExtraState(hostPtr);
+	    PrintExtraState(hostPtr);
 	    printf("\n");
 	}
     }
@@ -1921,7 +1919,7 @@ Recov_PrintState()
 /*
  *----------------------------------------------------------------------
  *
- * RecovState --
+ * GetState --
  *
  *	Return a printable string for the host's state.
  *
@@ -1934,8 +1932,8 @@ Recov_PrintState()
  *----------------------------------------------------------------------
  */
 
-char *
-RecovState(state)
+static char *
+GetState(state)
     int state;
 {
     switch(state & (RECOV_HOST_ALIVE|RECOV_HOST_DYING|RECOV_HOST_DEAD|
@@ -1970,8 +1968,8 @@ RecovState(state)
  *----------------------------------------------------------------------
  */
 
-void
-RecovPrintExtraState(hostPtr)
+static void
+PrintExtraState(hostPtr)
     RecovHostState *hostPtr;
 {
     if (hostPtr->state & RECOV_CRASH_CALLBACKS) {

@@ -56,15 +56,16 @@ List_Links *recovPingList = &recovPingListHdr;
 static Sync_Lock recovPingLock;
 #define LOCKPTR (&recovPingLock)
 
-static RecovPing *FirstHostToCheck();
-static RecovPing *NextHostToCheck();
-static void Deactivate();
+static RecovPing *FirstHostToCheck _ARGS_((void));
+static RecovPing *NextHostToCheck _ARGS_((RecovPing *pingPtr));
+static void Deactivate _ARGS_((RecovPing *pingPtr));
+static void PingInterval _ARGS_((Timer_Ticks time, ClientData clientData));
 
 
 /*
  *----------------------------------------------------------------------
  *
- * RecovPingInterval --
+ * PingInterval --
  *
  *	Set up the callback routine used for recov pinging.
  *
@@ -77,8 +78,8 @@ static void Deactivate();
  *----------------------------------------------------------------------
  */
 /*ARGSUSED*/
-void
-RecovPingInterval(time, clientData)
+static void
+PingInterval(time, clientData)
     Timer_Ticks	time;
     ClientData	clientData;
 {
@@ -111,7 +112,7 @@ RecovPingInit()
     Sync_LockInitDynamic(&recovPingLock, "Recov:pingListLock");
     List_Init(recovPingList);
     if (recov_AbsoluteIntervals) {
-	recovIntervalElement.routine = RecovPingInterval;
+	recovIntervalElement.routine = PingInterval;
 	recovIntervalElement.clientData = 0;
 	recovIntervalElement.interval =
 		timer_IntOneSecond * recovPingSeconds;

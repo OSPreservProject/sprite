@@ -17,6 +17,7 @@
 #define _RECOV
 
 #include "trace.h"
+#include "proc.h"
 
 /*
  * External view of the state kept about each host.
@@ -189,28 +190,35 @@ typedef struct Recov_Stats {
 
 extern Recov_Stats recov_Stats;
 
-extern void             Recov_Init();
-extern void		Recov_CrashRegister();
-extern void		Recov_RebootRegister();
-extern void		Recov_HostAlive();
-extern void		Recov_HostDead();
-extern int		Recov_GetHostState();
-extern ReturnStatus	Recov_IsHostDown();
-extern void		Recov_HostTrace();
-extern int		Recov_SetClientState();
-extern int		Recov_GetClientState();
-extern void		Recov_ClearClientState();
-extern void		Recov_AddHandleCountToClientState();
-extern ReturnStatus	Recov_GetStats();
-extern void		Recov_ChangePrintLevel();
+extern void 	Recov_Init _ARGS_((void));
+extern void 	Recov_CrashRegister _ARGS_((void (*crashCallBackProc)(), ClientData crashData));
+extern void 	Recov_RebootRegister _ARGS_((int spriteID, void (*rebootCallBackProc)(), ClientData rebootData));
+extern void 	Recov_RebootUnRegister _ARGS_((int spriteID, void (*rebootCallBackProc)(), ClientData rebootData));
+extern void 	Recov_HostAlive _ARGS_((int spriteID, unsigned int bootID, Boolean asyncRecovery, Boolean rpcNotActive));
+extern void 	Recov_HostDead _ARGS_((int spriteID));
+extern int 	Recov_GetHostState _ARGS_((int spriteID));
+extern Boolean 	Recov_GetHostInfo _ARGS_((int spriteID, Recov_State *recovStatePtr));
+extern ReturnStatus 	Recov_IsHostDown _ARGS_((int spriteID));
+extern void 	Recov_HostTrace _ARGS_((int spriteID, int event));
+extern int 	Recov_GetClientState _ARGS_((int spriteID));
+extern int 	Recov_SetClientState _ARGS_((int spriteID, int stateBits));
+extern void 	Recov_ClearClientState _ARGS_((int spriteID, int stateBits));
+extern void 	Recov_AddHandleCountToClientState _ARGS_((int type, int clientID, ReturnStatus status));
+extern void 	RecovRebootCallBacks _ARGS_((ClientData data, Proc_CallInfo *callInfoPtr));
+extern ReturnStatus 	Recov_DumpClientRecovInfo _ARGS_((int length, Address resultPtr, int *lengthNeededPtr));
+extern ReturnStatus 	Recov_GetStats _ARGS_((int size, Address userAddr));
+extern ReturnStatus 	Recov_DumpState _ARGS_((int size, Address userAddr));
+extern void 		Recov_ChangePrintLevel _ARGS_((int newLevel));
+extern void 		RecovPingInit _ARGS_((void));
+extern void 		RecovPrintPingList _ARGS_((void));
+extern void 		Recov_PrintTrace _ARGS_((int numRecs));
+extern void 		Recov_PrintState _ARGS_((void));
+extern void 		Recov_PrintTraceRecord _ARGS_((ClientData clientData, int event, Boolean printHeaderFlag));
+extern void 		Recov_Proc _ARGS_((void));
+extern void 		RecovAddHostToPing _ARGS_((int spriteID));
+extern int 		RecovCheckHost _ARGS_((int spriteID));
+extern int 		RecovGetLastHostState _ARGS_((int spriteID));
 
-extern void		Recov_HostTrace();
-extern void		Recov_PrintTrace();
-
-extern void		Recov_Proc();
-extern void		RecovAddHostToPing();
-extern int		RecovCheckHost();
-extern int		RecovGetLastHostState();
 
 #endif /* _RECOV */
 
