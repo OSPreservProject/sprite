@@ -51,6 +51,11 @@ Boolean proc_DoTrace = FALSE;
 Boolean proc_DoCallTrace = FALSE;
 
 /*
+ * Set to true to refuse ALL migrations onto this machine.
+ */
+Boolean proc_RefuseMigrations = FALSE;
+
+/*
  * Procedures internal to this file
  */
 
@@ -97,6 +102,7 @@ Proc_Migrate(pid, nodeID)
     register Proc_ControlBlock *procPtr;
     ReturnStatus status;
     Proc_TraceRecord record;
+    Boolean migrateSelf = FALSE;
 
     if (Proc_ComparePIDs(pid, PROC_ALL_PROCESSES)) {
 	status = Proc_EvictForeignProcs();
@@ -109,15 +115,15 @@ Proc_Migrate(pid, nodeID)
      */
     
     if (Proc_ComparePIDs(pid, PROC_MY_PID)) {
-#ifdef DOESNT_WORK_YET	
+	migrateSelf = TRUE;
 	procPtr = Proc_GetActualProc();
 	if (procPtr == (Proc_ControlBlock *) NIL) {
 	    Sys_Panic(SYS_FATAL, "Proc_Migrate: procPtr == NIL\n");
 	}
 	Proc_Lock(procPtr);
-#else  DOESNT_WORK_YET	
+#ifdef notdef
 	return(PROC_INVALID_PID);
-#endif DOESNT_WORK_YET
+#endif notdef
     } else {
 	procPtr = Proc_LockPID(pid);
 	if (procPtr == (Proc_ControlBlock *) NIL) {
@@ -163,14 +169,23 @@ Proc_Migrate(pid, nodeID)
 
     Proc_Unlock(procPtr);
 
-    status = WaitForMigration(procPtr);
-    
-    if (proc_DoTrace && proc_MigDebugLevel > 0) {
-	record.flags = PROC_MIGTRACE_HOME;
-	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_END_MIG,
-		     (ClientData *) &record);
+    /*
+     * If migrating another process, wait for it to migrate.
+     */
+    if (!migrateSelf) {
+	status = WaitForMigration(procPtr);
+    } else {
+	status = SUCCESS;
     }
-   
+
+    /*
+     * Note: the "end migration" trace record is inserted by the MigrateTrap
+     * routine to get around the issue of waiting for oneself to migrate.
+     * (Otherwise, since we can't wait here for the current process to
+     * migrate -- only a different process -- we wouldn't be able to insert
+     * the trace record at the right time.)
+     */
+     
     return(status);
 }
 
@@ -327,6 +342,14 @@ Proc_MigrateTrap(procPtr)
 		     (ClientData *) &record);
     }
 
+    if (proc_DoTrace && proc_MigDebugLevel > 0 && !foreign) {
+	record.processID = procPtr->processID;
+	record.flags = PROC_MIGTRACE_HOME;
+	record.info.filler = NIL;
+	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_END_MIG,
+		     (ClientData *) &record);
+    }
+   
     if (foreign) {
 	ProcExitProcess(procPtr, -1, -1, -1, TRUE);
     } else {
@@ -340,6 +363,13 @@ failure:
     Sig_SendProc(procPtr, SIG_KILL, status);
     Proc_Unlock(procPtr);
     WakeupCallers();
+    if (proc_DoTrace && proc_MigDebugLevel > 0 && !foreign) {
+	record.processID = procPtr->processID;
+	record.flags = PROC_MIGTRACE_HOME;
+	record.info.filler = NIL;
+	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_END_MIG,
+		     (ClientData *) &record);
+    }
 
 }
 
