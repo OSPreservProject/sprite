@@ -85,27 +85,18 @@ PdevServerIOHandle *PfsGetUserLevelIDs();
  *
  */
 ReturnStatus
-FsRmtLinkSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
-	dataSizePtr, clientDataPtr)
+FsRmtLinkSrvOpen(handlePtr, openArgsPtr, openResultsPtr)
      register FsLocalFileIOHandle *handlePtr;	/* A handle from FsLocalLookup.
 					 * Should be LOCKED upon entry,
 					 * unlocked upon exit. */
-     int		clientID;	/* Host ID of client doing the open */
-     register int	useFlags;	/* FS_MASTER, plus
-					 * FS_READ | FS_WRITE | FS_EXECUTE*/
-     register Fs_FileID	*ioFileIDPtr;	/* Return - I/O handle ID */
-     Fs_FileID		*streamIDPtr;	/* Return - stream ID. 
-					 * NIL during set/get attributes */
-     int		*dataSizePtr;	/* Return - sizeof(FsPdevState) */
-     ClientData		*clientDataPtr;	/* Return - a reference to FsPdevState.
-					 * Nothing is returned during set/get
-					 * attributes */
+     FsOpenArgs		*openArgsPtr;	/* Standard open arguments */
+     FsOpenResults	*openResultsPtr;/* For returning ioFileID, streamID */
 {
     register ReturnStatus status = SUCCESS;
+    register Fs_FileID *ioFileIDPtr = &openResultsPtr->ioFileID;
 
-    if ((useFlags & FS_PFS_MASTER) == 0) {
-	return(FsFileSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr,
-			    streamIDPtr, dataSizePtr, clientDataPtr));
+    if ((openArgsPtr->useFlags & FS_PFS_MASTER) == 0) {
+	return(FsFileSrvOpen(handlePtr, openArgsPtr, openResultsPtr));
     }
     /*
      * Generate an ID which is just like a FS_CONTROL_STREAM, except that
@@ -117,16 +108,16 @@ FsRmtLinkSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
     ioFileIDPtr->major = handlePtr->hdr.fileID.major;
     ioFileIDPtr->minor = handlePtr->hdr.fileID.minor ^
 			 (handlePtr->descPtr->version << 16);
-    if (useFlags & FS_EXCLUSIVE) {
+    if (openArgsPtr->useFlags & FS_EXCLUSIVE) {
 	/*
 	 * The pseudo-filesystem server is private to the client host.
 	 * We further uniqify its control handle ID to avoid conflict with
 	 * files from other servers.  We set the serverID to the host
 	 * running the server so we won't see closes or re-opens.
 	 */
-	ioFileIDPtr->serverID = clientID;
+	ioFileIDPtr->serverID = openArgsPtr->clientID;
 	ioFileIDPtr->major ^= rpc_SpriteID << 16;
-	FsStreamNewID(clientID, streamIDPtr);
+	FsStreamNewID(openArgsPtr->clientID, &openResultsPtr->streamID);
     } else {
 	/*
 	 * The pseudo-filesystem will be exported to the network.  Setting
@@ -144,13 +135,13 @@ FsRmtLinkSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	if (ctrlHandlePtr->serverID != NIL) {
 	    status = FS_FILE_BUSY;
 	} else {
-	    ctrlHandlePtr->serverID = clientID;
-	    FsStreamNewID(clientID, streamIDPtr);
+	    ctrlHandlePtr->serverID = openArgsPtr->clientID;
+	    FsStreamNewID(openArgsPtr->clientID, &openResultsPtr->streamID);
 	}
 	FsHandleRelease(ctrlHandlePtr, TRUE);
     }
-    *clientDataPtr = (ClientData)NIL;
-    *dataSizePtr = 0;
+    openResultsPtr->streamData = (ClientData)NIL;
+    openResultsPtr->dataSize = 0;
     FsHandleUnlock(handlePtr);
     return(status);
 }
@@ -410,6 +401,42 @@ FsPseudoDomainInfo(fileIDPtr, domainInfoPtr)
     Fs_FileID *fileIDPtr;
     Fs_DomainInfo *domainInfoPtr;
 {
+    ReturnStatus		status;
+    Pfs_Request			request;
+    FsRedirectInfo		*redirectPtr;
+    PdevClientIOHandle		*cltHandlePtr;
+    int				resultSize;
+
+
+    cltHandlePtr = FsHandleFetchType(PdevClientIOHandle, fileIDPtr);
+    if (cltHandlePtr != (PdevClientIOHandle *)NIL) {
+	FsHandleUnlock(cltHandlePtr);
+	/*
+	 * Go to the pseudo-device server to get the domain information.
+	 * We also change the fileID of the domain to be the user-visible
+	 * one so that the getwd() library call works right.
+	 */
+	*fileIDPtr = cltHandlePtr->pdevHandlePtr->userLevelID;
+	fileIDPtr->serverID = rpc_SpriteID;
+
+	request.hdr.operation = PFS_DOMAIN_INFO;
+	request.param.domainInfo = *fileIDPtr;
+	resultSize = sizeof(Fs_DomainInfo);
+	status = FsPseudoStreamLookup(cltHandlePtr->pdevHandlePtr, &request,
+		    0, (Address)NIL,
+		    &resultSize, (Address)domainInfoPtr, &redirectPtr);
+	if (redirectPtr != (FsRedirectInfo *)NIL) {
+	    free((Address)redirectPtr);
+	}
+	FsHandleRelease(cltHandlePtr, FALSE);
+    }
+    if (status != SUCCESS) {
+	domainInfoPtr->maxKbytes = -1;
+	domainInfoPtr->freeKbytes = -1;
+	domainInfoPtr->maxFileDesc = -1;
+	domainInfoPtr->freeFileDesc = -1;
+    }
+    return(status);
 }
 
 
@@ -930,7 +957,7 @@ FsPfsMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
 
     request.hdr.operation = PFS_MAKE_DEVICE;
     pdevHandlePtr = PfsGetUserLevelIDs(pdevHandlePtr,
-			    &makeDevArgsPtr->prefixID, &makeDevArgsPtr->rootID);
+	    &makeDevArgsPtr->open.prefixID, &makeDevArgsPtr->open.rootID);
     if (pdevHandlePtr == (PdevServerIOHandle *)NIL) {
 	return(FS_FILE_NOT_FOUND);
     }
