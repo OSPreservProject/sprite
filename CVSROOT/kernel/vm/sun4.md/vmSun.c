@@ -3970,7 +3970,7 @@ VmMach_MapInDevice(devPhysAddr, type)
  *
  *----------------------------------------------------------------------
  */
-ENTRY static void
+INTERNAL static void
 DevBufferInit()
 {
     Address		virtAddr;
@@ -3979,8 +3979,6 @@ DevBufferInit()
     int			i;
     Address	baseAddr;
     Address	endAddr;
-
-    MASTER_LOCK(vmMachMutexPtr);
 
     /*
      * Round base up to next page boundary and end down to page boundary.
@@ -4010,8 +4008,6 @@ DevBufferInit()
 	VmMachSetContextReg(oldContext);
 	virtAddr += VMMACH_SEG_SIZE;
     }
-
-    MASTER_UNLOCK(vmMachMutexPtr);
 }
 
 
@@ -4034,7 +4030,7 @@ static	Boolean	dmaPageBitMap[VMMACH_DMA_SIZE / VMMACH_PAGE_SIZE_INT];
  *
  *----------------------------------------------------------------------
  */
-Address
+ENTRY Address
 VmMach_DMAAlloc(numBytes, srcAddr)
     int		numBytes;		/* Number of bytes to map in. */
     Address	srcAddr;	/* Kernel virtual address to start mapping in.*/
@@ -4131,7 +4127,7 @@ VmMach_DMAAlloc(numBytes, srcAddr)
  *
  *----------------------------------------------------------------------
  */
-void
+ENTRY void
 VmMach_DMAFree(numBytes, mapAddr)
     int		numBytes;		/* Number of bytes to map in. */
     Address	mapAddr;	/* Kernel virtual address to unmap.*/
@@ -4696,7 +4692,7 @@ ByteFill(fillByte, numBytes, destPtr)
  *
  *----------------------------------------------------------------------
  */
-ENTRY static void
+INTERNAL static void
 Dev32BitDMABufferInit()
 {
     Address		virtAddr;
@@ -4705,7 +4701,6 @@ Dev32BitDMABufferInit()
     Address	baseAddr;
     Address	endAddr;
 
-    MASTER_LOCK(vmMachMutexPtr);
     if ((VMMACH_32BIT_DMA_SIZE & (VMMACH_CACHE_SIZE - 1)) != 0) {
 	panic(
 "Dev32BitDMABufferInit: 32-bit DMA area must be a multiple of cache size.\n");
@@ -4725,7 +4720,7 @@ Dev32BitDMABufferInit()
     VmMachSetContextReg(0);
     for (virtAddr = baseAddr; virtAddr < endAddr; ) {
 	if (VmMachGetSegMap(virtAddr) != VMMACH_INV_PMEG) {
-	    printf("DevBufferInit: DMA space already valid at 0x%x\n",
+	    printf("Dev32BitDMABufferInit: DMA space already valid at 0x%x\n",
 		   (unsigned int) virtAddr);
 	}
 	/* 
@@ -4741,8 +4736,6 @@ Dev32BitDMABufferInit()
 	virtAddr += VMMACH_SEG_SIZE;
     }
     VmMachSetContextReg(oldContext);
-
-    MASTER_UNLOCK(vmMachMutexPtr);
 }
 
 
@@ -4765,7 +4758,7 @@ static	Boolean	userdmaPageBitMap[VMMACH_32BIT_DMA_SIZE / VMMACH_PAGE_SIZE_INT];
  *
  *----------------------------------------------------------------------
  */
-Address
+ENTRY Address
 VmMach_32BitDMAAlloc(numBytes, srcAddr)
     int		numBytes;		/* Number of bytes to map in. */
     Address	srcAddr;	/* Kernel virtual address to start mapping in.*/
@@ -4872,7 +4865,7 @@ VmMach_32BitDMAAlloc(numBytes, srcAddr)
  *
  *----------------------------------------------------------------------
  */
-void
+ENTRY void
 VmMach_32BitDMAFree(numBytes, mapAddr)
     int		numBytes;		/* Number of bytes to map in. */
     Address	mapAddr;	/* Kernel virtual address to unmap.*/
