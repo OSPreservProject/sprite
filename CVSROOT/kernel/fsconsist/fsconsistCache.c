@@ -1734,7 +1734,17 @@ Fsconsist_RpcConsist(srvToken, clientID, command, storagePtr)
 	    status = FAILURE;
 	}
     } else if (rmtHandlePtr->openTimeStamp != consistArgPtr->openTimeStamp) {
-	if (Fsprefix_OpenInProgress(&consistArgPtr->fileID) == 0) {
+	if ((rmtHandlePtr->cacheInfo.version == consistArgPtr->version) &&
+	    ((consistArgPtr->flags & (FSCONSIST_DELETE_FILE|
+				     FSCONSIST_WRITE_BACK_BLOCKS)) == 0)) {
+	    /*
+	     * We have the same version as the server, but there has been
+	     * more open traffic than we realize.  If this is any command
+	     * except a write-back or delete (like return-attrs), then
+	     * we'll do it.
+	     */
+	    status = SUCCESS;
+	} else if (Fsprefix_OpenInProgress(&consistArgPtr->fileID) == 0) {
 	    status = FS_STALE_HANDLE;
 	    printf("Fsconsist_RpcConsist: <%d,%d> %s msg from %d timestamp %d not %d\n\t version %d and %d, returning stale handle\n",
 		    consistArgPtr->fileID.major,
@@ -1826,8 +1836,8 @@ ProcessConsist(data, callInfoPtr)
     /*
      * Process the request under the per file cache lock.
      */
-    reply.status = Fscache_Consist(&handlePtr->cacheInfo, consistPtr->args.flags,
-			    &reply.cachedAttr);
+    reply.status = Fscache_Consist(&handlePtr->cacheInfo,
+			consistPtr->args.flags, &reply.cachedAttr);
 #ifdef CONSIST_DEBUG
     if (fsTraceConsistMinor == handlePtr->rmt.hdr.fileID.minor) {
 	printf(
