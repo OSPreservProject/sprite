@@ -39,23 +39,24 @@ extern	int	dbgMaxStackAddr;
  */
 
 typedef enum {
-    READALLGPRS,		/* Read all 16 of the general purpose 
+    DBG_READ_ALL_GPRS,		/* Read all 16 of the general purpose 
 				   registers */
-    WRITEGPR,			/* Write one of the general purpose registers
+    DBG_WRITE_GPR,		/* Write one of the general purpose registers
 				   d0-d7 or a0-a7 */
-    CONTINUE, 			/* Continue execution */
-    SINGLESTEP,			/* Single step execution */
-    DETACH,			/* The debugger has finished with the kernel */
-    INSTREAD,			/* Read an instruction */
-    INSTWRITE,			/* Write an instruction */
-    DATAREAD,			/* Read data */
-    DATAWRITE,			/* Write data */
-    SETPID,			/* Set the process for which the stack 
+    DBG_CONTINUE, 		/* Continue execution */
+    DBG_SINGLESTEP,		/* Single step execution */
+    DBG_DETACH,			/* The debugger has finished with the kernel */
+    DBG_INST_READ,		/* Read an instruction */
+    DBG_INST_WRITE,		/* Write an instruction */
+    DBG_DATA_READ,		/* Read data */
+    DBG_DATA_WRITE,		/* Write data */
+    DBG_SET_PID,		/* Set the process for which the stack 
 				 * back trace is to be done. */
-    GETSTOPINFO,		/* Get all info needed by dbx after it stops. */
-    GET_VERSION_STRING,		/* Return the version string. */
-    DIVERT_SYSLOG,		/* Divert syslog output to the console. */
-    UNKNOWN			/* used for error checking */
+    DBG_GET_STOP_INFO,		/* Get all info needed by dbx after it stops. */
+    DBG_GET_VERSION_STRING,	/* Return the version string. */
+    DBG_DIVERT_SYSLOG,		/* Divert syslog output to the console. */
+    DBG_REBOOT,			/* Call the reboot routine. */
+    DBG_UNKNOWN			/* Used for error checking */
 } Dbg_Opcode;
 
 typedef struct {
@@ -74,6 +75,11 @@ typedef struct {
     int		numBytes;
 } Dbg_ReadMem;
 
+typedef struct {
+    int		stringLength;
+    char	string[100];
+} Dbg_Reboot;
+
 /*
  * Message format.
  */
@@ -86,6 +92,7 @@ typedef struct {
 	Dbg_ReadMem	readMem;
 	int		pc;
 	int		divertSyslog;
+	Dbg_Reboot	reboot;
     } data;
 } Dbg_Msg;
 

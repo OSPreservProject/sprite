@@ -82,6 +82,9 @@ static char *opcodeNames[] =  {
 	"Data Write",
 	"Process to walk stack for",
 	"Read information after stopped",
+	"Return version string",
+	"Divert syslog to the console",
+	"Reboot the machine",
 	"UNKNOWN OPCODE"
 };
 
@@ -248,8 +251,8 @@ TranslateOpcode(opcode)
 	int index;
 
 	index = (int) opcode;
-	if (index < 0 || index > (int) UNKNOWN) {
-	    index = (int) UNKNOWN;
+	if (index < 0 || index > (int) DBG_UNKNOWN) {
+	    index = (int) DBG_UNKNOWN;
 	}
 
 	return(opcodeNames[index]);
@@ -813,7 +816,7 @@ Dbg_Main(stackHole, trapStack)
 	    if (ReadRequest(TRUE)) {
 		GetRequestBytes(2, &tOpcode);
 		opcode = (Dbg_Opcode) tOpcode;
-		if (opcode == GETSTOPINFO) {
+		if (opcode == DBG_GET_STOP_INFO) {
 		    break;
 		}
 	    }
@@ -869,7 +872,7 @@ Dbg_Main(stackHole, trapStack)
 	     * The client wants to read some data from us ...
 	     */
 
-	    case GETSTOPINFO: {
+	    case DBG_GET_STOP_INFO: {
 		StopInfo	stopInfo;
 		stopInfo.codeStart = MACH_CODE_START;
 		if (procPtr != (Proc_ControlBlock *) NIL) {
@@ -894,7 +897,7 @@ Dbg_Main(stackHole, trapStack)
 		SendReply();
 		break;
 	    }
-	    case READALLGPRS:
+	    case DBG_READ_ALL_GPRS:
 		if (procPtr != (Proc_ControlBlock *) NIL) {
 		    PutReplyBytes(sizeof(procPtr->saveRegs),
 				 (Address) procPtr->saveRegs);
@@ -905,7 +908,7 @@ Dbg_Main(stackHole, trapStack)
 		SendReply();
 		break;
 
-	    case GET_VERSION_STRING: {
+	    case DBG_GET_VERSION_STRING: {
 		char	*SpriteVersion();
 		char	*version;
 
@@ -915,8 +918,8 @@ Dbg_Main(stackHole, trapStack)
 		break;
 	    }
 	    
-	    case INSTREAD:
-	    case DATAREAD: {
+	    case DBG_INST_READ:
+	    case DBG_DATA_READ: {
 		Dbg_ReadMem	readMem;
 		int		status;
 
@@ -946,7 +949,7 @@ Dbg_Main(stackHole, trapStack)
 	    /*
 	     * The client wants to write something to us.
 	     */
-	    case SETPID: {
+	    case DBG_SET_PID: {
 		Proc_PID	pid;
 
 		GetRequestBytes(sizeof(pid), (Address) &pid);
@@ -973,8 +976,28 @@ Dbg_Main(stackHole, trapStack)
 		}
 		break;
 	    }
-	    case INSTWRITE:
-	    case DATAWRITE: {
+	    case DBG_REBOOT: {
+		int	stringLength;
+		char	rebootString[100];
+		/*
+		 * For a reboot command first read the size of the string and
+		 * then the string itself.
+		 */
+		GetRequestBytes(sizeof(int), &stringLength);
+		if (stringLength != 0) {
+		    GetRequestBytes(stringLength, (Address)rebootString);
+		}
+		rebootString[stringLength] = '\0';
+		if (!dbg_Rs232Debug) {
+		    int	dummy;
+
+		    PutReplyBytes(4, (Address) &dummy);
+		    SendReply();
+		}
+		Mon_Reboot(rebootString);
+	    }
+	    case DBG_INST_WRITE:
+	    case DBG_DATA_WRITE: {
 		Dbg_WriteMem		writeMem;
 		unsigned	char	ch;
 		/*
@@ -1014,7 +1037,7 @@ Dbg_Main(stackHole, trapStack)
 		break;
 	    }
 
-	    case WRITEGPR: {                
+	    case DBG_WRITE_GPR: {                
 		Dbg_WriteGPR	writeGPR;
 
 		/*
@@ -1036,7 +1059,7 @@ Dbg_Main(stackHole, trapStack)
 		break;
 	    }
 
-	    case DIVERT_SYSLOG:
+	    case DBG_DIVERT_SYSLOG:
 		GetRequestBytes(sizeof(Boolean), (Address)&syslogDiverted);
 		if (!dbg_Rs232Debug) {
 		    int	dummy;
@@ -1046,7 +1069,7 @@ Dbg_Main(stackHole, trapStack)
 		}
 		break;
 
-	    case CONTINUE: 
+	    case DBG_CONTINUE: 
 		/*
 		 * The client wants to continue execution.
 		 */
@@ -1067,7 +1090,7 @@ Dbg_Main(stackHole, trapStack)
 		done = TRUE;
 		break;
 
-	    case SINGLESTEP:
+	    case DBG_SINGLESTEP:
 		/*
 		 * The client wants to single step.
 		 */
@@ -1092,7 +1115,7 @@ Dbg_Main(stackHole, trapStack)
 		done = TRUE;
 		break;
 
-	    case DETACH:
+	    case DBG_DETACH:
 		/*
 		 * The debugger has terminated and wants to let us go about our
 		 * business.
