@@ -230,7 +230,7 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 					 * I/O to a pseudo device, or NIL */
 {
     ReturnStatus		status;
-    Boolean			found;
+    Boolean			foundStream;
     register PdevClientIOHandle	*cltHandlePtr;
     register PdevControlIOHandle *ctrlHandlePtr;
     register FsPdevState	*pdevStatePtr;
@@ -275,7 +275,8 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
      * Put the client on its own stream list.
      */
     cltStreamPtr = FsStreamAddClient(&pdevStatePtr->streamID, clientID,
-		(FsHandleHeader *)cltHandlePtr, *flagsPtr, name, &found);
+		(FsHandleHeader *)cltHandlePtr, *flagsPtr, name,
+		(Boolean *)NIL, &foundStream);
     FsHandleRelease(cltStreamPtr, TRUE);
     FsHandleUnlock(cltHandlePtr);
     /*
@@ -322,7 +323,7 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 	FsHandleInvalidate((FsHandleHeader *) cltHandlePtr);
 	FsHandleRemove(cltHandlePtr);
 	(void)FsStreamClientClose(&cltStreamPtr->clientList, clientID);
-	if (!found) {
+	if (!foundStream) {
 	    /*
 	     * The client's stream wasn't already around from being installed
 	     * in Fs_Open, so we nuke the shadow stream we've created.
@@ -441,9 +442,8 @@ FsPdevConnect(ioFileIDPtr, clientID, name)
  */
 
 PdevServerIOHandle *
-FsServerStreamCreate(ioFileIDPtr, userFileIDPtr, name)
+FsServerStreamCreate(ioFileIDPtr, name)
     Fs_FileID	*ioFileIDPtr;	/* File ID used for pseudo stream handle */
-    Fs_FileID	*userFileIDPtr;	/* User-level fileID for pseudo-stream */
     char	*name;		/* File name for error messages */
 {
     FsHandleHeader *hdrPtr;
@@ -500,7 +500,7 @@ FsServerStreamCreate(ioFileIDPtr, userFileIDPtr, name)
     List_Init(&pdevHandlePtr->cltExceptWaitList);
 
     pdevHandlePtr->ctrlHandlePtr = (PdevControlIOHandle *)NIL;
-    pdevHandlePtr->userLevelID = *userFileIDPtr;
+    pdevHandlePtr->userLevelID = *ioFileIDPtr;
 
     return(pdevHandlePtr);
 }
@@ -656,12 +656,10 @@ FsPseudoStreamClose(streamPtr, clientID, procID, flags, size, data)
 /*
  *----------------------------------------------------------------------
  *
- * FsPseudoStreamMigStart --
+ * FsPseudoStreamRelease --
  *
- *	Begin migration of a pseudo-stream client.  We leave the state
- *	alone because the client handle, which is here on the same host
- *	as the pseudo-device master, will still be needed after the
- *	client is remote.
+ *	Called to release a reference on a pseudo stream.  However, there
+ *	is always only one refernece on the handle so we do nothing.
  *
  * Results:
  *	SUCCESS.
@@ -673,12 +671,12 @@ FsPseudoStreamClose(streamPtr, clientID, procID, flags, size, data)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsPseudoStreamMigStart(hdrPtr, flags, clientID, data)
+FsPseudoStreamRelease(hdrPtr, flags)
     FsHandleHeader *hdrPtr;	/* File being encapsulated */
     int flags;			/* Use flags from the stream */
-    int clientID;		/* Host doing the encapsulation */
-    ClientData data;		/* Buffer we fill in */
 {
+    Sys_Panic(SYS_FATAL, "FsPseudoStreamRelease called\n");
+
     return(SUCCESS);
 }
 
@@ -746,9 +744,7 @@ FsPseudoStreamMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr,
      * At the stream level, add the new client to the set of clients
      * for the stream, and check for any cross-network stream sharing.
      */
-    FsStreamMigClient(&migInfoPtr->streamID, migInfoPtr->srcClientID,
-		    dstClientID, (FsHandleHeader *)cltHandlePtr,
-		    &migInfoPtr->offset, &migInfoPtr->flags);
+    FsStreamMigClient(migInfoPtr, dstClientID, (FsHandleHeader *)cltHandlePtr);
 
     /*
      * Move the client at the I/O handle level.
@@ -831,10 +827,16 @@ FsRmtPseudoStreamMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr,
  *
  * FsPseudoStreamMigEnd --
  *
- *	Complete migration for a pseudo stream.  Complete setup of a 
- *	FS_RMT_DEVICE_STREAM after migration.
- *	The srvMigrate routine has done most all the work.
- *	We just grab a reference on the I/O handle for the stream.
+ *	Complete setup of a pdev client I/O handle after migrating a stream
+ *	to the I/O server of the pseudo-device connection (the host running
+ *	the user-level server process).  FsPseudoStreamMigrate has done
+ *	the work of shifting use counts at the stream and I/O handle level.
+ *	This routine fills in the stream's ioHandlePtr, but doens't adjust
+ *	the low-level reference count on the I/O handle (like other MigEnd
+ *	procedures) because the reference count isn't used the same way.
+ *	With pseudo-device connections, there is always only one refCount
+ *	on the client handle, but there may be entries in the clientList
+ *	to reflect remote clients.
  *
  * Results:
  *	None.
@@ -932,56 +934,4 @@ FsRmtPseudoStreamVerify(fileIDPtr, clientID, domainTypePtr)
 	*domainTypePtr = FS_PSEUDO_DOMAIN;
     }
     return((FsHandleHeader *)cltHandlePtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * FsServerStreamMigStart --
- *
- *	It's too painful to migrate the pseudo-device server.
- *
- * Results:
- *	GEN_NOT_IMPLEMENTED.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-ReturnStatus
-FsServerStreamMigStart(hdrPtr, flags, clientID, data)
-    FsHandleHeader *hdrPtr;	/* File being encapsulated */
-    int flags;			/* Use flags from the stream */
-    int clientID;		/* Host doing the encapsulation */
-    ClientData data;		/* Buffer we fill in */
-{
-    return(GEN_NOT_IMPLEMENTED);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * FsServerStreamMigEnd --
- *
- *	Complete migration for a server stream
- *
- * Results:
- *	GEN_NOT_IMPLEMENTED.
- *
- * Side effects:
- *	The streams that compose the Server stream are also deencapsulated.
- *
- *----------------------------------------------------------------------
- */
-/*ARGSUSED*/
-ReturnStatus
-FsServerStreamMigEnd(migInfoPtr, size, data, hdrPtrPtr)
-    FsMigInfo	*migInfoPtr;	/* Migration state */
-    int		size;		/* Zero */
-    ClientData	data;		/* NIL */
-    FsHandleHeader **hdrPtrPtr;	/* Return - handle for the file */
-{
-    return(GEN_NOT_IMPLEMENTED);
 }

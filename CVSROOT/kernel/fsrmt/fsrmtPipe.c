@@ -741,11 +741,9 @@ FsPipeSetIOAttr(fileIDPtr, attrPtr, flags)
 /*
  * ----------------------------------------------------------------------------
  *
- * FsDeviceMigStart --
+ * FsPipeRelease --
  *
- *	Begin migration of a FS_LCL_PIPE_STREAM.  There is no extra
- *	state that needs saving, but we do release a reference to the I/O
- *	handle.
+ *	Release a reference on a Pipe I/O handle.
  *	
  * Results:
  *	SUCCESS.
@@ -758,31 +756,12 @@ FsPipeSetIOAttr(fileIDPtr, attrPtr, flags)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsPipeMigStart(hdrPtr, flags, clientID, migFlagsPtr)
-    FsHandleHeader *hdrPtr;	/* File being encapsulated */
+FsPipeRelease(hdrPtr, flags)
+    FsHandleHeader *hdrPtr;	/* File being released */
     int flags;			/* Use flags from the stream */
-    int clientID;		/* Host doing the encapsulation */
-    int *migFlagsPtr;		/* Migration flags we may modify */
 {
-    register FsPipeIOHandle *handlePtr = (FsPipeIOHandle *)hdrPtr;
-    int writes;
-    
-    if ((flags & FS_RMT_SHARED) == 0) {
-	if (flags & FS_WRITE) {
-	    /*
-	     * Figure out if this client is migrating away the last writer.
-	     */
-	    FsHandleLock(handlePtr);
-	    FsIOClientStatus(&handlePtr->clientList, clientID,
-			     (int *) NIL, &writes, (int *) NIL);
-	    if (writes == 1) {
-		*migFlagsPtr |= FS_LAST_WRITER;
-	    }
-	    FsHandleRelease(hdrPtr, TRUE);
-	} else {
-	    FsHandleRelease(hdrPtr, FALSE);
-	}
-    }
+    Sys_Panic(SYS_FATAL, "FsPipeRelease called\n");
+    FsHandleRelease(hdrPtr, FALSE);
     return(SUCCESS);
 }
 
@@ -835,9 +814,7 @@ FsPipeMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
      * At the stream level, add the new client to the set of clients
      * for the stream, and check for any cross-network stream sharing.
      */
-    FsStreamMigClient(&migInfoPtr->streamID, migInfoPtr->srcClientID,
-		    dstClientID, (FsHandleHeader *)handlePtr,
-		    &migInfoPtr->offset, &migInfoPtr->flags);
+    FsStreamMigClient(migInfoPtr, dstClientID, (FsHandleHeader *)handlePtr);
     /*
      * Adjust use counts on the I/O handle to reflect any new sharing.
      */
@@ -922,9 +899,11 @@ FsRmtPipeMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
  *
  * FsPipeMigEnd --
  *
- *	Complete setup of a FS_LCL_PIPE_STREAM after migration.
- *	The migrate routine has done most all the work.
- *	We just grab a reference on the I/O handle for the stream.
+ *	Complete setup of a FS_LCL_PIPE_STREAM after migration (back) to the
+ *	pipe I/O server.  FsPipeMigrate has done the work of shifting use
+ *	counts at the stream and I/O handle level.  This routine has to
+ *	increment the low level reference count on the pipe I/O handle
+ *	to reflect the existence of a new stream to the I/O handle.
  *
  * Results:
  *	None.

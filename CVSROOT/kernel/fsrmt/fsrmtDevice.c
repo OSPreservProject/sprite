@@ -264,7 +264,7 @@ FsDeviceCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtrPt
 
 	streamPtr = FsStreamAddClient(&deviceDataPtr->streamID, clientID,
 			(FsHandleHeader *)devHandlePtr, flags,
-			name, (Boolean *)NIL);
+			name, (Boolean *)NIL, (Boolean *)NIL);
 	FsHandleRelease(streamPtr, TRUE);
 
 	devHandlePtr->use.ref++;
@@ -842,11 +842,9 @@ Fs_RpcDevReopen(srvToken, clientID, command, storagePtr)
 /*
  * ----------------------------------------------------------------------------
  *
- * FsDeviceMigStart --
+ * FsDeviceRelease --
  *
- *	Begin migration of a FS_LCL_DEVICE_STREAM.  There is no extra
- *	state that needs saving, but we do release a reference to the I/O
- *	handle.
+ *	Release a reference from a Device I/O handle.
  *	
  * Results:
  *	SUCCESS.
@@ -859,15 +857,12 @@ Fs_RpcDevReopen(srvToken, clientID, command, storagePtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsDeviceMigStart(hdrPtr, flags, clientID, data)
+FsDeviceRelease(hdrPtr, flags)
     FsHandleHeader *hdrPtr;	/* File being encapsulated */
     int flags;			/* Use flags from the stream */
-    int clientID;		/* Host doing the encapsulation */
-    ClientData data;		/* Buffer we fill in */
 {
-    if ((flags & FS_RMT_SHARED) == 0) {
-	FsHandleRelease(hdrPtr, FALSE);
-    }
+    Sys_Panic(SYS_FATAL, "FsDeviceRelease called\n");
+    FsHandleRelease(hdrPtr, FALSE);
     return(SUCCESS);
 }
 
@@ -875,12 +870,10 @@ FsDeviceMigStart(hdrPtr, flags, clientID, data)
 /*
  * ----------------------------------------------------------------------------
  *
- * FsRemoteIOMigStart --
+ * FsRemoteIORelease --
  *
- *	Begin migration of a remote stream.  There is no extra
- *	state that needs saving, but we do decrement our recovery related
- *	use counts (because the stream is moving away), and we release our
- *	reference to the I/O handle.
+ *	Release a reference on a remote I/O handle.  This decrements
+ *	recovery use counts as well as releasing the handle.
  *	
  * Results:
  *	SUCCESS.
@@ -893,29 +886,21 @@ FsDeviceMigStart(hdrPtr, flags, clientID, data)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsRemoteIOMigStart(hdrPtr, flags, clientID, migFlagsPtr)
+FsRemoteIORelease(hdrPtr, flags)
     FsHandleHeader *hdrPtr;	/* File being encapsulated */
     int flags;			/* Use flags from the stream */
-    int clientID;		/* Host doing the encapsulation */
-    int *migFlagsPtr;		/* Migration flags we may modify */
 {
     register FsRemoteIOHandle *rmtHandlePtr = (FsRemoteIOHandle *)hdrPtr;
 
     FsHandleLock(rmtHandlePtr);
-    if ((flags & FS_RMT_SHARED) == 0) {
-	rmtHandlePtr->recovery.use.ref--;
-	if (flags & FS_WRITE) {
-	    rmtHandlePtr->recovery.use.write--;
-	    if (rmtHandlePtr->recovery.use.write == 0) {
-		*migFlagsPtr |= FS_LAST_WRITER;
-	    }
-	}
-	if (flags & FS_EXECUTE) {
-	    rmtHandlePtr->recovery.use.exec--;
-	}
-	FsHandleRelease(rmtHandlePtr, TRUE);
+    rmtHandlePtr->recovery.use.ref--;
+    if (flags & FS_WRITE) {
+	rmtHandlePtr->recovery.use.write--;
     }
-
+    if (flags & FS_EXECUTE) {
+	rmtHandlePtr->recovery.use.exec--;
+    }
+    FsHandleRelease(rmtHandlePtr, TRUE);
     return(SUCCESS);
 }
 
@@ -973,9 +958,7 @@ FsDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
      * At the stream level, add the new client to the set of clients
      * for the stream, and check for any cross-network stream sharing.
      */
-    FsStreamMigClient(&migInfoPtr->streamID, migInfoPtr->srcClientID,
-			dstClientID, (FsHandleHeader *)devHandlePtr,
-			&migInfoPtr->offset, &migInfoPtr->flags);
+    FsStreamMigClient(migInfoPtr, dstClientID, (FsHandleHeader *)devHandlePtr);
     /*
      * Adjust use counts on the I/O handle to reflect any new sharing.
      */
@@ -1059,9 +1042,11 @@ FsRmtDeviceMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPt
  *
  * FsDeviceMigEnd --
  *
- *	Complete setup of a FS_RMT_DEVICE_STREAM after migration.
- *	The srvMigrate routine has done most all the work.
- *	We just grab a reference on the I/O handle for the stream.
+ *	Complete setup of a FS_DEVICE_STREAM after migration to the I/O server.
+ *	The migrate routine has done the work of shifting use counts
+ *	at the stream and I/O handle level.  This routine's job is
+ *	to increment the low level I/O handle reference count to reflect
+ *	the existence of a new stream to the I/O handle.
  *
  * Results:
  *	None.

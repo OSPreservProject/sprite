@@ -724,7 +724,7 @@ FsFileScavenge(hdrPtr)
 /*
  * ----------------------------------------------------------------------------
  *
- * FsFileMigStart --
+ * FsFileRelease --
  *
  *	Initiate migration of a FS_LCL_FILE_STREAM.  There is no extra
  *	state needed than already put together by Fs_EncapStream.  However,
@@ -745,31 +745,12 @@ FsFileScavenge(hdrPtr)
  */
 /*ARGSUSED*/
 ReturnStatus
-FsFileMigStart(hdrPtr, flags, clientID, migFlagsPtr)
+FsFileRelease(hdrPtr, flags)
     FsHandleHeader *hdrPtr;	/* File being encapsulated */
     int flags;			/* Use flags from the stream */
-    int clientID;		/* Host doing the encapsulation */
-    int *migFlagsPtr;		/* Migration flags we may modify */
 {
-    register FsLocalFileIOHandle *handlePtr = (FsLocalFileIOHandle *)hdrPtr;
-    int writes;
-
-    if ((flags & FS_RMT_SHARED) == 0) {
-	if (flags & FS_WRITE) {
-	    /*
-	     * Figure out if this client is migrating away the last writer.
-	     */
-	    FsHandleLock(handlePtr);
-	    FsIOClientStatus(&handlePtr->consist.clientList, clientID,
-			     (int *) NIL, &writes, (int *) NIL);
-	    if (writes == 1) {
-		*migFlagsPtr |= FS_LAST_WRITER;
-	    }
-	    FsHandleRelease(hdrPtr, TRUE);
-	} else {
-	    FsHandleRelease(hdrPtr, FALSE);
-	}
-    }
+    Sys_Panic(SYS_FATAL, "FsFileRelease called\n");
+    FsHandleRelease(hdrPtr, FALSE);
     return(SUCCESS);
 }
 
@@ -779,9 +760,11 @@ FsFileMigStart(hdrPtr, flags, clientID, migFlagsPtr)
  *
  * FsFileMigEnd --
  *
- *	Complete setup of a stream to a local file after migration.  The
- *	srvMigrate routine has done most of the work.  We just need to
- *	get a reference on the I/O handle for the stream.
+ *	Complete setup of a stream to a local file after migration to the
+ *	file server.  FsFileMigrate has done the work of shifting use
+ *	counts at the stream and I/O handle level.  This routine has to
+ *	increment the low level I/O handle reference count to reflect
+ *	the existence of a new stream to the I/O handle.
  *
  * Results:
  *	SUCCESS or FS_FILE_NOT_FOUND if the I/O handle can't be set up.
@@ -883,9 +866,7 @@ FsFileMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
 	 * We only close the orignial client if the stream is unshared,
 	 * i.e. there are no references left there.
 	 */
-	FsStreamMigClient(&migInfoPtr->streamID, migInfoPtr->srcClientID,
-			dstClientID, (FsHandleHeader *)handlePtr,
-			&migInfoPtr->offset, &migInfoPtr->flags);
+	FsStreamMigClient(migInfoPtr, dstClientID, (FsHandleHeader *)handlePtr);
 
 	/*
 	 * Adjust use counts on the I/O handle to reflect any new sharing.
