@@ -42,7 +42,7 @@ extern void VmMachReadAndZeroPMEG _ARGS_((int pmeg, VmMachPTE pteArray[]));
 extern void VmMachTracePMEG _ARGS_((int pmeg));
 extern void VmMachSetSegMap _ARGS_((Address virtualAddress, int value));
 extern void VmMachCopyUserSegMap _ARGS_((unsigned short *tablePtr));
-extern void VmMachFlushCurrentContext _ARGS_((void));
+extern void VmMach_FlushCurrentContext _ARGS_((void));
 extern void VmMachFlushByteRange _ARGS_((Address virtAddr, int numBytes));
 extern void VmMachFlushPage _ARGS_((Address pageVirtAddr));
 extern void VmMachSetup32BitDVMA _ARGS_((void));

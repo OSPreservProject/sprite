@@ -1525,8 +1525,8 @@ SetupVM(procPtr, objInfoPtr, codeFilePtr, usedFile, codeSegPtrPtr, execInfoPtr)
     Proc_Lock(procPtr);
     procPtr->genFlags |= PROC_NO_VM;
 #ifdef sun4
-    MachFlushWindowsToStack();
-    VmMachFlushCurrentContext();
+    Mach_FlushWindowsToStack();
+    VmMach_FlushCurrentContext();
 #endif
     Vm_SegmentDelete(procPtr->vmPtr->segPtrArray[VM_CODE], procPtr);
     Vm_SegmentDelete(procPtr->vmPtr->segPtrArray[VM_HEAP], procPtr);

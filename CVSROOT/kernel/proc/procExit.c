@@ -567,8 +567,8 @@ ProcExitProcess(exitProcPtr, reason, status, code, thisProcess)
      */
 
 #ifdef sun4
-    MachFlushWindowsToStack();
-    VmMachFlushCurrentContext();
+    Mach_FlushWindowsToStack();
+    VmMach_FlushCurrentContext();
 #endif
     if ((exitProcPtr->genFlags & PROC_USER) && !noVm) {
 	int i=0;

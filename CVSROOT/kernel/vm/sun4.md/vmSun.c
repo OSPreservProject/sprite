@@ -1812,7 +1812,7 @@ SetupContext(procPtr)
 	vmPtr->machPtr->contextPtr = contextPtr;
 	VmMachSetContextReg((int)contextPtr->context);
 	if (stolenContext) {
-	    VmMachFlushCurrentContext();
+	    VmMach_FlushCurrentContext();
 	}
 	/*
 	 * Set the context map.
