@@ -1,8 +1,8 @@
 /* 
  * fsIoOps.c --
  *
- *	Routine for initializing the fsOpTable switch entries for 
- *	local files, devices, and pipe.
+ *	Routine for initializing the operation switch table entries for 
+ *	local files, devices, and pipes.
  *
  * Copyright 1989 Regents of the University of California
  * Permission to use, copy, modify, and distribute this
@@ -29,6 +29,13 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsrmt.h"
 #include "fsdm.h"
 
+/*
+ * The OpenOps are called to do preliminary open-time processing.  They
+ * are called after pathname resolution has obtained a local file I/O handle
+ * that represents a name of some object.  The NameOpen routine maps
+ * the attributes kept with the local file into an objectID (Fs_FileID)
+ * and any other information needed to create an I/O stream to the object.
+ */
 static Fsio_OpenOps ioOpenOps[] = { 
     /*
      * FILE through SYMBOLIC_LINK are all the same.
@@ -68,14 +75,16 @@ static Fsio_StreamTypeOps ioStreamOps[] = {
      * during various cases of migration, although the reopen and scavenge
      * entry points in this table are used.
      */
-    { FSIO_STREAM, Fsio_NoProc, Fsio_NoProc, Fsio_NoProc,	/* cltOpen, read, write */
-		Fsio_NoProc, Fsio_NoProc,			/* iocontrol, select */
-		Fsio_NoProc, Fsio_NoProc,			/* getIOAttr, setIOAttr */
+    { FSIO_STREAM, Fsio_NoProc, Fsio_NoProc, Fsio_NoProc,/* open, read, write */
+		Fsio_NoProc, Fsio_NoProc,	/* pageRead, pageWrite */
+		Fsio_NoProc, Fsio_NoProc,	/* iocontrol, select */
+		Fsio_NoProc, Fsio_NoProc,	/* getIOAttr, setIOAttr */
 		Fsio_NoHandle,			/* clientVerify */
-		Fsio_NoProc, Fsio_NoProc,			/* release, migEnd */
-		Fsio_NoProc,				/* migrate */
-		Fsio_StreamReopen,			/* reopen, blockAlloc */
-		(Boolean (*)())NIL, Fsio_NullClientKill,/* scavenge, kill */
+		Fsio_NoProc, Fsio_NoProc,	/* release, migEnd */
+		Fsio_NoProc,			/* migrate */
+		Fsio_StreamReopen,
+		(Boolean (*)())NIL,		/* scavenge */
+		Fsio_NullClientKill,
 		Fsio_NoProc},			/* close */
     /*
      * Local file stream.  The file is on a local disk and blocks are
@@ -84,6 +93,7 @@ static Fsio_StreamTypeOps ioStreamOps[] = {
      * is already done by FslclGetAttr(FslclSetAttr).
      */
     { FSIO_LCL_FILE_STREAM, Fsio_FileIoOpen, Fsio_FileRead, Fsio_FileWrite,
+		Fsio_FileRead, Fsio_FileWrite,		/* Paging routines */
 		Fsio_FileIOControl, Fsio_FileSelect,
 		Fsio_NullProc, Fsio_NullProc,		/* Get/Set IO Attr */
 		Fsio_NoHandle, Fsio_FileMigClose, Fsio_FileMigOpen, Fsio_FileMigrate,
@@ -94,16 +104,18 @@ static Fsio_StreamTypeOps ioStreamOps[] = {
      * for the particular device type.
      */
     { FSIO_LCL_DEVICE_STREAM, Fsio_DeviceIoOpen, Fsio_DeviceRead, Fsio_DeviceWrite,
+		Fsio_NoProc, Fsio_NoProc,		/* Paging routines */
 		Fsio_DeviceIOControl, Fsio_DeviceSelect,
 		Fsio_DeviceGetIOAttr, Fsio_DeviceSetIOAttr,
 		Fsio_NoHandle,				/* clientVerify */
 		Fsio_DeviceMigClose, Fsio_DeviceMigOpen, Fsio_DeviceMigrate,
-		Fsrmt_DeviceReopen,				/* reopen */
+		Fsrmt_DeviceReopen,
 		Fsio_DeviceScavenge, Fsio_DeviceClientKill, Fsio_DeviceClose},
     /*
      * Local anonymous pipe stream.  
      */
     { FSIO_LCL_PIPE_STREAM, Fsio_NoProc, Fsio_PipeRead, Fsio_PipeWrite,
+		Fsio_NoProc, Fsio_NoProc,		/* Paging routines */
 		Fsio_PipeIOControl, Fsio_PipeSelect,
 		Fsio_PipeGetIOAttr, Fsio_PipeSetIOAttr,
 		Fsio_NoHandle,				/* clientVerify */
@@ -121,14 +133,14 @@ static int numIoStreamOps = sizeof(ioStreamOps)/
  *
  * Fsio_InitializeOps --
  *
- *	Initialize the fsOpTable switch for the remote domain naming 
- *	and remote domain streams.
+ *	Initialize the operation switch tables for the NameOpen
+ *	routines and the StreamOps for local objects.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	None.
+ *	Adds entries to the fsio_OpenOpTable and fsio_StreamOpTable.
  *
  *----------------------------------------------------------------------
  */
