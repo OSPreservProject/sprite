@@ -15,5 +15,4 @@
 # file, the "DEFAULT" line is used, if it is specified.
 #
 
-DEFAULT		/sprite/cmds/cat - > /sprite/src/kernel
-^kernel		/sprite/cmds/cat - >> /sprite/src/kernel/Log
+^kernel	/tmp/goo
