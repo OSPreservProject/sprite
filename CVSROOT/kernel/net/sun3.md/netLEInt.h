@@ -52,8 +52,11 @@
  * NET_LE_NUM_XMIT_ELEMENTS 	The number of elements to preallocate for the 
  *			   	retransmission queue.
  */
-
+#ifdef sun4
+#define NET_LE_CONTROL_REG_ADDR		0xffd10000
+#else
 #define NET_LE_CONTROL_REG_ADDR		0xfe10000
+#endif
 
 #define	NET_LE_NUM_RECV_BUFFERS_LOG2	4
 #define	NET_LE_NUM_RECV_BUFFERS		(1 << NET_LE_NUM_RECV_BUFFERS_LOG2)
@@ -72,10 +75,13 @@
  * We always deal with chip addresses in two parts, the lower 16 bits
  * and the upper 8 bits.
  */
-
+#ifdef sun4
+#define	NET_LE_SUN_FROM_CHIP_ADDR(high,low)	\
+		((Address) (0xff000000 + ((high) << 16) + (low)))
+#else
 #define	NET_LE_SUN_FROM_CHIP_ADDR(high,low)	\
 		((Address) (0xf000000 + ((high) << 16) + (low)))
-
+#endif
 #define	NET_LE_SUN_TO_CHIP_ADDR_HIGH(a) ( (((unsigned int) (a)) >> 16) & 0xff)
 #define	NET_LE_SUN_TO_CHIP_ADDR_LOW(a) ( ((unsigned int) (a)) & 0xffff)
 /*
@@ -83,12 +89,20 @@
  * register address port (RAP) register. The top 14 bits of RAP are reserved
  * and read as zeros. The register accessable in the register data port (RDP)
  * is selected by the value of the RAP. (page 15)
+ *
+ * The sun4 compiler generates byte loads and stores for short bit fields but
+ * the hardware doesn't support byte access to the the LE registers.  Making
+ * addrPort a short will cause the compiler to use sth/lduh instructions.
  */
 
 typedef struct NetLE_Reg {
 	unsigned short	dataPort;	/* RDP */
-	unsigned short		: 14;	/* Reserved - must be zero */
+#ifdef sun4
+        unsigned short	addrPort;	/* RAP */
+#else
+        unsigned short		: 14;	/* Reserved - must be zero */
 	unsigned short	addrPort: 2;	/* RAP */
+#endif
 } NetLE_Reg;
 
 /*

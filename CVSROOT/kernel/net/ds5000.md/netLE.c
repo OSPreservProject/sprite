@@ -87,8 +87,8 @@ NetLEInit(name, number, ctrlAddr)
 
     DISABLE_INTR();
 
-#ifdef sun4
-    Mach_SetHandler(6, Net_Intr, (ClientData) 0);
+#ifdef sun4c
+    Mach_SetHandler(5, Net_Intr, (ClientData) 0);
 #else
     Mach_SetHandler(27, Net_Intr, (ClientData) 0);
 #endif
@@ -270,12 +270,18 @@ NetLEReset()
 
     /*
      * Set the the Bus master control register (csr3) to have chip byte
-     * swap for us.
+     * swap for us. he sparcStation appears to need active low and
+     * byte control on.
      */
 
     netLEStatePtr->regPortPtr->addrPort = NET_LE_CSR3_ADDR;
+#ifdef sun4c
+     netLEStatePtr->regPortPtr->dataPort = NET_LE_CSR3_BYTE_SWAP |
+					  NET_LE_CSR3_ALE_CONTROL |
+					  NET_LE_CSR3_BYTE_CONTROL;
+#else
     netLEStatePtr->regPortPtr->dataPort = NET_LE_CSR3_BYTE_SWAP;
-
+#endif
     /*
      * Set the init block pointer address in csr1 and csr2
      */
@@ -301,11 +307,8 @@ NetLEReset()
 
 	for (i = 0; ((*csr0Ptr & NET_LE_CSR0_INIT_DONE) == 0); i++) {
 	    if (i > 5000) {
-#ifdef sun4c
-		Mach_MonAbort();
-#endif
-		panic("LE ethernet: Chip will not initialize, csr @ 0x%x = 0x%x \n",
-			(unsigned int) csr0Ptr, *csr0Ptr);
+		panic("LE ethernet: Chip will not initialize, csr = 0x%x \n",
+			*csr0Ptr);
 	    }
 	    MACH_DELAY(100);
 	}
