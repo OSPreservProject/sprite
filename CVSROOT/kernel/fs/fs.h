@@ -78,6 +78,13 @@ typedef struct FsHandleHeader {
 
 typedef struct FsNameInfo {
     FsFileID		fileID;		/* Identifies file and name server. */
+    FsFileID		rootID;		/* ID of file system root.  Passed
+					 * to name server to prevent ascending
+					 * past the root of a domain with ".."*/
+    int			domainType;	/* Name domain type */
+    struct FsPrefix	*prefixPtr;	/* Back pointer to prefix table entry.
+					 * This is kept for efficient handling
+					 * of lookup redirects. */
     char		*name;		/* For console error messages. */
 } FsNameInfo;
 
