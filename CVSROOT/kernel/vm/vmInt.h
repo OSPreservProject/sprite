@@ -50,7 +50,7 @@
  * | is vmMemEnd which is incremented	|
  * | each time Vm_RawAlloc is called.	|
  * | The absolute end is		|
- * | mach_CodeStart + vmKernMemSize.	|
+ * | mach_CodeStart + vmKernMemSize.	|			
  * |					|
  * -------------------------------------- mach_CodeStart + vmKernMemSize
  * |					|
@@ -113,8 +113,8 @@
  * |					|    			* vm_PageSize
  * |					|
  * -------------------------------------- (heapSeg.offset + heapSeg.ptSize) *
-*		    |			   			vm_PageSize
- *		    V
+ *		    |			   			vm_PageSize
+ *		    V			
  *
  *		    A
  *		    |
@@ -459,16 +459,27 @@ typedef struct VmCOWInfo {
 } VmCOWInfo;
 
 /*
- * Macro to get a pointer to a page table entry.
+ * Macros to get a pointer to a page table entry.
  */
-#ifdef CLEAN
+#ifdef CLEAN2
 #define	VmGetPTEPtr(segPtr, page) \
     (&((segPtr)->ptPtr[(page) - (segPtr)->offset]))
 #else /* CLEAN */
 #define	VmGetPTEPtr(segPtr, page) \
-    ((((page) - (segPtr)->offset) > (segPtr)->ptSize) ? \
+    (((((page) - (segPtr)->offset) > (segPtr)->ptSize)) ? \
 	panic("Page number outside bounds of page table"), (Vm_PTE *) NIL : \
 	(&((segPtr)->ptPtr[(page) - (segPtr)->offset])))
+#endif /* CLEAN */
+
+#ifdef CLEAN2
+#define	VmGetAddrPTEPtr(virtAddrPtr, page) \
+    (&((virtAddrPtr)->segPtr->ptPtr[(page) - segOffset(virtAddrPtr)]))
+#else /* CLEAN */
+#define	VmGetAddrPTEPtr(virtAddrPtr, page) \
+    (((((page) - segOffset(virtAddrPtr)) < 0) || \
+    (((page) - segOffset(virtAddrPtr)) > (virtAddrPtr)->segPtr->ptSize) ) ? \
+	panic("Page number outside bounds of page table"), (Vm_PTE *) NIL : \
+	(&((virtAddrPtr)->segPtr->ptPtr[(page) - segOffset(virtAddrPtr)])))
 #endif /* CLEAN */
 
 /*
@@ -476,8 +487,18 @@ typedef struct VmCOWInfo {
  */
 #define	VmIncPTEPtr(ptePtr, val) ((ptePtr) += val)
 
+/*
+ * Macro to get a virtAddr's offset in the page table.
+ */
+#define segOffset(virtAddrPtr) ( ((virtAddrPtr)->sharedPtr== \
+	(Vm_SegProcList *)NULL) ? (virtAddrPtr)->segPtr->offset :\
+	(virtAddrPtr)->sharedPtr->offset)
+
 
 /*----------------------------------------------------------------------------*/
+
+#define min(a,b) ((a)<(b)?(a):(b))
+#define max(a,b) ((a)>(b)?(a):(b))
 
 /*
  * Initialization routines.
@@ -530,14 +551,17 @@ extern  VmDeleteStatus 	VmSegmentDeleteInt();
 extern	void		VmDecPTUserCount();
 extern	Vm_Segment	*VmGetSegPtr();
 extern	void		VmFlushSegment();
+extern	Vm_SegProcList	*VmFindSharedSegment();
+extern	Boolean		VmCheckSharedSegment();
 /*
- * Routines to validate and validate pages.
+ * Routines to validate and invalidate pages.
  */
 extern	void		VmPageValidate();
 extern	void		VmPageValidateInt();
 extern	void		VmPageInvalidate();
 extern	void		VmPageInvalidateInt();
 extern	void		VmValidatePagesInt();
+extern	void		VmPageInvalidateRange();
 /*
  * VM list routines.  Like normal list routines but do more sanity checks.
  */
@@ -586,4 +610,10 @@ extern	void		VmPrefetch();
  * Vm tracing.
  */
 extern	void		VmTraceSegStart();
-#endif /* _VMINT */
+#endif _VMINT
+
+/*
+ * Shared memory.
+ */
+extern int vmShmDebug;
+#define dprintf if (vmShmDebug) printf
