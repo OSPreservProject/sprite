@@ -192,39 +192,40 @@ typedef struct Fscache_Block {
 /* 
  * Flags for a Fscache_Block: 
  * 
- *   FSCACHE_BLOCK_FREE		The block is not being used.
+ *   FSCACHE_BLOCK_FREE			The block is not being used.
  *   FSCACHE_BLOCK_ON_DIRTY_LIST	The block is on the dirty list.
- *   FSCACHE_BLOCK_BEING_WRITTEN	The block is in the process of being written to
- *				disk.
+ *   FSCACHE_BLOCK_BEING_WRITTEN	The block is in the process of being
+ *					written to disk.
  *   FSCACHE_BLOCK_DIRTY		The block contains dirty data.
- *   FSCACHE_BLOCK_DELETED		This block has been deleted.  This flag is set
- *				when a block is to be invalidated after it has
- *				been cleaned.
- *   FSCACHE_MOVE_TO_FRONT		After this block has finished being cleaned
- *				move it to the front of the LRU list.
+ *   FSCACHE_BLOCK_DELETED		This block has been deleted.  This
+ *					flag is set when a block is to be
+ *					invalidated after it has been cleaned.
+ *   FSCACHE_MOVE_TO_FRONT		After this block has finished being
+ *					cleaned move it to the front of the
+ *					LRU list.
  *   FSCACHE_WRITE_BACK_WAIT		This block is being written out by 
- *				FsCacheWriteBack which is waiting for all 
- *				such blocks to be written out.
- *   FSCACHE_BLOCK_WRITE_LOCKED	This block is being modified.
- *   FSCACHE_BLOCK_NEW		This block was just created.
+ *					FsCacheWriteBack which is waiting
+ *					for all such blocks to be written out.
+ *   FSCACHE_BLOCK_WRITE_LOCKED		This block is being modified.
+ *   FSCACHE_BLOCK_NEW			This block was just created.
  *   FSCACHE_BLOCK_CLEANER_WAITING	The block cleaner is waiting for this
- *				block to become unlocked in order to write
- *				it out.
- *   FSCACHE_NOT_MAPPED		This cache block does not have physical memory 
- *				behind it.
- *   FSCACHE_IND_BLOCK		This block is an indirect block.
- *   FSCACHE_DESC_BLOCK	This block is a file descriptor block.
- *   FSCACHE_DIR_BLOCK		This is a directory block.
- *   FSCACHE_DATA_BLOCK	This is a data block.
- *   FSCACHE_READ_AHEAD_BLOCK	This block was read ahead.
+ *					block to become unlocked in order to
+ *					write it out.
+ *   FSCACHE_NOT_MAPPED			This cache block does not have
+ *					physical memory behind it.
+ *   FSCACHE_IND_BLOCK			This block is an indirect block.
+ *   FSCACHE_DESC_BLOCK			This block is a file descriptor block.
+ *   FSCACHE_DIR_BLOCK			This is a directory block.
+ *   FSCACHE_DATA_BLOCK			This is a data block.
+ *   FSCACHE_READ_AHEAD_BLOCK		This block was read ahead.
  *   FSCACHE_IO_IN_PROGRESS		IO is in progress on this block.
- *   FSCACHE_DONT_BLOCK	Don't block if the cache block is already
- *				locked.	
- *   FSCACHE_PIPE_BLOCK		This is a block that is permanently locked
- *				so that it can serve as the data area for
- *				a pipe.
- *   FSCACHE_WRITE_THRU_BLOCK	This block is being written through by the
- *				caller to Fscache_UnlockBlock.
+ *   FSCACHE_DONT_BLOCK			Don't block if the cache block is
+ *					already locked.	
+ *   FSCACHE_PIPE_BLOCK			This is a block that is permanently
+ *					locked so that it can serve as the
+ *					data area for a pipe.
+ *   FSCACHE_WRITE_THRU_BLOCK		This block is being written through by
+ *					the caller to Fscache_UnlockBlock.
  */
 #define	FSCACHE_BLOCK_FREE			0x000001
 #define	FSCACHE_BLOCK_ON_DIRTY_LIST		0x000002
