@@ -1554,6 +1554,8 @@ UpgradeFragment(ofsPtr, handlePtr, indexInfoPtr, curLastBlock, newLastFrag,
 		    curFragBlock, curFragOffset, curLastFrag + 1,
 		    &newFragBlock, &newFragOffset);
 	if (newFragBlock == -1) {
+	    printf("UpgradeFragment: OfsFragFind failed: no space on %s.\n",
+		   ofsPtr->domainPtr->domainPrefix); /* DEBUG */
 	    status = FS_NO_DISK_SPACE;
 	    goto exit;
 	}
@@ -1572,6 +1574,8 @@ UpgradeFragment(ofsPtr, handlePtr, indexInfoPtr, curLastBlock, newLastFrag,
 		    indexInfoPtr->lastDiskBlock,
 		    TRUE, &newFragBlock, &bitmapPtr);
 	if (newFragBlock == -1) {
+	    printf("UpgradeFragment: OfsBlockFind failed: no space on %s.\n",
+		   ofsPtr->domainPtr->domainPrefix); /* DEBUG */
 	    status = FS_NO_DISK_SPACE;
 	    goto exit;
 	} else if (newFragBlock == 0 && handlePtr->hdr.fileID.minor != 2) {
@@ -1735,6 +1739,8 @@ AllocateBlock(handlePtr, descPtr, indexInfoPtr, newLastByte, curLastBlock,
 		*dirtiedIndexPtr = TRUE;
 		descPtr->numKbytes += newFragIndex + 1;
 	    } else {
+		printf("AllocateBlock: OfsFragFind failed: no space on %s.\n",
+		       ofsPtr->domainPtr->domainPrefix); /* DEBUG */
 		status = FS_NO_DISK_SPACE;
 	    }
 	} else {
@@ -1746,6 +1752,8 @@ AllocateBlock(handlePtr, descPtr, indexInfoPtr, newLastByte, curLastBlock,
 			    indexInfoPtr->lastDiskBlock, 
 			    TRUE, &blockNum, &bitmapPtr);
 		if (blockNum == -1) {
+		printf("AllocateBlock: OfsBlockFind failed: no space on %s.\n",
+		       ofsPtr->domainPtr->domainPrefix); /* DEBUG */
 		    status = FS_NO_DISK_SPACE;
 		} else if (blockNum == 0 && handlePtr->hdr.fileID.minor != 2) {
 		    /*

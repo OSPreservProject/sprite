@@ -106,6 +106,8 @@ LfsSegUsageAllocateBytes(lfsPtr, numBytes)
     if (cp->freeBlocks - blocks > usagePtr->params.minFreeBlocks) { 
 	return SUCCESS;
     }
+    printf("LfsSegUsageAllocateBytes: no space on %s.\n",
+	   lfsPtr->name);	/* DEBUG */
     return FS_NO_DISK_SPACE;
 }
 
@@ -581,6 +583,8 @@ LfsGetLogTail(lfsPtr, cantWait, logRangePtr, startBlockPtr)
      * Need to location a new segment.
      */
     if (cp->numClean == 0) {
+	printf("LfsGetLogTail: no space (no clean segments) on %s.\n",
+	       lfsPtr->name);	/* DEBUG */
 	return FS_NO_DISK_SPACE;
     }
     /*

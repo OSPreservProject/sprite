@@ -475,6 +475,7 @@ FetchIndirectBlock(indBlockNum, handlePtr, indexInfoPtr, blockAddrPtr,
     register OfsIndirectInfo	*indInfoPtr;
     register int		*intPtr;
     Boolean			dontBlock;
+    extern void			printf(); /* DEBUG */
 
     dontBlock = indexInfoPtr->flags & FSCACHE_DONT_BLOCK;
     indInfoPtr = &(indexInfoPtr->indInfo[indBlockNum]);
@@ -483,6 +484,8 @@ FetchIndirectBlock(indBlockNum, handlePtr, indexInfoPtr, blockAddrPtr,
 	    OfsBlockFind(handlePtr->hdr.fileID.minor, indexInfoPtr->ofsPtr, 
 			-1, TRUE, &blockNum, &bitmapPtr);
 	    if (blockNum == -1) {
+		printf("FetchIndirectBlock: no space on %s.\n",
+		       indexInfoPtr->ofsPtr->domainPtr->domainPrefix); /* DEBUG */
 		return(FS_NO_DISK_SPACE);
 	    }
 	    blockNum += indexInfoPtr->ofsPtr->headerPtr->dataOffset;

@@ -865,6 +865,8 @@ LfsFile_GrowBlock(lfsPtr, handlePtr, offset, numBytes)
 				FS_BLOCK_SIZE, 0, &diskAddress);
 	    if ((status != SUCCESS) || LfsIsNilDiskAddr(diskAddress)) {
 		LFS_STATS_INC(lfsPtr->stats.blockio.slowAllocFails);
+		printf("LfsFile_GrowBlock: no space on %s.\n",
+		       lfsPtr->name); /* DEBUG */
 		status = FS_NO_DISK_SPACE;
 	    }
 	}
