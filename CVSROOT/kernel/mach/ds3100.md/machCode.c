@@ -65,7 +65,7 @@ Boolean mach_AtInterruptLevel = FALSE;
  * used when expanding $MACHINE in file names.
  */
 
-char *mach_MachineType = "pmax";
+char *mach_MachineType = "ds3100";
 
 /*
  * The byte ordering/alignment type used with Swap_Buffer and I/O control data
