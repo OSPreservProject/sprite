@@ -476,10 +476,25 @@ endScan:
 		 */
 		if (status == SUCCESS) {
 		    /*
-		     * Linking to an existing file.  Make sure the types match,
-		     * and only allow links to directories if this is in
-		     * preparation for a rename.
+		     * Linking to an existing file.
+		     * This can only be a directory made in preparation
+		     * for a rename.
 		     */
+		    if (curHandlePtr->descPtr->fileType == FS_DIRECTORY &&
+			type == FS_DIRECTORY &&
+			(useFlags & FS_RENAME)) {
+			/*
+			 * Try the delete, this fails on non-empty directories.
+			 */
+			status = DeleteFileName(domainPtr, parentHandlePtr,
+			      &curHandlePtr, component, compLen, FALSE, idPtr);
+		    } else {
+			/*
+			 * Not ok to link to an existing file.
+			 */
+			status = FS_FILE_EXISTS;
+		    }
+#ifdef old_code
 		    if (curHandlePtr->descPtr->fileType != type) {
 			if (curHandlePtr->descPtr->fileType == FS_DIRECTORY) {
 			    status = FS_IS_DIRECTORY;
@@ -489,10 +504,12 @@ endScan:
 			    status = FS_FILE_EXISTS;
 			}
 		    } else if ((type == FS_DIRECTORY) &&
-			       (useFlags & FS_RENAME) == 0) {
+			    (useFlags & FS_RENAME) == 0) {
 			status = FS_NO_ACCESS;
 		    } else {
-			/* Ok to link to the file */
+			/*
+			 * Ok to link to an existing file
+			 */
 		    }
 		    if (status == SUCCESS) {
 			/*
@@ -501,6 +518,7 @@ endScan:
 			status = DeleteFileName(domainPtr, parentHandlePtr,
 			      &curHandlePtr, component, compLen, FALSE, idPtr);
 		    }
+#endif old_code
 		} else if (status == FS_FILE_NOT_FOUND) {
 		    /*
 		     * The file does not already exist.  Check write permission
