@@ -192,6 +192,11 @@ typedef struct Fs_BlockCacheStats {
     unsigned int blocksPitched;		/* The number of blocks that were
 					 * thrown out at the command of
 					 * virtual memory. */
+    int blocksFlushed;			/* The number of blocks written back
+					   due to consistency. */
+    int migBlocksFlushed;		/* The number of blocks written back
+					   due to consistency for migrated
+					   files. */
 } Fs_BlockCacheStats;
 
 /*
@@ -380,9 +385,42 @@ typedef struct Fs_RemoteIOStats {
 } Fs_RemoteIOStats;
 
 /*
+ * Statistics relating to migration.
+ */
+typedef struct Fs_MigStats {
+    unsigned int filesEncapsulated; 	/* Total number of files encapsulated
+					   by this host */
+    unsigned int filesDeencapsulated; 	/* Total number of files deencapsulated
+					   by this host */
+    unsigned int consistActions; 	/* Total number of files for which
+					   this host was the i/o server doing
+					   consistency */
+    unsigned int readOnlyFiles; 	/* Total number of files deencapsulated
+					   read-only */
+    unsigned int alreadyThere; 		/* Total number of (writable) files
+					   already on target. NOT USED. */
+    unsigned int uncacheableFiles; 	/* Total number of files deencapsulated
+					   that were uncacheable to begin
+					   with, and stayed that way. */
+    unsigned int cacheWritableFiles; 	/* Total number of cacheable, writable
+					   files that were still cacheable
+					   after migration. */
+    unsigned int uncacheToCacheFiles; 	/* Total number of uncacheable
+					   files that became cacheable after
+					   migration. */
+    unsigned int cacheToUncacheFiles; 	/* Total number of cacheable
+					   files that became uncacheable after
+					   migration. */
+    unsigned int errorsOnDeencap;	/* Any files that couldn't be
+					   deencapsulated due to errors. */
+} Fs_MigStats;
+
+/*
  * File system statistics.
  */
+#define FS_STAT_VERSION 1
 typedef struct Fs_Stats {
+    int			statsVersion;   /* Version number of statistics info */
     Fs_NameOpStats	cltName;	/* Client-side naming operations */
     Fs_NameOpStats	srvName;	/* Server-side naming operations */
     Fs_GeneralStats	gen;		/* General I/O operations */
@@ -397,6 +435,7 @@ typedef struct Fs_Stats {
     Fs_ConsistStats	consist;	/* Cache consistency actions */
     Fs_WriteBackStats	writeBack;	/* Cache write-back stats */
     Fs_RemoteIOStats	rmtIO;		/* Remote I/O stats */
+    Fs_MigStats		mig;		/* Migration */
 } Fs_Stats;
 
 /*
