@@ -118,9 +118,7 @@ extern	int	fsutil_NumRecovering;
  */
 
 #define	Fsutil_StringNCopy(numBytes, srcStr, destStr, strLengthPtr) \
-    (Proc_IsMigratedProcess() ? \
-	    Proc_StringNCopy(numBytes, srcStr, destStr, strLengthPtr) : \
-	    Vm_StringNCopy(numBytes, srcStr, destStr, strLengthPtr))
+    Proc_StringNCopy(numBytes, srcStr, destStr, strLengthPtr)
 
 /*
  * Macros to handle type casting when dealing with handles.
