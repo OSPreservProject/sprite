@@ -163,6 +163,17 @@
 #define	MACH_AUX_INTR			0x80000
 
 /*
+ * MACH_MAX_EXT_INTERRUPT - The largest available external interrupt number.
+ */
+#define MACH_MAX_EXT_INTERRUPT		15
+
+/*
+ * MACH_EXT_INTERRUPT_ANY - Used to by callers of Mach_AllocExtIntrNumber to 
+ * specify allocation of any available interrupt number.
+ */
+#define	MACH_EXT_INTERRUPT_ANY		(MACH_NUM_INTR_TYPES+1)
+
+/*
  * Bits in the KPSW (see SPUR-ISA page 36).
  */
 #define	MACH_KPSW_PREFETCH_ENA		0x00004
