@@ -31,4 +31,13 @@ if the other host dies at the start of migration.  - FD
 This contains the final (I hope) format of the recovery information statistics
 so that all kernels from this point onwards should be able to run the
 current recovinfo.
+
+This has a new Fscache_FetchBlock that doesn't have the double insert bug.
+This may or may not fix the fragment trashing problem (unknown). - BW
+
+This has support for IOC_WRITE_BACK in the file and remote file modules.
+The top level routine Fs_WriteBackIDStub doesn't use Fs_IOControl (yet),
+so this is forward compatible for when that changes over.  This has new
+PageRead and PageWrite FS routines, and a cleaned up interface for
+the BlockRead and BlockWrite FS routines. - BW
     New files linked in from the net library.
