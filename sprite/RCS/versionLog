@@ -705,3 +705,7 @@ Fixed a few compat bugs:
     Changes to rpc module to take out annoying printfs.
 
     Changes to vm module to support raid changes in device module.
+
+    Took out unused "release" rpc functions.
+
+    Fewer noisy FDDI messages.
