@@ -226,6 +226,13 @@ Proc_ExitInt(reason, status, code)
 	panic("Proc_ExitInt: bad procPtr.\n");
     }
 
+#ifdef sun4
+    if (curProcPtr->genFlags & PROC_USER) {
+	printf("Proc_ExitInt: user proc 0x%x exiting with status 0x%x\n",
+		(unsigned int) curProcPtr, status);
+    }
+#endif sun4
+
     if (curProcPtr->genFlags & PROC_FOREIGN) {
 	ProcRemoteExit(curProcPtr, reason, status, code);
     }

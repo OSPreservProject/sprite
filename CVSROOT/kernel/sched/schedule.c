@@ -548,6 +548,7 @@ IdleLoop()
     cpu = Mach_GetProcessorNumber();
     queuePtr = schedReadyQueueHdrPtr;
     MASTER_UNLOCK(sched_MutexPtr);
+
     if (Mach_IntrNesting(cpu) != 0) {
 	int i;
 
