@@ -51,7 +51,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "sprite.h"
 #include "fs.h"
 #include "fsInt.h"
-#include "fsPdev.h"
 #include "fsOpTable.h"
 #include "fsFile.h"
 #include "fsStream.h"
@@ -378,7 +377,6 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
     register	PdevControlIOHandle *ctrlHandlePtr;
     register	Fs_Stream *streamPtr;
     register	PdevState *pdevStatePtr;
-    Boolean	grabStreamID = FALSE;
 
     /*
      * The control I/O handle is identified by the fileID of the pseudo-device
@@ -402,12 +400,18 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	     * Return to the pseudo-device server a ControlIOHandle that
 	     * has us, the name server, in the serverID field.  This is
 	     * used when closing the control stream to get back to us
-	     * so we can clear the serverID field here.
+	     * so we can clear the serverID field here.  We also set up
+	     * a shadow stream here, which has us as the server so
+	     * recovery and closing work right.
 	     */
 	    ctrlHandlePtr->serverID = clientID;
 	    *ioFileIDPtr = ioFileID;
 	    *clientDataPtr = (ClientData)NIL;
 	    *dataSizePtr = 0;
+	    streamPtr = FsStreamNew(rpc_SpriteID, ctrlHandlePtr, useFlags);
+	    *streamIDPtr = streamPtr->hdr.fileID;
+	    FsStreamClientOpen(&streamPtr->clientList, clientID, useFlags);
+	    FsHandleRelease(streamPtr, TRUE);
 	}
     } else {
 	if (streamIDPtr == (FsFileID *)NIL) {
@@ -452,22 +456,17 @@ FsPseudoDevSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
 	    pdevStatePtr->uid = NIL;
 	    *clientDataPtr = (ClientData)pdevStatePtr ;
 	    *dataSizePtr = sizeof(PdevState);
-	    grabStreamID = TRUE;
-	}
-    }
-    /*
-     * Now choose a streamID for the opening process.  We return its ID
-     * in the PdevState (as well as the return parameter) so the pdev
-     * server can ensure that a stream exists on its host too.
-     */
-    if ((status == SUCCESS) && (streamIDPtr != (FsFileID *)NIL)) {
-	streamPtr = FsStreamNew(ctrlHandlePtr->serverID,
-			(FsHandleHeader *)NIL, useFlags);
-	*streamIDPtr = streamPtr->hdr.fileID;
-	if (grabStreamID) {
+	    /*
+	     * Set up a top level stream for the opening process.  No shadow
+	     * stream is kept here.  Instead, the streamID is returned to
+	     * the pdev server who sets up a shadow stream.
+	     */
+	    streamPtr = FsStreamNew(ctrlHandlePtr->serverID,
+				    (FsHandleHeader *)NIL, useFlags);
+	    *streamIDPtr = streamPtr->hdr.fileID;
 	    pdevStatePtr->streamID = streamPtr->hdr.fileID;
+	    FsStreamDispose(streamPtr);
 	}
-	FsStreamDispose(streamPtr);
     }
     FsHandleRelease(ctrlHandlePtr, TRUE);
     return(status);
