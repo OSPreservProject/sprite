@@ -754,20 +754,29 @@ Fsio_FileScavenge(hdrPtr)
 	    }
 	}
     }
+    /*
+     * We can reclaim the handle if the following holds.
+     *	1. There are no active users of the file.
+     *  2. The file is not undergoing deletion
+     *		(The deletion will handle removing the handle)
+     *  3. There are no remote clients of the file.  In particular,
+     *		the last writer might not be active, but we can't
+     *		nuke the handle until after it writes back.
+     */
     noUsers = (handlePtr->use.ref == 0) &&
+	     ((handlePtr->flags & FSIO_FILE_DELETED) == 0) &&
 	      (Fsconsist_NumClients(&handlePtr->consist) == 0);
     if (noUsers && handlePtr->descPtr->fileType == FS_DIRECTORY) {
 	/*
 	 * Flush unused directories, otherwise they linger for a long
 	 * time.  They may still be in the name cache, in which case
-	 * HandleAttemptRemove won't delete them.  This isn't that extreme
-	 * because LRU replacement (which calls this scavenge routine)
-	 * stops after reclaiming 1/64 of the handles.
+	 * HandleAttemptRemove won't delete them.
 	 */
 	int blocksSkipped;
-	status = Fscache_FileWriteBack(&handlePtr->cacheInfo, 0, FSCACHE_LAST_BLOCK,
-		FSCACHE_FILE_WB_WAIT | FSCACHE_WRITE_BACK_INDIRECT | FSCACHE_WRITE_BACK_AND_INVALIDATE,
-		&blocksSkipped);
+	status = Fscache_FileWriteBack(&handlePtr->cacheInfo,
+		0, FSCACHE_LAST_BLOCK,
+		FSCACHE_FILE_WB_WAIT | FSCACHE_WRITE_BACK_INDIRECT |
+		FSCACHE_WRITE_BACK_AND_INVALIDATE, &blocksSkipped);
 	noUsers = (status == SUCCESS) && (blocksSkipped == 0);
     }
     if (noUsers && Fscache_OkToScavenge(&handlePtr->cacheInfo)) {
