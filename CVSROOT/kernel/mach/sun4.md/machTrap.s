@@ -499,7 +499,18 @@ CallUnderflow:
 	jmpl	%VOL_TEMP1, %RETURN_ADDR_REG
 	nop
 /* FOR DEBUGGING */
-#ifdef NOTDEF
+	andcc	%CUR_PSR_REG, MACH_PS_BIT, %g0
+	bne	UnderflowOkay
+	nop
+	MACH_GET_CUR_PROC_PTR(%VOL_TEMP1)
+	set	_MachPIDOffset, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2
+	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %OUT_TEMP1
+	set	0x4310c, %VOL_TEMP1
+	cmp	%OUT_TEMP1, %VOL_TEMP1
+	bne	UnderflowOkay
+	nop
 	set	0x17171717, %OUT_TEMP1
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, IsFpOkayStill0, %OUT_TEMP1)
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, IsFpOkayStill1, %fp)
@@ -509,7 +520,6 @@ CallUnderflow:
 	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %OUT_TEMP1
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, PidForOkayness, %OUT_TEMP1)
-#endif NOTDEF
 /* END FOR DEBUGGING */
 UnderflowOkay:
 	MACH_DISABLE_TRAPS()
