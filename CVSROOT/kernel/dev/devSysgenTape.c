@@ -13,15 +13,15 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif /* not lint */
 
 
-#include "sprite.h"
-#include "dev.h"
-#include "devInt.h"
-#include "scsi.h"
-#include "scsiDevice.h"
-#include "scsiHBA.h"
-#include "scsiTape.h"
-#include "fs.h"
-#include "sysgenTape.h"
+#include <sprite.h>
+#include <dev.h>
+#include <devInt.h>
+#include <sys/scsi.h>
+#include <scsiDevice.h>
+#include <scsiHBA.h>
+#include <scsiTape.h>
+#include <fs.h>
+#include <sysgenTape.h>
 
 /*
  * Sense data returned from the Sysgen tape controller.
@@ -93,22 +93,20 @@ DevSysgenAttach(devicePtr, devPtr, tapePtr)
     ScsiDevice	*devPtr;	/* SCSI device handle for drive. */
     ScsiTape	*tapePtr;	/* Tape drive state to be filled in. */
 {
-    unsigned char statusByte;
-    ScsiCmd	senseCmd;
-    char	senseData[SCSI_MAX_SENSE_LEN];
-    int		length;
+    ScsiCmd		senseCmd;
     ReturnStatus	status;
+    static char		senseData[SCSI_MAX_SENSE_LEN];
+    int			length;
 
     /*
      * Since we don't know about the inquiry data (if any) returned by 
      * the Sysgen tape, check using the size of the SENSE data returned.
      */
     DevScsiSenseCmd(devPtr, SCSI_MAX_SENSE_LEN, senseData, &senseCmd);
-    status = DevScsiSendCmdSync(devPtr, &senseCmd, &statusByte, &length,
-			      (int *) NIL, (char *) NIL);
+    status = DevScsiSendCmdSync(devPtr, &senseCmd, &length);
     if ( (status != SUCCESS) || 
-         (statusByte != 0) ||
-	 (length != SYSGEN_SENSE_BYTES)) {
+         (senseCmd.statusByte != 0) ||
+	 (senseCmd.senseLen != SYSGEN_SENSE_BYTES)) {
 	return DEV_NO_DEVICE;
     }
     /*

@@ -20,14 +20,14 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
 
-#include "sprite.h"
-#include "dev.h"
-#include "devInt.h"
-#include "scsi.h"
-#include "scsiDevice.h"
-#include "scsiHBA.h"
-#include "scsiTape.h"
-#include "emulexTape.h"
+#include <sprite.h>
+#include <dev.h>
+#include <devInt.h>
+#include <sys/scsi.h>
+#include <scsiDevice.h>
+#include <scsiHBA.h>
+#include <scsiTape.h>
+#include <emulexTape.h>
 
 /*
  * Sense data returned from the Emulex tape controller in the shoeboxes.
@@ -100,23 +100,21 @@ DevEmulexAttach(devicePtr, devPtr, tapePtr)
     ScsiDevice	*devPtr;	/* SCSI device handle for drive. */
     ScsiTape	*tapePtr;	/* Tape drive state to be filled in. */
 {
-    unsigned char statusByte;
-    ScsiCmd	senseCmd;
-    char	senseData[SCSI_MAX_SENSE_LEN];
-    int		length;
+    ScsiCmd		senseCmd;
     ReturnStatus	status;
+    static char		senseData[SCSI_MAX_SENSE_LEN];
+    int			length;
     /*
      * Since we don't know about the inquiry data (if any) returned by 
      * the Emulex tape, check using the size of the SENSE data returned.
      */
     DevScsiSenseCmd(devPtr, SCSI_MAX_SENSE_LEN, senseData, &senseCmd);
-    status = DevScsiSendCmdSync(devPtr, &senseCmd, &statusByte, &length,
-			      (int *) NIL, (char *) NIL);
+    status = DevScsiSendCmdSync(devPtr, &senseCmd, &length);
     if ( (status != SUCCESS) || 
-         (statusByte != 0) ||
-	 ((length != EMULEX_SENSE_BYTES) &&
-	  (length != SCSI_MAX_SENSE_LEN) &&
-	  (length != 14)) ){
+         (senseCmd.statusByte != 0) ||
+	 ((senseCmd.senseLen != EMULEX_SENSE_BYTES) &&
+	  (senseCmd.senseLen != SCSI_MAX_SENSE_LEN) &&
+	  (senseCmd.senseLen != 14)) ){
 	return DEV_NO_DEVICE;
     }
     /*
