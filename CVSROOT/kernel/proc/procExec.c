@@ -589,7 +589,7 @@ SetupArgs(userArgsPtr, extraArgArray, argStackPtr, argStringPtr)
     encapPtr = (ExecEncapState *) buffer;
     hdrPtr = &encapPtr->hdr;
     hdrPtr->size = bufSize;
-    stackSize = bufSize - sizeof(ExecEncapHeader);
+    stackSize = Byte_AlignAddr((bufSize - sizeof(ExecEncapHeader)));
     hdrPtr->base = mach_MaxUserStackAddr - stackSize;
     encapPtr->argc = numArgs;
     newArgPtrArray = (char **) (buffer + sizeof(ExecEncapState));
