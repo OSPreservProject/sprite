@@ -479,8 +479,8 @@ Exc_Trap(trapStack)
 	     * trace trap is if the debugger is trying to single step the 
 	     * user process.
 	     */
-	    if (procPtr->genFlags & PROC_SINGLE_STEP) {
-		procPtr->genFlags &= ~PROC_SINGLE_STEP;
+	    if (procPtr->genFlags & PROC_SINGLE_STEP_FLAG) {
+		procPtr->genFlags &= ~PROC_SINGLE_STEP_FLAG;
 		(void) Sig_Send(SIG_TRACE_TRAP, SIG_NO_CODE,
 				procPtr->processID, FALSE);
 	    }
@@ -557,7 +557,7 @@ ExcUserReturn(procPtr, trapStackPtr)
 	gotSig = Sig_Handle(trapStackPtr, &newPC);
     }
     
-    if ((procPtr->genFlags & PROC_SINGLE_STEP) ||
+    if ((procPtr->genFlags & PROC_SINGLE_STEP_FLAG) ||
 	(procPtr->schedFlags & SCHED_CONTEXT_SWITCH_PENDING)) {
 	/*
 	 * Set the trace trap bit if we are supposed to single-step this
