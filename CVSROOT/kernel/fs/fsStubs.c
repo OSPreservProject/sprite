@@ -34,6 +34,7 @@ static char rcsid[] = "$Header$";
 #include <user/sys/stat.h>
 #include <user/sys/uio.h>
 #include <user/sys/ioctl.h>
+#include <user/sys/termio.h>
 #include <user/sys/termios.h>
 #include <user/sys/socket.h>
 #include <user/dev/tty.h>
@@ -314,6 +315,8 @@ Fs_NewOpenStub(pathName, unixFlags, permissions)
     if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
 		       &pathNameLength) != SUCCESS) {
 	Mach_SetErrno(EACCES);
+	printf("Errno: %x = %d\n", &Proc_GetActualProc()->unixErrno,
+		Proc_GetActualProc()->unixErrno);
 	return -1;
     }
     if (pathNameLength == FS_MAX_PATH_NAME_LENGTH) {
@@ -1051,7 +1054,9 @@ Fs_IoctlStub(streamID, request, buf)
     switch (request) {
 
     case FIOCLEX:
-	printf("ioctl: FIOCLEX\n");
+	if (debugFsStubs) {
+                printf("ioctl: FIOCLEX\n");
+                }
 	ioctl.command = IOC_SET_BITS;
 	ioctl.inBufSize = sizeof(int);
 	ioctl.inBuffer = (Address) &flags;
@@ -1061,7 +1066,9 @@ Fs_IoctlStub(streamID, request, buf)
 	break;
 
     case FIONCLEX:
-	printf("ioctl: FIONCLEX\n");
+	if (debugFsStubs) {
+                printf("ioctl: FIONCLEX\n");
+                }
 	ioctl.command = IOC_CLEAR_BITS;
 	ioctl.inBufSize = sizeof(int);
 	ioctl.inBuffer = (Address) &flags;
@@ -1072,7 +1079,9 @@ Fs_IoctlStub(streamID, request, buf)
 
 
     case FIONREAD:
-	printf("ioctl: FIONREAD\n");
+	if (debugFsStubs) {
+                printf("ioctl: FIONREAD\n");
+                }
 	ioctl.command = IOC_NUM_READABLE;
 	ioctl.outBuffer = (Address) &flags;
 	ioctl.outBufSize = sizeof(flags);
@@ -1081,7 +1090,9 @@ Fs_IoctlStub(streamID, request, buf)
 
 
     case FIONBIO:
-	printf("ioctl: FIONBIO\n");
+	if (debugFsStubs) {
+                printf("ioctl: FIONBIO\n");
+                }
 	if (Vm_CopyIn(4, buf, (Address) &flags) != SUCCESS) {
 	    Mach_SetErrno(EINVAL);
 	    return -1;
@@ -1098,7 +1109,9 @@ Fs_IoctlStub(streamID, request, buf)
 	break;
 
     case FIOASYNC:
-	printf("ioctl: FIOASYNC\n");
+	if (debugFsStubs) {
+                printf("ioctl: FIOASYNC\n");
+                }
 	if (Vm_CopyIn(4, buf, (Address) &flags) != SUCCESS) {
 	    Mach_SetErrno(EINVAL);
 	    return -1;
@@ -1119,7 +1132,9 @@ Fs_IoctlStub(streamID, request, buf)
     case TIOCGPGRP: {
 	    Ioc_Owner owner;
 
-	    printf("ioctl: FIOGETOWN\n");
+	    if (debugFsStubs) {
+		printf("ioctl: FIOGETOWN\n");
+	    }
 	    ioctl.command = IOC_GET_OWNER;
 	    ioctl.outBuffer = (Address) &owner;
 	    ioctl.outBufSize = sizeof(owner);
@@ -1133,15 +1148,17 @@ Fs_IoctlStub(streamID, request, buf)
 		Mach_SetErrno(EINVAL);
 		return -1;
 	    }
-        }
-	break;
+	    }
+	    break;
 
     case FIOSETOWN:
     case SIOCSPGRP:
     case TIOCSPGRP: {
 	    Ioc_Owner owner;
 
-	    printf("ioctl: FIOSETOWN\n");
+	    if (debugFsStubs) {
+                printf("ioctl: FIOSETOWN\n");
+	    }
 	    status = Vm_CopyIn(sizeof(int), buf, (Address) &owner.id);
 	    if (status != SUCCESS) {
 		Mach_SetErrno(EINVAL);
@@ -1162,7 +1179,9 @@ Fs_IoctlStub(streamID, request, buf)
      case TIOCGETP: {
 	    struct sgttyb temp;
 
-	    printf("ioctl: TIOCGETP\n");
+	    if (debugFsStubs) {
+                printf("ioctl: TIOCGETP\n");
+	    }
 	    ioctl.command = IOC_TTY_GET_PARAMS;
 	    ioctl.outBufSize = sizeof(struct sgttyb);
 	    if (streamPtr->ioHandlePtr->fileID.type == FSIO_LCL_PSEUDO_STREAM){
@@ -1183,7 +1202,9 @@ Fs_IoctlStub(streamID, request, buf)
      case TIOCSETP: {
 	    struct sgttyb temp;
 
-	    printf("ioctl: TIOCSETP\n");
+	    if (debugFsStubs) {
+                printf("ioctl: TIOCSETP\n");
+	    }
 	    ioctl.command = IOC_TTY_SET_PARAMS;
 	    ioctl.inBufSize = sizeof(struct sgttyb);
 	    if (streamPtr->ioHandlePtr->fileID.type == FSIO_LCL_PSEUDO_STREAM){
@@ -1203,7 +1224,9 @@ Fs_IoctlStub(streamID, request, buf)
      case TIOCSETN: {
 	    struct sgttyb temp;
 
-	    printf("ioctl: TIOCSETN\n");
+	    if (debugFsStubs) {
+                printf("ioctl: TIOCSETN\n");
+	    }
 	    ioctl.command = IOC_TTY_SETN;
 	    ioctl.inBufSize = sizeof(struct sgttyb);
 	    if (streamPtr->ioHandlePtr->fileID.type == FSIO_LCL_PSEUDO_STREAM){
@@ -1221,19 +1244,25 @@ Fs_IoctlStub(streamID, request, buf)
 	 break;
 
      case TIOCEXCL:
-	 printf("ioctl: TIOCEXCL\n");
-	 ioctl.command = IOC_TTY_EXCL;
-	 status = Fs_IOControl(streamPtr, &ioctl, &reply);
-	 break;
+	if (debugFsStubs) {
+	    printf("ioctl: TIOCEXCL\n");
+	}
+	ioctl.command = IOC_TTY_EXCL;
+	status = Fs_IOControl(streamPtr, &ioctl, &reply);
+	break;
 
      case TIOCNXCL:
-	 printf("ioctl: TIOCNXCL\n");
+	 if (debugFsStubs) {
+	     printf("ioctl: TIOCNXCL\n");
+	 }
 	 ioctl.command = IOC_TTY_NXCL;
 	 status = Fs_IOControl(streamPtr, &ioctl, &reply);
 	 break;
 
      case TIOCHPCL:
-	 printf("ioctl: TIOCHPCL\n");
+	 if (debugFsStubs) {
+	     printf("ioctl: TIOCHPCL\n");
+	 }
 	 ioctl.command = IOC_TTY_HUP_ON_CLOSE;
 	 status = Fs_IOControl(streamPtr, &ioctl, &reply);
 	 break;
@@ -1241,7 +1270,9 @@ Fs_IoctlStub(streamID, request, buf)
      case TIOCFLUSH: {
 	 int temp;
 
-	 printf("ioctl: TIOCFLUSH\n");
+	 if (debugFsStubs) {
+             printf("ioctl: TIOCFLUSH\n");
+         }
 	 ioctl.command = IOC_TTY_NXCL;
 	 ioctl.inBufSize = sizeof(int);
 	 if (streamPtr->ioHandlePtr->fileID.type == FSIO_LCL_PSEUDO_STREAM) {
@@ -1261,7 +1292,9 @@ Fs_IoctlStub(streamID, request, buf)
      case TIOCSTI: {
 	 int temp;
 
-	 printf("ioctl: TIOCSTI\n");
+	 if (debugFsStubs) {
+	     printf("ioctl: TIOCSTI\n");
+	 }
 	 ioctl.command = IOC_TTY_INSERT_CHAR;
 	 ioctl.inBufSize = sizeof(int);
 	 if (streamPtr->ioHandlePtr->fileID.type == FSIO_LCL_PSEUDO_STREAM) {
@@ -1279,25 +1312,33 @@ Fs_IoctlStub(streamID, request, buf)
      break;
 
      case TIOCSBRK:
-         printf("ioctl: TIOCSBRK\n");
+         if (debugFsStubs) {
+              printf("ioctl: TIOCSBRK\n");
+         }
 	 ioctl.command = IOC_TTY_SET_BREAK;
 	 status = Fs_IOControl(streamPtr, &ioctl, &reply);
 	 break;
 
      case TIOCCBRK:
-	 printf("ioctl: TIOCCBRK\n");
+	 if (debugFsStubs) {
+             printf("ioctl: TIOCCBRK\n");
+         }
 	 ioctl.command = IOC_TTY_CLEAR_BREAK;
 	 status = Fs_IOControl(streamPtr, &ioctl, &reply);
 	 break;
 
      case TIOCSDTR:
-	 printf("ioctl: TIOCSDTR\n");
+	 if (debugFsStubs) {
+             printf("ioctl: TIOCSDTR\n");
+         }
 	 ioctl.command = IOC_TTY_SET_DTR;
 	 status = Fs_IOControl(streamPtr, &ioctl, &reply);
 	 break;
 
      case TIOCCDTR:
-	 printf("ioctl: TIOCCDTR\n");
+	 if (debugFsStubs) {
+             printf("ioctl: TIOCCDTR\n");
+         }
 	 ioctl.command = IOC_TTY_CLEAR_DTR;
 	 status = Fs_IOControl(streamPtr, &ioctl, &reply);
 	 break;
@@ -1305,7 +1346,9 @@ Fs_IoctlStub(streamID, request, buf)
      case TIOCGETC: {
 	    struct tchars temp;
 
-	    printf("ioctl: TIOCGETC\n");
+	    if (debugFsStubs) {
+		printf("ioctl: TIOCGETC\n");
+	    }
 	    ioctl.command = IOC_TTY_GET_TCHARS;
 	    ioctl.outBufSize = sizeof(struct tchars);
 	    if (streamPtr->ioHandlePtr->fileID.type == FSIO_LCL_PSEUDO_STREAM){
@@ -1326,7 +1369,9 @@ Fs_IoctlStub(streamID, request, buf)
      case TIOCSETC: {
 	    struct tchars temp;
 
-	    printf("ioctl: TIOCSETC\n");
+	    if (debugFsStubs) {
+                printf("ioctl: TIOCSETC\n");
+            }
 	    ioctl.command = IOC_TTY_SET_TCHARS;
 	    ioctl.inBufSize = sizeof(struct tchars);
 	    if (streamPtr->ioHandlePtr->fileID.type == FSIO_LCL_PSEUDO_STREAM){
@@ -1346,7 +1391,9 @@ Fs_IoctlStub(streamID, request, buf)
      case TIOCGLTC: {
 	    struct ltchars temp;
 
-	    printf("ioctl: TIOCGLTC\n");
+	    if (debugFsStubs) {
+                printf("ioctl: TIOCGLTC\n");
+            }
 	    ioctl.command = IOC_TTY_GET_LTCHARS;
 	    ioctl.outBufSize = sizeof(struct ltchars);
 	    if (streamPtr->ioHandlePtr->fileID.type == FSIO_LCL_PSEUDO_STREAM){
@@ -1367,7 +1414,9 @@ Fs_IoctlStub(streamID, request, buf)
      case TIOCSLTC: {
 	    struct ltchars temp;
 
-	    printf("ioctl: TIOCSLTC\n");
+	    if (debugFsStubs) {
+                printf("ioctl: TIOCSLTC\n");
+            }
 	    ioctl.command = IOC_TTY_SET_LTCHARS;
 	    ioctl.inBufSize = sizeof(struct ltchars);
 	    if (streamPtr->ioHandlePtr->fileID.type == FSIO_LCL_PSEUDO_STREAM){
@@ -1406,7 +1455,9 @@ Fs_IoctlStub(streamID, request, buf)
      case TIOCLBIC: {
 	    int temp;
 
-	    printf("ioctl: TIOCLBIC\n");
+	    if (debugFsStubs) {
+                printf("ioctl: TIOCLBIC\n");
+            }
 	    ioctl.command = IOC_TTY_BIC_LM;
 	    ioctl.inBufSize = sizeof(int);
 	    if (streamPtr->ioHandlePtr->fileID.type == FSIO_LCL_PSEUDO_STREAM){
@@ -1426,7 +1477,9 @@ Fs_IoctlStub(streamID, request, buf)
      case TIOCLSET: {
 	    int temp;
 
-	    printf("ioctl: TIOCLSET\n");
+	    if (debugFsStubs) {
+                printf("ioctl: TIOCLSET\n");
+            }
 	    ioctl.command = IOC_TTY_SET_LM;
 	    ioctl.inBufSize = sizeof(int);
 	    if (streamPtr->ioHandlePtr->fileID.type == FSIO_LCL_PSEUDO_STREAM){
@@ -1446,7 +1499,9 @@ Fs_IoctlStub(streamID, request, buf)
      case TIOCLGET: {
 	    int temp;
 
-	    printf("ioctl: TIOCLGET\n");
+	    if (debugFsStubs) {
+                printf("ioctl: TIOCLGET\n");
+            }
 	    ioctl.command = IOC_TTY_GET_LM;
 	    ioctl.outBufSize = sizeof(int);
 	    if (streamPtr->ioHandlePtr->fileID.type == FSIO_LCL_PSEUDO_STREAM){
@@ -1466,7 +1521,9 @@ Fs_IoctlStub(streamID, request, buf)
      case TIOCGETD: {
 	    int temp;
 
-	    printf("ioctl: TIOCGETD\n");
+	    if (debugFsStubs) {
+                printf("ioctl: TIOCGETD\n");
+            }
 	    ioctl.command = IOC_TTY_GET_DISCIPLINE;
 	    ioctl.outBufSize = sizeof(int);
 	    if (streamPtr->ioHandlePtr->fileID.type == FSIO_LCL_PSEUDO_STREAM){
@@ -1487,7 +1544,9 @@ Fs_IoctlStub(streamID, request, buf)
      case TIOCSETD: {
 	    int temp;
 
-	    printf("ioctl: TIOCSETD\n");
+	    if (debugFsStubs) {
+                printf("ioctl: TIOCSETD\n");
+            }
 	    ioctl.command = IOC_TTY_SET_DISCIPLINE;
 	    ioctl.inBufSize = sizeof(int);
 	    if (streamPtr->ioHandlePtr->fileID.type == FSIO_LCL_PSEUDO_STREAM){
@@ -1507,7 +1566,9 @@ Fs_IoctlStub(streamID, request, buf)
      case SIOCATMARK: {
 	    int temp;
 
-	    printf("ioctl: TIOCATMARK\n");
+	    if (debugFsStubs) {
+                printf("ioctl: TIOCATMARK\n");
+            }
 	    ioctl.command = IOC_NET_IS_OOB_DATA_NEXT;
 	    ioctl.outBufSize = sizeof(int);
 	    if (streamPtr->ioHandlePtr->fileID.type == FSIO_LCL_PSEUDO_STREAM){
@@ -1527,7 +1588,9 @@ Fs_IoctlStub(streamID, request, buf)
      case TCGETS: {
 	    struct termios temp;
 
-	    printf("ioctl: TCGETS\n");
+	    if (debugFsStubs) {
+                printf("ioctl: TCGETS\n");
+            }
 	    ioctl.command = IOC_TTY_GET_TERMIO;
 	    ioctl.outBufSize = sizeof(struct termios);
 	    if (streamPtr->ioHandlePtr->fileID.type == FSIO_LCL_PSEUDO_STREAM){
@@ -1546,9 +1609,11 @@ Fs_IoctlStub(streamID, request, buf)
 	break;
 
      case TCSETS: {
-	    int temp;
+	    struct termios temp;
 
-	    printf("ioctl: TCSETS\n");
+	    if (debugFsStubs) {
+                printf("ioctl: TCSETS\n");
+            }
 	    ioctl.command = IOC_TTY_SET_TERMIO;
 	    ioctl.inBufSize = sizeof(struct termios);
 	    if (streamPtr->ioHandlePtr->fileID.type == FSIO_LCL_PSEUDO_STREAM){
@@ -1557,7 +1622,8 @@ Fs_IoctlStub(streamID, request, buf)
 		status = Fs_IOControl(streamPtr, &ioctl, &reply);
 	    } else {
 		ioctl.inBuffer = (Address) &temp;
-		status = Vm_CopyIn(sizeof(int), buf, (Address) &temp);
+		status = Vm_CopyIn(sizeof(struct termios), buf,
+			(Address) &temp);
 		if (status == SUCCESS) {
 		    status = Fs_IOControl(streamPtr, &ioctl, &reply);
 		}
@@ -1565,10 +1631,71 @@ Fs_IoctlStub(streamID, request, buf)
         }
 	break;
 
+     case TCGETA: {
+	    struct termios temp;
+	    struct termio temp2;
+
+	    if (debugFsStubs) {
+                printf("ioctl: TCGETA\n");
+            }
+	    ioctl.command = IOC_TTY_GET_TERMIO;
+	    ioctl.outBufSize = sizeof(struct termios);
+	    ioctl.outBuffer = (Address) &temp;
+	    status = Fs_IOControl(streamPtr, &ioctl, &reply);
+	    if (status != SUCCESS) {
+		if (debugFsStubs) {
+                printf("IOCTL failed on %s\n",
+                }
+			Fsutil_HandleName(streamPtr->ioHandlePtr));
+		status = SUCCESS;
+	    } else {
+		temp2.c_iflag = temp.c_iflag;
+		temp2.c_oflag = temp.c_oflag;
+		temp2.c_cflag = temp.c_cflag;
+		temp2.c_lflag = temp.c_lflag;
+		temp2.c_line = temp.c_line;
+		bcopy((Address) temp.c_cc, (Address) temp2.c_cc, NCC);
+		status = Vm_CopyOut(sizeof(struct termio),
+		    (Address) &temp2, buf);
+		if (status != SUCCESS) {
+		    if (debugFsStubs) {
+			printf("copy out failed\n");
+		    }
+		}
+	    }
+        }
+	break;
+
+     case TCSETA: {
+	    struct termios temp;
+	    struct termio temp2;
+	    status = Vm_CopyIn(sizeof(struct termio), buf, (Address) &temp);
+
+	    if (debugFsStubs) {
+                printf("ioctl: TCSETA\n");
+	    }
+	    temp.c_iflag = temp2.c_iflag;
+	    temp.c_oflag = temp2.c_oflag;
+	    temp.c_cflag = temp2.c_cflag;
+	    temp.c_lflag = temp2.c_lflag;
+	    temp.c_line = temp2.c_line;
+	    bzero((Address) temp.c_cc, NCCS);
+	    bcopy((Address) temp2.c_cc, (Address) temp.c_cc, NCC);
+	    ioctl.command = IOC_TTY_SET_TERMIO;
+	    ioctl.inBufSize = sizeof(struct termios);
+	    ioctl.inBuffer = (Address) &temp;
+	    if (status == SUCCESS) {
+		status = Fs_IOControl(streamPtr, &ioctl, &reply);
+	    }
+        }
+	break;
+
      case TIOCGWINSZ: {
 	    struct winsize temp;
 
-	    printf("ioctl: TIOCGWINSZ\n");
+	    if (debugFsStubs) {
+                printf("ioctl: TIOCGWINSZ\n");
+	    }
 	    ioctl.command = IOC_TTY_GET_WINDOW_SIZE;
 	    ioctl.outBuffer = (Address) &temp;
 	    ioctl.outBufSize = sizeof(struct winsize);
@@ -1590,7 +1717,9 @@ Fs_IoctlStub(streamID, request, buf)
      case TIOCSWINSZ: {
 	    struct winsize temp;
 
-	    printf("ioctl: TIOCSWINSZ\n");
+	    if (debugFsStubs) {
+                printf("ioctl: TIOCSWINSZ\n");
+	    }
 	    ioctl.command = IOC_TTY_SET_WINDOW_SIZE;
 	    ioctl.inBufSize = sizeof(struct winsize);
 	    if (streamPtr->ioHandlePtr->fileID.type == FSIO_LCL_PSEUDO_STREAM){
@@ -1615,7 +1744,9 @@ Fs_IoctlStub(streamID, request, buf)
      case QIOCGINFO: {
 	    DevScreenInfo *temp;
 
-	    printf("ioctl: QIOCGINFO\n");
+	    if (debugFsStubs) {
+                printf("ioctl: QIOCGINFO\n");
+	    }
 	    ioctl.command = IOC_GRAPHICS_GET_INFO;
 	    ioctl.outBufSize = sizeof(DevScreenInfo *);
 	    if (streamPtr->ioHandlePtr->fileID.type == FSIO_LCL_PSEUDO_STREAM){
@@ -1636,7 +1767,9 @@ Fs_IoctlStub(streamID, request, buf)
      case QIOCPMSTATE: {
 	    DevCursor temp;
 
-	    printf("ioctl: QIOCPMSTATE\n");
+	    if (debugFsStubs) {
+                printf("ioctl: QIOCPMSTATE\n");
+	    }
 	    ioctl.command = IOC_GRAPHICS_MOUSE_POS;
 	    ioctl.outBufSize = sizeof(DevCursor);
 	    if (streamPtr->ioHandlePtr->fileID.type == FSIO_LCL_PSEUDO_STREAM){
@@ -1657,7 +1790,9 @@ Fs_IoctlStub(streamID, request, buf)
      case QIOWCURSORCOLOR: {
 	    unsigned int temp[6];
 
-	    printf("ioctl: QIOWCURSORCOLOR\n");
+	    if (debugFsStubs) {
+                printf("ioctl: QIOWCURSORCOLOR\n");
+	    }
 	    ioctl.command = IOC_GRAPHICS_CURSOR_COLOR;
 	    ioctl.inBufSize = sizeof(unsigned int [6]);
 	    if (streamPtr->ioHandlePtr->fileID.type == FSIO_LCL_PSEUDO_STREAM){
@@ -1676,7 +1811,9 @@ Fs_IoctlStub(streamID, request, buf)
 	 break;
 
      case QIOCINIT:
-	 printf("ioctl: QIOCINIT\n");
+	 if (debugFsStubs) {
+	     printf("ioctl: QIOCINIT\n");
+	 }
 	 ioctl.command = IOC_GRAPHICS_INIT_SCREEN;
 	 status = Fs_IOControl(streamPtr, &ioctl, &reply);
 	 break;
@@ -1684,7 +1821,9 @@ Fs_IoctlStub(streamID, request, buf)
      case QIOCKPCMD: {
 	     DevKpCmd temp;
 
-	     printf("ioctl: QIOCKPCMD\n");
+	     if (debugFsStubs) {
+                printf("ioctl: QIOCKPCMD\n");
+             }
 	     ioctl.command = IOC_GRAPHICS_KBD_CMD;
 	     ioctl.inBufSize = sizeof(DevKpCmd);
 	    if (streamPtr->ioHandlePtr->fileID.type == FSIO_LCL_PSEUDO_STREAM){
@@ -1704,7 +1843,9 @@ Fs_IoctlStub(streamID, request, buf)
      case QIOCADDR: {
 	    DevScreenInfo *temp;
 
-	    printf("ioctl: QIOCADDR\n");
+	    if (debugFsStubs) {
+                printf("ioctl: QIOCADDR\n");
+            }
 	    ioctl.command = IOC_GRAPHICS_GET_INFO_ADDR;
 	    ioctl.outBufSize = sizeof(DevScreenInfo *);
 	    if (streamPtr->ioHandlePtr->fileID.type == FSIO_LCL_PSEUDO_STREAM){
@@ -1725,7 +1866,9 @@ Fs_IoctlStub(streamID, request, buf)
      case QIOWCURSOR: {
 	    short temp[32];
 
-	    printf("ioctl: QIOWCURSOR\n");
+	    if (debugFsStubs) {
+                printf("ioctl: QIOWCURSOR\n");
+	    }
 	    ioctl.command = IOC_GRAPHICS_CURSOR_BIT_MAP;
 	    ioctl.inBufSize = sizeof(short[32]);
 	    if (streamPtr->ioHandlePtr->fileID.type == FSIO_LCL_PSEUDO_STREAM){
@@ -1743,25 +1886,33 @@ Fs_IoctlStub(streamID, request, buf)
 	break;
 
      case QIOKERNLOOP:
-	 printf("ioctl: QIOKERNLOOP\n");
+	 if (debugFsStubs) {
+                printf("ioctl: QIOKERNLOOP\n");
+	 }
 	 ioctl.command = IOC_GRAPHICS_KERN_LOOP;
 	 status = Fs_IOControl(streamPtr, &ioctl, &reply);
 	 break;
 
      case QIOKERNUNLOOP:
-	 printf("ioctl: QIOKERNUNLOOP\n");
+	 if (debugFsStubs) {
+                printf("ioctl: QIOKERNUNLOOP\n");
+	 }
 	 ioctl.command = IOC_GRAPHICS_KERN_UNLOOP;
 	 status = Fs_IOControl(streamPtr, &ioctl, &reply);
 	 break;
 
      case QIOVIDEOON:
-	 printf("ioctl: QIOVIDEOON\n");
+	 if (debugFsStubs) {
+                printf("ioctl: QIOVIDEOON\n");
+	 }
 	 ioctl.command = IOC_GRAPHICS_VIDEO_ON;
 	 status = Fs_IOControl(streamPtr, &ioctl, &reply);
 	 break;
 
      case QIOVIDEOOFF:
-	 printf("ioctl: QIOVIDEOOFF\n");
+	 if (debugFsStubs) {
+                printf("ioctl: QIOVIDEOOFF\n");
+	 }
 	 ioctl.command = IOC_GRAPHICS_VIDEO_OFF;
 	 status = Fs_IOControl(streamPtr, &ioctl, &reply);
 	 break;
@@ -1769,7 +1920,9 @@ Fs_IoctlStub(streamID, request, buf)
      case QIOSETCMAP: {
 	    DevColorMap temp;
 
-	    printf("ioctl: QIOSETCMAP\n");
+	    if (debugFsStubs) {
+                printf("ioctl: QIOSETCMAP\n");
+	    }
 	    ioctl.command = IOC_GRAPHICS_COLOR_MAP;
 	    ioctl.inBufSize = sizeof(DevColorMap);
 	    if (streamPtr->ioHandlePtr->fileID.type == FSIO_LCL_PSEUDO_STREAM){
@@ -1796,7 +1949,9 @@ Fs_IoctlStub(streamID, request, buf)
 	  extern int	  sysHostID;
 	  int		  *intPtr;
 
-	  printf("ioctl: SIOCGIFCONF\n");
+	  if (debugFsStubs) {
+                printf("ioctl: SIOCGIFCONF\n");
+	  }
 	  status = Vm_CopyIn(sizeof(struct ifconf), buf, (Address)&ifc);
 	  if (status != SUCCESS) {
 	      return(status);
@@ -1824,14 +1979,16 @@ Fs_IoctlStub(streamID, request, buf)
       break;
 
       case SIOCRPHYSADDR: {
-	      /* Get the ethernet address. */
+	    /* Get the ethernet address. */
 
-	      struct ifdevea *p;
-	      Net_EtherAddress etherAddress;
+	    struct ifdevea *p;
+	    Net_EtherAddress etherAddress;
 
-	      printf("ioctl: SIOCRPHYSADDR\n");
-	      Mach_GetEtherAddress(&etherAddress);
-	      p = (struct ifdevea *) buf;
+	    if (debugFsStubs) {
+		printf("ioctl: SIOCRPHYSADDR\n");
+	    }
+	    Mach_GetEtherAddress(&etherAddress);
+	    p = (struct ifdevea *) buf;
 	      p->default_pa[0] = p->current_pa[0] = etherAddress.byte1;
 	      p->default_pa[1] = p->current_pa[1] = etherAddress.byte2;
 	      p->default_pa[2] = p->current_pa[2] = etherAddress.byte3;
@@ -1843,9 +2000,11 @@ Fs_IoctlStub(streamID, request, buf)
 	 break;
 
      default:
-	 printf("Bad Ioctl: 0x%08x\n",request);
-	 Mach_SetErrno(EINVAL);
-	 return -1;
+	if (debugFsStubs) {
+	    printf("Bad Ioctl: 0x%08x\n",request);
+	}
+	Mach_SetErrno(EINVAL);
+	return -1;
     }
     if (status != SUCCESS) {
 	Mach_SetErrno(Compat_MapCode(status));
