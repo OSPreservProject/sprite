@@ -81,10 +81,17 @@ Mach_EncapState(procPtr, hostID, infoPtr, buffer)
 	    printf("Mach_EncapState: FPU was active (fsr %x), dumping state.\n",
 		   procPtr->machStatePtr->fpuStatus);
 	}
-	MachFPUDumpState(machStatePtr->trapRegs);
-	if (machStatePtr->fpuStatus & MACH_FPU_EXCEPTION_PENDING) {
-	    procPtr->machStatePtr->fpuStatus |= (machStatePtr->trapRegs->fsr &
-						 MACH_FSR_TRAP_TYPE_MASK);
+	/*
+	 * We may or may not have saved the floating point state from the
+	 * FPU.  If an exception is pending then we must of done a 
+	 * save and doing another will overwrite the exception. 
+	 */
+	if ((machStatePtr->fpuStatus & MACH_FPU_EXCEPTION_PENDING) == 0) {
+	    MachFPUDumpState(machStatePtr->trapRegs);
+	    if (machStatePtr->fpuStatus & MACH_FPU_EXCEPTION_PENDING) {
+		procPtr->machStatePtr->fpuStatus |= 
+		    (machStatePtr->trapRegs->fsr & MACH_FSR_TRAP_TYPE_MASK);
+	    }
 	}
 	if (proc_MigDebugLevel > 2) {
 	    printf("Mach_EncapState: FPU fsr now %x.\n",
