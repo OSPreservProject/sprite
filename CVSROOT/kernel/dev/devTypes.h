@@ -83,7 +83,8 @@
 #define DEV_PLACEHOLDER_3	13      /* for ds3100 unused graphics device */
 #define DEV_AUDIO		15
 #define DEV_VMELINK		16
-#define DEV_ATC			18
+#define DEV_ATC			18      /* used by sun4 only */
+#define DEV_PLACEHOLDER_4       18      /* used by decstations */
 #define DEV_PLACEHOLDER_5	19
 #define	DEV_XBUS		21
 
