@@ -6,7 +6,7 @@
 
 NAME = rpc
 
-#if empty(TM:Mds3100) && empty(TM:Mcleands3100)
+#if empty(TM:Mds3100) && empty(TM:Mcleands3100) && empty(TM:Mds5000)
 XCFLAGS += -Wall
 #endif
 
