@@ -141,7 +141,7 @@ Fs_SelectStub(numStreams, userTimeoutPtr, userReadMaskPtr, userWriteMaskPtr,
     Time                *timeoutPtr;
     int                 numReady = 0;
     int                 doTimeout;
-    ReturnStatus        status;
+    ReturnStatus        status, writeStatus;
     int			inReadMasks[MAX_NUM_ROWS];
     int			inWriteMasks[MAX_NUM_ROWS];
     int			inExceptMasks[MAX_NUM_ROWS];
@@ -209,16 +209,15 @@ Fs_SelectStub(numStreams, userTimeoutPtr, userReadMaskPtr, userWriteMaskPtr,
 	inWriteMaskPtr, outWriteMaskPtr, inExceptMaskPtr, outExceptMaskPtr,
 	&numReady, &doTimeout);
     if (status == SUCCESS || status == FS_TIMEOUT) {
-	status = writeOutMasks(numStreams, userReadMaskPtr, outReadMaskPtr,
-	                       userWriteMaskPtr, outWriteMaskPtr,
-			       userExceptMaskPtr, outExceptMaskPtr);
-	if (status == SUCCESS && doTimeout) {
-	    status = Vm_CopyOut(sizeof(timeout), (Address) &timeout, 
+	writeStatus = writeOutMasks(numStreams, userReadMaskPtr,
+		outReadMaskPtr, userWriteMaskPtr, outWriteMaskPtr,
+	       userExceptMaskPtr, outExceptMaskPtr);
+	if (status == SUCCESS && doTimeout && writeStatus==SUCCESS) {
+	    writeStatus = Vm_CopyOut(sizeof(timeout), (Address) &timeout, 
 	                        (Address) userTimeoutPtr);
-	    if (status != SUCCESS) {
-		Mach_SetErrno(EACCES);
-		return -1;
-	    }
+	}
+	if (writeStatus != SUCCESS) {
+	    status = SYS_ARG_NOACCESS;
 	}
     }
     if (Vm_CopyOut(sizeof(*numReadyPtr), (Address) &numReady, 
@@ -250,7 +249,7 @@ Fs_NewSelectStub(numStreams, userReadMaskPtr, userWriteMaskPtr,
     Time                *timeoutPtr;
     int                 numReady = 0;
     int                 doTimeout;
-    ReturnStatus        status;
+    ReturnStatus        status, writeStatus;
     int			inReadMasks[MAX_NUM_ROWS];
     int			inWriteMasks[MAX_NUM_ROWS];
     int			inExceptMasks[MAX_NUM_ROWS];
@@ -326,23 +325,28 @@ Fs_NewSelectStub(numStreams, userReadMaskPtr, userWriteMaskPtr,
 	inWriteMaskPtr, outWriteMaskPtr, inExceptMaskPtr, outExceptMaskPtr,
 	&numReady, &doTimeout);
     if (status == SUCCESS || status == FS_TIMEOUT) {
-	status = writeOutMasks(numStreams, userReadMaskPtr, outReadMaskPtr,
-	                       userWriteMaskPtr, outWriteMaskPtr,
-			       userExceptMaskPtr, outExceptMaskPtr);
-	if (status == SUCCESS && doTimeout) {
-	    status = Vm_CopyOut(sizeof(timeout), (Address) &timeout, 
+	writeStatus = writeOutMasks(numStreams, userReadMaskPtr,
+		outReadMaskPtr, userWriteMaskPtr, outWriteMaskPtr,
+	        userExceptMaskPtr, outExceptMaskPtr);
+	if (status == SUCCESS && doTimeout && writeStatus==SUCCESS) {
+	    writeStatus = Vm_CopyOut(sizeof(timeout), (Address) &timeout, 
 	                        (Address) userTimeoutPtr);
-	    if (status != SUCCESS) {
-		Mach_SetErrno(EACCES);
-		return -1;
-	    }
 	}
     }
-    if (status != SUCCESS) {
-	Mach_SetErrno(EACCES);
-	return -1;
+    /*
+     * Note: I'm not convinced this is correct.  The code here before
+     * was wrong, but I don't know if I got this right.  I think this
+     * does the right thing for a timeout, but I'm not sure. -Ken
+     */
+    if (writeStatus == SUCCESS) {
+	if (status == SUCCESS) {
+	    return numReady;
+	} else if (status == FS_TIMEOUT) {
+	    return 0;
+	}
     }
-    return numReady;
+    Mach_SetErrno(EACCES);
+    return -1;
 }
 
 /*ARGSUSED*/
