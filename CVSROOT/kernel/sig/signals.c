@@ -368,6 +368,7 @@ LocalSend(procPtr, sigNum, code)
     int					code;
 {
     int	sigBitMask;
+    Proc_PID pid;
 
     LOCK_MONITOR;
 
@@ -457,12 +458,12 @@ LocalSend(procPtr, sigNum, code)
 		    /*
 		     * The process was only partially created.  We can't make
 		     * it runnable so we have to reclaim it directly.
+		     * Do this in the background so that
+		     * Proc_DestroyMigratedProc has to wait for Sig_Send
+		     * to unlock the process and we avoid a race condition.
 		     */
-		    Proc_Unlock(procPtr);
-		    Proc_RemoveMigDependency(procPtr->processID);
-		    ProcExitProcess(procPtr, PROC_TERM_DESTROYED,
-				    (int) PROC_NO_PEER, 0, FALSE);
-		    Proc_Lock(procPtr);
+		    Proc_CallFunc(Proc_DestroyMigratedProc,
+				  (ClientData) procPtr->processID, 0);
 		} else {
 		    /*
 		     * Resume the process so that we can perform the signal.
