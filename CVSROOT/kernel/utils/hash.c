@@ -305,8 +305,8 @@ Hash_Find(table, key)
     switch (table->ptrKeys) {
 	case 0:
 	    hashEntryPtr = (Hash_Entry *) Mem_Alloc(sizeof(Hash_Entry) + 
-				String_Length((Address) keyPtr) - 3);
-	    (void)String_Copy((char *) keyPtr, (char *) hashEntryPtr->key.name);
+				strlen((Address) keyPtr) - 3);
+	    (void)strcpy((char *) hashEntryPtr->key.name, (char *) keyPtr);
 	    break;
 	case 1:
 	    hashEntryPtr = (Hash_Entry *) Mem_Alloc(sizeof(Hash_Entry));
