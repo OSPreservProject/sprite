@@ -29,7 +29,7 @@ Boolean fsPdevDebug = FALSE;		/* Turns on print statements */
 Trace_Header pdevTraceHdr;
 Trace_Header *pdevTraceHdrPtr = &pdevTraceHdr;
 int pdevTraceLength = 200;
-Boolean pdevTracing = TRUE;		/* Turns on circular trace */
+Boolean pdevTracing = FALSE;		/* Turns on circular trace */
 int pdevMaxTraceDataSize;
 int pdevTraceIndex = 0;
 
