@@ -150,9 +150,8 @@ RpcNull(srvToken, clientID, command, storagePtr)
  *	by hosts to query the status of other hosts (pinging).
  *
  * Results:
- *	SUCCESS usually, except if rpcServiceEnabled is off, when
- *	RPC_SERVICE_DISABLED is returned.
- *
+ *	SUCCESS.
+ 
  * Side effects:
  *	The echo.
  *
@@ -188,6 +187,7 @@ RpcEcho(srvToken, clientID, command, storagePtr)
 	 */
     }
     Rpc_Reply(srvToken, SUCCESS, storagePtr, (int(*)()) NIL, (ClientData) NIL);
+    return (SUCCESS);
 }
 
 
