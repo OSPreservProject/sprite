@@ -1,7 +1,8 @@
 /* 
- * fsFileDesc.c --
+ * ofsFileDesc.c --
  *
- *	Routines to allocate, initialize, and free file descriptors.
+ *	Routines to allocate, initialize, and free file descriptors for the
+ *  	OFS domain file systems.
  *
  * Copyright 1987 Regents of the University of California
  * All rights reserved.
@@ -18,34 +19,31 @@
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #endif not lint
 
-#include "sprite.h"
-#include "fs.h"
-#include "fsutil.h"
-#include "fslcl.h"
-#include "fsNameOps.h"
-#include "fsio.h"
-#include "fsStat.h"
-#include "fsdm.h"
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fslcl.h>
+#include <fsNameOps.h>
+#include <fsio.h>
+#include <fsStat.h>
+#include <fsdm.h>
+#include <ofs.h>
+#include <stdio.h>
 
-ReturnStatus	Fsdm_FileDescFetch();
-ReturnStatus	Fsdm_FileDescStore();
-
-#define LOCKPTR (&domainPtr->fileDescLock)
+#define LOCKPTR (&ofsPtr->fileDescLock)
 
 /*
  * Array to provide the ability to set and extract bits out of a bitmap byte.
  */
-
 static unsigned char bitmasks[8] = {0x80, 0x40, 0x20, 0x10, 0x8, 0x4, 0x2, 0x1};
 
 int	fsdmDescSearchStarts = 0;
 int	fsdmDescBytesSearched = 0;
-
 
 /*
  *----------------------------------------------------------------------
  *
- * FsdmFileDescAllocInit --
+ * OfsFileDescAllocInit --
  *
  *	Initialize the data structure needed for allocation of file
  *	descriptors.
@@ -60,42 +58,40 @@ int	fsdmDescBytesSearched = 0;
  */
 
 ReturnStatus
-FsdmFileDescAllocInit(domainPtr)
-    register Fsdm_Domain *domainPtr;
+OfsFileDescAllocInit(ofsPtr)
+    register Ofs_Domain *ofsPtr;
 {
     register ReturnStatus	status;
 
-    Sync_LockInitDynamic(&(domainPtr->fileDescLock), "Fs:fileDescLock");
+    Sync_LockInitDynamic(&(ofsPtr->fileDescLock), "Fs:fileDescLock");
     /*
      * Allocate the bit map.
      */
 
-    domainPtr->fileDescBitmap = (unsigned char *) 
-	malloc(domainPtr->headerPtr->fdBitmapBlocks * FS_BLOCK_SIZE);
+    ofsPtr->fileDescBitmap = (unsigned char *) 
+	malloc(ofsPtr->headerPtr->fdBitmapBlocks * FS_BLOCK_SIZE);
 
     /* 
      * Read in the bit map.
      */
 
-    status = Fsio_DeviceBlockIO(FS_READ, &(domainPtr->headerPtr->device), 
-		    domainPtr->headerPtr->fdBitmapOffset * 4, 
-		    domainPtr->headerPtr->fdBitmapBlocks * 4,
-		    (Address) domainPtr->fileDescBitmap);
+    status = OfsDeviceBlockIO(ofsPtr, FS_READ, 
+		    ofsPtr->headerPtr->fdBitmapOffset * 4, 
+		    ofsPtr->headerPtr->fdBitmapBlocks * 4,
+		    (Address) ofsPtr->fileDescBitmap);
     if (status != SUCCESS) {
-	printf( "Could not read in file descriptor bit map.\n");
+	printf( "Could not read in OFS file descriptor bit map.\n");
 	return(status);
     } else {
 	fs_Stats.gen.physBytesRead += FS_BLOCK_SIZE;
     }
-
     return(SUCCESS);
 }
-
 
 /*
  *----------------------------------------------------------------------
  *
- * FsdmWriteBackFileDescBitmap() --
+ * OfsWriteBackFileDescBitmap() --
  *
  *	Write the file descriptor bit map out to disk for this domain.
  *
@@ -109,19 +105,19 @@ FsdmFileDescAllocInit(domainPtr)
  */
 
 ENTRY ReturnStatus
-FsdmWriteBackFileDescBitmap(domainPtr)
-    register Fsdm_Domain *domainPtr;
+OfsWriteBackFileDescBitmap(ofsPtr)
+    register Ofs_Domain *ofsPtr;
 {
     register ReturnStatus	status;
 
     LOCK_MONITOR;
 
-    status = Fsio_DeviceBlockIO(FS_WRITE, &(domainPtr->headerPtr->device), 
-		    domainPtr->headerPtr->fdBitmapOffset * 4, 
-		    domainPtr->headerPtr->fdBitmapBlocks * 4,
-		    (Address) domainPtr->fileDescBitmap);
+    status = OfsDeviceBlockIO(ofsPtr, FS_WRITE,
+		    ofsPtr->headerPtr->fdBitmapOffset * 4, 
+		    ofsPtr->headerPtr->fdBitmapBlocks * 4,
+		    (Address) ofsPtr->fileDescBitmap);
     if (status != SUCCESS) {
-	printf( "Could not write out file desc bit map.\n");
+	printf( "Could not write out OFS file desc bit map.\n");
     } else {
 	fs_Stats.gen.physBytesWritten += FS_BLOCK_SIZE;
     }
@@ -129,12 +125,11 @@ FsdmWriteBackFileDescBitmap(domainPtr)
     UNLOCK_MONITOR;
     return(status);
 }
-
 
 /*
  *----------------------------------------------------------------------
  *
- * Fsdm_GetNewFileNumber() --
+ * Ofs_GetNewFileNumber() --
  *
  *	Get a new file number by allocating a free file descriptor
  *	from the file descriptor bitmap.
@@ -149,8 +144,8 @@ FsdmWriteBackFileDescBitmap(domainPtr)
  */
 
 ENTRY ReturnStatus
-Fsdm_GetNewFileNumber(domainPtr, dirFileNum, fileNumberPtr)
-    register Fsdm_Domain 	*domainPtr;	/* Domain to allocate the file 
+Ofs_GetNewFileNumber(domainPtr, dirFileNum, fileNumberPtr)
+    Fsdm_Domain 	*domainPtr;	/* Domain to allocate the file 
 					 * descriptor out of. */
     int			dirFileNum;	/* File number of the directory that
 					   the file is in.  -1 means that
@@ -159,6 +154,7 @@ Fsdm_GetNewFileNumber(domainPtr, dirFileNum, fileNumberPtr)
     int			*fileNumberPtr; /* Place to return the number of
 					   the file descriptor allocated. */
 {
+    register Ofs_Domain		*ofsPtr = OFS_PTR_FROM_DOMAIN(domainPtr);
     register int 	   	i;
     register int		j;
     int				startByte;
@@ -168,15 +164,14 @@ Fsdm_GetNewFileNumber(domainPtr, dirFileNum, fileNumberPtr)
     int			   	descBytes;
 
     LOCK_MONITOR;
-
     fsdmDescSearchStarts++;
-    descBytes = domainPtr->headerPtr->numFileDesc >> 3;
+    descBytes = ofsPtr->headerPtr->numFileDesc >> 3;
     
     if (dirFileNum == -1) {
 	/*
 	 * Search linearly from a random starting byte.
 	 */
-	startByte = ((fsutil_TimeInSeconds * 1103515245 + 12345) & 0x7fffffff) % 
+	startByte = ((Fsutil_TimeInSeconds() * 1103515245 + 12345) & 0x7fffffff) % 
 			descBytes;
     } else {
 	/*
@@ -188,7 +183,7 @@ Fsdm_GetNewFileNumber(domainPtr, dirFileNum, fileNumberPtr)
     /*
      * Linear search forward the bit map a byte at a time.
      */
-    bitmapPtr = &(domainPtr->fileDescBitmap[startByte]);
+    bitmapPtr = &(ofsPtr->fileDescBitmap[startByte]);
     i = startByte;
     do {
 	fsdmDescBytesSearched++;
@@ -199,7 +194,7 @@ Fsdm_GetNewFileNumber(domainPtr, dirFileNum, fileNumberPtr)
 	i++;
 	if (i == descBytes) {
 	    i = 0;
-	    bitmapPtr = domainPtr->fileDescBitmap;
+	    bitmapPtr = ofsPtr->fileDescBitmap;
 	} else {
 	    bitmapPtr++;
 	}
@@ -211,7 +206,7 @@ Fsdm_GetNewFileNumber(domainPtr, dirFileNum, fileNumberPtr)
 	return(FAILURE);
     }
 
-    domainPtr->summaryInfoPtr->numFreeFileDesc--;
+    ofsPtr->summaryInfoPtr->numFreeFileDesc--;
     /*
      * Now find which file descriptor is free within the byte.
      */
@@ -231,7 +226,7 @@ Fsdm_GetNewFileNumber(domainPtr, dirFileNum, fileNumberPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Fsdm_FreeFileNumber() --
+ * Ofs_FreeFileNumber() --
  *
  *	Free a file number by clearing the corresponding bit the in
  *	file descriptor bit map.
@@ -246,25 +241,25 @@ Fsdm_GetNewFileNumber(domainPtr, dirFileNum, fileNumberPtr)
  */
 
 ENTRY ReturnStatus
-Fsdm_FreeFileNumber(domainPtr, fileNumber)
-    register Fsdm_Domain 	*domainPtr;	/* Domain that the file 
+Ofs_FreeFileNumber(domainPtr, fileNumber)
+    register Fsdm_Domain *domainPtr;	/* Domain that the file 
 					 * descriptor is in. */
     int			fileNumber; 	/* Number of file descriptor to 
 					   free.*/
 {
+    Ofs_Domain	*ofsPtr = OFS_PTR_FROM_DOMAIN(domainPtr);
     LOCK_MONITOR;
-
-    domainPtr->summaryInfoPtr->numFreeFileDesc++;
-    domainPtr->fileDescBitmap[fileNumber / 8] &= ~bitmasks[fileNumber & 0x7];
-
+    ofsPtr->summaryInfoPtr->numFreeFileDesc++;
+    ofsPtr->fileDescBitmap[fileNumber / 8] &= ~bitmasks[fileNumber & 0x7];
     UNLOCK_MONITOR;
+    return SUCCESS;
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * Fsdm_FileDescInit() --
+ * Ofs_FileDescInit() --
  *
  *	Initialize a new file descriptor.
  *
@@ -278,8 +273,8 @@ Fsdm_FreeFileNumber(domainPtr, fileNumber)
  */
 
 ReturnStatus
-Fsdm_FileDescInit(domainPtr, fileNumber, type, permissions, uid, gid, fileDescPtr)
-    register Fsdm_Domain 	*domainPtr;	/* Domain of the file */
+Ofs_FileDescInit(domainPtr, fileNumber, type, permissions, uid, gid, fileDescPtr)
+    register Fsdm_Domain *domainPtr;	/* Domain of the file */
     int			fileNumber; 	/* Number of file descriptor */
     int			type;		/* Type of the file */
     int			permissions;	/* Permission bits for the file */
@@ -290,21 +285,22 @@ Fsdm_FileDescInit(domainPtr, fileNumber, type, permissions, uid, gid, fileDescPt
 {
     ReturnStatus status;
     register int index;
+ 
     /*
      * Fetch the file descriptor and do rudimentation consistency checks.
      * This also gets its block into the cache which will happen sooner
      * or later anyway.
      */
-    status = Fsdm_FileDescFetch(domainPtr, fileNumber, fileDescPtr);
+    status = Ofs_FileDescFetch(domainPtr, fileNumber, fileDescPtr);
     if (status != SUCCESS) {
 	return(status);
     }
-    if (fileDescPtr->flags != FSDM_FD_FREE) {
-	printf( "Fsdm_FileDescInit fetched non-free file desc\n");
+    if (fileDescPtr->flags & FSDM_FD_ALLOC) {
+	printf( "Ofs_FileDescInit fetched non-free file desc\n");
 	return(FS_FILE_EXISTS);
     }
     fileDescPtr->magic = FSDM_FD_MAGIC;
-    fileDescPtr->flags = FSDM_FD_ALLOC;
+    fileDescPtr->flags = FSDM_FD_ALLOC|FSDM_FD_DIRTY;
     fileDescPtr->fileType = type;
     fileDescPtr->permissions = permissions;
     fileDescPtr->uid = uid;
@@ -334,10 +330,10 @@ Fsdm_FileDescInit(domainPtr, fileNumber, type, permissions, uid, gid, fileDescPt
     /*
      * Set the time stamps.  These times should come from the client.
      */
-    fileDescPtr->createTime = fsutil_TimeInSeconds;
-    fileDescPtr->accessTime = fsutil_TimeInSeconds;
-    fileDescPtr->descModifyTime = fsutil_TimeInSeconds;
-    fileDescPtr->dataModifyTime = fsutil_TimeInSeconds;
+    fileDescPtr->createTime = Fsutil_TimeInSeconds();
+    fileDescPtr->accessTime = fileDescPtr->createTime;
+    fileDescPtr->descModifyTime = fileDescPtr->createTime;
+    fileDescPtr->dataModifyTime = fileDescPtr->createTime;
 
     for (index = 0; index < FSDM_NUM_DIRECT_BLOCKS ; index++) {
 	fileDescPtr->direct[index] = FSDM_NIL_INDEX;
@@ -351,7 +347,7 @@ Fsdm_FileDescInit(domainPtr, fileNumber, type, permissions, uid, gid, fileDescPt
 /*
  *----------------------------------------------------------------------
  *
- * Fsdm_FileDescFetch() --
+ * Ofs_FileDescFetch() --
  *
  *	Fetch the given file descriptor from disk and store it into
  *	*fileDescPtr.
@@ -366,35 +362,32 @@ Fsdm_FileDescInit(domainPtr, fileNumber, type, permissions, uid, gid, fileDescPt
  */
 
 ReturnStatus
-Fsdm_FileDescFetch(domainPtr, fileNumber, fileDescPtr)
-    register Fsdm_Domain 	*domainPtr;	/* Domain to fetch the file 
+Ofs_FileDescFetch(domainPtr, fileNumber, fileDescPtr)
+     Fsdm_Domain 	*domainPtr;	/* Domain to fetch the file 
 					 * descriptor from. */
     register int	fileNumber; 	/* Number of file descriptor to 
 					   fetch.*/
     Fsdm_FileDescriptor	*fileDescPtr;	/* File descriptor structure to
 					   initialize. */
 {
+    register Ofs_Domain	      *ofsPtr = OFS_PTR_FROM_DOMAIN(domainPtr);
     register ReturnStatus     status;
-    register Fsdm_DomainHeader *headerPtr;
+    register Ofs_DomainHeader *headerPtr;
     register int 	    blockNum;
     int 		    offset;
     Fscache_Block	    *blockPtr;
     Boolean		    found;
 
-    if (fileNumber == 0) {
-	panic( "Fsdm_FileDescFetch: file #0\n");
-	return(FAILURE);
-    }
-    headerPtr = domainPtr->headerPtr;
+    headerPtr = ofsPtr->headerPtr;
     blockNum = headerPtr->fileDescOffset + fileNumber / FSDM_FILE_DESC_PER_BLOCK;
     offset = (fileNumber & (FSDM_FILE_DESC_PER_BLOCK - 1)) *
 		FSDM_MAX_FILE_DESC_SIZE;
 
     fs_Stats.blockCache.fileDescReads++;
-    Fscache_FetchBlock(&domainPtr->physHandle.cacheInfo, blockNum, 
+    Fscache_FetchBlock(&ofsPtr->physHandle.cacheInfo, blockNum, 
 		      FSCACHE_DESC_BLOCK, &blockPtr, &found);
     if (!found) {
-	status = Fsio_DeviceBlockIO(FS_READ, &headerPtr->device, 
+	status = OfsDeviceBlockIO(ofsPtr, FS_READ, 
 			   blockNum * FS_FRAGMENTS_PER_BLOCK,
 			   FS_FRAGMENTS_PER_BLOCK, blockPtr->blockAddr);
 	if (status != SUCCESS) {
@@ -424,7 +417,7 @@ Fsdm_FileDescFetch(domainPtr, fileNumber, fileDescPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Fsdm_FileDescStore() --
+ * Ofs_FileDescStore() --
  *
  *	Store the given file descriptor back into the file system block
  *	where it came from.  This involves putting the block back into
@@ -440,36 +433,34 @@ Fsdm_FileDescFetch(domainPtr, fileNumber, fileDescPtr)
  */
 
 ReturnStatus
-Fsdm_FileDescStore(domainPtr, fileNumber, fileDescPtr)
-    register Fsdm_Domain 	*domainPtr;	/* Domain to store the file 
+Ofs_FileDescStore(domainPtr, handlePtr, fileNumber, fileDescPtr, forceOut)
+    register Fsdm_Domain *domainPtr;	/* Domain to store the file 
 					 * descriptor into. */
+    Fsio_FileIOHandle	*handlePtr;
     int			fileNumber; 	/* Number of file descriptor to 
 					   store.*/
-    Fsdm_FileDescriptor	*fileDescPtr;	/* File descriptor structure to
-					   store. */
+    Fsdm_FileDescriptor	*fileDescPtr;	 /* File descriptor to store. */
+    Boolean		forceOut;  /* Force the change to disk. */
 {
-    register ReturnStatus   status;
-    register Fsdm_DomainHeader *headerPtr;
+    Ofs_Domain	*ofsPtr = OFS_PTR_FROM_DOMAIN(domainPtr);
+    register ReturnStatus   status = SUCCESS;
+    register Ofs_DomainHeader *headerPtr;
     register int 	    blockNum;
     int 		    offset;
     Fscache_Block	    *blockPtr;
     Boolean		    found;
 
-    if (fileNumber == 0) {
-	panic( "Fsdm_FileDescStore: file #0\n");
-	return(FAILURE);
-    }
-    headerPtr = domainPtr->headerPtr;
+    headerPtr = ofsPtr->headerPtr;
     blockNum = headerPtr->fileDescOffset + fileNumber / FSDM_FILE_DESC_PER_BLOCK;
     offset = (fileNumber & (FSDM_FILE_DESC_PER_BLOCK - 1)) *
 		FSDM_MAX_FILE_DESC_SIZE;
 
     fs_Stats.blockCache.fileDescWrites++;
-    Fscache_FetchBlock(&domainPtr->physHandle.cacheInfo, blockNum, 
+    Fscache_FetchBlock(&ofsPtr->physHandle.cacheInfo, blockNum, 
 		      (int)(FSCACHE_IO_IN_PROGRESS | FSCACHE_DESC_BLOCK),
 		      &blockPtr, &found);
     if (!found) {
-	status = Fsio_DeviceBlockIO(FS_READ, &headerPtr->device, 
+	status = OfsDeviceBlockIO(ofsPtr, FS_READ, 
 			   blockNum * FS_FRAGMENTS_PER_BLOCK,
 			   FS_FRAGMENTS_PER_BLOCK, blockPtr->blockAddr);
 	if (status != SUCCESS) {
@@ -483,6 +474,7 @@ Fsdm_FileDescStore(domainPtr, fileNumber, fileDescPtr)
     } else {
 	fs_Stats.blockCache.fileDescWriteHits++;
     }
+    fileDescPtr->flags &= ~FSDM_FD_DIRTY;
     bcopy((Address) fileDescPtr, blockPtr->blockAddr + offset, sizeof(Fsdm_FileDescriptor));
     /*
      * Put the block back into the cache setting the modify time to 1 which
@@ -491,92 +483,54 @@ Fsdm_FileDescStore(domainPtr, fileNumber, fileDescPtr)
      */
     Fscache_UnlockBlock(blockPtr, 1, blockNum * FS_FRAGMENTS_PER_BLOCK,
 			FS_BLOCK_SIZE, 0);
-    
-    return(SUCCESS);
+    if ((status == SUCCESS) && forceOut) { 
+	int	blocksSkipped;
+	status = Fscache_FileWriteBack(&ofsPtr->physHandle.cacheInfo,
+		    blockNum, blockNum, FSCACHE_FILE_WB_WAIT, &blocksSkipped);
+	if (status != SUCCESS) {
+	    printf("Ofs_FileDescStore: Couldn't write back desc <%d,%d>\n",
+		    domainPtr->domainNumber, fileNumber);
+	}
+    }
+
+    return(status);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * Fsdm_FileDescWriteBack --
+ * Ofs_FileDescSync() --
  *
- *	Force the file descriptor for the handle to disk.
+ *	Sync any cached file descriptor to disk.
  *
  * Results:
- *	None.
+ *	An error if could not read the file descriptor from disk.
  *
  * Side effects:
- *	File descriptor block forced to disk.
+ *	Cache block is modified.
  *
  *----------------------------------------------------------------------
  */
 ReturnStatus
-Fsdm_FileDescWriteBack(handlePtr, doWriteBack)
-    register Fsio_FileIOHandle	*handlePtr;	/* Handle that points
-					 * to descriptor to write back. */
-    Boolean		doWriteBack;	/* Do a cache write back, not only
-					 * a store into the cache block. */
+Ofs_FileDescSync(domainPtr, fileNumber)
+    register Fsdm_Domain 	*domainPtr;	/* Domain to store the file 
+					 * descriptor into. */
+    int			fileNumber; 	/* Number of file descriptor to 
+					   store.*/
 {
-    register Fsdm_DomainHeader	*headerPtr;
-    register Fsdm_FileDescriptor	*descPtr;
-    register Fsdm_Domain		*domainPtr;
-    register ReturnStatus     	status = SUCCESS;
-    register int 	    	blockNum;
-    int				blocksSkipped;
+    Ofs_Domain	*ofsPtr = OFS_PTR_FROM_DOMAIN(domainPtr);
+    ReturnStatus status;
+    int	blocksSkipped;
+    int	blockNum;
 
-    domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, FALSE);
-    if (domainPtr == (Fsdm_Domain *)NIL) {
-	return(FS_DOMAIN_UNAVAILABLE);
+    blockNum = ofsPtr->headerPtr->fileDescOffset + 
+				fileNumber / FSDM_FILE_DESC_PER_BLOCK;
+    status = Fscache_FileWriteBack(&ofsPtr->physHandle.cacheInfo,
+		blockNum, blockNum, FSCACHE_FILE_WB_WAIT, &blocksSkipped);
+    if (status != SUCCESS) {
+	printf("Ofs_FileDescSync: Couldn't sync back desc <%d,%d>\n",
+		domainPtr->domainNumber, fileNumber);
     }
-    descPtr = handlePtr->descPtr;
-    if (descPtr == (Fsdm_FileDescriptor *)NIL) {
-	if ((handlePtr->cacheInfo.flags & FSCACHE_FILE_GONE) == 0) {
-	    panic("Fsdm_FileDescWriteBack: no descriptor for \"%s\" (continuable)\n",
-		Fsutil_HandleName(handlePtr));
-	}
-	status = FS_FILE_REMOVED;
-	goto exit;
-    }
-    /*
-     * If the handle times differ from the descriptor times then force
-     * them out to the descriptor.
-     */
-    if (descPtr->accessTime < handlePtr->cacheInfo.attr.accessTime) {
-	descPtr->accessTime = handlePtr->cacheInfo.attr.accessTime;
-	descPtr->flags |= FSDM_FD_DIRTY;
-    }
-    if (descPtr->dataModifyTime < handlePtr->cacheInfo.attr.modifyTime) {
-	descPtr->dataModifyTime = handlePtr->cacheInfo.attr.modifyTime;
-	descPtr->flags |= FSDM_FD_DIRTY;
-    }
-    if (descPtr->dataModifyTime > descPtr->descModifyTime) {
-	descPtr->descModifyTime = descPtr->dataModifyTime;
-	descPtr->flags |= FSDM_FD_DIRTY;
-    }
-    if (descPtr->flags & FSDM_FD_DIRTY) {
-	descPtr->flags &= ~FSDM_FD_DIRTY;
-	status =  Fsdm_FileDescStore(domainPtr, handlePtr->hdr.fileID.minor, 
-				  descPtr);
-	if (status != SUCCESS) {
-	    printf("Fsdm_FileDescWriteBack: Could not put desc <%d,%d> into cache\n",
-		    handlePtr->hdr.fileID.major,
-		    handlePtr->hdr.fileID.minor);
-	}
-    }
-    if (status == SUCCESS && doWriteBack) {
-	headerPtr = domainPtr->headerPtr;
-	blockNum = headerPtr->fileDescOffset + 
-		   handlePtr->hdr.fileID.minor / FSDM_FILE_DESC_PER_BLOCK;
-	status = Fscache_FileWriteBack(&domainPtr->physHandle.cacheInfo,
-		    blockNum, blockNum, FSCACHE_FILE_WB_WAIT, &blocksSkipped);
-	if (status != SUCCESS) {
-	    printf("FsWritebackDesc: Couldn't write back desc <%d,%d>\n",
-		    handlePtr->hdr.fileID.major,
-		    handlePtr->hdr.fileID.minor);
-	}
-    }
-exit:
-    Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
-    return(status);
+    return status;
+
 }
-
