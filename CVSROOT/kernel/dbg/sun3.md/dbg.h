@@ -16,11 +16,6 @@
 #ifndef _SPRITE
 #include "sprite.h"
 #endif
-#include "dbgRs232.h"
-/*
- * Variable to indicate if are using the rs232 debugger or the network debugger.
- */
-extern	Boolean	dbg_Rs232Debug;
 
 /*
  * Variable to indicate that dbg wants a packet.
@@ -186,21 +181,29 @@ typedef struct {
 #define	DBG_TRACE_TRAP		9
 #define	DBG_EMU1010		10
 #define	DBG_EMU1111		11
-#define	DBG_STACK_FMT_ERROR	12
-#define	DBG_UNINIT_VECTOR	13
-#define	DBG_SPURIOUS_INT	14
-#define	DBG_LEVEL1_INT		15
-#define	DBG_LEVEL2_INT		16
-#define	DBG_LEVEL3_INT		17
-#define	DBG_LEVEL4_INT		18
-#define	DBG_LEVEL5_INT		19
-#define	DBG_LEVEL6_INT		20
-#define	DBG_LEVEL7_INT		21
-#define	DBG_SYSCALL_TRAP	22
-#define	DBG_SIG_RET_TRAP	23
-#define	DBG_BAD_TRAP		24
-#define	DBG_BRKPT_TRAP		25
-#define	DBG_UNKNOWN_EXC		26
+#define	DBG_STACK_FMT_ERROR	14
+#define	DBG_UNINIT_VECTOR	15
+#define	DBG_SPURIOUS_INT	24
+#define	DBG_LEVEL1_INT		25
+#define	DBG_LEVEL2_INT		26
+#define	DBG_LEVEL3_INT		27
+#define	DBG_LEVEL4_INT		28
+#define	DBG_LEVEL5_INT		29
+#define	DBG_LEVEL6_INT		30
+#define	DBG_LEVEL7_INT		31
+#define	DBG_SYSCALL_TRAP	33
+#define	DBG_SIG_RET_TRAP	34
+#define	DBG_BAD_TRAP		35
+#define	DBG_BRKPT_TRAP		47
+
+#define DBG_FP_UNORDERED_COND  48
+#define DBG_FP_INEXACT_RESULT  49
+#define DBG_FP_ZERO_DIV        50
+#define DBG_FP_UNDERFLOW       51
+#define DBG_FP_OPERAND_ERROR   52
+#define DBG_FP_OVERFLOW        53
+#define DBG_FP_NAN             54
+#define	DBG_UNKNOWN_EXC	       55
 
 /*
  * Variable that is set to true when we are called through the DBG_CALL macro.

@@ -14,7 +14,6 @@
 #define _DBGINT
 
 #include "dbgAsm.h"
-#include "dbgRs232.h"
 #include "vmMach.h"
 #include "vmMachInt.h"
 

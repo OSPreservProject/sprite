@@ -28,9 +28,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 
 Boolean	dbg_BeingDebugged = FALSE;		/* TRUE if are under control
 						 * of kdbx.*/
-Boolean	dbg_Rs232Debug = FALSE;			/* TRUE if are using the RS232
-						 * line to debug, FALSE if are
-						 * using the network. */
 Boolean	dbg_UsingNetwork = FALSE;		/* TRUE if the debugger is
 						 * using the network interface*/
 char	requestBuffer[DBG_MAX_REQUEST_SIZE];	/* Buffer to receive request
@@ -162,14 +159,6 @@ static char *exceptionNames[] = {
  * The type of machine that we are on.
  */
 int		machineType;
-
-/*
- * The RS 232 Port that we communicate with.  Channel A is used
- * although one could argue for using port B.  However, facilities
- * have welded a bracket to the 2/50 and 3/75 bodies which render
- * the B port useless.  (Can't attach the connector...)
- */
-Dbg_Rs232Channel		dbgChannel = DBG_RS232_CHANNELA;
 
 /*
  * All of the stuff that is put onto the stack when the debugger is entered.
@@ -364,95 +353,6 @@ TranslateException(exception)
 /*
  * ----------------------------------------------------------------------------
  *
- * ReadBytes --
- *
- *     Read the given number of bytes into the given address from the 
- *     rs232 line.  Acknowledge every third character.  This is done to 
- *     prevent kdbx from overunning us.  We can do every third character 
- *     because the receive buffer is of size three.  We also acknowledge the
- *     last character sent.
- *
- * Results:
- *     The bytes that were read are stored into bytePtr.
- *
- * Side effects:
- *     None.
- *
- * ----------------------------------------------------------------------------
- */
-static
-ReadBytes(numBytes, bytePtr, ack)
-    int		numBytes;	/* The number of bytes to read */
-    Address	bytePtr;	/* Where to store the data that was read. */
-    Boolean	ack;		/* ack every 3rd character. */
-{
-    int		i;
-    Boolean	justAcked;
-
-    for (i = 0; i < numBytes; i++) {
-	justAcked = FALSE;
-	bytePtr[i] = DbgRs232ReadChar(dbgChannel);
-	if (dbgTraceLevel >= 4) {
-	    printf("Read byte = %x\n", bytePtr[i]);
-	}
-	if (ack && (i + 1) % 3 == 0) {
-	    if (dbgTraceLevel >= 4) {
-		printf("Acking read\n");
-	    }
-	    justAcked = TRUE;
-	    DbgRs232WriteChar(dbgChannel, 0);
-	}
-    }
-    if (ack && !justAcked) {
-	if (dbgTraceLevel >= 4) {
-	    printf("Acking read\n");
-	}
-	DbgRs232WriteChar(dbgChannel, 0);
-    }
-}
-
-
-/*
- * ----------------------------------------------------------------------------
- *
- * WriteBytes --
- *
- *     Write the given number of bytes from the given address over the 
- *     rs232 line.  We have to wait for an ack once we have sent a specified
- *     number of bytes.  This is to prevent us from overrunning kdbx.
- *
- * Results:
- *     None.
- *
- * Side effects:
- *     None.
- *
- * ----------------------------------------------------------------------------
- */
-static
-WriteBytes(numBytes, bytePtr)
-    int		numBytes;	/* The number of bytes to write */
-    Address	bytePtr;
-{
-    int		  i;
-
-    if (dbgTraceLevel >= 3) {
-	bcopy(bytePtr, (char *) &i, 4);
-	printf("\r\nWriting: %d", i);
-    }
-
-    for (i = 0; i < numBytes; i++) {
-	DbgRs232WriteChar(dbgChannel, bytePtr[i]);
-	if ((i + 1) % DBG_ACK_SIZE == 0) {
-	    (void)DbgRs232ReadChar(dbgChannel);
-	}
-    }
-}
-
-
-/*
- * ----------------------------------------------------------------------------
- *
  * DbgComplain --
  *
  *     Complain because we are allready in the debugger.
@@ -578,13 +478,6 @@ ReadRequest(timeout)
     Boolean	timeout;	/* TRUE if should timeout after waiting a 
 				 * while. */
 {
-    if (dbg_Rs232Debug) {
-	/*
-	 * Don't read anything yet - wait until the actual request for bytes.
-	 */
-	replyOffset = 0;
-	return(TRUE);
-    } else {
 	int	timeOutCounter;
 
 	gotPacket = FALSE;
@@ -606,7 +499,6 @@ ReadRequest(timeout)
 	}
 
 	return(gotPacket);
-    }
 }
 
 
@@ -630,12 +522,8 @@ GetRequestBytes(numBytes, dest)
     int		numBytes;
     Address	dest;
 {
-    if (dbg_Rs232Debug) {
-	ReadBytes(numBytes, dest, TRUE);
-    } else {
 	bcopy(requestBuffer + requestOffset, dest, numBytes);
 	requestOffset += numBytes;
-    }
 }
 
 
@@ -688,9 +576,6 @@ SendReply()
 {
     void	Dbg_FormatPacket();
 
-    if (dbg_Rs232Debug) {
-	WriteBytes(replyOffset, replyBuffer);
-    } else {
 	Net_EtherHdr		*etherHdrPtr;
 
 	if (dbgTraceLevel >= 4) {
@@ -711,7 +596,6 @@ SendReply()
 	if (dbgTraceLevel >= 4) {
 	    printf("Sent reply\n");
 	}
-    }
 }
 
 /*
@@ -875,14 +759,7 @@ Dbg_Main(stackHole, dbgStack)
 	dbgTermReason = DBG_INTERRUPT_SIG;
     }
 
-    if (dbg_Rs232Debug) {
-	/*
-	 * Initialize the rs232 line
-	 */
-	DbgRs232Init();
-    } else {
-	dbg_UsingNetwork = TRUE;
-    }
+    dbg_UsingNetwork = TRUE;
 
     /*
      * If we are stopped after a continue or single step must write a
@@ -913,25 +790,6 @@ Dbg_Main(stackHole, dbgStack)
 	    printf("TI ");
 	} while (TRUE);
     } else {
-	if (dbg_Rs232Debug) {
-	    unsigned	char	ch;
-	    /*
-	     * Read in bytes until we get the sequence of 3 characters
-	     * 127, 27, 7.
-	     */
-	    while (TRUE) {
-		ReadBytes(1, (Address) &ch, FALSE);
-		if (ch == 127) {
-		    ReadBytes(1, (Address) &ch, FALSE);
-		    if (ch == 27) {
-			ReadBytes(1, (Address) &ch, FALSE);
-			if (ch == 7) {
-			    break;
-			}
-		    }
-		}
-	    }
-	}
 	(void) ReadRequest(FALSE);
 	GetRequestBytes(2, (Address)&tOpcode);
 	opcode = (Dbg_Opcode) tOpcode;
@@ -1063,7 +921,7 @@ Dbg_Main(stackHole, dbgStack)
 		Proc_PID	pid;
 
 		GetRequestBytes(sizeof(pid), (Address) &pid);
-		if (!dbg_Rs232Debug) {
+		{
 		    int	dummy;
 
 		    PutReplyBytes(4, (Address) &dummy);
@@ -1100,7 +958,7 @@ Dbg_Main(stackHole, dbgStack)
 		    GetRequestBytes(stringLength, (Address)rebootString);
 		}
 		rebootString[stringLength] = '\0';
-		if (!dbg_Rs232Debug) {
+		{
 		    int	dummy;
 
 		    PutReplyBytes(4, (Address) &dummy);
@@ -1164,7 +1022,7 @@ Dbg_Main(stackHole, dbgStack)
 		 * then read the value.
 		 */
 		GetRequestBytes(sizeof(writeGPR), (Address)&writeGPR);
-		if (!dbg_Rs232Debug) {
+		{
 		    int	dummy;
 
 		    PutReplyBytes(4, (Address) &dummy);
@@ -1180,7 +1038,7 @@ Dbg_Main(stackHole, dbgStack)
 
 	    case DBG_DIVERT_SYSLOG: 
 		GetRequestBytes(sizeof(Boolean), (Address)&syslogDiverted);
-		if (!dbg_Rs232Debug) {
+		{
 		    int	dummy;
 
 		    PutReplyBytes(4, (Address) &dummy);
@@ -1209,7 +1067,7 @@ Dbg_Main(stackHole, dbgStack)
 		if (dbgCanUseSyslog) {
 		    dbg_UsingSyslog = TRUE;
 		}
-		if (!dbg_Rs232Debug) {
+		  {
 		    int	dummy;
 
 		    PutReplyBytes(4, (Address) &dummy);
@@ -1313,7 +1171,7 @@ Dbg_Main(stackHole, dbgStack)
 		    printf("Continuing from pc %x ",
 				dbgGlobalStack.trapStack.excStack.pc);
 		}
-		if (!dbg_Rs232Debug) {
+		 {
 		    int	dummy;
 
 		    PutReplyBytes(4, (Address) &dummy);
@@ -1334,7 +1192,7 @@ Dbg_Main(stackHole, dbgStack)
 		    printf("Stepping from pc %x ",
 				dbgGlobalStack.trapStack.excStack.pc);
 		}
-		if (!dbg_Rs232Debug) {
+		 {
 		    int	dummy;
 
 		    PutReplyBytes(4, (Address) &dummy);
@@ -1361,7 +1219,7 @@ Dbg_Main(stackHole, dbgStack)
 		    printf("Detaching at pc %x ",
 				dbgGlobalStack.trapStack.excStack.pc);
 		}
-		if (!dbg_Rs232Debug) {
+		 {
 		    int	dummy;
 
 		    PutReplyBytes(4, (Address) &dummy);
