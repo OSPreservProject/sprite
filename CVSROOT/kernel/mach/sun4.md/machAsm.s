@@ -249,26 +249,6 @@ _Mach_ContextSwitch:
 					 * MAY BE EXTRANEOUS - interrupts should
 					 * already be off!
 					 */
-#ifdef NOTDEF
-	/* save old addresses for debugging */
-	set	_theAddrOfVmPtr, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %VOL_TEMP1
-	set	_oldAddrOfVmPtr, %VOL_TEMP2
-	st	%VOL_TEMP1, [%VOL_TEMP2]
-	tst	%VOL_TEMP1
-	be	FirstTimeDontPrint
-	nop
-	ld	[%VOL_TEMP1], %VOL_TEMP1	/* value of vmPtr */
-	MACH_DEBUG_BUF(%OUT_TEMP1, %OUT_TEMP2, DebugContextSwitch5, %VOL_TEMP1)
-	set	_theAddrOfMachPtr, %VOL_TEMP1
-	ld	[%VOL_TEMP1], %VOL_TEMP1
-	set	_oldAddrOfMachPtr, %VOL_TEMP2
-	st	%VOL_TEMP1, [%VOL_TEMP2]
-	ld	[%VOL_TEMP1], %VOL_TEMP1	/* value of vmPtr */
-	MACH_DEBUG_BUF(%OUT_TEMP1, %OUT_TEMP2, DebugContextSwitch6, %VOL_TEMP1)
-FirstTimeDontPrint:
-#endif NOTDEF
-
 
 	/*
 	 * Switch contexts to that of toProcPtr.  It's the second arg, so
@@ -357,34 +337,6 @@ ContextRestoreSomeMore:
 	restore
 	/* restore user stack pointer if a user process? */
 
-#ifdef NOTDEF
-	set	_theAddrOfVmPtr, %OUT_TEMP1	/* get addr of vmPtr */
-	ld	[%OUT_TEMP1], %OUT_TEMP1
-	ld	[%OUT_TEMP1], %OUT_TEMP1	/* get value of vmPtr */
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch11, %OUT_TEMP1)
-
-	set	_theAddrOfMachPtr, %OUT_TEMP1
-	ld	[%OUT_TEMP1], %OUT_TEMP1
-	ld	[%OUT_TEMP1], %OUT_TEMP1	/* value of machPtr */
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch12, %OUT_TEMP1)
-
-	set	_oldAddrOfVmPtr, %OUT_TEMP1	/* get addr of old vmPtr */
-	ld	[%OUT_TEMP1], %OUT_TEMP1
-	tst	%OUT_TEMP1
-	be	AgainFirstTimeDontPrint
-	nop
-	ld	[%OUT_TEMP1], %OUT_TEMP1	/* get value of old vmPtr */
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch13, %OUT_TEMP1)
-
-	set	_oldAddrOfMachPtr, %OUT_TEMP1
-	ld	[%OUT_TEMP1], %OUT_TEMP1
-	ld	[%OUT_TEMP1], %OUT_TEMP1	/* value of old machPtr */
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch14, %OUT_TEMP1)
-AgainFirstTimeDontPrint:
-
-	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch15, %CUR_PSR_REG)
-#endif NOTDEF
-
 	/*
 	 * Save the pointer to the current mach state structure that's in
 	 * a local register into a global variable.
@@ -401,13 +353,12 @@ AgainFirstTimeDontPrint:
 	ret
 	restore
 
-
 /*
  *---------------------------------------------------------------------
  *
  * MachRunUserProc -
  *
- *	void	MachRunUserProc(procPtr)
+ *	void	MachRunUserProc()
  *
  *	Make the first user process start off by returning it from a kernel
  *	trap.
@@ -426,10 +377,20 @@ _MachRunUserProc:
 	/*
 	 * Get values to restore registers to from the state structure.
 	 */
-	set	_machCurStatePtr, %VOL_TEMP1
+	set	_proc_RunningProcesses, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* procPtr */
+	set	0x44444444, %o3
+	MACH_DEBUG_BUF(%o0, %o1, PrintHereLabel, %o3)
+	MACH_DEBUG_BUF(%o0, %o1, PrintProcLabel, %VOL_TEMP1)
+	set	_machStatePtrOffset, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2		/* get offset */
+	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %VOL_TEMP1		/* machStatePtr */
+	MACH_DEBUG_BUF(%o0, %o1, PrintMachPtrLabel, %VOL_TEMP1)
 	add	%VOL_TEMP1, MACH_TRAP_REGS_OFFSET, %VOL_TEMP1
+	MACH_DEBUG_BUF(%o0, %o1, PrintAddrTrapRegsLabel, %VOL_TEMP1)
 	ld	[%VOL_TEMP1], %VOL_TEMP2	/* machStatePtr->trapRegs */
+	MACH_DEBUG_BUF(%o0, %o1, PrintTrapRegsLabel, %VOL_TEMP2)
 
 	/*
 	 * Restore %fp.  This will be the user's %sp when we return from
@@ -437,6 +398,25 @@ _MachRunUserProc:
 	 */
 	add	%VOL_TEMP2, MACH_FP_OFFSET, %VOL_TEMP1
 	ld	[%VOL_TEMP1], %fp		/* set %fp - user sp */
+	andcc	%fp, 0x7, %fp
+	be	UserStackOkay
+	nop
+	/*
+	 * User stack wasn't aligned.  It should have been when it got here!
+	 */
+	set	PROC_TERM_DESTROYED, %o0
+	set	PROC_BAD_STACK, %o1
+	clr	%o2
+	call	_Proc_ExitInt, 3
+	nop
+UserStackOkay:
+	/*
+	 * So that user stack has space for saved window area and storage
+	 * of callee's input registers.
+	 */
+	add	%fp, -MACH_FULL_STACK_FRAME, %fp
+
+	MACH_DEBUG_BUF(%o0, %o1, PrintFpLabel, %fp)
 
 	/*
 	 * Set return from trap pc and next pc.
@@ -482,4 +462,27 @@ _MachRunUserProc:
 	MACH_RESTORE_PSR()
 	jmp	%CUR_PC_REG
 	rett	%NEXT_PC_REG
+	nop
+
+/*
+ *---------------------------------------------------------------------
+ *
+ * MachGetCurrentSp -
+ *
+ *	Address	MachGetCurrentSp()
+ *
+ *	Return the value of the current stack pointer.
+ *
+ * Results:
+ *	The current stack pointer.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------
+ */
+.globl	_MachGetCurrentSp
+_MachGetCurrentSp:
+	mov	%sp, %o0
+	retl
 	nop
