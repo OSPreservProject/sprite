@@ -19,34 +19,16 @@
 
 .seg	"text"
 
-/*
- *	The temporary trap table.  I don't fill it in all the way.
- *	NOTE: set instruction is a 2-word pseudo op.
- */
-
 .globl	start
 .globl	_spriteStart
 start:
 _spriteStart:
-	/*
-	 * set cwp = 0, traps enabled, intr priority to f
-	 * Maybe set cwp to 1 with 0xfa1?
-	 mov	0xf80, %psr
-	 */
 
 	mov	%psr, %g1
-	/* set cwp to 0 and disable traps */
-	andn	%g1, 0x3f, %g1
-	/* set interrupt level */
-	or	%g1, 0xf00, %g1
-	wr	%g0, %g1, %psr
-	/* turn traps back on */
-	mov	%psr, %g1
-	or	%g1, 0x20, %g1
-	wr	%g0, %g1, %psr
-	mov	0x2, %wim
+	andn	%g1, 0x1f, %g1			/* set cwp to 0 */
+	mov	%g1, %psr
+	mov	0x2, %wim	/* set wim to window right behind us */
 
-	/* set wim to window right behind us */
 
 	call	_main
 	nop
