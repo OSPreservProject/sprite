@@ -92,6 +92,50 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
  */
 
 /*
+ * Special trace for indirect block bug
+ */
+#undef FSUTIL_TRACE_BLOCK
+#define FSUTIL_TRACE_BLOCK(event, blockPtr) \
+    if (((blockPtr)->flags & FSCACHE_IND_BLOCK) && \
+	(event != BLOCK_FETCH_HIT)) { \
+	Fsutil_TraceBlockRec blockRec;					\
+	blockRec.fileID = (blockPtr)->cacheInfoPtr->hdrPtr->fileID;	\
+	blockRec.blockNum = (blockPtr)->blockNum;			\
+	blockRec.flags	= (blockPtr)->flags;				\
+	Trace_Insert(fsutil_TraceHdrPtr, event, (ClientData)&blockRec);\
+    }
+
+/*
+ * FETCH_INIT	Block newly initialized by Fscache_FetchBlock
+ * FETCH_HIT	Block found by Fscache_FetchBlock or GetUnlockedBlock
+ * DELETE	Block being removed, usually from FetchBlock
+ * FETCH_WAIT	Fscache_FetchBlock had to wait for the block
+ * INVALIDATE	CacheFileInvalidate removed the block
+ * WRITE_INVALIDATE CacheFileWriteBack removed the block
+ * WRITE	Block cleaner wrote the block
+ * ITER_WAIT	GetUnlockedBlock had to wait for the block
+ * ITER_WAIT_HIT	GetUnlockedBlock got the block after waiting for it.
+ * DIRTY	Block becomming dirty for the first time
+ * DELETE_UNLOCK	UnlockBlock discarding the block via CacheFileInvalidate
+ * DELETE_TO_FRONT	UnlockBlock moving block to front of LRU list
+ * DELETE_TO_REAR	UnlockBlock moving block to rear of LRU list
+ */
+#define BLOCK_FETCH_INIT	1
+#define BLOCK_FETCH_HIT		2
+#define BLOCK_DELETE		3
+#define BLOCK_FETCH_WAIT	4
+#define BLOCK_INVALIDATE	5
+#define BLOCK_WRITE_INVALIDATE	6
+#define BLOCK_WRITE		7
+#define BLOCK_ITER_WAIT		8
+#define BLOCK_ITER_WAIT_HIT	9
+#define BLOCK_DIRTY		10
+#define BLOCK_DELETE_UNLOCK	11
+#define BLOCK_TO_FRONT		12
+#define BLOCK_TO_REAR		13
+#define BLOCK_TO_DIRTY_LIST	14
+
+/*
  * Monitor lock.
  */
 static Sync_Lock	cacheLock = Sync_LockInitStatic("Fs:blockCacheLock");
@@ -740,6 +784,7 @@ FetchBlock(canWait)
 	     * Put a pointer to the block in the dirty list.  
 	     * After it is cleaned it will be freed.
 	     */
+	    FSUTIL_TRACE_BLOCK(BLOCK_TO_DIRTY_LIST, blockPtr);
 	    PutBlockOnDirtyList(blockPtr, FALSE);
 	    blockPtr->flags |= FSCACHE_MOVE_TO_FRONT;
 	} else if (blockPtr->flags & FSCACHE_BLOCK_DELETED) {
@@ -753,6 +798,7 @@ FetchBlock(canWait)
 	     * This block is clean and unlocked.  Delete it from the
 	     * hash table and use it.
 	     */
+	    fs_Stats.blockCache.lru++;
 	    List_Remove((List_Links *) blockPtr);
 	    DeleteBlock(blockPtr);
 	    return(blockPtr);
@@ -966,6 +1012,8 @@ Fscache_GetPageFromFS(timeLastAccessed, pageNumPtr)
  * ----------------------------------------------------------------------------
  *
  */
+static Fscache_Block *lostBlockPtr;
+
 ENTRY void
 Fscache_FetchBlock(cacheInfoPtr, blockNum, flags, blockPtrPtr, foundPtr)
     register Fscache_FileInfo *cacheInfoPtr; /* Pointer to the cache state 
@@ -989,166 +1037,166 @@ Fscache_FetchBlock(cacheInfoPtr, blockNum, flags, blockPtrPtr, foundPtr)
     Fscache_Block		*newBlockPtr;
     int				refTime;
     register Boolean		dontBlock = (flags & FSCACHE_DONT_BLOCK);
+    Boolean			doubleInsert = FALSE;
 
     LOCK_MONITOR;
 
-    /*
-     * See if the block is in the cache.
-     */
+    *blockPtrPtr = (Fscache_Block *)NIL;
     SET_BLOCK_HASH_KEY(blockHashKey, cacheInfoPtr, blockNum);
 
-again:
-
-    hashEntryPtr = Hash_Find(blockHashTable, (Address) &blockHashKey);
-    blockPtr = (Fscache_Block *) Hash_GetValue(hashEntryPtr);
-    if (blockPtr != (Fscache_Block *) NIL) {
-	if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
-	    UNLOCK_MONITOR;
-	    panic("Fscache_FetchBlock hashing error\n");
-	    *foundPtr = FALSE;
-	    *blockPtrPtr = (Fscache_Block *) NIL;
-	    return;
-	}
-	if (((flags & FSCACHE_IO_IN_PROGRESS) && 
-	     blockPtr->refCount > 0) ||
-	    (blockPtr->flags & FSCACHE_IO_IN_PROGRESS)) {
-	    if (dontBlock) {
-		*foundPtr = TRUE;
-		*blockPtrPtr = (Fscache_Block *) NIL;
+    do {
+	/*
+	 * Keep re-hashing until we get a block.  If we ever have to
+	 * wait in this loop then the hash table can change out from
+	 * under us, so we always rehash.
+	 */
+	hashEntryPtr = Hash_Find(blockHashTable, (Address) &blockHashKey);
+	blockPtr = (Fscache_Block *) Hash_GetValue(hashEntryPtr);
+	if (blockPtr != (Fscache_Block *) NIL) {
+	    *foundPtr = TRUE;
+	    if (blockPtr->fileNum != cacheInfoPtr->hdrPtr->fileID.minor) {
 		UNLOCK_MONITOR;
+		panic("Fscache_FetchBlock hashing error\n");
+		*foundPtr = FALSE;
 		return;
 	    }
-	    /*
-	     * Wait until becomes unlocked.  Start over when wakeup 
-	     * because the block could go away while we are waiting.
-	     */
-	    FSUTIL_TRACE_BLOCK(FSUTIL_TRACE_BLOCK_WAIT, blockPtr);
-	    (void)Sync_Wait(&blockPtr->ioDone, FALSE);
-	    goto again;
-	}
-	blockPtr->refCount++;
-	if (flags & FSCACHE_IO_IN_PROGRESS) {
-	    blockPtr->flags |= FSCACHE_IO_IN_PROGRESS;
-	}
-	FSUTIL_TRACE_BLOCK(FSUTIL_TRACE_BLOCK_HIT, blockPtr);
-	*foundPtr = TRUE;
-	*blockPtrPtr = blockPtr;
-	UNLOCK_MONITOR;
-	return;
-    }
-    *foundPtr = FALSE;
-	
-    /*
-     * Have to allocate a block.  If there is a free block use it.  Otherwise
-     * either take a block off of the lru list or make a new one.
-     */
-    while (blockPtr == (Fscache_Block *) NIL) {
-	if (!List_IsEmpty(partFreeList)) {
-	    /*
-	     * Use partially free blocks first.
-	     */
-	    fs_Stats.blockCache.numFreeBlocks--;
-	    fs_Stats.blockCache.partFree++;
-	    blockPtr = (Fscache_Block *) List_First(partFreeList);
-	    List_Remove((List_Links *) blockPtr);
-	} else if (!List_IsEmpty(totFreeList)) {
-	    /*
-	     * Can't find a partially free block so use a totally free
-	     * block.
-	     */
-	    fs_Stats.blockCache.numFreeBlocks--;
-	    fs_Stats.blockCache.totFree++;
-	    blockPtr = (Fscache_Block *) List_First(totFreeList);
-	    List_Remove((List_Links *) blockPtr);
-	    if (PAGE_IS_8K) {
-		otherBlockPtr = GET_OTHER_BLOCK(blockPtr);
-		List_Move((List_Links *) otherBlockPtr,
-			      LIST_ATREAR(partFreeList));
+	    if (doubleInsert && blockNum != -2) {
+		printf("Fscache_FetchBlock: double insert avoided file <%d,%d> block %d\n",
+		    blockPtr->cacheInfoPtr->hdrPtr->fileID.major,
+		    blockPtr->cacheInfoPtr->hdrPtr->fileID.minor,
+		    blockPtr->blockNum);
+	    }
+	    if (((flags & FSCACHE_IO_IN_PROGRESS) && 
+		 blockPtr->refCount > 0) ||
+		(blockPtr->flags & FSCACHE_IO_IN_PROGRESS)) {
+		if (! dontBlock) {
+		    /*
+		     * Wait until it becomes unlocked, or return
+		     * found = TRUE and block = NIL if caller can't block.
+		     */
+		    FSUTIL_TRACE_BLOCK(BLOCK_FETCH_WAIT, blockPtr);
+		    (void)Sync_Wait(&blockPtr->ioDone, FALSE);
+		}
+		blockPtr = (Fscache_Block *)NIL;
+	    } else {
+		blockPtr->refCount++;
+		if (flags & FSCACHE_IO_IN_PROGRESS) {
+		    blockPtr->flags |= FSCACHE_IO_IN_PROGRESS;
+		}
+		FSUTIL_TRACE_BLOCK(BLOCK_FETCH_HIT, blockPtr);
 	    }
 	} else {
 	    /*
-	     * Can't find any free blocks so have to use one of our blocks
-	     * or create new ones.
+	     * Have to allocate a block.  If there is a free block use it, or
+	     * take a block off of the lru list, or make a new one.
 	     */
-	    if (fs_Stats.blockCache.numCacheBlocks >= 
-					fs_Stats.blockCache.maxCacheBlocks) {
+	    *foundPtr = FALSE;
+	    if (!List_IsEmpty(partFreeList)) {
 		/*
-		 * We can't have anymore blocks so reuse one of our own.
+		 * Use partially free blocks first.
 		 */
-		blockPtr = FetchBlock(!dontBlock);
-		fs_Stats.blockCache.lru++;
+		fs_Stats.blockCache.numFreeBlocks--;
+		fs_Stats.blockCache.partFree++;
+		blockPtr = (Fscache_Block *) List_First(partFreeList);
+		List_Remove((List_Links *) blockPtr);
+	    } else if (!List_IsEmpty(totFreeList)) {
+		/*
+		 * Can't find a partially free block so use a totally free
+		 * block.
+		 */
+		fs_Stats.blockCache.numFreeBlocks--;
+		fs_Stats.blockCache.totFree++;
+		blockPtr = (Fscache_Block *) List_First(totFreeList);
+		List_Remove((List_Links *) blockPtr);
+		if (PAGE_IS_8K) {
+		    otherBlockPtr = GET_OTHER_BLOCK(blockPtr);
+		    List_Move((List_Links *) otherBlockPtr,
+				  LIST_ATREAR(partFreeList));
+		}
 	    } else {
 		/*
-		 * See if VM has an older page than we have.
+		 * Can't find any free blocks so have to use one of our blocks
+		 * or create new ones.
 		 */
-		refTime = Vm_GetRefTime();
-		blockPtr = (Fscache_Block *) List_First(lruList);
-		DEBUG_PRINT( ("FsCacheBlockFetch: fs=%d vm=%d\n", 
-				   blockPtr->timeReferenced, refTime) );
-		if (blockPtr->timeReferenced > refTime) {
+		if (fs_Stats.blockCache.numCacheBlocks >= 
+					    fs_Stats.blockCache.maxCacheBlocks) {
 		    /*
-		     * VM has an older page than us so we get to make a new
-		     * block.
+		     * We can't have anymore blocks so reuse one of our own.
 		     */
-		    DEBUG_PRINT( ("FsCacheBlockFetch:Creating new block\n" ));
-		    if (!CreateBlock(TRUE, &newBlockPtr)) {
-			DEBUG_PRINT( ("FsCacheBlockFetch: Couldn't create block\n" ));
-			blockPtr = FetchBlock(!dontBlock);
-			fs_Stats.blockCache.lru++;
-		    } else {
-			fs_Stats.blockCache.unmapped++;
-			blockPtr = newBlockPtr;
-		    }
+		    blockPtr = FetchBlock(!dontBlock);
 		} else {
 		    /*
-		     * We have an older block than VM's oldest page so reuse
-		     * the block.
+		     * Grow the cache if VM has an older page than we have.
 		     */
-		    DEBUG_PRINT( ("FsCacheBlockFetch: Recycling block\n") );
-		    fs_Stats.blockCache.lru++;
-		    blockPtr = FetchBlock(!dontBlock);
+		    refTime = Vm_GetRefTime();
+		    blockPtr = (Fscache_Block *) List_First(lruList);
+		    DEBUG_PRINT( ("FsCacheBlockFetch: fs=%d vm=%d\n", 
+				       blockPtr->timeReferenced, refTime) );
+		    if (blockPtr->timeReferenced > refTime) {
+			DEBUG_PRINT( ("FsCacheBlockFetch:Creating new block\n" ));
+			if (!CreateBlock(TRUE, &newBlockPtr)) {
+			    DEBUG_PRINT( ("FsCacheBlockFetch: Couldn't create block\n" ));
+			    blockPtr = FetchBlock(!dontBlock);
+			} else {
+			    fs_Stats.blockCache.unmapped++;
+			    blockPtr = newBlockPtr;
+			}
+		    } else {
+			/*
+			 * We have an older block than VM's oldest page so reuse
+			 * the block.
+			 */
+			DEBUG_PRINT( ("FsCacheBlockFetch: Recycling block\n") );
+			blockPtr = FetchBlock(!dontBlock);
+		    }
 		}
 	    }
-	}
-	if ((blockPtr == (Fscache_Block *)NIL) && dontBlock) {
 	    /*
-	     * FetchBlock couldn't make room in the cache.  Our caller
-	     * should try to treat this like a blocking operation.
+	     * If blockPtr is NIL we waited for room in the cache or
+	     * for a busy cache block.  Now we'll retry all the various
+	     * ploys to get a free block.
+	     * We set the doubleInsert flag here to catch the old bug
+	     * case where the first hash didn't find the block, FetchBlock
+	     * waited for room in the cache, and the block reappeared
+	     * in the cache but FetchBlock was called to get a new block
+	     * anyway - the hash was not redone so a block could have
+	     * been put into the hash table twice.
 	     */
-	    fs_Stats.blockCache.lru--;
-	    *foundPtr = FALSE;
-	    *blockPtrPtr = (Fscache_Block *) NIL;
-	    UNLOCK_MONITOR;
-	    return;
+	    doubleInsert = TRUE;
 	}
-	/*
-	 * If blockPtr is NIL we waited inside FetchBlock and now
-	 * we'll try all the various ploys to get a free block again.
-	 */
+    } while ((blockPtr == (Fscache_Block *)NIL) && !dontBlock);
+
+    if ((*foundPtr == FALSE) && (blockPtr != (Fscache_Block *)NIL)) {
+	cacheInfoPtr->blocksInCache++;
+	blockPtr->cacheInfoPtr = cacheInfoPtr;
+	blockPtr->refCount = 1;
+	blockPtr->flags = flags & (FSCACHE_DATA_BLOCK | FSCACHE_IND_BLOCK |
+				   FSCACHE_DESC_BLOCK | FSCACHE_DIR_BLOCK |
+				   FSCACHE_READ_AHEAD_BLOCK);
+	blockPtr->flags |= FSCACHE_IO_IN_PROGRESS;
+	blockPtr->fileNum = cacheInfoPtr->hdrPtr->fileID.minor;
+	blockPtr->blockNum = blockNum;
+	blockPtr->blockSize = -1;
+	blockPtr->timeDirtied = 0;
+	blockPtr->timeReferenced = fsutil_TimeInSeconds;
+	*blockPtrPtr = blockPtr;
+	FSUTIL_TRACE_BLOCK(BLOCK_FETCH_INIT, blockPtr);
+	if (Hash_GetValue(hashEntryPtr) != (char *)NIL) {
+	    lostBlockPtr = (Fscache_Block *)Hash_GetValue(hashEntryPtr);
+	    UNLOCK_MONITOR;
+	    panic("Fscache_FetchBlock: hashEntryPtr->value changed\n");
+	    LOCK_MONITOR;
+	}
+	Hash_SetValue(hashEntryPtr, blockPtr);
+	List_Insert((List_Links *) blockPtr, LIST_ATREAR(lruList));
+	List_InitElement(&blockPtr->fileLinks);
+	if (flags & FSCACHE_IND_BLOCK) {
+	    List_Insert(&blockPtr->fileLinks, LIST_ATREAR(&cacheInfoPtr->indList));
+	} else {
+	    List_Insert(&blockPtr->fileLinks,LIST_ATREAR(&cacheInfoPtr->blockList));
+	}
     }
-    
-    cacheInfoPtr->blocksInCache++;
-    blockPtr->cacheInfoPtr = cacheInfoPtr;
-    blockPtr->refCount = 1;
-    blockPtr->flags = flags & (FSCACHE_DATA_BLOCK | FSCACHE_IND_BLOCK |
-			       FSCACHE_DESC_BLOCK | FSCACHE_DIR_BLOCK |
-			       FSCACHE_READ_AHEAD_BLOCK);
-    blockPtr->flags |= FSCACHE_IO_IN_PROGRESS;
-    blockPtr->fileNum = cacheInfoPtr->hdrPtr->fileID.minor;
-    blockPtr->blockNum = blockNum;
-    blockPtr->blockSize = -1;
-    blockPtr->timeDirtied = 0;
-    blockPtr->timeReferenced = fsutil_TimeInSeconds;
     *blockPtrPtr = blockPtr;
-    FSUTIL_TRACE_BLOCK(FSUTIL_TRACE_NO_BLOCK, blockPtr);
-    Hash_SetValue(hashEntryPtr, blockPtr);
-    List_Insert((List_Links *) blockPtr, LIST_ATREAR(lruList));
-    List_InitElement(&blockPtr->fileLinks);
-    if (flags & FSCACHE_IND_BLOCK) {
-	List_Insert(&blockPtr->fileLinks, LIST_ATREAR(&cacheInfoPtr->indList));
-    } else {
-	List_Insert(&blockPtr->fileLinks,LIST_ATREAR(&cacheInfoPtr->blockList));
-    }
 
     UNLOCK_MONITOR;
     return;
@@ -1230,6 +1278,7 @@ Fscache_UnlockBlock(blockPtr, timeDirtied, diskBlock, blockSize, flags)
 	 * lock count and then invalidate the block.
 	 */
 	blockPtr->refCount--;
+	FSUTIL_TRACE_BLOCK(BLOCK_DELETE_UNLOCK, blockPtr);
 	CacheFileInvalidate(blockPtr->cacheInfoPtr, blockPtr->blockNum, 
 			    blockPtr->blockNum);
 	UNLOCK_MONITOR;
@@ -1255,6 +1304,7 @@ Fscache_UnlockBlock(blockPtr, timeDirtied, diskBlock, blockSize, flags)
 	    }
 	    blockPtr->flags |= FSCACHE_BLOCK_DIRTY;
 	    blockPtr->timeDirtied = timeDirtied;
+	    FSUTIL_TRACE_BLOCK(BLOCK_DIRTY, blockPtr);
 	}
     }
 
@@ -1300,6 +1350,7 @@ Fscache_UnlockBlock(blockPtr, timeDirtied, diskBlock, blockSize, flags)
 	    if (blockPtr->flags & FSCACHE_BLOCK_ON_DIRTY_LIST) {
 		blockPtr->flags |= FSCACHE_MOVE_TO_FRONT;
 	    } else {
+		FSUTIL_TRACE_BLOCK(BLOCK_TO_FRONT, blockPtr);
 		List_Move((List_Links *) blockPtr, LIST_ATFRONT(lruList));
 	    }
 	    fs_Stats.blockCache.blocksPitched++;
@@ -1506,7 +1557,7 @@ CacheFileInvalidate(cacheInfoPtr, firstBlock, lastBlock)
 	    cacheInfoPtr->blocksInCache--;
 	    List_Remove(&blockPtr->fileLinks);
 	    Hash_Delete(blockHashTable, hashEntryPtr);
-	    FSUTIL_TRACE_BLOCK(FSUTIL_TRACE_DEL_BLOCK, blockPtr);
+	    FSUTIL_TRACE_BLOCK(BLOCK_INVALIDATE, blockPtr);
     
 	    /*
 	     * Invalidate the block, including removing it from dirty list
@@ -1684,7 +1735,7 @@ again:
 		Hash_Delete(blockHashTable, hashEntryPtr);
 		List_Remove((List_Links *) blockPtr);
 		blockPtr->flags |= FSCACHE_BLOCK_DELETED;
-		FSUTIL_TRACE_BLOCK(FSUTIL_TRACE_DEL_BLOCK, blockPtr);
+		FSUTIL_TRACE_BLOCK(BLOCK_WRITE_INVALIDATE, blockPtr);
 	    }
 	} else if (blockPtr->refCount > 0) {
 	    /* 
@@ -2209,7 +2260,7 @@ Fscache_CleanBlocks(data, callInfoPtr)
 	    /*
 	     * Write the block.
 	     */
-	    FSUTIL_TRACE_BLOCK(FSUTIL_TRACE_BLOCK_WRITE, blockPtr);
+	    FSUTIL_TRACE_BLOCK(BLOCK_WRITE, blockPtr);
 	    status = (cacheInfoPtr->ioProcsPtr->blockWrite)
 		    (cacheInfoPtr->hdrPtr, blockPtr, lastDirtyBlock);
 #ifdef lint
@@ -2966,11 +3017,13 @@ GetUnlockedBlock(blockHashKeyPtr, blockNum)
 {
     register	Fscache_Block	*blockPtr;
     register	Hash_Entry	*hashEntryPtr;
+    int event;
 
     /*
      * See if block is in the hash table.
      */
     blockHashKeyPtr->blockNumber = blockNum;
+    event = BLOCK_FETCH_HIT;
 again:
     hashEntryPtr = Hash_LookOnly(blockHashTable, (Address)blockHashKeyPtr);
     if (hashEntryPtr == (Hash_Entry *) NIL) {
@@ -2985,14 +3038,15 @@ again:
      */
     if (blockPtr->refCount > 0 || 
 	(blockPtr->flags & FSCACHE_BLOCK_BEING_WRITTEN)) {
-	FSUTIL_TRACE_BLOCK(FSUTIL_TRACE_BLOCK_WAIT, blockPtr);
+	FSUTIL_TRACE_BLOCK(BLOCK_ITER_WAIT, blockPtr);
 	(void) Sync_Wait(&blockPtr->ioDone, FALSE);
 	if (sys_ShuttingDown) {
 	    return((Hash_Entry *) NIL);
 	}
+	event = BLOCK_ITER_WAIT_HIT;
 	goto again;
     }
-    FSUTIL_TRACE_BLOCK(FSUTIL_TRACE_BLOCK_HIT, blockPtr);
+    FSUTIL_TRACE_BLOCK(event, blockPtr);
     return(hashEntryPtr);
 }
 
@@ -3014,6 +3068,8 @@ again:
  * ----------------------------------------------------------------------------
  *
  */
+static Fscache_Block *deletedBlockPtr;
+
 INTERNAL static void
 DeleteBlock(blockPtr)
     register	Fscache_Block	*blockPtr;
@@ -3026,11 +3082,12 @@ DeleteBlock(blockPtr)
     hashEntryPtr = Hash_LookOnly(blockHashTable, (Address) &blockHashKey);
     if (hashEntryPtr == (Hash_Entry *) NIL) {
 	UNLOCK_MONITOR;
+	deletedBlockPtr = blockPtr;
 	panic("DeleteBlock: Block in LRU list is not in the hash table.\n");
 	LOCK_MONITOR;
 	return;
     }
-    FSUTIL_TRACE_BLOCK(FSUTIL_TRACE_DEL_BLOCK, blockPtr);
+    FSUTIL_TRACE_BLOCK(BLOCK_DELETE, blockPtr);
     Hash_Delete(blockHashTable, hashEntryPtr);
     blockPtr->cacheInfoPtr->blocksInCache--;
     List_Remove(&blockPtr->fileLinks);
