@@ -205,7 +205,6 @@ Ofs_AttachDisk(devicePtr, localName, flags, domainNumPtr)
 		return(FAILURE);
 	    }
 	} else {
-	    printf("Ofs_AttachDisk: No disk header\n");
 	    free(buffer);
 	    return(FAILURE);
 	}
@@ -253,8 +252,9 @@ Ofs_AttachDisk(devicePtr, localName, flags, domainNumPtr)
     partition = ((Ofs_DomainHeader *)buffer)->device.unit;
     if (partition >= 0 && partition < FSDM_NUM_DISK_PARTS) {
 	if ((devicePtr->unit % FSDM_NUM_DISK_PARTS) != partition) {
-	    printf("Ofs_AttachDisk: partition mis-match, arg %d disk %d\n",
-		      devicePtr->unit, partition);
+	    /*
+	     * File system was built on a different partition.
+	     */
 	    free((char *) summaryInfoPtr);
 	    free(buffer);
 	    return(FAILURE);
