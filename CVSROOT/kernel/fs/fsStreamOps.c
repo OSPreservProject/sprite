@@ -31,6 +31,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsTrace.h"
 #include "fsStat.h"
 #include "fsDisk.h"
+#include "fsPrefix.h"
 #include "rpc.h"
 #include "vm.h"
 
@@ -644,6 +645,10 @@ Fs_IOControl(streamPtr, ioctlPtr, replyPtr)
     streamType = streamPtr->ioHandlePtr->fileID.type;
     do {
 	retry = FALSE;
+	replyPtr->length = ioctlPtr->outBufSize;
+	replyPtr->flags = 0;
+	replyPtr->signal = 0;
+	replyPtr->code = 0;
 	/*
 	 * Pre-processing for some of the IOControls.
 	 *
@@ -655,6 +660,12 @@ Fs_IOControl(streamPtr, ioctlPtr, replyPtr)
 	 *
 	 * IOC_LOCK and IOC_UNLOCK.  We have to fill in the process and hostID
 	 * entries in the buffer passed in from the user.
+	 *
+	 * IOC_PREFIX.  This is processed here and not passed down to
+	 * lower levels.  This looks at the streamPtr->nameInfoPtr which
+	 * is completely generic and not otherwise needed by lower levels.
+	 * This simplifies the object modules and eliminates an RPC in the
+	 * case that the object is remote.
 	 */
 	if (command == IOC_NUM_READABLE) {
 	    offset = streamPtr->offset;
@@ -665,12 +676,24 @@ Fs_IOControl(streamPtr, ioctlPtr, replyPtr)
 	    lockArgsPtr = (Ioc_LockArgs *)ioctlPtr->inBuffer;
 	    lockArgsPtr->hostID = rpc_SpriteID;
 	    Sync_GetWaitToken(&lockArgsPtr->pid, &lockArgsPtr->token);
+	} else if (command == IOC_PREFIX) {
+	    FsPrefix	*prefixPtr;
+	    if ((streamPtr->nameInfoPtr == (FsNameInfo *) NIL) ||
+		(streamPtr->nameInfoPtr->prefixPtr == (FsPrefix *)NIL)) {
+		status = GEN_INVALID_ARG;
+	    } else {
+		prefixPtr = streamPtr->nameInfoPtr->prefixPtr;
+		if (ioctlPtr->outBufSize < prefixPtr->prefixLength) {
+		    status = GEN_INVALID_ARG;
+		} else {
+		    strcpy(ioctlPtr->outBuffer, prefixPtr->prefix);
+		    replyPtr->length = prefixPtr->prefixLength;
+		    status = SUCCESS;
+		}
+	    }
+	    return(status);	/* Do not pass down IOC_PREFIX */
 	}
 
-	replyPtr->length = ioctlPtr->outBufSize;
-	replyPtr->flags = 0;
-	replyPtr->signal = 0;
-	replyPtr->code = 0;
 	status = (*fsStreamOpTable[streamType].ioControl)
 			(streamPtr, ioctlPtr, replyPtr);
 #ifdef lint
@@ -847,7 +870,6 @@ Fs_IOControl(streamPtr, ioctlPtr, replyPtr)
 	case IOC_GET_OWNER:
 	case IOC_SET_OWNER:
 	case IOC_MAP:
-	case IOC_PREFIX:
 	     break;
     }
     /*
