@@ -56,4 +56,4 @@ typedef struct {
     int 	token;      /* token to use for remote notify call */
 } ProcRemoteWaitCmd;
 
-#endif _MIGRATE
+#endif /* _MIGRATE */

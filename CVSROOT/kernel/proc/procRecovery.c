@@ -16,7 +16,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif /* not lint */
 
 #include "sprite.h"
 #include "proc.h"
@@ -31,7 +31,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 void Proc_MigrateCrash();
 #ifdef notdef
 void Proc_HostIsUp();
-#endif
+#endif /* */
 
 static Sync_Lock recovLock = {0,0};
 #define LOCKPTR &recovLock
@@ -78,7 +78,7 @@ Proc_RecovInit()
     Recov_CrashRegister(Proc_MigrateCrash, (ClientData) NIL);
 #ifdef notdef
     Recov_BackRegister(Proc_MigrateHostIsUp, (ClientData) NIL);
-#endif
+#endif /* */
 }
 
 
@@ -158,7 +158,7 @@ Proc_AddMigDependency(processID, hostID)
     new = TRUE;
 #else KERNEL_HASH
     hashEntryPtr = Hash_CreateEntry(dependHashTable, (Address) processID, &new);
-#endif KERNEL_HASH
+#endif /* KERNEL_HASH */
     if (!new) {
 	if (proc_MigDebugLevel > 0) {
 	    Sys_Panic((proc_MigDebugLevel > 4) ? SYS_FATAL : SYS_WARNING,
@@ -204,7 +204,7 @@ Proc_RemoveMigDependency(processID)
 #else KERNEL_HASH
     hashEntryPtr = Hash_FindEntry(dependHashTable, (Address) processID);
     if (hashEntryPtr == (Hash_Entry *) NULL) {
-#endif KERNEL_HASH
+#endif /* KERNEL_HASH */
 	if (proc_MigDebugLevel > 0) {
 	    Sys_Panic((proc_MigDebugLevel > 4) ? SYS_FATAL : SYS_WARNING,
 		      "Proc_RemoveMigDependency: process %x not registered.\n",
@@ -217,7 +217,7 @@ Proc_RemoveMigDependency(processID)
     Hash_Delete(dependHashTable, hashEntryPtr);
 #else KERNEL_HASH
     Hash_DeleteEntry(dependHashTable, hashEntryPtr);
-#endif KERNEL_HASH
+#endif /* KERNEL_HASH */
     Mem_Free ((Address) dependPtr);
     UNLOCK_MONITOR;
 }

@@ -34,7 +34,7 @@
 #include <kernel/timer.h>
 #include <kernel/sig.h>
 #include <kernel/mach.h>
-#endif
+#endif /* */
 
 /*
  * Constants for Proc_Exec().  
@@ -632,4 +632,4 @@ extern ReturnStatus		Proc_GetEnvironRangeStub();
 extern ReturnStatus		Proc_InstallEnvironStub();
 extern ReturnStatus		Proc_CopyEnvironStub();
 
-#endif _PROC
+#endif /* _PROC */

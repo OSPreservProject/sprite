@@ -24,7 +24,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif /* not lint */
 
 
 #include "sprite.h"
@@ -475,18 +475,7 @@ Proc_ResumeMigProc(pc)
      * Start the process running.  This does not return.  
      */
 
-/*
- **** temporary kludge since Mary wants proc to herself!  FIXME!
- */
-#if defined(SUN2) || defined(SUN3)
-    if (proc_MigDebugLevel > 5) {
-	Sys_Printf("Calling Mach_StartUserProc(%x, %x). D0 = %x, SP = %x.\n",
-		   (Address) procPtr, (Address) pc,
-		   procPtr->machStatePtr->userState.trapRegs[D0],
-		   procPtr->machStatePtr->userState.trapRegs[SP]);
-    }
-#endif
-    Mach_StartUserProc(procPtr, pc);
+    Mach_StartUserProc(procPtr, (Address) pc);
     Sys_Panic(SYS_FATAL, "ProcResumeMigProc: Mach_StartUserProc returned.\n");
 }
 
@@ -600,7 +589,7 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
 	record.flags = PROC_MIGTRACE_START;
 	record.info.call.callNumber = callNumber;
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_CALL,
-		     (ClientData *) &record);
+		     (ClientData) &record);
     }
 
     for (i = 0; i < numWords; i++) {
@@ -787,7 +776,7 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
     if (replyDataSize < RPC_MIN_BUFFER_SIZE) {
 	replyDataSize = RPC_MIN_BUFFER_SIZE;
     }
-#endif RPC_MIN_BUFFER_SIZE
+#endif /* RPC_MIN_BUFFER_SIZE */
 	
     dataBuffer = Mem_Alloc(dataSize);
     ptr = dataBuffer;
@@ -840,7 +829,7 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
 	record.flags &= ~PROC_MIGTRACE_START;
 	record.info.call.status = remoteCallStatus;
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_CALL,
-		     (ClientData *) &record);
+		     (ClientData) &record);
     }
 
     /*
@@ -849,7 +838,8 @@ Proc_DoRemoteCall(callNumber, numWords, argsPtr, specsPtr)
      */
     if (remoteCallStatus == PROC_NO_PEER) {
 	status = PROC_NO_PEER;
-	(void) Sig_Send(SIG_KILL, PROC_NO_PEER, procPtr->processID, FALSE); 
+	(void) Sig_Send(SIG_KILL, (int) PROC_NO_PEER, procPtr->processID,
+			FALSE); 
 	goto failure;
     }
     /*
@@ -1001,7 +991,7 @@ ProcRemoteFork(parentProcPtr, childProcPtr)
 	record.flags = PROC_MIGTRACE_START;
 	record.info.call.callNumber = SYS_PROC_FORK;
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_CALL,
-		     (ClientData *) &record);
+		     (ClientData) &record);
     }
 
     /*
@@ -1028,7 +1018,7 @@ ProcRemoteFork(parentProcPtr, childProcPtr)
 	record.flags &= ~PROC_MIGTRACE_START;
 	record.info.call.status = status;
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_CALL,
-		     (ClientData *) &record);
+		     (ClientData) &record);
     }
 
     /*
@@ -1038,8 +1028,8 @@ ProcRemoteFork(parentProcPtr, childProcPtr)
      */
     if (status != SUCCESS) {
 	if (status == PROC_NO_PEER) {
-	    (void) Sig_Send(SIG_KILL, PROC_NO_PEER, parentProcPtr->processID,
-			    FALSE); 
+	    (void) Sig_Send(SIG_KILL, (int) PROC_NO_PEER,
+			    parentProcPtr->processID, FALSE); 
 	}
 	if (proc_MigDebugLevel > 0) {
 	    Sys_Printf("Warning: ProcRemoteFork returning status %x.\n",
@@ -1119,7 +1109,7 @@ ProcRemoteExit(procPtr, reason, exitStatus, code)
 	record.flags = PROC_MIGTRACE_START;
 	record.info.call.callNumber = SYS_PROC_EXIT;
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_CALL,
-		     (ClientData *) &record);
+		     (ClientData) &record);
     }
 
 
@@ -1160,7 +1150,7 @@ ProcRemoteExit(procPtr, reason, exitStatus, code)
 	record.flags &= ~PROC_MIGTRACE_START;
 	record.info.call.status = status;
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_CALL,
-		     (ClientData *) &record);
+		     (ClientData) &record);
     }
 
     Mem_Free(buffer);

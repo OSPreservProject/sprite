@@ -20,7 +20,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif /* not lint */
 
 #include "sprite.h"
 #include "mach.h"
@@ -50,7 +50,7 @@ static ReturnStatus	DoExec();
 #ifndef PROC_MAX_ENVIRON_LENGTH
 #define PROC_MAX_ENVIRON_LENGTH (PROC_MAX_ENVIRON_NAME_LENGTH + \
 				 PROC_MAX_ENVIRON_VALUE_LENGTH)
-#endif  PROC_MAX_ENVIRON_LENGTH
+#endif /*  PROC_MAX_ENVIRON_LENGTH */
 
 typedef struct {
     List_Links	links;

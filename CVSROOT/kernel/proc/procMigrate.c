@@ -15,7 +15,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif /* not lint */
 
 
 #include "sprite.h"
@@ -127,7 +127,7 @@ Proc_Migrate(pid, nodeID)
 	Proc_Lock(procPtr);
 #ifdef notdef
 	return(PROC_INVALID_PID);
-#endif notdef
+#endif /* notdef */
     } else {
 	procPtr = Proc_LockPID(pid);
 	if (procPtr == (Proc_ControlBlock *) NIL) {
@@ -156,7 +156,7 @@ Proc_Migrate(pid, nodeID)
 	record.flags = PROC_MIGTRACE_START | PROC_MIGTRACE_HOME;
 	record.info.filler = NIL;
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_BEGIN_MIG,
-		     (ClientData *) &record);
+		     (ClientData) &record);
     }
    
     /*
@@ -254,7 +254,7 @@ Proc_MigrateTrap(procPtr)
 	}
 	record.info.filler = NIL;
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_MIGTRAP,
-		     (ClientData *) &record);
+		     (ClientData) &record);
     }
    
     procPtr->genFlags = (procPtr->genFlags & ~PROC_MIG_PENDING) |
@@ -321,7 +321,7 @@ Proc_MigrateTrap(procPtr)
 			       foreign);
 #else SHARED
     status = SendSegment(procPtr, VM_HEAP, nodeID, foreign);
-#endif SHARED
+#endif /* SHARED */
     if (status != SUCCESS) {
 	Sys_Panic(SYS_WARNING, "Error %x returned by SendSegment on heap.\n",
 		  status);
@@ -345,7 +345,7 @@ Proc_MigrateTrap(procPtr)
 	goto failure;
 #else
 	Sys_Printf("Warning: not killing migrating process.\n");
-#endif
+#endif /* */
     }
     procPtr->genFlags = (procPtr->genFlags & ~PROC_MIGRATING) |
 	    PROC_MIGRATION_DONE;
@@ -362,7 +362,7 @@ Proc_MigrateTrap(procPtr)
     if (proc_DoTrace && proc_MigDebugLevel > 1) {
 	record.flags = (foreign ? 0 : PROC_MIGTRACE_HOME);
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_MIGTRAP,
-		     (ClientData *) &record);
+		     (ClientData) &record);
     }
 
     if (proc_DoTrace && proc_MigDebugLevel > 0 && !foreign) {
@@ -370,7 +370,7 @@ Proc_MigrateTrap(procPtr)
 	record.flags = PROC_MIGTRACE_HOME;
 	record.info.filler = NIL;
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_END_MIG,
-		     (ClientData *) &record);
+		     (ClientData) &record);
     }
    
     if (foreign) {
@@ -391,7 +391,7 @@ failure:
 	record.flags = PROC_MIGTRACE_HOME;
 	record.info.filler = NIL;
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_END_MIG,
-		     (ClientData *) &record);
+		     (ClientData) &record);
     }
 
 }
@@ -486,7 +486,7 @@ SendProcessState(procPtr, nodeID, foreign)
 	record.info.command.type = PROC_MIGRATE_PROC;
 	record.info.command.data = (ClientData) NIL;
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_TRANSFER,
-		     (ClientData *) &record);
+		     (ClientData) &record);
     }
    
     machStateSize = Mach_GetEncapSize();
@@ -556,7 +556,7 @@ SendProcessState(procPtr, nodeID, foreign)
     if (proc_DoTrace && proc_MigDebugLevel > 2) {
 	record.flags = (foreign ? 0 : PROC_MIGTRACE_HOME);
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_TRANSFER,
-		     (ClientData *) &record);
+		     (ClientData) &record);
     }
    
     if (error != SUCCESS) {
@@ -624,7 +624,7 @@ SendSegment(procPtr, type, nodeID, foreign)
 	record.info.command.type = PROC_MIGRATE_VM;
 	record.info.command.data = (ClientData) NIL;
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_TRANSFER,
-		     (ClientData *) &record);
+		     (ClientData) &record);
     }
    
     status = Vm_MigrateSegment(procPtr->vmPtr->segPtrArray[type], &segBuffer,
@@ -666,7 +666,7 @@ SendSegment(procPtr, type, nodeID, foreign)
 	record.flags = (foreign ? 0 : PROC_MIGTRACE_HOME);
 	record.info.command.data = (ClientData) numPages;
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_TRANSFER,
-		     (ClientData *) &record);
+		     (ClientData) &record);
     }
    
     if (error != SUCCESS) {
@@ -725,7 +725,7 @@ SendFileState(procPtr, nodeID, foreign)
 	record.info.command.type = PROC_MIGRATE_FILES;
 	record.info.command.data = (ClientData) NIL;
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_TRANSFER,
-		     (ClientData *) &record);
+		     (ClientData) &record);
     }
 
     if (proc_MigDebugLevel > 6) {
@@ -766,7 +766,7 @@ SendFileState(procPtr, nodeID, foreign)
 	record.flags = (foreign ? 0 : PROC_MIGTRACE_HOME);
 	record.info.command.data = (ClientData) numEncap;
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_TRANSFER,
-		     (ClientData *) &record);
+		     (ClientData) &record);
     }
    
     if (status != SUCCESS) {
@@ -824,7 +824,7 @@ ResumeExecution(procPtr, nodeID, foreign)
 	record.info.command.type = PROC_MIGRATE_RESUME;
 	record.info.command.data = (ClientData) NIL;
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_TRANSFER,
-		     (ClientData *) &record);
+		     (ClientData) &record);
     }
    
 
@@ -850,7 +850,7 @@ ResumeExecution(procPtr, nodeID, foreign)
     if (proc_DoTrace && proc_MigDebugLevel > 2) {
 	record.flags = (foreign ? 0 : PROC_MIGTRACE_HOME);
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_TRANSFER,
-		     (ClientData *) &record);
+		     (ClientData) &record);
     }
    
     if (status != SUCCESS) {
@@ -1073,7 +1073,7 @@ Proc_MigSendUserInfo(procPtr)
 	record.info.command.type = PROC_MIGRATE_USER_INFO;
 	record.info.command.data = (ClientData) NIL;
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_TRANSFER,
-		     (ClientData *) &record);
+		     (ClientData) &record);
     }
    
     procBufferSize = PROC_NUM_USER_INFO_FIELDS * sizeof(int);
@@ -1112,7 +1112,7 @@ Proc_MigSendUserInfo(procPtr)
     if (proc_DoTrace && proc_MigDebugLevel > 2) {
 	record.flags = PROC_MIGTRACE_HOME;
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_TRANSFER,
-		     (ClientData *) &record);
+		     (ClientData) &record);
     }
    
     if (error != SUCCESS) {
@@ -1281,7 +1281,8 @@ Proc_DestroyMigratedProc(pidData)
      */
     Proc_Unlock(procPtr);
     
-    ProcExitProcess(procPtr, PROC_TERM_DESTROYED, PROC_NO_PEER, 0, FALSE);
+    ProcExitProcess(procPtr, PROC_TERM_DESTROYED, (int) PROC_NO_PEER, 0,
+		    FALSE);
 
     Proc_RemoveMigDependency(pid);
 }

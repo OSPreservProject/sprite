@@ -56,5 +56,5 @@ extern	ReturnStatus		ProcFamilyInsert();
 
 extern	int			ProcTableMatch();
 extern	void			ProcAddToGroupList();
-#endif _PROCINT
+	  
 #endif /* _PROCINT */

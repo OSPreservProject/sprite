@@ -21,7 +21,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif /* not lint */
 
 #include "sprite.h"
 #include "proc.h"
@@ -132,7 +132,7 @@ again:
 	    UNLOCK_MONITOR;
 	    return(PROC_UID_MISMATCH);
 	}
-#endif
+#endif /* */
     }
     List_Insert((List_Links *) &(procPtr->familyElement), 
 		LIST_ATFRONT(&famHdrPtr->famList));

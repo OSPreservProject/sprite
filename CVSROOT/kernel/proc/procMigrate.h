@@ -201,4 +201,4 @@ extern void Proc_AddMigDependency();
 
 
 
-#endif _PROCMIGRATE
+#endif /* _PROCMIGRATE */

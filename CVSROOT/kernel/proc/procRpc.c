@@ -16,7 +16,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif /* not lint */
 
 #include "sprite.h"
 #include "mach.h"
@@ -248,7 +248,7 @@ Proc_RpcRemoteCall(callPtr, dataPtr, dataLength, replyDataPtr,
 	record.flags = PROC_MIGTRACE_START | PROC_MIGTRACE_HOME;
 	record.info.call.callNumber = callPtr->callNumber;
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_CALL,
-		     (ClientData *) &record);
+		     (ClientData) &record);
     }
     
     if (!callPtr->parseArgs) {
@@ -264,7 +264,7 @@ Proc_RpcRemoteCall(callPtr, dataPtr, dataLength, replyDataPtr,
 	    record.info.call.status = status;
 	    record.flags &= ~PROC_MIGTRACE_START;
 	    Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_CALL,
-			 (ClientData *) &record);
+			 (ClientData) &record);
 	}
 	return(status);
     }
@@ -312,7 +312,7 @@ Proc_RpcRemoteCall(callPtr, dataPtr, dataLength, replyDataPtr,
 	record.info.call.status = status;
 	record.flags &= ~PROC_MIGTRACE_START;
 	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_CALL,
-		     (ClientData *) &record);
+		     (ClientData) &record);
     }
 
     return(status);

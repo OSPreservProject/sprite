@@ -18,7 +18,7 @@
 
 #ifndef lint
 static char rcsid[] = "$Header$ SPRITE (Berkeley)";
-#endif not lint
+#endif /* not lint */
 
 #include "sprite.h"
 #include "mach.h"
@@ -277,7 +277,7 @@ p     */
 	Proc_Unlock(parentProcPtr);
     }
 
-    Mach_SetReturnVal(procPtr, PROC_CHILD_PROC);
+    Mach_SetReturnVal(procPtr, (int) PROC_CHILD_PROC);
      * Set up the environment of the process.
      */
 
