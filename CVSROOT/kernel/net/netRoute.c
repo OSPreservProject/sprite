@@ -46,7 +46,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "mem.h"
 #include "timer.h"
 #include "sync.h"
-#include "string.h"
 
 /*
  * A broadcast address that will be put into a broadcast route.
@@ -148,7 +147,7 @@ void NetArpHandler();
  *      Initialize the broadcast route.  The rest of the routes are
  *      installed via the netRoute user program.
  *
- *	This uses Mem_Alloc, so it should be called after Mem_Init.
+ *	This uses malloc, so it should be called after Mem_Init.
  *
  * Results:
  *	None.
@@ -223,35 +222,34 @@ Net_InstallRouteStub(spriteID, flags, type, clientData, name, machType)
     int length;
 
     if (Vm_StringNCopy(128, name, hostname, &length) != SUCCESS) {
-	Sys_Panic(SYS_WARNING, "Net_InstallRoute: bad name arg\n");
+	printf("Warning: Net_InstallRoute: bad name arg\n");
 	return(SYS_ARG_NOACCESS);
     }
     hostname[127] = '\0';
     switch(type) {
 	case NET_ROUTE_ETHER: {
-	    localData = (ClientData)Mem_Alloc(sizeof(Net_EtherAddress));
+	    localData = (ClientData)malloc(sizeof(Net_EtherAddress));
 	    status = Vm_CopyIn(sizeof(Net_EtherAddress), (Address)clientData,
 				      (Address)localData);
 	    if (status != SUCCESS) {
-		Mem_Free((Address)localData);
+		free((Address)localData);
 		return(status);
 	    }
 	    break;
 	}
 	default:
-	    Sys_Panic(SYS_WARNING, "Net_InstallRoute: bad route type %d\n",
-			type);
+	    printf("Warning: Net_InstallRoute: bad route type %d\n", type);
 	    return(GEN_INVALID_ARG);
     }
     if (Vm_StringNCopy(128, machType, machineType, &length) != SUCCESS) {
-	Sys_Panic(SYS_WARNING, "Net_InstallRoute: bad machType arg\n");
-	(void) String_Copy("sun3", machineType);
+	printf("Warning: Net_InstallRoute: bad machType arg\n");
+	(void) strcpy(machineType,"sun3");
     }
     machineType[127] = '\0';
     status = Net_InstallRoute(spriteID, flags, type, localData,
 		    hostname, machineType);
     if (localData != (ClientData)NIL) {
-	Mem_Free((Address)localData);
+	free((Address)localData);
     }
     return(status);
 }
@@ -292,22 +290,22 @@ Net_InstallRoute(spriteID, flags, type, clientData, hostname, machType)
     routePtr = netRouteArray[spriteID];
     if (routePtr != (Net_Route *)NIL) {
 	if (routePtr->data != (Address)NIL) {
-	    Mem_Free((Address)routePtr->data);
+	    free((Address)routePtr->data);
 	}
 	if (routePtr->name != (char *)NIL) {
-	    Mem_Free((Address) routePtr->name);
+	    free((Address) routePtr->name);
 	}
 	if (routePtr->machType != (char *)NIL) {
-	    Mem_Free((Address) routePtr->machType);
+	    free((Address) routePtr->machType);
 	}
-	Mem_Free((Address)routePtr);
+	free((Address)routePtr);
     }
-    routePtr = (Net_Route *)Mem_Alloc(sizeof(Net_Route));
+    routePtr = (Net_Route *)malloc(sizeof(Net_Route));
     netRouteArray[spriteID] = routePtr;
-    routePtr->name = (char *)Mem_Alloc(String_Length(hostname) + 1);
-    (void) String_Copy(hostname, routePtr->name);
-    routePtr->machType = (char *)Mem_Alloc(String_Length(machType) + 1);
-    (void) String_Copy(machType, routePtr->machType);
+    routePtr->name = (char *)malloc(strlen(hostname) + 1);
+    (void) strcpy(routePtr->name, hostname);
+    routePtr->machType = (char *)malloc(strlen(machType) + 1);
+    (void) strcpy(routePtr->machType, machType);
     /*
      * Prepare the Route.  This includes the transport header that
      * will be used in messages sent to the Sprite Host.
@@ -324,7 +322,7 @@ Net_InstallRoute(spriteID, flags, type, clientData, hostname, machType)
 	     * drivers fill in the source part of the ethernet header each
 	     * time they send out a packet.
 	     */
-	    etherHdrPtr = (Net_EtherHdr *)Mem_Alloc(sizeof(Net_EtherHdr));
+	    etherHdrPtr = (Net_EtherHdr *)malloc(sizeof(Net_EtherHdr));
 	    NET_ETHER_ADDR_COPY(*(Net_EtherAddress *)clientData,
 				NET_ETHER_HDR_DESTINATION(*etherHdrPtr));
 	    NET_ETHER_HDR_TYPE(*etherHdrPtr) = 
@@ -334,8 +332,7 @@ Net_InstallRoute(spriteID, flags, type, clientData, hostname, machType)
 	}
 	default: {
 	    routePtr->data = (Address)NIL;
-	    Sys_Panic(SYS_WARNING,
-		      "Unsupported route type in Net_InstallRoute");
+	    printf("Warning: Unsupported route type in Net_InstallRoute\n");
 	    break;
 	}
     }
@@ -651,7 +648,7 @@ Net_SpriteIDToMachType(spriteID)
  *	None.
  *
  * Side effects:
- *	Sys_Printf.
+ *	printf.
  *
  *----------------------------------------------------------------------
  */
@@ -841,12 +838,12 @@ NetDoArp(mutexPtr, command, gatherPtr, packetPtr)
 	retries++;
 	if (command == NET_SPRITE_ARP_REQUEST) {
 	    if (arpDebug) {
-		Sys_Printf("Sending arp request\n");
+		printf("Sending arp request\n");
 	    }
 	    arpStatistics.numArpRequests++;
 	} else {
 	    if (arpDebug) {
-		Sys_Printf("Sending rev arp request\n");
+		printf("Sending rev arp request\n");
 	    }
 	    arpStatistics.numRevArpRequests++;
 	}
@@ -919,7 +916,7 @@ NetArpInput(packetPtr, packetLength)
 	     * If we do then we reply with that info.
 	     */
 	    if (arpDebug) {
-		Sys_Printf("Got ARP request for Sprite ID %d\n",
+		printf("Got ARP request for Sprite ID %d\n",
 				arpDataPtr->spriteHostID);
 	    }
 	    if (arpDataPtr->spriteHostID > 0 &&
@@ -958,7 +955,7 @@ NetArpInput(packetPtr, packetLength)
 	     * to be messing with things once we've notified the waiter.
 	     */
 	    if (arpDebug) {
-		Sys_Printf("Got ARP reply for Sprite ID %d\n",
+		printf("Got ARP reply for Sprite ID %d\n",
 				arpDataPtr->spriteHostID);
 	    }
 	    LIST_FORALL(&arpList, (List_Links *)arpPtr) {
@@ -983,7 +980,7 @@ NetArpInput(packetPtr, packetLength)
 	    spriteID = Net_AddrToID(0, NET_ROUTE_ETHER, 
 					(ClientData) &arpDataPtr->etherAddr);
 	    if (arpDebug) {
-		Sys_Printf("Got REV_ARP request for Sprite ID %d\n",
+		printf("Got REV_ARP request for Sprite ID %d\n",
 				arpDataPtr->spriteHostID);
 	    }
 	    if (spriteID > 0) {
@@ -997,7 +994,7 @@ NetArpInput(packetPtr, packetLength)
 	     * then copy the reply into the waiting arp state.
 	     */
 	    if (arpDebug) {
-		Sys_Printf("Got REV_ARP reply for Sprite ID %d",
+		printf("Got REV_ARP reply for Sprite ID %d",
 			    arpDataPtr->spriteHostID);
 	    }
 	    LIST_FORALL(&revArpList, (List_Links *)arpPtr) {
@@ -1152,7 +1149,7 @@ NetArpOutput(spriteID, destPtr, flags)
 			Net_HostToNetShort(NET_ETHER_SPRITE_ARP);
 
     if (arpDebug) {
-	Sys_Printf("Sending%sARP reply for Sprite ID %d\n",
+	printf("Sending%sARP reply for Sprite ID %d\n",
 	    flags == NET_SPRITE_REV_ARP_REPLY ? " REV_" : " ", spriteID);
     }
     arpStatistics.numRevArpReplies++;
@@ -1187,7 +1184,7 @@ Net_ArpTimeout(time, data)
 
     MASTER_LOCK(*arpPtr->mutexPtr);
     if (arpDebug) {
-	Sys_Printf("Arp timeout\n");
+	printf("Arp timeout\n");
     }
     arpPtr->state &= ~ARP_IN_TIMEOUT_QUEUE;
     Sync_MasterBroadcast(&arpPtr->condition);
