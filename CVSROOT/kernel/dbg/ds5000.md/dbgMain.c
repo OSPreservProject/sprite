@@ -181,7 +181,7 @@ unsigned *DbgGetDestPC();
 /*
  * ----------------------------------------------------------------------------
  *
- * InRange --
+ * Dbg_InRange --
  *
  *     Return true if the given address is a valid kernel address and false
  *     otherwise.
@@ -196,7 +196,7 @@ unsigned *DbgGetDestPC();
  * ----------------------------------------------------------------------------
  */
 /*ARGSUSED*/
-static Boolean InRange(addr, numBytes, writeable) 
+Boolean Dbg_InRange(addr, numBytes, writeable) 
     unsigned 	int addr; 	/* Beginning address to check. */
     int		numBytes; 	/* Number of bytes to check. */
     Boolean	writeable;	/* TRUE => address must be writeable. */
@@ -208,7 +208,7 @@ static Boolean InRange(addr, numBytes, writeable)
     firstPage = addr >> VMMACH_PAGE_SHIFT;
     lastPage = (addr + numBytes - 1) >> VMMACH_PAGE_SHIFT;
     if (firstPage != lastPage) {
-	printf("InRange: Object spans pages\n");
+	printf("Dbg_InRange: Object spans pages\n");
 	return(FALSE);
     }
     return(VmMach_MakeDebugAccessible(addr));
@@ -782,14 +782,14 @@ Dbg_Main()
 	    }
             case IREAD:
             case DREAD:
-		if (InRange(requestPtr->addr, 4, FALSE)) {
+		if (Dbg_InRange(requestPtr->addr, 4, FALSE)) {
 		    replyPtr->data = *(int *)requestPtr->addr;
 		} else {
 		    replyPtr->status = 0;
 		}
 		break;
             case IWRITE:
-		if (InRange(requestPtr->addr, 4, TRUE)) {
+		if (Dbg_InRange(requestPtr->addr, 4, TRUE)) {
 		    replyPtr->data = *(int *)requestPtr->addr;
 		    Mach_FlushCode((Address)requestPtr->addr, 4);
 		    *(int *)requestPtr->addr = requestPtr->data;
@@ -799,7 +799,7 @@ Dbg_Main()
 		}
 		break;
             case DWRITE:
-		if (InRange(requestPtr->addr, 4, TRUE)) {
+		if (Dbg_InRange(requestPtr->addr, 4, TRUE)) {
 		    replyPtr->data = *(int *)requestPtr->addr;
 		    *(int *)requestPtr->addr = requestPtr->data;
 		} else {
@@ -817,7 +817,7 @@ Dbg_Main()
 		if (dbgTraceLevel >= 1) {
 		    printf("Single-step PC=%x\n", pc);
 		}
-		if (!InRange((unsigned int)pc, 4, TRUE)) {
+		if (!Dbg_InRange((unsigned int)pc, 4, TRUE)) {
 		    printf("Bad SSTEP PC\n");
 		    replyPtr->status = 0;
 		    break;
@@ -833,14 +833,14 @@ Dbg_Main()
             case PKILL:
 		break;
             case DBREAD: 
-		if (InRange(requestPtr->addr, 1, FALSE)) {
+		if (Dbg_InRange(requestPtr->addr, 1, FALSE)) {
 		    replyPtr->data = *(char *)requestPtr->addr;
 		} else {
 		    replyPtr->status = 0;
 		}
 		break;
             case DBWRITE:
-		if (InRange(requestPtr->addr, 1, TRUE)) {
+		if (Dbg_InRange(requestPtr->addr, 1, TRUE)) {
 		    replyPtr->data = *(char *)requestPtr->addr;
 		    *(char *)requestPtr->addr = requestPtr->data;
 		} else {
@@ -848,14 +848,14 @@ Dbg_Main()
 		}
 		break;
             case DHREAD:
-		if (InRange(requestPtr->addr, 2, FALSE)) {
+		if (Dbg_InRange(requestPtr->addr, 2, FALSE)) {
 		    replyPtr->data = *(short *)requestPtr->addr;
 		} else {
 		    replyPtr->status = 0;
 		}
 		break;
             case DHWRITE:
-		if (InRange(requestPtr->addr, 2, TRUE)) {
+		if (Dbg_InRange(requestPtr->addr, 2, TRUE)) {
 		    replyPtr->data = *(short *)requestPtr->addr;
 		    *(short *)requestPtr->addr = requestPtr->data;
 		} else {
