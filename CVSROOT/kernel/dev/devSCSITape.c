@@ -656,7 +656,9 @@ DevSCSITapeIOControl(devicePtr, ioctlPtr, replyPtr)
 		    if (repoArgsPtr->offset != 0) {
 			return(DEV_INVALID_ARG);
 		    }
-		    goto rewind;
+		    status = (tapePtr->specialCmdProc)(tapePtr,
+						  IOC_TAPE_REWIND, 1);
+		    break;
 		case IOC_BASE_CURRENT:
 		    status = DEV_INVALID_ARG;
 		    break;
@@ -673,6 +675,7 @@ DevSCSITapeIOControl(devicePtr, ioctlPtr, replyPtr)
 		    }
 		    break;
 	    }
+	    tapePtr->state &= ~SCSI_TAPE_WRITTEN;
 	    break;
 	}
 	case IOC_TAPE_COMMAND: {
@@ -680,6 +683,7 @@ DevSCSITapeIOControl(devicePtr, ioctlPtr, replyPtr)
 	    if (ioctlPtr->inBufSize < sizeof(Dev_TapeCommand)) {
 		return(DEV_INVALID_ARG);
 	    }
+	    tapePtr->state &= ~SCSI_TAPE_WRITTEN;
 	    switch (cmdPtr->command) {
 		case IOC_TAPE_WEOF: {
 		    status = (tapePtr->specialCmdProc)(tapePtr, IOC_TAPE_WEOF,
@@ -693,15 +697,6 @@ DevSCSITapeIOControl(devicePtr, ioctlPtr, replyPtr)
 		}
 		case IOC_TAPE_OFFLINE:
 		case IOC_TAPE_REWIND: {
-rewind:		    /*
-		     * Have to write an end-of-file mark if the last thing done
-		     * was a write...
-		     */
-		    if (tapePtr->state & SCSI_TAPE_WRITTEN) {
-			status = (tapePtr->specialCmdProc)(tapePtr,
-						   IOC_TAPE_WEOF, 1);
-			tapePtr->state &= ~SCSI_TAPE_WRITTEN;
-		    }
 		    status = (tapePtr->specialCmdProc)(tapePtr,
 						  IOC_TAPE_REWIND, 1);
 		    break;
