@@ -349,14 +349,7 @@ Rpc_Start()
 	Timer_GetCurrentTicks(&ticks);
 	Timer_TicksToTime(ticks, &bootTime);
     } else {
-	Timer_SetTimeOfDay(bootTime, -tzMinutes, tzDST);
-	/*
-	Sys_Printf("Rpc_Start: time = %d.%06d, offset = %d, DST = %d\n", 
-		bootTime.seconds,
-		bootTime.microseconds,
-		-tzMinutes,
-		tzDST);
-	*/
+	Timer_SetTimeOfDay(bootTime, tzMinutes, tzDST);
     }
     rpcBootID = bootTime.seconds;
 
@@ -364,7 +357,7 @@ Rpc_Start()
      * Convert from Greenwich Standard minutes to local minutes
      * and print the time on the console.
      */
-    seconds = bootTime.seconds - tzMinutes * 60;
+    seconds = bootTime.seconds + tzMinutes * 60;
     Time_ToAscii(seconds, FALSE, dateString);
     Sys_Printf("%s\n", dateString);
 }

@@ -249,7 +249,12 @@ RpcFsUnixPrefix(srvToken, clientID, command, storagePtr)
  *
  * RpcGetTime --
  *
- *	Return the time of day.
+ *	Return the time of day.  The RPC_GET_TIME is done at boot time
+ *	by machines and used to initialize their rpcBootID, as well as
+ *	set their clock.  The point of the rpcBootID is to have a different
+ *	one each time a host boots so others can detect a reboot.  The
+ *	time obtained with this is usually overridden, however, with
+ *	an 'rdate' done by the bootcmds (much) later in the boot sequence.
  *
  * Results:
  *	If SUCCESS is returned then reply has been sent.  Otherwise caller
@@ -273,33 +278,26 @@ RpcGetTime(srvToken, clientID, command, storagePtr)
 				 * pointers and 0 for the lengths.  This can
 				 * be passed to Rpc_Reply */
 {
-    /*
-     * Ugly hack so that only one machine is a time server...
-     */
-    if (rpc_SpriteID != 1) {
-	return(RPC_NO_REPLY);
-    } else {
-	Rpc_ReplyMem	*replyMemPtr;
-	struct timeReturn {
-	    Time time;
-	    int offset;
-	    Boolean DST;
-	} *timeReturnPtr;
+    Rpc_ReplyMem	*replyMemPtr;
+    struct timeReturn {
+	Time time;
+	int offset;
+	Boolean DST;
+    } *timeReturnPtr;
+    
+    timeReturnPtr =
+	(struct timeReturn *)Mem_Alloc(sizeof(struct timeReturn));
+    Timer_GetTimeOfDay(&timeReturnPtr->time, &timeReturnPtr->offset,
+					 &timeReturnPtr->DST);
+    storagePtr->replyParamPtr = (Address)timeReturnPtr;
+    storagePtr->replyParamSize = sizeof(struct timeReturn);
 
-	timeReturnPtr =
-	    (struct timeReturn *)Mem_Alloc(sizeof(struct timeReturn));
-	Timer_GetTimeOfDay(&timeReturnPtr->time, &timeReturnPtr->offset,
-					     &timeReturnPtr->DST);
-	storagePtr->replyParamPtr = (Address)timeReturnPtr;
-	storagePtr->replyParamSize = sizeof(struct timeReturn);
+    replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
+    replyMemPtr->paramPtr = storagePtr->replyParamPtr;
+    replyMemPtr->dataPtr = (Address) NIL;
 
-	replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
-	replyMemPtr->paramPtr = storagePtr->replyParamPtr;
-	replyMemPtr->dataPtr = (Address) NIL;
-
-	Rpc_Reply(srvToken, SUCCESS, storagePtr, Rpc_FreeMem, replyMemPtr);
-	return(SUCCESS);
-    }
+    Rpc_Reply(srvToken, SUCCESS, storagePtr, Rpc_FreeMem, replyMemPtr);
+    return(SUCCESS);
 }
 
 
@@ -333,7 +331,6 @@ RpcProcMigInit(srvToken, clientID, command, storagePtr)
 				 * be passed to Rpc_Reply */
 {
     ReturnStatus status;
-    Rpc_ReplyMem	*replyMemPtr;
 
     status = Proc_AcceptMigration(clientID); 
     Rpc_Reply(srvToken, status, storagePtr, NIL, NIL);

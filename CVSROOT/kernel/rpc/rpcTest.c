@@ -77,8 +77,19 @@ Rpc_GetTime(serverId, timePtr, timeZoneMinutesPtr, timeZoneDSTPtr)
 	*timeZoneDSTPtr = 0;
     } else {
 	*timePtr = rpcTimeReturn.time;
-	*timeZoneMinutesPtr = rpcTimeReturn.timeZoneMinutes;
-	*timeZoneDSTPtr = rpcTimeReturn.timeZoneDST;
+	if (rpcTimeReturn.timeZoneMinutes > 0) {
+	    /*
+	     * This is a return from lust, and timeZoneMinutes are
+	     * really a unix kernel's tz_minuteswest, and the timeZoneDST
+	     * is a code for what kind of time zone correction to use.
+	     */
+	    Sys_Panic(SYS_WARNING, "Rpc_Start, negative timezone offset.\n");
+	    *timeZoneMinutesPtr = -rpcTimeReturn.timeZoneMinutes;
+	    *timeZoneDSTPtr = TRUE;
+	} else {
+	    *timeZoneMinutesPtr = rpcTimeReturn.timeZoneMinutes;
+	    *timeZoneDSTPtr = rpcTimeReturn.timeZoneDST;
+	} 
     }
     return(status);
 }
@@ -314,3 +325,67 @@ Rpc_Echo(serverId, inputPtr, returnPtr, size)
  *	If the RPC is successful the input data is copied into
  *	the return data.  This is an expensive copy...
  *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Rpc_Ping(serverId)
+    int serverId;
+{
+    Rpc_Storage storage;
+    ReturnStatus status;
+
+    storage.requestDataPtr = (Address)NIL;
+    storage.requestDataSize = 0;
+    storage.replyDataPtr = (Address)NIL;
+    storage.replyDataSize = 0;
+    storage.replyParamPtr = (Address)NIL;
+    storage.replyParamSize = 0;
+    storage.requestParamPtr = (Address)NIL;
+    storage.requestParamSize = 0;
+
+    /*
+     * This should use RPC_ECHO_1, but it is unimplemented by the server.
+     */         
+    status = Rpc_Call(serverId, RPC_ECHO_2, &storage);
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_Send --
+ *
+ *	Send data to the specified server.
+ *
+ * Results:
+ *	The status code from the RPC.
+ *
+ * Side effects:
+ *	Send the request to the server...
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Rpc_Send(serverId, inputPtr, size)
+    int serverId;
+    Address inputPtr;
+    int size;
+{
+    Rpc_Storage storage;
+    ReturnStatus status;
+
+    storage.requestDataPtr = inputPtr;
+    storage.requestDataSize = size;
+
+    storage.replyDataPtr = (Address)NIL;
+    storage.replyDataSize = 0;
+
+    storage.replyParamPtr = (Address)NIL;
+    storage.replyParamSize = 0;
+
+    storage.requestParamPtr = (Address)NIL;
+    storage.requestParamSize = 0;
+
+    status = Rpc_Call(serverId, RPC_SEND, &storage);
+    return(status);
+}
