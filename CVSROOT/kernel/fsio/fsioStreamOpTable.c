@@ -143,7 +143,7 @@ FsAttrOps fsAttrOpTable[FS_NUM_DOMAINS] = {
 /* FS_REMOTE_SPRITE_DOMAIN */
     { FsSpriteGetAttr, FsSpriteSetAttr },
 /* FS_PSEUDO_DOMAIN */
-    { NoProc, NoProc },
+    { FsPseudoGetAttr, FsPseudoSetAttr },
 /* FS_NFS_DOMAIN */
     { NoProc, NoProc },
 };
@@ -306,13 +306,15 @@ FsStreamTypeOps fsStreamOpTable[] = {
 		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
 		FsControlScavenge, FsControlClientKill,
 		FsControlClose },
-#ifdef not_done_yet
     /*
      * The 'naming stream' for a pseudo-filesystem is used to forward lookup
      * operations from the kernel up to the user-level server.  It is like
      * a regular pdev request-response stream, except that extra connections
      * to it are established via the prefix table when remote Sprite hosts
      * import a pseudo-filesystem.  The routines here are used to set this up.
+     * This stream is only accessed locally.  To remote hosts the domain is
+     * a regular remote sprite domain, and the RPC stubs on the server then
+     * switch out to either local-domain or pseudo-domain routines.
      */
     { FS_PFS_NAMING_STREAM, FsPfsNamingCltOpen,
 		NoProc, NoProc,				/* read, write */
@@ -320,10 +322,38 @@ FsStreamTypeOps fsStreamOpTable[] = {
 		NullProc, NullProc,			/* Get/Set IO Attr */
 		FsRmtPseudoStreamVerify,
 		NoProc, NoProc,				/* migStart, migEnd */
-		NoProc, FsPfsNamingReopen,		/* migrate, reopen */
+		NoProc, NoProc,				/* migrate, reopen */
 		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
-		FsPfsNamingScavenge, FsPfsNamingClientKill,
-		FsPfsNamingClose },
+		FsRemoteHandleScavenge, NullClientKill,
+		FsRemoteIOClose },
+    /*
+     * A pseudo stream to a pseudo-filesystem server.  This is just like
+     * a pseudo stream to a pseudo-device server, except for the CltOpen
+     * routine because setup is different.  
+     */
+    { FS_LCL_PFS_STREAM, FsPfsStreamCltOpen, FsPseudoStreamRead,
+		FsPseudoStreamWrite, FsPseudoStreamIOControl,
+		FsPseudoStreamSelect,
+		NullProc, NullProc,			/* Get/Set IO Attr */
+		NoHandle, FsPseudoStreamMigStart, FsPseudoStreamMigEnd,
+		FsPseudoStreamMigrate, NoProc,		/* migrate, reopen */
+		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
+		FsHandleUnlockHdr, NullClientKill, FsPseudoStreamClose },
+    /*
+     * A pseudo stream to a remote pseudo-filesystem server.  This is just
+     * like the remote pseudo-device stream, except that it maps to a
+     * FS_LCL_PFS_STREAM type on the server.
+     */
+    { FS_RMT_PFS_STREAM, FsRmtPseudoStreamCltOpen, FsSpriteRead,
+		FsSpriteWrite,
+		FsRemoteIOControl, FsSpriteSelect,
+		FsRemoteGetIOAttr, FsRemoteSetIOAttr,
+		FsRmtPseudoStreamVerify,
+		FsRemoteIOMigStart, FsRemoteIOMigEnd,
+		FsRmtPseudoStreamMigrate, NoProc,	/* migrate, reopen */
+		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
+		FsRemoteHandleScavenge, NullClientKill, FsRemoteIOClose },
+#ifdef notdef
     /*
      * Locally cached named pipe stream.  
      */
@@ -365,7 +395,56 @@ FsStreamTypeOps fsStreamOpTable[] = {
 		NoProc, NoProc,
 		NoProc, NoProc,
 		NoProc, NoProc},
-#endif not_done_yet
+#endif /* notdef */
+};
+
+/*
+ * Simple arrays are used to map between local and remote types.
+ */
+int fsRmtToLclType[FS_NUM_STREAM_TYPES] = {
+    FS_STREAM, 			/* FS_STREAM */
+    FS_LCL_FILE_STREAM,		/* FS_LCL_FILE_STREAM */
+    FS_LCL_FILE_STREAM,		/* FS_RMT_FILE_STREAM */
+    FS_LCL_DEVICE_STREAM,	/* FS_LCL_DEVICE_STREAM */
+    FS_LCL_DEVICE_STREAM,	/* FS_RMT_DEVICE_STREAM */
+    FS_LCL_PIPE_STREAM,		/* FS_LCL_PIPE_STREAM */
+    FS_LCL_PIPE_STREAM,		/* FS_RMT_PIPE_STREAM */
+    FS_CONTROL_STREAM,		/* FS_CONTROL_STREAM */
+    FS_SERVER_STREAM,		/* FS_SERVER_STREAM */
+    FS_LCL_PSEUDO_STREAM,	/* FS_LCL_PSEUDO_STREAM */
+    FS_LCL_PSEUDO_STREAM,	/* FS_RMT_PSEUDO_STREAM */
+    FS_PFS_CONTROL_STREAM,	/* FS_PFS_CONTROL_STREAM */
+    FS_LCL_PSEUDO_STREAM,	/* FS_PFS_NAMING_STREAM */
+    FS_LCL_PFS_STREAM,		/* FS_LCL_PFS_STREAM */
+    FS_LCL_PFS_STREAM,		/* FS_RMT_PFS_STREAM */
+
+    -1,				/* FS_RMT_NFS_STREAM */
+    FS_LCL_NAMED_PIPE_STREAM,	/* FS_LCL_NAMED_PIPE_STREAM */
+    FS_LCL_NAMED_PIPE_STREAM,	/* FS_RMT_NAMED_PIPE_STREAM */
+    -1,				/* FS_RMT_UNIX_STREAM */
+};
+
+int fsLclToRmtType[FS_NUM_STREAM_TYPES] = {
+    FS_STREAM, 			/* FS_STREAM */
+    FS_RMT_FILE_STREAM,		/* FS_LCL_FILE_STREAM */
+    FS_RMT_FILE_STREAM,		/* FS_RMT_FILE_STREAM */
+    FS_RMT_DEVICE_STREAM,	/* FS_LCL_DEVICE_STREAM */
+    FS_RMT_DEVICE_STREAM,	/* FS_RMT_DEVICE_STREAM */
+    FS_RMT_PIPE_STREAM,		/* FS_LCL_PIPE_STREAM */
+    FS_RMT_PIPE_STREAM,		/* FS_RMT_PIPE_STREAM */
+    FS_CONTROL_STREAM,		/* FS_CONTROL_STREAM */
+    -1,				/* FS_SERVER_STREAM */
+    FS_RMT_PSEUDO_STREAM,	/* FS_LCL_PSEUDO_STREAM */
+    FS_RMT_PSEUDO_STREAM,	/* FS_RMT_PSEUDO_STREAM */
+    FS_PFS_CONTROL_STREAM,	/* FS_PFS_CONTROL_STREAM */
+    FS_PFS_NAMING_STREAM,	/* FS_PFS_NAMING_STREAM */
+    FS_RMT_PFS_STREAM,		/* FS_LCL_PFS_STREAM */
+    FS_RMT_PFS_STREAM,		/* FS_RMT_PFS_STREAM */
+
+    FS_RMT_NFS_STREAM,		/* FS_RMT_NFS_STREAM */
+    FS_RMT_NAMED_PIPE_STREAM,	/* FS_LCL_NAMED_PIPE_STREAM */
+    FS_RMT_NAMED_PIPE_STREAM,	/* FS_RMT_NAMED_PIPE_STREAM */
+    FS_RMT_UNIX_STREAM,		/* FS_RMT_UNIX_STREAM */
 };
 
 
