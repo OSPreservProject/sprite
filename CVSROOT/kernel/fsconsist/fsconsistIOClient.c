@@ -205,12 +205,13 @@ FsIOClientClose(clientList, clientID, flags, cachePtr)
 		clientPtr->clientID,
 		clientPtr->use.ref, clientPtr->use.write, clientPtr->use.exec);
 	}
-	if (!(*cachePtr) || !clientPtr->cached) {
-	    if (clientPtr->use.ref == 0) {
-		List_Remove((List_Links *) clientPtr);
-		Mem_Free((Address) clientPtr);
-	    }
+	if ((!(*cachePtr) || !clientPtr->cached) &&
+	    (clientPtr->use.ref == 0)) {
+	    List_Remove((List_Links *) clientPtr);
+	    Mem_Free((Address) clientPtr);
 	    *cachePtr = FALSE;
+	} else {
+	    *cachePtr = clientPtr->cached;
 	}
     }
     return(found);

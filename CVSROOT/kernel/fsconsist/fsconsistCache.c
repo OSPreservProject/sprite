@@ -697,11 +697,12 @@ FsMigrateConsistency(handlePtr, srcClientID, dstClientID, useFlags,
 					 * this open and other cache messages */
 {
     register FsConsistInfo *consistPtr = &handlePtr->consist;
-    Boolean			cache = TRUE;
+    Boolean			cache;
     register	ReturnStatus	status;
 
     LOCK_MONITOR;
 
+    cache = (srcClientID == consistPtr->lastWriter);
     if ((useFlags & FS_RMT_SHARED) == 0) {
 	/*
 	 * Remove references due to the original client so it doesn't confuse
@@ -873,6 +874,7 @@ FsConsistClose(consistPtr, clientID, flags, wasCachedPtr)
 {
     LOCK_MONITOR;
 
+    *wasCachedPtr = (consistPtr->lastWriter == clientID);
     if (!FsIOClientClose(&consistPtr->clientList, clientID, flags,
 			 wasCachedPtr)) {
 	UNLOCK_MONITOR;
