@@ -56,8 +56,8 @@ typedef struct Mach_MonFuncs {
     int		(*ioctl)();
     int		(*close)();
     int		(*lseek)();
-    int		(*getchar)();
-    int		(*putchar)();
+    int		(*mgetchar)();
+    int		(*mputchar)();
     int		(*showchar)();
     int		(*gets)();
     int		(*puts)();
