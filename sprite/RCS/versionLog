@@ -147,4 +147,31 @@ increased limit on ds3100 kernel heap to 16 MB
 Patched called to VmMach_GetContext() to handle processes without context
 loaded.  sun4c only.  This allows kernel stack traces during debug sessions.
 
+
+1.062	Thu Mar 29 17:37:37 PST 1990
+____________________________________________________________________________
+Rpc and Sys:
+Added rpc code for servers to generate negative acknowledgements if they
+cannot grant an rpc server process to a client request.  The new code contains
+2 methods for clients to handle a negative acknowledgement - by backoff or
+by ramping down the number of channels they can use with that server.
+New hooks have been added to Sys_StatsStub to control, using rpccmd,
+the generation of negative acks, the client policy handling
+negative acks, and the number and max number of rpc server procs.
+--------------------------------------------------------------------------
+Recov and Sys:
+There is also a stub (for recovcmd) to change the pinging policy of client recov
+deamons.  This new kernel contains code in the recov module to try to prevent
+clients from synchronizing their pings due to server reboots.  They now
+ping at absolute intervals from when they rebooted, but using recovcmd you
+can change back to the old way if you want to for some weird reason.
+---------------------------------------------------------------------------
+Mach: (sun4 and sun4c)
+If a process is suspended for debug due to a bad stack pointer in the window
+underflow trap, you can now kill it, because it checks for KILL signals now.
+-------------------------------------------------------------------------
+Sig:
+Added a new routine, Sig_CheckForKill() that lets you check for a kill
+signal without handling any signals that might take you out to user mode.
+This is for the Mach change for the sun4 and sun4c, above.
     New files linked in from the net library.
