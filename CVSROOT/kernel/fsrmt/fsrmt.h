@@ -5,6 +5,13 @@
  *
  * Copyright (C) 1985 Regents of the University of California
  * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
  *
  *
  * $Header$ SPRITE (Berkeley)
@@ -14,7 +21,29 @@
 #define _FSSPRITEDOMAIN
 
 #include "fsNameOps.h"
+#include "fsIO.h"
 #include "proc.h"
+
+/*
+ * (New) Parameters for the read and write RPCs.
+ */
+
+typedef struct FsRemoteIOParams {
+    Fs_FileID	fileID;			/* Identifies file to read from */
+    Fs_FileID	streamID;		/* Identifies stream (for offset) */
+    Sync_RemoteWaiter waiter;		/* Process info for remote waiting */
+    Fs_IOParam	io;			/* I/O parameter block */
+}
+
+/*
+ * (New) Parameters for the I/O Control RPC.
+ */
+
+typedef struct FsRemoteIOCParam {
+    Fs_FileID	fileID;		/* File to manipulate. */
+    Fs_FileID	streamID;	/* Stream to the file, needed for locking */
+    Fs_IOCParam	ioc;		/* IOControl parameter block */
+} FsRemoteIOCParam;
 
 /*
  * Parameters for the read RPC.
@@ -48,25 +77,6 @@ typedef struct FsRemoteWriteParams {
     Sync_RemoteWaiter waiter;		/* Process info for remote waiting */
 } FsRemoteWriteParams;
 
-/*
- * Parameters for the Device Open RPC.
- */
-
-typedef struct FsSpriteDevOpenParams {
-    Fs_FileID	fileID;		/* File ID from the name server used by the
-				 * I/O server to construct its own file ID */
-    Fs_Device	device;		/* Specifies device server, type, unit */
-    int		flags;		/* FS_MIGRATING_HANDLE. */
-    int		streamType;	/* Type of stream being opened, either a
-				 * domain stream, a cacheable stream for
-				 * named pipes, or a pdev stream to
-				 * open up the master's req/res pipes */
-} FsSpriteDevOpenParams;
-
-typedef struct FsSpriteDevOpenResults {
-    Fs_FileID	fileID;		/* File ID that identifies the handle on the
-				 * I/O server. */
-} FsSpriteDevOpenResults;
 
 /*
  * Parameters for the iocontrol RPC
