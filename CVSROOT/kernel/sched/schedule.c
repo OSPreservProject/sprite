@@ -547,6 +547,9 @@ IdleLoop()
     Sync_SemRegister(sched_MutexPtr);
     cpu = Mach_GetProcessorNumber();
     queuePtr = schedReadyQueueHdrPtr;
+#ifdef spur
+    Mach_InstCountEnd(0);
+#endif
     MASTER_UNLOCK(sched_MutexPtr);
 
     if (Mach_IntrNesting(cpu) != 0) {
@@ -571,6 +574,9 @@ IdleLoop()
 	     * have sched_Mutex down at this point, so this is only a hint.
 	     */
 	    MASTER_LOCK(sched_MutexPtr);
+#ifdef spur
+	    Mach_InstCountStart(2);
+#endif
 	    /*
 	     * Make sure queue is not empty. If there is a ready process
 	     * take a peek at it to insure that we can execute it. The
@@ -592,8 +598,15 @@ IdleLoop()
  		 * We found a READY processor for us, break out of the
 		 * idle loop.
 		 */
+#ifdef spur
+		Mach_InstCountOff(2);
+#endif
 		break;
 	    }
+	    sync_InstrumentPtr[cpu]->sched_MutexMiss++;
+#ifdef spur
+	    Mach_InstCountEnd(2);
+#endif
 	    MASTER_UNLOCK(sched_MutexPtr);
 	}
 	/*
@@ -607,6 +620,9 @@ IdleLoop()
 	    sched_Instrument.processor[cpu].idleTicksLow++;
 	}
     }
+#ifdef spur
+    Mach_InstCountStart(1);
+#endif
 #ifdef spur
 	modeReg = Dev_CCIdleCounters(TRUE,modeReg); /* Restore perf counters. */
 #endif
@@ -780,6 +796,10 @@ Sched_LockAndSwitch()
     sched_Instrument.processor[Mach_GetProcessorNumber()].
 				numInvoluntarySwitches++;
     Sched_ContextSwitchInt(PROC_READY);
+#ifdef spur
+    Mach_InstCountEnd(1);
+#endif
+
     MASTER_UNLOCK(sched_MutexPtr);
 }
 
@@ -807,6 +827,9 @@ Sched_ContextSwitch(state)
 
     MASTER_LOCK(sched_MutexPtr);
     Sched_ContextSwitchInt(state);
+#ifdef spur
+    Mach_InstCountEnd(1);
+#endif
     MASTER_UNLOCK(sched_MutexPtr);
 
 }
@@ -835,6 +858,9 @@ void
 Sched_StartKernProc(func)
     void	(*func)();
 {
+#ifdef spur
+    Mach_InstCountEnd(1);
+#endif
     MASTER_UNLOCK(sched_MutexPtr);
     func();
     Proc_Exit(0);
@@ -892,6 +918,9 @@ Sched_StartUserProc(pc)
 {
     register     	Proc_ControlBlock *procPtr;
 
+#ifdef spur
+    Mach_InstCountEnd(1);
+#endif
     MASTER_UNLOCK(sched_MutexPtr);
     procPtr = Proc_GetCurrentProc();
 
