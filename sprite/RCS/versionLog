@@ -593,4 +593,8 @@ Fixed a few compat bugs:
     sprite vs. unix executable (profiled ones were done wrong)
     restarting migrated system calls
     window flush in signal return
+
+1.107	Mon Dec 16 11:25:47 PST 1991
+
+1.108	Wed Dec 18 15:43:38 PST 1991
     New files linked in from the net library.
