@@ -400,7 +400,7 @@ _VmMachSetSegMap:
  *	set to the context for which the segment map entries are to be set.
  *	
  *	void VmMachSegMapCopy(tablePtr, startAddr, endAddr)
- *	    char *tablePtr;
+ *	    short *tablePtr;
  *	    int startAddr;
  *	    int endAddr;
  *
@@ -417,16 +417,36 @@ _VmMachSegMapCopy:
 						/* segTableAddr in %o0 */
 						/* startAddr in %o1 */
 						/* endAddr in %o2 */
+    /*
+     * Due to the hole in the address space, I must make sure that no
+     * segment for an address in the hole gets anything written to it, since
+     * this would overwrite the pmeg mapping for a valid address's segment.
+     */
     set		VMMACH_SEG_MAP_MASK, %OUT_TEMP1
     and		%o1, %OUT_TEMP1, %o1	/* mask out low bits */
 copyLoop:
-    lduh	[%o0], %OUT_TEMP1
+    /* returns 0 in OUT_TEMP1 if okay, 1 otherwise */
+    VMMACH_ADDR_OK_ASM(%o1, SegCopyLabel1, SegCopyLabel2, %OUT_TEMP1, %OUT_TEMP2)
+    tst		%OUT_TEMP1
+    be		GoAheadAndCopy
+    lduh	[%o0], %OUT_TEMP1	/* IN DELAY SLOT */
+    set		VMMACH_INV_PMEG, %OUT_TEMP2
+    cmp		%OUT_TEMP1, %OUT_TEMP2
+    be		SkipStore
+    nop
+    /* Would try to store valid pmeg to horrid location! */
+    /* What arguments? */
+    clr		%o0
+    call	_panic, 1
+    nop
+GoAheadAndCopy:
     stha	%OUT_TEMP1, [%o1] VMMACH_SEG_MAP_SPACE
-    add		%o0, 4, %o0		/* increment address to copy from */
+SkipStore:
+    add		%o0, 2, %o0		/* increment address to copy from */
     set		VMMACH_SEG_SIZE, %OUT_TEMP2
     add		%o1, %OUT_TEMP2, %o1	/* increment addr to copy to */
     cmp		%o2, %o1		/* Hit upper bound? */
-    bg		copyLoop
+    bgu		copyLoop
     nop
 
     retl	/* return from leaf routine */
@@ -775,11 +795,11 @@ _Vm_CopyOut:
     set		_mach_FirstUserAddr, %OUT_TEMP1
     ld		[%OUT_TEMP1], %OUT_TEMP1	/* get 1st user addr */
     cmp		%o2, %OUT_TEMP1
-    bcs		BadAddress		/* branch carry set? */
+    blu		BadAddress		/* branch carry set */
     nop
     sub		%o2, 1, %OUT_TEMP2
     addcc	%OUT_TEMP2, %o0, %OUT_TEMP2
-    bcs		BadAddress
+    blu		BadAddress
     nop
 
     set		_mach_LastUserAddr, %OUT_TEMP1
