@@ -76,7 +76,7 @@ int proc_AllowMigrationState = PROC_MIG_ALLOW_DEFAULT;
  * machines of the same architecture and version number.
  */
 #ifndef PROC_MIGRATE_VERSION
-#define PROC_MIGRATE_VERSION 7
+#define PROC_MIGRATE_VERSION 8
 #endif /* PROC_MIGRATE_VERSION */
 
 int proc_MigrationVersion = PROC_MIGRATE_VERSION;
