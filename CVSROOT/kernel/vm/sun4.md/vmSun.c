@@ -228,14 +228,6 @@ INTERNAL static void Dev32BitDMABufferInit _ARGS_((void));
     } \
 }
 #endif
-/*
- * PMEG segment info list entry.
- */
-struct PMEGseg {
-    struct PMEGseg	*nextLink;	/* Linked list ptr. */
-    struct Vm_Segment	*segPtr;	/* Software segment. */
-    int			hardSegNum;	/* Hardware segment number. */
-};
 
 /*
  * PMEG table entry structure.
@@ -243,7 +235,7 @@ struct PMEGseg {
 typedef struct {
     List_Links			links;		/* Links so that the pmeg */
               					/* can be in a list */
-    struct PMEGseg		segInfo;	/* Info on software segment. */
+    struct VmMach_PMEGseg	segInfo;	/* Info on software segment. */
     int				pageCount;	/* Count of resident pages in
 						 * this pmeg. */
     int				lockCount;	/* The number of times that
@@ -866,7 +858,6 @@ VmMach_Init(firstFreePage)
     MapColorMapAndIdRomAddr();
 #endif sun4c
 #endif NOTDEF
-
 }
 
 
@@ -923,7 +914,7 @@ MMUInit(firstFreeSegment)
     for (i = 0, pmegPtr = pmegArray; i < VMMACH_NUM_PMEGS; i++, pmegPtr++) {
 	pmegPtr->segInfo.segPtr = (Vm_Segment *) NIL;
 	pmegPtr->flags = PMEG_DONT_ALLOC;
-	pmegPtr->segInfo.nextLink = (struct PMEGseg *)NIL;
+	pmegPtr->segInfo.nextLink = (struct VmMach_PMEGseg *)NIL;
     }
 
 #ifdef sun2
@@ -1228,6 +1219,7 @@ VmMach_SegInit(segPtr)
     segDataPtr->offset = PageToSeg(segPtr->offset);
     segDataPtr->segTablePtr =
 	    (VMMACH_SEG_NUM *) ((Address)segDataPtr + sizeof(VmMach_SegData));
+    segDataPtr->pmegInfo.inuse = 0;
     for (i = 0; i < segTableSize; i++) {
 	segDataPtr->segTablePtr[i] = VMMACH_INV_PMEG;
     }
@@ -1269,7 +1261,9 @@ VmMach_SegExpand(segPtr, firstPage, lastPage)
     register	VmMach_SegData	*oldSegDataPtr;
     register	VmMach_SegData	*newSegDataPtr;
 
-    newSegTableSize = segPtr->ptSize / VMMACH_NUM_PAGES_PER_SEG;
+    newSegTableSize = (segPtr->ptSize + VMMACH_NUM_PAGES_PER_SEG-1 +
+            (segPtr->offset%VMMACH_NUM_PAGES_PER_SEG)) /
+            VMMACH_NUM_PAGES_PER_SEG;
     oldSegDataPtr = segPtr->machPtr;
     if (newSegTableSize <= oldSegDataPtr->numSegs) {
 	return;
@@ -1506,7 +1500,7 @@ PMEGGet(softSegPtr, hardSegNum, flags)
     Address			virtAddr;
     Boolean			found = FALSE;
     int				numValidPages;
-    struct PMEGseg		*curSeg, *nextSeg;
+    struct VmMach_PMEGseg		*curSeg, *nextSeg;
 
     if (List_IsEmpty(pmegFreeList)) {
 	
@@ -1530,7 +1524,7 @@ PMEGGet(softSegPtr, hardSegNum, flags)
 	/*
 	 * Need to steal the pmeg from its current owner.
 	 */
-	for (curSeg = &pmegPtr->segInfo; curSeg != (struct PMEGseg *)NIL;) {
+	for (curSeg = &pmegPtr->segInfo; curSeg != (struct VmMach_PMEGseg *)NIL;) {
 	    vmStat.machDepStat.stealPmeg++;
 	    segPtr = curSeg->segPtr;
 	    *GetHardSegPtr(segPtr->machPtr, curSeg->hardSegNum) =
@@ -1589,11 +1583,11 @@ PMEGGet(softSegPtr, hardSegNum, flags)
 	    }
 	    nextSeg = curSeg->nextLink;
 	    if (curSeg != &pmegPtr->segInfo) {
-		free((char *)curSeg);
+		curSeg->inuse = 0;
 	    }
 	    curSeg = nextSeg;
 	}
-	pmegPtr->segInfo.nextLink = (struct PMEGseg *)NIL;
+	pmegPtr->segInfo.nextLink = (struct VmMach_PMEGseg *)NIL;
 	VmMachSetContextReg(oldContext);
 	/*
 	 * Read out all reference and modify bits from the pmeg.
@@ -1715,7 +1709,7 @@ PMEGFree(pmegNum)
     int 	pmegNum;	/* Which pmeg to free */
 {
     register	PMEG	*pmegPtr;
-    struct PMEGseg	*segPtr, *nextPtr;
+    struct VmMach_PMEGseg	*segPtr, *nextPtr;
 
     pmegPtr = &pmegArray[pmegNum];
     /*
@@ -1734,7 +1728,7 @@ PMEGFree(pmegNum)
 	VmMachPMEGZero(pmegNum);
     }
     if (pmegPtr->segInfo.segPtr != (Vm_Segment *)NIL) {
-	for (segPtr = &pmegPtr->segInfo; segPtr != (struct PMEGseg *)NIL;) {
+	for (segPtr = &pmegPtr->segInfo; segPtr != (struct VmMach_PMEGseg *)NIL;) {
 	    if (segPtr->segPtr->machPtr == (VmMach_SegData *)NIL) {
 		printf("PMEGFree(%d): seg %d has no machPtr!\n", pmegNum,
 			segPtr->segPtr->segNum);
@@ -1744,12 +1738,12 @@ PMEGFree(pmegNum)
 	    }
 	    nextPtr = segPtr->nextLink;
 	    if (segPtr != &pmegPtr->segInfo) {
-		free((char *)segPtr);
+		segPtr->inuse = 0;
 	    }
 	    segPtr = nextPtr;
 	}
     }
-    pmegPtr->segInfo.nextLink = (struct PMEGseg *) NIL;
+    pmegPtr->segInfo.nextLink = (struct VmMach_PMEGseg *) NIL;
     pmegPtr->segInfo.segPtr = (Vm_Segment *) NIL;
 
     /*
@@ -3465,7 +3459,7 @@ VmMach_PageValidate(virtAddrPtr, pte)
     register  int		hardSeg;
     register  VmMachPTE		hardPTE;
     register  VmMachPTE		tHardPTE;
-    struct	PMEGseg		*pmegSegPtr;
+    struct	VmMach_PMEGseg		*pmegSegPtr;
     Vm_PTE    *ptePtr;
     Address	addr;
     Boolean	reLoadPMEG;  	/* TRUE if we had to reload this PMEG. */
@@ -3519,11 +3513,16 @@ VmMach_PageValidate(virtAddrPtr, pte)
 
 	    *segTablePtr = (VMMACH_SEG_NUM) tmpSegNum;
 	    pmegPtr = &pmegArray[*segTablePtr];
-	    pmegSegPtr = (struct PMEGseg *)malloc(sizeof(struct PMEGseg));
-	    pmegSegPtr->nextLink = pmegPtr->segInfo.nextLink;
-	    pmegPtr->segInfo.nextLink = pmegSegPtr;
-	    pmegSegPtr->segPtr = virtAddrPtr->segPtr;
-	    pmegSegPtr->hardSegNum = hardSeg;
+	    if (virtAddrPtr->segPtr->machPtr->pmegInfo.inuse) {
+		printf("VmMach_PageValidate: segment sharing table overflow\n");
+	    } else {
+		pmegSegPtr = &virtAddrPtr->segPtr->machPtr->pmegInfo;
+		pmegSegPtr->inuse = 1;
+		pmegSegPtr->nextLink = pmegPtr->segInfo.nextLink;
+		pmegPtr->segInfo.nextLink = pmegSegPtr;
+		pmegSegPtr->segPtr = virtAddrPtr->segPtr;
+		pmegSegPtr->hardSegNum = hardSeg;
+	    }
 	}
     }
 
