@@ -52,6 +52,7 @@ typedef struct {
 
 static Sync_Lock clientLock;
 #define LOCKPTR (&clientLock)
+void ClientOpenInt();
 
 
 /*
@@ -107,9 +108,6 @@ FsIOClientOpen(clientList, clientID, useFlags, cached)
     Boolean	cached;		/* Boolean property recorded for client */
 {
     register FsClientInfo *clientPtr;
-    register ClientItem *listPtr;
-
-    LOCK_MONITOR;
 
     LIST_FORALL(clientList, (List_Links *)clientPtr) {
 	if (clientPtr->clientID == clientID) {
@@ -137,17 +135,7 @@ found:
     /*
      * Make sure the client is in the master list of all clients for this host.
      */
-    LIST_FORALL(masterClientList, (List_Links *)listPtr) {
-	if (listPtr->clientID == clientID) {
-	    goto exit;
-	}
-    }
-    listPtr = Mem_New(ClientItem);
-    listPtr->clientID = clientID;
-    List_InitElement((List_Links *)listPtr);
-    List_Insert((List_Links *)listPtr, LIST_ATFRONT(masterClientList));
-exit:
-    UNLOCK_MONITOR;
+    ClientOpenInt(clientID);
     return(clientPtr);
 }
 
@@ -284,18 +272,16 @@ FsIOClientRemoveWriter(clientList, clientID)
  * ----------------------------------------------------------------------------
  */
 
-ENTRY Boolean
-FsStreamClientOpen(clientList, clientID, useFlags)
+Boolean
+FsStreamClientOpen(clientList, clientID, useFlags, foundPtr)
     List_Links		*clientList;	/* List of clients */
     int			clientID;	/* The client who is opening the file */
     int			useFlags;	/* FS_READ | FS_WRITE | FS_EXECUTE */
+    Boolean		*foundPtr;	/* Return - TRUE if client existed */
 {
     register FsStreamClientInfo *clientPtr;
-    register ClientItem *listPtr;
     register Boolean found = FALSE;
     register Boolean shared = FALSE;
-
-    LOCK_MONITOR;
 
     LIST_FORALL(clientList, (List_Links *)clientPtr) {
 	if (clientPtr->clientID == clientID) {
@@ -318,17 +304,10 @@ FsStreamClientOpen(clientList, clientID, useFlags)
     /*
      * Make sure the client is in the master list of all clients for this host.
      */
-    LIST_FORALL(masterClientList, (List_Links *)listPtr) {
-	if (listPtr->clientID == clientID) {
-	    goto exit;
-	}
+    ClientOpenInt(clientID);
+    if (foundPtr != (Boolean *)NIL) {
+	*foundPtr = found;
     }
-    listPtr = Mem_New(ClientItem);
-    listPtr->clientID = clientID;
-    List_InitElement((List_Links *)listPtr);
-    List_Insert((List_Links *)listPtr, LIST_ATFRONT(masterClientList));
-exit:
-    UNLOCK_MONITOR;
     return(shared);
 }
 
@@ -340,8 +319,7 @@ exit:
  *	Remove a client from the client list of a stream.
  *
  * Results:
- *	TRUE if the client list is empty after the close.  This is used
- *	to detect cross-network sharing of streams.
+ *	TRUE if the client list is empty after the close.
  *
  * Side effects:
  *	The client list entry from the stream is removed.
@@ -395,6 +373,44 @@ FsStreamClientFind(clientList, clientID)
 	}
     }
     return(FALSE);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * ClientOpenInt --
+ *
+ *      Add a client to the master list of clients that is checked by
+ *	FsClientScavenge.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	May add the client to the list.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+ENTRY void
+ClientOpenInt(clientID)
+    int clientID;
+{
+    register	ClientItem	*listPtr;
+
+    LOCK_MONITOR;
+
+    LIST_FORALL(masterClientList, (List_Links *)listPtr) {
+	if (listPtr->clientID == clientID) {
+	    goto exit;
+	}
+    }
+    listPtr = Mem_New(ClientItem);
+    listPtr->clientID = clientID;
+    List_InitElement((List_Links *)listPtr);
+    List_Insert((List_Links *)listPtr, LIST_ATFRONT(masterClientList));
+exit:
+    UNLOCK_MONITOR;
 }
 
 /*
