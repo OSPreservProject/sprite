@@ -122,6 +122,7 @@ extern	void		VmMach_UnpinUserPages();
  * Cache flushing.
  */
 extern	void		VmMach_FlushPage();
+extern	void		VmMach_FlushCode();
 /*
  * Routines to map and unmap kernel data into/out-of the user's address space.
  */

@@ -366,8 +366,8 @@ _VmMachTracePMEG:
 |*	context for which the segment map entry is to be set.
 |*
 |*	void VmMachSetSegMap(virtualAddress, value)
-|*	    Address	virtualAddress;
-|*	    int		value;
+|*	    Address		virtualAddress;
+|*	    unsigned char	value;
 |*
 |* Results:
 |*     None.

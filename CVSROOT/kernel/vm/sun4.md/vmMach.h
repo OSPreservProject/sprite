@@ -104,6 +104,7 @@ extern	void		VmMach_SetProtForDbg();
 extern	void		VmMach_GetRefModBits();
 extern	void		VmMach_ClearRefBit();
 extern	void		VmMach_ClearModBit();		
+extern	void		VmMach_AllocCheck();		
 /*
  * Page validation and invalidation.
  */
@@ -154,6 +155,7 @@ extern	void		VmMach_UnpinUserPages();
  * Cache flushing.
  */
 extern	void		VmMach_FlushPage();
+extern	void		VmMach_FlushCode();
 
 extern	ReturnStatus	VmMach_Cmd();
 
