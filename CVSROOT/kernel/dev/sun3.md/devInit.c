@@ -84,9 +84,9 @@ void
 Dev_Config()
 {
     register int index;
-    int memoryType;		/* This is ultimatly for the page table
+    int memoryType = 0;		/* This is ultimatly for the page table
 				 * type field used to map in the device */
-    Boolean mapItIn;		/* If TRUE we need to map the device into
+    Boolean mapItIn = FALSE;	/* If TRUE we need to map the device into
 				 * kernel virtual space */
 
     if (devConfigDebug) {
