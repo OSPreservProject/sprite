@@ -201,6 +201,57 @@ Mach_Init()
      * Start the refresh timer.
      */
     Mach_RefreshStart();
+
+#define	CHECK_OFFSETS
+#ifdef CHECK_OFFSETS
+    /* 
+     * Check of values of _OFFSETS in machConst.h used by assembly code in 
+     * loMem.s to index into C structures.
+     */
+#define	C(s,o)	if ((int)&(((Mach_State*)0x0)->userState.trapRegState.s)!= o){\
+			Sys_Panic(SYS_FATAL, "Bad offset %d != %d\n", \
+			(int)&(((Mach_State*)0x0)->userState.trapRegState.s)\
+			,o); \
+		}
+
+    C(regs,MACH_TRAP_REGS_OFFSET); C(kpsw,MACH_TRAP_KPSW_OFFSET);
+    C(curPC,MACH_TRAP_CUR_PC_OFFSET); C(nextPC, MACH_TRAP_NEXT_PC_OFFSET);
+    C(insert,MACH_TRAP_INSERT_OFFSET); C(swp, MACH_TRAP_SWP_OFFSET);
+    C(cwp, MACH_TRAP_CWP_OFFSET);
+
+#undef C
+#define	C2(s,o)	if ((int)&(((Mach_State*)0x0)->userState.s)!= o){\
+			Sys_Panic(SYS_FATAL, "Bad offset %d != %d\n", \
+			(int)&(((Mach_State*)0x0)->userState.s),o); \
+		}
+    C2(specPageAddr, MACH_SPEC_PAGE_ADDR_OFFSET); 
+    C2(swpBaseAddr, MACH_SWP_BASE_ADDR_OFFSET);
+    C2(swpMaxAddr, MACH_SWP_MAX_ADDR_OFFSET);
+    C2(minSWP,MACH_MIN_SWP_OFFSET); C2(maxSWP,MACH_MAX_SWP_OFFSET);
+    C2(newCurPC,MACH_NEW_CUR_PC_OFFSET); C2(sigNum,MACH_SIG_NUM_OFFSET); 
+    C2(sigCode, MACH_SIG_CODE_OFFSET); 
+    C2(oldHoldMask,MACH_OLD_HOLD_MASK_OFFSET );
+    C2(faultAddr,MACH_FAULT_ADDR_OFFSET);
+#undef C2
+#define	C3(s,o)	if ((int)&(((Mach_State*)0x0)->s)!= o){\
+			Sys_Panic(SYS_FATAL, "Bad offset %d != %d\n", \
+			(int)&(((Mach_State*)0x0)->s),o); \
+			}
+    C3(kernStackStart, MACH_KERN_STACK_START_OFFSET);
+    C3(kernStackEnd, MACH_KERN_STACK_END_OFFSET);
+#undef C3
+#define	C4(s,o)	if ((int)&(((Mach_State*)0x0)->switchRegState.s)!= o){\
+			Sys_Panic(SYS_FATAL, "Bad offset %d != %d\n", \
+			(int)&(((Mach_State*)0x0)->switchRegState.s),o); \
+		}
+    C4(regs,MACH_SWITCH_REGS_OFFSET); C4(kpsw,MACH_SWITCH_KPSW_OFFSET);
+    C4(upsw,MACH_SWITCH_UPSW_OFFSET); C4(curPC, MACH_SWITCH_CUR_PC_OFFSET);
+    C4(nextPC, MACH_SWITCH_NEXT_PC_OFFSET); 
+    C4(insert, MACH_SWITCH_INSERT_OFFSET);
+    C4(swp, MACH_SWITCH_SWP_OFFSET); C4(cwp, MACH_SWITCH_CWP_OFFSET);
+#undef C4
+#endif
+
 }
 
 

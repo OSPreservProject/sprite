@@ -1723,14 +1723,14 @@ SysCallTrap:
 	 */
 	ld_32		SAFE_TEMP1, r0, $_machCurStatePtr
 	Nop
-	ld_32		SAFE_TEMP2, SAFE_TEMP1, $(MACH_TRAP_REGS_OFFSET + 8 * 16)
+	ld_32		SAFE_TEMP2, SAFE_TEMP1, $(MACH_TRAP_REGS_OFFSET + (8 * 16))
 	Nop
 	/*
 	 * Check number of kernel call for validity.
 	 */
 	ld_32		VOL_TEMP1, r0, $_machMaxSysCall
 	Nop
-	cmp_br_delayed	le, SAFE_TEMP2, VOL_TEMP1, sysCallTrap_FetchArgs
+	cmp_br_delayed	ule, SAFE_TEMP2, VOL_TEMP1, sysCallTrap_FetchArgs
 	Nop
 	/*
 	 * Bad kernel call.  Take a user error and then do a normal return
@@ -1783,7 +1783,7 @@ sysCallTrap_FetchArgs:
 	 * the user stack pointer + (numArgs - 5) * 8 to point to the base
 	 * of the arguments on the spill stack.
 	 */
-	ld_32		VOL_TEMP1, SAFE_TEMP1, $(MACH_TRAP_REGS_OFFSET + 8 * MACH_SPILL_SP)
+	ld_32		VOL_TEMP1, SAFE_TEMP1, $(MACH_TRAP_REGS_OFFSET + (8 * MACH_SPILL_SP))
 	sub		VOL_TEMP3, SAFE_TEMP3, $5
 	sll		VOL_TEMP3, VOL_TEMP3, $3
 	add		VOL_TEMP1, VOL_TEMP1, VOL_TEMP3
@@ -1903,7 +1903,7 @@ SysCall_Return:
 	 * stack pointer and the kpsw and then do a normal return from
 	 * trap.
 	 */
-	st_32		RETURN_VAL_REG, SAFE_TEMP1, $(MACH_TRAP_REGS_OFFSET + 8 * MACH_RETURN_VAL_REG)
+	st_32		RETURN_VAL_REG, SAFE_TEMP1, $(MACH_TRAP_REGS_OFFSET + (8 * MACH_RETURN_VAL_REG))
 	ld_32		SPILL_SP, SAFE_TEMP1, $MACH_KERN_STACK_END_OFFSET
 	Nop
 	add_nt		RETURN_VAL_REG, r0, $MACH_NORM_RETURN
@@ -1969,7 +1969,7 @@ SigReturnTrap:
 	 */
 	ld_32		VOL_TEMP1, r0, $_machCurStatePtr
 	nop
-	st_32		SPILL_SP, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + 8 * 4)
+	st_32		SPILL_SP, VOL_TEMP1, $(MACH_TRAP_REGS_OFFSET + (8 * 4))
 	st_32		KPSW_REG, VOL_TEMP1, $MACH_TRAP_KPSW_OFFSET
 	SWITCH_TO_KERNEL_STACKS()
 	/*
@@ -2576,16 +2576,16 @@ SaveState:
 	/*
 	 * Save all of the globals.
 	 */
-	st_32		r0, VOL_TEMP1, $0
-	st_32		r1, VOL_TEMP1, $8
-	st_32		r2, VOL_TEMP1, $16
-	st_32		r3, VOL_TEMP1, $24
-	st_32		r4, VOL_TEMP1, $32
-	st_32		r5, VOL_TEMP1, $40
-	st_32		r6, VOL_TEMP1, $48
-	st_32		r7, VOL_TEMP1, $56
-	st_32		r8, VOL_TEMP1, $64
-	st_32		r9, VOL_TEMP1, $72
+	st_32		r0, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+0
+	st_32		r1, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+8
+	st_32		r2, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+16
+	st_32		r3, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+24
+	st_32		r4, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+32
+	st_32		r5, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+40
+	st_32		r6, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+48
+	st_32		r7, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+56
+	st_32		r8, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+64
+	st_32		r9, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+72
 
 	/*
 	 * Move where to save to into a global.
@@ -2610,28 +2610,28 @@ SaveState:
 	 * Now we are in the previous window.  Save all of its registers
 	 * into the state structure.
 	 */
-	st_32		r10, r1, $80
-	st_32		r11, r1, $88
-	st_32		r12, r1, $96
-	st_32		r13, r1, $104
-	st_32		r14, r1, $112
-	st_32		r15, r1, $120
-	st_32		r16, r1, $128
-	st_32		r17, r1, $136
-	st_32		r18, r1, $144
-	st_32		r19, r1, $152
-	st_32		r20, r1, $160
-	st_32		r21, r1, $168
-	st_32		r22, r1, $176
-	st_32		r23, r1, $184
-	st_32		r24, r1, $192
-	st_32		r25, r1, $200
-	st_32		r26, r1, $208
-	st_32		r27, r1, $216
-	st_32		r28, r1, $224
-	st_32		r29, r1, $232
-	st_32		r30, r1, $240
-	st_32		r31, r1, $248
+	st_32		r10, r1, $MACH_REG_STATE_REGS_OFFSET+80
+	st_32		r11, r1, $MACH_REG_STATE_REGS_OFFSET+88
+	st_32		r12, r1, $MACH_REG_STATE_REGS_OFFSET+96
+	st_32		r13, r1, $MACH_REG_STATE_REGS_OFFSET+104
+	st_32		r14, r1, $MACH_REG_STATE_REGS_OFFSET+112
+	st_32		r15, r1, $MACH_REG_STATE_REGS_OFFSET+120
+	st_32		r16, r1, $MACH_REG_STATE_REGS_OFFSET+128
+	st_32		r17, r1, $MACH_REG_STATE_REGS_OFFSET+136
+	st_32		r18, r1, $MACH_REG_STATE_REGS_OFFSET+144
+	st_32		r19, r1, $MACH_REG_STATE_REGS_OFFSET+152
+	st_32		r20, r1, $MACH_REG_STATE_REGS_OFFSET+160
+	st_32		r21, r1, $MACH_REG_STATE_REGS_OFFSET+168
+	st_32		r22, r1, $MACH_REG_STATE_REGS_OFFSET+176
+	st_32		r23, r1, $MACH_REG_STATE_REGS_OFFSET+184
+	st_32		r24, r1, $MACH_REG_STATE_REGS_OFFSET+192
+	st_32		r25, r1, $MACH_REG_STATE_REGS_OFFSET+200
+	st_32		r26, r1, $MACH_REG_STATE_REGS_OFFSET+208
+	st_32		r27, r1, $MACH_REG_STATE_REGS_OFFSET+216
+	st_32		r28, r1, $MACH_REG_STATE_REGS_OFFSET+224
+	st_32		r29, r1, $MACH_REG_STATE_REGS_OFFSET+232
+	st_32		r30, r1, $MACH_REG_STATE_REGS_OFFSET+240
+	st_32		r31, r1, $MACH_REG_STATE_REGS_OFFSET+248
 
 	/*
 	 * Now push all of the windows before the current one onto the saved
@@ -2736,28 +2736,28 @@ RestoreState:
 	 * saved cwp points to the window that we saved in the reg state 
 	 * struct.
 	 */
-	ld_32		r10, r1, $80
-	ld_32		r11, r1, $88
-	ld_32		r12, r1, $96
-	ld_32		r13, r1, $104
-	ld_32		r14, r1, $112
-	ld_32		r15, r1, $120
-	ld_32		r16, r1, $128
-	ld_32		r17, r1, $136
-	ld_32		r18, r1, $144
-	ld_32		r19, r1, $152
-	ld_32		r20, r1, $160
-	ld_32		r21, r1, $168
-	ld_32		r22, r1, $176
-	ld_32		r23, r1, $184
-	ld_32		r24, r1, $192
-	ld_32		r25, r1, $200
-	ld_32		r26, r1, $208
-	ld_32		r27, r1, $216
-	ld_32		r28, r1, $224
-	ld_32		r29, r1, $232
-	ld_32		r30, r1, $240
-	ld_32		r31, r1, $248
+	ld_32		r10, r1, $MACH_REG_STATE_REGS_OFFSET+80
+	ld_32		r11, r1, $MACH_REG_STATE_REGS_OFFSET+88
+	ld_32		r12, r1, $MACH_REG_STATE_REGS_OFFSET+96
+	ld_32		r13, r1, $MACH_REG_STATE_REGS_OFFSET+104
+	ld_32		r14, r1, $MACH_REG_STATE_REGS_OFFSET+112
+	ld_32		r15, r1, $MACH_REG_STATE_REGS_OFFSET+120
+	ld_32		r16, r1, $MACH_REG_STATE_REGS_OFFSET+128
+	ld_32		r17, r1, $MACH_REG_STATE_REGS_OFFSET+136
+	ld_32		r18, r1, $MACH_REG_STATE_REGS_OFFSET+144
+	ld_32		r19, r1, $MACH_REG_STATE_REGS_OFFSET+152
+	ld_32		r20, r1, $MACH_REG_STATE_REGS_OFFSET+160
+	ld_32		r21, r1, $MACH_REG_STATE_REGS_OFFSET+168
+	ld_32		r22, r1, $MACH_REG_STATE_REGS_OFFSET+176
+	ld_32		r23, r1, $MACH_REG_STATE_REGS_OFFSET+184
+	ld_32		r24, r1, $MACH_REG_STATE_REGS_OFFSET+192
+	ld_32		r25, r1, $MACH_REG_STATE_REGS_OFFSET+200
+	ld_32		r26, r1, $MACH_REG_STATE_REGS_OFFSET+208
+	ld_32		r27, r1, $MACH_REG_STATE_REGS_OFFSET+216
+	ld_32		r28, r1, $MACH_REG_STATE_REGS_OFFSET+224
+	ld_32		r29, r1, $MACH_REG_STATE_REGS_OFFSET+232
+	ld_32		r30, r1, $MACH_REG_STATE_REGS_OFFSET+240
+	ld_32		r31, r1, $MACH_REG_STATE_REGS_OFFSET+248
 	/*
 	 * Go forward to the window that we are to execute in.
 	 */
@@ -2782,15 +2782,15 @@ RestoreState:
 	/*
 	 * Restore the globals.
 	 */
-	ld_32		r1, VOL_TEMP1, $8
-	ld_32		r2, VOL_TEMP1, $16
-	ld_32		r3, VOL_TEMP1, $24
-	ld_32		r4, VOL_TEMP1, $32
-	ld_32		r5, VOL_TEMP1, $40
-	ld_32		r6, VOL_TEMP1, $48
-	ld_32		r7, VOL_TEMP1, $56
-	ld_32		r8, VOL_TEMP1, $64
-	ld_32		r9, VOL_TEMP1, $72
+	ld_32		r1, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+8
+	ld_32		r2, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+16
+	ld_32		r3, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+24
+	ld_32		r4, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+32
+	ld_32		r5, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+40
+	ld_32		r6, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+48
+	ld_32		r7, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+56
+	ld_32		r8, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+64
+	ld_32		r9, VOL_TEMP1, $MACH_REG_STATE_REGS_OFFSET+72
 	/*
 	 * Return to our caller.
 	 */
