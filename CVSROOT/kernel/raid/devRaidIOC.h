@@ -17,10 +17,7 @@
 #define _DEVRAIDIOC
 
 extern void ReportRequestError();
-extern void ReportRaidDiskAttachError();
 extern void ReportHardInitFailure();
 extern void ReportReconstructionFailure();
-extern void FailRaidDisk();
-extern void ReplaceRaidDisk();
 
 #endif _DEVRAIDIOC

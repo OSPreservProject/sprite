@@ -22,6 +22,7 @@
 #include "sync.h"
 #include "fs.h"
 #include "devBlockDevice.h"
+#include "devRaidDisk.h"
 
 #ifndef MIN
 #define MIN(a,b) ( (a) < (b) ? (a) : (b) )
@@ -32,32 +33,6 @@
 #endif  MAX
 
 /*
- * Data structure for each disk used by raid device.
- *
- * RAID_DISK_INVALID	==> could not attach device
- * RAID_DISK_READY	==> device operational
- * RAID_DISK_FAILED	==> device considered failed (a write error occured)
- * RAID_DISK_REPLACED	==> the device is nolonger a part of the array
- * RAID_DISK_RECONSTRUCT==> the device is currently being reonstructed
- *				(IO's to the reconstructed part of the device
- *				 are allowed)
- */
-typedef enum {
-    RAID_DISK_INVALID, RAID_DISK_READY, RAID_DISK_FAILED, RAID_DISK_REPLACED,
-    RAID_DISK_RECONSTRUCT
-} RaidDiskState;
-
-typedef struct RaidDisk {
-    Sync_Semaphore	  mutex;
-    RaidDiskState	  state;
-    unsigned		  numValidSector; /* Used during reconstruction. */
-    int			  version;
-    int			  useCount;
-    Fs_Device	          device;
-    DevBlockDeviceHandle *handlePtr;
-} RaidDisk;
-
-/*
  * Data structure each RAID device.
  *
  * RAID_INVALID	==> array has not been configured
@@ -66,11 +41,14 @@ typedef struct RaidDisk {
  *			 array is ever active)
  * RAID_VALID	==> array is configured
  */
-typedef enum { RAID_INVALID, RAID_BUSY, RAID_VALID } RaidState;
+typedef enum { RAID_INVALID, RAID_BUSY, RAID_VALID, RAID_EXCLUSIVE } RaidState;
 
 typedef struct Raid {
     RaidState		 state;
     Sync_Semaphore	 mutex;
+    Sync_Condition	 waitExclusive;
+    Sync_Condition	 waitNonExclusive;
+    int			 numReqInSys;
     Fs_Device		*devicePtr; /* Device corresponding to this raid. */
     int			 numRow;
     int			 numCol;
@@ -79,6 +57,7 @@ typedef struct Raid {
     unsigned		 numSector;
     int		 	 numStripe;
     int			 dataSectorsPerStripe;
+    int			 dataStripeUnitsPerDisk;
     int		 	 sectorsPerDisk;
     int		 	 bytesPerStripeUnit;
     int		 	 dataBytesPerStripe;
@@ -131,6 +110,7 @@ typedef struct RaidBlockRequest {
  */
 typedef struct RaidIOControl {
     Sync_Semaphore	 mutex;
+    Raid		*raidPtr;
     int			 numIO;
     void	       (*doneProc)();
     ClientData		 clientData;

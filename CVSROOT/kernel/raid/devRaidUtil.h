@@ -19,12 +19,6 @@
 #include "devRaid.h"
 
 /*
- * Is specified range of disk sectors "valid" on specified disk? 
- */
-#define IsInRange(diskPtr, startSector, numSector) 	\
-    ((startSector) + (numSector) <= (diskPtr)->numValidSector)
-
-/*
  * Maps a RAID sector to stripe ID and visa versa.
  */
 #define SectorToStripeID(raidPtr, sector)	\
@@ -98,9 +92,6 @@ extern void FreeIOControl();
 extern void FreeRequestControl();
 extern void FreeStripeIOControl();
 extern void FreeReconstructionControl();
-extern void MapPhysicalToStripeID();
-extern void MapParity();
-extern void MapSector();
 extern void RangeRestrict();
 extern void XorRaidRangeRequests();
 extern void AddRaidParityRangeRequest();
