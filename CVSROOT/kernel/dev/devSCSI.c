@@ -331,10 +331,10 @@ DevScsiFormatInquiry(dataPtr, outputString)
 	len += sprintf(outputString+len,"%s %s %s",v,p,f);
 #endif
 	char	v[32], p[32], rl[32], rd[32];
-	CopyAndTerminateString(8,dataPtr->vendorID, v);
-	CopyAndTerminateString(16,dataPtr->productID, p);
-	CopyAndTerminateString(4,dataPtr->revLevel, rl);
-	CopyAndTerminateString(8,dataPtr->revData, rd);
+	CopyAndTerminateString(8,(char *) (dataPtr->vendorID), v);
+	CopyAndTerminateString(16,(char *) (dataPtr->productID), p);
+	CopyAndTerminateString(4,(char *) (dataPtr->revLevel), rl);
+	CopyAndTerminateString(8,(char*) (dataPtr->revData), rd);
 	len += sprintf(outputString+len,"%s %s %s", v, p, rl, rd);
     }
     return len;

@@ -65,7 +65,7 @@ Dev_TimerProbe(ctrlLocPtr)
 
     MACH_DELAY(4); 
     status = Mach_Probe(1,(char *)&(tmrbase->d_reg), &byte);
-    if ((status != SUCCESS) || (byte == -1)) {
+    if ((status != SUCCESS) || (byte == (char)0xff)) {
 	return DEV_NO_CONTROLLER;
     }
     dev_TimerAddr = tmrbase;
@@ -148,7 +148,7 @@ TimerInit(tmrp)
  *
  *----------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 ReturnStatus
 Dev_TimerIOControl(devicePtr, ioctlPtr, replyPtr)
     Fs_Device	        *devicePtr;
@@ -157,7 +157,6 @@ Dev_TimerIOControl(devicePtr, ioctlPtr, replyPtr)
 {
    register volatile DevTimerChip *tmrp = dev_TimerAddr;
    register DevTimerVal *set;
-   register s;
    unsigned int t0, t1;
    DevTimerTest *tare;
 
@@ -282,7 +281,6 @@ Dev_TimerReadReg( cntrs, cnt)
   register unsigned char *cntrs;
   register int cnt;
 {
-   register int s;
    register volatile DevTimerChip *tmrp = dev_TimerAddr;
 
    DISABLE_INTR();
@@ -290,7 +288,7 @@ Dev_TimerReadReg( cntrs, cnt)
    tmrp->d_reg = DEV_TIMER_SAVE; MACH_DELAY(1);
    tmrp->d_reg = DEV_TIMER_LDDPTR|DEV_TIMER_HOLDCYC;
    DEV_TIMER_DATA_PORT;
-   while (--cnt >= 0) {
+   for (; cnt > 0; cnt--) {
 	  MACH_DELAY(1);
       cntrs[cnt] = tmrp->d_reg;
    }

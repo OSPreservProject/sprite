@@ -804,7 +804,7 @@ DevSCSI0Intr(clientDataArg)
 		newRequestPtr = Dev_QueueGetNextFromSet(ctrlPtr->devQueues,
 				DEV_QUEUE_ANY_QUEUE_MASK,&clientData);
 		if (newRequestPtr != (List_Links *) NIL) { 
-		    entryAvailProc(clientData,newRequestPtr);
+		    (void) entryAvailProc(clientData,newRequestPtr);
 		}
 	    }
 	    MASTER_UNLOCK(&(ctrlPtr->mutex));
@@ -847,7 +847,7 @@ DevSCSI0Intr(clientDataArg)
 		newRequestPtr = Dev_QueueGetNextFromSet(ctrlPtr->devQueues,
 				DEV_QUEUE_ANY_QUEUE_MASK,&clientData);
 		if (newRequestPtr != (List_Links *) NIL) { 
-		    entryAvailProc(clientData,newRequestPtr);
+		    (void) entryAvailProc(clientData,newRequestPtr);
 		}
 	    }
 	    MASTER_UNLOCK(&(ctrlPtr->mutex));

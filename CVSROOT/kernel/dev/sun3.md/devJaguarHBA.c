@@ -246,8 +246,9 @@ static int	devJaguarDebug = 0;
  * The follow data structure is used by the Sprite kernel debugger to 
  * examine Jaguar memory. See routine GetJaguarMem.
  */
+#ifndef lint
 static JaguarMem DebugJaguarMem;
-
+#endif
 /*
  * Constants for the sun implementation.
  * DMA_BURST_COUNT - The number of VME DMA transfers performed in a 
@@ -314,7 +315,7 @@ static Boolean SendJaguarCmd();
  *
  *----------------------------------------------------------------------
  */
-
+#ifndef lint
 static unsigned int
 GetJaguarMem(ctrlNum)
     int	ctrlNum;	/* Controller to number to act upon. */
@@ -322,6 +323,7 @@ GetJaguarMem(ctrlNum)
     CopyFromJaguarMem(Controllers[ctrlNum]->memPtr, &DebugJaguarMem, 2048);
     return (unsigned int) Controllers[ctrlNum]->memPtr;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -371,7 +373,7 @@ WaitForResponseBlock(ctrlPtr,crbPtr)
  *
  *----------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 static Boolean
 InitializeWorkq(ctrlPtr,workqNum, parity, priority)
     Controller	*ctrlPtr;	/* Controller to initalize Work Queue on. */
@@ -465,7 +467,6 @@ PerformDiagnostics(memPtr, name)
     volatile JaguarMem *memPtr;	/* Pointer to VME Short IO space of HBA. */
     char	*name;		/* Name of the controller for error messges. */
 {
-     register volatile JaguarMCSB *mcsb = &(memPtr->mcsb);
      register volatile JaguarCQE  *cqe;
      register volatile JaguarIOPB *iopb;
      register volatile JaguarCRB  *crb;
@@ -485,7 +486,7 @@ PerformDiagnostics(memPtr, name)
 	 * Send the command off and wait for response.
 	 */
 	cqe->controlReg = JAGUAR_CQE_GO_BUSY;
-	if (!WaitForBitSet(&(crb->status),JAGUAR_CRB_BLOCK_VALID,10000000)) {
+	if (!WaitForBitSet(&(crb->status),JAGUAR_CRB_BLOCK_VALID,100000)) {
 	     panic("%s diag timeout. status = 0x%x\n", name, 
 		   crb->status);
 	     return FALSE;
@@ -1513,7 +1514,7 @@ RequestDone(devPtr,scsiCmdPtr,status,scsiStatusByte,amountTransferred)
  *
  *----------------------------------------------------------------------
  */
-/*ARGUSED*/
+/*ARGSUSED*/
 static ReturnStatus
 ReleaseProc(scsiDevicePtr)
     ScsiDevice	*scsiDevicePtr;
@@ -1566,7 +1567,7 @@ entryAvailProc(clientData, newRequestPtr)
     if (!good) {
 	 devPtr->numActiveCmds--;
 	 MASTER_UNLOCK(&(ctrlPtr->mutex));
-	 RequestDone(devPtr,scsiCmdPtr,DEV_HARD_ERROR,0,0);
+	 RequestDone(devPtr,scsiCmdPtr,(ReturnStatus)DEV_HARD_ERROR,0,0);
 	 MASTER_LOCK(&(ctrlPtr->mutex));
     }
     return TRUE;
@@ -1600,7 +1601,7 @@ StartNextRequest(devPtr)
 	if (newRequest == (List_Links *) NIL) {
 	    break;
 	}
-	entryAvailProc((ClientData) devPtr, newRequest);
+	(void) entryAvailProc((ClientData) devPtr, newRequest);
     }
 }
 
@@ -1720,7 +1721,6 @@ DevJaguarAttachDevice(devicePtr, insertProc)
     Device *devPtr;
     Controller	*ctrlPtr;
     char   tmpBuffer[512];
-    int	   length;
     int	   ctrlNum;
     int	   targetID, lun, bus;
     int	   i, workQueue;

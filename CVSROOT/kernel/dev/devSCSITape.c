@@ -268,6 +268,7 @@ DevSCSITapeSpecialCmd(tapePtr, command, count)
     int		senseLength;
     char	senseBuffer[SCSI_MAX_SENSE_LEN];
     unsigned int	code;
+    int			amountTransferred;
     int		scsiCmd;
 
    code = 0;
@@ -303,7 +304,7 @@ DevSCSITapeSpecialCmd(tapePtr, command, count)
     scsiTapeCmd.dataToDevice = FALSE;
     senseLength = SCSI_MAX_SENSE_LEN;
     status = DevScsiSendCmdSync(tapePtr->devPtr, &scsiTapeCmd, &statusByte,
-				&code, &senseLength, senseBuffer);
+				&amountTransferred, &senseLength, senseBuffer);
 
     if (status == SUCCESS) {
 	status = (tapePtr->errorProc)(tapePtr,statusByte, senseLength, 

@@ -61,7 +61,6 @@ DevSCSIDeviceOpen(devicePtr, useFlags, token, flagsPtr)
     Fs_NotifyToken token;	/* Call-back token for input, unused here */
     int	 *flagsPtr;		/* OUT: Device open flags. */
 {
-    ReturnStatus status;
     ScsiDevice *devPtr;
 
     /*

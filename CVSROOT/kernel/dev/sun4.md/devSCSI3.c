@@ -920,6 +920,9 @@ SendCommand(devPtr, scsiCmdPtr)
 	return(status);
     }
 #endif reselection
+#ifdef lint
+    status = PutByte(ctrlPtr, (char *) 0);
+#endif
     if (ctrlPtr->dmaState != DMA_INACTIVE) {
 	ctrlPtr->dmaBuffer = addr = VmMach_DMAAlloc(size,scsiCmdPtr->buffer);
 	if (devSCSI3Debug > 5) {
@@ -2116,7 +2119,7 @@ DevSCSI3Intr(clientDataArg)
 	        newRequestPtr = Dev_QueueGetNextFromSet(ctrlPtr->devQueues,
 				DEV_QUEUE_ANY_QUEUE_MASK,&clientData);
 		if (newRequestPtr != (List_Links *) NIL) { 
-		    entryAvailProc(clientData,newRequestPtr);
+		    (void) entryAvailProc(clientData,newRequestPtr);
 		}
 	    }
 	    MASTER_UNLOCK(&(ctrlPtr->mutex));
@@ -2151,7 +2154,7 @@ rtnHardErrorAndGetNext:
     newRequestPtr = Dev_QueueGetNextFromSet(ctrlPtr->devQueues,
 				DEV_QUEUE_ANY_QUEUE_MASK,&clientData);
     if (newRequestPtr != (List_Links *) NIL) { 
-	entryAvailProc(clientData,newRequestPtr);
+	(void) entryAvailProc(clientData,newRequestPtr);
     }
     MASTER_UNLOCK(&(ctrlPtr->mutex));
     return (TRUE);
@@ -2173,7 +2176,7 @@ rtnHardErrorAndGetNext:
  *
  *----------------------------------------------------------------------
  */
-/*ARGUSED*/
+/*ARGSUSED*/
 static ReturnStatus
 ReleaseProc(scsiDevicePtr)
     ScsiDevice	*scsiDevicePtr;

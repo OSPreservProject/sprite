@@ -189,10 +189,10 @@ DevScsiSendCmdSync(scsiDevicePtr, scsiCmdPtr, statusBytePtr,
     ScsiDevice *scsiDevicePtr;  /* Handle for target device. */
     ScsiCmd	*scsiCmdPtr;		    /* SCSI command to be sent. */
     unsigned char *statusBytePtr; /* Area to store SCSI status byte. */
+    int		*amountTransferredPtr; /* OUT - Nuber of bytes transferred. */
     Address 	senseBufferPtr;	  /* Buffer to put sense data upon error. */
     int		*senseBufferLenPtr; /*  IN - Length of senseBuffer available.
 				     * OUT - Length of senseData returned. */
-    int		*amountTransferredPtr; /* OUT - Nuber of bytes transferred. */
 {
     ReturnStatus status;
     SyncCmdBuf	 syncCmdData;
@@ -364,7 +364,7 @@ DevScsiTestReady(scsiDevicePtr)
  *
  *----------------------------------------------------------------------
  */
-
+/*ARGSUSED*/
 ReturnStatus
 DevScsiIOControl(devPtr, ioctlPtr, replyPtr)
     ScsiDevice	*devPtr;	/* SCSI Handle for device. */
@@ -438,9 +438,9 @@ DevScsiIOControl(devPtr, ioctlPtr, replyPtr)
         if (senseBufLen > senseDataLen) {
 	    senseBufLen = senseDataLen;
 	}
-	bcopy(senseData, ioctlPtr->outBufSize + sizeof(Dev_ScsiStatus) + 
-			statusPtr->amountTransferred,
-	     senseBufLen);
+	bcopy(senseData, (char *)(ioctlPtr->outBufSize + sizeof(Dev_ScsiStatus)
+				     + statusPtr->amountTransferred) ,
+	                 senseBufLen);
 	return status;
     } else {
 	return GEN_INVALID_ARG;
