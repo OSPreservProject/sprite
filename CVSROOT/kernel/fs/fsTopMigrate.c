@@ -33,6 +33,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsio.h"
 #include "fsprefix.h"
 #include "fsNameOps.h"
+#include "fsStat.h"
 #include "byte.h"
 #include "rpc.h"
 #include "procMigrate.h"
@@ -184,6 +185,7 @@ Fs_EncapFileState(procPtr, hostID, infoPtr, ptr)
     Fsprefix *prefixPtr;
     int cwdLength;
     int size;
+    int encaps;
 
 
     fsPtr = procPtr->fsPtr;
@@ -263,6 +265,7 @@ Fs_EncapFileState(procPtr, hostID, infoPtr, ptr)
     }
     fsPtr->cwdPtr = (Fs_Stream *) NIL;
     ptr += sizeof(FsMigInfo);
+    encaps = 1;
 
     for (i = 0; i < fsPtr->numStreams; i++) {
 	streamPtr = fsPtr->streamList[i];
@@ -276,12 +279,18 @@ Fs_EncapFileState(procPtr, hostID, infoPtr, ptr)
 		return(status);
 	    }
 	    fsPtr->streamList[i] = (Fs_Stream *) NIL;
+	    encaps++;
 	} else {
 	    Byte_FillBuffer(ptr, int, NIL);
 	    bzero(ptr, sizeof(FsMigInfo));
 	}	
 	ptr += sizeof(FsMigInfo);
     }
+
+#ifndef CLEAN   
+    Proc_MigAddToCounter(encaps, &fs_Stats.mig.filesEncapsulated,
+			 &fs_Stats.mig.encapSquared);
+#endif /* CLEAN */    
 
     return(SUCCESS);
 }
@@ -321,6 +330,7 @@ Fs_DeencapFileState(procPtr, infoPtr, buffer)
     char *cwdName;
     int cwdLength;
     Fs_Stream *prefixStreamPtr;
+    int deencaps;
 
     /*
      * Set up an fsPtr for the process.  Initialize some fields so that
@@ -428,6 +438,12 @@ Fs_DeencapFileState(procPtr, infoPtr, buffer)
 	}
 	buffer += sizeof(FsMigInfo);
     }
+
+#ifndef CLEAN   
+    Proc_MigAddToCounter(numStreams + 1, &fs_Stats.mig.filesDeencapsulated,
+			 &fs_Stats.mig.deencapSquared);
+#endif /* CLEAN */    
+    
     Proc_Lock(procPtr);
     return(SUCCESS);
     
