@@ -137,8 +137,7 @@ Fs_Open(name, useFlags, type, permissions, streamPtrPtr)
 	FsHandleUnlock(streamPtr);
 	status = (*fsStreamOpTable[openResults.ioFileID.type].cltOpen)
 		    (&openResults.ioFileID, &streamPtr->flags, rpc_SpriteID,
-		     openResults.streamData, streamPtr->nameInfoPtr,
-		     &streamPtr->ioHandlePtr);
+		     openResults.streamData, &streamPtr->ioHandlePtr);
 	if (status == SUCCESS) {
 	    if (streamPtr->flags & FS_TRUNC) {
 		int length = 0;
