@@ -33,7 +33,6 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "fsStat.h"
 #include "fsutilTrace.h"
 #include "fslcl.h"
-#include "fsReadAheadInt.h"
 #include "fsBlockCache.h"
 #include "vm.h"
 #include "spriteTime.h"
@@ -890,33 +889,21 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	if (blockPtr == (Fscache_Block *)NIL) {
 	    if (status == FS_NO_DISK_SPACE) {
 		/*
-		 * HACK to limit the number of "Alloc failed" messages.
-		 * MAX_MESSAGES - the max number of messages within the interval
-		 * INTERVAL_LIMIT - the time in which MAX_MESSAGES can appear.
-		 * The idea is that less than MAX_MESSAGES can appear within
-		 * any INTERVAL_LIMIT period.
+		 * Limit the number of "Alloc failed" messages to 1 per file.
+		 * Servers with hard-copy consoles like this feature.
 		 */
-		static int lastPrintTime = 0;
-		static int numRecentPrints = 0;
-#define MAX_MESSAGES	2
-#define INTERVAL_LIMIT	30
-    
-		if (fsutil_TimeInSeconds - lastPrintTime >= INTERVAL_LIMIT) {
-		    numRecentPrints = 0;
-		}
-		if (numRecentPrints < MAX_MESSAGES) {
-		    numRecentPrints++;
+		if ((cacheInfoPtr->flags & FSCACHE_ALLOC_FAILED) == 0) {
+		    cacheInfoPtr->flags |= FSCACHE_ALLOC_FAILED;
 		    printf("Fscache_Write: Alloc failed <%d,%d> \"%s\" %s\n",
 			cacheInfoPtr->hdrPtr->fileID.major,
 			cacheInfoPtr->hdrPtr->fileID.major,
 			Fsutil_HandleName(cacheInfoPtr->hdrPtr),
 			"DISK FULL");
-		    lastPrintTime = fsutil_TimeInSeconds;
 		}
-#undef MAX_MESSAGES
-#undef INTERVAL_LIMIT
 	    }
 	    break;
+	} else {
+	    cacheInfoPtr->flags &= ~FSCACHE_ALLOC_FAILED;
 	}
 
 
@@ -1049,7 +1036,7 @@ Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
 	fs_TypeStats.cacheBytes[FS_STAT_WRITE][fileType] += offset - oldOffset;
     }
     if (bytesToFree > 0) {
-	FsdmRecordDeletionStats(cacheInfoPtr, bytesToFree);
+	Fsdm_RecordDeletionStats(cacheInfoPtr, bytesToFree);
     }
 #endif CLEAN
 
