@@ -354,6 +354,8 @@ FsPseudoStreamCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
 	     * The client's stream wasn't already around from being installed
 	     * in Fs_Open, so we nuke the shadow stream we've created.
 	     */
+	    cltStreamPtr = FsHandleFetchType(Fs_Stream,
+					     &cltStreamPtr->hdr.fileID);
 	    FsStreamDispose(cltStreamPtr);
 	}
     }
