@@ -488,17 +488,20 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
 	RECOV_TRACE(spriteID, hostPtr->state, RECOV_CUZ_REBOOT);
 	if (hostPtr->state &
 		(RECOV_HOST_ALIVE|RECOV_HOST_DYING|RECOV_HOST_BOOTING)) {
+		RecovHostPrint(RECOV_PRINT_ALL, spriteID,
+			"Undetected crash occurred.\n");
 	    /*
 	     * A crash occured un-detected.  We do the crash call-backs
 	     * first, and block server processes in the meantime.
 	     * RECOV_CRASH_CALLBACKS flag is cleared by RecovCrashCallBacks.
 	     */
-	    RECOV_TRACE(spriteID, RECOV_CRASH, RECOV_CUZ_REBOOT);
 	    hostPtr->state &=
 		    ~(RECOV_HOST_ALIVE|RECOV_HOST_DYING|RECOV_HOST_DEAD);
 	    hostPtr->state |= RECOV_HOST_BOOTING;
+	    RECOV_TRACE(spriteID, hostPtr->state, RECOV_CUZ_CRASH_UNDETECTED);
 	    if ((hostPtr->state & RECOV_CRASH_CALLBACKS) == 0) {
 		hostPtr->state |= RECOV_CRASH_CALLBACKS;
+		RECOV_TRACE(spriteID, hostPtr->state, RECOV_CUZ_CRASH_UNDETECTED);
 		Proc_CallFunc(RecovCrashCallBacks, (ClientData)spriteID, 0);
 	    }
 	}
@@ -518,6 +521,7 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
      * recovery actions complete.
      */
     if (! asyncRecovery) {
+	RecovHostPrint(RECOV_PRINT_ALL, spriteID, "Async recovery false.\n");
 	while (hostPtr->state & RECOV_CRASH_CALLBACKS) {
 	    (void)Sync_Wait(&hostPtr->recovery, FALSE);
 	    if (sys_ShuttingDown) {
@@ -552,14 +556,18 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
 	     * Host already alive.  We may still want recovery at this
 	     * point.  See CallBacksDone.
 	     */
+	    RecovHostPrint(RECOV_PRINT_ALL, spriteID, "Already up.\n");
 	    break;
 	case RECOV_HOST_BOOTING:
 	    /*
 	     * See if a booting host is ready yet.
 	     */
+	    RecovHostPrint(RECOV_PRINT_ALL, spriteID, "Booting, set recov.\n");
 	    if (! rpcNotActive) {
 		hostPtr->state &= ~RECOV_HOST_BOOTING;
 		hostPtr->state |= RECOV_HOST_ALIVE|RECOV_WANT_RECOVERY;
+		RecovHostPrint(RECOV_PRINT_ALL, spriteID,
+			"Booting, set alive, recov.\n");
 	    }
 	    break;
 	case RECOV_HOST_DYING:
@@ -569,8 +577,12 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
 	     */
 	    if (rpcNotActive) {
 		hostPtr->state |= RECOV_HOST_BOOTING;
+		RecovHostPrint(RECOV_PRINT_ALL, spriteID,
+			"Dead or dying, set booting.\n");
 	    } else {
 		hostPtr->state |= (RECOV_HOST_ALIVE|RECOV_WANT_RECOVERY);
+		RecovHostPrint(RECOV_PRINT_ALL, spriteID,
+			"Dead, dying, set want recov.\n");
 	    }
 	    hostPtr->state &= ~(RECOV_HOST_DEAD|RECOV_HOST_DYING);
 	    break;
@@ -588,6 +600,8 @@ Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
 	(hostPtr->state & RECOV_REBOOT_CALLBACKS) == 0) {
 	hostPtr->state &= ~RECOV_WANT_RECOVERY;
 	hostPtr->state |= RECOV_REBOOT_CALLBACKS;
+	RecovHostPrint(RECOV_PRINT_ALL, spriteID,
+		"Want recov, etc, callbacks.\n");
 	Proc_CallFunc(RecovRebootCallBacks, (ClientData)spriteID, 0);
     }
 exit:
@@ -680,7 +694,8 @@ Recov_HostDead(spriteID)
 			    recov_CrashDelay);
 #else
 	    hostPtr->state |= RECOV_HOST_DEAD|RECOV_CRASH_CALLBACKS;
-	RecovHostPrint(RECOV_PRINT_CRASH, spriteID, "crash call-backs made\n");
+	    RecovHostPrint(RECOV_PRINT_CRASH, spriteID,
+		    "crash call-backs made\n");
 	    RECOV_TRACE(spriteID, hostPtr->state, RECOV_CUZ_CRASH);
 	    Proc_CallFunc(RecovCrashCallBacks, (ClientData)spriteID, 0);
 #endif
@@ -1279,7 +1294,8 @@ RecovDelayedCrashCallBacks(data, callInfoPtr)
 
     state = Recov_GetHostState(spriteID);
     if (state & RECOV_HOST_DYING) {
-	RecovHostPrint(RECOV_PRINT_CRASH, spriteID, "crash call-backs made\n");
+	RecovHostPrint(RECOV_PRINT_CRASH, spriteID,
+	    "crash call-backs being made\n");
 	recov_Stats.crashes++;
 	MarkHostDead(spriteID);
 	LIST_FORALL(&crashCallBackList, (List_Links *)notifyPtr) {
@@ -1424,6 +1440,45 @@ Recov_GetHostState(spriteID)
 		    state = RECOV_STATE_UNKNOWN;
 		}
 	    }
+	}
+    }
+    UNLOCK_MONITOR;
+    return(state);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RecovGetLastHostState --
+ *
+ *	This looks into	the host table to pass back the
+ *	host's current state.  It just uses whatever state the
+ *	host has marked currently, and does no further interpretation.
+ *
+ * Results:
+ *	hostPtr->state
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY int
+RecovGetLastHostState(spriteID)
+    int spriteID;
+{
+    register Hash_Entry *hashPtr;
+    register RecovHostState *hostPtr;
+    register int state = RECOV_STATE_UNKNOWN;
+
+    LOCK_MONITOR;
+
+    hashPtr = Hash_LookOnly(recovHashTable, (Address)spriteID);
+    if (hashPtr != (Hash_Entry *)NIL) {
+	hostPtr = (RecovHostState *)hashPtr->value;
+	if (hostPtr != (RecovHostState *)NIL) {
+	    state = hostPtr->state;
 	}
     }
     UNLOCK_MONITOR;
@@ -1628,7 +1683,6 @@ Recov_GetHostInfo(spriteID, recovStatePtr)
 {
     Hash_Entry *hashPtr;
     RecovHostState *hostPtr;
-    register NotifyElement *notifyPtr;
     Boolean found = FALSE;
 
     LOCK_MONITOR;
@@ -1715,6 +1769,9 @@ Recov_PrintTraceRecord(clientData, event, printHeaderFlag)
 		break;
 	    case RECOV_CUZ_CRASH:
 		printf("crash");
+		break;
+	    case RECOV_CUZ_CRASH_UNDETECTED:
+		printf("crash undetected");
 		break;
 	    case RECOV_CUZ_DONE:
 		printf("done");
@@ -1892,3 +1949,11 @@ RecovPrintExtraState(hostPtr)
     }
 }
 
+
+void
+Recov_ChangePrintLevel(newLevel)
+    int	newLevel;
+{
+    recov_PrintLevel = newLevel;
+    return;
+}

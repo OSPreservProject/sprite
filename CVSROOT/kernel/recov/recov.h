@@ -143,6 +143,7 @@ typedef struct RecovTraceRecord {
  *	RECOV_CUZ_DONE		Recovery actions completed
  *	RECOV_CUZ_PING_CHK	We are pinging the host to check it out
  *	RECOV_CUZ_PING_ASK	We are pinging the host because we were asked
+ *	RECOV_CUZ_CRASH_UNDETECTED	Crash wasn't detected until reboot
  */
 #define RECOV_CUZ_WAIT		0x1
 #define RECOV_CUZ_WAKEUP	0x2
@@ -152,6 +153,7 @@ typedef struct RecovTraceRecord {
 #define RECOV_CUZ_DONE		0x20
 #define RECOV_CUZ_PING_CHK	0x40
 #define RECOV_CUZ_PING_ASK	0x80
+#define RECOV_CUZ_CRASH_UNDETECTED	0x100
 
 #ifndef CLEAN
 
@@ -200,6 +202,7 @@ extern int		Recov_GetClientState();
 extern void		Recov_ClearClientState();
 extern void		Recov_AddHandleCountToClientState();
 extern ReturnStatus	Recov_GetStats();
+extern void		Recov_ChangePrintLevel();
 
 extern void		Recov_HostTrace();
 extern void		Recov_PrintTrace();
@@ -207,6 +210,7 @@ extern void		Recov_PrintTrace();
 extern void		Recov_Proc();
 extern void		RecovAddHostToPing();
 extern int		RecovCheckHost();
+extern int		RecovGetLastHostState();
 
 #endif /* _RECOV */
 

@@ -169,8 +169,9 @@ Recov_Proc()
 	while (pingPtr != (RecovPing *)NIL) {
 	    check = RecovCheckHost(pingPtr->spriteID);
 	    if (check > 0) {
-		RECOV_TRACE(pingPtr->spriteID, RECOV_STATE_UNKNOWN,
-				      RECOV_CUZ_PING_CHK);
+		RECOV_TRACE(pingPtr->spriteID,
+		    RecovGetLastHostState(pingPtr->spriteID),
+		    RECOV_CUZ_PING_CHK);
 		recov_Stats.pings++;
 		Rpc_Ping(pingPtr->spriteID);
 	    } else if (check == 0) {
