@@ -540,38 +540,54 @@ UnderflowOkay:
  *
  * MachHandleWindowOverflowTrap --
  *
- *	Trap entrance to the window overflow handler.  This sets up a return
+ *	Trap entrance to the window overflow handler.  We try to get in and
+ *	out of here as quickly as possible in the normal case.  Unlike
+ *	most traps, we jump here directly from the trap table, and do not
+ *	go through the usual MachTrap preamble.  This means no
+ *	state has been saved and we have no stack pointer.  This in turn means
+ *	that we cannot turn traps on, since we have no saved state and no place
+ *	to save the trap registers. This routine sets up a return
  *	address, calls the overflow handler, restores the psr, and
- *	returns from the trap.
+ *	returns from the trap.  It assumes that the trap psr was stored in
+ *	%CUR_PSR_REG before jumping here (in the trap vector table).
  *
- *	This is set up so that we can just call the
- *	overflow handler even if it's not from a trap, and the right thing
- *	should happen.
+ *	When we return to this routine from the actual overflow handling
+ *	routine, we check to see if we're returning to user mode.  If we aren't
+ *	we can just leave this routine normally.  If we're returning to user
+ *	mode, however, we must check for some special cases.  It may be that
+ *	the user stack wasn't resident and that we had to save the overflow
+ *	window to a special internal buffer rather than the user stack.  If this
+ *	is so, we require extra processing.  So we call MachTrap to save state
+ *	for us and then call MachReturnFromTrap, which will handle the fact
+ *	that the window was saved to an internal buffer.  The effect of all of
+ *	this is to turn the overflow trap into a "slow overflow trap" that goes
+ *	through the usual trap preamble and postamble.
  *
  * Results:
  *	None.
  *
  * Side effects:
  *	The mach state structure may be modified if this is a user window
- *	and its stack isn't resident so that we need to save windows to
+ *	and its stack isn't resident, causing us to save the window to
  *	the buffers in the mach state structure.
  *
  * ----------------------------------------------------------------------
  */
 .global	MachHandleWindowOverflowTrap
 MachHandleWindowOverflowTrap:
+	/*
+	 * Call actual overflow handler.
+	 */
 	set	MachWindowOverflow, %VOL_TEMP1
 	jmpl	%VOL_TEMP1, %SAFE_TEMP
 	nop
 	/*
-	 * If returning to user mode, check special handling flags here.
-	 * We only need to check for the condition that we need to copy user
-	 * window overflow values from where they were saved
-	 * in the process state buffer out to the user stack, because the
-	 * user stack wasn't resident.
+	 * If returning to user mode, check special handling flags here to
+	 * see if we need to do any fancy processing (due to the user's
+	 * stack not being resident so we had to save the window to an internal
+	 * buffer instead).
 	 */
-	/* Are we a user or kernel process? */
-        andcc   %CUR_PSR_REG, MACH_PS_BIT, %g0
+        andcc   %CUR_PSR_REG, MACH_PS_BIT, %g0		/* user or kernel? */
         bne     NormalOverflowReturn
         nop
         /* Do we need to take a special action? Check special handling flag. */
@@ -584,21 +600,14 @@ MachHandleWindowOverflowTrap:
         be      NormalOverflowReturn
 	nop
 	/*
-	 * We need to save state and put space on the stack pointer, etc.
+	 * We need to save state and allocate space on the stack, etc.
 	 * Run through regular trap preamble to do this.  The trap preamble
-	 * will then return us to here, where we'll call MachUserAction
-	 * to take care of the special action.
+	 * will then return us to here.  This is all in preparation for
+	 * calling MachReturnFromTrap, since that will call MachUserAction
+	 * to deal with the window saved to the internal buffer.
 	 */
 	call	_MachTrap
 	nop
-	/*
-	 * Now we must restore state, take stuff off the stack, etc.
-	 * The easy way to do this is go through the regular return from
-	 * trap sequence, and this will do the handling of the special
-	 * user action stuff for us.  I could just call MachReturnFromTrap
-	 * directly from MachTrap for this trap case, but this looks better
-	 * here.  Maybe?
-	 */
 MachReturnToOverflowWithSavedState:
 /* FOR_DEBUGGING */
 	set	0x44444444, %OUT_TEMP1
@@ -622,6 +631,11 @@ MachReturnToOverflowWithSavedState:
 	set	0x55555555, %OUT_TEMP1
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverWithSaved7, %OUT_TEMP1)
 /*END  FOR_DEBUGGING */
+	/*
+	 * Now call trap postamble to restore state and push saved window to
+	 * the user stack.  MachReturnFromTrap will return to user mode, so
+	 * we will not come back here after this call!
+	 */
 	call	_MachReturnFromTrap
 	nop
 
@@ -639,9 +653,9 @@ NormalOverflowReturn:
  *
  * MachWindowOverflow --
  *
- *	Window overflow handler.  It's set up so that it can be called as a
- *	result of a window overflow trap or as a result of moving into an
- *	invalid window as a result of some other trap or interrupt.
+ *	Window overflow handler.  It's set up so that it can be called from the
+ *	fast window overflow trap handler, or it can be called directly from
+ *	MachTrap for any trap that causes us to land inside an invalid window.
  *
  *	The window we've trapped into is currently invalid.  We want to
  *	make it valid.  We do this by moving one window further, saving that
@@ -649,9 +663,9 @@ NormalOverflowReturn:
  *	moving back to the window that we trapped into.  It is then valid
  *	and usable.  Note that we move first to the window to save and then
  *	mark it invalid.  In the other order we would get another overflow
- *	trap, but with traps turned off...
- *	Note that %sp should point to highest (on stack, lowest in memory)
- *	usable word in the current stack frame.  %fp is the %sp of the
+ *	trap, but with traps turned off, which causes a watchdog reset...
+ *	Note that %sp should point to the lowest address usable
+ *	word in the current stack frame.  %fp is the %sp of the
  *	caller's stack frame, so the first (highest in memory) usable word
  *	of a current stack frame is (%fp - 4).
  *
@@ -660,12 +674,13 @@ NormalOverflowReturn:
  *	allowed.
  *
  * Results:
- *	Returns to the address in %SAFE_TEMP + 8.
+ *	Returns to the address %SAFE_TEMP + 8.
  *
  * Side effects:
  *	The window invalid mask changes and a register window is saved.
  *	The mach state structure may change if we need to save this window
- *	into it if it's a user window and the stack isn't resident.
+ *	into its internal buffers (if it's a user window and the stack isn't
+ *	resident).
  *
  * ----------------------------------------------------------------------
  */
@@ -685,7 +700,8 @@ MachWindowOverflow:
 	/*
 	 * If this is a user window, then see if stack space is resident.
 	 * If it is, go ahead, but if not, then set special handling and
-	 * save to buffers.
+	 * save to buffers.  It's fairly dreadful that we must do all this
+	 * checking here, since this will slow down all the overflow traps.
 	 */
 	set	MACH_MAX_USER_STACK_ADDR, %g3	/* %sp in user space? */
 	subcc	%g3, %sp, %g0			/* need sp < highest addr */
@@ -708,8 +724,8 @@ BadStack:
 	/*
 	 * Assume it was a user process's bad stack pointer.  We can't kill
 	 * the process here, so just take over the window and the user process
-	 * will die a terrible death later.  We just return to take over the
-	 * window, since we've already advanced the %wim.
+	 * will die a terrible death later.  To take over the window, we just
+	 * return, since we've already advanced the %wim.
 	 */
 	set	0x99999999, %i0
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BadOverflowStack0, %i0)
@@ -718,11 +734,11 @@ BadStack:
 	nop
 UserStack:
 	/*
-	 * If alignment is bad, what should we do?  As above, since it's a
-	 * user stack pointer, we just take over the window and assume the
-	 * user process will die a horrible death later on.
+	 * If the stack alignment is bad, we just take over the window and
+	 * assume the user process will die a horrible death later on.
 	 */
 	andcc	%sp, 0x7, %g0
+/* FOR DEBUGGING */
 	be	blick
 	nop
 	set	0x97979797, %i0
@@ -730,9 +746,11 @@ UserStack:
 	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BadOverflowStack3, %sp)
 blick:
 	andcc	%sp, 0x7, %g0
+/* END FOR DEBUGGING */
 	bne	ReturnFromOverflow
 	nop
 
+	/* Would saving window cause a page fault? */
 	MACH_CHECK_FOR_FAULT(%sp, %g3)
 	bne	SaveToInternalBuffer
 	nop
@@ -744,12 +762,9 @@ blick:
 	nop
 SaveToInternalBuffer:
 	/*
-	 * It wasn't resident, so we must save to internal buffer and set
-	 * special handling.
-	 */
-
-	/*
-	 * Update the saved mask to show that this window had to be saved
+	 * The stack wasn't resident, so we must save to an internal buffer
+	 * and set the special handling flag.
+	 * We update the saved mask to show that this window had to be saved
 	 * to the internal buffers.  We do this by or'ing in the value of
 	 * the current window invalid mask, since it's been set to point to
 	 * this window we must save.
@@ -825,7 +840,7 @@ SaveToInternalBuffer:
 	nop
 NormalOverflow:
 	/*
-	 * save this window to stack - save locals and ins to top 16 words
+	 * Save this window to stack - save locals and ins to top 16 words
 	 * on the stack. (Since our stack grows down, the top word is %sp
 	 * and the bottom will be (%sp + offset).
 	 */

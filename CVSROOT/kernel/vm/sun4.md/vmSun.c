@@ -29,6 +29,7 @@ static char rcsid[] = "$Header$ SPRITE (Berkeley)";
 #include "dbg.h"
 #include "net.h"
 
+extern	Address	vmStackBaseAddr;
 /*
  * Temporary macro for circular debugging buffer.
  */
@@ -358,6 +359,11 @@ VmMach_BootInit(pageSizePtr, pageShiftPtr, pageTableIncPtr, kernMemSizePtr,
      * the max.
      */
     *maxSegsPtr = -1;
+    /*
+     * Turn on caching.
+     */
+    VmMachClearCacheTags();
+    VmMachInitSystemEnableReg();
 }
 
 
@@ -493,14 +499,19 @@ VmMach_Init(firstFreePage)
 	    virtAddr <= lastCodeAddr) {
 	    pte = VMMACH_RESIDENT_BIT | VMMACH_KR_PROT | 
 			  i * VMMACH_CLUSTER_SIZE;
-#ifdef sun4	/* while porting */
-	    pte |= VMMACH_DONT_CACHE_BIT;
+#ifdef sun4
+#ifdef NOTDEF
+	    pte &= ~VMMACH_DONT_CACHE_BIT
+#endif NOTDEF
 #endif /* sun4 */
 	} else {
 	    pte = VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT | 
 			  i * VMMACH_CLUSTER_SIZE;
 #ifdef sun4	/* while porting */
-	    pte |= VMMACH_DONT_CACHE_BIT;
+	    if (virtAddr >= vmStackBaseAddr ||
+		    virtAddr < (Address) MACH_KERN_START) {
+		pte |= VMMACH_DONT_CACHE_BIT;
+	    }
 #endif /* sun4 */
         }
 	SET_ALL_PAGE_MAP(virtAddr, pte);
@@ -632,7 +643,7 @@ MMUInit(firstFreeSegment)
 #endif /* sun2 */
 
     /*
-     * Invalidate all hardware segments from segment 1 up to the beginning
+     * Invalidate all hardware segments from first segment up to the beginning
      * of the kernel.
      */
     for (; i < ((((unsigned int) mach_KernStart) & VMMACH_ADDR_MASK) >>
@@ -714,12 +725,7 @@ MMUInit(firstFreeSegment)
 			inusePMEG = TRUE;
 		    }
 		} else {
-#ifdef sun4				/* while porting */
-		    VmMachSetPageMap(virtAddr,
-			    (VmMachPTE)VMMACH_DONT_CACHE_BIT);
-#else
 		    VmMachSetPageMap(virtAddr, (VmMachPTE)0);
-#endif sun4
 		}
 	    }
 	    virtAddr -= VMMACH_SEG_SIZE;
@@ -2141,7 +2147,12 @@ VmMach_SetSegProt(segPtr, firstPage, lastPage, makeWriteable)
 					 (Address)&pteChange, TRUE);
 		    }
 #ifdef sun4
-		    pte |= VMMACH_DONT_CACHE_BIT;
+		    if (virtAddr < (Address) MACH_KERN_START ||
+			    virtAddr >= vmStackBaseAddr) {
+			pte |= VMMACH_DONT_CACHE_BIT;
+		    } else {
+			pte &= ~VMMACH_DONT_CACHE_BIT;
+		    }
 #endif sun4
 		    VmMachSetPageMap(pageVirtAddr, pte);
 		}
@@ -2193,6 +2204,9 @@ VmMach_SetPageProt(virtAddrPtr, softPTE)
     int				pmegNum;
     int				i;
     Vm_TracePTEChange		pteChange;
+#ifdef sun4
+    Address			testVirtAddr;
+#endif sun4
 
     MASTER_LOCK(vmMachMutexPtr);
 
@@ -2201,6 +2215,9 @@ VmMach_SetPageProt(virtAddrPtr, softPTE)
     if (pmegNum != VMMACH_INV_PMEG) {
 	virtAddr = ((virtAddrPtr->page << VMMACH_PAGE_SHIFT) & 
 			VMMACH_PAGE_MASK) + vmMachPTESegAddr;	
+#ifdef sun4
+	testVirtAddr = (Address) (virtAddrPtr->page << VMMACH_PAGE_SHIFT);
+#endif sun4
 	for (i = 0; 
 	     i < VMMACH_CLUSTER_SIZE; 
 	     i++, virtAddr += VMMACH_PAGE_SIZE_INT) {
@@ -2222,7 +2239,12 @@ VmMach_SetPageProt(virtAddrPtr, softPTE)
 				 (Address)&pteChange, TRUE);
 	    }
 #ifdef sun4
-	    hardPTE |= VMMACH_DONT_CACHE_BIT;
+	    if (testVirtAddr < (Address) MACH_KERN_START ||
+		    testVirtAddr >= vmStackBaseAddr) {
+		hardPTE |= VMMACH_DONT_CACHE_BIT;
+	    } else {
+		hardPTE &= ~VMMACH_DONT_CACHE_BIT;
+	    }
 #endif sun4
 	    VmMachWritePTE(pmegNum, virtAddr, hardPTE);
 	}
@@ -2421,7 +2443,9 @@ VmMach_ClearRefBit(virtAddrPtr, virtFrameNum)
 	    }
 	    pte &= ~VMMACH_REFERENCED_BIT;
 #ifdef sun4
+#ifdef NOTDEF
 	    pte |= VMMACH_DONT_CACHE_BIT;
+#endif NOTDEF
 #endif sun4
 
 	    VmMachWritePTE(pmegNum, virtAddr, pte);
@@ -2484,7 +2508,9 @@ VmMach_ClearModBit(virtAddrPtr, virtFrameNum)
 	    }
 	    pte &= ~VMMACH_MODIFIED_BIT;
 #ifdef sun4
+#ifdef NOTDEF
 	    pte |= VMMACH_DONT_CACHE_BIT;
+#endif NOTDEF
 #endif sun4
 	    VmMachWritePTE(pmegNum, virtAddr, pte);
 	}
@@ -2574,7 +2600,11 @@ VmMach_PageValidate(virtAddrPtr, pte)
     }
     hardPTE = VMMACH_RESIDENT_BIT | VirtToPhysPage(Vm_GetPageFrame(pte));
 #ifdef sun4	/* while porting */
-	    hardPTE |= VMMACH_DONT_CACHE_BIT;
+	    if (addr < (Address) MACH_KERN_START || addr >= vmStackBaseAddr) {
+		hardPTE |= VMMACH_DONT_CACHE_BIT;
+	    } else {
+		hardPTE &= ~VMMACH_DONT_CACHE_BIT;
+	    }
 #endif /* sun4 */
     if (segPtr == vm_SysSegPtr) {
 	int	oldContext;

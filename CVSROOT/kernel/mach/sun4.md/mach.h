@@ -86,7 +86,7 @@ extern	void	Mach_EnableIntr();
 /*
  * Delay for N microseconds.
  */
-#define	MACH_DELAY(n)	{ register int N = (n)>>1; N--; while (N > 0) {N--;} }
+#define	MACH_DELAY(n)	{ register int N = (n)<<3; N--; while (N > 0) {N--;} }
 
 /*
  * The interrupt register on a sun4.

@@ -189,7 +189,7 @@ DoneCheck:
 #define	VMMACH_PAGE_MAP_SPACE		0x4
 
 /*
- * Masks for access to different parts of control space.
+ * Masks for access to different parts of control and device space.
  *
  * VMMACH_CONTEXT_OFF	 	Offset to context register in control space.
  * VMMACH_DIAGNOSTIC_REG	The address of the diagnostic register.
@@ -201,6 +201,7 @@ DoneCheck:
  * VMMACH_MACH_TYPE_ADDR	Address of machine type in the id prom.
  * VMMACH_IDPROM_INC		Amount to increment an address when stepping
  *				through the id prom.
+ * VMMACH_CACHE_TAGS_ADDR	Address of cache tags in control space.
  */
 
 #define	VMMACH_CONTEXT_OFF		0x30000000	/* control space */
@@ -212,6 +213,24 @@ DoneCheck:
 #define VMMACH_ETHER_ADDR		0x02
 #define VMMACH_MACH_TYPE_ADDR		0x01
 #define VMMACH_IDPROM_INC		0x01
+#define	VMMACH_CACHE_TAGS_ADDR		0x80000000	/* control space */
+
+/*
+ * Other cache constants:
+ */
+/*
+ * Mask to set enable cache bit in the system enable register.
+ * Or it with register to enable the cache.
+ */
+#define	VMMACH_ENABLE_CACHE_BIT		0x10
+/*
+ * Number of cache tag words.
+ */
+#define	VMMACH_NUM_CACHE_TAGS		(2 * 4096)
+/*
+ * Cache tag address increment.
+ */
+#define	VMMACH_CACHE_TAG_INCR		0x10
 
 /*
  * The highest virtual address useable by the kernel for both machine type

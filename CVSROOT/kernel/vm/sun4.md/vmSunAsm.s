@@ -612,6 +612,62 @@ _VmMachSetKernelContext:
     nop
 
 /*
+ * ----------------------------------------------------------------------------
+ *
+ * VmMachInitSystemEnableReg --
+ *
+ *     	Set the system enable register to turn on caching, etc.
+ *
+ *	void VmMachInitSystemEnableReg()
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     Caching will be turned on, if it wasn't already.
+ *
+ * ----------------------------------------------------------------------------
+ */
+.globl	_VmMachInitSystemEnableReg
+_VmMachInitSystemEnableReg:
+    set		VMMACH_SYSTEM_ENABLE_REG, %OUT_TEMP1
+    lduba	[%OUT_TEMP1] VMMACH_CONTROL_SPACE, %o0
+    or		%o0, VMMACH_ENABLE_CACHE_BIT, %o0
+    stba	%o0, [%OUT_TEMP1] VMMACH_CONTROL_SPACE
+    retl			/* Return from leaf routine */
+    nop
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmMachClearCacheTags --
+ *
+ *     	Clear all tags in the cache.
+ *
+ *	void VmMachClearCacheTags()
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+.globl	_VmMachClearCacheTags
+_VmMachClearCacheTags:
+    set		VMMACH_NUM_CACHE_TAGS, %OUT_TEMP1
+    set		VMMACH_CACHE_TAGS_ADDR, %OUT_TEMP2
+ClearTags:
+    sta		%g0, [%OUT_TEMP2] VMMACH_CONTROL_SPACE		/* clear tag */
+    add		%OUT_TEMP2, VMMACH_CACHE_TAG_INCR, %OUT_TEMP2	/* dec cntr */
+    subcc	%OUT_TEMP1, 1, %OUT_TEMP1			/* inc addr */
+    bg		ClearTags
+    nop
+    retl
+    nop
+
+/*
  * ----------------------------------------------------------------------
  *
  * Vm_Copy{In,Out}
