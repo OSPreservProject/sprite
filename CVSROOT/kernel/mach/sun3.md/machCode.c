@@ -3,8 +3,14 @@
  *
  *     C code for the mach module.
  *
- * Copyright (C) 1985 Regents of the University of California
- * All rights reserved.
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
  */
 
 #ifndef lint
@@ -119,6 +125,9 @@ int	mach_LastUserStackPage;
 
 extern	int		MachGetVBR();
 MachVectorTable		*machVectorTablePtr;
+int			((*machInterruptRoutines[256])());
+ClientData		machInterruptArgs[256];
+
 
 /*
  * The variables and tables below are used by the assembler routine
@@ -165,7 +174,8 @@ MachMonBootParam	machMonBootParam;
 void	SetupSigHandler();
 void	ReturnFromSigHandler();
 void	MachUserReturn();
-
+void MachProbeStart();
+void MachProbeEnd();
 
 /*
  * ----------------------------------------------------------------------------
@@ -213,7 +223,7 @@ Mach_Init()
     for (i = 0; i < 8; i++) {
 	if (machMonBootParam.argPtr[i] != (char *) 0 &&
 	 machMonBootParam.argPtr[i] != (char *) NIL) {
-	    machMonBootParam.argPtr[i] -= (char *) offset;
+	    machMonBootParam.argPtr[i] -= offset;
 	}
     }
     /*
@@ -273,7 +283,6 @@ Mach_Init()
      * We start off with interrupts disabled.
      */
     mach_NumDisableInterrupts[0] = 1;
-
 }
 
 
@@ -299,7 +308,6 @@ Mach_InitFirstProc(procPtr)
 {
     procPtr->machStatePtr = (Mach_State *)Vm_RawAlloc(sizeof(Mach_State));
     procPtr->machStatePtr->kernStackStart = mach_StackBottom;
-    procPtr->machStatePtr->setJumpStatePtr = (Mach_SetJumpState *)NIL;
     machCurStatePtr = procPtr->machStatePtr;
 }
 
@@ -341,7 +349,6 @@ Mach_SetupNewState(procPtr, fromStatePtr, startFunc, startPC, user)
 
     if (procPtr->machStatePtr == (Mach_State *)NIL) {
 	procPtr->machStatePtr = (Mach_State *)Vm_RawAlloc(sizeof(Mach_State));
-	procPtr->machStatePtr->setJumpStatePtr = (Mach_SetJumpState *)NIL;
     }
 
     statePtr = procPtr->machStatePtr;
@@ -714,18 +721,27 @@ Mach_InitSyscall(callNum, numArgs, normalHandler, migratedHandler)
  */
 
 void
-Mach_SetHandler(vectorNumber, handler)
+Mach_SetHandler(vectorNumber, handler, clientData)
     int vectorNumber;	/* Vector number that the device generates */
     int (*handler)();	/* Interrupt handling procedure */
+    ClientData	clientData; /* ClientData for interrupt callback routine. */
 {
     int	*vecTablePtr;
-
-    if (vectorNumber < 64 || vectorNumber > 255) {
-	printf("%d: ", vectorNumber);
-	printf("Warning: Bad vector number\n");
+    extern int	MachVectoredInterrupt();
+    /*
+     * Don't let the caller override a vector than can't be generated with
+     * an interrupt. Only vectors 24 thru 30 and 64 thru 255 can be 
+     * generated.
+     */
+    if ((vectorNumber < 25) ||
+	((vectorNumber > 30) && (vectorNumber < 64)) || 
+	(vectorNumber > 255)) {
+	panic("Warning: Bad vector number %d\n",vectorNumber);
     } else {
+	machInterruptRoutines[vectorNumber] = handler;
+	machInterruptArgs[vectorNumber] = clientData;
 	vecTablePtr = (int *) MachGetVBR();
-	vecTablePtr[vectorNumber] = (int)handler;
+	vecTablePtr[vectorNumber] = (int)MachVectoredInterrupt;
     }
 }
 
@@ -829,7 +845,7 @@ MachTrap(trapStack)
 		     * user state (indicated by particular values of the
 		     * program counter), after a pointer is made accessible by 
 		     * Vm_MakeAccessible (indicated by numMakeAcc > 0) or
-		     * after someone did a set jump in the kernel and tried
+		     * after someone did a Mach_Probe() in the kernel and tried
 		     * to access a user process.
 		     */
 
@@ -842,9 +858,12 @@ MachTrap(trapStack)
 			    && (((unsigned) trapStack.excStack.pc)
 				<= (unsigned) MachFetchArgsEnd)) {
 			copyInProgress = TRUE;
-		    } else if ((procPtr->vmPtr->numMakeAcc == 0)
-			&& (procPtr->machStatePtr->setJumpStatePtr
-			== (Mach_SetJumpState *) NIL)) {
+		    } else if ((((unsigned) trapStack.excStack.pc)
+				>= (unsigned) MachProbeStart)
+			    && (((unsigned) trapStack.excStack.pc)
+				<= (unsigned) MachProbeEnd)) {
+			return(MACH_USER_ERROR);
+		    } else if (procPtr->vmPtr->numMakeAcc == 0) {
 			return(MACH_KERN_ERROR);
 		    }
 
@@ -865,14 +884,8 @@ MachTrap(trapStack)
 			    return(MACH_USER_ERROR);
 			} else {
 			    /*
-			     * Real kernel error.  Take a long jump if
-			     * possible.
+			     * Real kernel error. 
 			     */
-			    if (procPtr->machStatePtr->setJumpStatePtr != 
-						(Mach_SetJumpState *) NIL) {
-				Mach_LongJump(
-				    procPtr->machStatePtr->setJumpStatePtr);
-			    }
 			    return(MACH_KERN_ERROR);
 			}
 		    } else {
@@ -880,14 +893,18 @@ MachTrap(trapStack)
 		    }
 		} else {
 		    /*
-		     * Happened to a kernel process.  Take a long jump if 
-		     * possible.
+		     * Happened to a kernel process.  If the error happen 
+		     * in Mach_Probe() return MACH_USER_ERROR to force 
+		     * Mach_Probe() to return FAILURE.
 		     */
-		    if (procPtr->machStatePtr->setJumpStatePtr !=
-						(Mach_SetJumpState *) NIL) {
-			Mach_LongJump(procPtr->machStatePtr->setJumpStatePtr);
+		    if ((((unsigned) trapStack.excStack.pc)
+				>= (unsigned) MachProbeStart)
+			  && (((unsigned) trapStack.excStack.pc)
+				<= (unsigned) MachProbeEnd)) {
+			return(MACH_USER_ERROR);
+		    } else { 
+			return(MACH_KERN_ERROR);
 		    }
-		    return(MACH_KERN_ERROR);
 		}
 	    case MACH_SPURIOUS_INT:
 		/*
@@ -1395,31 +1412,6 @@ Mach_ProcessorState(processor)
     } else {
 	return(MACH_USER);
     }
-}
-
-
-/*
- * ----------------------------------------------------------------------------
- *
- * Mach_UnsetJump --
- *
- *	Clear out the pointer to the saved state from a set jump.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	setJumpStatePtr field of proc table for current process is nil'd out.
- *
- * ----------------------------------------------------------------------------
- */
-void
-Mach_UnsetJump()
-{
-    Proc_ControlBlock	*procPtr;
-
-    procPtr = Proc_GetCurrentProc();
-    procPtr->machStatePtr->setJumpStatePtr = (Mach_SetJumpState *) NIL;
 }
 
 
