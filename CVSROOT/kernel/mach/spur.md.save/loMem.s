@@ -273,6 +273,13 @@ _machMapSlotIdToPnum: 		.long 0; .long 0; .long 0; .long 0;
 				.long 0; .long 0; .long 0; .long 0;
 				.long 0; .long 0; .long 0; .long 0;
 runningProcesses: 		.long _proc_RunningProcesses
+				.long _proc_RunningProcesses+4
+				.long _proc_RunningProcesses+8
+				.long _proc_RunningProcesses+12
+				.long _proc_RunningProcesses+16
+				.long _proc_RunningProcesses+20
+				.long _proc_RunningProcesses+24
+				.long _proc_RunningProcesses+28
 firstProcStatePtr:		.long _machFirstProcState
 numArgsPtr:			.long _machNumArgs
 _machStatePtrOffset:		.long 0
@@ -1598,6 +1605,12 @@ cmpTrap_RefreshTrap:
 	nop
 	wr_insert	VOL_TEMP1
 
+		/*
+		 * Little hack to see if pnum in kpsw is bad. 
+		 */
+		extract	VOL_TEMP1,KPSW_REG,$3
+		cmp_trap  ne,r0,VOL_TEMP1,$2
+
 	wr_kpsw		KPSW_REG, $0
 	return_trap	NEXT_PC_REG, $0
 	Nop
@@ -1891,18 +1904,13 @@ sysCallTrap_CallRoutine:
 	 * Now call the routine to handle the system call.  We do this
 	 * by jumping through 
 	 *
-	 *	(proc_RunningProcesses[0]->kcallTable[sysCallType])()
+	 *	(proc_RunningProcesses[pnum]->kcallTable[sysCallType])()
 	 */
 
 	/* 
-	 * VOL_TEMP1 <= proc_RunningProccesses[0]
+	 * VOL_TEMP1 <= proc_RunningProccesses[pnum]
 	 */
-	ld_32		VOL_TEMP1, r0, $runningProcesses
-	Nop						
-	ld_32		VOL_TEMP1, VOL_TEMP1, $0
-	Nop
-	ld_32		VOL_TEMP1, VOL_TEMP1, $0
-	Nop
+	LD_CURRENT_PCB_PTR(VOL_TEMP1)
 	/*
 	 * VOL_TEMP2 <= offset of kcall table pointer in PCB
 	 */
@@ -2385,13 +2393,9 @@ returnTrap_NormReturn:
 	/*
 	 * See if we have to take any special action for this process.
 	 * This is determined by looking at 
-	 * proc_RunningProcesses[0]->specialHandling.
+	 * proc_RunningProcesses[pnum]->specialHandling.
 	 */
-	ld_32		VOL_TEMP1, r0, $runningProcesses
-	Nop
-	ld_32		VOL_TEMP1, VOL_TEMP1, $0
-	nop
-	ld_32		VOL_TEMP1, VOL_TEMP1, $0
+	LD_CURRENT_PCB_PTR(VOL_TEMP1)
 	ld_32		VOL_TEMP2, r0, $_machSpecialHandlingOffset
 	Nop
 	add_nt		VOL_TEMP1, VOL_TEMP1, VOL_TEMP2
@@ -2870,11 +2874,10 @@ RestoreState:
 	/*
 	 * Insert the current processor number into the KPSW_REG.
 	 */
-#ifdef notdef
 	GET_PNUM_FROM_BOARD(r1)
 	wr_insert	$3
 	insert		KPSW_REG, KPSW_REG, r1
-#endif
+
 	ld_32		r1, VOL_TEMP1, $MACH_REG_STATE_UPSW_OFFSET
 	ld_32		r2, VOL_TEMP1, $MACH_REG_STATE_INSERT_OFFSET
 	ld_32		CUR_PC_REG, VOL_TEMP1, $MACH_REG_STATE_CUR_PC_OFFSET
