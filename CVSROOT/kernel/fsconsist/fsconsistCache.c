@@ -410,11 +410,9 @@ UpdateList(consistPtr, clientID, useFlags, cacheable,
     /*
      * Add the client to the I/O handle client list.
      */
-    clientPtr = FsIOClientOpen(&consistPtr->clientList, clientID, useFlags);
-    /*
-     * Update client state that only pertains to keeping files consistent.
-     */
-    clientPtr->cached = cacheable;
+    clientPtr = FsIOClientOpen(&consistPtr->clientList, clientID, useFlags,
+				cacheable);
+
     if (cacheable && (useFlags & FS_WRITE)) {
 	consistPtr->lastWriter = clientID;
     }
@@ -694,7 +692,7 @@ FsMigrateConsistency(handlePtr, srcClientID, dstClientID, useFlags,
 					 * this open and other cache messages */
 {
     register FsConsistInfo *consistPtr = &handlePtr->consist;
-    Boolean			wasCached;	/* IGNORED */
+    Boolean			cache = TRUE;
     register	ReturnStatus	status;
 
     LOCK_MONITOR;
@@ -708,7 +706,7 @@ FsMigrateConsistency(handlePtr, srcClientID, dstClientID, useFlags,
 	 * will get handled properly.
 	 */
 	if (!FsIOClientClose(&consistPtr->clientList, srcClientID, useFlags,
-		&wasCached)) {
+		&cache)) {
 	    Sys_Panic(SYS_WARNING,
 		    "FsMigrateConsistency, srcClient %d unknown\n",
 		    srcClientID);
@@ -933,6 +931,49 @@ FsConsistClose(consistPtr, clientID, flags, wasCachedPtr)
     }
     UNLOCK_MONITOR;
     return(TRUE);
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * FsConsistClients --
+ *
+ *	Returns the number of clients in the client list for a file.
+ *	Called to see if it's ok to scavenge the file handle.
+ *
+ * Results:
+ *	The number of clients in the client list.
+ *
+ * Side effects:
+ *	Unused client list entries are cleaned up.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+ENTRY int
+FsConsistClients(consistPtr)
+    register FsConsistInfo *consistPtr;	/* Handle of file being closed */
+{
+    register int numClients = 0;
+    register FsClientInfo *clientPtr;
+    register FsClientInfo *nextClientPtr;
+
+    LOCK_MONITOR;
+
+    nextClientPtr = (FsClientInfo *)List_First(&consistPtr->clientList);
+    while (!List_IsAtEnd(&consistPtr->clientList, (List_Links *)nextClientPtr)) {
+	clientPtr = nextClientPtr;
+	nextClientPtr = (FsClientInfo *)List_Next((List_Links *)clientPtr);
+	if (clientPtr->use.ref == 0 && !clientPtr->cached) {
+	    List_Remove((List_Links *) clientPtr);
+	    Mem_Free((Address) clientPtr);
+	} else {
+	    numClients++;
+	}
+    }
+    UNLOCK_MONITOR;
+    return(numClients);
 }
 
 
