@@ -96,7 +96,15 @@ typedef struct {
     ReturnStatus	(*func)();
 } SyscallInfo;
 
-static Boolean syscallTrace = FALSE;
+/*
+ * Values for system call tracing:
+ *
+ *	0: 	Use the fast assembly language interface and don't trace 
+ *		anything.
+ *	1: 	Use the slower C interface but no trace printing.
+ *	> 1: 	Use the slower C interface and trace system calls.
+ */
+int machUNIXSyscallTrace = 0;
 
 /*
  * Zillions of forward declarations.
@@ -208,7 +216,7 @@ extern ReturnStatus MachUNIXError();
 /*
  * The system call table.
  */
-SyscallInfo sysCallTable[] = {
+SyscallInfo machUNIXSysCallTable[] = {
 	"indir", 		0, 	MachUNIXError,
 	"exit",			1, 	MachUNIXExit,
 	"fork",			0, 	MachUNIXFork,
@@ -469,7 +477,7 @@ SyscallInfo sysCallTable[] = {
 	"setsysinfo",		0, 	MachUNIXError,
 };
 
-int numUNIXSyscalls = sizeof(sysCallTable) / sizeof(SyscallInfo);
+int machNumUNIXSyscalls = sizeof(machUNIXSysCallTable) / sizeof(SyscallInfo);
 
 extern Mach_State	*machCurStatePtr;
 
@@ -497,7 +505,6 @@ MachUNIXSyscall()
 {
     unsigned		*regs;
     int			args[6];
-    int			retVal;
     ReturnStatus	status;
     int			type;
     int			numArgs;
@@ -507,10 +514,10 @@ MachUNIXSyscall()
      * in v0.
      */
     type = machCurStatePtr->userState.regState.regs[V0];
-    if (type < 0 || type >= numUNIXSyscalls) {
+    if (type < 0 || type >= machNumUNIXSyscalls) {
 	return(FALSE);
     }
-    numArgs = sysCallTable[type].numArgs;
+    numArgs = machUNIXSysCallTable[type].numArgs;
     regs = machCurStatePtr->userState.regState.regs;
     if (numArgs > 4) {
 	if (Vm_CopyIn(4 * (numArgs - 4), regs[SP] + 16, args) != SUCCESS) {
@@ -519,85 +526,88 @@ MachUNIXSyscall()
 	    return(TRUE);
 	}
     }
-    retVal = 0;
+    machCurStatePtr->userState.unixRetVal = 0;
     switch (numArgs) {
 	case 0:
-	    if (syscallTrace) {
-		printf("MachUNIXSyscall: %s() => ", sysCallTable[type].name);
+	    if (machUNIXSyscallTrace > 1) {
+		printf("MachUNIXSyscall: %s() => ", 
+			machUNIXSysCallTable[type].name);
 	    }
-	    status = sysCallTable[type].func(&retVal);
+	    status = machUNIXSysCallTable[type].func();
 	    break;
 	case 1:
-	    if (syscallTrace) {
-		printf("MachUNIXSyscall: %s(%x) => ", sysCallTable[type].name,
+	    if (machUNIXSyscallTrace > 1) {
+		printf("MachUNIXSyscall: %s(%x) => ", 
+			machUNIXSysCallTable[type].name,
 			regs[A0]);
 	    }
-	    status = sysCallTable[type].func(&retVal, regs[A0]);
+	    status = machUNIXSysCallTable[type].func(regs[A0]);
 	    break;
 	case 2:
-	    if (syscallTrace) {
-		printf("MachUNIXSyscall: %s(%x, %x) => ", sysCallTable[type].name,
+	    if (machUNIXSyscallTrace > 1) {
+		printf("MachUNIXSyscall: %s(%x, %x) => ", 
+			machUNIXSysCallTable[type].name,
 			regs[A0], regs[A1]);
 	    }
-	    status = sysCallTable[type].func(&retVal, regs[A0], regs[A1]);
+	    status = machUNIXSysCallTable[type].func(regs[A0], regs[A1]);
 	    break;
 	case 3:
-	    if (syscallTrace) {
+	    if (machUNIXSyscallTrace > 1) {
 		printf("MachUNIXSyscall: %s(%x, %x, %x) => ", 
-			sysCallTable[type].name,
+			machUNIXSysCallTable[type].name,
 			regs[A0], regs[A1], regs[A2]);
 	    }
-	    status = sysCallTable[type].func(&retVal, regs[A0], regs[A1],
+	    status = machUNIXSysCallTable[type].func(regs[A0], regs[A1],
 					     regs[A2]);
 	    break;
 	case 4:
-	    if (syscallTrace) {
+	    if (machUNIXSyscallTrace > 1) {
 		printf("MachUNIXSyscall: %s(%x, %x, %x, %x) => ", 
-			sysCallTable[type].name,
+			machUNIXSysCallTable[type].name,
 			regs[A0], regs[A1], regs[A2], regs[A3]);
 	    }
-	    status = sysCallTable[type].func(&retVal, regs[A0], regs[A1],
+	    status = machUNIXSysCallTable[type].func(regs[A0], regs[A1],
 					     regs[A2], regs[A3]);
 	    break;
 	case 5: 
-	    if (syscallTrace) {
+	    if (machUNIXSyscallTrace > 1) {
 		printf("MachUNIXSyscall: %s(%x, %x, %x, %x, %x) => ", 
-			sysCallTable[type].name,
+			machUNIXSysCallTable[type].name,
 			regs[A0], regs[A1], regs[A2], regs[A3], args[0]);
 	    }
-	    status = sysCallTable[type].func(&retVal, regs[A0], regs[A1],
+	    status = machUNIXSysCallTable[type].func(regs[A0], regs[A1],
 					     regs[A2], regs[A3], args[0]);
 	    break; 
 	case 6:
-	    if (syscallTrace) {
+	    if (machUNIXSyscallTrace > 1) {
 		printf("MachUNIXSyscall: %s(%x, %x, %x, %x, %x, %x) => ", 
-			sysCallTable[type].name,
+			machUNIXSysCallTable[type].name,
 			regs[A0], regs[A1], regs[A2], regs[A3], args[0],
 			args[1]);
 	    }
-	    status = sysCallTable[type].func(&retVal, regs[A0], regs[A1],
+	    status = machUNIXSysCallTable[type].func(regs[A0], regs[A1],
 					     regs[A2], regs[A3], args[0],
 					     args[1]);
 	    break; 
 	case 7:
-	    if (syscallTrace) {
+	    if (machUNIXSyscallTrace > 1) {
 		printf("MachUNIXSyscall: %s(%x, %x, %x, %x, %x, %x, %x) => ", 
-			sysCallTable[type].name,
+			machUNIXSysCallTable[type].name,
 			regs[A0], regs[A1], regs[A2], regs[A3], args[0],
 			args[1], args[2]);
 	    }
-	    status = sysCallTable[type].func(&retVal, regs[A0], regs[A1],
+	    status = machUNIXSysCallTable[type].func(regs[A0], regs[A1],
 					     regs[A2], regs[A3], args[0],
 					     args[1], args[2]);
 	    break;
 	case 8:
-	    if (syscallTrace) {
+	    if (machUNIXSyscallTrace > 1) {
 		printf("MachUNIXSyscall: %s(%x, %x, %x, %x, %x, %x, %x, %x) => ", 
-			sysCallTable[type].name,
+			machUNIXSysCallTable[type].name,
 			regs[A0], regs[A1], regs[A2], regs[A3], args[0],
 			args[1], args[2], args[3]);
 	    }
-	    status = sysCallTable[type].func(&retVal, regs[A0], regs[A1], 
+	    status = machUNIXSysCallTable[type].func(regs[A0], regs[A1], 
 					     regs[A2], regs[A3], args[0],
 					     args[1], args[2], args[3]);
 	default:
@@ -608,32 +618,31 @@ MachUNIXSyscall()
      * The long jump and signal return system calls do things differently on
      * a return.  Everyone else does the standard thing.
      */
-    if (type != UNIX_LONG_JUMP_RETURN && type != UNIX_SIG_RETURN) {
+    if (type != MACH_UNIX_LONG_JUMP_RETURN && type != MACH_UNIX_SIG_RETURN) {
 	/*
 	 * The UNIX stubs looks at a3 to decide what to do.  If a3 == 1 then
 	 * v0 has the UNIX error code and the stub will stuff the error
 	 * into errno.  If a3 == 0 the V0 has the return value.
 	 */
 	if (status == SUCCESS) {
-	    regs[V0] = retVal;
+	    regs[V0] = machCurStatePtr->userState.unixRetVal;
 	    regs[A3] = 0;
 	} else {
 	    regs[V0] = Compat_MapCode(status);
 	    regs[A3] = 1;
 	}
-	if (syscallTrace) {
+	if (machUNIXSyscallTrace > 1) {
 	    printf("V0 = %x A3 = %x\n", regs[V0], regs[A3]);
 	}
-	machCurStatePtr->userState.regState.pc += 4;
     }
+    machCurStatePtr->userState.regState.pc += 4;
 
     return(TRUE);
 }
 
 
 ReturnStatus
-MachUNIXExit(retValPtr, status)
-    int	*retValPtr;
+MachUNIXExit(status)
     int	status;
 {
     Proc_Exit(status);
@@ -641,8 +650,7 @@ MachUNIXExit(retValPtr, status)
 }
 
 ReturnStatus
-MachUNIXFork(retValPtr)
-    int	*retValPtr;
+MachUNIXFork()
 {
     ReturnStatus	status;
     Address		usp;
@@ -664,7 +672,8 @@ MachUNIXFork(retValPtr)
 	return(SUCCESS);
     }
     if (status == SUCCESS) {
-	(void)Vm_CopyIn(sizeof(int), usp, (Address)retValPtr);
+	(void)Vm_CopyIn(sizeof(int), usp, 
+		(Address)&machCurStatePtr->userState.unixRetVal);
     }
     /* 
      * The user fork stub expects a 0 for the parent.
@@ -675,8 +684,7 @@ MachUNIXFork(retValPtr)
 
 
 ReturnStatus
-MachUNIXVFork(retValPtr)
-    int	*retValPtr;
+MachUNIXVFork()
 {
     ReturnStatus	status;
     Address		usp;
@@ -698,7 +706,8 @@ MachUNIXVFork(retValPtr)
 	return(SUCCESS);
     }
     if (status != SUCCESS) {
-	(void)Vm_CopyIn(sizeof(int), usp, (Address)retValPtr);
+	(void)Vm_CopyIn(sizeof(int), usp, 
+			(Address)&machCurStatePtr->userState.unixRetVal);
     } 
     /* 
      * The user fork stub expects a 0 for the parent.
@@ -708,8 +717,7 @@ MachUNIXVFork(retValPtr)
 }
 
 ReturnStatus
-MachUNIXRead(retValPtr, streamID, buffer, numBytes)
-    int		*retValPtr;
+MachUNIXRead(streamID, buffer, numBytes)
     int 	streamID;	/* descriptor for stream to read */
     char	*buffer;	/* pointer to buffer area */
     int		numBytes;	/* number of bytes to read */
@@ -720,15 +728,15 @@ MachUNIXRead(retValPtr, streamID, buffer, numBytes)
     usp = (Address) (machCurStatePtr->userState.regState.regs[SP] - 4);
     status = Fs_ReadStub(streamID, numBytes, buffer, (int *)usp);
     if (status == SUCCESS) {
-	(void)Vm_CopyIn(sizeof(int), usp, (Address)retValPtr);
+	(void)Vm_CopyIn(sizeof(int), usp, 
+			(Address)&machCurStatePtr->userState.unixRetVal);
     }
     return(status);
 }
 
 
 ReturnStatus
-MachUNIXWrite(retValPtr, streamID, buffer, numBytes)
-    int		*retValPtr;
+MachUNIXWrite(streamID, buffer, numBytes)
     int 	streamID;	/* descriptor for stream to read */
     char	*buffer;	/* pointer to buffer area */
     int		numBytes;	/* number of bytes to read */
@@ -739,14 +747,14 @@ MachUNIXWrite(retValPtr, streamID, buffer, numBytes)
     usp = (Address) (machCurStatePtr->userState.regState.regs[SP] - 4);
     status = Fs_WriteStub(streamID, numBytes, buffer, (int *)usp);
     if (status == SUCCESS) {
-	(void)Vm_CopyIn(sizeof(int), usp, (Address)retValPtr);
+	(void)Vm_CopyIn(sizeof(int), usp, 
+			(Address)&machCurStatePtr->userState.unixRetVal);
     }
     return(status);
 }
 
 ReturnStatus
-MachUNIXOpen(retValPtr, pathName, unixFlags, permissions)
-    int		*retValPtr;
+MachUNIXOpen(pathName, unixFlags, permissions)
     char	*pathName;	/* The name of the file to open */
     int		unixFlags;	/* O_RDONLY O_WRONLY O_RDWR O_NDELAY
 				 * O_APPEND O_CREAT O_TRUNC O_EXCL */
@@ -799,32 +807,30 @@ MachUNIXOpen(retValPtr, pathName, unixFlags, permissions)
 
     status = Fs_OpenStub(pathName, useFlags, permissions, (int *)usp);
     if (status == SUCCESS) {
-	(void)Vm_CopyIn(sizeof(int), usp, (Address)retValPtr);
+	(void)Vm_CopyIn(sizeof(int), usp,
+			(Address)&machCurStatePtr->userState.unixRetVal);
     }
     return(status);
 }
 
 ReturnStatus
-MachUNIXClose(retValPtr, streamID)
-    int	*retValPtr;
+MachUNIXClose(streamID)
     int streamID;
 {
     return(Fs_UserClose(streamID));
 }
 
 ReturnStatus
-MachUNIXCreat(retValPtr, pathName, permissions)
-    int	*retValPtr;
+MachUNIXCreat(pathName, permissions)
     char *pathName;		/* The name of the file to create */
     int permissions;		/* Permission mask to use on creation */
 {
-    return(MachUNIXOpen(retValPtr, pathName,  FS_CREATE|FS_TRUNC|FS_WRITE,
+    return(MachUNIXOpen(pathName,  FS_CREATE|FS_TRUNC|FS_WRITE,
 			permissions));
 }
 
 ReturnStatus
-MachUNIXLink(retValPtr, name1, name2)
-    int	*retValPtr;
+MachUNIXLink(name1, name2)
     char *name1;
     char *name2;
 {
@@ -832,16 +838,14 @@ MachUNIXLink(retValPtr, name1, name2)
 }
 
 ReturnStatus
-MachUNIXUnlink(retValPtr, pathName)
-    int	*retValPtr;
+MachUNIXUnlink(pathName)
     char *pathName;
 {
     return(Fs_RemoveStub(pathName));
 }
 
 ReturnStatus
-MachUNIXExecve(retValPtr, name, argv, envp)
-    int	*retValPtr;
+MachUNIXExecve(name, argv, envp)
     char *name;			/* name of file to exec */
     char *argv[];		/* array of arguments */
     char *envp[];		/* array of environment pointers */
@@ -850,8 +854,7 @@ MachUNIXExecve(retValPtr, name, argv, envp)
 }
 
 ReturnStatus
-MachUNIXExecv(retValPtr, name, argv)
-    int	*retValPtr;
+MachUNIXExecv(name, argv)
     char *name;			/* Name of file containing program to exec. */
     char **argv;		/* Array of arguments to pass to program. */
 {
@@ -859,16 +862,14 @@ MachUNIXExecv(retValPtr, name, argv)
 }
 
 ReturnStatus
-MachUNIXChdir(retValPtr, pathName)
-    int		*retValPtr;
+MachUNIXChdir(pathName)
     char	*pathName;
 {
     return(Fs_ChangeDirStub(pathName));
 }
 
 ReturnStatus
-MachUNIXChmod(retValPtr, path, mode)
-    int		*retValPtr;
+MachUNIXChmod(path, mode)
     char	*path;
     int		mode;
 {
@@ -889,8 +890,7 @@ MachUNIXChmod(retValPtr, path, mode)
 }
 
 ReturnStatus
-MachUNIXFChmod(retValPtr, fd, mode)
-    int		*retValPtr;
+MachUNIXFChmod(fd, mode)
     int		fd;
     int		mode;
 {
@@ -910,8 +910,7 @@ MachUNIXFChmod(retValPtr, fd, mode)
 }
 
 ReturnStatus
-MachUNIXChown(retValPtr, path, owner, group)
-    int	*retValPtr;
+MachUNIXChown(path, owner, group)
     char *path;
     int owner;
     int group;
@@ -935,8 +934,7 @@ MachUNIXChown(retValPtr, path, owner, group)
 }
 
 ReturnStatus
-MachUNIXFChown(retValPtr, fd, owner, group)
-    int	*retValPtr;
+MachUNIXFChown(fd, owner, group)
     int fd;
     int owner;
     int group;
@@ -959,8 +957,7 @@ MachUNIXFChown(retValPtr, fd, owner, group)
 }
 
 ReturnStatus
-MachUNIXSbrk(retValPtr, addr)
-    int		*retValPtr;
+MachUNIXSbrk(addr)
     Address	addr;
 {
     Vm_Segment	*segPtr;
@@ -982,8 +979,7 @@ MachUNIXSbrk(retValPtr, addr)
 }
 
 ReturnStatus
-MachUNIXLseek(retValPtr, streamID, offset, whence)
-    int	*retValPtr;
+MachUNIXLseek(streamID, offset, whence)
     int streamID;			/* array of stream identifiers */
     long offset;
     int whence;
@@ -1012,29 +1008,36 @@ MachUNIXLseek(retValPtr, streamID, offset, whence)
 			      sizeof(Ioc_RepositionArgs),
 			      (Address)&args, sizeof(int), usp);
     if (status == SUCCESS) {
-	(void)Vm_CopyIn(sizeof(int), usp, (Address)retValPtr);
+	(void)Vm_CopyIn(sizeof(int), usp,
+			(Address)&machCurStatePtr->userState.unixRetVal);
     }
     return(status);
 }
 
 ReturnStatus
-MachUNIXGetPID(retValPtr)
-    int	*retValPtr;
+MachUNIXGetPID()
 {
+#ifdef notdef
     ReturnStatus	status;
     Address		usp;
 
     usp = (Address) (machCurStatePtr->userState.regState.regs[SP] - 4);
     status = Proc_GetIDs((int *)usp, (int *) NULL, (int *) NULL, (int *) NULL);
     if (status == SUCCESS) {
-	(void)Vm_CopyIn(sizeof(int), usp, (Address)retValPtr);
+	(void)Vm_CopyIn(sizeof(int), usp,
+			(Address)&machCurStatePtr->userState.unixRetVal);
     }
     return(status);
+#endif
+    register	Proc_ControlBlock	*procPtr;
+
+    procPtr = Proc_GetEffectiveProc();
+    machCurStatePtr->userState.unixRetVal = procPtr->processID;
+    return(SUCCESS);
 }
 
 ReturnStatus
-MachUNIXGetuid(retValPtr)
-    int	*retValPtr;
+MachUNIXGetuid()
 {
     ReturnStatus	status;
     Address		usp;
@@ -1042,14 +1045,14 @@ MachUNIXGetuid(retValPtr)
     usp = (Address) (machCurStatePtr->userState.regState.regs[SP] - 4);
     status = Proc_GetIDs((int *) NULL, (int *) NULL, (int *)usp, (int *) NULL);
     if (status == SUCCESS) {
-	(void)Vm_CopyIn(sizeof(int), usp, (Address)retValPtr);
+	(void)Vm_CopyIn(sizeof(int), usp,
+			(Address)&machCurStatePtr->userState.unixRetVal);
     }
     return(status);
 }
 
 ReturnStatus
-MachUNIXAccess(retValPtr, pathName, mode)
-    int	*retValPtr;
+MachUNIXAccess(pathName, mode)
     char *pathName;		/* The name of the file to open */
     int	 mode;			/* access mode to test for */
 {
@@ -1065,8 +1068,7 @@ MachUNIXAccess(retValPtr, pathName, mode)
     return(Fs_CheckAccess(pathName, spriteMode, TRUE));
 }
 
-ReturnStatus MachUNIXKill(retValPtr, pid, sig)
-    int	*retValPtr;
+ReturnStatus MachUNIXKill(pid, sig)
     int pid;
     int sig;
 {
@@ -1083,8 +1085,7 @@ ReturnStatus MachUNIXKill(retValPtr, pid, sig)
     return(Sig_UserSend(spriteSignal, pid, FALSE));
 }
 
-ReturnStatus MachUNIXStat(retValPtr, pathName, attsBufPtr)
-    int	*retValPtr;
+ReturnStatus MachUNIXStat(pathName, attsBufPtr)
     char *pathName;		/* The name of the file to stat */
     struct stat *attsBufPtr;	/* ptr to buffer to hold attributes in 
 				   Unix format */
@@ -1107,8 +1108,7 @@ ReturnStatus MachUNIXStat(retValPtr, pathName, attsBufPtr)
 }
 
 
-ReturnStatus MachUNIXLstat(retValPtr, pathName, attsBufPtr)
-    int	*retValPtr;
+ReturnStatus MachUNIXLstat(pathName, attsBufPtr)
     char *pathName;		/* The name of the file to stat */
     struct stat *attsBufPtr;	/* ptr to buffer to hold attributes in 
 				   Unix format */
@@ -1145,8 +1145,7 @@ ReturnStatus MachUNIXLstat(retValPtr, pathName, attsBufPtr)
 }
 
 
-ReturnStatus MachUNIXFstat(retValPtr, fd, attsBufPtr)
-    int	*retValPtr;
+ReturnStatus MachUNIXFstat(fd, attsBufPtr)
     int	fd;		/* The name of the file to stat */
     struct stat *attsBufPtr;	/* ptr to buffer to hold attributes in 
 				   Unix format */
@@ -1168,8 +1167,7 @@ ReturnStatus MachUNIXFstat(retValPtr, fd, attsBufPtr)
 }
 
 ReturnStatus
-MachUNIXDup(retValPtr, oldStreamID)
-    int	*retValPtr;
+MachUNIXDup(oldStreamID)
     int oldStreamID;
 {
     ReturnStatus	status;
@@ -1184,13 +1182,14 @@ MachUNIXDup(retValPtr, oldStreamID)
     }
     status = Fs_GetNewIDStub(oldStreamID, (int *)usp);
     if (status == SUCCESS) {
-	(void)Vm_CopyIn(sizeof(int), usp, (Address)retValPtr);
+	(void)Vm_CopyIn(sizeof(int), usp, 
+			(Address)&machCurStatePtr->userState.unixRetVal);
     }
     return(status);
 }
 
 ReturnStatus
-MachUNIXDup2(retValPtr, oldStreamID, newStreamID)
+MachUNIXDup2(oldStreamID, newStreamID)
     int oldStreamID;		/* original stream identifier */
     int newStreamID;		/* new stream identifier */
 {
@@ -1204,14 +1203,14 @@ MachUNIXDup2(retValPtr, oldStreamID, newStreamID)
     }
     status = Fs_GetNewIDStub(oldStreamID, (int *)usp);
     if (status == SUCCESS) {
-	(void)Vm_CopyIn(sizeof(int), usp, (Address)retValPtr);
+	(void)Vm_CopyIn(sizeof(int), usp, 
+			(Address)&machCurStatePtr->userState.unixRetVal);
     }
     return(status);
 }
 
 ReturnStatus
-MachUNIXPipe(retValPtr, filedes)
-    int	*retValPtr;
+MachUNIXPipe(filedes)
     int	filedes[2];
 {
     ReturnStatus	status;
@@ -1221,31 +1220,29 @@ MachUNIXPipe(retValPtr, filedes)
 	/*
 	 * When pipe returns, the stub expects v0 to contain the first
 	 * file id and v1 to contain the second one.  Our caller will
-	 * put *retValPtr into v0 for us, but we have to deal with v1.
+	 * put unixRetVal into v0 for us, but we have to deal with v1.
 	 */
 	(void)Vm_CopyIn(sizeof(int), (Address)&(filedes[0]),
-			(Address)retValPtr);
+			(Address)&machCurStatePtr->userState.unixRetVal);
 	(void)Vm_CopyIn(sizeof(int), (Address)&(filedes[1]),
 			(Address)&machCurStatePtr->userState.regState.regs[V1]);
     }
 }
 
 ReturnStatus
-MachUNIXGetGID(retValPtr)
-    int	*retValPtr;
+MachUNIXGetGID()
 {
     /*
      * The Sprite group id for Sprite at Berkeley.  Should do a better job
      * of this.
      */
-    *retValPtr = 155;
+    machCurStatePtr->userState.unixRetVal = 155;
 
     return(SUCCESS);
 }
 
 ReturnStatus
-MachUNIXSymlink(retValPtr, target, link) 
-    int	*retValPtr;
+MachUNIXSymlink(target, link) 
     char *target;
     char *link;
 {
@@ -1253,8 +1250,7 @@ MachUNIXSymlink(retValPtr, target, link)
 }
 
 ReturnStatus
-MachUNIXReadLink(retValPtr, link, buffer, numBytes)
-    int	*retValPtr;
+MachUNIXReadLink(link, buffer, numBytes)
     char *link;			/* name of link file to read */
     char *buffer;		/* pointer to buffer area */
     int numBytes;		/* number of bytes to read */
@@ -1266,12 +1262,13 @@ MachUNIXReadLink(retValPtr, link, buffer, numBytes)
 
     status = Fs_ReadLinkStub(link, numBytes, buffer, (int *)usp);
     if (status == SUCCESS) {
-	(void)Vm_CopyIn(sizeof(int), usp, (Address)retValPtr);
+	(void)Vm_CopyIn(sizeof(int), usp, 
+			(Address)&machCurStatePtr->userState.unixRetVal);
 	/*
 	 * Sprite's Fs_ReadLink includes the terminating null character
 	 * in the character count return  while Unix doesn't. 
 	 */
-	*retValPtr -= 1;
+	machCurStatePtr->userState.unixRetVal -= 1;
     }
     return(status);
 }
@@ -1279,8 +1276,7 @@ MachUNIXReadLink(retValPtr, link, buffer, numBytes)
 #define PERMISSION_MASK 0777
 
 ReturnStatus
-MachUNIXUmask(retValPtr, newMask)
-    int	*retValPtr;
+MachUNIXUmask(newMask)
     int newMask;
 {
     ReturnStatus status;	/* result returned by Fs_Read */
@@ -1290,23 +1286,23 @@ MachUNIXUmask(retValPtr, newMask)
 
     status = Fs_SetDefPermStub((~newMask) & PERMISSION_MASK, (int *)usp);
     if (status == SUCCESS) {
-	(void)Vm_CopyIn(sizeof(int), usp, (Address)retValPtr);
-	*retValPtr = (~(*retValPtr)) & PERMISSION_MASK;
+	(void)Vm_CopyIn(sizeof(int), usp, 
+			(Address)&machCurStatePtr->userState.unixRetVal);
+	machCurStatePtr->userState.unixRetVal = 
+		(~(machCurStatePtr->userState.unixRetVal)) & PERMISSION_MASK;
     }
     return(status);
 }
 
 ReturnStatus
-MachUNIXGetPageSize(retValPtr)
-    int	*retValPtr;
+MachUNIXGetPageSize()
 {
-    *retValPtr = vm_PageSize;
+    machCurStatePtr->userState.unixRetVal = vm_PageSize;
     return(SUCCESS);
 }
 
 ReturnStatus
-MachUNIXGetGroups(retValPtr, gidsetlen, gidset)
-    int	*retValPtr;
+MachUNIXGetGroups(gidsetlen, gidset)
     int gidsetlen;
     int *gidset;
 {
@@ -1318,17 +1314,17 @@ MachUNIXGetGroups(retValPtr, gidsetlen, gidset)
 
     status = Proc_GetGroupIDs(gidsetlen, gidset, (int *)usp);
     if (status == SUCCESS) {
-	(void)Vm_CopyIn(sizeof(int), usp, (Address)retValPtr);
-	if (*retValPtr > gidsetlen) {
-	    *retValPtr = gidsetlen;
+	(void)Vm_CopyIn(sizeof(int), usp, 
+			(Address)&machCurStatePtr->userState.unixRetVal);
+	if (machCurStatePtr->userState.unixRetVal > gidsetlen) {
+	    machCurStatePtr->userState.unixRetVal = gidsetlen;
 	}
     }
     return(status);
 }
 
 ReturnStatus
-MachUNIXSetGroups(retValPtr, ngroups, gidset)
-    int	*retValPtr;
+MachUNIXSetGroups(ngroups, gidset)
     int ngroups;
     int *gidset;
 {
@@ -1336,8 +1332,7 @@ MachUNIXSetGroups(retValPtr, ngroups, gidset)
 }
 
 ReturnStatus
-MachUNIXGetPGrp(retValPtr, pid)
-    int	*retValPtr;
+MachUNIXGetPGrp(pid)
     int pid;
 {
     Address usp;
@@ -1349,13 +1344,13 @@ MachUNIXGetPGrp(retValPtr, pid)
     }
     status = Proc_GetFamilyID(pid, (int *)usp);
     if (status == SUCCESS) {
-	(void)Vm_CopyIn(sizeof(int), usp, (Address)retValPtr);
+	(void)Vm_CopyIn(sizeof(int), usp, 
+		        (Address)&machCurStatePtr->userState.unixRetVal);
     }
     return(status);
 }
 
-ReturnStatus MachUNIXSetPGrp(retValPtr, pid, pgrp)
-    int	*retValPtr;
+ReturnStatus MachUNIXSetPGrp(pid, pgrp)
     int pid;
 {
     if (pid == 0) {
@@ -1364,8 +1359,7 @@ ReturnStatus MachUNIXSetPGrp(retValPtr, pid, pgrp)
     return(Proc_SetFamilyID(pid, pgrp));
 }
 
-ReturnStatus MachUNIXWait(retValPtr, statusPtr, options, unixRusagePtr)
-    int			*retValPtr;
+ReturnStatus MachUNIXWait(statusPtr, options, unixRusagePtr)
     union	wait	*statusPtr;
     int			options;
     struct	rusage	*unixRusagePtr;
@@ -1452,20 +1446,19 @@ ReturnStatus MachUNIXWait(retValPtr, statusPtr, options, unixRusagePtr)
 	    return(status);
 	}
     }
-    *retValPtr = pid;
+    machCurStatePtr->userState.unixRetVal = pid;
     return(SUCCESS);
 }
 
 ReturnStatus
-MachUNIXGetDTableSize(retValPtr)
-    int	*retValPtr;
+MachUNIXGetDTableSize()
 {
-    *retValPtr = 100;
+    machCurStatePtr->userState.unixRetVal = 100;
     return(SUCCESS);
 }
 
 ReturnStatus
-MachUNIXSelect(retValPtr, width, readfds, writefds, exceptfds, timeout)
+MachUNIXSelect(width, readfds, writefds, exceptfds, timeout)
     int width, *readfds, *writefds, *exceptfds;
     Time *timeout;
 {
@@ -1476,39 +1469,36 @@ MachUNIXSelect(retValPtr, width, readfds, writefds, exceptfds, timeout)
     status = Fs_SelectStub(width, timeout, readfds, writefds,
 			   exceptfds, (int *)usp);
     if (status == SUCCESS) {
-	(void)Vm_CopyIn(sizeof(int), usp, (Address)retValPtr);
+	(void)Vm_CopyIn(sizeof(int), usp, 
+			(Address)&machCurStatePtr->userState.unixRetVal);
     }
     return(status);
 }
 
 ReturnStatus
-MachUNIXFSync(retValPtr, fd)
-    int	*retValPtr;
+MachUNIXFSync(fd)
     int fd;
 {
     return(Fs_FileWriteBackStub(fd, -1, -1, 1));
 }
 
 ReturnStatus
-MachUNIXSetPriority(retValPtr, which, who, prio)
-    int *retValPtr;
+MachUNIXSetPriority(which, who, prio)
     int which, who, prio;
 {
     return(SUCCESS);
 }
 
 ReturnStatus
-MachUNIXGetPriority(retValPtr, which, who, prio)
-    int *retValPtr;
+MachUNIXGetPriority(which, who, prio)
     int which, who, prio;
 {
-    *retValPtr = 0;
+    machCurStatePtr->userState.unixRetVal = 0;
     return(SUCCESS);
 }
 
 ReturnStatus
-MachUNIXGetTimeOfDay(retValPtr, tp, tzpPtr)
-    int			*retValPtr;
+MachUNIXGetTimeOfDay(tp, tzpPtr)
     struct timeval 	*tp;
     struct timezone 	*tzpPtr;
 {
@@ -1538,7 +1528,7 @@ MachUNIXGetTimeOfDay(retValPtr, tp, tzpPtr)
 
 
 ReturnStatus
-MachUNIXSetTimeOfDay(retValPtr, tp, tzpPtr)
+MachUNIXSetTimeOfDay(tp, tzpPtr)
     struct timeval *tp;
     struct timezone *tzpPtr;
 {
@@ -1584,8 +1574,7 @@ MachUNIXSetTimeOfDay(retValPtr, tp, tzpPtr)
 }
 
 ReturnStatus
-MachUNIXGetDirEntries(retValPtr, fd, buf, nbytes, basep)
-    int *retValPtr;
+MachUNIXGetDirEntries(fd, buf, nbytes, basep)
     int  fd;
     char *buf;
     int nbytes;
@@ -1601,8 +1590,9 @@ MachUNIXGetDirEntries(retValPtr, fd, buf, nbytes, basep)
     usp = (Address)(machCurStatePtr->userState.regState.regs[SP] - 4);
     status = Fs_ReadStub(fd, nbytes, buf, (int *)usp);
     if (status == SUCCESS) {
-	(void)Vm_CopyIn(sizeof(int), usp, (Address)retValPtr);
-	if (*retValPtr == 0) {
+	(void)Vm_CopyIn(sizeof(int), usp,
+		        (Address)&machCurStatePtr->userState.unixRetVal);
+	if (machCurStatePtr->userState.unixRetVal == 0) {
 	    return(SUCCESS);
 	}
     } else {
@@ -1611,8 +1601,9 @@ MachUNIXGetDirEntries(retValPtr, fd, buf, nbytes, basep)
     /* 
      * Translate and byte swap things if necessary.
      */
-    Vm_MakeAccessible(VM_OVERWRITE_ACCESS, *retValPtr, buf, &bytesAcc, &addr);
-    if (bytesAcc != *retValPtr) {
+    Vm_MakeAccessible(VM_OVERWRITE_ACCESS, 
+		machCurStatePtr->userState.unixRetVal, buf, &bytesAcc, &addr);
+    if (bytesAcc != machCurStatePtr->userState.unixRetVal) {
 	panic("User buffer not accessible, but we just wrote to it !!!\n");
     }
     dirPtr = (FsDirEntry *)addr;
@@ -1662,7 +1653,7 @@ MachUNIXGetDirEntries(retValPtr, fd, buf, nbytes, basep)
 	  }
 
 ReturnStatus
-MachUNIXGetRUsage(retValPtr, who, rusage)
+MachUNIXGetRUsage(who, rusage)
      int who;
      struct rusage *rusage;
 {
@@ -1709,8 +1700,7 @@ MachUNIXGetRUsage(retValPtr, who, rusage)
 }
 
 ReturnStatus
-MachUNIXReadv(retValPtr, stream, iov, iovcnt)
-    int *retValPtr;
+MachUNIXReadv(stream, iov, iovcnt)
     int stream;			/* descriptor for stream to read. */
     register struct iovec *iov;	/* pointer to array of iovecs. */
     int iovcnt;			/* number of  iovecs in iov. */
@@ -1734,14 +1724,13 @@ MachUNIXReadv(retValPtr, stream, iov, iovcnt)
     }
 
     if (status == SUCCESS) {
-	*retValPtr = totalRead;
+	machCurStatePtr->userState.unixRetVal = totalRead;
     }
     return(status);
 }
 
 ReturnStatus
-MachUNIXWritev(retValPtr, stream, iov, iovcnt)
-    int *retValPtr;
+MachUNIXWritev(stream, iov, iovcnt)
     int stream;			/* descriptor for stream to read. */
     register struct iovec *iov;	/* pointer to array of iovecs. */
     int iovcnt;			/* number of  iovecs in iov. */
@@ -1765,14 +1754,13 @@ MachUNIXWritev(retValPtr, stream, iov, iovcnt)
     }
 
     if (status == SUCCESS) {
-	*retValPtr = totalWritten;
+	machCurStatePtr->userState.unixRetVal = totalWritten;
     }
     return(status);
 }
 
 ReturnStatus
-MachUNIXSetREUID(retValPtr, ruid, euid)
-    int	*retValPtr;
+MachUNIXSetREUID(ruid, euid)
     int	ruid, euid;
 {
     if (ruid == -1) {
@@ -1785,8 +1773,7 @@ MachUNIXSetREUID(retValPtr, ruid, euid)
 }
 
 ReturnStatus
-MachUNIXSetREGID(retValPtr, rgid, egid)
-    int retValPtr;
+MachUNIXSetREGID(rgid, egid)
     int	rgid, egid;
 {
     Address	usp;
@@ -1817,7 +1804,7 @@ MachUNIXSetREGID(retValPtr, rgid, egid)
 }
 
 ReturnStatus
-MachUNIXRename(retValPtr, from, to)
+MachUNIXRename(from, to)
     char *from;
     char *to;
 {
@@ -1825,8 +1812,7 @@ MachUNIXRename(retValPtr, from, to)
 }
 
 ReturnStatus
-MachUNIXTruncate(retValPtr, path, length)
-    int	*retValPtr;
+MachUNIXTruncate(path, length)
     char *path;
     unsigned long length;
 {
@@ -1850,7 +1836,7 @@ MachUNIXTruncate(retValPtr, path, length)
 }
 
 ReturnStatus
-MachUNIXFTruncate(retValPtr, fd, length)
+MachUNIXFTruncate(fd, length)
     int fd;
     unsigned long length;
 {
@@ -1867,8 +1853,7 @@ MachUNIXFTruncate(retValPtr, fd, length)
 }
 
 ReturnStatus
-MachUNIXLongJumpReturn(retValPtr, sigContextPtr)
-    int	*retValPtr;
+MachUNIXLongJumpReturn(sigContextPtr)
     struct sigcontext *sigContextPtr;
 {
     struct sigcontext	sigContext;
@@ -1882,7 +1867,7 @@ MachUNIXLongJumpReturn(retValPtr, sigContextPtr)
 	return(status);
     }
     regsPtr = &machCurStatePtr->userState.regState;
-    regsPtr->pc = (Address)sigContext.sc_pc;
+    regsPtr->pc = (Address)(sigContext.sc_pc - 4);
     bcopy(sigContext.sc_regs, regsPtr->regs, sizeof(sigContext.sc_regs));
     regsPtr->mflo = sigContext.sc_mdlo;
     regsPtr->mfhi = sigContext.sc_mdhi;
@@ -1893,8 +1878,7 @@ MachUNIXLongJumpReturn(retValPtr, sigContextPtr)
 }
 
 ReturnStatus
-MachUNIXFLock(retValPtr, descriptor, operation)
-    int	*retValPtr;
+MachUNIXFLock(descriptor, operation)
     int	descriptor;
     int operation;
 {
@@ -1928,7 +1912,7 @@ MachUNIXFLock(retValPtr, descriptor, operation)
 }
 
 ReturnStatus
-MachUNIXMkDir(retValPtr, pathName, permissions)
+MachUNIXMkDir(pathName, permissions)
     char *pathName;		/* The name of the directory to create */
     int permissions;		/* Permission mask to use on creation */
 {
@@ -1937,16 +1921,14 @@ MachUNIXMkDir(retValPtr, pathName, permissions)
 
 
 ReturnStatus
-MachUNIXRMDir(retValPtr, pathName)
-    int	*retValPtr;
+MachUNIXRMDir(pathName)
     char *pathName;		/* The name of the directory to create */
 {
     return(Fs_RemoveDirStub(pathName));
 }
 
 ReturnStatus
-MachUNIXUTimes(retValPtr, path, tvp)
-    int		*retValPtr;
+MachUNIXUTimes(path, tvp)
     char	*path;
     struct timeval tvp[2];
 {
@@ -1969,8 +1951,7 @@ MachUNIXUTimes(retValPtr, path, tvp)
 }
 
 ReturnStatus
-MachUNIXKillPG(retValPtr, pgrp, sig)
-    int *retValPtr;
+MachUNIXKillPG(pgrp, sig)
     int pgrp;
     int sig;
 {
@@ -1985,15 +1966,13 @@ MachUNIXKillPG(retValPtr, pgrp, sig)
 }
 
 ReturnStatus
-MachUNIXGetRLimit(retValPtr)
-    int *retValPtr;
+MachUNIXGetRLimit()
 {
     return(SUCCESS);
 }
 
 ReturnStatus
-MachUNIXSetRLimit(retValPtr)
-    int *retValPtr;
+MachUNIXSetRLimit()
 {
     return(SUCCESS);
 }
@@ -2007,8 +1986,7 @@ int machDomainNameLen = 0;
 int machHostID;
 
 ReturnStatus
-MachUNIXGetHostName(retValPtr, name, namelen)
-    int *retValPtr;
+MachUNIXGetHostName(name, namelen)
     char *name;
     int namelen;
 {
@@ -2023,8 +2001,7 @@ MachUNIXGetHostName(retValPtr, name, namelen)
 }
 
 ReturnStatus
-MachUNIXSetHostName(retValPtr, name, namelen)
-    int *retValPtr;
+MachUNIXSetHostName(name, namelen)
     char *name;
     int namelen;
 {
@@ -2044,16 +2021,14 @@ MachUNIXSetHostName(retValPtr, name, namelen)
 }
 
 ReturnStatus
-MachUNIXGetHostID(retValPtr)
-    int	*retValPtr;
+MachUNIXGetHostID()
 {
-    *retValPtr = machHostID;
+    machCurStatePtr->userState.unixRetVal = machHostID;
     return(SUCCESS);
 }
 
 ReturnStatus
-MachUNIXSetHostID(retValPtr, hostid)
-    int	*retValPtr;
+MachUNIXSetHostID(hostid)
     int hostid;
 {
     machHostID = hostid;
@@ -2061,8 +2036,7 @@ MachUNIXSetHostID(retValPtr, hostid)
 }
 
 ReturnStatus
-MachUNIXGetDomainName(retValPtr, name, namelen)
-    int	*retValPtr;
+MachUNIXGetDomainName(name, namelen)
     char *name;
     int namelen;
 {
@@ -2077,8 +2051,7 @@ MachUNIXGetDomainName(retValPtr, name, namelen)
 }
 
 ReturnStatus
-MachUNIXSetDomainName(retValPtr, name, namelen)
-    int	*retValPtr;
+MachUNIXSetDomainName(name, namelen)
     char *name;
     int namelen;
 {
@@ -2098,8 +2071,7 @@ MachUNIXSetDomainName(retValPtr, name, namelen)
 }
 
 ReturnStatus
-MachUNIXGetItimer(retValPtr, which, value)
-    int *retValPtr;
+MachUNIXGetItimer(which, value)
     int which;
     struct itimerval *value;
 {
@@ -2107,8 +2079,7 @@ MachUNIXGetItimer(retValPtr, which, value)
 }
 
 ReturnStatus
-MachUNIXSetITimer(retValPtr, which, value, ovalue)
-    int *retValPtr;
+MachUNIXSetITimer(which, value, ovalue)
     int which;
     struct itimerval *value;
     struct itimerval *ovalue;
@@ -2118,8 +2089,7 @@ MachUNIXSetITimer(retValPtr, which, value, ovalue)
 }
 
 ReturnStatus
-MachUNIXGetSysInfo(retValPtr, op, buffer, nbytes, start, arg)
-    int *retValPtr;
+MachUNIXGetSysInfo(op, buffer, nbytes, start, arg)
     unsigned  op;
     char      *buffer;
     unsigned   nbytes;
@@ -2143,15 +2113,14 @@ MachUNIXGetSysInfo(retValPtr, op, buffer, nbytes, start, arg)
      * Just return a 0.  This says that the requested information is
      * not available which is certainly true for the most part.
      */
-    *retValPtr = 0;
+    machCurStatePtr->userState.unixRetVal = 0;
     return(SUCCESS);
 }
 
 /************************ Begin Unimplemented calls **********************/
 
 ReturnStatus
-MachUNIXSocketPair(retValPtr, d, type, protocol, sv)
-    int *retValPtr;
+MachUNIXSocketPair(d, type, protocol, sv)
     int d, type, protocol;
     int sv[2];
 {
@@ -2160,8 +2129,7 @@ MachUNIXSocketPair(retValPtr, d, type, protocol, sv)
 }
 
 ReturnStatus
-MachUNIXReboot(retValPtr, howto)
-    int	*retValPtr;
+MachUNIXReboot(howto)
     int howto;
 {
     printf("reboot is not implemented\n");
@@ -2169,16 +2137,14 @@ MachUNIXReboot(retValPtr, howto)
 }
 
 ReturnStatus
-MachUNIXSync(retValPtr)
-    int *retValPtr;
+MachUNIXSync()
 {
     printf("sync is not implemented\n");
     return(FAILURE);
 }
 
 ReturnStatus
-MachUNIXPtrace(retValPtr, request, pid, addr, data)
-    int *retValPtr;
+MachUNIXPtrace(request, pid, addr, data)
     int request, pid, *addr, data;
 {
     printf("ptrace is not implemented\n");
@@ -2186,16 +2152,14 @@ MachUNIXPtrace(retValPtr, request, pid, addr, data)
 }
 
 ReturnStatus
-MachUNIXGetDOpt(retValPtr)
-    int	*retValPtr;
+MachUNIXGetDOpt()
 {
     printf("getdopt is not implemented\n");
     return(FAILURE);
 }
 
 ReturnStatus
-MachUNIXSetDOpt(retValPtr)
-    int	*retValPtr;
+MachUNIXSetDOpt()
 {
     printf("setdopt is not implemented\n");
     return(FAILURE);
@@ -2203,8 +2167,7 @@ MachUNIXSetDOpt(retValPtr)
 
 
 ReturnStatus
-MachUNIXAdjTime(retValPtr, delta, olddelta)
-    int			*retValPtr;
+MachUNIXAdjTime(delta, olddelta)
     struct timeval	*delta;
     struct timeval	*olddelta;
 {
@@ -2216,6 +2179,6 @@ ReturnStatus
 MachUNIXError()
 {
     printf("MachUNIXError: %s is not implemented\n", 
-	    sysCallTable[machCurStatePtr->userState.regState.regs[V0]].name);
+	    machUNIXSysCallTable[machCurStatePtr->userState.regState.regs[V0]].name);
     return(FAILURE);
 }
