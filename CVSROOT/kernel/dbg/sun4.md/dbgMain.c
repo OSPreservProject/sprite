@@ -633,8 +633,8 @@ Dbg_Main(trapType, trapStatePtr)
 #ifdef NOTDEF
 /*
  * This is the code the other machine types execute to sync the disks
- * when going into the debugger.  But it seems to cause us to hang since
- * it context switches to the backend write process and never comes back.
+ * when going into the debugger.  But it seems to cause us to pop out of the
+ * debugger, since it context switches to the backend write process.
  * Why does it work (does it?) on the other machines?
  */
     if (!dbg_BeingDebugged) {
