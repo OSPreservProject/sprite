@@ -37,6 +37,8 @@ int	rpc_SwappedVersion = RPC_SWAPPED_VERSION;
 RpcConst rpcEtherConst;
 RpcConst rpcInetConst;
 
+void RpcBufferInit();
+
 
 /*
  *----------------------------------------------------------------------
@@ -111,6 +113,9 @@ Rpc_Init()
     rpcInetConst.maxTries = 8;
     rpcInetConst.maxAcks = 10;
 
+    /*
+     * TRACE and HISTOGRAM initialization.
+     */
     Trace_Init(rpcTraceHdrPtr, RPC_TRACE_LEN, sizeof(RpcHdr), 0);
 
     rpcServiceTime[0] = (Rpc_Histogram *)NIL;
@@ -119,6 +124,15 @@ Rpc_Init()
 	rpcServiceTime[i] = Rpc_HistInit(RPC_NUM_HIST_BUCKETS, 1024);
 	rpcCallTime[i] = Rpc_HistInit(RPC_NUM_HIST_BUCKETS, 1024);
     }
+
+    /*
+     * Set our preferred inter-fragment delay based on machine type.
+     * This is a microsecond value.  Our output rate starts the same
+     * as the input rate, although MyDelay could increase if a machine
+     * senses that it is overloaded.
+     */
+
+    RpcGetMachineDelay(&rpcMyDelay, &rpcOutputRate);
 
     /*
      * The client channel table is kept as a pointer to an array of pointers
@@ -147,92 +161,24 @@ Rpc_Init()
 	chanPtr->waitCondition.waiting = FALSE;
 
 	/*
-	 * Precompute some scatter/gather vector elements.  Buffer space
-	 * for the RPC headers is part of the channel struct so the
-	 * scatter/gather elements that point to the RPC header can
-	 * be set up once here.  Similarly, the channel
-	 * of the request RPC header is set up once here as it
-	 * is always the same.
+	 * Set up header storage and the scatter/gather sets used to
+	 * refer to a whole message.  This is done for each type
+	 * of packet (request, reply ack), plus an array of these
+	 * things used for fragmenting our request.
 	 */
-	bufferPtr = &chanPtr->request.protoHdrBuffer;
-	bufferPtr->bufAddr = Vm_RawAlloc(maxHdrSize);
-	bufferPtr->length = maxHdrSize;
-	bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
-
-	bufferPtr = &chanPtr->request.rpcHdrBuffer;
-	bufferPtr->bufAddr = (Address)&chanPtr->requestRpcHdr;
-	bufferPtr->length = sizeof(RpcHdr);
-	bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
-	chanPtr->requestRpcHdr.version = rpc_NativeVersion;
-	chanPtr->requestRpcHdr.channel = chanPtr->index;
-	chanPtr->request.paramBuffer.mutexPtr = (Sync_Semaphore *)NIL;
-	chanPtr->request.dataBuffer.mutexPtr = (Sync_Semaphore *)NIL;
+	RpcBufferInit(&chanPtr->requestRpcHdr, &chanPtr->request,
+			chanPtr->index, -1);
+	RpcBufferInit(&chanPtr->replyRpcHdr, &chanPtr->reply,
+			chanPtr->index, -1);
+	RpcBufferInit(&chanPtr->ackHdr, &chanPtr->ack,
+			chanPtr->index, -1);
 
 	for (frag=0 ; frag < RPC_MAX_NUM_FRAGS ; frag++) {
-
-	    bufferPtr = &chanPtr->fragment[frag].protoHdrBuffer;
-	    bufferPtr->bufAddr = Vm_RawAlloc(maxHdrSize);
-	    bufferPtr->length = maxHdrSize;
-	    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
-
-	    bufferPtr = &chanPtr->fragment[frag].rpcHdrBuffer;
-	    bufferPtr->bufAddr = (Address)&chanPtr->fragRpcHdr[frag];
-	    bufferPtr->length = sizeof(RpcHdr);
-	    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
-	    chanPtr->fragRpcHdr[frag].version = rpc_NativeVersion;
-	    chanPtr->fragRpcHdr[frag].channel = chanPtr->index;
-	    chanPtr->fragment[frag].paramBuffer.mutexPtr =
-			(Sync_Semaphore *)NIL;
-	    chanPtr->fragment[frag].dataBuffer.mutexPtr =
-			(Sync_Semaphore *)NIL;
+	    RpcBufferInit(&chanPtr->fragRpcHdr[frag], &chanPtr->fragment[frag],
+			    chanPtr->index, -1);
 	}
 
-	bufferPtr = &chanPtr->reply.protoHdrBuffer;
-	bufferPtr->bufAddr = Vm_RawAlloc(maxHdrSize);
-	bufferPtr->length = maxHdrSize;
-	bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
-
-	bufferPtr = &chanPtr->reply.rpcHdrBuffer;
-	bufferPtr->bufAddr = (Address)&chanPtr->replyRpcHdr;
-	bufferPtr->length = sizeof(RpcHdr);
-	bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
-	chanPtr->reply.paramBuffer.mutexPtr = (Sync_Semaphore *)NIL;
-	chanPtr->reply.dataBuffer.mutexPtr = (Sync_Semaphore *)NIL;
-
-	/*
-	 * Initialize the buffer pointers and some of the packet
-	 * header fields for the explicit acknowledgement messages.
-	 */
-	bufferPtr = &chanPtr->ack.protoHdrBuffer;
-	bufferPtr->bufAddr = Vm_RawAlloc(maxHdrSize);
-	bufferPtr->length = maxHdrSize;
-	bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
-
-	bufferPtr = &chanPtr->ack.rpcHdrBuffer;
-	bufferPtr->bufAddr = (Address)&chanPtr->ackHdr;
-	bufferPtr->length = sizeof(RpcHdr);
-	bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
-	chanPtr->ack.paramBuffer.bufAddr = (Address)NIL;
-	chanPtr->ack.paramBuffer.length = 0;
-	chanPtr->ack.paramBuffer.mutexPtr = (Sync_Semaphore *)NIL;
-	chanPtr->ack.dataBuffer.bufAddr = (Address)NIL;
-	chanPtr->ack.dataBuffer.length = 0;
-	chanPtr->ack.dataBuffer.mutexPtr = (Sync_Semaphore *)NIL;
-	chanPtr->ackHdr.numFrags = 0;
-	chanPtr->ackHdr.fragMask = 0;
-	chanPtr->ackHdr.paramSize = 0;
-	chanPtr->ackHdr.dataSize = 0;
-
     }
-
-    /*
-     * Set our preferred inter-fragment delay based on machine type.
-     * This is a microsecond value.  Our output rate starts the same
-     * as the input rate, although MyDelay could increase if a machine
-     * senses that it is overloaded.
-     */
-
-    RpcGetMachineDelay(&rpcMyDelay, &rpcOutputRate);
 
     /*
      * Initialize the servers' state table.  Most slots are left
@@ -257,6 +203,74 @@ Rpc_Init()
     if (rpc_SpriteID < 0) {
 	rpc_SpriteID = 0;
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcBufferInit --
+ *
+ *	Initialize a packet buffer for one of the various packets sent
+ *	via an RPC channel.  They all share the same packet format and
+ *	buffering system, and this call is used to initialize it.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Allocate memory with Vm_RawAlloc.  Give initial values to
+ *	the fields of the RPC header that never change.  These are:
+ *	version		# byte ordering version.
+ *	channel		# channel port number.
+ *	delay		# interfragment delay.
+ *	paramSize 0	# size of the parameter area of the message.
+ *	dataSize 0	# size of the data area of the message.
+ *	numFrags 0	# >0 if fragmented
+ *	fragMask 0	# fragmentID
+ *
+ *----------------------------------------------------------------------
+ */
+void
+RpcBufferInit(rpcHdrPtr, bufferSetPtr, channel, serverHint)
+    RpcHdr *rpcHdrPtr;		/* Storage for packet header */
+    RpcBufferSet *bufferSetPtr;	/* Scatter/gather vector for whole message */
+    int channel;		/* chanPtr->index */
+    int serverHint;		/* srvPtr->index */
+{
+    int maxHdrSize = Net_MaxProtoHdrSize();
+
+    bufferSetPtr->protoHdrBuffer.length = maxHdrSize;
+    bufferSetPtr->protoHdrBuffer.bufAddr = Vm_RawAlloc(maxHdrSize);
+    bufferSetPtr->protoHdrBuffer.mutexPtr = (Sync_Semaphore *)NIL;
+
+    bufferSetPtr->rpcHdrBuffer.length = sizeof(RpcHdr);
+    bufferSetPtr->rpcHdrBuffer.bufAddr = (Address)rpcHdrPtr;
+    bufferSetPtr->rpcHdrBuffer.mutexPtr = (Sync_Semaphore *)NIL;
+
+    bufferSetPtr->paramBuffer.length = 0;
+    bufferSetPtr->paramBuffer.bufAddr = (Address)NIL;
+    bufferSetPtr->paramBuffer.mutexPtr = (Sync_Semaphore *)NIL;
+
+    bufferSetPtr->dataBuffer.length = 0;
+    bufferSetPtr->dataBuffer.bufAddr = (Address)NIL;
+    bufferSetPtr->dataBuffer.mutexPtr = (Sync_Semaphore *)NIL;
+    /*
+     * Set up RPC header fields that don't change.
+     */
+    rpcHdrPtr->version = rpc_NativeVersion;
+    rpcHdrPtr->delay = rpcMyDelay;
+
+    rpcHdrPtr->clientID = rpc_SpriteID;
+    rpcHdrPtr->channel = channel;
+    rpcHdrPtr->serverID = rpc_SpriteID;
+    rpcHdrPtr->serverHint = serverHint;
+    /*
+     * And some that might not have to change.
+     */
+    rpcHdrPtr->numFrags = 0;
+    rpcHdrPtr->fragMask = 0;
+    rpcHdrPtr->paramSize = 0;
+    rpcHdrPtr->dataSize = 0;
 }
 
 /*
@@ -311,80 +325,26 @@ RpcInitServerState(index)
     srvPtr->mutex = mutexInit;
     srvPtr->waitCondition.waiting = FALSE;
 
-    maxHdrSize = Net_MaxProtoHdrSize();
     /*
      * Set up the buffer address for the RPC header of replies
      * and acks to point to the headers kept here in the server's state.
      */
-    bufferPtr = &srvPtr->reply.protoHdrBuffer;
-    bufferPtr->bufAddr = Vm_RawAlloc(maxHdrSize);
-    bufferPtr->length = maxHdrSize;
-    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
-
-    bufferPtr = &srvPtr->reply.rpcHdrBuffer;
-    bufferPtr->bufAddr = (Address)&srvPtr->replyRpcHdr;
-    bufferPtr->length = sizeof(RpcHdr);
-    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
-    srvPtr->reply.paramBuffer.mutexPtr = (Sync_Semaphore *)NIL;
-    srvPtr->reply.dataBuffer.mutexPtr = (Sync_Semaphore *)NIL;
+    RpcBufferInit(&srvPtr->replyRpcHdr, &srvPtr->reply, -1, srvPtr->index);
+    RpcBufferInit(&srvPtr->ackRpcHdr, &srvPtr->ack, -1, srvPtr->index);
     for (frag=0 ; frag < RPC_MAX_NUM_FRAGS ; frag++) {
-	bufferPtr = &srvPtr->fragment[frag].protoHdrBuffer;
-	bufferPtr->bufAddr = Vm_RawAlloc(maxHdrSize);
-	bufferPtr->length = maxHdrSize;
-	bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
-
-	bufferPtr = &srvPtr->fragment[frag].rpcHdrBuffer;
-	bufferPtr->bufAddr = (Address)&srvPtr->fragRpcHdr[frag];
-	bufferPtr->length = sizeof(RpcHdr);
-	bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
-	srvPtr->fragment[frag].paramBuffer.mutexPtr = (Sync_Semaphore *)NIL;
-	srvPtr->fragment[frag].dataBuffer.mutexPtr = (Sync_Semaphore *)NIL;
+	RpcBufferInit(&srvPtr->fragRpcHdr[frag], &srvPtr->fragment[frag],
+			-1, srvPtr->index);
     }
-
-    bufferPtr = &srvPtr->ack.protoHdrBuffer;
-    bufferPtr->bufAddr = Vm_RawAlloc(maxHdrSize);
-    bufferPtr->length = maxHdrSize;
-    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
-
-    bufferPtr = &srvPtr->ack.rpcHdrBuffer;
-    bufferPtr->bufAddr = (Address)&srvPtr->ackRpcHdr;
-    bufferPtr->length = sizeof(RpcHdr);
-    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
-
-    bufferPtr = &srvPtr->ack.paramBuffer;
-    bufferPtr->bufAddr = (Address)NIL;
-    bufferPtr->length = 0;
-    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
-
-    bufferPtr = &srvPtr->ack.dataBuffer;
-    bufferPtr->bufAddr = (Address)NIL;
-    bufferPtr->length = 0;
-    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
-
     /*
      * Set up the scatter vector for input requests to the server.
      * Allocate buffer space for the largest possible request.
      */
-    
-    bufferPtr = &srvPtr->request.protoHdrBuffer;
-    bufferPtr->bufAddr = Vm_RawAlloc(maxHdrSize);
-    bufferPtr->length = maxHdrSize;
-    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
+    RpcBufferInit(&srvPtr->requestRpcHdr, &srvPtr->request, -1, srvPtr->index);
+    srvPtr->request.paramBuffer.bufAddr = Vm_RawAlloc(RPC_MAX_PARAM_SIZE);
+    srvPtr->request.paramBuffer.length = RPC_MAX_PARAM_SIZE;
 
-    bufferPtr = &srvPtr->request.rpcHdrBuffer;
-    bufferPtr->bufAddr = (Address)&srvPtr->requestRpcHdr;
-    bufferPtr->length = sizeof(RpcHdr);
-    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
-
-    bufferPtr = &srvPtr->request.paramBuffer;
-    bufferPtr->bufAddr = Vm_RawAlloc(RPC_MAX_PARAM_SIZE);
-    bufferPtr->length = RPC_MAX_PARAM_SIZE;
-    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
-
-    bufferPtr = &srvPtr->request.dataBuffer;
-    bufferPtr->bufAddr = Vm_RawAlloc(RPC_MAX_DATA_SIZE);
-    bufferPtr->length = RPC_MAX_DATA_SIZE;
-    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
+    srvPtr->request.dataBuffer.bufAddr = Vm_RawAlloc(RPC_MAX_DATA_SIZE);
+    srvPtr->request.dataBuffer.length = RPC_MAX_DATA_SIZE;
 
     /*
      * Initialize temporaries.
